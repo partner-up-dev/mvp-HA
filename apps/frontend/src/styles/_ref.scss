@@ -1,0 +1,232 @@
+/*
+ * Design Reference Tokens
+ * First layer: Raw design values stored in nested SCSS maps (W3C DTCG aligned)
+ * These are the foundational tokens that will be referenced by system tokens
+ */
+
+@use 'sass:map';
+@use 'sass:meta';
+
+/* Color Tokens */
+$color: (
+  primary: (
+    10: #f3f9e9,
+    20: #e6f3d3,
+    30: #102000,
+    40: #cdeda4,
+    50: #bfe77f,
+    60: #a3dd5f,
+    70: #86d43f,
+    80: #96d945,
+    90: #5e8c24,
+    100: #102000,
+  ),
+  secondary: (
+    10: #f5f7f0,
+    20: #eef3e3,
+    30: #e6edd6,
+    40: #dbe7c8,
+    50: #cedfb5,
+    60: #b7c58f,
+    70: #9aaf66,
+    80: #85976e,
+    90: #2d3a24,
+    100: #ffffff,
+  ),
+  tertiary: (
+    10: #f2faf9,
+    20: #e6f6f5,
+    30: #cceeea,
+    40: #bbece8,
+    50: #99e0db,
+    60: #78d3ce,
+    70: #5fbfba,
+    80: #4c9e99,
+    90: #1a726f,
+    100: #ffffff,
+  ),
+  error: (
+    10: #fff5f5,
+    20: #ffeded,
+    30: #ffdada,
+    40: #ffdad6,
+    50: #ffb4b4,
+    60: #ff8a8a,
+    70: #e95b5b,
+    80: #d32f2f,
+    90: #8b0000,
+    100: #410002,
+  ),
+  warning: (
+    10: #fffbee,
+    20: #fff6dc,
+    30: #fff0c8,
+    40: #f6c430,
+    50: #e6b020,
+    60: #cca50d,
+    70: #997a00,
+    80: #755600,
+    90: #241a00,
+    100: #1a1200,
+  ),
+  surface: (
+    10: #ffffff,
+    20: #fbfbf7,
+    30: #f9faef,
+    40: #f3f4e9,
+    50: #eeefe3,
+    60: #e8e9de,
+    70: #e2e3d8,
+    80: #050a00,
+    90: #bfbfb0,
+    100: #000000,
+  ),
+  neutral: (
+    10: #f9faf8,
+    20: #f3f4f1,
+    30: #edeee9,
+    40: #75796c,
+    50: #6d7164,
+    60: #65695c,
+    70: #5d6154,
+    80: #55594c,
+    90: #e2e3d8,
+    96: #f3f4e9,
+    100: #fff,
+  ),
+  neutral-variant: (
+    10: #f7f8f6,
+    20: #eff0ec,
+    30: #44483d,
+    40: #c5c8ba,
+    50: #bdc0b2,
+    60: #b5b8aa,
+    70: #adb0a2,
+    80: #a5a89a,
+    90: #9da092,
+    100: #95988a,
+  ),
+);
+
+/* Spacing Tokens */
+$spacing: (
+  xs: 4px,
+  sm: 8px,
+  med: 16px,
+  lg: 32px,
+);
+
+/* Border Radius Tokens */
+$radius: (
+  none: 0px,
+  xs: 0px,
+  sm: 0px,
+  med: 8px,
+  lg: 16px,
+  full: 50%,
+);
+
+/* Size Tokens */
+$size: (
+  xSmall: 20px,
+  small: 24px,
+  medium: 32px,
+  large: 44px,
+  xLarge: 60px,
+);
+
+/* Icon Tokens */
+$icon: (
+  size: (
+    small: 20px,
+    medium: 24px,
+    large: 40px,
+  ),
+  font-size: (
+    small: 14px,
+    medium: 20px,
+    large: 40px,
+  ),
+);
+
+/* Shadow Tokens */
+$shadow: (
+  0: none,
+  1: (0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12)),
+  2: (0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)),
+  3: (0px 3px 3px -2px rgba(0, 0, 0, 0.2), 0px 3px 4px 0px rgba(0, 0, 0, 0.14), 0px 1px 8px 0px rgba(0, 0, 0, 0.12)),
+  4: (0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12)),
+  6: (0px 3px 5px -1px rgba(0, 0, 0, 0.2), 0px 6px 10px 0px rgba(0, 0, 0, 0.14), 0px 1px 18px 0px rgba(0, 0, 0, 0.12)),
+  8: (0px 5px 5px -3px rgba(0, 0, 0, 0.2), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12)),
+  12: (0px 7px 8px -4px rgba(0, 0, 0, 0.2), 0px 12px 17px 2px rgba(0, 0, 0, 0.14), 0px 5px 22px 4px rgba(0, 0, 0, 0.12)),
+  16: (0px 8px 9px -5px rgba(0, 0, 0, 0.2), 0px 16px 24px 2px rgba(0, 0, 0, 0.14), 0px 6px 30px 5px rgba(0, 0, 0, 0.12)),
+  24: (0px 11px 15px -7px rgba(0, 0, 0, 0.2), 0px 24px 38px 3px rgba(0, 0, 0, 0.14), 0px 9px 46px 8px rgba(0, 0, 0, 0.12)),
+);
+
+/* Typography Tokens */
+$typography: (
+  display-large: (
+    size: 42px,
+    weight: 200,
+    line-height: 48px,
+  ),
+  headline-large: (
+    size: 32px,
+    weight: 200,
+    line-height: 48px,
+  ),
+  title-large: (
+    size: 22px,
+    weight: 400,
+    line-height: 32px,
+  ),
+  title-medium: (
+    size: 18px,
+    weight: 400,
+    line-height: 24px,
+  ),
+  body-large: (
+    size: 16px,
+    weight: 400,
+    line-height: 24px,
+  ),
+  label-large: (
+    size: 14px,
+    weight: 400,
+    line-height: 20px,
+  ),
+  label-medium: (
+    size: 12px,
+    weight: 400,
+    line-height: 16px,
+  ),
+  label-small: (
+    size: 10px,
+    weight: 400,
+    line-height: 16px,
+  ),
+);
+
+$font: (
+  family: (
+    mono: "ui-monospace, monospace",
+  ),
+);
+
+/* Opacity Tokens */
+$opacity: (
+  disabled: 0.6,
+  invalid: 0.6,
+);
+
+$all: (
+  color: $color, 
+  spacing: $spacing, 
+  radius: $radius, 
+  size: $size, 
+  icon: $icon, 
+  shadow: $shadow, 
+  typo: $typography, 
+  font: $font, 
+  opacity: $opacity
+);

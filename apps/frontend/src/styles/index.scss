@@ -1,0 +1,48 @@
+/*
+ * Main Style Entry Point
+ * Centralized CSS variable emission for all tokens (ref, sys, comp)
+ * Note: fn namespace is auto-injected via Vite's additionalData
+ */
+
+@use 'sass:map';
+@use './ref' as ref;
+@use './sys' as sys;
+@use './component' as comp;
+@use './functions' as fn;
+
+// Forward all modules for external use
+@forward './functions';
+@forward './mixins';
+
+/* Emit all reference tokens as CSS variables */
+:root, page {
+  /* Emit ref tokens */
+  @include fn.emit-css-variables(ref.$all, 'ref');
+  
+  /* Emit system tokens (light mode default) */
+  @include fn.emit-css-variables(sys.$light, 'sys');
+  @include fn.emit-css-variables(sys.$base, 'sys');
+  
+  /* Emit component tokens */
+  @include fn.emit-css-variables(comp.$comp-tokens, 'comp');
+}
+
+/* Dark mode using media query */
+@media (prefers-color-scheme: dark) {
+  :root, page {
+    /* Override with dark mode color tokens */
+    @include fn.emit-css-variables(sys.$dark, 'sys');
+  }
+}
+
+/* Manual dark mode class support */
+:root[data-theme='dark'], page[data-theme='dark'] {
+  /* Override with dark mode color tokens */
+  @include fn.emit-css-variables(sys.$dark, 'sys');
+}
+
+/* Manual light mode class support */
+:root[data-theme='light'], page[data-theme='light'] {
+  /* Reset to light mode color tokens */
+  @include fn.emit-css-variables(sys.$light, 'sys');
+}
