@@ -3,7 +3,7 @@ import { client } from '@/lib/rpc';
 
 interface UpdateStatusInput {
   id: string;
-  status: 'OPEN' | 'FULL' | 'CLOSED';
+  status: 'OPEN' | 'ACTIVE' | 'CLOSED';
   pin: string;
 }
 

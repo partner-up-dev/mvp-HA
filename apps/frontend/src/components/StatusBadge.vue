@@ -5,17 +5,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps<{
-  status: 'OPEN' | 'FULL' | 'CLOSED';
+  status: "OPEN" | "ACTIVE" | "CLOSED";
 }>();
 
 const statusText = computed(() => {
   const map = {
-    OPEN: '招募中',
-    FULL: '已满员',
-    CLOSED: '已关闭',
+    OPEN: "可加入",
+    ACTIVE: "进行中",
+    CLOSED: "已结束",
   };
   return map[props.status];
 });
@@ -32,9 +32,9 @@ const statusText = computed(() => {
     color: var(--sys-color-on-primary-container);
   }
 
-  &.full {
-    background: var(--sys-color-warning-container);
-    color: var(--sys-color-on-warning-container);
+  &.active {
+    background: var(--sys-color-tertiary-container);
+    color: var(--sys-color-on-tertiary-container);
   }
 
   &.closed {

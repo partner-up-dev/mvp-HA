@@ -13,9 +13,9 @@ const props = defineProps<{
 
 const statusText = computed(() => {
   const map = {
-    OPEN: "招募中",
+    OPEN: "可加入",
     FULL: "已满员",
-    CLOSED: "已关闭",
+    CLOSED: "已结束",
   };
   return map[props.status];
 });

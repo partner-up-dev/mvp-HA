@@ -1,8 +1,16 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
-  OPENAI_API_KEY: z.string().min(1),
+
+  // Configurable LLM settings (OpenAI v1 compatible)
+  LLM_API_KEY: z.string().min(1).optional(),
+  LLM_BASE_URL: z.string().url().optional(),
+  LLM_DEFAULT_MODEL: z.string().default("gpt-4o-mini"),
+
+  // Deprecated: Keep for backward compatibility
+  OPENAI_API_KEY: z.string().min(1).optional(),
+
   PORT: z.coerce.number().default(3000),
 });
 

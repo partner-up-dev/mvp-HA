@@ -1,8 +1,10 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
+import { streamObject } from 'ai';
 import { PartnerRequestService } from '../services/PartnerRequestService';
-import { prStatusSchema } from '../entities/partner-request';
+import { prStatusSchema, parsedPRSchema } from '../entities/partner-request';
+import { LLMService } from '../services/LLMService';
 
 const app = new Hono();
 const service = new PartnerRequestService();
@@ -15,6 +17,11 @@ const createPRSchema = z.object({
 
 const updateStatusSchema = z.object({
   status: prStatusSchema,
+  pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
+});
+
+const updateContentSchema = z.object({
+  parsed: parsedPRSchema,
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
 });
 
@@ -49,5 +56,75 @@ export const partnerRequestRoute = app
       const { status, pin } = c.req.valid('json');
       const result = await service.updatePRStatus(id, status, pin);
       return c.json(result);
+    }
+  )
+  // PATCH /api/pr/:id/content - Update content
+  .patch(
+    '/:id/content',
+    zValidator('param', z.object({ id: z.string().uuid() })),
+    zValidator('json', updateContentSchema),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const { parsed, pin } = c.req.valid('json');
+      const result = await service.updatePRContent(id, parsed, pin);
+      return c.json(result);
+    }
+  )
+  // POST /api/pr/:id/join - Join partner request
+  .post(
+    '/:id/join',
+    zValidator('param', z.object({ id: z.string().uuid() })),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const result = await service.joinPR(id);
+      return c.json(result);
+    }
+  )
+  // POST /api/pr/:id/exit - Exit partner request
+  .post(
+    '/:id/exit',
+    zValidator('param', z.object({ id: z.string().uuid() })),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const result = await service.exitPR(id);
+      return c.json(result);
+    }
+  )
+  // POST /api/pr/parse-stream - Streaming endpoint for parseRequest visualization
+  .post(
+    '/parse-stream',
+    zValidator('json', z.object({ rawText: z.string().min(1).max(2000) })),
+    async (c) => {
+      const { rawText } = c.req.valid('json');
+
+      const llmService = new LLMService();
+
+      // Use streamObject for real-time updates
+      const { partialObjectStream } = await streamObject({
+        model: llmService.client('gpt-4o-mini'),
+        schema: parsedPRSchema,
+        system: LLMService.parsePRPrompt,
+        prompt: rawText,
+        temperature: 0.3,
+      });
+
+      // Transform to SSE format
+      const stream = partialObjectStream.pipeThrough(
+        new TransformStream({
+          transform(chunk, controller) {
+            controller.enqueue(
+              new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`)
+            );
+          },
+        })
+      );
+
+      return c.body(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
     }
   );

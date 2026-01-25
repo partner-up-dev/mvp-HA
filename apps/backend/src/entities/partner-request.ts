@@ -1,13 +1,15 @@
-import { pgTable, uuid, text, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, integer } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 // Parsed partner request schema (from LLM)
 export const parsedPRSchema = z.object({
+  title: z.string().optional(),
   scenario: z.string(),
   time: z.string().nullable(),
   location: z.string().nullable(),
-  peopleCount: z.number().nullable(),
+  minParticipants: z.number().nullable(),
+  maxParticipants: z.number().nullable(),
   budget: z.string().nullable(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
@@ -16,7 +18,7 @@ export const parsedPRSchema = z.object({
 export type ParsedPartnerRequest = z.infer<typeof parsedPRSchema>;
 
 // Status enum
-export const prStatusSchema = z.enum(['OPEN', 'FULL', 'CLOSED']);
+export const prStatusSchema = z.enum(['OPEN', 'ACTIVE', 'CLOSED']);
 export type PRStatus = z.infer<typeof prStatusSchema>;
 
 // Drizzle table definition
@@ -26,6 +28,7 @@ export const partnerRequests = pgTable('partner_requests', {
   parsed: jsonb('parsed').$type<ParsedPartnerRequest>().notNull(),
   status: text('status').$type<PRStatus>().notNull().default('OPEN'),
   pinHash: text('pin_hash').notNull(),
+  participants: integer('participants').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

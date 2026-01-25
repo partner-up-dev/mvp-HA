@@ -34,6 +34,9 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 // Export type for RPC client
 export type AppType = typeof routes;
 
+// Export types for frontend use
+export type { ParsedPartnerRequest, PRStatus } from './entities/partner-request';
+
 // Start server
 serve({
   fetch: app.fetch,

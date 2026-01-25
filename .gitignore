@@ -4,6 +4,7 @@ node_modules/
 # Build outputs
 dist/
 build/
+*.zip
 
 # Environment variables
 .env
@@ -85,6 +86,7 @@ jspm_packages/
 # IDE
 .vscode/
 .idea/
+.claude/
 
 # OS
 .DS_Store
@@ -93,3 +95,4 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+nul

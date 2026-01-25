@@ -15,9 +15,15 @@
       <span class="value">{{ parsed.location }}</span>
     </div>
 
-    <div class="field" v-if="parsed.peopleCount">
+    <div class="field" v-if="parsed.minParticipants || parsed.maxParticipants">
       <span class="label">人数</span>
-      <span class="value">{{ parsed.peopleCount }}人</span>
+      <span class="value">{{
+        formatParticipants(
+          parsed.minParticipants,
+          parsed.maxParticipants,
+          participants,
+        )
+      }}</span>
     </div>
 
     <div class="field" v-if="parsed.budget">
@@ -48,10 +54,12 @@
 
 <script setup lang="ts">
 interface ParsedPartnerRequest {
+  title?: string;
   scenario: string;
   time: string | null;
   location: string | null;
-  peopleCount: number | null;
+  minParticipants: number | null;
+  maxParticipants: number | null;
   budget: string | null;
   preferences: string[];
   notes: string | null;
@@ -60,7 +68,46 @@ interface ParsedPartnerRequest {
 defineProps<{
   parsed: ParsedPartnerRequest;
   rawText: string;
+  participants?: number;
 }>();
+
+const formatParticipants = (
+  min: number | null,
+  max: number | null,
+  current?: number,
+) => {
+  const parts: string[] = [];
+
+  // Show current/max if both are available
+  if (current !== undefined && max) {
+    parts.push(`${current}/${max}`);
+  } else if (current !== undefined) {
+    parts.push(`已有${current}人`);
+  }
+
+  // Add min requirement if exists
+  if (min) {
+    parts.push(`（至少 ${min} 人）`);
+  }
+
+  // Fallback formats if no current count
+  if (parts.length === 0) {
+    if (min && max) {
+      if (min === max) {
+        return `${min}人`;
+      }
+      return `${min}-${max}人`;
+    }
+    if (min) {
+      return `至少${min}人`;
+    }
+    if (max) {
+      return `最多${max}人`;
+    }
+  }
+
+  return parts.join(" ");
+};
 </script>
 
 <style lang="scss" scoped>

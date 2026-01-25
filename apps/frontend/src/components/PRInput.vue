@@ -10,15 +10,17 @@
       rows="5"
       maxlength="2000"
     />
-    <span class="char-count">{{ modelValue.length }} / 2000</span>
+    <span class="char-count">{{ (modelValue || '').length }} / 2000</span>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  modelValue: string;
+const props = withDefaults(defineProps<{
+  modelValue?: string;
   disabled?: boolean;
-}>();
+}>(), {
+  modelValue: '',
+});
 
 defineEmits<{
   'update:modelValue': [value: string];
