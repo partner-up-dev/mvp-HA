@@ -1,10 +1,10 @@
-import { hc } from 'hono/client';
-import type { AppType } from '@partner-up-dev/backend';
+import { hc } from "hono/client";
+import type { AppType, PRStatus } from "@partner-up-dev/backend";
 
 const MOCK_DELAY_MS = 1500; // Simulate network latency
 
 // Helper to create mock SSE stream
-const createMockStream = (data: any[]) => {
+const createMockStream = <T>(data: T[]) => {
   const encoder = new TextEncoder();
 
   return new ReadableStream({
@@ -35,23 +35,36 @@ const mockClient = {
       },
 
       // Mock POST /api/pr/parse-stream (NEW)
-      'parse-stream': {
+      "parse-stream": {
         $post: async ({ json }: { json: { rawText: string } }) => {
           // Simulate streaming partial results
           const mockPartials = [
-            { scenario: '旅行' },
-            { scenario: '旅行', time: '周末' },
-            { scenario: '旅行', time: '周末', location: '杭州' },
-            { scenario: '旅行', time: '周末', location: '杭州', peopleCount: 2 },
-            { scenario: '旅行', time: '周末', location: '杭州', peopleCount: 2, budget: '500' },
+            { scenario: "旅行" },
+            { scenario: "旅行", time: "周末" },
+            { scenario: "旅行", time: "周末", location: "杭州" },
             {
-              scenario: '旅行',
-              time: '周末',
-              location: '杭州',
-              peopleCount: 2,
-              budget: '500',
-              preferences: ['爬山'],
-              notes: null
+              scenario: "旅行",
+              time: "周末",
+              location: "杭州",
+              minParticipants: 2,
+            },
+            {
+              scenario: "旅行",
+              time: "周末",
+              location: "杭州",
+              minParticipants: 2,
+              maxParticipants: 4,
+              budget: "500",
+            },
+            {
+              scenario: "旅行",
+              time: "周末",
+              location: "杭州",
+              minParticipants: 2,
+              maxParticipants: 4,
+              budget: "500",
+              preferences: ["爬山"],
+              notes: null,
             },
           ];
 
@@ -60,14 +73,14 @@ const mockClient = {
             status: 200,
             body: createMockStream(mockPartials),
             headers: new Headers({
-              'Content-Type': 'text/event-stream',
+              "Content-Type": "text/event-stream",
             }),
           } as Response;
         },
       },
 
       // Mock GET /api/pr/:id
-      ':id': {
+      ":id": {
         $get: async ({ param }: { param: { id: string } }) => {
           await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -76,17 +89,18 @@ const mockClient = {
             status: 200,
             json: async () => ({
               id: param.id,
-              rawText: '我想找人一起去北京旅行',
+              rawText: "我想找人一起去北京旅行",
               parsed: {
-                scenario: '旅行',
-                time: '周末',
-                location: '北京',
-                peopleCount: 2,
-                budget: '1000',
-                preferences: ['喜欢拍照'],
+                scenario: "旅行",
+                time: "周末",
+                location: "北京",
+                minParticipants: 2,
+                maxParticipants: 4,
+                budget: "1000",
+                preferences: ["喜欢拍照"],
                 notes: null,
               },
-              status: 'OPEN',
+              status: "OPEN",
               createdAt: new Date().toISOString(),
             }),
           } as Response;
@@ -94,7 +108,13 @@ const mockClient = {
 
         // Mock PATCH /api/pr/:id/status
         status: {
-          $patch: async ({ param, json }: any) => {
+          $patch: async ({
+            param,
+            json,
+          }: {
+            param: { id: string };
+            json: { status: PRStatus };
+          }) => {
             await new Promise((resolve) => setTimeout(resolve, 500));
 
             return {

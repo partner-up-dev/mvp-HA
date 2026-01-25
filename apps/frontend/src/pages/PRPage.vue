@@ -237,7 +237,7 @@ const title = computed(() =>
 );
 
 const description = computed(
-  () => data.value?.parsed?.content || "查看搭子请求",
+  () => data.value?.parsed?.scenario || "查看搭子请求",
 );
 
 useHead({

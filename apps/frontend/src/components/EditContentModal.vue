@@ -136,21 +136,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
+import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 import { useUpdatePRContent } from "@/queries/useUpdatePRContent";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
-
-interface ParsedPartnerRequest {
-  title?: string;
-  scenario: string;
-  time: string | null;
-  location: string | null;
-  minParticipants: number | null;
-  maxParticipants: number | null;
-  budget: string | null;
-  preferences: string[];
-  notes: string | null;
-}
 
 interface Props {
   open: boolean;
@@ -168,7 +157,7 @@ const updateMutation = useUpdatePRContent();
 
 // Form data
 const formData = ref<ParsedPartnerRequest>({
-  title: props.initialParsed.title || '',
+  title: props.initialParsed.title || "",
   scenario: props.initialParsed.scenario,
   time: props.initialParsed.time,
   location: props.initialParsed.location,
@@ -187,7 +176,7 @@ watch(
   () => props.initialParsed,
   (newVal) => {
     formData.value = {
-      title: newVal.title || '',
+      title: newVal.title || "",
       scenario: newVal.scenario,
       time: newVal.time,
       location: newVal.location,
@@ -203,7 +192,7 @@ watch(
 
 const isFormValid = computed(() => {
   return (
-    formData.value.title.trim().length > 0 &&
+    (formData.value.title?.trim().length ?? 0) > 0 &&
     formData.value.scenario.trim().length > 0 &&
     pin.value.length === 4
   );

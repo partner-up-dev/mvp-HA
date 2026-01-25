@@ -4,9 +4,9 @@
  * Uses map-deep-get for accessing nested token values
  */
 
-@use 'sass:map';
-@use './ref' as ref;
-@use './functions' as fn;
+@use "sass:map";
+@use "./ref" as ref;
+@use "./functions" as fn;
 
 /* System Color Tokens Map - Light Mode */
 $light: (
@@ -16,26 +16,21 @@ $light: (
     primary-container: fn.map-deep-get(ref.$color, primary, 40),
     on-primary: fn.map-deep-get(ref.$color, primary, 100),
     on-primary-container: fn.map-deep-get(ref.$color, primary, 30),
-    
     // Secondary colors
     secondary: fn.map-deep-get(ref.$color, secondary, 80),
     secondary-container: fn.map-deep-get(ref.$color, secondary, 40),
     on-secondary: fn.map-deep-get(ref.$color, secondary, 100),
-    
     // Tertiary colors
     tertiary: fn.map-deep-get(ref.$color, tertiary, 80),
     tertiary-container: fn.map-deep-get(ref.$color, tertiary, 40),
     on-tertiary: fn.map-deep-get(ref.$color, tertiary, 100),
-    
     // Error colors
     error: fn.map-deep-get(ref.$color, error, 80),
     error-container: fn.map-deep-get(ref.$color, error, 40),
     on-error: fn.map-deep-get(ref.$color, error, 100),
-    
     // Warning colors
     warning: fn.map-deep-get(ref.$color, warning, 40),
     on-warning: fn.map-deep-get(ref.$color, warning, 90),
-    
     // Surface colors
     surface: fn.map-deep-get(ref.$color, surface, 30),
     surface-container: fn.map-deep-get(ref.$color, surface, 50),
@@ -44,16 +39,13 @@ $light: (
     surface-container-highest: fn.map-deep-get(ref.$color, neutral, 90),
     on-surface: fn.map-deep-get(ref.$color, surface, 80),
     on-surface-variant: fn.map-deep-get(ref.$color, neutral-variant, 30),
-    
     // Neutral colors
     neutral: fn.map-deep-get(ref.$color, neutral, 80),
     neutral-container: fn.map-deep-get(ref.$color, neutral, 40),
     on-neutral: fn.map-deep-get(ref.$color, neutral, 100),
-    
     // Outline colors
     outline: fn.map-deep-get(ref.$color, neutral, 40),
     outline-variant: fn.map-deep-get(ref.$color, neutral-variant, 40),
-    
     // Standard colors (for convenience)
     green: fn.map-deep-get(ref.$color, primary, 80),
     red: fn.map-deep-get(ref.$color, error, 80),
@@ -70,44 +62,36 @@ $dark: (
     primary-container: fn.map-deep-get(ref.$color, primary, 90),
     on-primary: fn.map-deep-get(ref.$color, primary, 20),
     on-primary-container: fn.map-deep-get(ref.$color, primary, 10),
-    
     // Secondary colors
     secondary: fn.map-deep-get(ref.$color, secondary, 70),
     secondary-container: fn.map-deep-get(ref.$color, secondary, 90),
     on-secondary: fn.map-deep-get(ref.$color, secondary, 20),
-    
     // Tertiary colors
     tertiary: fn.map-deep-get(ref.$color, tertiary, 70),
     tertiary-container: fn.map-deep-get(ref.$color, tertiary, 90),
     on-tertiary: fn.map-deep-get(ref.$color, tertiary, 20),
-    
     // Error colors
     error: fn.map-deep-get(ref.$color, error, 70),
     error-container: fn.map-deep-get(ref.$color, error, 90),
     on-error: fn.map-deep-get(ref.$color, error, 20),
-    
     // Warning colors
     warning: fn.map-deep-get(ref.$color, warning, 50),
     on-warning: fn.map-deep-get(ref.$color, warning, 10),
-    
     // Surface colors
     surface: fn.map-deep-get(ref.$color, surface, 80),
-    surface-container: fn.map-deep-get(ref.$color, surface, 70),
+    surface-container: fn.map-deep-get(ref.$color, surface, 80),
     surface-container-low: fn.map-deep-get(ref.$color, surface, 90),
     surface-container-lowest: fn.map-deep-get(ref.$color, surface, 100),
     surface-container-highest: fn.map-deep-get(ref.$color, surface, 60),
     on-surface: fn.map-deep-get(ref.$color, surface, 20),
-    on-surface-variant: fn.map-deep-get(ref.$color, neutral-variant, 70),
-    
+    on-surface-variant: fn.map-deep-get(ref.$color, neutral-variant, 20),
     // Neutral colors
     neutral: fn.map-deep-get(ref.$color, neutral, 60),
     neutral-container: fn.map-deep-get(ref.$color, neutral, 80),
     on-neutral: fn.map-deep-get(ref.$color, neutral, 10),
-    
     // Outline colors
     outline: fn.map-deep-get(ref.$color, neutral, 60),
     outline-variant: fn.map-deep-get(ref.$color, neutral-variant, 60),
-    
     // Standard colors (for convenience)
     green: fn.map-deep-get(ref.$color, primary, 70),
     red: fn.map-deep-get(ref.$color, error, 70),

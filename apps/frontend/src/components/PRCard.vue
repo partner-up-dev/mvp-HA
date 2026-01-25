@@ -112,7 +112,7 @@ const formatParticipants = (
 
 <style lang="scss" scoped>
 .pr-card {
-  background: var(--sys-color-surface-container-low);
+  background: var(--sys-color-surface-container);
   border-radius: var(--sys-radius-lg);
   padding: var(--sys-spacing-med);
   display: flex;

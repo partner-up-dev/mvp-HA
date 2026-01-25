@@ -105,45 +105,40 @@ onMounted(() => {
 
 .pin-field {
   flex: 1;
-  padding: var(--sys-spacing-sm);
+  padding: 0 var(--sys-spacing-sm);
+  height: var(--sys-size-medium);
+  box-sizing: border-box;
+  // background-color: var(--sys-color-surface-container);
+  background: transparent;
+  color: var(--sys-color-on-surface);
   border: 1px solid var(--sys-color-outline);
   border-radius: var(--sys-radius-sm);
-  font-family: monospace;
-  font-size: 1.2rem;
-  letter-spacing: 0.5rem;
   text-align: center;
   transition: border-color 0.2s;
+  letter-spacing: 0.5rem;
+  @include mx.pu-font(body-large, true);
 
   &:focus {
     outline: none;
     border-color: var(--sys-color-primary);
-    box-shadow: 0 0 0 2px var(--sys-color-primary-container);
   }
 }
 
 .regenerate-btn {
-  padding: var(--sys-spacing-sm);
+  height: var(--sys-size-medium);
+  width: var(--sys-size-medium);
   border: 1px solid var(--sys-color-outline);
   border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface);
   cursor: pointer;
-  transition: transform 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  &:hover {
-    transform: scale(1.1);
-    background: var(--sys-color-surface-variant);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .info-text {
-  font-size: 0.875rem;
+  @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
 }
 </style>

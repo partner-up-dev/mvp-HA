@@ -30,7 +30,7 @@ defineEmits<{
   width: 100%;
   padding: var(--sys-spacing-med);
   border: none;
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-xs);
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   cursor: pointer;
