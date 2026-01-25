@@ -1,0 +1,43 @@
+/**
+ * 职责：聚合所有 Controller，导出 AppType。
+ */
+
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { logger } from "hono/logger";
+import { HTTPException } from "hono/http-exception";
+import { partnerRequestRoute } from "./controllers/partner-request.controller";
+import { env } from "./lib/env";
+
+const app = new Hono();
+
+// Middleware
+app.use("*", logger());
+app.use("*", cors());
+
+// Global error handler
+app.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    return c.json({ error: err.message }, err.status);
+  }
+  console.error(err);
+  return c.json({ error: "Internal Server Error" }, 500);
+});
+
+// Mount routes
+const routes = app.route("/api/pr", partnerRequestRoute);
+
+// Health check
+app.get("/health", (c) => c.json({ status: "ok" }));
+
+// Export type for RPC client
+export type AppType = typeof routes;
+
+// Start server
+serve({
+  fetch: app.fetch,
+  port: env.PORT,
+});
+
+console.log(`Server running on http://localhost:${env.PORT}`);

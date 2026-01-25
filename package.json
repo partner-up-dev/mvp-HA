@@ -1,0 +1,16 @@
+{
+  "name": "partner-up-dev",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @partner-up-dev/frontend dev & pnpm --filter @partner-up-dev/backend dev",
+    "dev:frontend": "pnpm --filter @partner-up-dev/frontend dev",
+    "dev:backend": "pnpm --filter @partner-up-dev/backend dev",
+    "build": "pnpm --filter @partner-up-dev/backend build && pnpm --filter @partner-up-dev/frontend build",
+    "db:generate": "pnpm --filter @partner-up-dev/backend db:generate",
+    "db:migrate": "pnpm --filter @partner-up-dev/backend db:migrate",
+    "db:studio": "pnpm --filter @partner-up-dev/backend db:studio"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,13 +1,12 @@
 /*
  * Main Style Entry Point
- * Centralized CSS variable emission for all tokens (ref, sys, comp)
+ * Centralized CSS variable emission for all tokens (ref, sys)
  * Note: fn namespace is auto-injected via Vite's additionalData
  */
 
 @use 'sass:map';
 @use './ref' as ref;
 @use './sys' as sys;
-@use './component' as comp;
 @use './functions' as fn;
 
 // Forward all modules for external use
@@ -18,13 +17,10 @@
 :root, page {
   /* Emit ref tokens */
   @include fn.emit-css-variables(ref.$all, 'ref');
-  
+
   /* Emit system tokens (light mode default) */
   @include fn.emit-css-variables(sys.$light, 'sys');
   @include fn.emit-css-variables(sys.$base, 'sys');
-  
-  /* Emit component tokens */
-  @include fn.emit-css-variables(comp.$comp-tokens, 'comp');
 }
 
 /* Dark mode using media query */
