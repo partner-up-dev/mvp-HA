@@ -27,7 +27,7 @@
         :disabled="!isValid"
         @click="handleSubmit"
       >
-        生成分享页面
+        解析我的需求
       </SubmitButton>
 
       <LoadingState

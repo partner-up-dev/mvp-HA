@@ -7,6 +7,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue()],
+    build: {
+      outDir: "./dist",
+    },
     resolve: {
       alias: {
         "@": resolve(__dirname, "src"),
