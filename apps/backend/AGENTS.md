@@ -11,6 +11,7 @@
 - ORM: Drizzle ORM  
 - Validation: Zod + @hono/zod-validator  
 - AI: Vercel AI SDK
+- Build: tsup (bundled ESM output to dist/)
 
 ## Architecture
 
