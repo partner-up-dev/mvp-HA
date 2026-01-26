@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, integer } from 'drizzle-orm/pg-core';
+import { pgTable, bigserial, text, jsonb, timestamp, integer } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -23,7 +23,7 @@ export type PRStatus = z.infer<typeof prStatusSchema>;
 
 // Drizzle table definition
 export const partnerRequests = pgTable('partner_requests', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
   rawText: text('raw_text').notNull(),
   parsed: jsonb('parsed').$type<ParsedPartnerRequest>().notNull(),
   status: text('status').$type<PRStatus>().notNull().default('OPEN'),
@@ -46,3 +46,4 @@ export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
 // Type inference
 export type PartnerRequest = typeof partnerRequests.$inferSelect;
 export type NewPartnerRequest = typeof partnerRequests.$inferInsert;
+export type PRId = PartnerRequest['id'];

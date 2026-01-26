@@ -1,5 +1,5 @@
 import { hc } from "hono/client";
-import type { AppType, PRStatus } from "@partner-up-dev/backend";
+import type { AppType, PRStatus, PRId } from "@partner-up-dev/backend";
 
 const MOCK_DELAY_MS = 1500; // Simulate network latency
 
@@ -26,7 +26,7 @@ const mockClient = {
       $post: async ({ json }: { json: { rawText: string; pin: string } }) => {
         await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
 
-        const mockId = crypto.randomUUID();
+        const mockId = Math.floor(Math.random() * 100000) + 1;
         return {
           ok: true,
           status: 201,
@@ -81,7 +81,7 @@ const mockClient = {
 
       // Mock GET /api/pr/:id
       ":id": {
-        $get: async ({ param }: { param: { id: string } }) => {
+        $get: async ({ param }: { param: { id: PRId } }) => {
           await new Promise((resolve) => setTimeout(resolve, 500));
 
           return {
@@ -112,7 +112,7 @@ const mockClient = {
             param,
             json,
           }: {
-            param: { id: string };
+            param: { id: PRId };
             json: { status: PRStatus };
           }) => {
             await new Promise((resolve) => setTimeout(resolve, 500));

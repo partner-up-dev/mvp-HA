@@ -1,5 +1,5 @@
 import { db } from '../lib/db';
-import { partnerRequests, type NewPartnerRequest, type PRStatus, type ParsedPartnerRequest } from '../entities/partner-request';
+import { partnerRequests, type NewPartnerRequest, type PRStatus, type ParsedPartnerRequest, type PRId } from '../entities/partner-request';
 import { eq } from 'drizzle-orm';
 
 export class PartnerRequestRepository {
@@ -8,12 +8,12 @@ export class PartnerRequestRepository {
     return result[0];
   }
 
-  async findById(id: string) {
+  async findById(id: PRId) {
     const result = await db.select().from(partnerRequests).where(eq(partnerRequests.id, id));
     return result[0] || null;
   }
 
-  async updateStatus(id: string, status: PRStatus) {
+  async updateStatus(id: PRId, status: PRStatus) {
     const result = await db
       .update(partnerRequests)
       .set({ status })
@@ -22,7 +22,7 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async updateParsed(id: string, parsed: ParsedPartnerRequest) {
+  async updateParsed(id: PRId, parsed: ParsedPartnerRequest) {
     const result = await db
       .update(partnerRequests)
       .set({ parsed })
@@ -31,7 +31,7 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async incrementParticipants(id: string) {
+  async incrementParticipants(id: PRId) {
     const pr = await this.findById(id);
     if (!pr) return null;
 
@@ -43,7 +43,7 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async decrementParticipants(id: string) {
+  async decrementParticipants(id: PRId) {
     const pr = await this.findById(id);
     if (!pr) return null;
 

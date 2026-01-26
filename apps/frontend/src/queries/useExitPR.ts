@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import type { PRId } from '@partner-up-dev/backend';
 import { client } from '@/lib/rpc';
 
 export const useExitPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: PRId) => {
       const res = await client.api.pr[':id'].exit.$post({
         param: { id },
       });

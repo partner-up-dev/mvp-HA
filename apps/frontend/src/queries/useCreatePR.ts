@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/vue-query';
+import type { PRId } from '@partner-up-dev/backend';
 import { client } from '@/lib/rpc';
 
 interface CreatePRInput {
@@ -6,8 +7,12 @@ interface CreatePRInput {
   pin: string;
 }
 
+interface CreatePRResult {
+  id: PRId;
+}
+
 export const useCreatePR = () => {
-  return useMutation({
+  return useMutation<CreatePRResult, Error, CreatePRInput>({
     mutationFn: async (input: CreatePRInput) => {
       const res = await client.api.pr.$post({
         json: input,

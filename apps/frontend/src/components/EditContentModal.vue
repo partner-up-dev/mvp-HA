@@ -136,7 +136,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
 import { useUpdatePRContent } from "@/queries/useUpdatePRContent";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
@@ -144,7 +144,7 @@ import ErrorToast from "@/components/ErrorToast.vue";
 interface Props {
   open: boolean;
   initialParsed: ParsedPartnerRequest;
-  prId: string;
+  prId: PRId;
 }
 
 const props = defineProps<Props>();

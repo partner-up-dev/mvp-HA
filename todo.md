@@ -30,3 +30,4 @@
 - [x] 搭子请求页标题（包括 tab 的）
 - [ ] 根据 CREATOR_OF 显示创建的搭子请求列表在首页
 - [ ] 添加 EXPIRED 状态
+- [x] PR.id 用 bigint serial 而不是 uuid

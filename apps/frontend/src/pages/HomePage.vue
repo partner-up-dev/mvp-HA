@@ -75,13 +75,14 @@ import ErrorToast from "@/components/ErrorToast.vue";
 import ParseVisualizationModal from "@/components/ParseVisualizationModal.vue";
 import { useCreatePR } from "@/queries/useCreatePR";
 import { useUserPRStore } from "@/stores/userPRStore";
+import type { PRId } from "@partner-up-dev/backend";
 
 const router = useRouter();
 const mutation = useCreatePR();
 const userPRStore = useUserPRStore();
 
 const showModal = ref(false);
-const pendingResult = ref<any>(null);
+const pendingResult = ref<{ id: PRId } | null>(null);
 
 // VeeValidate form setup with Zod schema
 const { handleSubmit, values: formValues } = useForm({
@@ -104,10 +105,10 @@ const onSubmit = handleSubmit(async (values) => {
       pin: values.pin,
     });
     pendingResult.value = result;
-  } catch (error: any) {
+  } catch (error) {
     showModal.value = false;
     // Error will be shown via ErrorToast
-    console.error('Submission error:', error);
+    console.error("Submission error:", error);
   }
 });
 

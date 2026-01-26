@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { HTTPException } from 'hono/http-exception';
 import { PartnerRequestRepository } from '../repositories/PartnerRequestRepository';
 import { LLMService } from './LLMService';
-import type { PRStatus, ParsedPartnerRequest } from '../entities/partner-request';
+import type { PRStatus, ParsedPartnerRequest, PRId } from '../entities/partner-request';
 
 const repo = new PartnerRequestRepository();
 const llmService = new LLMService();
@@ -31,7 +31,7 @@ export class PartnerRequestService {
     return { id: request.id };
   }
 
-  async getPR(id: string) {
+  async getPR(id: PRId) {
     const request = await repo.findById(id);
     if (!request) {
       throw new HTTPException(404, { message: 'Partner request not found' });
@@ -42,7 +42,7 @@ export class PartnerRequestService {
     return publicData;
   }
 
-  async updatePRStatus(id: string, status: PRStatus, pin: string) {
+  async updatePRStatus(id: PRId, status: PRStatus, pin: string) {
     const request = await repo.findById(id);
     if (!request) {
       throw new HTTPException(404, { message: 'Partner request not found' });
@@ -63,7 +63,7 @@ export class PartnerRequestService {
     return publicData;
   }
 
-  async updatePRContent(id: string, parsed: ParsedPartnerRequest, pin: string) {
+  async updatePRContent(id: PRId, parsed: ParsedPartnerRequest, pin: string) {
     const request = await repo.findById(id);
     if (!request) {
       throw new HTTPException(404, { message: 'Partner request not found' });
@@ -89,7 +89,7 @@ export class PartnerRequestService {
     return publicData;
   }
 
-  async joinPR(id: string) {
+  async joinPR(id: PRId) {
     const request = await repo.findById(id);
     if (!request) {
       throw new HTTPException(404, { message: 'Partner request not found' });
@@ -129,7 +129,7 @@ export class PartnerRequestService {
     return publicData;
   }
 
-  async exitPR(id: string) {
+  async exitPR(id: PRId) {
     const request = await repo.findById(id);
     if (!request) {
       throw new HTTPException(404, { message: 'Partner request not found' });

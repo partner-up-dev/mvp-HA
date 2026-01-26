@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 
 interface UpdateContentInput {
-  id: string;
+  id: PRId;
   parsed: ParsedPartnerRequest;
   pin: string;
 }

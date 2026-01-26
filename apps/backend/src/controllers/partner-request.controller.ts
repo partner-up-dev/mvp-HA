@@ -25,6 +25,10 @@ const updateContentSchema = z.object({
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
 });
 
+const prIdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
+
 export const partnerRequestRoute = app
   // POST /api/pr - Create partner request
   .post(
@@ -39,7 +43,7 @@ export const partnerRequestRoute = app
   // GET /api/pr/:id - Get partner request
   .get(
     '/:id',
-    zValidator('param', z.object({ id: z.string().uuid() })),
+    zValidator('param', prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid('param');
       const result = await service.getPR(id);
@@ -49,7 +53,7 @@ export const partnerRequestRoute = app
   // PATCH /api/pr/:id/status - Update status
   .patch(
     '/:id/status',
-    zValidator('param', z.object({ id: z.string().uuid() })),
+    zValidator('param', prIdParamSchema),
     zValidator('json', updateStatusSchema),
     async (c) => {
       const { id } = c.req.valid('param');
@@ -61,7 +65,7 @@ export const partnerRequestRoute = app
   // PATCH /api/pr/:id/content - Update content
   .patch(
     '/:id/content',
-    zValidator('param', z.object({ id: z.string().uuid() })),
+    zValidator('param', prIdParamSchema),
     zValidator('json', updateContentSchema),
     async (c) => {
       const { id } = c.req.valid('param');
@@ -73,7 +77,7 @@ export const partnerRequestRoute = app
   // POST /api/pr/:id/join - Join partner request
   .post(
     '/:id/join',
-    zValidator('param', z.object({ id: z.string().uuid() })),
+    zValidator('param', prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid('param');
       const result = await service.joinPR(id);
@@ -83,7 +87,7 @@ export const partnerRequestRoute = app
   // POST /api/pr/:id/exit - Exit partner request
   .post(
     '/:id/exit',
-    zValidator('param', z.object({ id: z.string().uuid() })),
+    zValidator('param', prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid('param');
       const result = await service.exitPR(id);

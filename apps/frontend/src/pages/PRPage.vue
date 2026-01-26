@@ -61,7 +61,7 @@
 
       <!-- Edit Content Modal -->
       <EditContentModal
-        v-if="showEditModal"
+        v-if="showEditModal && id !== null"
         :open="showEditModal"
         :initial-parsed="data.parsed"
         :pr-id="id"
@@ -139,6 +139,7 @@ import ShareButton from "@/components/ShareButton.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import EditContentModal from "@/components/EditContentModal.vue";
 import { usePR } from "@/queries/usePR";
+import type { PRId } from "@partner-up-dev/backend";
 import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
 import { useJoinPR } from "@/queries/useJoinPR";
 import { useExitPR } from "@/queries/useExitPR";
@@ -146,7 +147,13 @@ import { useUserPRStore } from "@/stores/userPRStore";
 
 const route = useRoute();
 const router = useRouter();
-const id = computed(() => route.params.id as string);
+const id = computed<PRId | null>(() => {
+  const rawId = Array.isArray(route.params.id)
+    ? route.params.id[0]
+    : route.params.id;
+  const parsed = Number(rawId);
+  return Number.isFinite(parsed) && parsed > 0 ? (parsed as PRId) : null;
+});
 
 const { data, isLoading, error } = usePR(id);
 const updateMutation = useUpdatePRStatus();
@@ -167,11 +174,13 @@ const statusOptions = [
 
 // Check if current user is creator
 const isCreator = computed(() => {
+  if (id.value === null) return false;
   return userPRStore.isCreatorOf(id.value);
 });
 
 // Check if current user has joined
 const hasJoined = computed(() => {
+  if (id.value === null) return false;
   return userPRStore.isParticipantOf(id.value);
 });
 
@@ -205,6 +214,7 @@ const handleEditSuccess = () => {
 };
 
 const handleUpdateStatus = async () => {
+  if (id.value === null) return;
   await updateMutation.mutateAsync({
     id: id.value,
     status: selectedStatus.value,
@@ -220,11 +230,13 @@ const goHome = () => {
 };
 
 const handleJoin = async () => {
+  if (id.value === null) return;
   await joinMutation.mutateAsync(id.value);
   userPRStore.joinPR(id.value);
 };
 
 const handleExit = async () => {
+  if (id.value === null) return;
   await exitMutation.mutateAsync(id.value);
   userPRStore.exitPR(id.value);
 };

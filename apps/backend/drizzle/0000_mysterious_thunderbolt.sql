@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS "partner_requests" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" bigserial PRIMARY KEY NOT NULL,
 	"raw_text" text NOT NULL,
 	"parsed" jsonb NOT NULL,
 	"status" text DEFAULT 'OPEN' NOT NULL,
