@@ -19,7 +19,11 @@
         <time class="created-at">{{ formatDate(data.createdAt) }}</time>
       </header>
 
-      <PRCard :parsed="data.parsed" :raw-text="data.rawText" :participants="data.participants" />
+      <PRCard
+        :parsed="data.parsed"
+        :raw-text="data.rawText"
+        :participants="data.participants"
+      />
 
       <div class="actions">
         <ShareButton :url="shareUrl" />
@@ -280,8 +284,9 @@ useHead({
 
 .page-header {
   display: flex;
-  flex-direction: column;
-  margin-bottom: var(--sys-spacing-med);
+  align-items: center;
+  gap: var(--sys-spacing-sm);
+  margin-bottom: var(--sys-spacing-lg);
 }
 
 .home-btn {

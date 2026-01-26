@@ -13,7 +13,7 @@ export const usePR = (id: Ref<PRId | null>) => {
       }
 
       const res = await client.api.pr[':id'].$get({
-        param: { id: prId },
+        param: { id: prId.toString() },
       });
 
       if (!res.ok) {

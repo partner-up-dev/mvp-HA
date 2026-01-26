@@ -1,6 +1,6 @@
 import { db } from '../lib/db';
 import { partnerRequests, type NewPartnerRequest, type PRStatus, type ParsedPartnerRequest, type PRId } from '../entities/partner-request';
-import { eq } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 
 export class PartnerRequestRepository {
   async create(data: NewPartnerRequest) {
@@ -11,6 +11,15 @@ export class PartnerRequestRepository {
   async findById(id: PRId) {
     const result = await db.select().from(partnerRequests).where(eq(partnerRequests.id, id));
     return result[0] || null;
+  }
+
+  async findByIds(ids: PRId[]) {
+    if (ids.length === 0) return [];
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(inArray(partnerRequests.id, ids))
+      .orderBy(desc(partnerRequests.createdAt));
   }
 
   async updateStatus(id: PRId, status: PRStatus) {

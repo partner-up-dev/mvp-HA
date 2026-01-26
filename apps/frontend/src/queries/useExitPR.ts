@@ -8,7 +8,7 @@ export const useExitPR = () => {
   return useMutation({
     mutationFn: async (id: PRId) => {
       const res = await client.api.pr[':id'].exit.$post({
-        param: { id },
+        param: { id: id.toString() },
       });
 
       if (!res.ok) {

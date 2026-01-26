@@ -21,6 +21,19 @@ export type ParsedPartnerRequest = z.infer<typeof parsedPRSchema>;
 export const prStatusSchema = z.enum(['OPEN', 'ACTIVE', 'CLOSED']);
 export type PRStatus = z.infer<typeof prStatusSchema>;
 
+export const partnerRequestSummarySchema = z.object({
+  id: z.number().int().positive(),
+  status: prStatusSchema,
+  participants: z.number().int().nonnegative(),
+  createdAt: z.string(),
+  parsed: z.object({
+    title: z.string().optional(),
+    scenario: z.string(),
+  }),
+});
+
+export type PartnerRequestSummary = z.infer<typeof partnerRequestSummarySchema>;
+
 // Drizzle table definition
 export const partnerRequests = pgTable('partner_requests', {
   id: bigserial('id', { mode: 'number' }).primaryKey(),

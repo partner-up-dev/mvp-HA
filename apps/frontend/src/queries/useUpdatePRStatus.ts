@@ -14,7 +14,7 @@ export const useUpdatePRStatus = () => {
   return useMutation({
     mutationFn: async ({ id, status, pin }: UpdateStatusInput) => {
       const res = await client.api.pr[':id'].status.$patch({
-        param: { id },
+        param: { id: id.toString() },
         json: { status, pin },
       });
 

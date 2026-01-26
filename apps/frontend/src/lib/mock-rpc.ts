@@ -79,6 +79,29 @@ const mockClient = {
         },
       },
 
+      // Mock POST /api/pr/batch
+      batch: {
+        $post: async ({ json }: { json: { ids: PRId[] } }) => {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          return {
+            ok: true,
+            status: 200,
+            json: async () =>
+              json.ids.map((id) => ({
+                id,
+                status: "OPEN" as const,
+                participants: 0,
+                createdAt: new Date().toISOString(),
+                parsed: {
+                  title: `Request ${id}`,
+                  scenario: "æ—…è¡Œ",
+                },
+              })),
+          } as Response;
+        },
+      },
+
       // Mock GET /api/pr/:id
       ":id": {
         $get: async ({ param }: { param: { id: PRId } }) => {

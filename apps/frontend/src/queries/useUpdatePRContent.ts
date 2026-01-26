@@ -14,7 +14,7 @@ export const useUpdatePRContent = () => {
   return useMutation({
     mutationFn: async ({ id, parsed, pin }: UpdateContentInput) => {
       const res = await client.api.pr[":id"].content.$patch({
-        param: { id },
+        param: { id: id.toString() },
         json: { parsed, pin },
       });
 

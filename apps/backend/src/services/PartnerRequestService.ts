@@ -42,6 +42,22 @@ export class PartnerRequestService {
     return publicData;
   }
 
+  async getPRSummariesByIds(ids: PRId[]) {
+    const uniqueIds = Array.from(new Set(ids));
+    const rows = await repo.findByIds(uniqueIds);
+
+    return rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      participants: row.participants ?? 0,
+      createdAt: row.createdAt.toISOString(),
+      parsed: {
+        title: row.parsed.title,
+        scenario: row.parsed.scenario,
+      },
+    }));
+  }
+
   async updatePRStatus(id: PRId, status: PRStatus, pin: string) {
     const request = await repo.findById(id);
     if (!request) {

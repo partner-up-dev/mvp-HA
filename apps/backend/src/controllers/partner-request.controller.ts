@@ -25,6 +25,10 @@ const updateContentSchema = z.object({
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
 });
 
+const batchGetSchema = z.object({
+  ids: z.array(z.coerce.number().int().positive()).max(50),
+});
+
 const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
@@ -38,6 +42,16 @@ export const partnerRequestRoute = app
       const { rawText, pin } = c.req.valid('json');
       const result = await service.createPR(rawText, pin);
       return c.json(result, 201);
+    }
+  )
+  // POST /api/pr/batch - Batch get partner request summaries
+  .post(
+    '/batch',
+    zValidator('json', batchGetSchema),
+    async (c) => {
+      const { ids } = c.req.valid('json');
+      const result = await service.getPRSummariesByIds(ids);
+      return c.json(result);
     }
   )
   // GET /api/pr/:id - Get partner request

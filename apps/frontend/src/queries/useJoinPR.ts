@@ -8,7 +8,7 @@ export const useJoinPR = () => {
   return useMutation({
     mutationFn: async (id: PRId) => {
       const res = await client.api.pr[':id'].join.$post({
-        param: { id },
+        param: { id: id.toString() },
       });
 
       if (!res.ok) {

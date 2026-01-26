@@ -35,7 +35,7 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 export type AppType = typeof routes;
 
 // Export types for frontend use
-export type { ParsedPartnerRequest, PRStatus, PRId } from './entities/partner-request';
+export type { ParsedPartnerRequest, PRStatus, PRId, PartnerRequestSummary } from './entities/partner-request';
 
 // Start server
 serve({
