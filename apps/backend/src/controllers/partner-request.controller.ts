@@ -1,10 +1,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { streamObject } from 'ai';
 import { PartnerRequestService } from '../services/PartnerRequestService';
 import { prStatusSchema, parsedPRSchema } from '../entities/partner-request';
-import { LLMService } from '../services/LLMService';
 
 const app = new Hono();
 const service = new PartnerRequestService();
@@ -106,43 +104,5 @@ export const partnerRequestRoute = app
       const { id } = c.req.valid('param');
       const result = await service.exitPR(id);
       return c.json(result);
-    }
-  )
-  // POST /api/pr/parse-stream - Streaming endpoint for parseRequest visualization
-  .post(
-    '/parse-stream',
-    zValidator('json', z.object({ rawText: z.string().min(1).max(2000) })),
-    async (c) => {
-      const { rawText } = c.req.valid('json');
-
-      const llmService = new LLMService();
-
-      // Use streamObject for real-time updates
-      const { partialObjectStream } = await streamObject({
-        model: llmService.client('gpt-4o-mini'),
-        schema: parsedPRSchema,
-        system: LLMService.parsePRPrompt,
-        prompt: rawText,
-        temperature: 0.3,
-      });
-
-      // Transform to SSE format
-      const stream = partialObjectStream.pipeThrough(
-        new TransformStream({
-          transform(chunk, controller) {
-            controller.enqueue(
-              new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`)
-            );
-          },
-        })
-      );
-
-      return c.body(stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
     }
   );

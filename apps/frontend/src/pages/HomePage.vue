@@ -50,18 +50,10 @@
 
       <CreatedPRList empty-mode="hide" />
     </main>
-
-    <ParseVisualizationModal
-      :open="showModal"
-      :raw-text="formValues.rawText || ''"
-      @close="showModal = false"
-      @complete="handleVisualizationComplete"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useForm, Field } from "vee-validate";
 import { createPRValidationSchema } from "@/lib/validation";
@@ -70,18 +62,13 @@ import PINInput from "@/components/PINInput.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
-import ParseVisualizationModal from "@/components/ParseVisualizationModal.vue";
 import CreatedPRList from "@/components/CreatedPRList.vue";
 import { useCreatePR } from "@/queries/useCreatePR";
 import { useUserPRStore } from "@/stores/userPRStore";
-import type { PRId } from "@partner-up-dev/backend";
 
 const router = useRouter();
 const mutation = useCreatePR();
 const userPRStore = useUserPRStore();
-
-const showModal = ref(false);
-const pendingResult = ref<{ id: PRId } | null>(null);
 
 const { handleSubmit, values: formValues } = useForm({
   validationSchema: createPRValidationSchema,
@@ -92,27 +79,18 @@ const { handleSubmit, values: formValues } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  showModal.value = true;
-
   try {
     const result = await mutation.mutateAsync({
       rawText: values.rawText,
       pin: values.pin,
     });
-    pendingResult.value = result;
+
+    userPRStore.addCreatedPR(result.id);
+    await router.push(`/pr/${result.id}`);
   } catch (error) {
-    showModal.value = false;
     console.error("Submission error:", error);
   }
 });
-
-const handleVisualizationComplete = () => {
-  showModal.value = false;
-  if (!pendingResult.value) return;
-
-  userPRStore.addCreatedPR(pendingResult.value.id);
-  router.push(`/pr/${pendingResult.value.id}`);
-};
 </script>
 
 <style lang="scss" scoped>
