@@ -74,59 +74,12 @@
       />
 
       <!-- Status Modify Modal -->
-      <div
-        v-if="showModifyModal"
-        class="modal-overlay"
-        @click.self="showModifyModal = false"
-      >
-        <div class="modal">
-          <h3>修改需求状态</h3>
-
-          <div class="status-options">
-            <button
-              v-for="status in statusOptions"
-              :key="status.value"
-              :class="[
-                'status-option',
-                { active: selectedStatus === status.value },
-              ]"
-              @click="selectedStatus = status.value"
-            >
-              {{ status.label }}
-            </button>
-          </div>
-
-          <div class="pin-input">
-            <label>输入PIN码确认</label>
-            <input
-              v-model="modifyPin"
-              type="password"
-              inputmode="numeric"
-              maxlength="4"
-              placeholder="****"
-            />
-          </div>
-
-          <div class="modal-actions">
-            <button class="cancel-btn" @click="showModifyModal = false">
-              取消
-            </button>
-            <SubmitButton
-              :loading="updateMutation.isPending.value"
-              :disabled="!modifyPin || modifyPin.length !== 4"
-              @click="handleUpdateStatus"
-            >
-              确认修改
-            </SubmitButton>
-          </div>
-
-          <ErrorToast
-            v-if="updateMutation.isError.value"
-            :message="updateMutation.error.value?.message || '修改失败'"
-            @close="updateMutation.reset()"
-          />
-        </div>
-      </div>
+      <ModifyStatusModal
+        v-if="id !== null"
+        :open="showModifyModal"
+        :pr-id="id"
+        @close="showModifyModal = false"
+      />
     </template>
   </div>
 </template>
@@ -142,6 +95,7 @@ import PRCard from "@/components/PRCard.vue";
 import ShareButton from "@/components/ShareButton.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import EditContentModal from "@/components/EditContentModal.vue";
+import ModifyStatusModal from "@/components/ModifyStatusModal.vue";
 import { usePR } from "@/queries/usePR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
@@ -161,23 +115,14 @@ const id = computed<PRId | null>(() => {
 });
 
 const { data, isLoading, error } = usePR(id);
-const updateMutation = useUpdatePRStatus();
 const joinMutation = useJoinPR();
 const exitMutation = useExitPR();
 const userPRStore = useUserPRStore();
 
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
-const selectedStatus = ref<"OPEN" | "ACTIVE" | "CLOSED">("OPEN");
-const modifyPin = ref("");
 
 useBodyScrollLock(computed(() => showEditModal.value || showModifyModal.value));
-
-const statusOptions = [
-  { value: "OPEN" as const, label: "招募中" },
-  { value: "ACTIVE" as const, label: "进行中" },
-  { value: "CLOSED" as const, label: "已结束" },
-];
 
 // Check if current user is creator
 const isCreator = computed(() => {
@@ -218,18 +163,6 @@ const formatDate = (dateStr: string) => {
 
 const handleEditSuccess = () => {
   showEditModal.value = false;
-};
-
-const handleUpdateStatus = async () => {
-  if (id.value === null) return;
-  await updateMutation.mutateAsync({
-    id: id.value,
-    status: selectedStatus.value,
-    pin: modifyPin.value,
-  });
-
-  showModifyModal.value = false;
-  modifyPin.value = "";
 };
 
 const goHome = () => {
@@ -428,98 +361,5 @@ useHead({
   &:hover {
     background: var(--sys-color-surface-container-highest);
   }
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  z-index: 1000;
-}
-
-.modal {
-  background: var(--sys-color-surface-container-lowest);
-  border-radius: var(--sys-radius-lg);
-  padding: var(--sys-spacing-lg);
-  width: 100%;
-  max-width: 360px;
-  max-height: calc(
-    var(--pu-vh) -
-      (2 * var(--sys-spacing-med)) - var(--pu-safe-top) - var(--pu-safe-bottom)
-  );
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-
-  h3 {
-    @include mx.pu-font(title-large);
-    margin-bottom: var(--sys-spacing-med);
-  }
-}
-
-.status-options {
-  display: flex;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-med);
-}
-
-.status-option {
-  @include mx.pu-font(label-large);
-  flex: 1;
-  padding: var(--sys-spacing-sm);
-  min-height: var(--sys-size-large);
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container);
-  cursor: pointer;
-
-  &.active {
-    background: var(--sys-color-primary-container);
-    border-color: var(--sys-color-primary);
-    color: var(--sys-color-on-primary-container);
-  }
-}
-
-.pin-input {
-  margin-bottom: var(--sys-spacing-med);
-
-  label {
-    @include mx.pu-font(label-medium);
-    display: block;
-    margin-bottom: var(--sys-spacing-xs);
-    color: var(--sys-color-on-surface-variant);
-  }
-
-  input {
-    @include mx.pu-font(title-medium);
-    width: 100%;
-    padding: var(--sys-spacing-sm);
-    border: 1px solid var(--sys-color-outline);
-    border-radius: var(--sys-radius-sm);
-    text-align: center;
-    letter-spacing: 0.5em;
-  }
-}
-
-.modal-actions {
-  display: flex;
-  gap: var(--sys-spacing-sm);
-}
-
-.cancel-btn {
-  @include mx.pu-font(label-large);
-  flex: 1;
-  padding: var(--sys-spacing-sm);
-  min-height: var(--sys-size-large);
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  background: transparent;
-  cursor: pointer;
 }
 </style>

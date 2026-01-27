@@ -50,3 +50,7 @@ Prohibited:
 
 - ❌ Hardcoded colors, sizes, or font properties
 - ❌ Direct imports of token files (`_sys.scss`, `_ref.scss`)
+
+## Components
+
+- Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.

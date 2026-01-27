@@ -1,143 +1,144 @@
 <template>
-  <div v-if="open" class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal">
-      <h3>编辑搭子需求</h3>
-
-      <form @submit.prevent="handleSubmit">
-        <div class="form-field">
-          <label>标题 <span class="required">*</span></label>
-          <input
-            v-model="formData.title"
-            type="text"
-            placeholder="例如：周末一起爬香山"
-          />
-        </div>
-
-        <div class="form-field">
-          <label>活动类型 <span class="required">*</span></label>
-          <input
-            v-model="formData.scenario"
-            type="text"
-            placeholder="例如：爬山、看电影、打球等"
-          />
-        </div>
-
-        <div class="form-field">
-          <label>时间</label>
-          <input
-            v-model="formData.time"
-            type="text"
-            placeholder="例如：周末、明天下午等"
-          />
-        </div>
-
-        <div class="form-field">
-          <label>地点</label>
-          <input
-            v-model="formData.location"
-            type="text"
-            placeholder="例如：香山公园、中关村等"
-          />
-        </div>
-
-        <div class="form-field">
-          <label>最少人数</label>
-          <input
-            v-model.number="formData.minParticipants"
-            type="number"
-            placeholder="至少需要几个人"
-          />
-        </div>
-
-        <div class="form-field">
-          <label>最多人数</label>
-          <input
-            v-model.number="formData.maxParticipants"
-            type="number"
-            placeholder="最多需要几个人"
-          />
-        </div>
-
-        <div class="form-field">
-          <label>预算</label>
-          <input
-            v-model="formData.budget"
-            type="text"
-            placeholder="例如：AA、我请客等"
-          />
-        </div>
-
-        <div class="form-field">
-          <label>偏好要求</label>
-          <div class="tags-input">
-            <div class="tags">
-              <span
-                v-for="(pref, index) in formData.preferences"
-                :key="index"
-                class="tag"
-              >
-                {{ pref }}
-                <button
-                  type="button"
-                  class="remove-tag"
-                  @click="removePreference(index)"
-                >
-                  ×
-                </button>
-              </span>
-            </div>
-            <input
-              v-model="newPreference"
-              type="text"
-              placeholder="输入后按回车添加"
-              @keydown.enter.prevent="addPreference"
-            />
-          </div>
-        </div>
-
-        <div class="form-field">
-          <label>备注</label>
-          <textarea v-model="formData.notes" rows="3" placeholder="其他说明" />
-        </div>
-
-        <div class="form-field pin-field">
-          <label>PIN码确认 <span class="required">*</span></label>
-          <input
-            v-model="pin"
-            type="password"
-            inputmode="numeric"
-            maxlength="4"
-            placeholder="****"
-          />
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="cancel-btn" @click="$emit('close')">
-            取消
-          </button>
-          <SubmitButton
-            type="submit"
-            :loading="updateMutation.isPending.value"
-            :disabled="!isFormValid"
-          >
-            确认修改
-          </SubmitButton>
-        </div>
-
-        <ErrorToast
-          v-if="updateMutation.isError.value"
-          :message="updateMutation.error.value?.message || '修改失败'"
-          @close="updateMutation.reset()"
+  <Modal
+    :open="open"
+    max-width="480px"
+    title="编辑搭子需求"
+    @close="$emit('close')"
+  >
+    <form @submit.prevent="handleSubmit">
+      <div class="form-field">
+        <label>标题 <span class="required">*</span></label>
+        <input
+          v-model="formData.title"
+          type="text"
+          placeholder="例如：周末一起爬香山"
         />
-      </form>
-    </div>
-  </div>
-</template>
+      </div>
 
+      <div class="form-field">
+        <label>活动类型 <span class="required">*</span></label>
+        <input
+          v-model="formData.scenario"
+          type="text"
+          placeholder="例如：爬山、看电影、打球等"
+        />
+      </div>
+
+      <div class="form-field">
+        <label>时间</label>
+        <input
+          v-model="formData.time"
+          type="text"
+          placeholder="例如：周末、明天下午等"
+        />
+      </div>
+
+      <div class="form-field">
+        <label>地点</label>
+        <input
+          v-model="formData.location"
+          type="text"
+          placeholder="例如：香山公园、中关村等"
+        />
+      </div>
+
+      <div class="form-field">
+        <label>最少人数</label>
+        <input
+          v-model.number="formData.minParticipants"
+          type="number"
+          placeholder="至少需要几个人"
+        />
+      </div>
+
+      <div class="form-field">
+        <label>最多人数</label>
+        <input
+          v-model.number="formData.maxParticipants"
+          type="number"
+          placeholder="最多需要几个人"
+        />
+      </div>
+
+      <div class="form-field">
+        <label>预算</label>
+        <input
+          v-model="formData.budget"
+          type="text"
+          placeholder="例如：AA、我请客等"
+        />
+      </div>
+
+      <div class="form-field">
+        <label>偏好要求</label>
+        <div class="tags-input">
+          <div class="tags">
+            <span
+              v-for="(pref, index) in formData.preferences"
+              :key="index"
+              class="tag"
+            >
+              {{ pref }}
+              <button
+                type="button"
+                class="remove-tag"
+                @click="removePreference(index)"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+          <input
+            v-model="newPreference"
+            type="text"
+            placeholder="输入后按回车添加"
+            @keydown.enter.prevent="addPreference"
+          />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>备注</label>
+        <textarea v-model="formData.notes" rows="3" placeholder="其他说明" />
+      </div>
+
+      <div class="form-field pin-field">
+        <label>PIN码确认 <span class="required">*</span></label>
+        <input
+          v-model="pin"
+          type="password"
+          inputmode="numeric"
+          maxlength="4"
+          placeholder="****"
+        />
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="cancel-btn" @click="$emit('close')">
+          取消
+        </button>
+        <SubmitButton
+          type="submit"
+          :loading="updateMutation.isPending.value"
+          :disabled="!isFormValid"
+        >
+          确认修改
+        </SubmitButton>
+      </div>
+
+      <ErrorToast
+        v-if="updateMutation.isError.value"
+        :message="updateMutation.error.value?.message || '修改失败'"
+        @close="updateMutation.reset()"
+      />
+    </form>
+  </Modal>
+</template>
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
 import { useUpdatePRContent } from "@/queries/useUpdatePRContent";
+import Modal from "@/components/Modal.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
 
@@ -230,39 +231,6 @@ const handleSubmit = async () => {
 </script>
 
 <style lang="scss" scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  z-index: 1000;
-}
-
-.modal {
-  background: var(--sys-color-surface);
-  border-radius: var(--sys-radius-lg);
-  padding: var(--sys-spacing-lg);
-  width: 100%;
-  max-width: 480px;
-  max-height: calc(
-    var(--pu-vh) -
-      (2 * var(--sys-spacing-med)) - var(--pu-safe-top) - var(--pu-safe-bottom)
-  );
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-
-  h3 {
-    @include mx.pu-font(title-large);
-    margin-bottom: var(--sys-spacing-med);
-  }
-}
-
 .form-field {
   margin-bottom: var(--sys-spacing-med);
 
