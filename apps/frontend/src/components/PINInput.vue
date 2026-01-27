@@ -106,7 +106,7 @@ onMounted(() => {
 .pin-field {
   flex: 1;
   padding: 0 var(--sys-spacing-sm);
-  height: var(--sys-size-medium);
+  height: var(--sys-size-large);
   box-sizing: border-box;
   // background-color: var(--sys-color-surface-container);
   background: transparent;
@@ -125,8 +125,8 @@ onMounted(() => {
 }
 
 .regenerate-btn {
-  height: var(--sys-size-medium);
-  width: var(--sys-size-medium);
+  height: var(--sys-size-large);
+  width: var(--sys-size-large);
   border: 1px solid var(--sys-color-outline);
   border-radius: var(--sys-radius-sm);
   cursor: pointer;
@@ -135,6 +135,11 @@ onMounted(() => {
   justify-content: center;
   background: transparent;
   color: var(--sys-color-on-surface);
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+  }
 }
 
 .info-text {

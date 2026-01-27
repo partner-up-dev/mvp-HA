@@ -97,8 +97,11 @@ const onSubmit = handleSubmit(async (values) => {
 .home-page {
   max-width: 480px;
   margin: 0 auto;
-  padding: var(--sys-spacing-med);
-  min-height: 100vh;
+  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
+    calc(var(--sys-spacing-med) + var(--pu-safe-right))
+    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-med) + var(--pu-safe-left));
+  min-height: var(--pu-vh);
 }
 
 .header {

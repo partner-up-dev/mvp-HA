@@ -148,6 +148,7 @@ import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
 import { useJoinPR } from "@/queries/useJoinPR";
 import { useExitPR } from "@/queries/useExitPR";
 import { useUserPRStore } from "@/stores/userPRStore";
+import { useBodyScrollLock } from "@/lib/body-scroll-lock";
 
 const route = useRoute();
 const router = useRouter();
@@ -169,6 +170,8 @@ const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const selectedStatus = ref<"OPEN" | "ACTIVE" | "CLOSED">("OPEN");
 const modifyPin = ref("");
+
+useBodyScrollLock(computed(() => showEditModal.value || showModifyModal.value));
 
 const statusOptions = [
   { value: "OPEN" as const, label: "招募中" },
@@ -278,8 +281,11 @@ useHead({
 .pr-page {
   max-width: 480px;
   margin: 0 auto;
-  padding: var(--sys-spacing-med);
-  min-height: 100vh;
+  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
+    calc(var(--sys-spacing-med) + var(--pu-safe-right))
+    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-med) + var(--pu-safe-left));
+  min-height: var(--pu-vh);
 }
 
 .page-header {
@@ -287,6 +293,7 @@ useHead({
   align-items: center;
   gap: var(--sys-spacing-sm);
   margin-bottom: var(--sys-spacing-lg);
+  min-width: 0;
 }
 
 .home-btn {
@@ -295,6 +302,20 @@ useHead({
   border: none;
   color: var(--sys-color-on-surface);
   cursor: pointer;
+  min-width: var(--sys-size-large);
+  min-height: var(--sys-size-large);
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: var(--sys-color-surface-container);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+  }
 }
 
 .page-title {
@@ -302,6 +323,12 @@ useHead({
   color: var(--sys-color-on-surface);
   margin: 0;
   flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .header {
@@ -318,16 +345,35 @@ useHead({
 
 .actions {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--sys-spacing-sm);
   margin-top: var(--sys-spacing-lg);
+}
+
+.actions > button {
+  width: 100%;
+}
+
+.actions :deep(.share-button) {
+  width: 100%;
+  flex: unset;
+}
+
+@include mx.breakpoint(md) {
+  .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }
 
 .join-btn {
   @include mx.pu-font(label-large);
   flex: 1;
   padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  min-height: var(--sys-size-large);
   border: none;
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-sm);
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   cursor: pointer;
@@ -348,8 +394,9 @@ useHead({
   @include mx.pu-font(label-large);
   flex: 1;
   padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  min-height: var(--sys-size-large);
   border: 1px solid var(--sys-color-error);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-sm);
   background: transparent;
   color: var(--sys-color-error);
   cursor: pointer;
@@ -371,8 +418,9 @@ useHead({
   @include mx.pu-font(label-large);
   flex: 1;
   padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  min-height: var(--sys-size-large);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-sm);
   background: var(--sys-color-surface-container);
   color: var(--sys-color-on-surface);
   cursor: pointer;
@@ -389,7 +437,11 @@ useHead({
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sys-spacing-med);
+  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
+    calc(var(--sys-spacing-med) + var(--pu-safe-right))
+    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-med) + var(--pu-safe-left));
+  z-index: 1000;
 }
 
 .modal {
@@ -398,6 +450,12 @@ useHead({
   padding: var(--sys-spacing-lg);
   width: 100%;
   max-width: 360px;
+  max-height: calc(
+    var(--pu-vh) -
+      (2 * var(--sys-spacing-med)) - var(--pu-safe-top) - var(--pu-safe-bottom)
+  );
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 
   h3 {
     @include mx.pu-font(title-large);
@@ -415,8 +473,9 @@ useHead({
   @include mx.pu-font(label-large);
   flex: 1;
   padding: var(--sys-spacing-sm);
+  min-height: var(--sys-size-large);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-sm);
   background: var(--sys-color-surface-container);
   cursor: pointer;
 
@@ -442,7 +501,7 @@ useHead({
     width: 100%;
     padding: var(--sys-spacing-sm);
     border: 1px solid var(--sys-color-outline);
-    border-radius: var(--sys-radius-med);
+    border-radius: var(--sys-radius-sm);
     text-align: center;
     letter-spacing: 0.5em;
   }
@@ -457,8 +516,9 @@ useHead({
   @include mx.pu-font(label-large);
   flex: 1;
   padding: var(--sys-spacing-sm);
+  min-height: var(--sys-size-large);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-sm);
   background: transparent;
   cursor: pointer;
 }

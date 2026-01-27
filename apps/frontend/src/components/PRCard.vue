@@ -133,6 +133,8 @@ const formatParticipants = (
   .value {
     @include mx.pu-font(body-large);
     color: var(--sys-color-on-surface);
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 
@@ -164,6 +166,9 @@ const formatParticipants = (
     margin-top: var(--sys-spacing-sm);
     color: var(--sys-color-on-surface-variant);
     font-style: italic;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 </style>

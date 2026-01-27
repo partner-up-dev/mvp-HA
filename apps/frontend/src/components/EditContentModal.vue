@@ -237,7 +237,10 @@ const handleSubmit = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sys-spacing-med);
+  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
+    calc(var(--sys-spacing-med) + var(--pu-safe-right))
+    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-med) + var(--pu-safe-left));
   z-index: 1000;
 }
 
@@ -247,8 +250,12 @@ const handleSubmit = async () => {
   padding: var(--sys-spacing-lg);
   width: 100%;
   max-width: 480px;
-  max-height: 90vh;
+  max-height: calc(
+    var(--pu-vh) -
+      (2 * var(--sys-spacing-med)) - var(--pu-safe-top) - var(--pu-safe-bottom)
+  );
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 
   h3 {
     @include mx.pu-font(title-large);
@@ -276,7 +283,7 @@ const handleSubmit = async () => {
     width: 100%;
     padding: var(--sys-spacing-sm);
     border: 1px solid var(--sys-color-outline);
-    border-radius: var(--sys-radius-med);
+    border-radius: var(--sys-radius-sm);
     background: var(--sys-color-surface-container);
     color: var(--sys-color-on-surface);
 
@@ -305,7 +312,7 @@ const handleSubmit = async () => {
 
 .tags-input {
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-sm);
   padding: var(--sys-spacing-xs);
   background: var(--sys-color-surface-container);
 
@@ -334,14 +341,20 @@ const handleSubmit = async () => {
       font-size: 18px;
       line-height: 1;
       padding: 0;
-      width: 16px;
-      height: 16px;
+      min-width: var(--sys-size-large);
+      min-height: var(--sys-size-large);
+      border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
 
       &:hover {
         opacity: 0.7;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--sys-color-on-primary-container);
+        outline-offset: 2px;
       }
     }
   }
@@ -367,9 +380,10 @@ const handleSubmit = async () => {
 .cancel-btn {
   @include mx.pu-font(label-large);
   flex: 1;
+  min-width: 66px;
   padding: var(--sys-spacing-sm);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-xs);
   background: transparent;
   cursor: pointer;
 

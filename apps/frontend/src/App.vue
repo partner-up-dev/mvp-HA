@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { RouterView } from 'vue-router';
+import { RouterView } from "vue-router";
 </script>
 
 <style lang="scss">
@@ -14,9 +14,11 @@ import { RouterView } from 'vue-router';
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
-  min-height: 100vh;
+  min-height: var(--pu-vh);
+  -webkit-tap-highlight-color: transparent;
 }
 </style>
