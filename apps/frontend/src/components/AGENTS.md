@@ -1,7 +1,5 @@
 # AGENTS.md for Frontend Components
 
-This directory contains Vue components.
-
 ## Component Development Norms
 
 ### Using RPC Data
@@ -54,3 +52,4 @@ Prohibited:
 ## Components
 
 - Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.
+- SharePR.vue: Inline share component with carousel navigation for multiple share methods. Shows preview of content to be shared and handles copy-to-clipboard action. Designed to be extensible for future share targets (WeChat, Xiaohongshu, etc.).

@@ -25,9 +25,7 @@
         :participants="data.participants"
       />
 
-      <div class="actions">
-        <ShareButton :url="shareUrl" />
-
+      <section class="actions">
         <button
           v-if="canJoin"
           class="join-btn"
@@ -61,7 +59,10 @@
         >
           修改状态
         </button>
-      </div>
+      </section>
+
+      <!-- Share PR Component -->
+      <SharePR :share-url="shareUrl" />
 
       <!-- Edit Content Modal -->
       <EditContentModal
@@ -92,7 +93,7 @@ import LoadingState from "@/components/LoadingState.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import PRCard from "@/components/PRCard.vue";
-import ShareButton from "@/components/ShareButton.vue";
+import SharePR from "@/components/SharePR.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import EditContentModal from "@/components/EditContentModal.vue";
 import ModifyStatusModal from "@/components/ModifyStatusModal.vue";
@@ -286,11 +287,6 @@ useHead({
 
 .actions > button {
   width: 100%;
-}
-
-.actions :deep(.share-button) {
-  width: 100%;
-  flex: unset;
 }
 
 @include mx.breakpoint(md) {

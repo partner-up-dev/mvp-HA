@@ -1,5 +1,5 @@
 <template>
-  <div class="pr-card">
+  <article class="pr-card">
     <div class="field" v-if="parsed.scenario">
       <span class="label">场景</span>
       <span class="value">{{ parsed.scenario }}</span>
@@ -49,7 +49,7 @@
       <summary>原始描述</summary>
       <p>{{ rawText }}</p>
     </details>
-  </div>
+  </article>
 </template>
 
 <script setup lang="ts">
