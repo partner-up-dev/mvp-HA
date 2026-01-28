@@ -8,6 +8,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
 import { partnerRequestRoute } from "./controllers/partner-request.controller";
+import { llmRoute } from "./controllers/llm.controller";
 import { env } from "./lib/env";
 
 const app = new Hono();
@@ -26,7 +27,9 @@ app.onError((err, c) => {
 });
 
 // Mount routes
-const routes = app.route("/api/pr", partnerRequestRoute);
+const routes = app
+  .route("/api/pr", partnerRequestRoute)
+  .route("/api/llm", llmRoute);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
@@ -35,7 +38,12 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 export type AppType = typeof routes;
 
 // Export types for frontend use
-export type { ParsedPartnerRequest, PRStatus, PRId, PartnerRequestSummary } from './entities/partner-request';
+export type {
+  ParsedPartnerRequest,
+  PRStatus,
+  PRId,
+  PartnerRequestSummary,
+} from "./entities/partner-request";
 
 // Start server
 serve({

@@ -53,17 +53,7 @@
 </template>
 
 <script setup lang="ts">
-interface ParsedPartnerRequest {
-  title?: string;
-  scenario: string;
-  time: string | null;
-  location: string | null;
-  minParticipants: number | null;
-  maxParticipants: number | null;
-  budget: string | null;
-  preferences: string[];
-  notes: string | null;
-}
+import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 
 defineProps<{
   parsed: ParsedPartnerRequest;

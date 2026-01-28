@@ -62,7 +62,7 @@
       </section>
 
       <!-- Share PR Component -->
-      <SharePR :share-url="shareUrl" />
+      <SharePR :share-url="shareUrl" :pr-data="data" />
 
       <!-- Edit Content Modal -->
       <EditContentModal
@@ -279,8 +279,7 @@ useHead({
 
 .actions {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-direction: row;
   gap: var(--sys-spacing-sm);
   margin-top: var(--sys-spacing-lg);
 }

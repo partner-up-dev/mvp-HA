@@ -2,6 +2,22 @@
 
 ## Component Development Norms
 
+### Using Shared Types
+
+Always import type definitions from `@partner-up-dev/backend` instead of re-declaring them:
+
+```typescript
+import type { ParsedPartnerRequest, PRId, PRStatus } from "@partner-up-dev/backend";
+
+// ❌ Don't do this:
+interface ParsedPartnerRequest { ... }
+
+// ✅ Do this:
+import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+```
+
+This ensures consistency across frontend and backend and reduces duplication.
+
 ### Using RPC Data
 
 In components, destructure Vue Query returns (`data`, `isLoading`, `error`).
@@ -52,4 +68,4 @@ Prohibited:
 ## Components
 
 - Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.
-- SharePR.vue: Inline share component with carousel navigation for multiple share methods. Shows preview of content to be shared and handles copy-to-clipboard action. Designed to be extensible for future share targets (WeChat, Xiaohongshu, etc.).
+- SharePR.vue: Carousel host for multiple share methods. Renders per-method components (ShareAsLink/Method.vue, ShareToXiaohongshu/Method.vue). Each method component internally owns its options, preview, and actions, ensuring proper state management and type safety. No duplicated types—imports ParsedPartnerRequest from @partner-up-dev/backend.
