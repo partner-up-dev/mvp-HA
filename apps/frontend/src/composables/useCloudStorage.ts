@@ -1,4 +1,5 @@
 import { ref, readonly } from "vue";
+import { client } from "@/lib/rpc";
 
 /**
  * Composable for uploading files to cloud storage
@@ -22,19 +23,18 @@ export const useCloudStorage = () => {
     uploadError.value = null;
 
     try {
-      const formData = new FormData();
-      formData.append("poster", file, filename);
-
-      const response = await fetch("/api/upload/poster", {
-        method: "POST",
-        body: formData,
+      const res = await client.api.upload.poster.$post({
+        form: {
+          poster: file,
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+      if (!res.ok) {
+        const error = (await res.json()) as { error?: string };
+        throw new Error(error.error || `Upload failed: ${res.statusText}`);
       }
 
-      const { key } = await response.json();
+      const { key } = await res.json();
       return `/api/upload/download/${key}`;
     } catch (error) {
       const errorMessage =

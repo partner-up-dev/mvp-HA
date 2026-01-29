@@ -16,6 +16,10 @@
 - RPC Infer Type: Do not manually define Interfaces for API returns; let TypeScript infer from Hono Client.
 - Request Params: If backend uses zValidator, mismatched param types (e.g., string to number) will cause type errors—do not bypass with `as any`.
 
+### API Calls
+
+- Always use Hono RPC Client (`client`) for API requests instead of manual `fetch`.
+
 ## Distributed Documentation
 
 - Data Fetching: See [src/queries/AGENTS.md](src/queries/AGENTS.md).
