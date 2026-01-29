@@ -290,3 +290,32 @@ p {
   margin: 0;
   color: var(--sys-color-on-surface-variant);
 }
+
+// ===== DEBUG =====
+.debug-section {
+  margin-top: var(--sys-spacing-med);
+  padding: var(--sys-spacing-med);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-low);
+
+  h4 {
+    margin: 0 0 var(--sys-spacing-sm) 0;
+    color: var(--sys-color-on-surface);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: var(--sys-spacing-med);
+    list-style-type: disc;
+
+    li {
+      margin-bottom: var(--sys-spacing-xs);
+      font-size: 12px;
+      color: var(--sys-color-on-surface-variant);
+      word-break: break-word;
+    }
+  }
+}

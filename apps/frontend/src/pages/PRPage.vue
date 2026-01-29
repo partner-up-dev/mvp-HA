@@ -82,6 +82,8 @@
         @close="showModifyModal = false"
       />
     </template>
+
+    {{ nav.userAgent.toLowerCase() }}
   </div>
 </template>
 
@@ -114,6 +116,7 @@ const id = computed<PRId | null>(() => {
   const parsed = Number(rawId);
   return Number.isFinite(parsed) && parsed > 0 ? (parsed as PRId) : null;
 });
+const nav = window.navigator;
 
 const { data, isLoading, error } = usePR(id);
 const joinMutation = useJoinPR();

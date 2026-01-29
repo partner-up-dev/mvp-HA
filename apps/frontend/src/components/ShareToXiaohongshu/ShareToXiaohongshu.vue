@@ -77,6 +77,16 @@
         <div class="i-mdi-arrow-top-right"></div>
       </button>
     </div>
+
+    <!-- Debug Section -->
+    <div class="debug-section" v-if="debugMessages.length > 0">
+      <h4>Debug Logs:</h4>
+      <ul>
+        <li v-for="(msg, index) in debugMessages.slice(-10)" :key="index">
+          {{ msg }}
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -113,6 +123,7 @@ const generatedCaptions = ref<Map<number, string>>(new Map());
 const isTransitioning = ref(false);
 const isPosterTransitioning = ref(false);
 const copyState = ref<"idle" | "copied" | "error">("idle");
+const debugMessages = ref<string[]>([]);
 
 // Composables
 const { mutateAsync: generateCaptionAsync, isPending: isCaptionGenerating } =
@@ -207,43 +218,77 @@ watch(
   async (newCaption) => {
     if (!newCaption) {
       posterUrl.value = null;
+      debugMessages.value.push("Caption is empty, clearing poster URL");
+      console.log("Caption is empty, clearing poster URL");
       return;
     }
     try {
       posterIsGenerating.value = true;
+      debugMessages.value.push("Starting poster generation");
+      console.log("Starting poster generation for caption:", newCaption);
 
       // Show placeholder longer for better UX
       await delayMs(TIMING_CONSTANTS.POSTER_GENERATION_DELAY);
+      debugMessages.value.push("Delay completed, generating poster blob");
+      console.log("Delay completed, generating poster blob");
 
       const blob = await generatePoster(newCaption);
+      debugMessages.value.push(
+        `Poster blob generated, size: ${blob.size} bytes`,
+      );
+      console.log("Poster blob generated:", blob);
 
       // Add transition effect
       isPosterTransitioning.value = true;
+      debugMessages.value.push("Starting transition effect");
+      console.log("Starting transition effect");
 
-      if (isWeChatBrowser()) {
+      const isWeChat = isWeChatBrowser();
+      debugMessages.value.push(`isWeChatBrowser: ${isWeChat}`);
+      console.log("isWeChatBrowser:", isWeChat);
+
+      if (isWeChat) {
         // Upload to server for WeChat browser
+        debugMessages.value.push(
+          "Detected WeChat browser, uploading to server",
+        );
+        console.log("Detected WeChat browser, uploading to server");
         try {
           const downloadUrl = await uploadFile(blob, "poster.png");
           posterUrl.value = downloadUrl;
+          debugMessages.value.push(`Upload successful, URL: ${downloadUrl}`);
+          console.log("Upload successful, URL:", downloadUrl);
         } catch (uploadError) {
+          debugMessages.value.push(
+            `Upload failed: ${uploadError}, falling back to blob URL`,
+          );
           console.warn("Upload failed, falling back to blob URL:", uploadError);
           // Fallback to blob URL with warning
           posterUrl.value = URL.createObjectURL(blob);
+          debugMessages.value.push("Fallback to blob URL");
+          console.log("Fallback to blob URL");
         }
       } else {
         // Use blob URL for other browsers
         posterUrl.value = URL.createObjectURL(blob);
+        debugMessages.value.push("Using blob URL for non-WeChat browser");
+        console.log("Using blob URL for non-WeChat browser");
       }
 
       // Remove transition state after animation completes (fire and forget)
       setTimeout(() => {
         isPosterTransitioning.value = false;
+        debugMessages.value.push("Transition completed");
+        console.log("Transition completed");
       }, TIMING_CONSTANTS.POSTER_TRANSITION_DURATION);
     } catch (error) {
+      debugMessages.value.push(`Failed to generate poster: ${error}`);
       console.error("Failed to generate poster:", error);
       posterUrl.value = null;
     } finally {
       posterIsGenerating.value = false;
+      debugMessages.value.push("Poster generation process finished");
+      console.log("Poster generation process finished");
     }
   },
   { immediate: false },
