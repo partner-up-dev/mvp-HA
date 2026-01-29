@@ -1,5 +1,5 @@
 import { ref, readonly } from "vue";
-import { client } from "@/lib/rpc";
+import { API_URL, client } from "@/lib/rpc";
 
 /**
  * Composable for uploading files to cloud storage
@@ -35,7 +35,7 @@ export const useCloudStorage = () => {
       }
 
       const { key } = await res.json();
-      return `/api/upload/download/${key}`;
+      return `${API_URL}/api/upload/download/${key}`;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Upload failed";
