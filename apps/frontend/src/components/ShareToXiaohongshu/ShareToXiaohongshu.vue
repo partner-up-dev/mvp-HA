@@ -67,9 +67,9 @@
         <button
           class="outline-btn download-poster-btn"
           @click="handleDownloadPoster"
-          :disabled="!caption || posterIsGenerating"
+          :disabled="!caption || posterIsGenerating || isWeChatBrowser()"
         >
-          {{ posterIsGenerating ? "生成中..." : "下载海报" }}
+          {{ downloadButtonLabel }}
         </button>
       </div>
       <button class="primary-btn" @click="handleOpenApp">
@@ -128,6 +128,15 @@ const copyButtonLabel = computed(() => {
   if (copyState.value === "copied") return "已复制!";
   if (copyState.value === "error") return "复制失败";
   return "复制文案";
+});
+
+/**
+ * Computed button label for download poster
+ */
+const downloadButtonLabel = computed(() => {
+  if (posterIsGenerating.value) return "生成中...";
+  if (isWeChatBrowser()) return "长按图片保存";
+  return "下载海报";
 });
 
 /**
