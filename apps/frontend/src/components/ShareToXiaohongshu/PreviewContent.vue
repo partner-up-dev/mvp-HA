@@ -3,12 +3,14 @@
     <CaptionEditor
       :caption="caption"
       :disabled="isCaptionGenerating"
+      :is-transitioning="isTransitioning"
       @update:caption="$emit('update:caption', $event)"
     />
     <PosterPreview
       :caption="caption"
       :poster-url="posterUrl"
       :is-generating="posterIsGenerating"
+      :is-transitioning="isPosterTransitioning"
     />
   </div>
 </template>
@@ -24,6 +26,8 @@ interface Props {
   posterUrl: string | null;
   posterIsGenerating: boolean;
   isCaptionGenerating: boolean;
+  isTransitioning: boolean;
+  isPosterTransitioning: boolean;
 }
 
 defineProps<Props>();

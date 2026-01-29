@@ -5,7 +5,6 @@
 </template>
 
 <script setup lang="ts">
-import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 
 interface Props {
@@ -19,18 +18,8 @@ const emit = defineEmits<{
   regenerate: [];
 }>();
 
-const { mutateAsync, isPending: isGenerating } =
-  useGenerateXiaohongshuCaption();
-
-const isPending = props.isPending ?? isGenerating.value;
-
 const handleRefresh = async () => {
-  try {
-    await mutateAsync(props.prData);
-    emit("regenerate");
-  } catch (error) {
-    console.error("Failed to generate caption:", error);
-  }
+  emit("regenerate");
 };
 </script>
 
@@ -49,8 +38,8 @@ const handleRefresh = async () => {
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
-    background: var(--sys-color-primary-container);
-    color: var(--sys-color-on-primary-container);
+    background: var(--sys-color-surface-container);
+    color: var(--sys-color-on-surface-container);
   }
 
   &:disabled {

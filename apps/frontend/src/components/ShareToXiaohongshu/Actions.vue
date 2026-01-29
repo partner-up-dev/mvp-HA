@@ -16,7 +16,10 @@
         {{ posterIsGenerating ? "生成中..." : "下载海报" }}
       </button>
     </div>
-    <button class="primary-btn" @click="handleOpenApp">分享到小红书 →</button>
+    <button class="primary-btn" @click="handleOpenApp">
+      分享到小红书
+      <div class="i-mdi-arrow-top-right"></div>
+    </button>
   </div>
 </template>
 

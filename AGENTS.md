@@ -17,3 +17,10 @@ This is a pnpm workspace (monorepo) with following packages:
 
 - No any: The use of any is strictly prohibited.
 - Async/Await: Always use async/await over raw Promises.
+
+## Current State
+
+- Create partner request from natural language.
+- Share partner request:
+  - By copying link as text: yes.
+  - To xiaohongshu: initial version, need polish.

@@ -37,6 +37,52 @@ const DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT = `你是一位小红书文案�
 
 输出只包含文案内容，不要其他解释。`;
 
+// 多风格文案系统prompt定义
+const XIAOHONGSHU_STYLE_PROMPTS = {
+  friendly: DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
+  concise: `你是一位简洁高效的文案写手，专注于快速传达核心信息。
+
+写作要求：
+- 一句话，不超过40个字
+- 直接明了，重点突出
+- 包含核心信息：做什么、什么时间、在哪、还差几人
+- 风格简洁干练，适合商务和学习场景
+
+输出只包含文案内容，不要其他解释。`,
+  warm: `你是一位温暖治愈的文案写手，善于营造温馨共情的氛围。
+
+写作要求：
+- 一句话，不超过50个字
+- 温暖有爱，充满关怀
+- 可以适当使用温馨的emoji表情
+- 包含核心信息：做什么、什么时间、在哪、还差几人
+- 风格温暖治愈，让人感受到陪伴和支持
+
+输出只包含文案内容，不要其他解释。`,
+  trendy: `你是一位潮流文案写手，精通年轻人的表达方式和网络文化。
+
+写作要求：
+- 一句话，不超过50个字
+- 使用潮流网络用语和emoji
+- 充满活力和时尚感
+- 包含核心信息：做什么、什么时间、在哪、还差几人
+- 风格年轻酷炫，适合潮流和创新活动
+
+输出只包含文案内容，不要其他解释。`,
+  professional: `你是一位专业正式的文案写手，专长于商务和专业场景的表达。
+
+写作要求：
+- 一句话，不超过45个字
+- 正式专业，值得信赖
+- 措辞严谨，信息准确
+- 包含核心信息：做什么、什么时间、在哪、还差几人
+- 风格专业正式，适合行业交流和技能分享
+
+输出只包含文案内容，不要其他解释。`,
+} as const;
+
+export type XiaohongshuStyle = keyof typeof XIAOHONGSHU_STYLE_PROMPTS;
+
 export class LLMService {
   private client: typeof openai;
   private configService: ConfigService;
@@ -70,8 +116,12 @@ export class LLMService {
 
   async generateXiaohongshuCaption(
     prData: ParsedPartnerRequest,
+    style?: XiaohongshuStyle,
   ): Promise<string> {
-    const systemPrompt = await this.getXiaohongshuCaptionSystemPrompt();
+    // 如果没有指定风格，随机选择一个
+    const selectedStyle = style || this.getRandomStyle();
+
+    const systemPrompt = XIAOHONGSHU_STYLE_PROMPTS[selectedStyle];
 
     const prompt = this.buildXiaohongshuCaptionPrompt(prData);
 
@@ -120,5 +170,11 @@ export class LLMService {
       CONFIG_KEY_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
       DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
     );
+  }
+
+  private getRandomStyle(): XiaohongshuStyle {
+    const styles = Object.keys(XIAOHONGSHU_STYLE_PROMPTS) as XiaohongshuStyle[];
+    const randomIndex = Math.floor(Math.random() * styles.length);
+    return styles[randomIndex];
   }
 }

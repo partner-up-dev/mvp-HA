@@ -3,6 +3,7 @@
     :value="caption"
     rows="4"
     class="caption-textarea"
+    :class="{ transitioning: isTransitioning }"
     placeholder="编辑小红书文案..."
     :disabled="disabled"
     @input="handleInput"
@@ -13,6 +14,7 @@
 interface Props {
   caption: string;
   disabled?: boolean;
+  isTransitioning?: boolean;
 }
 
 defineProps<Props>();
@@ -76,10 +78,15 @@ const handleInput = (event: Event) => {
   font-family: inherit;
   font-size: 14px;
   resize: vertical;
+  transition: opacity 0.3s ease;
 
   &:focus {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: -2px;
+  }
+
+  &.transitioning {
+    opacity: 0.7;
   }
 }
 
