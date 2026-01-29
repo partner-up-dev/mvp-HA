@@ -13,6 +13,7 @@
     "@unhead/vue": "^2.1.2",
     "@vee-validate/zod": "^4.15.1",
     "hono": "^4.6.0",
+    "html2canvas": "^1.4.1",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "vee-validate": "^4.15.1",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@iconify-json/mdi": "^1.1.67",
     "@partner-up-dev/backend": "workspace:*",
+    "@types/html2canvas": "^1.0.0",
     "@types/node": "^22.0.0",
     "@unocss/preset-icons": "^0.60.3",
     "@unocss/vite": "^0.60.3",

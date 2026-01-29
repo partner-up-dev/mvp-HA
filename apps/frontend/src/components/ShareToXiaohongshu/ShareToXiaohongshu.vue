@@ -22,6 +22,7 @@
         placeholder="编辑小红书文案..."
         :disabled="isCaptionGenerating"
         @input="handleCaptionUpdate"
+        @blur="handleCaptionBlur"
       ></textarea>
 
       <!-- Poster Preview -->
@@ -81,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onUnmounted } from "vue";
 import { useAppScheme } from "@/composables/useAppScheme";
 import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
 import { useGeneratePoster } from "@/composables/useGeneratePoster";
@@ -113,6 +114,7 @@ const generatedCaptions = ref<Map<number, string>>(new Map());
 const isTransitioning = ref(false);
 const isPosterTransitioning = ref(false);
 const copyState = ref<"idle" | "copied" | "error">("idle");
+const posterGenerationTimeoutId = ref<number | null>(null);
 
 // Composables
 const { mutateAsync: generateCaptionAsync, isPending: isCaptionGenerating } =
@@ -162,6 +164,9 @@ const handleInitializeCaption = async (prData: ParsedPartnerRequest) => {
     });
     caption.value = newCaption;
     generatedCaptions.value.set(currentStyleIndex.value, newCaption);
+
+    // Generate poster for initial caption
+    await generatePosterForCurrentCaption();
   } catch (error) {
     console.error("Failed to initialize caption:", error);
   }
@@ -194,6 +199,9 @@ const handleRegenerate = async () => {
     await delayMs(TIMING_CONSTANTS.CAPTION_TRANSITION_DELAY);
     caption.value = newCaption;
     isTransitioning.value = false;
+
+    // Generate poster for new caption
+    await generatePosterForCurrentCaption();
   } catch (error) {
     console.error("Failed to regenerate caption:", error);
     isTransitioning.value = false;
@@ -209,53 +217,80 @@ const handleCaptionUpdate = (event: Event) => {
 };
 
 /**
- * Generate poster when caption changes
+ * Handle caption blur - trigger poster generation
  */
-watch(
-  () => caption.value,
-  async (newCaption) => {
-    if (!newCaption) {
-      posterUrl.value = null;
-      return;
-    }
-    try {
-      posterIsGenerating.value = true;
+const handleCaptionBlur = () => {
+  // Cancel any pending poster generation
+  if (posterGenerationTimeoutId.value) {
+    clearTimeout(posterGenerationTimeoutId.value);
+  }
 
-      // Show placeholder longer for better UX
-      await delayMs(TIMING_CONSTANTS.POSTER_GENERATION_DELAY);
+  // Generate poster with a small delay to debounce rapid blur events
+  posterGenerationTimeoutId.value = window.setTimeout(() => {
+    generatePosterForCurrentCaption();
+  }, 100);
+};
 
-      const blob = await generatePoster(newCaption);
+/**
+ * Generate poster for current caption value
+ */
+const generatePosterForCurrentCaption = async () => {
+  const currentCaption = caption.value;
 
-      // Add transition effect
-      isPosterTransitioning.value = true;
+  if (!currentCaption) {
+    posterUrl.value = null;
+    return;
+  }
 
-      if (isWeChatBrowser()) {
-        // Upload to server for WeChat browser
-        try {
-          const downloadUrl = await uploadFile(blob, "poster.png");
-          posterUrl.value = downloadUrl;
-        } catch (uploadError) {
-          console.warn("Upload failed, falling back to blob URL:", uploadError);
-          // Fallback to blob URL with warning
-          posterUrl.value = URL.createObjectURL(blob);
-        }
-      } else {
-        // Use blob URL for other browsers
+  try {
+    posterIsGenerating.value = true;
+
+    // Show placeholder longer for better UX
+    await delayMs(TIMING_CONSTANTS.POSTER_GENERATION_DELAY);
+
+    // Generate poster with current style
+    const blob = await generatePoster(currentCaption, currentStyleIndex.value);
+
+    // Add transition effect
+    isPosterTransitioning.value = true;
+
+    if (isWeChatBrowser()) {
+      // Upload to server for WeChat browser
+      try {
+        const downloadUrl = await uploadFile(blob, "poster.png");
+        posterUrl.value = downloadUrl;
+      } catch (uploadError) {
+        console.warn("Upload failed, falling back to blob URL:", uploadError);
+        // Fallback to blob URL with warning
         posterUrl.value = URL.createObjectURL(blob);
       }
+    } else {
+      // Use blob URL for other browsers
+      posterUrl.value = URL.createObjectURL(blob);
+    }
 
-      // Remove transition state after animation completes (fire and forget)
-      setTimeout(() => {
-        isPosterTransitioning.value = false;
-      }, TIMING_CONSTANTS.POSTER_TRANSITION_DURATION);
-    } catch (error) {
-      console.error("Failed to generate poster:", error);
-      posterUrl.value = null;
-    } finally {
-      posterIsGenerating.value = false;
+    // Remove transition state after animation completes (fire and forget)
+    setTimeout(() => {
+      isPosterTransitioning.value = false;
+    }, TIMING_CONSTANTS.POSTER_TRANSITION_DURATION);
+  } catch (error) {
+    console.error("Failed to generate poster:", error);
+    posterUrl.value = null;
+  } finally {
+    posterIsGenerating.value = false;
+  }
+};
+
+/**
+ * Regenerate poster when style changes (for cached captions)
+ */
+watch(
+  () => currentStyleIndex.value,
+  async () => {
+    if (caption.value) {
+      await generatePosterForCurrentCaption();
     }
   },
-  { immediate: false },
 );
 
 /**
@@ -316,6 +351,13 @@ const handleOpenApp = () => {
 
 // Initialize caption on mount
 handleInitializeCaption(props.prData);
+
+// Cleanup timeout on unmount
+onUnmounted(() => {
+  if (posterGenerationTimeoutId.value) {
+    clearTimeout(posterGenerationTimeoutId.value);
+  }
+});
 </script>
 
 <style scoped lang="scss" src="./ShareToXiaohongshu.scss"></style>

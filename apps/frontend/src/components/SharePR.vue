@@ -60,7 +60,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const currentMethodIndex = ref(0);
+const currentMethodIndex = ref(1);
 
 const allMethods = computed<ShareMethod[]>(() => [
   {
@@ -70,7 +70,7 @@ const allMethods = computed<ShareMethod[]>(() => [
   },
   {
     id: "XIAOHONGSHU",
-    label: "小红书分享",
+    label: "分享到小红书",
     enabled: !!props.prData?.parsed,
   },
 ]);
