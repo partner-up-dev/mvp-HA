@@ -42,7 +42,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import ShareAsLinkMethod from "./ShareAsLink/Method.vue";
-import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/Method.vue";
+import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/ShareToXiaohongshu.vue";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 
 interface ShareMethod {
