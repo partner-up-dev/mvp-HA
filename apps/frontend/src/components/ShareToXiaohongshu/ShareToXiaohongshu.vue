@@ -89,7 +89,6 @@ import {
   formatCaptionWithUrl,
   generatePosterFilename,
   delayMs,
-  blobToBase64,
 } from "./ShareToXiaohongshu";
 
 interface Props {
@@ -193,7 +192,7 @@ watch(
 
       // Add transition effect
       isPosterTransitioning.value = true;
-      posterUrl.value = await blobToBase64(blob);
+      posterUrl.value = URL.createObjectURL(blob);
 
       // Remove transition state after animation completes (fire and forget)
       setTimeout(() => {
@@ -232,12 +231,8 @@ const handleDownloadPoster = async () => {
     return;
   }
   try {
-    const base64Data = posterUrl.value.split(",")[1];
-    const mimeType = posterUrl.value.split(";")[0].split(":")[1];
-    const blob = new Blob(
-      [Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0))],
-      { type: mimeType },
-    );
+    const response = await fetch(posterUrl.value);
+    const blob = await response.blob();
     downloadBlob(blob, generatePosterFilename());
   } catch (error) {
     console.error("Failed to download poster:", error);
