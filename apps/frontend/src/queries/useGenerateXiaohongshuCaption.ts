@@ -2,13 +2,6 @@ import { useMutation } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 
-export type XiaohongshuStyle =
-  | "friendly"
-  | "concise"
-  | "warm"
-  | "trendy"
-  | "professional";
-
 export const useGenerateXiaohongshuCaption = () => {
   return useMutation({
     mutationFn: async ({
@@ -16,18 +9,22 @@ export const useGenerateXiaohongshuCaption = () => {
       style,
     }: {
       prData: ParsedPartnerRequest;
-      style?: XiaohongshuStyle;
+      style?: number;
     }) => {
-      const res = await client.api.llm["xiaohongshu-caption"].$post({
-        json: { ...prData, style },
-      });
+      const payload: any = { json: prData };
+      if (style !== undefined) {
+        // pass style as query param
+        payload.query = { style: String(style) };
+      }
+
+      const res = await client.api.llm["xiaohongshu-caption"].$post(payload);
 
       if (!res.ok) {
         throw new Error("Failed to generate caption");
       }
 
       const data = await res.json();
-      return data.caption;
+      return data.caption as string;
     },
   });
 };

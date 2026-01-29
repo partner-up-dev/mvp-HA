@@ -12,6 +12,7 @@ const CONFIG_KEY_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT =
   "partner_request.parse_system_prompt";
 const CONFIG_KEY_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT =
   "xiaohongshu.caption_system_prompt";
+const CONFIG_KEY_XIAOHONGSHU_STYLE_PROMPT = "xiaohongshu_style_prompt";
 
 const DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT = `你是一个搭子需求解析助手。用户会输入自然语言描述的搭子需求，你需要将其结构化。
 
@@ -37,7 +38,7 @@ const DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT = `你是一位小红书文案�
 
 输出只包含文案内容，不要其他解释。`;
 
-// 多风格文案系统prompt定义
+// 多风格文案系统prompt定义（作为默认回退值）
 const XIAOHONGSHU_STYLE_PROMPTS = {
   friendly: DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
   concise: `你是一位简洁高效的文案写手，专注于快速传达核心信息。
@@ -116,12 +117,30 @@ export class LLMService {
 
   async generateXiaohongshuCaption(
     prData: ParsedPartnerRequest,
-    style?: XiaohongshuStyle,
+    style?: number | XiaohongshuStyle,
   ): Promise<string> {
-    // 如果没有指定风格，随机选择一个
-    const selectedStyle = style || this.getRandomStyle();
+    const styles = await this.getXiaohongshuStylePrompts();
 
-    const systemPrompt = XIAOHONGSHU_STYLE_PROMPTS[selectedStyle];
+    let systemPrompt: string;
+
+    if (typeof style === "number") {
+      if (styles.length === 0) {
+        systemPrompt = DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT;
+      } else {
+        const idx = Math.floor(style);
+        const n = styles.length;
+        const selected = ((idx % n) + n) % n; // wraparound, handle negative
+        systemPrompt = styles[selected];
+      }
+    } else if (typeof style === "string" && XIAOHONGSHU_STYLE_PROMPTS[style]) {
+      systemPrompt = XIAOHONGSHU_STYLE_PROMPTS[style];
+    } else {
+      // no style specified or unknown string style -> random
+      systemPrompt =
+        styles.length > 0
+          ? styles[Math.floor(Math.random() * styles.length)]
+          : DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT;
+    }
 
     const prompt = this.buildXiaohongshuCaptionPrompt(prData);
 
@@ -169,6 +188,14 @@ export class LLMService {
     return await this.configService.getValueOrFallback(
       CONFIG_KEY_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
       DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
+    );
+  }
+
+  private async getXiaohongshuStylePrompts(): Promise<string[]> {
+    const fallback = Object.values(XIAOHONGSHU_STYLE_PROMPTS) as string[];
+    return await this.configService.getJsonArrayOrFallback(
+      CONFIG_KEY_XIAOHONGSHU_STYLE_PROMPT,
+      fallback,
     );
   }
 

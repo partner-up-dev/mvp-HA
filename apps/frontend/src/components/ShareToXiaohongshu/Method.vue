@@ -38,10 +38,7 @@ import { ref, watch } from "vue";
 import PreviewContent from "./PreviewContent.vue";
 import Actions from "./Actions.vue";
 import Options from "./Options.vue";
-import {
-  useGenerateXiaohongshuCaption,
-  type XiaohongshuStyle,
-} from "@/queries/useGenerateXiaohongshuCaption";
+import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
 import { useGeneratePoster } from "@/composables/useGeneratePoster";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 
@@ -52,25 +49,13 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// 风格定义
-interface StyleOption {
-  id: XiaohongshuStyle;
-  name: string;
-}
-
-const styles: StyleOption[] = [
-  { id: "friendly", name: "活泼友好" },
-  { id: "concise", name: "简洁干练" },
-  { id: "warm", name: "温暖治愈" },
-  { id: "trendy", name: "潮流酷炫" },
-  { id: "professional", name: "专业正式" },
-];
+// Frontend no longer knows style names; use numeric index
 
 const caption = ref("");
 const posterUrl = ref<string | null>(null);
 const posterIsGenerating = ref(false);
 const currentStyleIndex = ref(0);
-const generatedCaptions = ref<Map<string, string>>(new Map());
+const generatedCaptions = ref<Map<number, string>>(new Map());
 const isTransitioning = ref(false);
 const isPosterTransitioning = ref(false);
 
@@ -81,18 +66,17 @@ const { generatePoster } = useGeneratePoster();
 // Initialize caption on mount (random style)
 const handleInitializeCaption = async (prData: ParsedPartnerRequest) => {
   try {
-    // 随机选择一个风格开始
-    currentStyleIndex.value = Math.floor(Math.random() * styles.length);
-    const selectedStyle = styles[currentStyleIndex.value];
+    // start from 0 (backend handles wraparound), or pick random int if desired
+    currentStyleIndex.value = 0;
 
     const newCaption = await generateCaptionAsync({
       prData,
-      style: selectedStyle.id,
+      style: currentStyleIndex.value,
     });
     caption.value = newCaption;
 
-    // 缓存生成的文案
-    generatedCaptions.value.set(selectedStyle.id, newCaption);
+    // cache generated caption under numeric index
+    generatedCaptions.value.set(currentStyleIndex.value, newCaption);
   } catch (error) {
     console.error("Failed to initialize caption:", error);
   }
@@ -103,23 +87,22 @@ const handleRegenerate = async () => {
   try {
     isTransitioning.value = true;
 
-    // 切换到下一个风格
-    currentStyleIndex.value = (currentStyleIndex.value + 1) % styles.length;
-    const selectedStyle = styles[currentStyleIndex.value];
+    // 切换到下一个风格（只递增，后端负责 wraparound）
+    currentStyleIndex.value = currentStyleIndex.value + 1;
 
     let newCaption: string;
 
     // 检查是否已有缓存
-    if (generatedCaptions.value.has(selectedStyle.id)) {
-      newCaption = generatedCaptions.value.get(selectedStyle.id)!;
+    if (generatedCaptions.value.has(currentStyleIndex.value)) {
+      newCaption = generatedCaptions.value.get(currentStyleIndex.value)!;
     } else {
       // 生成新文案
       newCaption = await generateCaptionAsync({
         prData: props.prData,
-        style: selectedStyle.id,
+        style: currentStyleIndex.value,
       });
       // 缓存生成的文案
-      generatedCaptions.value.set(selectedStyle.id, newCaption);
+      generatedCaptions.value.set(currentStyleIndex.value, newCaption);
     }
 
     // 添加短暂延迟创建切换效果

@@ -8,20 +8,41 @@ const app = new Hono();
 const llmService = new LLMService();
 
 // POST /api/llm/xiaohongshu-caption - Generate Xiaohongshu caption
-const generateCaptionSchema = parsedPRSchema.extend({
-  style: z
-    .enum(["friendly", "concise", "warm", "trendy", "professional"])
-    .optional(),
-});
-
 export const llmRoute = app.post(
   "/xiaohongshu-caption",
-  zValidator("json", generateCaptionSchema),
+  zValidator("json", parsedPRSchema),
   async (c) => {
-    const { style, ...prData } = c.req.valid("json");
+    const prData = c.req.valid("json");
+
+    const styleRaw = c.req.query("style");
+
+    let style: number | XiaohongshuStyle | undefined = undefined;
+
+    if (styleRaw !== undefined) {
+      // Try parse as integer index first
+      const asNumber = Number(styleRaw);
+      if (
+        !Number.isNaN(asNumber) &&
+        Number.isInteger(asNumber) &&
+        String(asNumber) === styleRaw
+      ) {
+        style = asNumber;
+      } else {
+        // Fall back to string enum if matches
+        const s = String(styleRaw);
+        if (
+          ["friendly", "concise", "warm", "trendy", "professional"].includes(s)
+        ) {
+          style = s as XiaohongshuStyle;
+        } else {
+          return c.json({ error: "invalid style parameter" }, 400);
+        }
+      }
+    }
+
     const caption = await llmService.generateXiaohongshuCaption(
-      prData,
-      style as XiaohongshuStyle,
+      prData as any,
+      style as any,
     );
     return c.json({ caption });
   },
