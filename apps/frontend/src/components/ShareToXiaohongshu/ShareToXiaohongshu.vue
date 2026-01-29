@@ -55,10 +55,14 @@
       <div class="actions-row">
         <button
           class="outline-btn copy-caption-btn"
+          :class="{
+            success: copyState === 'copied',
+            error: copyState === 'error',
+          }"
           @click="handleCopyCaptionWithUrl"
-          :disabled="!caption"
+          :disabled="!caption || copyState !== 'idle'"
         >
-          复制文案
+          {{ copyButtonLabel }}
         </button>
         <button
           class="outline-btn download-poster-btn"
@@ -77,10 +81,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useAppScheme } from "@/composables/useAppScheme";
 import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
 import { useGeneratePoster } from "@/composables/useGeneratePoster";
+import { useCloudStorage } from "@/composables/useCloudStorage";
+import { isWeChatBrowser } from "@/lib/browser-detection";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 import {
   TIMING_CONSTANTS,
@@ -106,12 +112,33 @@ const currentStyleIndex = ref(0);
 const generatedCaptions = ref<Map<number, string>>(new Map());
 const isTransitioning = ref(false);
 const isPosterTransitioning = ref(false);
+const copyState = ref<"idle" | "copied" | "error">("idle");
 
 // Composables
 const { mutateAsync: generateCaptionAsync, isPending: isCaptionGenerating } =
   useGenerateXiaohongshuCaption();
 const { generatePoster } = useGeneratePoster();
+const { uploadFile } = useCloudStorage();
 const { openXiaohongshu } = useAppScheme();
+
+/**
+ * Computed button label for copy caption
+ */
+const copyButtonLabel = computed(() => {
+  if (copyState.value === "copied") return "已复制!";
+  if (copyState.value === "error") return "复制失败";
+  return "复制文案";
+});
+
+/**
+ * Flash state for copy action
+ */
+const flashState = (next: "idle" | "copied" | "error"): void => {
+  copyState.value = next;
+  window.setTimeout(() => {
+    copyState.value = "idle";
+  }, 2000);
+};
 
 /**
  * Initialize caption on mount
@@ -192,7 +219,21 @@ watch(
 
       // Add transition effect
       isPosterTransitioning.value = true;
-      posterUrl.value = URL.createObjectURL(blob);
+
+      if (isWeChatBrowser()) {
+        // Upload to server for WeChat browser
+        try {
+          const downloadUrl = await uploadFile(blob, "poster.png");
+          posterUrl.value = downloadUrl;
+        } catch (uploadError) {
+          console.warn("Upload failed, falling back to blob URL:", uploadError);
+          // Fallback to blob URL with warning
+          posterUrl.value = URL.createObjectURL(blob);
+        }
+      } else {
+        // Use blob URL for other browsers
+        posterUrl.value = URL.createObjectURL(blob);
+      }
 
       // Remove transition state after animation completes (fire and forget)
       setTimeout(() => {
@@ -209,16 +250,33 @@ watch(
 );
 
 /**
+ * Clean up blob URLs when poster URL changes to remote URL
+ */
+watch(
+  () => posterUrl.value,
+  (newUrl, oldUrl) => {
+    if (
+      oldUrl &&
+      oldUrl.startsWith("blob:") &&
+      newUrl &&
+      !newUrl.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(oldUrl);
+    }
+  },
+);
+
+/**
  * Copy caption and URL to clipboard
  */
 const handleCopyCaptionWithUrl = async () => {
   try {
     const content = formatCaptionWithUrl(caption.value, props.shareUrl);
     await copyToClipboard(content);
-    alert("✅ 已复制到剪贴板");
+    flashState("copied");
   } catch (error) {
     console.error("Failed to copy:", error);
-    alert("❌ 复制失败，请重试");
+    flashState("error");
   }
 };
 

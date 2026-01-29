@@ -243,6 +243,18 @@
 .copy-caption-btn,
 .download-poster-btn {
   flex: 1;
+
+  &.success {
+    background: var(--sys-color-tertiary);
+    color: var(--sys-color-on-tertiary);
+    border-color: var(--sys-color-tertiary);
+  }
+
+  &.error {
+    background: var(--sys-color-error);
+    color: var(--sys-color-on-error);
+    border-color: var(--sys-color-error);
+  }
 }
 
 .primary-btn {

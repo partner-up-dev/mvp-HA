@@ -9,6 +9,7 @@ import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
 import { partnerRequestRoute } from "./controllers/partner-request.controller";
 import { llmRoute } from "./controllers/llm.controller";
+import { uploadRoute } from "./controllers/upload.controller";
 import { env } from "./lib/env";
 
 const app = new Hono();
@@ -29,7 +30,8 @@ app.onError((err, c) => {
 // Mount routes
 const routes = app
   .route("/api/pr", partnerRequestRoute)
-  .route("/api/llm", llmRoute);
+  .route("/api/llm", llmRoute)
+  .route("/api/upload", uploadRoute);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));

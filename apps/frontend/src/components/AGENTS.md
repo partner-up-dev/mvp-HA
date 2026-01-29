@@ -69,3 +69,7 @@ Prohibited:
 
 - Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.
 - SharePR.vue: Carousel host for multiple share methods. Renders per-method components (ShareAsLink/Method.vue, ShareToXiaohongshu/Method.vue). Each method component internally owns its options, preview, and actions, ensuring proper state management and type safety. No duplicated types—imports ParsedPartnerRequest from @partner-up-dev/backend.
+
+## Composables
+
+- `useCloudStorage()`: Handles file uploads to the backend and returns download URLs.
