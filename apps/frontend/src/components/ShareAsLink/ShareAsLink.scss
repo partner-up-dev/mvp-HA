@@ -1,43 +1,32 @@
-<template>
-  <div class="action-section">
-    <button
-      class="action-btn"
-      :class="{
-        success: state === 'copied',
-        error: state === 'error',
-      }"
-      @click="handleClick"
-      :disabled="state !== 'idle'"
-    >
-      {{ label }}
-    </button>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { computed } from "vue";
-
-type ShareState = "idle" | "copied" | "error";
-
-interface Props {
-  onClick: () => Promise<void>;
-  state: ShareState;
+.share-as-link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-med);
 }
 
-const props = defineProps<Props>();
+.preview-title {
+  @include mx.pu-font(label-large);
+  color: var(--sys-color-on-surface-variant);
+  margin: 0 0 var(--sys-spacing-xs) 0;
+}
 
-const label = computed(() => {
-  if (props.state === "copied") return "已复制!";
-  if (props.state === "error") return "分享失败";
-  return "复制链接";
-});
+.preview-content {
+  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  border: 1px solid var(--sys-color-outline-variant);
+  overflow-x: auto;
+}
 
-const handleClick = async () => {
-  await props.onClick();
-};
-</script>
+.preview-text {
+  @include mx.pu-font(body-large);
+  font-family: var(--sys-font-family-mono);
+  color: var(--sys-color-on-surface);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
 
-<style lang="scss" scoped>
 .action-section {
   display: flex;
 }
@@ -79,4 +68,4 @@ const handleClick = async () => {
     outline-offset: 2px;
   }
 }
-</style>
+

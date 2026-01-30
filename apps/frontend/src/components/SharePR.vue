@@ -23,10 +23,7 @@
 
     <!-- Content Section -->
     <div class="content-section">
-      <ShareAsLinkMethod
-        v-show="currentMethod.id === 'COPY_LINK'"
-        :share-url="shareUrl"
-      />
+      <ShareAsLink v-show="currentMethod.id === 'COPY_LINK'" :share-url="shareUrl" />
       <ShareToXiaohongshuMethod
         v-show="currentMethod.id === 'XIAOHONGSHU'"
         :share-url="shareUrl"
@@ -41,7 +38,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import ShareAsLinkMethod from "./ShareAsLink/Method.vue";
+import ShareAsLink from "./ShareAsLink/ShareAsLink.vue";
 import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/ShareToXiaohongshu.vue";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 
