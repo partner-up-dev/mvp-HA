@@ -14,6 +14,13 @@ const envSchema = z.object({
   // DB operation timeout (ms) for config lookups (fallback is used on timeout)
   DB_OPERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(250),
 
+  // WeChat Official Account (for JS-SDK signature)
+  WECHAT_OFFICIAL_ACCOUNT_APP_ID: z.string().min(1).optional(),
+  WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: z.string().min(1).optional(),
+
+  // Poster storage directory (used by upload controller)
+  POSTERS_DIR: z.string().min(1).optional(),
+
   PORT: z.coerce.number().default(3000),
 });
 

@@ -24,3 +24,4 @@ This is a pnpm workspace (monorepo) with following packages:
 - Share partner request:
   - By copying link as text: yes.
   - To xiaohongshu: initial version, need polish.
+  - To WeChat chat (WeChat WebView menu share): yes (JS-SDK, generates a share card with thumbnail).

@@ -35,7 +35,9 @@ export const useCloudStorage = () => {
       }
 
       const { key } = await res.json();
-      return `${API_URL}/api/upload/download/${key}`;
+
+      const base = API_URL || window.location.origin;
+      return new URL(`/api/upload/download/${key}`, base).toString();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Upload failed";

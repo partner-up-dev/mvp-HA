@@ -2,11 +2,16 @@ import { Hono } from "hono";
 import { promises as fs } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { env } from "../lib/env";
 
 const app = new Hono();
 
 // Ensure posters directory exists
-const postersDir = "/mnt/oss/posters";
+const defaultPostersDir =
+  process.platform === "win32"
+    ? path.join(process.cwd(), "posters")
+    : "/mnt/oss/posters";
+const postersDir = env.POSTERS_DIR ?? defaultPostersDir;
 
 export const uploadRoute = app.post("/poster", async (c) => {
   try {

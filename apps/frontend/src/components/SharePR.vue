@@ -1,6 +1,5 @@
 <template>
   <section class="share-pr">
-    <!-- Carousel Header -->
     <div class="carousel-header">
       <button
         class="nav-btn"
@@ -21,15 +20,26 @@
       </button>
     </div>
 
-    <!-- Content Section -->
     <div class="content-section">
-      <ShareAsLink v-show="currentMethod.id === 'COPY_LINK'" :share-url="shareUrl" />
-      <ShareToXiaohongshuMethod
-        v-show="currentMethod.id === 'XIAOHONGSHU'"
+      <ShareAsLink
+        v-if="currentMethod.id === 'COPY_LINK'"
         :share-url="shareUrl"
-        :pr-data="prData?.parsed ?? ({} as ParsedPartnerRequest)"
       />
-      <div v-show="!currentMethod.id" class="empty-state">
+
+      <ShareToWechatChatMethod
+        v-else-if="currentMethod.id === 'WECHAT_CHAT' && prData?.parsed && prData.rawText"
+        :share-url="shareUrl"
+        :raw-text="prData.rawText"
+        :pr-data="prData.parsed"
+      />
+
+      <ShareToXiaohongshuMethod
+        v-else-if="currentMethod.id === 'XIAOHONGSHU' && prData?.parsed"
+        :share-url="shareUrl"
+        :pr-data="prData.parsed"
+      />
+
+      <div v-else class="empty-state">
         <p>该分享方式暂不可用</p>
       </div>
     </div>
@@ -37,13 +47,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, ref, watchEffect } from "vue";
 import ShareAsLink from "./ShareAsLink/ShareAsLink.vue";
 import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/ShareToXiaohongshu.vue";
+import ShareToWechatChatMethod from "./ShareToWechatChat/ShareToWechatChat.vue";
+import { isWeChatBrowser } from "@/lib/browser-detection";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 
+type ShareMethodId = "COPY_LINK" | "XIAOHONGSHU" | "WECHAT_CHAT";
+
 interface ShareMethod {
-  id: "COPY_LINK" | "XIAOHONGSHU";
+  id: ShareMethodId;
   label: string;
   enabled: boolean;
 }
@@ -52,18 +66,18 @@ interface Props {
   shareUrl: string;
   prData?: {
     parsed?: ParsedPartnerRequest;
+    rawText?: string;
   };
 }
 
 const props = defineProps<Props>();
 
-const currentMethodIndex = ref(1);
-
 const allMethods = computed<ShareMethod[]>(() => [
+  { id: "COPY_LINK", label: "链接分享", enabled: true },
   {
-    id: "COPY_LINK",
-    label: "链接分享",
-    enabled: true,
+    id: "WECHAT_CHAT",
+    label: "分享到微信",
+    enabled: isWeChatBrowser() && !!props.prData?.parsed && !!props.prData?.rawText,
   },
   {
     id: "XIAOHONGSHU",
@@ -72,30 +86,54 @@ const allMethods = computed<ShareMethod[]>(() => [
   },
 ]);
 
-const enabledMethods = computed(() =>
-  allMethods.value.filter((m) => m.enabled),
-);
+const enabledMethods = computed(() => allMethods.value.filter((m) => m.enabled));
+
+const currentMethodId = ref<ShareMethodId>("COPY_LINK");
+
+watchEffect(() => {
+  const enabled = enabledMethods.value;
+  if (enabled.length === 0) {
+    currentMethodId.value = "COPY_LINK";
+    return;
+  }
+
+  const stillEnabled = enabled.some((m) => m.id === currentMethodId.value);
+  if (!stillEnabled) {
+    currentMethodId.value = enabled[0].id;
+  }
+});
 
 const currentMethod = computed(() => {
   const enabled = enabledMethods.value;
-  if (enabled.length === 0) {
-    return allMethods.value[0];
-  }
-  const normalizedIndex = currentMethodIndex.value % enabled.length;
-  return enabled[normalizedIndex];
+  return (
+    enabled.find((m) => m.id === currentMethodId.value) ??
+    enabled[0] ??
+    { id: "COPY_LINK", label: "链接分享", enabled: true }
+  );
 });
 
 const goToPrevMethod = (): void => {
-  if (enabledMethods.value.length <= 1) return;
-  currentMethodIndex.value =
-    (currentMethodIndex.value - 1 + enabledMethods.value.length) %
-    enabledMethods.value.length;
+  const enabled = enabledMethods.value;
+  if (enabled.length <= 1) return;
+
+  const currentIndex = Math.max(
+    0,
+    enabled.findIndex((m) => m.id === currentMethod.value.id),
+  );
+  const prevIndex = (currentIndex - 1 + enabled.length) % enabled.length;
+  currentMethodId.value = enabled[prevIndex].id;
 };
 
 const goToNextMethod = (): void => {
-  if (enabledMethods.value.length <= 1) return;
-  currentMethodIndex.value =
-    (currentMethodIndex.value + 1) % enabledMethods.value.length;
+  const enabled = enabledMethods.value;
+  if (enabled.length <= 1) return;
+
+  const currentIndex = Math.max(
+    0,
+    enabled.findIndex((m) => m.id === currentMethod.value.id),
+  );
+  const nextIndex = (currentIndex + 1) % enabled.length;
+  currentMethodId.value = enabled[nextIndex].id;
 };
 </script>
 
