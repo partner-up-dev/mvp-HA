@@ -88,6 +88,34 @@ const mockClient = {
         },
       },
     },
+    poster: {
+      html: {
+        $post: async ({
+          json,
+        }: {
+          json: {
+            caption: string;
+            style?: number | string;
+            ratio?: string;
+            saveOnServer?: boolean;
+          };
+        }) => {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          const placeholder =
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==";
+
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              posterUrl: placeholder,
+              saved: Boolean(json.saveOnServer),
+            }),
+          } as Response;
+        },
+      },
+    },
   },
 } as unknown as ReturnType<typeof hc<AppType>>;
 

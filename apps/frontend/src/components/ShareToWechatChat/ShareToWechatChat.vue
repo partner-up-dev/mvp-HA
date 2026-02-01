@@ -49,8 +49,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
-import { useGeneratePoster } from "@/composables/useGeneratePoster";
-import { useCloudStorage } from "@/composables/useCloudStorage";
+import { useGenerateHtmlPoster } from "@/composables/useGenerateHtmlPoster";
 import { useWeChatShare } from "@/composables/useWeChatShare";
 import type { ShareToWechatChatProps } from "./ShareToWechatChat";
 
@@ -58,23 +57,21 @@ const props = defineProps<ShareToWechatChatProps>();
 
 const styleIndex = ref(0);
 const errorMessage = ref<string | null>(null);
-const lastUploadedThumbnailUrl = ref<string | null>(null);
+const lastPosterUrl = ref<string | null>(null);
 
 const { mutateAsync: generateCaptionAsync, isPending: isCaptionGenerating } =
   useGenerateXiaohongshuCaption();
 const { generatePoster, posterUrl, isGenerating: isPosterGenerating } =
-  useGeneratePoster();
-const { uploadFile, isUploading, uploadError } = useCloudStorage();
+  useGenerateHtmlPoster();
 const { initWeChatSdk, setWeChatShareCard, initError } = useWeChatShare();
 
 const isWorking = computed(
-  () =>
-    isCaptionGenerating.value || isPosterGenerating.value || isUploading.value,
+  () => isCaptionGenerating.value || isPosterGenerating.value,
 );
 
 const primaryButtonLabel = computed(() => {
   if (isWorking.value) return "生成中...";
-  if (lastUploadedThumbnailUrl.value) return "重新生成并更新分享卡片";
+  if (lastPosterUrl.value) return "重新生成并更新分享卡片";
   return "生成并更新分享卡片";
 });
 
@@ -112,9 +109,13 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
       style: styleIndex.value,
     });
 
-    const blob = await generatePoster(caption, styleIndex.value);
-    const thumbnailUrl = await uploadFile(blob, "wechat-share-thumb.png");
-    lastUploadedThumbnailUrl.value = thumbnailUrl;
+    const { posterUrl: thumbnailUrl } = await generatePoster(
+      caption,
+      styleIndex.value,
+      "3:4",
+      true,
+    );
+    lastPosterUrl.value = thumbnailUrl;
 
     await setWeChatShareCard({
       title: buildShareTitle(),
@@ -134,7 +135,7 @@ const handleTryNextStyle = async (): Promise<void> => {
 };
 
 const errorText = computed(
-  () => errorMessage.value ?? uploadError.value ?? initError.value,
+  () => errorMessage.value ?? initError.value,
 );
 </script>
 

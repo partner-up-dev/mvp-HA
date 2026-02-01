@@ -30,12 +30,12 @@ Upgrade the current XHS poster generation system from template-based to **LLM-ge
 Based on the referenced implementation, we'll adopt these key patterns:
 
 1. **Dynamic HTML Generation**: LLM creates complete HTML with inline CSS
-2. **Server-Side Rendering**: Use Playwright for consistent, high-quality image generation
+2. **Server-Side Rendering**: Use Puppeteer (Chromium) for consistent, high-quality image generation
 3. **Flexible Styling**: AI-driven layout and visual design decisions
 4. **Content-Aware Design**: Layout adapts to content semantics
 5. **Smart Storage**: Conditional poster saving for WeChat browser optimization
 
-### Rendering Strategy: Server-Side with Playwright
+### Rendering Strategy: Server-Side with Puppeteer (Chromium)
 
 **Advantages**:
 
@@ -56,7 +56,7 @@ Based on the referenced implementation, we'll adopt these key patterns:
 ```
 Backend (New):
 ├── HtmlPosterService.ts         # LLM HTML generation service
-├── BrowserRenderService.ts      # Playwright-based PNG rendering
+├── BrowserRenderService.ts      # Puppeteer-based PNG rendering
 ├── PosterStorageService.ts      # Conditional poster file management
 └── PosterStylePrompts.ts        # Style prompt definitions
 
@@ -97,7 +97,7 @@ export class HtmlPosterService {
 **Features**:
 
 - Uses existing LLMService with new prompt system
-- Generates complete HTML with inline CSS optimized for Playwright rendering
+- Generates complete HTML with inline CSS optimized for Puppeteer rendering
 - Adapts layout based on content length and semantic analysis
 - Supports dynamic color schemes and typography
 - Includes microelements like icons, dividers, decorative elements
@@ -194,7 +194,7 @@ export class PosterStorageService {
 
 **File**: `apps/backend/src/services/PosterStylePrompts.ts`
 
-Define detailed prompts for each style that leverage full Playwright CSS support:
+Define detailed prompts for each style that leverage full Puppeteer CSS support:
 
 ```typescript
 export const POSTER_STYLE_PROMPTS = {
@@ -221,7 +221,7 @@ function isWeChatBrowser(userAgent: string): boolean {
 const puppeteerRenderService = new PuppeteerRenderService();
 
 export const posterRoute = app.post(
-  "/generate-html-poster",
+  "/html",
   zValidator("json", generatePosterSchema),
   async (c) => {
     const { caption, style, ratio, saveOnServer } = c.req.valid("json");
