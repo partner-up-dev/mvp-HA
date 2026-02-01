@@ -45,18 +45,6 @@ export async function copyToClipboard(text: string): Promise<void> {
 }
 
 /**
- * Download blob as a file
- */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-/**
  * Format caption and URL for sharing
  */
 export function formatCaptionWithUrl(caption: string, url: string): string {

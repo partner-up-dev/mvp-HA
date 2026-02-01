@@ -88,6 +88,35 @@ const mockClient = {
         },
       },
     },
+    poster: {
+      generate: {
+        $post: async ({
+          json,
+        }: {
+          json: {
+            caption: string;
+            style: string;
+            ratio: string;
+            saveOnServer?: boolean;
+          };
+        }) => {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+
+          const posterUrl = json.saveOnServer
+            ? "https://example.com/mock-poster.png"
+            : "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              posterUrl,
+              saved: Boolean(json.saveOnServer),
+            }),
+          } as Response;
+        },
+      },
+    },
   },
 } as unknown as ReturnType<typeof hc<AppType>>;
 

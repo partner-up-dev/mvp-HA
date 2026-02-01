@@ -1,12 +1,12 @@
 import { generateObject } from "ai";
-import { createOpenAI, openai } from "@ai-sdk/openai";
 import {
   parsedPRSchema,
   type ParsedPartnerRequest,
 } from "../entities/partner-request";
-import { env } from "../lib/env";
 import { ConfigService } from "./ConfigService";
 import { z } from "zod";
+import { env } from "../lib/env";
+import { createLlmClient } from "./llm-client";
 
 const CONFIG_KEY_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT =
   "partner_request.parse_system_prompt";
@@ -85,18 +85,11 @@ const XIAOHONGSHU_STYLE_PROMPTS = {
 export type XiaohongshuStyle = keyof typeof XIAOHONGSHU_STYLE_PROMPTS;
 
 export class LLMService {
-  private client: typeof openai;
+  private client: ReturnType<typeof createLlmClient>;
   private configService: ConfigService;
 
   constructor() {
-    if (env.LLM_BASE_URL) {
-      this.client = createOpenAI({
-        apiKey: env.LLM_API_KEY,
-        baseURL: env.LLM_BASE_URL,
-      });
-    } else {
-      this.client = openai;
-    }
+    this.client = createLlmClient();
 
     this.configService = new ConfigService();
   }

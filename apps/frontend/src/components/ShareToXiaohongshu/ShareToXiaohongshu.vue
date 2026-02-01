@@ -85,14 +85,13 @@
 import { ref, watch, computed, onUnmounted } from "vue";
 import { useAppScheme } from "@/composables/useAppScheme";
 import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
-import { useGeneratePoster } from "@/composables/useGeneratePoster";
-import { useCloudStorage } from "@/composables/useCloudStorage";
+import { useGenerateHtmlPoster } from "@/composables/useGenerateHtmlPoster";
 import { isWeChatBrowser } from "@/lib/browser-detection";
+import { mapStyleIndexToPosterStyle } from "@/lib/poster-style-map";
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
 import {
   TIMING_CONSTANTS,
   copyToClipboard,
-  downloadBlob,
   formatCaptionWithUrl,
   generatePosterFilename,
   delayMs,
@@ -119,8 +118,7 @@ const posterGenerationTimeoutId = ref<number | null>(null);
 // Composables
 const { mutateAsync: generateCaptionAsync, isPending: isCaptionGenerating } =
   useGenerateXiaohongshuCaption();
-const { generatePoster } = useGeneratePoster();
-const { uploadFile } = useCloudStorage();
+const { generatePoster, downloadPoster } = useGenerateHtmlPoster();
 const { openXiaohongshu } = useAppScheme();
 
 /**
@@ -249,25 +247,12 @@ const generatePosterForCurrentCaption = async () => {
     await delayMs(TIMING_CONSTANTS.POSTER_GENERATION_DELAY);
 
     // Generate poster with current style
-    const blob = await generatePoster(currentCaption, currentStyleIndex.value);
+    const posterStyle = mapStyleIndexToPosterStyle(currentStyleIndex.value);
+    const generatedUrl = await generatePoster(currentCaption, posterStyle);
 
     // Add transition effect
     isPosterTransitioning.value = true;
-
-    if (isWeChatBrowser()) {
-      // Upload to server for WeChat browser
-      try {
-        const downloadUrl = await uploadFile(blob, "poster.png");
-        posterUrl.value = downloadUrl;
-      } catch (uploadError) {
-        console.warn("Upload failed, falling back to blob URL:", uploadError);
-        // Fallback to blob URL with warning
-        posterUrl.value = URL.createObjectURL(blob);
-      }
-    } else {
-      // Use blob URL for other browsers
-      posterUrl.value = URL.createObjectURL(blob);
-    }
+    posterUrl.value = generatedUrl;
 
     // Remove transition state after animation completes (fire and forget)
     setTimeout(() => {
@@ -289,23 +274,6 @@ watch(
   async () => {
     if (caption.value) {
       await generatePosterForCurrentCaption();
-    }
-  },
-);
-
-/**
- * Clean up blob URLs when poster URL changes to remote URL
- */
-watch(
-  () => posterUrl.value,
-  (newUrl, oldUrl) => {
-    if (
-      oldUrl &&
-      oldUrl.startsWith("blob:") &&
-      newUrl &&
-      !newUrl.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(oldUrl);
     }
   },
 );
@@ -333,9 +301,7 @@ const handleDownloadPoster = async () => {
     return;
   }
   try {
-    const response = await fetch(posterUrl.value);
-    const blob = await response.blob();
-    downloadBlob(blob, generatePosterFilename());
+    await downloadPoster(posterUrl.value, generatePosterFilename());
   } catch (error) {
     console.error("Failed to download poster:", error);
     alert("❌ 下载失败，请重试");

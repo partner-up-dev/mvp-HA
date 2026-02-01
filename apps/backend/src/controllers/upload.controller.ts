@@ -1,36 +1,23 @@
 import { Hono } from "hono";
-import { promises as fs } from "fs";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
-import { env } from "../lib/env";
+import { PosterStorageService } from "../services/PosterStorageService";
 
 const app = new Hono();
 
-// Ensure posters directory exists
-const defaultPostersDir =
-  process.platform === "win32"
-    ? path.join(process.cwd(), "posters")
-    : "/mnt/oss/posters";
-const postersDir = env.POSTERS_DIR ?? defaultPostersDir;
+const posterStorageService = new PosterStorageService();
 
 export const uploadRoute = app.post("/poster", async (c) => {
   try {
-    // Ensure directory exists
-    await fs.mkdir(postersDir, { recursive: true });
-
     const formData = await c.req.formData();
-    const file = formData.get("poster") as File;
+    const file = formData.get("poster");
 
-    if (!file || !file.type.startsWith("image/")) {
+    if (!(file instanceof File) || !file.type.startsWith("image/")) {
       return c.json({ error: "Invalid file" }, 400);
     }
 
-    const key = uuidv4();
-    const filename = `${key}.png`;
-    const filepath = path.join(postersDir, filename);
-
     const buffer = await file.arrayBuffer();
-    await fs.writeFile(filepath, Buffer.from(buffer));
+    const { key } = await posterStorageService.savePoster(
+      Buffer.from(buffer),
+    );
 
     return c.json({ key });
   } catch (error) {
@@ -47,18 +34,13 @@ app.get("/download/:key", async (c) => {
       return c.json({ error: "Key is required" }, 400);
     }
 
-    const filename = `${key}.png`;
-    const filepath = path.join(postersDir, filename);
-
-    // Check if file exists
-    try {
-      await fs.access(filepath);
-    } catch {
+    const exists = await posterStorageService.exists(key);
+    if (!exists) {
       return c.json({ error: "File not found" }, 404);
     }
 
-    // Read and serve the file
-    const fileBuffer = await fs.readFile(filepath);
+    const filename = posterStorageService.getPosterFilename(key);
+    const fileBuffer = await posterStorageService.readPoster(key);
     return c.body(fileBuffer, 200, {
       "Content-Type": "image/png",
       "Content-Disposition": `inline; filename="${filename}"`,

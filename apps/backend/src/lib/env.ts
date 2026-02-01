@@ -21,6 +21,10 @@ const envSchema = z.object({
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),
 
+  // Poster cleanup settings
+  POSTER_CLEANUP_INTERVAL_HOURS: z.coerce.number().positive().default(24),
+  POSTER_CLEANUP_MAX_AGE_HOURS: z.coerce.number().positive().default(168),
+
   PORT: z.coerce.number().default(3000),
 });
 

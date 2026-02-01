@@ -221,7 +221,7 @@ function isWeChatBrowser(userAgent: string): boolean {
 const puppeteerRenderService = new PuppeteerRenderService();
 
 export const posterRoute = app.post(
-  "/generate-html-poster",
+  "/generate",
   zValidator("json", generatePosterSchema),
   async (c) => {
     const { caption, style, ratio, saveOnServer } = c.req.valid("json");
