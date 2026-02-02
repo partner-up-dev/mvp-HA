@@ -1,0 +1,70 @@
+name: Deploy Backend to Aliyun FC
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend-fc-deploy.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ALIYUN_FC_REGION: ${{ secrets.ALIYUN_FC_REGION }}
+      ALIYUN_FC_FUNCTION_NAME: ${{ secrets.ALIYUN_FC_FUNCTION_NAME }}
+      ALIYUN_FC_NODE_RUNTIME_LAYER_ARN: ${{ secrets.ALIYUN_FC_NODE_RUNTIME_LAYER_ARN }}
+      ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ secrets.ALIYUN_FC_NODE_MODULES_LAYER_ARN }}
+      ALIYUN_FC_VPC_ID: ${{ secrets.ALIYUN_FC_VPC_ID }}
+      ALIYUN_FC_SECURITY_GROUP_ID: ${{ secrets.ALIYUN_FC_SECURITY_GROUP_ID }}
+      ALIYUN_FC_VSWITCH_ID: ${{ secrets.ALIYUN_FC_VSWITCH_ID }}
+      ALIYUN_FC_OSS_ENDPOINT: ${{ secrets.ALIYUN_FC_OSS_ENDPOINT }}
+      ALIYUN_FC_OSS_BUCKET: ${{ secrets.ALIYUN_FC_OSS_BUCKET }}
+      ALIYUN_FC_OSS_BUCKET_PATH: ${{ secrets.ALIYUN_FC_OSS_BUCKET_PATH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build backend
+        run: pnpm --filter @partner-up-dev/backend build
+
+      - name: Prepare Function Compute package
+        run: |
+          rm -rf apps/backend/.fc-package
+          mkdir -p apps/backend/.fc-package
+          cp -R apps/backend/dist apps/backend/.fc-package/
+          cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
+
+      - name: Install Serverless Devs CLI
+        run: npm install -g @serverless-devs/s
+
+      - name: Configure Aliyun credentials
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
+        run: |
+          s config add \
+            --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID" \
+            --Alias default
+
+      - name: Deploy to Aliyun FC
+        run: s deploy -y -t apps/backend/s.yaml

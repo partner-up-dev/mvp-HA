@@ -1,0 +1,67 @@
+edition: 3.0.0
+name: partnerup-backend
+access: default
+
+vars:
+  region: ${env.ALIYUN_FC_REGION}
+  functionName: ${env.ALIYUN_FC_FUNCTION_NAME}
+  nodeRuntimeLayerArn: ${env.ALIYUN_FC_NODE_RUNTIME_LAYER_ARN}
+  nodeModulesLayerArn: ${env.ALIYUN_FC_NODE_MODULES_LAYER_ARN}
+  vpcId: ${env.ALIYUN_FC_VPC_ID}
+  securityGroupId: ${env.ALIYUN_FC_SECURITY_GROUP_ID}
+  vswitchId: ${env.ALIYUN_FC_VSWITCH_ID}
+  ossEndpoint: ${env.ALIYUN_FC_OSS_ENDPOINT}
+  ossBucket: ${env.ALIYUN_FC_OSS_BUCKET}
+  ossBucketPath: ${env.ALIYUN_FC_OSS_BUCKET_PATH}
+
+resources:
+  backend:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: ${vars.functionName}
+      runtime: custom.debian11
+      description: PartnerUp backend (Hono) deployed via Serverless Devs
+      timeout: 60
+      memorySize: 1024
+      cpu: 0.5
+      diskSize: 512
+      code: ./.fc-package
+      customRuntimeConfig:
+        command:
+          - bash
+          - fc-start.sh
+        port: 9000
+      environmentVariables:
+        PORT: "9000"
+        NODE_ENV: production
+        PATH: /opt/nodejs/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      vpcConfig:
+        vpcId: ${vars.vpcId}
+        securityGroupId: ${vars.securityGroupId}
+        vswitchIds:
+          - ${vars.vswitchId}
+      ossMountConfig:
+        mountPoints:
+          - endpoint: ${vars.ossEndpoint}
+            bucketName: ${vars.ossBucket}
+            bucketPath: ${vars.ossBucketPath}
+            mountDir: /mnt/OSS
+            readOnly: false
+      layers:
+        - ${vars.nodeRuntimeLayerArn}
+        - ${vars.nodeModulesLayerArn}
+      triggers:
+        - triggerName: httpTrigger
+          triggerType: http
+          qualifier: LATEST
+          triggerConfig:
+            authType: anonymous
+            disableURLInternet: true
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
