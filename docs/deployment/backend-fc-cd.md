@@ -1,7 +1,7 @@
 # Backend Continuous Deployment (Aliyun FC + Serverless Devs)
 
 This repository deploys the backend to Aliyun Function Compute (FC) using **Serverless Devs** via GitHub Actions.
-The backend runs as a normal HTTP server on **custom Debian 11 runtime with Node.js 22**, and **node_modules are supplied by a custom layer** (so they are not bundled with the deployment package).
+The backend runs as a normal HTTP server on **custom Debian 12 runtime with Node.js 22**, and **node_modules are supplied by a custom layer** (so they are not bundled with the deployment package).
 
 ## Overview
 
@@ -22,15 +22,26 @@ Configure the following secrets in the GitHub repository:
 | `ALIBABA_CLOUD_ACCOUNT_ID` | Alibaba Cloud Account ID |
 | `ALIYUN_FC_REGION` | FC region (e.g. `cn-hangzhou`) |
 | `ALIYUN_FC_FUNCTION_NAME` | FC function name to deploy |
-| `ALIYUN_FC_NODE_RUNTIME_LAYER_ARN` | Custom layer ARN that provides Node.js 22 runtime (Debian 11) |
 | `ALIYUN_FC_NODE_MODULES_LAYER_ARN` | Custom layer ARN that provides `node_modules` |
 | `ALIYUN_FC_NODE_MODULES_LAYER_NAME` | FC layer name for publishing backend `node_modules` |
+| `ALIYUN_FC_ROLE_ARN` | RAM role ARN for the function |
+| `ALIYUN_FC_RESOURCE_GROUP_ID` | Resource group ID |
+| `ALIYUN_FC_LOG_PROJECT` | Log service project name |
+| `ALIYUN_FC_LOG_STORE` | Log service logstore name |
 | `ALIYUN_FC_VPC_ID` | VPC ID for accessing the VPS network |
 | `ALIYUN_FC_SECURITY_GROUP_ID` | Security group ID for the function VPC network |
-| `ALIYUN_FC_VSWITCH_ID` | VSwitch ID for the function VPC network |
+| `ALIYUN_FC_VSWITCH_ID_PRIMARY` | Primary VSwitch ID for the function VPC network |
+| `ALIYUN_FC_VSWITCH_ID_SECONDARY` | Secondary VSwitch ID for the function VPC network |
 | `ALIYUN_FC_OSS_ENDPOINT` | OSS internal endpoint used for OSS mount |
 | `ALIYUN_FC_OSS_BUCKET` | OSS bucket name to mount |
 | `ALIYUN_FC_OSS_BUCKET_PATH` | OSS bucket path (use `/` to mount the bucket root) |
+| `ALIYUN_FC_PATH` | PATH value for the runtime (match the FC console export) |
+| `DATABASE_URL` | Database connection string |
+| `WECHAT_OFFICIAL_ACCOUNT_APP_ID` | WeChat Official Account App ID |
+| `WECHAT_OFFICIAL_ACCOUNT_APP_SECRET` | WeChat Official Account App Secret |
+| `LLM_API_KEY` | LLM API key |
+| `LLM_BASE_URL` | LLM base URL |
+| `LLM_DEFAULT_MODEL` | LLM default model |
 
 ## Packaging Notes
 
@@ -55,12 +66,13 @@ After a successful layer deployment, update `ALIYUN_FC_NODE_MODULES_LAYER_ARN` t
 
 The FC configuration in `apps/backend/s.yaml` uses:
 
-- `runtime: custom.debian11`
-- `customRuntimeConfig.port: 9000`
-- `PORT=9000` in environment variables
-- `layers` to attach Node.js 22 runtime + `node_modules` layers
-- `vpcConfig` to connect to the VPS network (no public URL exposed)
-- `ossMountConfig` to mount the OSS bucket at `/mnt/OSS`
+- `runtime: custom.debian12`
+- `customRuntimeConfig.port: 3000`
+- `PORT=3000` in environment variables
+- `layers` to attach the `node_modules` layer
+- `vpcConfig` to connect to the VPS network
+- `ossMountConfig` to mount the OSS bucket at `/mnt/oss`
+- `disableURLInternet: false` to match the console export's public URL setting
 
 ## Manual Deployment
 
@@ -82,14 +94,25 @@ If you need to deploy locally (with Serverless Devs installed):
    ```bash
    ALIYUN_FC_REGION=... \
    ALIYUN_FC_FUNCTION_NAME=... \
-   ALIYUN_FC_NODE_RUNTIME_LAYER_ARN=... \
    ALIYUN_FC_NODE_MODULES_LAYER_ARN=... \
+   ALIYUN_FC_ROLE_ARN=... \
+   ALIYUN_FC_RESOURCE_GROUP_ID=... \
+   ALIYUN_FC_LOG_PROJECT=... \
+   ALIYUN_FC_LOG_STORE=... \
    ALIYUN_FC_VPC_ID=... \
    ALIYUN_FC_SECURITY_GROUP_ID=... \
-   ALIYUN_FC_VSWITCH_ID=... \
+   ALIYUN_FC_VSWITCH_ID_PRIMARY=... \
+   ALIYUN_FC_VSWITCH_ID_SECONDARY=... \
    ALIYUN_FC_OSS_ENDPOINT=... \
    ALIYUN_FC_OSS_BUCKET=... \
    ALIYUN_FC_OSS_BUCKET_PATH=/ \
+   ALIYUN_FC_PATH=... \
+   DATABASE_URL=... \
+   WECHAT_OFFICIAL_ACCOUNT_APP_ID=... \
+   WECHAT_OFFICIAL_ACCOUNT_APP_SECRET=... \
+   LLM_API_KEY=... \
+   LLM_BASE_URL=... \
+   LLM_DEFAULT_MODEL=... \
    s deploy -y -t apps/backend/s.yaml
    ```
 
@@ -111,4 +134,4 @@ If you need to deploy locally (with Serverless Devs installed):
 
 ## Fixed Public IP Notes
 
-To use a fixed outbound public IP while keeping public ingress disabled, configure the VPC with a NAT gateway + EIP and route outbound traffic through it. The function is attached to the VPC via `vpcConfig` and the HTTP trigger disables the public URL, so the app is reachable only through private networking or internal routing. Ensure the VSwitch and security group allow access to the VPS network and the NAT gateway.
+To use a fixed outbound public IP while keeping outbound access controlled, configure the VPC with a NAT gateway + EIP and route outbound traffic through it. The function is attached to the VPC via `vpcConfig` and `internetAccess: false` disables direct public egress, so outbound traffic should flow through the VPC routing. Ensure the VSwitch and security group allow access to the VPS network and the NAT gateway.

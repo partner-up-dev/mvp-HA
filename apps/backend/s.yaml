@@ -5,11 +5,15 @@ access: default
 vars:
   region: ${env.ALIYUN_FC_REGION}
   functionName: ${env.ALIYUN_FC_FUNCTION_NAME}
-  nodeRuntimeLayerArn: ${env.ALIYUN_FC_NODE_RUNTIME_LAYER_ARN}
   nodeModulesLayerArn: ${env.ALIYUN_FC_NODE_MODULES_LAYER_ARN}
+  roleArn: ${env.ALIYUN_FC_ROLE_ARN}
+  resourceGroupId: ${env.ALIYUN_FC_RESOURCE_GROUP_ID}
+  logProject: ${env.ALIYUN_FC_LOG_PROJECT}
+  logStore: ${env.ALIYUN_FC_LOG_STORE}
   vpcId: ${env.ALIYUN_FC_VPC_ID}
   securityGroupId: ${env.ALIYUN_FC_SECURITY_GROUP_ID}
-  vswitchId: ${env.ALIYUN_FC_VSWITCH_ID}
+  vSwitchIdPrimary: ${env.ALIYUN_FC_VSWITCH_ID_PRIMARY}
+  vSwitchIdSecondary: ${env.ALIYUN_FC_VSWITCH_ID_SECONDARY}
   ossEndpoint: ${env.ALIYUN_FC_OSS_ENDPOINT}
   ossBucket: ${env.ALIYUN_FC_OSS_BUCKET}
   ossBucketPath: ${env.ALIYUN_FC_OSS_BUCKET_PATH}
@@ -20,36 +24,66 @@ resources:
     props:
       region: ${vars.region}
       functionName: ${vars.functionName}
-      runtime: custom.debian11
-      description: PartnerUp backend (Hono) deployed via Serverless Devs
+      handler: index.handler
+      role: ${vars.roleArn}
+      disableOndemand: false
+      description: ""
       timeout: 60
-      memorySize: 1024
-      cpu: 0.5
       diskSize: 512
+      internetAccess: false
+      memorySize: 512
+      cpu: 0.35
+      runtime: custom.debian12
+      resourceGroupId: ${vars.resourceGroupId}
+      instanceIsolationMode: SHARE
+      instanceConcurrency: 20
+      sessionAffinity: NONE
+      tags:
+        - Key: project
+          Value: mvp-HA
       code: ./.fc-package
       customRuntimeConfig:
+        port: 3000
         command:
           - bash
-          - fc-start.sh
-        port: 9000
+          - -c
+          - ./fc-start.sh
+        healthCheckConfig: {}
+      logConfig:
+        enableRequestMetrics: true
+        enableInstanceMetrics: true
+        logBeginRule: DefaultRegex
+        project: ${vars.logProject}
+        enableCustomExtraLog: true
+        enableLlmMetrics: false
+        logstore: ${vars.logStore}
       environmentVariables:
-        PORT: "9000"
+        PORT: "3000"
         NODE_ENV: production
-        PATH: /opt/nodejs/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        PATH: ${env.ALIYUN_FC_PATH}
+        NODE_PATH: /opt/nodejs/node_modules
+        LD_LIBRARY_PATH: /code:/code/lib:/usr/lib:/opt/lib:/usr/local/lib
+        TZ: Asia/Shanghai
+        DATABASE_URL: ${env.DATABASE_URL}
+        WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${env.WECHAT_OFFICIAL_ACCOUNT_APP_ID}
+        WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${env.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET}
+        LLM_API_KEY: ${env.LLM_API_KEY}
+        LLM_BASE_URL: ${env.LLM_BASE_URL}
+        LLM_DEFAULT_MODEL: ${env.LLM_DEFAULT_MODEL}
       vpcConfig:
         vpcId: ${vars.vpcId}
         securityGroupId: ${vars.securityGroupId}
-        vswitchIds:
-          - ${vars.vswitchId}
+        vSwitchIds:
+          - ${vars.vSwitchIdPrimary}
+          - ${vars.vSwitchIdSecondary}
       ossMountConfig:
         mountPoints:
           - endpoint: ${vars.ossEndpoint}
             bucketName: ${vars.ossBucket}
             bucketPath: ${vars.ossBucketPath}
-            mountDir: /mnt/OSS
+            mountDir: /mnt/oss
             readOnly: false
       layers:
-        - ${vars.nodeRuntimeLayerArn}
         - ${vars.nodeModulesLayerArn}
       triggers:
         - triggerName: httpTrigger
@@ -57,11 +91,12 @@ resources:
           qualifier: LATEST
           triggerConfig:
             authType: anonymous
-            disableURLInternet: true
+            disableURLInternet: false
             methods:
               - GET
               - POST
               - PUT
               - DELETE
+              - HEAD
               - PATCH
               - OPTIONS

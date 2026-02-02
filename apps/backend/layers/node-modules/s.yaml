@@ -11,4 +11,4 @@ services:
       description: PartnerUp backend production node_modules
       code: ./.layer
       compatibleRuntime:
-        - custom.debian11
+        - custom.debian12
