@@ -1,0 +1,60 @@
+name: Deploy Backend Node Modules Layer to Aliyun FC
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/backend/package.json"
+      - "pnpm-lock.yaml"
+      - "apps/backend/layers/node-modules/**"
+      - ".github/workflows/backend-fc-layer-deploy.yml"
+
+jobs:
+  deploy-layer:
+    runs-on: ubuntu-latest
+    env:
+      ALIYUN_FC_REGION: ${{ vars.ALIYUN_FC_REGION }}
+      ALIYUN_FC_NODE_MODULES_LAYER_NAME: ${{ vars.ALIYUN_FC_NODE_MODULES_LAYER_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install production dependencies for backend
+        run: pnpm -C apps/backend install --prod --frozen-lockfile --node-linker=hoisted
+
+      - name: Prepare node_modules layer
+        run: |
+          rm -rf apps/backend/.layer
+          mkdir -p apps/backend/.layer/nodejs
+          cp -R apps/backend/node_modules apps/backend/.layer/nodejs/node_modules
+
+      - name: Install Serverless Devs CLI
+        run: npm install -g @serverless-devs/s
+
+      - name: Configure Aliyun credentials
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
+        run: |
+          s config add \
+            --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID" \
+            --Alias default
+
+      - name: Deploy node_modules layer
+        run: s deploy -y -t apps/backend/layers/node-modules/s.yaml

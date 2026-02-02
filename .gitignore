@@ -97,3 +97,5 @@ Thumbs.db
 *.temp
 nul
 apps/backend/posters/*
+apps/backend/.fc-package/
+apps/backend/.layer/

@@ -1,0 +1,14 @@
+edition: 1.0.0
+name: partnerup-backend-node-modules
+access: default
+
+services:
+  node_modules_layer:
+    component: devsapp/fc-layer
+    props:
+      region: ${env.ALIYUN_FC_REGION}
+      layerName: ${env.ALIYUN_FC_NODE_MODULES_LAYER_NAME}
+      description: PartnerUp backend production node_modules
+      code: ./.layer
+      compatibleRuntime:
+        - custom.debian12
