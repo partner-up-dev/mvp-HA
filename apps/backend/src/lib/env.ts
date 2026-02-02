@@ -21,7 +21,9 @@ const envSchema = z.object({
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),
 
+  // Deployment
   PORT: z.coerce.number().default(3000),
+  DEPLOY_TO: z.enum(["aliyun_fc", "local"]).default("local"),
 });
 
 export const env = envSchema.parse(process.env);

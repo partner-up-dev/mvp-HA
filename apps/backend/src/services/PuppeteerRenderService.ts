@@ -1,6 +1,8 @@
 import chromium from "@sparticuz/chromium";
-import puppeteer, { Browser } from "puppeteer-core";
+import puppeteer from "puppeteer-core";
+import puppeteerPkg from "puppeteer";
 import type { PosterDimensions } from "./HtmlPosterService";
+import { env } from "@/lib/env";
 
 export class PuppeteerRenderService {
   private browser: Browser | null = null;
@@ -40,22 +42,35 @@ export class PuppeteerRenderService {
 
   async getBrowser(): Promise<Browser> {
     if (!this.browser || !this.browser.connected) {
-      this.browser = await puppeteer.launch({
-        args: [
-          ...chromium.args,
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-          "--single-process",
-          "--no-zygote",
-          "--font-render-hinting=none",
-        ],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-      });
+      if (env.DEPLOY_TO === "aliyun_fc") {
+        this.browser = await puppeteer.launch({
+          args: [
+            ...chromium.args,
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--single-process",
+            "--no-zygote",
+            "--font-render-hinting=none",
+          ],
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath(),
+          headless: chromium.headless,
+          ignoreHTTPSErrors: true,
+        });
+      } else {
+        this.browser = await puppeteerPkg.launch({
+          headless: "new",
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+          ],
+          ignoreHTTPSErrors: true,
+        });
+      }
     }
     return this.browser;
   }

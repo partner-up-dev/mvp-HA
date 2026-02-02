@@ -27,6 +27,7 @@ export const POSTER_STYLE_PROMPTS: Record<PosterStyleKey, string> = {
 布局要求：
 - 单页海报，明确视觉层级
 - 标题突出、留白充足
+- 字体不小于 42px
 - 可使用 CSS Grid 或 Flex 进行布局
 `,
   minimal: `你是极简风格海报设计师。请生成简洁、克制、专业感强的海报。
@@ -38,6 +39,7 @@ export const POSTER_STYLE_PROMPTS: Record<PosterStyleKey, string> = {
 
 布局要求：
 - 单页海报，主视觉为文字
+- 字体不小于 42px
 - 使用 CSS Grid 或 Flex 进行排版
 `,
   warm: `你是温暖治愈风格的海报设计师。请生成柔和、温馨、有陪伴感的海报。
@@ -50,6 +52,7 @@ export const POSTER_STYLE_PROMPTS: Record<PosterStyleKey, string> = {
 布局要求：
 - 单页海报，强调情绪氛围
 - 适度加入装饰元素烘托温度
+- 字体不小于 42px
 `,
   modern: `你是现代潮流海报设计师。请生成时髦、利落、有节奏感的海报。
 
@@ -61,6 +64,7 @@ export const POSTER_STYLE_PROMPTS: Record<PosterStyleKey, string> = {
 布局要求：
 - 单页海报，强调节奏感和视觉冲击
 - 使用 CSS Grid 或 Flex 进行布局
+- 字体不小于 42px
 `,
   elegant: `你是优雅精致风格海报设计师。请生成高级、克制、细节精致的海报。
 
@@ -72,5 +76,6 @@ export const POSTER_STYLE_PROMPTS: Record<PosterStyleKey, string> = {
 布局要求：
 - 单页海报，主视觉为标题与关键信息
 - 排版规整，留白舒适
+- 字体不小于 42px
 `,
 };

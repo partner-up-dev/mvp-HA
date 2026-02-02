@@ -36,6 +36,7 @@
     "@types/node": "^22.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/uuid": "^9.0.1",
+    "puppeteer": "^21.6.0",
     "tsup": "^8.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
