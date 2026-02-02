@@ -15,8 +15,8 @@ jobs:
   deploy-layer:
     runs-on: ubuntu-latest
     env:
-      ALIYUN_FC_REGION: ${{ secrets.ALIYUN_FC_REGION }}
-      ALIYUN_FC_NODE_MODULES_LAYER_NAME: ${{ secrets.ALIYUN_FC_NODE_MODULES_LAYER_NAME }}
+      ALIYUN_FC_REGION: ${{ vars.ALIYUN_FC_REGION }}
+      ALIYUN_FC_NODE_MODULES_LAYER_NAME: ${{ vars.ALIYUN_FC_NODE_MODULES_LAYER_NAME }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
