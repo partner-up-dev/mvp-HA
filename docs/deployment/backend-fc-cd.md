@@ -22,7 +22,6 @@ Configure the following secrets in the GitHub repository:
 | `ALIBABA_CLOUD_ACCOUNT_ID` | Alibaba Cloud Account ID |
 | `ALIYUN_FC_REGION` | FC region (e.g. `cn-hangzhou`) |
 | `ALIYUN_FC_FUNCTION_NAME` | FC function name to deploy |
-| `ALIYUN_FC_NODE_MODULES_LAYER_ARN` | Custom layer ARN that provides `node_modules` |
 | `ALIYUN_FC_NODE_MODULES_LAYER_NAME` | FC layer name for publishing backend `node_modules` |
 | `ALIYUN_FC_ROLE_ARN` | RAM role ARN for the function |
 | `ALIYUN_FC_RESOURCE_GROUP_ID` | Resource group ID |
@@ -60,7 +59,7 @@ apps/backend/.fc-package/
 
 The layer workflow publishes a dedicated FC layer that contains production `node_modules` for the backend. It only runs when `apps/backend/package.json`, `pnpm-lock.yaml`, or the layer configuration changes, so the layer isn't rebuilt during normal backend deployments.
 
-After a successful layer deployment, update `ALIYUN_FC_NODE_MODULES_LAYER_ARN` to the new layer version ARN produced by the workflow logs.
+`apps/backend/s.yaml` hard-codes the layer ARN to `acs:fc:cn-hangzhou:1586615825306453:layers/mvp-HA-backend-node-modules`, so backend deployments do not depend on a GitHub Actions variable. If the layer name or account changes, update this value directly in `s.yaml`.
 
 ## Custom Runtime Settings
 
@@ -99,7 +98,6 @@ If you need to deploy locally (with Serverless Devs installed):
    ```bash
    ALIYUN_FC_REGION=... \
    ALIYUN_FC_FUNCTION_NAME=... \
-   ALIYUN_FC_NODE_MODULES_LAYER_ARN=... \
    ALIYUN_FC_ROLE_ARN=... \
    ALIYUN_FC_RESOURCE_GROUP_ID=... \
    ALIYUN_FC_LOG_PROJECT=... \
