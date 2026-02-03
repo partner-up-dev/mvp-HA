@@ -55,7 +55,7 @@ jobs:
             --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
             --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
             --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID" \
-            --Alias default
+            -a default
 
       - name: Deploy node_modules layer
         run: s deploy -y -t apps/backend/layers/node-modules/s.yaml

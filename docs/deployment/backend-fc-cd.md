@@ -79,6 +79,7 @@ The FC configuration in `apps/backend/s.yaml` uses:
 If you need to deploy locally (with Serverless Devs installed):
 
 1. Build and package the backend:
+
    ```bash
    pnpm --filter @partner-up-dev/backend build
    rm -rf apps/backend/.fc-package
@@ -86,11 +87,15 @@ If you need to deploy locally (with Serverless Devs installed):
    cp -R apps/backend/dist apps/backend/.fc-package/
    cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
    ```
+
 2. Configure `s` credentials (once per machine):
+
    ```bash
-   s config add --AccessKeyID <id> --AccessKeySecret <secret> --AccountID <account> --Alias default
+   s config add --AccessKeyID <id> --AccessKeySecret <secret> --AccountID <account>
    ```
+
 3. Deploy:
+
    ```bash
    ALIYUN_FC_REGION=... \
    ALIYUN_FC_FUNCTION_NAME=... \
@@ -119,13 +124,16 @@ If you need to deploy locally (with Serverless Devs installed):
 ### Manual Layer Deployment
 
 1. Build the production `node_modules` layer directory:
+
    ```bash
    pnpm -C apps/backend install --prod --frozen-lockfile --node-linker=hoisted
    rm -rf apps/backend/.layer
    mkdir -p apps/backend/.layer/nodejs
    cp -R apps/backend/node_modules apps/backend/.layer/nodejs/node_modules
    ```
+
 2. Deploy the layer:
+
    ```bash
    ALIYUN_FC_REGION=... \
    ALIYUN_FC_NODE_MODULES_LAYER_NAME=... \

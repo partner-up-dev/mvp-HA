@@ -73,10 +73,10 @@ jobs:
           ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
         run: |
           s config add \
-            --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
-            --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
-            --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID" \
-            --Alias default
+          --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+          --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+          --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID" \
+          -a default
 
       - name: Deploy to Aliyun FC
         run: s deploy -y -t apps/backend/s.yaml
