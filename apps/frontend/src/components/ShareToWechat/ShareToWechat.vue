@@ -29,14 +29,6 @@
         {{ primaryButtonLabel }}
       </button>
 
-      <button
-        class="outline-btn"
-        @click="handleTryNextStyle"
-        :disabled="isWorking"
-      >
-        换个风格
-      </button>
-
       <div v-if="errorText" class="error-text">{{ errorText }}</div>
       <div v-else class="guidance-text">
         <p>更新完成后，请点击微信右上角“…”</p>
@@ -47,29 +39,38 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
-import { useGeneratePoster } from "@/composables/useGeneratePoster";
+import { computed, ref, onMounted } from "vue";
+import { useGenerateWechatThumbHtml } from "@/queries/useGenerateWechatThumbHtml";
+import { renderPosterHtmlToBlob } from "@/composables/renderHtmlPoster";
+import { useGenerateWechatThumbPoster } from "@/composables/useGenerateWechatThumbPoster";
 import { useCloudStorage } from "@/composables/useCloudStorage";
 import { useWeChatShare } from "@/composables/useWeChatShare";
-import type { ShareToWechatChatProps } from "./ShareToWechatChat";
+import { client } from "@/lib/rpc";
+import type { ShareToWechatChatProps } from "./ShareToWechat";
 
 const props = defineProps<ShareToWechatChatProps>();
 
 const styleIndex = ref(0);
 const errorMessage = ref<string | null>(null);
 const lastUploadedThumbnailUrl = ref<string | null>(null);
+const posterUrl = ref<string | null>(null);
+const isRendering = ref(false);
 
-const { mutateAsync: generateCaptionAsync, isPending: isCaptionGenerating } =
-  useGenerateXiaohongshuCaption();
-const { generatePoster, posterUrl, isGenerating: isPosterGenerating } =
-  useGeneratePoster();
+const {
+  mutateAsync: generateThumbHtmlAsync,
+  isPending: isThumbHtmlGenerating,
+} = useGenerateWechatThumbHtml();
+const { generateThumb, isGenerating: isFallbackThumbGenerating } =
+  useGenerateWechatThumbPoster();
 const { uploadFile, isUploading, uploadError } = useCloudStorage();
 const { initWeChatSdk, setWeChatShareCard, initError } = useWeChatShare();
 
 const isWorking = computed(
   () =>
-    isCaptionGenerating.value || isPosterGenerating.value || isUploading.value,
+    isThumbHtmlGenerating.value ||
+    isFallbackThumbGenerating.value ||
+    isRendering.value ||
+    isUploading.value,
 );
 
 const primaryButtonLabel = computed(() => {
@@ -101,20 +102,65 @@ const truncateDesc = (raw: string, maxLen: number): string => {
 
 const buildShareDesc = (): string => truncateDesc(props.rawText, 80);
 
+const pickFallbackKeyText = (): string => {
+  const title = props.prData.title?.trim();
+  if (title && title.length > 0) return title.slice(0, 3);
+
+  const scenario = props.prData.scenario?.trim();
+  if (scenario && scenario.length > 0) return scenario.slice(0, 3);
+
+  return "搭";
+};
+
 const handleGenerateAndUpdate = async (): Promise<void> => {
   errorMessage.value = null;
 
   try {
     await initWeChatSdk();
 
-    const caption = await generateCaptionAsync({
-      prData: props.prData,
-      style: styleIndex.value,
-    });
+    let blob: Blob;
 
-    const blob = await generatePoster(caption, styleIndex.value);
+    try {
+      isRendering.value = true;
+      const spec = await generateThumbHtmlAsync({
+        prId: props.prId,
+        style: styleIndex.value,
+      });
+
+      blob = await renderPosterHtmlToBlob({
+        html: spec.html,
+        width: spec.width,
+        height: spec.height,
+        backgroundColor: spec.backgroundColor,
+        scale: 2,
+      });
+    } catch (error) {
+      console.warn(
+        "HTML thumbnail generation failed, fallback to template:",
+        error,
+      );
+      blob = await generateThumb(pickFallbackKeyText(), styleIndex.value);
+    } finally {
+      isRendering.value = false;
+    }
+
     const thumbnailUrl = await uploadFile(blob, "wechat-share-thumb.png");
     lastUploadedThumbnailUrl.value = thumbnailUrl;
+    posterUrl.value = thumbnailUrl;
+
+    // Cache the thumbnail URL in backend
+    try {
+      await client.api.share["wechat-card"]["cache-thumbnail"].$post({
+        json: {
+          prId: props.prId,
+          style: styleIndex.value,
+          posterUrl: thumbnailUrl,
+        },
+      });
+    } catch (cacheError) {
+      console.warn("Failed to cache thumbnail URL:", cacheError);
+      // Don't fail the whole operation
+    }
 
     await setWeChatShareCard({
       title: buildShareTitle(),
@@ -122,20 +168,46 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
       link: normalizeShareUrl(props.shareUrl),
       imgUrl: thumbnailUrl,
     });
+
+    styleIndex.value += 1;
   } catch (error) {
     const message = error instanceof Error ? error.message : "操作失败";
     errorMessage.value = message;
+    isRendering.value = false;
   }
 };
 
-const handleTryNextStyle = async (): Promise<void> => {
-  styleIndex.value = styleIndex.value + 1;
-  await handleGenerateAndUpdate();
+const handleInitialize = async (): Promise<void> => {
+  try {
+    if (props.prData.wechatThumbnail) {
+      const cached = props.prData.wechatThumbnail;
+      lastUploadedThumbnailUrl.value = cached.posterUrl;
+      posterUrl.value = cached.posterUrl;
+      styleIndex.value = cached.style + 1;
+
+      await setWeChatShareCard({
+        title: buildShareTitle(),
+        desc: buildShareDesc(),
+        link: normalizeShareUrl(props.shareUrl),
+        imgUrl: cached.posterUrl,
+      });
+      return;
+    }
+
+    await handleGenerateAndUpdate();
+  } catch (error) {
+    console.error("Failed to initialize poster:", error);
+  }
 };
 
 const errorText = computed(
   () => errorMessage.value ?? uploadError.value ?? initError.value,
 );
+
+// Initialize poster on mount
+onMounted(() => {
+  handleInitialize();
+});
 </script>
 
-<style scoped lang="scss" src="./ShareToWechatChat.scss"></style>
+<style scoped lang="scss" src="./ShareToWechat.scss"></style>

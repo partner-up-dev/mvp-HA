@@ -1,8 +1,7 @@
-import { ref, computed, createApp, nextTick } from "vue";
+import { computed, createApp, nextTick, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import html2canvas from "html2canvas";
-import PosterTemplate from "@/components/PosterTemplate.vue";
-import type { PosterData } from "@/lib/poster-types";
+import WechatThumbTemplate from "@/components/WechatThumbTemplate.vue";
 
 const unwrapHTMLElement = (value: unknown): HTMLElement | null => {
   if (value instanceof HTMLElement) return value;
@@ -31,25 +30,14 @@ const canvasToBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
   });
 };
 
-/**
- * HTML-to-image poster generation for Xiaohongshu
- * Creates styled posters using Vue templates and CSS
- */
-export const useGeneratePoster = () => {
+export const useGenerateWechatThumbPoster = () => {
   const isGenerating = ref(false);
   const posterUrl = ref<string | null>(null);
 
-  const generatePoster = async (caption: string, style = 0): Promise<Blob> => {
+  const generateThumb = async (keyText: string, style = 0): Promise<Blob> => {
     isGenerating.value = true;
 
     try {
-      // Prepare poster data
-      const posterData: PosterData = {
-        caption,
-        style,
-      };
-
-      // Create a temporary container for rendering
       const tempContainer = document.createElement("div");
       tempContainer.style.position = "absolute";
       tempContainer.style.top = "-10000px";
@@ -57,68 +45,45 @@ export const useGeneratePoster = () => {
       tempContainer.style.pointerEvents = "none";
       document.body.appendChild(tempContainer);
 
-      // Create Vue app instance with poster template
-      const app = createApp(PosterTemplate, { data: posterData });
-
-      // Mount the component
+      const app = createApp(WechatThumbTemplate, { keyText, style });
       const vm = app.mount(tempContainer) as ComponentPublicInstance;
-
-      // Wait for Vue to render
       await nextTick();
 
-      // Get the poster element
-      const maybeExposed = vm as unknown as { posterElement?: unknown };
-      const posterElement = unwrapHTMLElement(maybeExposed.posterElement);
-      if (!posterElement) {
-        throw new Error("Failed to get poster element");
+      const maybeExposed = vm as unknown as { thumbElement?: unknown };
+      const element = unwrapHTMLElement(maybeExposed.thumbElement);
+      if (!element) {
+        throw new Error("Failed to get thumbnail element");
       }
 
-      // Configure html2canvas options for high quality
-      const canvas = await html2canvas(posterElement, {
-        width: 540,
-        height: 720,
-        scale: 2, // Higher DPI for better quality
+      const canvas = await html2canvas(element, {
+        width: 300,
+        height: 300,
+        scale: 2,
         useCORS: true,
         allowTaint: false,
         backgroundColor: null,
         logging: false,
-        onclone: (clonedDoc) => {
-          // Ensure fonts are loaded in cloned document
-          const clonedElement = clonedDoc.querySelector(".poster-template");
-          if (clonedElement) {
-            (clonedElement as HTMLElement).style.setProperty(
-              "font-display",
-              "block",
-            );
-          }
-        },
+        windowWidth: 300,
+        windowHeight: 300,
       });
 
-      // Convert canvas to blob
       const blob = await canvasToBlob(canvas);
 
-      // Update poster URL for preview
       if (posterUrl.value) {
         URL.revokeObjectURL(posterUrl.value);
       }
       posterUrl.value = URL.createObjectURL(blob);
 
-      // Cleanup
       app.unmount();
       document.body.removeChild(tempContainer);
 
       return blob;
-    } catch (error) {
-      console.error("Failed to generate poster:", error);
-      throw new Error(
-        `Poster generation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
     } finally {
       isGenerating.value = false;
     }
   };
 
-  const clearPoster = () => {
+  const clearPoster = (): void => {
     if (posterUrl.value) {
       URL.revokeObjectURL(posterUrl.value);
     }
@@ -126,7 +91,7 @@ export const useGeneratePoster = () => {
   };
 
   return {
-    generatePoster,
+    generateThumb,
     clearPoster,
     isGenerating: computed(() => isGenerating.value),
     posterUrl: computed(() => posterUrl.value),

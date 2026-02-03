@@ -1,5 +1,5 @@
 {
-  "id": "5f123e46-dee6-4ca1-9ac6-0b8be42d4b9b",
+  "id": "e235d512-ed98-4d72-8d0a-9633b971dd32",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -77,6 +77,20 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "xiaohongshu_poster": {
+          "name": "xiaohongshu_poster",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'null'::jsonb"
+        },
+        "wechat_thumbnail": {
+          "name": "wechat_thumbnail",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'null'::jsonb"
         }
       },
       "indexes": {},

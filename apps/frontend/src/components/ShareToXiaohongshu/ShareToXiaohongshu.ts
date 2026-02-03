@@ -1,11 +1,20 @@
 import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import type { PRId } from "@partner-up-dev/backend";
 
 /**
  * Props for ShareToXiaohongshu component
  */
 export interface ShareToXiaohongshuProps {
   shareUrl: string;
-  prData: ParsedPartnerRequest;
+  prId: PRId;
+  prData: ParsedPartnerRequest & {
+    xiaohongshuPoster?: {
+      caption: string;
+      posterStylePrompt: string;
+      posterUrl: string;
+      createdAt: string;
+    } | null;
+  };
 }
 
 /**
@@ -13,7 +22,7 @@ export interface ShareToXiaohongshuProps {
  */
 export const TIMING_CONSTANTS = {
   CAPTION_TRANSITION_DELAY: 150, // ms - delay before showing new caption
-  POSTER_GENERATION_DELAY: 1500, // ms - delay to show placeholder longer
+  POSTER_GENERATION_DELAY: 0, // ms - delay to show placeholder longer
   POSTER_TRANSITION_DURATION: 300, // ms - animation duration
 } as const;
 

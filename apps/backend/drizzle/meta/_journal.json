@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1769348750013,
-      "tag": "0000_mysterious_thunderbolt",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1769489723764,
-      "tag": "0001_white_synch",
+      "when": 1770041281153,
+      "tag": "0000_wakeful_exodus",
       "breakpoints": true
     }
   ]

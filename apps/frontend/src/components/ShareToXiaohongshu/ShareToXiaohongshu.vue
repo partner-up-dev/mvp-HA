@@ -15,7 +15,7 @@
     <div class="xiaohongshu-preview">
       <!-- Caption Editor -->
       <textarea
-        :value="caption"
+        :value="caption?.caption"
         rows="4"
         class="caption-textarea"
         :class="{ transitioning: isTransitioning }"
@@ -27,22 +27,30 @@
 
       <!-- Poster Preview -->
       <div class="poster-preview">
-        <div v-if="posterIsGenerating" class="generating-state">
-          <div class="poster-placeholder">
-            <div class="spinner"></div>
-            <p>🎨 生成海报中...</p>
+        <div v-if="posterUrl" class="poster-container">
+          <div class="poster-image-wrapper">
+            <img
+              :src="posterUrl"
+              alt="分享海报"
+              class="poster-image"
+              :class="{
+                'poster-transitioning': isPosterTransitioning,
+                'poster-loading': posterIsGenerating,
+              }"
+            />
+            <div v-if="posterIsGenerating" class="poster-loading-overlay">
+              <div class="spinner"></div>
+            </div>
           </div>
-        </div>
-        <div v-else-if="posterUrl" class="poster-container">
-          <img
-            :src="posterUrl"
-            alt="分享海报"
-            class="poster-image"
-            :class="{ 'poster-transitioning': isPosterTransitioning }"
-          />
           <div class="guidance-text">
             <p>📱 长按图片保存到相册</p>
             <p class="sub-text">或分享到您的小红书</p>
+          </div>
+        </div>
+        <div v-else-if="posterIsGenerating" class="generating-state">
+          <div class="poster-placeholder">
+            <div class="spinner"></div>
+            <p>🎨 生成海报中...</p>
           </div>
         </div>
         <div v-else class="empty-state">
@@ -61,14 +69,16 @@
             error: copyState === 'error',
           }"
           @click="handleCopyCaptionWithUrl"
-          :disabled="!caption || copyState !== 'idle'"
+          :disabled="!caption?.caption || copyState !== 'idle'"
         >
           {{ copyButtonLabel }}
         </button>
         <button
           class="outline-btn download-poster-btn"
           @click="handleDownloadPoster"
-          :disabled="!caption || posterIsGenerating || isWeChatBrowser()"
+          :disabled="
+            !caption?.caption || posterIsGenerating || isWeChatBrowser()
+          "
         >
           {{ downloadButtonLabel }}
         </button>
@@ -85,10 +95,13 @@
 import { ref, watch, computed, onUnmounted } from "vue";
 import { useAppScheme } from "@/composables/useAppScheme";
 import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
+import { useGenerateXhsPosterHtml } from "@/queries/useGenerateXhsPosterHtml";
 import { useGeneratePoster } from "@/composables/useGeneratePoster";
+import { renderPosterHtmlToBlob } from "@/composables/renderHtmlPoster";
 import { useCloudStorage } from "@/composables/useCloudStorage";
 import { isWeChatBrowser } from "@/lib/browser-detection";
-import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import { client } from "@/lib/rpc";
+import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
 import {
   TIMING_CONSTANTS,
   copyToClipboard,
@@ -98,19 +111,38 @@ import {
   delayMs,
 } from "./ShareToXiaohongshu";
 
+const DEFAULT_POSTER_STYLE_PROMPT =
+  "简洁大方的信息展示风格，文字清晰易读，留白充足，色彩克制，传递可信感";
+
 interface Props {
   shareUrl: string;
-  prData: ParsedPartnerRequest;
+  prId: PRId;
+  prData: ParsedPartnerRequest & {
+    xiaohongshuPoster?: {
+      caption: string;
+      posterStylePrompt: string;
+      posterUrl: string;
+      createdAt: string;
+    } | null;
+  };
 }
 
 const props = defineProps<Props>();
 
 // State
-const caption = ref("");
+const caption = ref<{ caption: string; posterStylePrompt: string } | null>(
+  null,
+);
 const posterUrl = ref<string | null>(null);
 const posterIsGenerating = ref(false);
-const currentStyleIndex = ref(0);
-const generatedCaptions = ref<Map<number, string>>(new Map());
+const posterStylePrompt = ref(DEFAULT_POSTER_STYLE_PROMPT);
+const captionCounter = ref(0);
+const generatedCaptions = ref<
+  Map<
+    number,
+    { caption: string; posterStylePrompt: string; posterUrl?: string }
+  >
+>(new Map());
 const isTransitioning = ref(false);
 const isPosterTransitioning = ref(false);
 const copyState = ref<"idle" | "copied" | "error">("idle");
@@ -119,6 +151,7 @@ const posterGenerationTimeoutId = ref<number | null>(null);
 // Composables
 const { mutateAsync: generateCaptionAsync, isPending: isCaptionGenerating } =
   useGenerateXiaohongshuCaption();
+const { mutateAsync: generatePosterHtmlAsync } = useGenerateXhsPosterHtml();
 const { generatePoster } = useGeneratePoster();
 const { uploadFile } = useCloudStorage();
 const { openXiaohongshu } = useAppScheme();
@@ -154,16 +187,31 @@ const flashState = (next: "idle" | "copied" | "error"): void => {
 /**
  * Initialize caption on mount
  */
-const handleInitializeCaption = async (prData: ParsedPartnerRequest) => {
+const handleInitializeCaption = async () => {
   try {
-    currentStyleIndex.value = 0;
+    captionCounter.value = 0;
+
+    if (props.prData.xiaohongshuPoster) {
+      const cached = props.prData.xiaohongshuPoster;
+      const initialCaption = {
+        caption: cached.caption,
+        posterStylePrompt: cached.posterStylePrompt,
+        posterUrl: cached.posterUrl,
+      };
+      caption.value = initialCaption;
+      generatedCaptions.value.set(captionCounter.value, initialCaption);
+      posterStylePrompt.value = cached.posterStylePrompt;
+      posterUrl.value = cached.posterUrl;
+      return;
+    }
 
     const newCaption = await generateCaptionAsync({
-      prData,
-      style: currentStyleIndex.value,
+      prId: props.prId,
+      style: captionCounter.value,
     });
     caption.value = newCaption;
-    generatedCaptions.value.set(currentStyleIndex.value, newCaption);
+    generatedCaptions.value.set(captionCounter.value, newCaption);
+    posterStylePrompt.value = newCaption.posterStylePrompt;
 
     // Generate poster for initial caption
     await generatePosterForCurrentCaption();
@@ -179,25 +227,30 @@ const handleRegenerate = async () => {
   try {
     isTransitioning.value = true;
 
-    currentStyleIndex.value = currentStyleIndex.value + 1;
+    captionCounter.value = captionCounter.value + 1;
 
-    let newCaption: string;
+    let newCaption: {
+      caption: string;
+      posterStylePrompt: string;
+      posterUrl?: string;
+    };
 
     // Check cache first
-    if (generatedCaptions.value.has(currentStyleIndex.value)) {
-      newCaption = generatedCaptions.value.get(currentStyleIndex.value)!;
+    if (generatedCaptions.value.has(captionCounter.value)) {
+      newCaption = generatedCaptions.value.get(captionCounter.value)!;
     } else {
       // Generate new caption
       newCaption = await generateCaptionAsync({
-        prData: props.prData,
-        style: currentStyleIndex.value,
+        prId: props.prId,
+        style: captionCounter.value,
       });
-      generatedCaptions.value.set(currentStyleIndex.value, newCaption);
+      generatedCaptions.value.set(captionCounter.value, newCaption);
     }
 
     // Add transition delay
     await delayMs(TIMING_CONSTANTS.CAPTION_TRANSITION_DELAY);
     caption.value = newCaption;
+    posterStylePrompt.value = newCaption.posterStylePrompt;
     isTransitioning.value = false;
 
     // Generate poster for new caption
@@ -213,7 +266,10 @@ const handleRegenerate = async () => {
  */
 const handleCaptionUpdate = (event: Event) => {
   const target = event.target as HTMLTextAreaElement;
-  caption.value = target.value;
+  if (caption.value) {
+    caption.value.caption = target.value;
+    posterStylePrompt.value = DEFAULT_POSTER_STYLE_PROMPT;
+  }
 };
 
 /**
@@ -234,43 +290,89 @@ const handleCaptionBlur = () => {
 /**
  * Generate poster for current caption value
  */
-const generatePosterForCurrentCaption = async () => {
-  const currentCaption = caption.value;
+const generatePosterForCurrentCaption = async (): Promise<void> => {
+  const currentCaption = caption.value?.caption;
 
   if (!currentCaption) {
     posterUrl.value = null;
     return;
   }
 
+  // If we have a cached poster for this caption index (and caption matches), use it.
+  const cachedData = generatedCaptions.value.get(captionCounter.value);
+  if (cachedData?.posterUrl && cachedData.caption === currentCaption) {
+    posterUrl.value = cachedData.posterUrl;
+    return;
+  }
+
   try {
     posterIsGenerating.value = true;
 
-    // Show placeholder longer for better UX
-    await delayMs(TIMING_CONSTANTS.POSTER_GENERATION_DELAY);
+    if (TIMING_CONSTANTS.POSTER_GENERATION_DELAY > 0) {
+      await delayMs(TIMING_CONSTANTS.POSTER_GENERATION_DELAY);
+    }
 
-    // Generate poster with current style
-    const blob = await generatePoster(currentCaption, currentStyleIndex.value);
+    let blob: Blob;
+
+    try {
+      const spec = await generatePosterHtmlAsync({
+        prId: props.prId,
+        caption: currentCaption,
+        posterStylePrompt: posterStylePrompt.value,
+      });
+
+      blob = await renderPosterHtmlToBlob({
+        html: spec.html,
+        width: spec.width,
+        height: spec.height,
+        backgroundColor: spec.backgroundColor,
+        scale: 2,
+      });
+    } catch (error) {
+      console.warn(
+        "HTML poster generation failed, fallback to template:",
+        error,
+      );
+      blob = await generatePoster(currentCaption, captionCounter.value);
+    }
 
     // Add transition effect
     isPosterTransitioning.value = true;
 
-    if (isWeChatBrowser()) {
-      // Upload to server for WeChat browser
+    let nextPosterUrl: string;
+    try {
+      nextPosterUrl = await uploadFile(blob, "poster.png");
+    } catch (uploadError) {
+      console.warn("Upload failed, falling back to blob URL:", uploadError);
+      nextPosterUrl = URL.createObjectURL(blob);
+    }
+
+    posterUrl.value = nextPosterUrl;
+
+    // Cache the poster URL in backend (only meaningful with remote URL)
+    if (nextPosterUrl.startsWith("https://") || nextPosterUrl.startsWith("http://")) {
       try {
-        const downloadUrl = await uploadFile(blob, "poster.png");
-        posterUrl.value = downloadUrl;
-      } catch (uploadError) {
-        console.warn("Upload failed, falling back to blob URL:", uploadError);
-        // Fallback to blob URL with warning
-        posterUrl.value = URL.createObjectURL(blob);
+        await client.api.share.xiaohongshu["cache-poster"].$post({
+          json: {
+            prId: props.prId,
+            caption: currentCaption,
+            posterStylePrompt: posterStylePrompt.value,
+            posterUrl: nextPosterUrl,
+          },
+        });
+      } catch (cacheError) {
+        console.warn("Failed to cache poster URL:", cacheError);
       }
-    } else {
-      // Use blob URL for other browsers
-      posterUrl.value = URL.createObjectURL(blob);
+    }
+
+    // Cache the generated poster URL for this caption index (only if caption still matches)
+    const entry = generatedCaptions.value.get(captionCounter.value);
+    if (entry && entry.caption === currentCaption) {
+      entry.posterUrl = nextPosterUrl;
     }
 
     // Remove transition state after animation completes (fire and forget)
-    setTimeout(() => {
+    window.setTimeout(() => {
       isPosterTransitioning.value = false;
     }, TIMING_CONSTANTS.POSTER_TRANSITION_DURATION);
   } catch (error) {
@@ -280,18 +382,6 @@ const generatePosterForCurrentCaption = async () => {
     posterIsGenerating.value = false;
   }
 };
-
-/**
- * Regenerate poster when style changes (for cached captions)
- */
-watch(
-  () => currentStyleIndex.value,
-  async () => {
-    if (caption.value) {
-      await generatePosterForCurrentCaption();
-    }
-  },
-);
 
 /**
  * Clean up blob URLs when poster URL changes to remote URL
@@ -315,7 +405,10 @@ watch(
  */
 const handleCopyCaptionWithUrl = async () => {
   try {
-    const content = formatCaptionWithUrl(caption.value, props.shareUrl);
+    const content = formatCaptionWithUrl(
+      caption.value?.caption || "",
+      props.shareUrl,
+    );
     await copyToClipboard(content);
     flashState("copied");
   } catch (error) {
@@ -350,7 +443,7 @@ const handleOpenApp = () => {
 };
 
 // Initialize caption on mount
-handleInitializeCaption(props.prData);
+handleInitializeCaption();
 
 // Cleanup timeout on unmount
 onUnmounted(() => {

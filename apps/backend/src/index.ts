@@ -11,6 +11,7 @@ import { partnerRequestRoute } from "./controllers/partner-request.controller";
 import { llmRoute } from "./controllers/llm.controller";
 import { uploadRoute } from "./controllers/upload.controller";
 import { wechatRoute } from "./controllers/wechat.controller";
+import { shareRoute } from "./controllers/share.controller";
 import { env } from "./lib/env";
 
 const app = new Hono();
@@ -32,6 +33,7 @@ app.onError((err, c) => {
 const routes = app
   .route("/api/pr", partnerRequestRoute)
   .route("/api/llm", llmRoute)
+  .route("/api/share", shareRoute)
   .route("/api/upload", uploadRoute)
   .route("/api/wechat", wechatRoute);
 

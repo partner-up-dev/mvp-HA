@@ -1,20 +1,32 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { parsedPRSchema } from "../entities/partner-request";
+import { PartnerRequestService } from "../services/PartnerRequestService";
 import { LLMService, XiaohongshuStyle } from "../services/LLMService";
 
 const app = new Hono();
 const llmService = new LLMService();
+const prService = new PartnerRequestService();
+
+const xiaohongshuCaptionRequestSchema = z.object({
+  prId: z.coerce.number().int().positive(),
+});
+
+const xiaohongshuCaptionQuerySchema = z.object({
+  style: z.string().optional(),
+});
 
 // POST /api/llm/xiaohongshu-caption - Generate Xiaohongshu caption
 export const llmRoute = app.post(
   "/xiaohongshu-caption",
-  zValidator("json", parsedPRSchema),
+  zValidator("json", xiaohongshuCaptionRequestSchema),
+  zValidator("query", xiaohongshuCaptionQuerySchema),
   async (c) => {
-    const prData = c.req.valid("json");
+    const { prId } = c.req.valid("json");
 
-    const styleRaw = c.req.query("style");
+    const pr = await prService.getPR(prId);
+
+    const { style: styleRaw } = c.req.valid("query");
 
     let style: number | XiaohongshuStyle | undefined = undefined;
 
@@ -40,10 +52,8 @@ export const llmRoute = app.post(
       }
     }
 
-    const caption = await llmService.generateXiaohongshuCaption(
-      prData as any,
-      style as any,
-    );
-    return c.json({ caption });
+    const { caption, posterStylePrompt } =
+      await llmService.generateXiaohongshuCaption(pr.parsed, style);
+    return c.json({ caption, posterStylePrompt });
   },
 );

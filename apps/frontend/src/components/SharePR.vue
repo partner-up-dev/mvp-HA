@@ -22,26 +22,24 @@
 
     <div class="content-section">
       <ShareAsLink
-        v-if="currentMethod.id === 'COPY_LINK'"
+        v-show="currentMethod.id === 'COPY_LINK'"
         :share-url="shareUrl"
       />
 
       <ShareToWechatChatMethod
-        v-else-if="currentMethod.id === 'WECHAT_CHAT' && prData?.parsed && prData.rawText"
+        v-show="currentMethod.id === 'WECHAT_CHAT'"
         :share-url="shareUrl"
+        :pr-id="prId!"
         :raw-text="prData.rawText"
-        :pr-data="prData.parsed"
+        :pr-data="shareData"
       />
 
       <ShareToXiaohongshuMethod
-        v-else-if="currentMethod.id === 'XIAOHONGSHU' && prData?.parsed"
+        v-show="currentMethod.id === 'XIAOHONGSHU'"
         :share-url="shareUrl"
-        :pr-data="prData.parsed"
+        :pr-id="prId!"
+        :pr-data="shareData"
       />
-
-      <div v-else class="empty-state">
-        <p>该分享方式暂不可用</p>
-      </div>
     </div>
   </section>
 </template>
@@ -50,23 +48,34 @@
 import { computed, ref, watchEffect } from "vue";
 import ShareAsLink from "./ShareAsLink/ShareAsLink.vue";
 import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/ShareToXiaohongshu.vue";
-import ShareToWechatChatMethod from "./ShareToWechatChat/ShareToWechatChat.vue";
-import { isWeChatBrowser } from "@/lib/browser-detection";
-import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import ShareToWechatChatMethod from "./ShareToWechat/ShareToWechat.vue";
+import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
 
 type ShareMethodId = "COPY_LINK" | "XIAOHONGSHU" | "WECHAT_CHAT";
 
 interface ShareMethod {
   id: ShareMethodId;
   label: string;
-  enabled: boolean;
+  enabled?: boolean;
 }
 
 interface Props {
   shareUrl: string;
-  prData?: {
-    parsed?: ParsedPartnerRequest;
-    rawText?: string;
+  prId: PRId;
+  prData: {
+    parsed: ParsedPartnerRequest;
+    rawText: string;
+    xiaohongshuPoster?: {
+      caption: string;
+      posterStylePrompt: string;
+      posterUrl: string;
+      createdAt: string;
+    } | null;
+    wechatThumbnail?: {
+      style: number;
+      posterUrl: string;
+      createdAt: string;
+    } | null;
   };
 }
 
@@ -77,16 +86,23 @@ const allMethods = computed<ShareMethod[]>(() => [
   {
     id: "WECHAT_CHAT",
     label: "分享到微信",
-    enabled: isWeChatBrowser() && !!props.prData?.parsed && !!props.prData?.rawText,
   },
   {
     id: "XIAOHONGSHU",
     label: "分享到小红书",
-    enabled: !!props.prData?.parsed,
   },
 ]);
 
-const enabledMethods = computed(() => allMethods.value.filter((m) => m.enabled));
+const prId = computed(() => props.prId);
+const shareData = computed(() => ({
+  ...props.prData.parsed,
+  xiaohongshuPoster: props.prData.xiaohongshuPoster ?? null,
+  wechatThumbnail: props.prData.wechatThumbnail ?? null,
+}));
+
+const enabledMethods = computed(() =>
+  allMethods.value.filter((m) => m.enabled || m.enabled === undefined),
+);
 
 const currentMethodId = ref<ShareMethodId>("COPY_LINK");
 
@@ -107,8 +123,7 @@ const currentMethod = computed(() => {
   const enabled = enabledMethods.value;
   return (
     enabled.find((m) => m.id === currentMethodId.value) ??
-    enabled[0] ??
-    { id: "COPY_LINK", label: "链接分享", enabled: true }
+    enabled[0] ?? { id: "COPY_LINK", label: "链接分享", enabled: true }
   );
 });
 

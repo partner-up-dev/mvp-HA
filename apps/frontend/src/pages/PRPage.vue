@@ -62,7 +62,7 @@
       </section>
 
       <!-- Share PR Component -->
-      <SharePR :share-url="shareUrl" :pr-data="data" />
+      <SharePR v-if="id !== null" :share-url="shareUrl" :pr-id="id" :pr-data="data" />
 
       <!-- Edit Content Modal -->
       <EditContentModal
