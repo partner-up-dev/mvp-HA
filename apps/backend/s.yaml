@@ -3,20 +3,20 @@ name: partnerup-backend
 access: default
 
 vars:
-  region: ${env.ALIYUN_FC_REGION}
-  functionName: ${env.ALIYUN_FC_FUNCTION_NAME}
-  nodeModulesLayerArn: ${env.ALIYUN_FC_NODE_MODULES_LAYER_ARN}
-  roleArn: ${env.ALIYUN_FC_ROLE_ARN}
-  resourceGroupId: ${env.ALIYUN_FC_RESOURCE_GROUP_ID}
-  logProject: ${env.ALIYUN_FC_LOG_PROJECT}
-  logStore: ${env.ALIYUN_FC_LOG_STORE}
-  vpcId: ${env.ALIYUN_FC_VPC_ID}
-  securityGroupId: ${env.ALIYUN_FC_SECURITY_GROUP_ID}
-  vSwitchIdPrimary: ${env.ALIYUN_FC_VSWITCH_ID_PRIMARY}
-  vSwitchIdSecondary: ${env.ALIYUN_FC_VSWITCH_ID_SECONDARY}
-  ossEndpoint: ${env.ALIYUN_FC_OSS_ENDPOINT}
-  ossBucket: ${env.ALIYUN_FC_OSS_BUCKET}
-  ossBucketPath: ${env.ALIYUN_FC_OSS_BUCKET_PATH}
+  region: ${env('ALIYUN_FC_REGION')}
+  functionName: ${env('ALIYUN_FC_FUNCTION_NAME')}
+  nodeModulesLayerArn: ${env('ALIYUN_FC_NODE_MODULES_LAYER_ARN')}
+  roleArn: ${env('ALIYUN_FC_ROLE_ARN')}
+  resourceGroupId: ${env('ALIYUN_FC_RESOURCE_GROUP_ID')}
+  logProject: ${env('ALIYUN_FC_LOG_PROJECT')}
+  logStore: ${env('ALIYUN_FC_LOG_STORE')}
+  vpcId: ${env('ALIYUN_FC_VPC_ID')}
+  securityGroupId: ${env('ALIYUN_FC_SECURITY_GROUP_ID')}
+  vSwitchIdPrimary: ${env('ALIYUN_FC_VSWITCH_ID_PRIMARY')}
+  vSwitchIdSecondary: ${env('ALIYUN_FC_VSWITCH_ID_SECONDARY')}
+  ossEndpoint: ${env('ALIYUN_FC_OSS_ENDPOINT')}
+  ossBucket: ${env('ALIYUN_FC_OSS_BUCKET')}
+  ossBucketPath: ${env('ALIYUN_FC_OSS_BUCKET_PATH')}
 
 resources:
   backend:
@@ -60,16 +60,16 @@ resources:
       environmentVariables:
         PORT: "3000"
         NODE_ENV: production
-        PATH: ${env.ALIYUN_FC_PATH}
+        PATH: ${env('ALIYUN_FC_PATH')}
         NODE_PATH: /opt/nodejs/node_modules
         LD_LIBRARY_PATH: /code:/code/lib:/usr/lib:/opt/lib:/usr/local/lib
         TZ: Asia/Shanghai
-        DATABASE_URL: ${env.DATABASE_URL}
-        WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${env.WECHAT_OFFICIAL_ACCOUNT_APP_ID}
-        WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${env.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET}
-        LLM_API_KEY: ${env.LLM_API_KEY}
-        LLM_BASE_URL: ${env.LLM_BASE_URL}
-        LLM_DEFAULT_MODEL: ${env.LLM_DEFAULT_MODEL}
+        DATABASE_URL: ${env('DATABASE_URL')}
+        WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${env('WECHAT_OFFICIAL_ACCOUNT_APP_ID')}
+        WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${env('WECHAT_OFFICIAL_ACCOUNT_APP_SECRET')}
+        LLM_API_KEY: ${env('LLM_API_KEY')}
+        LLM_BASE_URL: ${env('LLM_BASE_URL')}
+        LLM_DEFAULT_MODEL: ${env('LLM_DEFAULT_MODEL')}
       vpcConfig:
         vpcId: ${vars.vpcId}
         securityGroupId: ${vars.securityGroupId}

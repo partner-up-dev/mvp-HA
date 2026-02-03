@@ -51,11 +51,10 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
         run: |
-          s config add \
+          s config add -a default -f \
             --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
             --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
-            --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID" \
-            -a default
+            --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID"
 
       - name: Deploy node_modules layer
         run: s deploy -y -t apps/backend/layers/node-modules/s.yaml
