@@ -57,6 +57,11 @@ apps/backend/.fc-package/
 
 The deploy workflow first builds and publishes a dedicated FC layer that contains production `node_modules` for the backend. It then resolves the latest layer ARN (including the version suffix) and passes it to `s deploy` via `ALIYUN_FC_NODE_MODULES_LAYER_ARN`, so backend deployments always use the freshly published layer without needing persisted GitHub variables or repo commits.
 
+Helper scripts (used by CI) live in:
+
+- `scripts/fc_layer_latest_arn.py`
+- `scripts/fc_layer_prune_versions.py`
+
 ## Custom Runtime Settings
 
 The FC configuration in `apps/backend/s.yaml` uses:
@@ -132,7 +137,7 @@ If you need to deploy locally (with Serverless Devs installed):
    ```bash
    ALIYUN_FC_REGION=... \
    ALIYUN_FC_NODE_MODULES_LAYER_NAME=... \
-   s layer publish \
+   s cli fc3 layer publish \
      --region "$ALIYUN_FC_REGION" \
      --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
      --code apps/backend/.layer \
@@ -144,21 +149,21 @@ If you need to deploy locally (with Serverless Devs installed):
 3. Resolve the latest versioned layer ARN and deploy:
 
    ```bash
-   ALIYUN_FC_NODE_MODULES_LAYER_ARN=$(s layer versions \
+   ALIYUN_FC_NODE_MODULES_LAYER_ARN=$(python3 scripts/fc_layer_latest_arn.py \
      --region "$ALIYUN_FC_REGION" \
      --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
-     --table false \
-     -o json \
-     -a default | python -c "import json,sys\n\ndata=json.load(sys.stdin)\nitems=[]\n\ndef walk(v):\n  if isinstance(v,list):\n    for x in v: walk(x)\n  elif isinstance(v,dict):\n    if 'version' in v and ('layerVersionArn' in v or 'arn' in v): items.append(v)\n    for x in v.values(): walk(x)\n\nwalk(data)\n\ndef to_int(v):\n  try: return int(v)\n  except: return -1\n\nbest=None\nbest_ver=-1\nfor it in items:\n  ver=to_int(it.get('version'))\n  if ver > best_ver:\n    best_ver=ver\n    best=it\n\nprint(best.get('layerVersionArn') or best.get('arn'))\n") \
+     --access default) \
    s deploy -y -t apps/backend/s.yaml
    ```
 
 4. (Optional) Clean up old layer versions (keep 3):
 
    ```bash
-   s layer versions --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --table false -o json -a default
-   # Then delete old ones:
-   # s layer remove --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --version-id <id> --assume-yes -a default
+   python3 scripts/fc_layer_prune_versions.py \
+     --region "$ALIYUN_FC_REGION" \
+     --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
+     --keep 3 \
+     --access default
    ```
 
 ## Fixed Public IP Notes

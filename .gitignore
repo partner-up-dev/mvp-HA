@@ -99,3 +99,8 @@ nul
 apps/backend/posters/*
 apps/backend/.fc-package/
 apps/backend/.layer/
+
+# Python
+.pdm-python
+__pypackages__/
+__pycache__/

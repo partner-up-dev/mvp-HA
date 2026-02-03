@@ -57,8 +57,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: pnpm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
 
       - name: Install backend production deps for layer
         if: steps.changes.outputs.layer == 'true'
@@ -89,7 +94,7 @@ jobs:
       - name: Publish node_modules layer
         if: steps.changes.outputs.layer == 'true'
         run: |
-          s layer publish \
+          s cli fc3 layer publish \
             --region "$ALIYUN_FC_REGION" \
             --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
             --code apps/backend/.layer \
@@ -99,118 +104,12 @@ jobs:
 
       - name: Clean up old layer versions (keep 3)
         if: steps.changes.outputs.layer == 'true' || github.event_name == 'workflow_dispatch'
-        run: |
-          VERSIONS_JSON=$(s layer versions \
-            --region "$ALIYUN_FC_REGION" \
-            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
-            --table false \
-            -o json \
-            -a default)
-          export VERSIONS_JSON
-
-          python - <<'PY'
-import json
-import os
-import subprocess
-import sys
-
-raw = os.environ["VERSIONS_JSON"]
-try:
-    data = json.loads(raw)
-except json.JSONDecodeError as e:
-    print("Failed to parse versions JSON from `s layer versions`.", file=sys.stderr)
-    print(raw, file=sys.stderr)
-    raise
-
-items = []
-def walk(v):
-    if isinstance(v, list):
-        for x in v:
-            walk(x)
-    elif isinstance(v, dict):
-        # Common shapes include dicts that contain version info directly, or nested under keys.
-        if "version" in v and ("layerVersionArn" in v or "arn" in v):
-            items.append(v)
-        for x in v.values():
-            walk(x)
-
-walk(data)
-
-def to_int(v):
-    try:
-        return int(v)
-    except Exception:
-        return -1
-
-versions = sorted({to_int(it.get("version")) for it in items if to_int(it.get("version")) >= 0}, reverse=True)
-if len(versions) <= 3:
-    print(f"Layer versions: {versions} (<= 3), nothing to delete.")
-    sys.exit(0)
-
-to_delete = versions[3:]
-print(f"Keeping versions: {versions[:3]}; deleting: {to_delete}")
-
-region = os.environ["ALIYUN_FC_REGION"]
-layer = os.environ["ALIYUN_FC_NODE_MODULES_LAYER_NAME"]
-for vid in to_delete:
-    cmd = ["s", "layer", "remove", "--region", region, "--layer-name", layer, "--version-id", str(vid), "--assume-yes", "-a", "default"]
-    print("Running:", " ".join(cmd))
-    subprocess.check_call(cmd)
-PY
+        run: python3 scripts/fc_layer_prune_versions.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --keep 3 --access default
 
       - name: Resolve latest layer ARN
         id: layer_arn
         run: |
-          VERSIONS_JSON=$(s layer versions \
-            --region "$ALIYUN_FC_REGION" \
-            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
-            --table false \
-            -o json \
-            -a default)
-          export VERSIONS_JSON
-
-          LAYER_ARN=$(python - <<'PY'
-import json
-import os
-import sys
-
-data = json.loads(os.environ["VERSIONS_JSON"])
-items = []
-
-def walk(v):
-  if isinstance(v, list):
-    for x in v:
-      walk(x)
-  elif isinstance(v, dict):
-    if "version" in v and ("layerVersionArn" in v or "arn" in v):
-      items.append(v)
-    for x in v.values():
-      walk(x)
-
-walk(data)
-
-def to_int(v):
-  try:
-    return int(v)
-  except Exception:
-    return -1
-
-best = None
-best_ver = -1
-for it in items:
-  ver = to_int(it.get("version"))
-  if ver > best_ver:
-    best_ver = ver
-    best = it
-
-if not best:
-  print("No layer versions found in output", file=sys.stderr)
-  raise SystemExit(1)
-
-print(best.get("layerVersionArn") or best.get("arn"))
-PY
-          )
-
+          LAYER_ARN="$(python3 scripts/fc_layer_latest_arn.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --access default)"
           echo "layer_arn=$LAYER_ARN" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies (workspace)
