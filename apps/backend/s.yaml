@@ -5,8 +5,7 @@ access: default
 vars:
   region: ${env('ALIYUN_FC_REGION')}
   functionName: ${env('ALIYUN_FC_FUNCTION_NAME')}
-  # Hard-coded to avoid relying on GitHub Action env vars that can't be mutated at runtime.
-  nodeModulesLayerArn: acs:fc:cn-hangzhou:1586615825306453:layers/mvp-HA-backend-node-modules
+  nodeModulesLayerArn: ${env('ALIYUN_FC_NODE_MODULES_LAYER_ARN')}
   roleArn: ${env('ALIYUN_FC_ROLE_ARN')}
   resourceGroupId: ${env('ALIYUN_FC_RESOURCE_GROUP_ID')}
   logProject: ${env('ALIYUN_FC_LOG_PROJECT')}

@@ -18,6 +18,7 @@ jobs:
       ALIYUN_FC_FUNCTION_NAME: ${{ vars.ALIYUN_FC_FUNCTION_NAME }}
       ALIYUN_FC_ROLE_ARN: ${{ vars.ALIYUN_FC_ROLE_ARN }}
       ALIYUN_FC_RESOURCE_GROUP_ID: ${{ vars.ALIYUN_FC_RESOURCE_GROUP_ID }}
+      ALIYUN_FC_NODE_MODULES_LAYER_NAME: ${{ vars.ALIYUN_FC_NODE_MODULES_LAYER_NAME }}
       ALIYUN_FC_LOG_PROJECT: ${{ vars.ALIYUN_FC_LOG_PROJECT }}
       ALIYUN_FC_LOG_STORE: ${{ vars.ALIYUN_FC_LOG_STORE }}
       ALIYUN_FC_VPC_ID: ${{ vars.ALIYUN_FC_VPC_ID }}
@@ -38,6 +39,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect layer input changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            layer:
+              - "apps/backend/package.json"
+              - "pnpm-lock.yaml"
+              - "apps/backend/layers/node-modules/**"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -49,18 +60,17 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install backend production deps for layer
+        if: steps.changes.outputs.layer == 'true'
+        working-directory: apps/backend
+        run: pnpm install --prod --frozen-lockfile
 
-      - name: Build backend
-        run: pnpm --filter @partner-up-dev/backend build
-
-      - name: Prepare Function Compute package
+      - name: Prepare node_modules layer
+        if: steps.changes.outputs.layer == 'true'
         run: |
-          rm -rf apps/backend/.fc-package
-          mkdir -p apps/backend/.fc-package
-          cp -R apps/backend/dist apps/backend/.fc-package/
-          cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
+          rm -rf apps/backend/.layer
+          mkdir -p apps/backend/.layer/nodejs
+          cp -R apps/backend/node_modules apps/backend/.layer/nodejs/node_modules
 
       - name: Install Serverless Devs CLI
         run: npm install -g @serverless-devs/s
@@ -76,5 +86,147 @@ jobs:
           --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
           --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID"
 
+      - name: Publish node_modules layer
+        if: steps.changes.outputs.layer == 'true'
+        run: |
+          s layer publish \
+            --region "$ALIYUN_FC_REGION" \
+            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
+            --code apps/backend/.layer \
+            --compatible-runtime custom.debian12 \
+            --description "PartnerUp backend production node_modules" \
+            -a default
+
+      - name: Clean up old layer versions (keep 3)
+        if: steps.changes.outputs.layer == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          VERSIONS_JSON=$(s layer versions \
+            --region "$ALIYUN_FC_REGION" \
+            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
+            --table false \
+            -o json \
+            -a default)
+          export VERSIONS_JSON
+
+          python - <<'PY'
+import json
+import os
+import subprocess
+import sys
+
+raw = os.environ["VERSIONS_JSON"]
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError as e:
+    print("Failed to parse versions JSON from `s layer versions`.", file=sys.stderr)
+    print(raw, file=sys.stderr)
+    raise
+
+items = []
+def walk(v):
+    if isinstance(v, list):
+        for x in v:
+            walk(x)
+    elif isinstance(v, dict):
+        # Common shapes include dicts that contain version info directly, or nested under keys.
+        if "version" in v and ("layerVersionArn" in v or "arn" in v):
+            items.append(v)
+        for x in v.values():
+            walk(x)
+
+walk(data)
+
+def to_int(v):
+    try:
+        return int(v)
+    except Exception:
+        return -1
+
+versions = sorted({to_int(it.get("version")) for it in items if to_int(it.get("version")) >= 0}, reverse=True)
+if len(versions) <= 3:
+    print(f"Layer versions: {versions} (<= 3), nothing to delete.")
+    sys.exit(0)
+
+to_delete = versions[3:]
+print(f"Keeping versions: {versions[:3]}; deleting: {to_delete}")
+
+region = os.environ["ALIYUN_FC_REGION"]
+layer = os.environ["ALIYUN_FC_NODE_MODULES_LAYER_NAME"]
+for vid in to_delete:
+    cmd = ["s", "layer", "remove", "--region", region, "--layer-name", layer, "--version-id", str(vid), "--assume-yes", "-a", "default"]
+    print("Running:", " ".join(cmd))
+    subprocess.check_call(cmd)
+PY
+
+      - name: Resolve latest layer ARN
+        id: layer_arn
+        run: |
+          VERSIONS_JSON=$(s layer versions \
+            --region "$ALIYUN_FC_REGION" \
+            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
+            --table false \
+            -o json \
+            -a default)
+          export VERSIONS_JSON
+
+          LAYER_ARN=$(python - <<'PY'
+import json
+import os
+import sys
+
+data = json.loads(os.environ["VERSIONS_JSON"])
+items = []
+
+def walk(v):
+  if isinstance(v, list):
+    for x in v:
+      walk(x)
+  elif isinstance(v, dict):
+    if "version" in v and ("layerVersionArn" in v or "arn" in v):
+      items.append(v)
+    for x in v.values():
+      walk(x)
+
+walk(data)
+
+def to_int(v):
+  try:
+    return int(v)
+  except Exception:
+    return -1
+
+best = None
+best_ver = -1
+for it in items:
+  ver = to_int(it.get("version"))
+  if ver > best_ver:
+    best_ver = ver
+    best = it
+
+if not best:
+  print("No layer versions found in output", file=sys.stderr)
+  raise SystemExit(1)
+
+print(best.get("layerVersionArn") or best.get("arn"))
+PY
+          )
+
+          echo "layer_arn=$LAYER_ARN" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build backend
+        run: pnpm --filter @partner-up-dev/backend build
+
+      - name: Prepare Function Compute package
+        run: |
+          rm -rf apps/backend/.fc-package
+          mkdir -p apps/backend/.fc-package
+          cp -R apps/backend/dist apps/backend/.fc-package/
+          cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
+
       - name: Deploy to Aliyun FC
+        env:
+          ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ steps.layer_arn.outputs.layer_arn }}
         run: s deploy -y -t apps/backend/s.yaml
