@@ -29,12 +29,40 @@ def _to_int(value: object) -> int:
 
 
 def _load_json_payload(raw: str) -> Any:
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        print("Failed to parse JSON payload:", file=sys.stderr)
+    # `s cli ... -o json` may still emit log lines to stdout before the JSON.
+    # Parse the first JSON value found in the output and ignore any prefix/suffix noise.
+    decoder = json.JSONDecoder()
+    starts: list[int] = []
+    for token in ("[", "{"):
+        pos = raw.find(token)
+        while pos >= 0:
+            starts.append(pos)
+            pos = raw.find(token, pos + 1)
+    starts.sort()
+
+    if not starts:
+        print("Failed to find JSON start in command output:", file=sys.stderr)
         print(raw, file=sys.stderr)
-        raise
+        raise json.JSONDecodeError("No JSON start found", raw, 0)
+
+    last_error: json.JSONDecodeError | None = None
+    for start in starts:
+        try:
+            value, end = decoder.raw_decode(raw[start:])
+        except json.JSONDecodeError as exc:
+            last_error = exc
+            continue
+
+        trailing = raw[start + end :].strip()
+        if trailing:
+            print("Warning: trailing non-JSON output detected:", file=sys.stderr)
+            print(trailing, file=sys.stderr)
+
+        return value
+
+    print("Failed to parse JSON payload:", file=sys.stderr)
+    print(raw, file=sys.stderr)
+    raise last_error or json.JSONDecodeError("Unable to decode JSON", raw, 0)
 
 
 def _fetch_versions_json(region: str, layer_name: str, access: str) -> str:
