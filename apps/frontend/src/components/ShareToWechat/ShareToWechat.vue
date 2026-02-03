@@ -1,5 +1,15 @@
-<template>
+﻿<template>
   <div class="wechat-chat-method">
+    <div class="options-section flex flex-col">
+      <button
+        class="outline-btn"
+        @click="handleGenerateAndUpdate"
+        :disabled="isWorking"
+      >
+        {{ switchButtonLabel }}
+      </button>
+    </div>
+
     <div class="preview-section">
       <h4 class="preview-title">微信分享卡片预览</h4>
 
@@ -7,31 +17,24 @@
         <div v-if="isWorking" class="generating-state">
           <div class="poster-placeholder">
             <div class="spinner"></div>
-            <p>生成缩略图中...</p>
+            <p>生成中...</p>
           </div>
         </div>
-        <div v-else-if="posterUrl" class="poster-container">
-          <img :src="posterUrl" alt="分享缩略图预览" class="poster-image" />
-          <p class="helper-text">该缩略图将用于微信分享卡片的图片</p>
-        </div>
-        <div v-else class="empty-state">
-          <p>尚未生成缩略图</p>
+        <div v-else>
+          <WeChatChatPreview
+            :poster-url="posterUrl"
+            :share-title="shareTitle"
+            :share-desc="shareDescPreview"
+            :thumb-placeholder="thumbPlaceholder"
+          />
         </div>
       </div>
     </div>
 
     <div class="action-section">
-      <button
-        class="primary-btn"
-        @click="handleGenerateAndUpdate"
-        :disabled="isWorking"
-      >
-        {{ primaryButtonLabel }}
-      </button>
-
       <div v-if="errorText" class="error-text">{{ errorText }}</div>
       <div v-else class="guidance-text">
-        <p>更新完成后，请点击微信右上角“…”</p>
+        <p>请点击微信右上角“…”</p>
         <p class="sub-text">选择“发送给朋友”或“分享到朋友圈”</p>
       </div>
     </div>
@@ -47,6 +50,7 @@ import { useCloudStorage } from "@/composables/useCloudStorage";
 import { useWeChatShare } from "@/composables/useWeChatShare";
 import { client } from "@/lib/rpc";
 import type { ShareToWechatChatProps } from "./ShareToWechat";
+import WeChatChatPreview from "./WeChatChatPreview.vue";
 
 const props = defineProps<ShareToWechatChatProps>();
 
@@ -73,10 +77,10 @@ const isWorking = computed(
     isUploading.value,
 );
 
-const primaryButtonLabel = computed(() => {
+const switchButtonLabel = computed(() => {
   if (isWorking.value) return "生成中...";
-  if (lastUploadedThumbnailUrl.value) return "重新生成并更新分享卡片";
-  return "生成并更新分享卡片";
+  if (lastUploadedThumbnailUrl.value) return "换一个";
+  return "换一个";
 });
 
 const normalizeShareUrl = (rawUrl: string): string => {
@@ -111,6 +115,11 @@ const pickFallbackKeyText = (): string => {
 
   return "搭";
 };
+
+const shareTitle = computed(() => buildShareTitle());
+const shareDesc = computed(() => buildShareDesc());
+const shareDescPreview = computed(() => truncateDesc(props.rawText, 36));
+const thumbPlaceholder = computed(() => pickFallbackKeyText());
 
 const handleGenerateAndUpdate = async (): Promise<void> => {
   errorMessage.value = null;
@@ -148,7 +157,6 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
     lastUploadedThumbnailUrl.value = thumbnailUrl;
     posterUrl.value = thumbnailUrl;
 
-    // Cache the thumbnail URL in backend
     try {
       await client.api.share["wechat-card"]["cache-thumbnail"].$post({
         json: {
@@ -159,12 +167,11 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
       });
     } catch (cacheError) {
       console.warn("Failed to cache thumbnail URL:", cacheError);
-      // Don't fail the whole operation
     }
 
     await setWeChatShareCard({
-      title: buildShareTitle(),
-      desc: buildShareDesc(),
+      title: shareTitle.value,
+      desc: shareDesc.value,
       link: normalizeShareUrl(props.shareUrl),
       imgUrl: thumbnailUrl,
     });
@@ -186,8 +193,8 @@ const handleInitialize = async (): Promise<void> => {
       styleIndex.value = cached.style + 1;
 
       await setWeChatShareCard({
-        title: buildShareTitle(),
-        desc: buildShareDesc(),
+        title: shareTitle.value,
+        desc: shareDesc.value,
         link: normalizeShareUrl(props.shareUrl),
         imgUrl: cached.posterUrl,
       });
@@ -204,7 +211,6 @@ const errorText = computed(
   () => errorMessage.value ?? uploadError.value ?? initError.value,
 );
 
-// Initialize poster on mount
 onMounted(() => {
   handleInitialize();
 });

@@ -11,9 +11,7 @@
 }
 
 .poster-preview {
-  border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface);
   overflow: hidden;
 }
 
@@ -22,20 +20,6 @@
   padding: var(--sys-spacing-med);
   text-align: center;
   color: var(--sys-color-on-surface-variant);
-}
-
-.poster-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm);
-}
-
-.poster-image {
-  width: 100%;
-  height: auto;
-  border-radius: var(--sys-radius-sm);
-  border: 1px solid var(--sys-color-outline-variant);
 }
 
 .helper-text {
@@ -58,17 +42,6 @@
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
-}
-
-.primary-btn {
-  border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-
-  &:hover:not(:disabled) {
-    background: var(--sys-color-primary-container);
-    color: var(--sys-color-on-primary-container);
-  }
 }
 
 .outline-btn {
@@ -130,4 +103,3 @@
     transform: rotate(360deg);
   }
 }
-
