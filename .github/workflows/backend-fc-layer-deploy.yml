@@ -34,7 +34,8 @@ jobs:
           cache: pnpm
 
       - name: Install production dependencies for backend
-        run: pnpm -C apps/backend install --prod --frozen-lockfile --node-linker=hoisted
+        working-directory: apps/backend
+        run: pnpm install --prod --frozen-lockfile
 
       - name: Prepare node_modules layer
         run: |
