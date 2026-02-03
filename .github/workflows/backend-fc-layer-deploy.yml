@@ -57,5 +57,12 @@ jobs:
             --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
             --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID"
 
-      - name: Deploy node_modules layer
-        run: s deploy -y -t apps/backend/layers/node-modules/s.yaml
+      - name: Publish node_modules layer
+        run: |
+          s cli fc layer publish \
+            --code apps/backend/.layer \
+            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
+            --compatible-runtime custom.debian12 \
+            --description "PartnerUp backend production node_modules" \
+            --region "$ALIYUN_FC_REGION" \
+            --access default

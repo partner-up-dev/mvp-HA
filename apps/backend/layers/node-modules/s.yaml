@@ -1,3 +1,6 @@
+# Legacy Serverless Devs template for reference.
+# The devsapp/fc-layer component no longer exposes a `deploy` method;
+# use `s cli fc layer publish` instead (see docs/deployment/backend-fc-cd.md).
 edition: 1.0.0
 name: partnerup-backend-node-modules
 access: default
