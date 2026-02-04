@@ -68,7 +68,7 @@ The FC configuration in `apps/backend/s.yaml` uses:
 - `PORT=3000` in environment variables
 - `layers` to attach the `node_modules` layer
 - `ossMountConfig` to mount the OSS bucket at `/mnt/oss`
-- `disableURLInternet: false` to match the console export's public URL setting
+- HTTP trigger is managed separately (not deployed by `s deploy`), so the public URL remains stable
 
 ## Manual Deployment
 
