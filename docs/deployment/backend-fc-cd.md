@@ -119,12 +119,9 @@ If you need to deploy locally (with Serverless Devs installed):
 1. Build the production `node_modules` layer directory:
 
    ```bash
-   pnpm -C apps/backend install --prod --frozen-lockfile --node-linker=hoisted
    rm -rf apps/backend/.layer
    mkdir -p apps/backend/.layer/nodejs
-   cp -R apps/backend/node_modules apps/backend/.layer/nodejs/node_modules
-   cp apps/backend/package.json apps/backend/.layer/nodejs/package.json
-   cp pnpm-lock.yaml apps/backend/.layer/nodejs/pnpm-lock.yaml
+   pnpm --filter @partner-up-dev/backend deploy --prod --node-linker=hoisted apps/backend/.layer/nodejs
    ```
 
 2. Publish the layer:

@@ -71,24 +71,16 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install backend production deps for layer
-        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
-        working-directory: apps/backend
-        run: pnpm install --prod --frozen-lockfile --node-linker=hoisted
-
       - name: Prepare node_modules layer
         if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
         run: |
           rm -rf apps/backend/.layer
           mkdir -p apps/backend/.layer/nodejs
-          NODE_MODULES_DIR="$(pnpm -C apps/backend root)"
-          if [ ! -d "$NODE_MODULES_DIR" ]; then
-            echo "Expected node_modules at $NODE_MODULES_DIR but it was not found."
+          pnpm --filter @partner-up-dev/backend deploy --prod --node-linker=hoisted apps/backend/.layer/nodejs
+          if [ ! -d "apps/backend/.layer/nodejs/node_modules" ]; then
+            echo "Layer build failed: node_modules not found in apps/backend/.layer/nodejs"
             exit 1
           fi
-          cp -R "$NODE_MODULES_DIR" apps/backend/.layer/nodejs/node_modules
-          cp apps/backend/package.json apps/backend/.layer/nodejs/package.json
-          cp pnpm-lock.yaml apps/backend/.layer/nodejs/pnpm-lock.yaml
 
       - name: Install Serverless Devs CLI
         run: npm install -g @serverless-devs/s
