@@ -143,6 +143,9 @@ jobs:
       - name: Build backend
         run: pnpm --filter @partner-up-dev/backend build
 
+      - name: Ensure start script is executable
+        run: chmod +x apps/backend/fc-start.sh
+
       - name: Prepare Function Compute package
         run: |
           rm -rf apps/backend/.fc-package
