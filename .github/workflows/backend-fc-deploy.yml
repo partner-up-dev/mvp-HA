@@ -69,7 +69,7 @@ jobs:
       - name: Install backend production deps for layer
         if: steps.changes.outputs.layer == 'true'
         working-directory: apps/backend
-        run: pnpm install --prod --frozen-lockfile
+        run: pnpm install --prod --frozen-lockfile --node-linker=hoisted
 
       - name: Prepare node_modules layer
         if: steps.changes.outputs.layer == 'true'
@@ -77,6 +77,8 @@ jobs:
           rm -rf apps/backend/.layer
           mkdir -p apps/backend/.layer/nodejs
           cp -R apps/backend/node_modules apps/backend/.layer/nodejs/node_modules
+          cp apps/backend/package.json apps/backend/.layer/nodejs/package.json
+          cp pnpm-lock.yaml apps/backend/.layer/nodejs/pnpm-lock.yaml
 
       - name: Install Serverless Devs CLI
         run: npm install -g @serverless-devs/s
