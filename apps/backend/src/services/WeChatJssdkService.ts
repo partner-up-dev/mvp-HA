@@ -57,7 +57,7 @@ const wechatProxyDispatcher = env.WECHAT_HTTP_PROXY
   ? new ProxyAgent(env.WECHAT_HTTP_PROXY)
   : undefined;
 
-const fetchWeChat = (url: URL): Promise<Response> =>
+const fetchWeChat = (url: URL): ReturnType<typeof fetch> =>
   wechatProxyDispatcher ? fetch(url, { dispatcher: wechatProxyDispatcher }) : fetch(url);
 
 export type WeChatJssdkSignature = {
