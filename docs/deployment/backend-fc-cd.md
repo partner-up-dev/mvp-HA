@@ -25,10 +25,6 @@ Configure the following secrets in the GitHub repository:
 | `ALIYUN_FC_RESOURCE_GROUP_ID` | Resource group ID |
 | `ALIYUN_FC_LOG_PROJECT` | Log service project name |
 | `ALIYUN_FC_LOG_STORE` | Log service logstore name |
-| `ALIYUN_FC_VPC_ID` | VPC ID for accessing the VPS network |
-| `ALIYUN_FC_SECURITY_GROUP_ID` | Security group ID for the function VPC network |
-| `ALIYUN_FC_VSWITCH_ID_PRIMARY` | Primary VSwitch ID for the function VPC network |
-| `ALIYUN_FC_VSWITCH_ID_SECONDARY` | Secondary VSwitch ID for the function VPC network |
 | `ALIYUN_FC_OSS_ENDPOINT` | OSS internal endpoint used for OSS mount |
 | `ALIYUN_FC_OSS_BUCKET` | OSS bucket name to mount |
 | `ALIYUN_FC_OSS_BUCKET_PATH` | OSS bucket path (use `/` to mount the bucket root) |
@@ -36,6 +32,7 @@ Configure the following secrets in the GitHub repository:
 | `DATABASE_URL` | Database connection string |
 | `WECHAT_OFFICIAL_ACCOUNT_APP_ID` | WeChat Official Account App ID |
 | `WECHAT_OFFICIAL_ACCOUNT_APP_SECRET` | WeChat Official Account App Secret |
+| `WECHAT_HTTP_PROXY` | Optional HTTP proxy for WeChat API requests |
 | `LLM_API_KEY` | LLM API key |
 | `LLM_BASE_URL` | LLM base URL |
 | `LLM_DEFAULT_MODEL` | LLM default model |
@@ -70,7 +67,6 @@ The FC configuration in `apps/backend/s.yaml` uses:
 - `customRuntimeConfig.port: 3000`
 - `PORT=3000` in environment variables
 - `layers` to attach the `node_modules` layer
-- `vpcConfig` to connect to the VPS network
 - `ossMountConfig` to mount the OSS bucket at `/mnt/oss`
 - `disableURLInternet: false` to match the console export's public URL setting
 
@@ -104,10 +100,6 @@ If you need to deploy locally (with Serverless Devs installed):
    ALIYUN_FC_RESOURCE_GROUP_ID=... \
    ALIYUN_FC_LOG_PROJECT=... \
    ALIYUN_FC_LOG_STORE=... \
-   ALIYUN_FC_VPC_ID=... \
-   ALIYUN_FC_SECURITY_GROUP_ID=... \
-   ALIYUN_FC_VSWITCH_ID_PRIMARY=... \
-   ALIYUN_FC_VSWITCH_ID_SECONDARY=... \
    ALIYUN_FC_OSS_ENDPOINT=... \
    ALIYUN_FC_OSS_BUCKET=... \
    ALIYUN_FC_OSS_BUCKET_PATH=/ \
@@ -115,6 +107,7 @@ If you need to deploy locally (with Serverless Devs installed):
    DATABASE_URL=... \
    WECHAT_OFFICIAL_ACCOUNT_APP_ID=... \
    WECHAT_OFFICIAL_ACCOUNT_APP_SECRET=... \
+   WECHAT_HTTP_PROXY=... \
    LLM_API_KEY=... \
    LLM_BASE_URL=... \
    LLM_DEFAULT_MODEL=... \
@@ -165,7 +158,3 @@ If you need to deploy locally (with Serverless Devs installed):
      --keep 3 \
      --access default
    ```
-
-## Fixed Public IP Notes
-
-To use a fixed outbound public IP while keeping outbound access controlled, configure the VPC with a NAT gateway + EIP and route outbound traffic through it. The function is attached to the VPC via `vpcConfig` and `internetAccess: false` disables direct public egress, so outbound traffic should flow through the VPC routing. Ensure the VSwitch and security group allow access to the VPS network and the NAT gateway.

@@ -30,7 +30,6 @@ resources:
       description: ""
       timeout: 60
       diskSize: 512
-      internetAccess: false
       memorySize: 512
       cpu: 0.35
       runtime: custom.debian12
@@ -67,6 +66,7 @@ resources:
         DATABASE_URL: ${env('DATABASE_URL')}
         WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${env('WECHAT_OFFICIAL_ACCOUNT_APP_ID')}
         WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${env('WECHAT_OFFICIAL_ACCOUNT_APP_SECRET')}
+        WECHAT_HTTP_PROXY: ${env('WECHAT_HTTP_PROXY')}
         LLM_API_KEY: ${env('LLM_API_KEY')}
         LLM_BASE_URL: ${env('LLM_BASE_URL')}
         LLM_DEFAULT_MODEL: ${env('LLM_DEFAULT_MODEL')}

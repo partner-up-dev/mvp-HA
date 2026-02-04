@@ -47,6 +47,7 @@ src/
 - Env:
   - `WECHAT_OFFICIAL_ACCOUNT_APP_ID`
   - `WECHAT_OFFICIAL_ACCOUNT_APP_SECRET`
+  - `WECHAT_HTTP_PROXY` (optional, routes WeChat API requests via HTTP proxy)
 - Notes:
   - `access_token` and `jsapi_ticket` are cached in-memory with expiry.
 
@@ -54,4 +55,3 @@ src/
 
 - Poster uploads are saved to `POSTERS_DIR` if provided.
 - Default: `/mnt/oss/posters` on Linux, `./posters` on Windows.
-
