@@ -109,8 +109,32 @@ jobs:
       - name: Resolve latest layer ARN
         id: layer_arn
         run: |
-          LAYER_ARN="$(python3 scripts/fc_layer_latest_arn.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --access default)"
-          echo "layer_arn=$LAYER_ARN" >> "$GITHUB_OUTPUT"
+          RAW_ARN="$(python3 scripts/fc_layer_latest_arn.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --access default)"
+          export RAW_ARN
+          NORMALIZED_ARN="$(python3 - <<'PY'
+          import os
+          import re
+          import sys
+
+          raw = os.environ["RAW_ARN"].strip()
+          account_id = os.environ.get("ALIBABA_CLOUD_ACCOUNT_ID", "").strip()
+
+          pattern = re.compile(r"^(acs:fc:[a-z0-9-]+:)([^:]+)(:layers/.+/versions/.+)$")
+          match = pattern.match(raw)
+          if not match:
+              print(f"Invalid layer ARN: {raw}", file=sys.stderr)
+              sys.exit(1)
+
+          if not account_id.isdigit():
+              print("Invalid ALIBABA_CLOUD_ACCOUNT_ID; must be digits.", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"{match.group(1)}{account_id}{match.group(3)}")
+          PY
+          )"
+          echo "layer_arn=$NORMALIZED_ARN" >> "$GITHUB_OUTPUT"
+        env:
+          ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
 
       - name: Install dependencies (workspace)
         run: pnpm install --frozen-lockfile
