@@ -149,6 +149,10 @@ jobs:
           cp -R apps/backend/dist apps/backend/.fc-package/
           cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
 
+      - name: Remove existing HTTP trigger (best effort)
+        run: |
+          s remove trigger -y -t apps/backend/s.yaml --trigger-name httpTrigger -a default || true
+
       - name: Deploy to Aliyun FC
         env:
           ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ steps.layer_arn.outputs.layer_arn }}
