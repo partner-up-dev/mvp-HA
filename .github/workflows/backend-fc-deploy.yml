@@ -72,16 +72,21 @@ jobs:
           python-version: "3.x"
 
       - name: Install backend production deps for layer
-        if: steps.changes.outputs.layer == 'true' || inputs.publish_layer_only == true
+        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
         working-directory: apps/backend
         run: pnpm install --prod --frozen-lockfile --node-linker=hoisted
 
       - name: Prepare node_modules layer
-        if: steps.changes.outputs.layer == 'true' || inputs.publish_layer_only == true
+        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
         run: |
           rm -rf apps/backend/.layer
           mkdir -p apps/backend/.layer/nodejs
-          cp -R apps/backend/node_modules apps/backend/.layer/nodejs/node_modules
+          NODE_MODULES_DIR="$(pnpm -C apps/backend root)"
+          if [ ! -d "$NODE_MODULES_DIR" ]; then
+            echo "Expected node_modules at $NODE_MODULES_DIR but it was not found."
+            exit 1
+          fi
+          cp -R "$NODE_MODULES_DIR" apps/backend/.layer/nodejs/node_modules
           cp apps/backend/package.json apps/backend/.layer/nodejs/package.json
           cp pnpm-lock.yaml apps/backend/.layer/nodejs/pnpm-lock.yaml
 
@@ -100,7 +105,7 @@ jobs:
           --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID"
 
       - name: Publish node_modules layer
-        if: steps.changes.outputs.layer == 'true' || inputs.publish_layer_only == true
+        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
         run: |
           s cli fc3 layer publish \
             --region "$ALIYUN_FC_REGION" \
@@ -111,12 +116,12 @@ jobs:
             -a default
 
       - name: Clean up old layer versions (keep 3)
-        if: steps.changes.outputs.layer == 'true' || github.event_name == 'workflow_dispatch' || inputs.publish_layer_only == true
+        if: steps.changes.outputs.layer == 'true' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
         run: python3 scripts/fc_layer_prune_versions.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --keep 3 --access default
 
       - name: Resolve latest layer ARN
         id: layer_arn
-        if: inputs.publish_layer_only != true
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         run: |
           RAW_ARN="$(python3 scripts/fc_layer_latest_arn.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --access default)"
           export RAW_ARN
@@ -146,19 +151,19 @@ jobs:
           ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
 
       - name: Install dependencies (workspace)
-        if: inputs.publish_layer_only != true
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build backend
-        if: inputs.publish_layer_only != true
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         run: pnpm --filter @partner-up-dev/backend build
 
       - name: Ensure start script is executable
-        if: inputs.publish_layer_only != true
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         run: chmod +x apps/backend/fc-start.sh
 
       - name: Prepare Function Compute package
-        if: inputs.publish_layer_only != true
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         run: |
           rm -rf apps/backend/.fc-package
           mkdir -p apps/backend/.fc-package
@@ -166,14 +171,14 @@ jobs:
           cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
 
       - name: Remove existing HTTP trigger (best effort)
-        if: inputs.publish_layer_only != true
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         env:
           ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ steps.layer_arn.outputs.layer_arn }}
         run: |
           s remove trigger -y -t apps/backend/s.yaml --trigger-name httpTrigger -a default || true
 
       - name: Deploy to Aliyun FC
-        if: inputs.publish_layer_only != true
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         env:
           ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ steps.layer_arn.outputs.layer_arn }}
         run: s deploy -y -t apps/backend/s.yaml
