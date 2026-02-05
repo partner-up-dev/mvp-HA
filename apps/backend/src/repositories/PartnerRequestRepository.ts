@@ -43,10 +43,14 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async updateParsed(id: PRId, parsed: ParsedPartnerRequest) {
+  async updateParsed(
+    id: PRId,
+    parsed: ParsedPartnerRequest,
+    expiresAt: Date | null,
+  ) {
     const result = await db
       .update(partnerRequests)
-      .set({ parsed })
+      .set({ parsed, expiresAt })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] || null;

@@ -1,4 +1,4 @@
-# AGENTS.md of PartnerUp MVP-HA (Frontend)
+﻿# AGENTS.md of PartnerUp MVP-HA (Frontend)
 
 本项目是一个基于 Vue 3 的前端应用，使用 Hono RPC Client 与后端通信，并利用 TanStack Vue Query 进行服务端状态管理。
 
@@ -20,6 +20,16 @@
 
 - Always use Hono RPC Client (`client`) for API requests instead of manual `fetch`.
 
+## Product Reference
+
+- See `docs/product/overview.md` for H-A MVP definition and scope.
+
+## Current State
+
+- UI 文案“搭子请求”对应产品 PartnerRequest（协作单元）。
+- 前端状态枚举与后端一致（OPEN / ACTIVE / CLOSED / EXPIRED）。
+- EXPIRED 由后端到期自动结束，前端仅展示，不允许手动选择。
+
 ## WeChat JS-SDK Share
 
 - In WeChat WebView, sharing cards are customized via WeChat JS-SDK.
@@ -35,4 +45,3 @@
 
 - Data Fetching: See `src/queries/AGENTS.md`.
 - Components: See `src/components/AGENTS.md`.
-

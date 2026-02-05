@@ -2,7 +2,10 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { PartnerRequestService } from '../services/PartnerRequestService';
-import { prStatusSchema, parsedPRSchema } from '../entities/partner-request';
+import {
+  prStatusManualSchema,
+  parsedPRSchema,
+} from '../entities/partner-request';
 
 const app = new Hono();
 const service = new PartnerRequestService();
@@ -14,7 +17,7 @@ const createPRSchema = z.object({
 });
 
 const updateStatusSchema = z.object({
-  status: prStatusSchema,
+  status: prStatusManualSchema,
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
 });
 

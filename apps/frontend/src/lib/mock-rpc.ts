@@ -47,7 +47,7 @@ const mockClient = {
                 createdAt: new Date().toISOString(),
                 parsed: {
                   title: `Request ${id}`,
-                  scenario: "Ã¦â€”â€¦Ã¨Â¡Å’",
+                  scenario: "weekend",
                 },
               })),
           } as Response;
@@ -64,15 +64,16 @@ const mockClient = {
             status: 200,
             json: async () => ({
               id: param.id,
-              rawText: "æˆ‘æƒ³æ‰¾äººä¸€èµ·åŽ»åŒ—äº¬æ—…è¡Œ",
+              rawText: "Let's find someone for a weekend trip",
               parsed: {
-                scenario: "æ—…è¡Œ",
-                time: "å‘¨æœ«",
-                location: "åŒ—äº¬",
+                scenario: "weekend",
+                time: "this weekend",
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                location: "beijing",
                 minParticipants: 2,
                 maxParticipants: 4,
                 budget: "1000",
-                preferences: ["å–œæ¬¢æ‹ç…§"],
+                preferences: ["photo"],
                 notes: null,
               },
               status: "OPEN",

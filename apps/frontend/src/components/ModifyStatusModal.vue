@@ -52,10 +52,10 @@ import Modal from "@/components/Modal.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
 import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
-import type { PRId } from "@partner-up-dev/backend";
+import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
 
 interface StatusOption {
-  value: "OPEN" | "ACTIVE" | "CLOSED";
+  value: PRStatusManual;
   label: string;
 }
 
@@ -75,7 +75,7 @@ const statusOptions: StatusOption[] = [
 ];
 
 const updateMutation = useUpdatePRStatus();
-const selectedStatus = ref<"OPEN" | "ACTIVE" | "CLOSED">("OPEN");
+const selectedStatus = ref<PRStatusManual>("OPEN");
 const modifyPin = ref("");
 
 const handleClose = () => {

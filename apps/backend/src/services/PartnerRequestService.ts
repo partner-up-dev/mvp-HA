@@ -29,6 +29,7 @@ export class PartnerRequestService {
       rawText,
       parsed,
       pinHash,
+      expiresAt: parsed.expiresAt ? new Date(parsed.expiresAt) : null,
       status: "OPEN",
     });
 
@@ -41,8 +42,9 @@ export class PartnerRequestService {
       throw new HTTPException(404, { message: "Partner request not found" });
     }
 
-    // Return without pinHash for security
-    const { pinHash, ...publicData } = request;
+    const normalized = this.normalizeParsedExpiresAt(request);
+    const refreshed = await this.expireIfNeeded(normalized);
+    const { pinHash, ...publicData } = refreshed;
     return publicData;
   }
 
@@ -102,7 +104,11 @@ export class PartnerRequestService {
       throw new HTTPException(403, { message: "Invalid PIN" });
     }
 
-    const updated = await repo.updateParsed(id, parsed);
+    const updated = await repo.updateParsed(
+      id,
+      parsed,
+      parsed.expiresAt ? new Date(parsed.expiresAt) : null,
+    );
     if (!updated) {
       throw new HTTPException(500, { message: "Failed to update content" });
     }
@@ -200,5 +206,51 @@ export class PartnerRequestService {
 
     const { pinHash, ...publicData } = updated;
     return publicData;
+  }
+
+  private async expireIfNeeded(request: {
+    id: PRId;
+    status: PRStatus;
+    expiresAt: Date | null;
+    parsed: ParsedPartnerRequest;
+  }) {
+    if (request.status !== "OPEN" && request.status !== "ACTIVE") {
+      return request;
+    }
+
+    const expiresAt =
+      request.expiresAt ??
+      (request.parsed.expiresAt ? new Date(request.parsed.expiresAt) : null);
+
+    if (!expiresAt || Number.isNaN(expiresAt.getTime())) {
+      return request;
+    }
+
+    if (expiresAt.getTime() > Date.now()) {
+      return request;
+    }
+
+    const updated = await repo.updateStatus(request.id, "EXPIRED");
+    return updated ? this.normalizeParsedExpiresAt(updated) : request;
+  }
+
+  private normalizeParsedExpiresAt<
+    T extends { parsed: ParsedPartnerRequest; expiresAt: Date | null },
+  >(request: T): T {
+    if (request.parsed.expiresAt != null) {
+      return request;
+    }
+
+    const normalized = request.expiresAt
+      ? request.expiresAt.toISOString()
+      : null;
+
+    return {
+      ...request,
+      parsed: {
+        ...request.parsed,
+        expiresAt: normalized,
+      },
+    };
   }
 }

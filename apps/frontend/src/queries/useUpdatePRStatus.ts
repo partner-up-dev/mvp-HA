@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import type { PRId } from '@partner-up-dev/backend';
+import type { PRId, PRStatusManual } from '@partner-up-dev/backend';
 import { client } from '@/lib/rpc';
 
 interface UpdateStatusInput {
   id: PRId;
-  status: 'OPEN' | 'ACTIVE' | 'CLOSED';
+  status: PRStatusManual;
   pin: string;
 }
 

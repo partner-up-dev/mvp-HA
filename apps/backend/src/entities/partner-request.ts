@@ -15,6 +15,7 @@ export const parsedPRSchema = z.object({
   scenario: z.string(),
   time: z.string().nullable(),
   location: z.string().nullable(),
+  expiresAt: z.string().datetime().nullable(),
   minParticipants: z.number().nullable(),
   maxParticipants: z.number().nullable(),
   budget: z.string().nullable(),
@@ -25,8 +26,10 @@ export const parsedPRSchema = z.object({
 export type ParsedPartnerRequest = z.infer<typeof parsedPRSchema>;
 
 // Status enum
-export const prStatusSchema = z.enum(["OPEN", "ACTIVE", "CLOSED"]);
+export const prStatusSchema = z.enum(["OPEN", "ACTIVE", "CLOSED", "EXPIRED"]);
 export type PRStatus = z.infer<typeof prStatusSchema>;
+export const prStatusManualSchema = z.enum(["OPEN", "ACTIVE", "CLOSED"]);
+export type PRStatusManual = z.infer<typeof prStatusManualSchema>;
 
 export const partnerRequestSummarySchema = z.object({
   id: z.number().int().positive(),
@@ -67,6 +70,7 @@ export const partnerRequests = pgTable("partner_requests", {
   pinHash: text("pin_hash").notNull(),
   participants: integer("participants").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
   xiaohongshuPoster: jsonb("xiaohongshu_poster")
     .$type<XiaohongshuPosterCache | null>()
     .default(null),

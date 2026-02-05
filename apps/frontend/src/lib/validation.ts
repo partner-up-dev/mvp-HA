@@ -22,7 +22,7 @@ export const parsedFieldsSchema = z.object({
   title: z.string().optional(),
   scenario: z.string().min(1, "请输入活动类型"),
   time: z.string().nullable(),
-  location: z.string().nullable(),
+  expiresAt: z.string().datetime().nullable(),
   minParticipants: z.number().nullable(),
   maxParticipants: z.number().nullable(),
   budget: z.string().nullable(),

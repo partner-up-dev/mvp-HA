@@ -36,6 +36,7 @@ const DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT = `你是一个搭子需求解
 - scenario: 场景类型，如：旅行/通勤/用餐/运动/学习/娱乐等
 - time: 时间要求，如果没有明确说明则为null
 - location: 地点要求，如果没有明确说明则为null
+- expiresAt: 本需求的自动结束时间，ISO 8601 datetime 字符串（如 "2026-02-05T10:00:00.000Z"），如果无法推断则为null。请基于“当前时间”和场景做出合理的期限
 - minParticipants: 最少需要的参与人数，数字类型，如果没有明确说明则为null
 - maxParticipants: 最多需要的参与人数，数字类型，如果没有明确说明则为null（注意：如果用户只说"需要2人"，则minParticipants和maxParticipants都是2）
 - budget: 预算范围，如果没有明确说明则为null
@@ -204,11 +205,13 @@ export class LLMService {
 
   async parseRequest(rawText: string): Promise<ParsedPartnerRequest> {
     const systemPrompt = await this.getParsePartnerRequestSystemPrompt();
+    const nowIso = new Date().toISOString();
+    const system = `${systemPrompt}\n\nCurrent time (ISO 8601): ${nowIso}\n\nOutput must include expiresAt as ISO 8601 datetime string or null.`;
 
     const { object } = await generateObject({
       model: this.client(env.LLM_DEFAULT_MODEL),
       schema: parsedPRSchema,
-      system: systemPrompt,
+      system,
       prompt: rawText,
       temperature: 0.3,
     });
@@ -252,7 +255,7 @@ export class LLMService {
           caption: z.string().max(100),
           posterStylePrompt: z.string(),
         }),
-        system: systemPrompt,
+        system,
         prompt,
         temperature: 0.7,
       });

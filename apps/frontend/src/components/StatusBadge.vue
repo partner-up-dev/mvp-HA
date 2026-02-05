@@ -8,7 +8,7 @@
 import { computed } from "vue";
 
 const props = defineProps<{
-  status: "OPEN" | "ACTIVE" | "CLOSED";
+  status: "OPEN" | "ACTIVE" | "CLOSED" | "EXPIRED";
 }>();
 
 const statusText = computed(() => {
@@ -16,6 +16,7 @@ const statusText = computed(() => {
     OPEN: "可加入",
     ACTIVE: "进行中",
     CLOSED: "已结束",
+    EXPIRED: "已过期",
   };
   return map[props.status];
 });
@@ -38,6 +39,11 @@ const statusText = computed(() => {
   }
 
   &.closed {
+    background: var(--sys-color-surface-container);
+    color: var(--sys-color-on-surface-variant);
+  }
+
+  &.expired {
     background: var(--sys-color-surface-container);
     color: var(--sys-color-on-surface-variant);
   }

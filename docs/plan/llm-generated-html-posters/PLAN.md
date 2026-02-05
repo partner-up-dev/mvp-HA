@@ -730,9 +730,9 @@ FUNCTION_TIMEOUT=30000
 # Ensure sufficient memory allocation (1GB+)
 ```
 
-## 📋 Task Breakdown
+## 📋 PartnerRequest Breakdown
 
-### Backend Tasks (9h total)
+### Backend PartnerRequests (9h total)
 
 1. **HtmlPosterService Implementation** - 2h
 2. **PuppeteerRenderService Implementation** - 2h
@@ -743,7 +743,7 @@ FUNCTION_TIMEOUT=30000
 7. **Content Analysis Service** - 1h
 8. **Error Handling & Validation** - 1h
 
-### Frontend Tasks (2h total)
+### Frontend PartnerRequests (2h total)
 
 1. **Update Poster Generation Composable** - 1h
 2. **Update ShareToXiaohongshu Component** - 1h

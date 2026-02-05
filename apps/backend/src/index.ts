@@ -47,6 +47,7 @@ export type AppType = typeof routes;
 export type {
   ParsedPartnerRequest,
   PRStatus,
+  PRStatusManual,
   PRId,
   PartnerRequestSummary,
 } from "./entities/partner-request";

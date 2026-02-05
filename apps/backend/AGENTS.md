@@ -1,4 +1,4 @@
-# AGENTS.md of PartnerUp MVP-HA (Backend)
+﻿# AGENTS.md of PartnerUp MVP-HA (Backend)
 
 本项目是一个基于 Hono (Server) 和 Drizzle ORM (Database) 的后端服务。
 
@@ -41,7 +41,16 @@ src/
 3. JSON Response: Always return via `c.json()` so RPC can infer types.
 4. Error Handling: Use global `app.onError` to unify error response shapes.
 
-## WeChat JS-SDK
+## Product Reference
+
+- See `docs/product/overview.md` for H-A MVP definition and scope.
+
+## Current State
+
+- 产品“PartnerRequest”在代码中命名为“partner request (PR)”。
+- 状态已包含 OPEN / ACTIVE / CLOSED / EXPIRED；EXPIRED 在获取时懒触发（到期自动结束）。
+
+### WeChat JS-SDK
 
 - Endpoint: `GET /api/wechat/jssdk-signature?url=...`
 - Env:
@@ -51,7 +60,7 @@ src/
 - Notes:
   - `access_token` and `jsapi_ticket` are cached in-memory with expiry.
 
-## Upload Storage
+### Upload Storage
 
 - Poster uploads are saved to `POSTERS_DIR` if provided.
 - Default: `/mnt/oss/posters` on Linux, `./posters` on Windows.

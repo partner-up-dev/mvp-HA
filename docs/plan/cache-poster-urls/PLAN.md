@@ -137,7 +137,7 @@ ADD COLUMN xiaohongshu_posters JSONB DEFAULT '[]'::jsonb NOT NULL,
 ADD COLUMN wechat_thumbnails JSONB DEFAULT '[]'::jsonb NOT NULL;
 ```
 
-**Tasks:**
+**PartnerRequests:**
 
 - Create migration file
 - Update Drizzle schema snapshot
