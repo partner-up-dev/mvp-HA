@@ -3,11 +3,11 @@ import {
   partnerRequests,
   type NewPartnerRequest,
   type PRStatus,
-  type ParsedPartnerRequest,
   type PRId,
   type XiaohongshuPosterCache,
   type WechatThumbnailCache,
   type PartnerRequest,
+  type PartnerRequestFields,
 } from "../entities/partner-request";
 import { desc, eq, inArray } from "drizzle-orm";
 
@@ -43,39 +43,33 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async updateParsed(
+  async updateFields(
     id: PRId,
-    parsed: ParsedPartnerRequest,
+    fields: PartnerRequestFields,
     expiresAt: Date | null,
   ) {
     const result = await db
       .update(partnerRequests)
-      .set({ parsed, expiresAt })
+      .set({
+        title: fields.title,
+        type: fields.type,
+        time: fields.time,
+        location: fields.location,
+        expiresAt,
+        partners: fields.partners,
+        budget: fields.budget,
+        preferences: fields.preferences,
+        notes: fields.notes,
+      })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] || null;
   }
 
-  async incrementParticipants(id: PRId) {
-    const pr = await this.findById(id);
-    if (!pr) return null;
-
+  async updatePartners(id: PRId, partners: PartnerRequestFields["partners"]) {
     const result = await db
       .update(partnerRequests)
-      .set({ participants: (pr.participants || 0) + 1 })
-      .where(eq(partnerRequests.id, id))
-      .returning();
-    return result[0] || null;
-  }
-
-  async decrementParticipants(id: PRId) {
-    const pr = await this.findById(id);
-    if (!pr) return null;
-
-    const newCount = Math.max(0, (pr.participants || 0) - 1);
-    const result = await db
-      .update(partnerRequests)
-      .set({ participants: newCount })
+      .set({ partners })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] || null;

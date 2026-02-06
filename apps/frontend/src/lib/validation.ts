@@ -1,15 +1,15 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import { toTypedSchema } from "@vee-validate/zod";
 
 // Validation schema matching backend requirements
 export const createPRSchema = z.object({
   rawText: z
     .string()
-    .min(1, "请输入搭子需求描述")
-    .max(2000, "描述不能超过2000字符")
+    .min(1, "è¯·è¾“å…¥æ­å­éœ€æ±‚æè¿°")
+    .max(2000, "æè¿°ä¸èƒ½è¶…è¿‡2000å­—ç¬¦")
     .transform((val) => val.trim()),
 
-  pin: z.string().regex(/^\d{4}$/, "PIN码必须是4位数字"),
+  pin: z.string().regex(/^\d{4}$/, "PINç å¿…é¡»æ˜¯4ä½æ•°å­—"),
 });
 
 export type CreatePRInput = z.infer<typeof createPRSchema>;
@@ -17,14 +17,25 @@ export type CreatePRInput = z.infer<typeof createPRSchema>;
 // Convert to VeeValidate schema
 export const createPRValidationSchema = toTypedSchema(createPRSchema);
 
-// Parsed fields validation schema
-export const parsedFieldsSchema = z.object({
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const isoDateTimeSchema = z.string().datetime();
+const isoDateOrDateTimeSchema = z.union([isoDateTimeSchema, isoDateSchema]);
+
+// Partner request fields validation schema
+export const prFieldsSchema = z.object({
   title: z.string().optional(),
-  scenario: z.string().min(1, "请输入活动类型"),
-  time: z.string().nullable(),
+  type: z.string().min(1, "è¯·è¾“å…¥æ´»åŠ¨ç±»åž‹"),
+  time: z.tuple([
+    isoDateOrDateTimeSchema.nullable(),
+    isoDateOrDateTimeSchema.nullable(),
+  ]),
+  location: z.string().nullable(),
   expiresAt: z.string().datetime().nullable(),
-  minParticipants: z.number().nullable(),
-  maxParticipants: z.number().nullable(),
+  partners: z.tuple([
+    z.number().nullable(),
+    z.number().int().nonnegative(),
+    z.number().nullable(),
+  ]),
   budget: z.string().nullable(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
@@ -32,8 +43,8 @@ export const parsedFieldsSchema = z.object({
 
 // Update content schema
 export const updateContentSchema = z.object({
-  parsed: parsedFieldsSchema,
-  pin: z.string().regex(/^\d{4}$/, "PIN码必须是4位数字"),
+  fields: prFieldsSchema,
+  pin: z.string().regex(/^\d{4}$/, "PINç å¿…é¡»æ˜¯4ä½æ•°å­—"),
 });
 
 export type UpdateContentInput = z.infer<typeof updateContentSchema>;

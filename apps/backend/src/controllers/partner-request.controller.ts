@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { PartnerRequestService } from '../services/PartnerRequestService';
 import {
   prStatusManualSchema,
-  parsedPRSchema,
+  partnerRequestFieldsSchema,
 } from '../entities/partner-request';
 
 const app = new Hono();
@@ -14,6 +14,7 @@ const service = new PartnerRequestService();
 const createPRSchema = z.object({
   rawText: z.string().min(1).max(2000),
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
+  nowIso: z.string().datetime(),
 });
 
 const updateStatusSchema = z.object({
@@ -22,7 +23,7 @@ const updateStatusSchema = z.object({
 });
 
 const updateContentSchema = z.object({
-  parsed: parsedPRSchema,
+  fields: partnerRequestFieldsSchema,
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
 });
 
@@ -40,8 +41,8 @@ export const partnerRequestRoute = app
     '/',
     zValidator('json', createPRSchema),
     async (c) => {
-      const { rawText, pin } = c.req.valid('json');
-      const result = await service.createPR(rawText, pin);
+      const { rawText, pin, nowIso } = c.req.valid('json');
+      const result = await service.createPR(rawText, pin, nowIso);
       return c.json(result, 201);
     }
   )
@@ -84,8 +85,8 @@ export const partnerRequestRoute = app
     zValidator('json', updateContentSchema),
     async (c) => {
       const { id } = c.req.valid('param');
-      const { parsed, pin } = c.req.valid('json');
-      const result = await service.updatePRContent(id, parsed, pin);
+      const { fields, pin } = c.req.valid('json');
+      const result = await service.updatePRContent(id, fields, pin);
       return c.json(result);
     }
   )

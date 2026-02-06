@@ -71,7 +71,7 @@ export const useWeChatShare = () => {
 
         await new Promise<void>((resolve, reject) => {
           wx?.config({
-            debug: true,
+            debug: false,
             appId: signature.appId,
             timestamp: signature.timestamp,
             nonceStr: signature.nonceStr,

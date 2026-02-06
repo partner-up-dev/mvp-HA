@@ -1,4 +1,4 @@
-import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import type { PRId } from "@partner-up-dev/backend";
 
 /**
@@ -7,7 +7,7 @@ import type { PRId } from "@partner-up-dev/backend";
 export interface ShareToXiaohongshuProps {
   shareUrl: string;
   prId: PRId;
-  prData: ParsedPartnerRequest & {
+  prData: PartnerRequestFields & {
     xiaohongshuPoster?: {
       caption: string;
       posterStylePrompt: string;

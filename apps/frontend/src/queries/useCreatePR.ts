@@ -5,6 +5,7 @@ import { client } from '@/lib/rpc';
 interface CreatePRInput {
   rawText: string;
   pin: string;
+  nowIso: string;
 }
 
 interface CreatePRResult {

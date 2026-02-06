@@ -49,7 +49,7 @@ import { computed, ref, watchEffect } from "vue";
 import ShareAsLink from "./ShareAsLink/ShareAsLink.vue";
 import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/ShareToXiaohongshu.vue";
 import ShareToWechatChatMethod from "./ShareToWechat/ShareToWechat.vue";
-import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
+import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 
 type ShareMethodId = "COPY_LINK" | "XIAOHONGSHU" | "WECHAT_CHAT";
 
@@ -63,7 +63,15 @@ interface Props {
   shareUrl: string;
   prId: PRId;
   prData: {
-    parsed: ParsedPartnerRequest;
+    title?: string;
+    type: string;
+    time: PartnerRequestFields["time"];
+    location: string | null;
+    expiresAt: string | null;
+    partners: PartnerRequestFields["partners"];
+    budget: string | null;
+    preferences: string[];
+    notes: string | null;
     rawText: string;
     xiaohongshuPoster?: {
       caption: string;
@@ -95,7 +103,15 @@ const allMethods = computed<ShareMethod[]>(() => [
 
 const prId = computed(() => props.prId);
 const shareData = computed(() => ({
-  ...props.prData.parsed,
+  title: props.prData.title,
+  type: props.prData.type,
+  time: props.prData.time,
+  location: props.prData.location,
+  expiresAt: props.prData.expiresAt,
+  partners: props.prData.partners,
+  budget: props.prData.budget,
+  preferences: props.prData.preferences,
+  notes: props.prData.notes,
   xiaohongshuPoster: props.prData.xiaohongshuPoster ?? null,
   wechatThumbnail: props.prData.wechatThumbnail ?? null,
 }));

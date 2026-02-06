@@ -37,7 +37,7 @@ Enhance SharePR.vue to add "Share to Xiaohongshu" functionality, allowing users 
    - `flashState()` - provides user feedback
    - Component state management pattern already established
 
-### ⚠️ What We Need to Build
+### What We Need to Build
 
 1. A new share method component for Xiaohongshu-specific UI
 2. LLM-based caption generation (backend integration or client-side)
@@ -245,7 +245,7 @@ interface Props {
 
 ---
 
-## ⚠️ Known Limitations & Future Considerations
+## Known Limitations & Future Considerations
 
 1. **H5 Limitations**: Cannot directly save images to gallery
    - Solution: Guide users to long-press and save manually

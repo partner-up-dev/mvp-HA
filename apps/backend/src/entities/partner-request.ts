@@ -6,24 +6,35 @@ import {
   timestamp,
   integer,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Parsed partner request schema (from LLM)
-export const parsedPRSchema = z.object({
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const isoDateTimeSchema = z.string().datetime();
+const isoDateOrDateTimeSchema = z.union([isoDateTimeSchema, isoDateSchema]);
+
+// Partner request fields (from LLM / client edits)
+export const partnerRequestFieldsSchema = z.object({
   title: z.string().optional(),
-  scenario: z.string(),
-  time: z.string().nullable(),
+  type: z.string(),
+  time: z.tuple([
+    isoDateOrDateTimeSchema.nullable(),
+    isoDateOrDateTimeSchema.nullable(),
+  ]),
   location: z.string().nullable(),
   expiresAt: z.string().datetime().nullable(),
-  minParticipants: z.number().nullable(),
-  maxParticipants: z.number().nullable(),
+  partners: z.tuple([
+    z.number().nullable(),
+    z.number().int().nonnegative(),
+    z.number().nullable(),
+  ]),
   budget: z.string().nullable(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
 });
 
-export type ParsedPartnerRequest = z.infer<typeof parsedPRSchema>;
+export type PartnerRequestFields = z.infer<typeof partnerRequestFieldsSchema>;
 
 // Status enum
 export const prStatusSchema = z.enum(["OPEN", "ACTIVE", "CLOSED", "EXPIRED"]);
@@ -34,12 +45,14 @@ export type PRStatusManual = z.infer<typeof prStatusManualSchema>;
 export const partnerRequestSummarySchema = z.object({
   id: z.number().int().positive(),
   status: prStatusSchema,
-  participants: z.number().int().nonnegative(),
+  partners: z.tuple([
+    z.number().nullable(),
+    z.number().int().nonnegative(),
+    z.number().nullable(),
+  ]),
   createdAt: z.string(),
-  parsed: z.object({
-    title: z.string().optional(),
-    scenario: z.string(),
-  }),
+  title: z.string().optional(),
+  type: z.string(),
 });
 
 export type PartnerRequestSummary = z.infer<typeof partnerRequestSummarySchema>;
@@ -65,12 +78,29 @@ export type WechatThumbnailCache = z.infer<typeof wechatThumbnailSchema>;
 export const partnerRequests = pgTable("partner_requests", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   rawText: text("raw_text").notNull(),
-  parsed: jsonb("parsed").$type<ParsedPartnerRequest>().notNull(),
+  title: text("title"),
+  type: text("type").notNull(),
+  time: text("time_window")
+    .array()
+    .$type<[string | null, string | null]>()
+    .notNull()
+    .default(sql`ARRAY[NULL, NULL]::text[]`),
+  location: text("location"),
   status: text("status").$type<PRStatus>().notNull().default("OPEN"),
   pinHash: text("pin_hash").notNull(),
-  participants: integer("participants").notNull().default(0),
+  partners: integer("partners")
+    .array()
+    .$type<[number | null, number, number | null]>()
+    .notNull()
+    .default(sql`ARRAY[NULL, 0, NULL]::integer[]`),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   expiresAt: timestamp("expires_at"),
+  budget: text("budget"),
+  preferences: text("preferences")
+    .array()
+    .notNull()
+    .default(sql`ARRAY[]::text[]`),
+  notes: text("notes"),
   xiaohongshuPoster: jsonb("xiaohongshu_poster")
     .$type<XiaohongshuPosterCache | null>()
     .default(null),
@@ -81,12 +111,14 @@ export const partnerRequests = pgTable("partner_requests", {
 
 // Zod schemas for validation
 export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
-  parsed: parsedPRSchema,
+  time: partnerRequestFieldsSchema.shape.time,
+  partners: partnerRequestFieldsSchema.shape.partners,
   status: prStatusSchema,
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
-  parsed: parsedPRSchema,
+  time: partnerRequestFieldsSchema.shape.time,
+  partners: partnerRequestFieldsSchema.shape.partners,
   status: prStatusSchema,
 });
 

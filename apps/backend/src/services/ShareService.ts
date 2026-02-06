@@ -1,5 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import type { PRId } from "../entities/partner-request";
+import type { PartnerRequest, PartnerRequestFields, PRId } from "../entities/partner-request";
 import { PartnerRequestService } from "./PartnerRequestService";
 import { LLMService, type PosterHtmlResponse } from "./LLMService";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
@@ -38,8 +38,9 @@ export class ShareService {
   }): Promise<PosterHtmlResponse> {
     // Always generate HTML (poster image URL caching is handled via cache endpoints)
     const pr = await this.prService.getPR(params.prId);
+    const prFields = this.toPartnerRequestFields(pr);
     const result = await this.llmService.generateXiaohongshuPosterHtml({
-      pr,
+      pr: { ...prFields, rawText: pr.rawText },
       caption: params.caption,
       posterStylePrompt: params.posterStylePrompt,
     });
@@ -55,9 +56,10 @@ export class ShareService {
   }): Promise<PosterHtmlResponse> {
     // Always generate HTML (thumbnail image URL caching is handled via cache endpoints)
     const pr = await this.prService.getPR(params.prId);
+    const prFields = this.toPartnerRequestFields(pr);
 
     const result = await this.llmService.generateWeChatCardThumbnailHtml({
-      pr,
+      pr: { ...prFields, rawText: pr.rawText },
       style: params.style,
     });
 
@@ -120,5 +122,19 @@ export class ShareService {
     if (!url) return null;
     if (!this.isRemoteUrl(url)) return null;
     return url;
+  }
+
+  private toPartnerRequestFields(pr: PartnerRequest): PartnerRequestFields {
+    return {
+      title: pr.title ?? undefined,
+      type: pr.type,
+      time: pr.time,
+      location: pr.location,
+      expiresAt: pr.expiresAt ? pr.expiresAt.toISOString() : null,
+      partners: pr.partners,
+      budget: pr.budget,
+      preferences: pr.preferences,
+      notes: pr.notes,
+    };
   }
 }

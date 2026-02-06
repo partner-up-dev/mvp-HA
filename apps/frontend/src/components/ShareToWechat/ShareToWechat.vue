@@ -110,8 +110,8 @@ const pickFallbackKeyText = (): string => {
   const title = props.prData.title?.trim();
   if (title && title.length > 0) return title.slice(0, 3);
 
-  const scenario = props.prData.scenario?.trim();
-  if (scenario && scenario.length > 0) return scenario.slice(0, 3);
+  const type = props.prData.type?.trim();
+  if (type && type.length > 0) return type.slice(0, 3);
 
   return "搭";
 };

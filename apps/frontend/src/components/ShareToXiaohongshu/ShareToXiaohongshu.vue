@@ -101,7 +101,7 @@ import { renderPosterHtmlToBlob } from "@/composables/renderHtmlPoster";
 import { useCloudStorage } from "@/composables/useCloudStorage";
 import { isWeChatBrowser } from "@/lib/browser-detection";
 import { client } from "@/lib/rpc";
-import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
+import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import {
   TIMING_CONSTANTS,
   copyToClipboard,
@@ -117,7 +117,7 @@ const DEFAULT_POSTER_STYLE_PROMPT =
 interface Props {
   shareUrl: string;
   prId: PRId;
-  prData: ParsedPartnerRequest & {
+  prData: PartnerRequestFields & {
     xiaohongshuPoster?: {
       caption: string;
       posterStylePrompt: string;

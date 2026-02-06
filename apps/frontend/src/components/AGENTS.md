@@ -7,13 +7,13 @@
 Always import type definitions from `@partner-up-dev/backend` instead of re-declaring them:
 
 ```typescript
-import type { ParsedPartnerRequest, PRId, PRStatus } from "@partner-up-dev/backend";
+import type { PartnerRequestFields, PRId, PRStatus } from "@partner-up-dev/backend";
 
 // ❌ Don't do this:
-interface ParsedPartnerRequest { ... }
+interface PartnerRequestFields { ... }
 
 // ✅ Do this:
-import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
 ```
 
 This ensures consistency across frontend and backend and reduces duplication.
@@ -68,8 +68,10 @@ Prohibited:
 ## Components
 
 - Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.
-- SharePR.vue: Carousel host for multiple share methods. Renders per-method components (ShareAsLink/ShareAsLink.vue, ShareToXiaohongshu/ShareToXiaohongshu.vue, ShareToWechat/ShareToWechat.vue). Each method component internally owns its options, preview, and actions, ensuring proper state management and type safety. No duplicated types—imports ParsedPartnerRequest from @partner-up-dev/backend.
+- DateTimeRangePicker.vue: Standalone time window picker for start/end date/time. Uses `v-model` to emit `[start, end]` values in `YYYY-MM-DD` or `YYYY-MM-DDTHH:mm` format.
+- SharePR.vue: Carousel host for multiple share methods. Renders per-method components (ShareAsLink/ShareAsLink.vue, ShareToXiaohongshu/ShareToXiaohongshu.vue, ShareToWechat/ShareToWechat.vue). Each method component internally owns its options, preview, and actions, ensuring proper state management and type safety. No duplicated types—imports PartnerRequestFields from @partner-up-dev/backend.
 
 ## Composables
 
 - `useCloudStorage()`: Handles file uploads to the backend and returns download URLs.
+

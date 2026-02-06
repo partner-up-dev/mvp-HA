@@ -45,7 +45,7 @@ export type AppType = typeof routes;
 
 // Export types for frontend use
 export type {
-  ParsedPartnerRequest,
+  PartnerRequestFields,
   PRStatus,
   PRStatusManual,
   PRId,

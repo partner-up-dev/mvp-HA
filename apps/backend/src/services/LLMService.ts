@@ -1,12 +1,13 @@
 import { generateObject } from "ai";
 import { createOpenAI, openai } from "@ai-sdk/openai";
 import {
-  parsedPRSchema,
-  type ParsedPartnerRequest,
+  partnerRequestFieldsSchema,
+  type PartnerRequestFields,
 } from "../entities/partner-request";
 import { env } from "../lib/env";
 import { ConfigService } from "./ConfigService";
 import { z } from "zod";
+import { DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT } from "./prompts/partnerRequestParsePrompt";
 
 const CONFIG_KEY_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT =
   "partner_request.parse_system_prompt";
@@ -28,20 +29,6 @@ export type PosterHtmlResponse = {
     keyText?: string;
   };
 };
-
-const DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT = `你是一个搭子需求解析助手。用户会输入自然语言描述的搭子需求，你需要将其结构化。
-
-解析规则：
-- title: 需求标题，简洁概括需求内容（8-18字），例如："周末一起爬香山"、"找人一起学习日语"、"寻通勤拼车伙伴"
-- scenario: 场景类型，如：旅行/通勤/用餐/运动/学习/娱乐等
-- time: 时间要求，如果没有明确说明则为null
-- location: 地点要求，如果没有明确说明则为null
-- expiresAt: 本需求的自动结束时间，ISO 8601 datetime 字符串（如 "2026-02-05T10:00:00.000Z"），如果无法推断则为null。请基于“当前时间”和场景做出合理的期限
-- minParticipants: 最少需要的参与人数，数字类型，如果没有明确说明则为null
-- maxParticipants: 最多需要的参与人数，数字类型，如果没有明确说明则为null（注意：如果用户只说"需要2人"，则minParticipants和maxParticipants都是2）
-- budget: 预算范围，如果没有明确说明则为null
-- preferences: 其他偏好要求，字符串数组
-- notes: 其他备注信息，如果没有则为null`;
 
 const DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT = `你是一位小红书文案写手和视觉设计师，专长于撰写有分享力的搭子合伙文案，并设计与之匹配的海报风格。
 
@@ -203,14 +190,16 @@ export class LLMService {
     this.configService = new ConfigService();
   }
 
-  async parseRequest(rawText: string): Promise<ParsedPartnerRequest> {
+  async parseRequest(
+    rawText: string,
+    nowIso: string,
+  ): Promise<PartnerRequestFields> {
     const systemPrompt = await this.getParsePartnerRequestSystemPrompt();
-    const nowIso = new Date().toISOString();
     const system = `${systemPrompt}\n\nCurrent time (ISO 8601): ${nowIso}\n\nOutput must include expiresAt as ISO 8601 datetime string or null.`;
 
     const { object } = await generateObject({
       model: this.client(env.LLM_DEFAULT_MODEL),
-      schema: parsedPRSchema,
+      schema: partnerRequestFieldsSchema,
       system,
       prompt: rawText,
       temperature: 0.3,
@@ -220,7 +209,7 @@ export class LLMService {
   }
 
   async generateXiaohongshuCaption(
-    prData: ParsedPartnerRequest,
+    prData: PartnerRequestFields,
     style?: number | XiaohongshuStyle,
   ): Promise<{ caption: string; posterStylePrompt: string }> {
     const styles = await this.getXiaohongshuStylePrompts();
@@ -290,7 +279,7 @@ export class LLMService {
   }
 
   async generateXiaohongshuPosterHtml(params: {
-    pr: { parsed: ParsedPartnerRequest; rawText: string };
+    pr: PartnerRequestFields & { rawText: string };
     caption: string;
     posterStylePrompt: string;
   }): Promise<PosterHtmlResponse> {
@@ -326,7 +315,7 @@ HTML/CSS 约束：
   }
 
   async generateWeChatCardThumbnailHtml(params: {
-    pr: { parsed: ParsedPartnerRequest; rawText: string };
+    pr: PartnerRequestFields & { rawText: string };
     style?: number;
   }): Promise<PosterHtmlResponse> {
     const stylePrompts = await this.getShareWeChatThumbnailHtmlStylePrompts();
@@ -345,17 +334,20 @@ HTML/CSS 约束：
     return object;
   }
 
-  private buildXiaohongshuCaptionPrompt(prData: ParsedPartnerRequest): string {
+  private buildXiaohongshuCaptionPrompt(prData: PartnerRequestFields): string {
     const parts: string[] = [];
 
     if (prData.title) parts.push(`活动标题：${prData.title}`);
-    if (prData.time) parts.push(`时间：${prData.time}`);
+    const timeWindow = this.formatTimeWindow(prData.time);
+    if (timeWindow) parts.push(`时间：${timeWindow}`);
     if (prData.location) parts.push(`地点：${prData.location}`);
-    if (prData.maxParticipants && prData.minParticipants) {
-      const needed = prData.maxParticipants - prData.minParticipants;
-      parts.push(
-        `需要人数：还差${needed > 0 ? needed : prData.maxParticipants}人`,
-      );
+    const [minPartners, currentPartners, maxPartners] = prData.partners;
+    if (maxPartners !== null) {
+      const needed = Math.max(maxPartners - currentPartners, 0);
+      parts.push(`需要人数：还差${needed}人`);
+    } else if (minPartners !== null) {
+      const needed = Math.max(minPartners - currentPartners, 0);
+      parts.push(`最少需要：还差${needed}人`);
     }
     if (prData.preferences && prData.preferences.length > 0) {
       parts.push(`偏好：${prData.preferences.join("、")}`);
@@ -421,21 +413,24 @@ HTML/CSS 约束：
   }
 
   private buildXhsPosterHtmlPrompt(
-    pr: { parsed: ParsedPartnerRequest; rawText: string },
+    pr: PartnerRequestFields & { rawText: string },
     caption: string,
   ): string {
     const parts: string[] = [];
     parts.push(`海报文案（必须原样出现）：${caption}`);
 
-    const title = pr.parsed.title?.trim();
+    const title = pr.title?.trim();
     if (title) parts.push(`标题：${title}`);
-    parts.push(`场景：${pr.parsed.scenario}`);
-    if (pr.parsed.time) parts.push(`时间：${pr.parsed.time}`);
-    if (pr.parsed.location) parts.push(`地点：${pr.parsed.location}`);
-    if (pr.parsed.minParticipants !== null)
-      parts.push(`最少人数：${pr.parsed.minParticipants}`);
-    if (pr.parsed.maxParticipants !== null)
-      parts.push(`最多人数：${pr.parsed.maxParticipants}`);
+    parts.push(`类型：${pr.type}`);
+    const timeWindow = this.formatTimeWindow(pr.time);
+    if (timeWindow) parts.push(`时间：${timeWindow}`);
+    if (pr.location) parts.push(`地点：${pr.location}`);
+    const [minPartners, currentPartners, maxPartners] = pr.partners;
+    if (minPartners !== null)
+      parts.push(`最少人数：${minPartners}`);
+    if (maxPartners !== null)
+      parts.push(`最多人数：${maxPartners}`);
+    parts.push(`当前人数：${currentPartners}`);
 
     parts.push(
       "\n输出要求：请输出 JSON，字段为 html,width,height,backgroundColor。不要输出解释。",
@@ -446,15 +441,14 @@ HTML/CSS 约束：
     return parts.join("\n");
   }
 
-  private buildWeChatThumbnailHtmlPrompt(pr: {
-    parsed: ParsedPartnerRequest;
-    rawText: string;
-  }): string {
+  private buildWeChatThumbnailHtmlPrompt(
+    pr: PartnerRequestFields & { rawText: string },
+  ): string {
     const parts: string[] = [];
-    const title = pr.parsed.title?.trim();
+    const title = pr.title?.trim();
     if (title) parts.push(`标题：${title}`);
-    parts.push(`场景：${pr.parsed.scenario}`);
-    if (pr.parsed.location) parts.push(`地点：${pr.parsed.location}`);
+    parts.push(`类型：${pr.type}`);
+    if (pr.location) parts.push(`地点：${pr.location}`);
 
     parts.push(
       "从以上信息中选择一个 keyText：要么是 1 个 emoji，要么是 <=3 个汉字。",
@@ -468,4 +462,23 @@ HTML/CSS 约束：
 
     return parts.join("\n");
   }
+
+  private formatTimeWindow(time: PartnerRequestFields["time"]): string | null {
+    const [start, end] = time;
+    if (start && end) return `${start} - ${end}`;
+    if (start) return start;
+    if (end) return end;
+    return null;
+  }
 }
+
+
+
+
+
+
+
+
+
+
+

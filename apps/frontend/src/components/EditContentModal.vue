@@ -18,20 +18,13 @@
       <div class="form-field">
         <label>活动类型 <span class="required">*</span></label>
         <input
-          v-model="formData.scenario"
+          v-model="formData.type"
           type="text"
           placeholder="例如：爬山、看电影、打球等"
         />
       </div>
 
-      <div class="form-field">
-        <label>时间</label>
-        <input
-          v-model="formData.time"
-          type="text"
-          placeholder="例如：周末、明天下午等"
-        />
-      </div>
+      <DateTimeRangePicker v-model="formData.time" />
 
       <div class="form-field">
         <label>地点</label>
@@ -45,7 +38,7 @@
       <div class="form-field">
         <label>最少人数</label>
         <input
-          v-model.number="formData.minParticipants"
+          v-model.number="minPartners"
           type="number"
           placeholder="至少需要几个人"
         />
@@ -54,7 +47,7 @@
       <div class="form-field">
         <label>最多人数</label>
         <input
-          v-model.number="formData.maxParticipants"
+          v-model.number="maxPartners"
           type="number"
           placeholder="最多需要几个人"
         />
@@ -84,7 +77,7 @@
                 class="remove-tag"
                 @click="removePreference(index)"
               >
-                ×
+                清除
               </button>
             </span>
           </div>
@@ -136,17 +129,21 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
+import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import { useUpdatePRContent } from "@/queries/useUpdatePRContent";
 import Modal from "@/components/Modal.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
+import DateTimeRangePicker from "@/components/DateTimeRangePicker.vue";
 
 interface Props {
   open: boolean;
-  initialParsed: ParsedPartnerRequest;
+  initialFields: PartnerRequestFields;
   prId: PRId;
 }
+
+type TimeWindow = PartnerRequestFields["time"];
+type PartnersTuple = PartnerRequestFields["partners"];
 
 const props = defineProps<Props>();
 const emit = defineEmits<{
@@ -156,37 +153,49 @@ const emit = defineEmits<{
 
 const updateMutation = useUpdatePRContent();
 
+const cloneTimeWindow = (time: TimeWindow): TimeWindow => [time[0], time[1]];
+const clonePartners = (partners: PartnersTuple): PartnersTuple => [
+  partners[0],
+  partners[1],
+  partners[2],
+];
+
 // Form data
-const formData = ref<ParsedPartnerRequest>({
-  title: props.initialParsed.title || "",
-  scenario: props.initialParsed.scenario,
-  time: props.initialParsed.time,
-  expiresAt: props.initialParsed.expiresAt,
-  minParticipants: props.initialParsed.minParticipants,
-  maxParticipants: props.initialParsed.maxParticipants,
-  budget: props.initialParsed.budget,
-  preferences: [...props.initialParsed.preferences],
-  notes: props.initialParsed.notes,
+const formData = ref<PartnerRequestFields>({
+  title: props.initialFields.title || "",
+  type: props.initialFields.type,
+  time: cloneTimeWindow(props.initialFields.time),
+  expiresAt: props.initialFields.expiresAt,
+  partners: clonePartners(props.initialFields.partners),
+  budget: props.initialFields.budget,
+  preferences: [...props.initialFields.preferences],
+  notes: props.initialFields.notes,
+  location: props.initialFields.location,
 });
+
+const minPartners = ref<number | null>(formData.value.partners[0]);
+const maxPartners = ref<number | null>(formData.value.partners[2]);
 
 const pin = ref("");
 const newPreference = ref("");
 
 // Reset form when modal opens with new data
 watch(
-  () => props.initialParsed,
+  () => props.initialFields,
   (newVal) => {
     formData.value = {
       title: newVal.title || "",
-      scenario: newVal.scenario,
-      time: newVal.time,
+      type: newVal.type,
+      time: cloneTimeWindow(newVal.time),
       expiresAt: newVal.expiresAt,
-      minParticipants: newVal.minParticipants,
-      maxParticipants: newVal.maxParticipants,
+      partners: clonePartners(newVal.partners),
       budget: newVal.budget,
       preferences: [...newVal.preferences],
       notes: newVal.notes,
+      location: newVal.location,
     };
+    minPartners.value = newVal.partners[0];
+    maxPartners.value = newVal.partners[2];
   },
   { deep: true },
 );
@@ -194,7 +203,7 @@ watch(
 const isFormValid = computed(() => {
   return (
     (formData.value.title?.trim().length ?? 0) > 0 &&
-    formData.value.scenario.trim().length > 0 &&
+    formData.value.type.trim().length > 0 &&
     pin.value.length === 4
   );
 });
@@ -214,10 +223,19 @@ const removePreference = (index: number) => {
 const handleSubmit = async () => {
   if (!isFormValid.value) return;
 
+  const updatedFields: PartnerRequestFields = {
+    ...formData.value,
+    partners: [
+      minPartners.value,
+      formData.value.partners[1],
+      maxPartners.value,
+    ],
+  };
+
   try {
     await updateMutation.mutateAsync({
       id: props.prId,
-      parsed: formData.value,
+      fields: updatedFields,
       pin: pin.value,
     });
 
@@ -271,6 +289,7 @@ const handleSubmit = async () => {
     min-height: 60px;
   }
 }
+
 
 .pin-field input {
   @include mx.pu-font(title-medium);

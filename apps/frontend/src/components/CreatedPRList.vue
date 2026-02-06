@@ -34,7 +34,7 @@
           <div class="created-item-top">
             <div class="created-item-text">
               <div class="created-item-name">
-                {{ pr.parsed.title || pr.parsed.scenario }}
+                {{ pr.title || pr.type }}
               </div>
               <time class="created-item-time">
                 {{ formatDate(pr.createdAt) }}

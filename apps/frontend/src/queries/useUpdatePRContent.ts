@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import type { ParsedPartnerRequest, PRId } from "@partner-up-dev/backend";
+import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 
 interface UpdateContentInput {
   id: PRId;
-  parsed: ParsedPartnerRequest;
+  fields: PartnerRequestFields;
   pin: string;
 }
 
@@ -12,10 +12,10 @@ export const useUpdatePRContent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, parsed, pin }: UpdateContentInput) => {
+    mutationFn: async ({ id, fields, pin }: UpdateContentInput) => {
       const res = await client.api.pr[":id"].content.$patch({
         param: { id: id.toString() },
-        json: { parsed, pin },
+        json: { fields, pin },
       });
 
       if (!res.ok) {

@@ -9,8 +9,8 @@
         <button class="home-btn" @click="goHome" aria-label="返回首页">
           <div class="i-mdi-arrow-left font-title-large"></div>
         </button>
-        <h1 v-if="data.parsed?.title" class="page-title">
-          {{ data.parsed.title }}
+        <h1 v-if="data.title" class="page-title">
+          {{ data.title }}
         </h1>
       </div>
 
@@ -20,9 +20,14 @@
       </header>
 
       <PRCard
-        :parsed="data.parsed"
+        :type="data.type"
+        :time="localizedTime"
+        :location="data.location"
+        :partners="data.partners"
+        :budget="data.budget"
+        :preferences="data.preferences"
+        :notes="data.notes"
         :raw-text="data.rawText"
-        :participants="data.participants"
       />
 
       <section class="actions">
@@ -68,7 +73,7 @@
       <EditContentModal
         v-if="showEditModal && id !== null"
         :open="showEditModal"
-        :initial-parsed="data.parsed"
+        :initial-fields="data"
         :pr-id="id"
         @close="showEditModal = false"
         @success="handleEditSuccess"
@@ -141,10 +146,9 @@ const canJoin = computed(() => {
   if (isCreator.value || hasJoined.value) return false;
   if (data.value.status !== "OPEN" && data.value.status !== "ACTIVE")
     return false;
-  if (data.value.parsed.maxParticipants) {
-    const currentCount = data.value.participants || 0;
-    if (currentCount >= data.value.parsed.maxParticipants) return false;
-  }
+  const maxPartners = data.value.partners[2];
+  const currentCount = data.value.partners[1];
+  if (maxPartners !== null && currentCount >= maxPartners) return false;
   return true;
 });
 
@@ -159,6 +163,32 @@ const formatDate = (dateStr: string) => {
     minute: "2-digit",
   });
 };
+
+const normalizeTimeValue = (value: string | null): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.toLowerCase() === "null") return null;
+  return trimmed;
+};
+
+const formatDateTime = (value: string | null): string | null => {
+  const normalized = normalizeTimeValue(value);
+  if (!normalized) return null;
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const localizedTime = computed(() => [
+  formatDateTime(data.value?.time[0] ?? null),
+  formatDateTime(data.value?.time[1] ?? null),
+]);
 
 const handleEditSuccess = () => {
   showEditModal.value = false;
@@ -182,13 +212,13 @@ const handleExit = async () => {
 
 // Set up dynamic meta tags
 const title = computed(() =>
-  data.value?.parsed?.title
-    ? `${data.value.parsed.title} - 搭一把`
+  data.value?.title
+    ? `${data.value.title} - 搭一把`
     : "搭子请求 - 搭一把",
 );
 
 const description = computed(
-  () => data.value?.parsed?.scenario || "查看搭子请求",
+  () => data.value?.type || "查看搭子请求",
 );
 
 useHead({
@@ -356,3 +386,8 @@ useHead({
   }
 }
 </style>
+
+
+
+
+

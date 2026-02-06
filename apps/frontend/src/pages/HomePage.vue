@@ -83,6 +83,7 @@ const onSubmit = handleSubmit(async (values) => {
     const result = await mutation.mutateAsync({
       rawText: values.rawText,
       pin: values.pin,
+      nowIso: new Date().toISOString(),
     });
 
     userPRStore.addCreatedPR(result.id);

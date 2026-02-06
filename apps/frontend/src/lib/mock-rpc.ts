@@ -20,7 +20,11 @@ const mockClient = {
   api: {
     pr: {
       // Mock POST /api/pr
-      $post: async ({ json }: { json: { rawText: string; pin: string } }) => {
+      $post: async ({
+        json,
+      }: {
+        json: { rawText: string; pin: string; nowIso: string };
+      }) => {
         await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
 
         const mockId = Math.floor(Math.random() * 100000) + 1;
@@ -39,17 +43,15 @@ const mockClient = {
           return {
             ok: true,
             status: 200,
-            json: async () =>
-              json.ids.map((id) => ({
-                id,
-                status: "OPEN" as const,
-                participants: 0,
-                createdAt: new Date().toISOString(),
-                parsed: {
+              json: async () =>
+                json.ids.map((id) => ({
+                  id,
+                  status: "OPEN" as const,
+                  partners: [null, 0, null] as const,
+                  createdAt: new Date().toISOString(),
                   title: `Request ${id}`,
-                  scenario: "weekend",
-                },
-              })),
+                  type: "weekend",
+                })),
           } as Response;
         },
       },
@@ -65,17 +67,17 @@ const mockClient = {
             json: async () => ({
               id: param.id,
               rawText: "Let's find someone for a weekend trip",
-              parsed: {
-                scenario: "weekend",
-                time: "this weekend",
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                location: "beijing",
-                minParticipants: 2,
-                maxParticipants: 4,
-                budget: "1000",
-                preferences: ["photo"],
-                notes: null,
-              },
+              title: "å‘¨æœ«ä¸€èµ·å‡ºå‘",
+              type: "weekend",
+              time: ["2026-02-08T09:00:00.000Z", "2026-02-08T12:00:00.000Z"] as const,
+              expiresAt: new Date(
+                Date.now() + 24 * 60 * 60 * 1000,
+              ).toISOString(),
+              location: "beijing",
+              partners: [2, 0, 4] as const,
+              budget: "1000",
+              preferences: ["photo"],
+              notes: null,
               status: "OPEN",
               createdAt: new Date().toISOString(),
             }),

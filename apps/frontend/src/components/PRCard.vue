@@ -1,48 +1,42 @@
 <template>
   <article class="pr-card">
-    <div class="field" v-if="parsed.scenario">
-      <span class="label">场景</span>
-      <span class="value">{{ parsed.scenario }}</span>
+    <div class="field" v-if="type">
+      <span class="label">类型</span>
+      <span class="value">{{ type }}</span>
     </div>
 
-    <div class="field" v-if="parsed.time">
+    <div class="field" v-if="formattedTime">
       <span class="label">时间</span>
-      <span class="value">{{ parsed.time }}</span>
+      <span class="value">{{ formattedTime }}</span>
     </div>
 
-    <div class="field" v-if="parsed.location">
+    <div class="field" v-if="location">
       <span class="label">地点</span>
-      <span class="value">{{ parsed.location }}</span>
+      <span class="value">{{ location }}</span>
     </div>
 
-    <div class="field" v-if="parsed.minParticipants || parsed.maxParticipants">
+    <div class="field" v-if="shouldShowPartners">
       <span class="label">人数</span>
-      <span class="value">{{
-        formatParticipants(
-          parsed.minParticipants,
-          parsed.maxParticipants,
-          participants,
-        )
-      }}</span>
+      <span class="value">{{ formattedPartners }}</span>
     </div>
 
-    <div class="field" v-if="parsed.budget">
+    <div class="field" v-if="budget">
       <span class="label">预算</span>
-      <span class="value">{{ parsed.budget }}</span>
+      <span class="value">{{ budget }}</span>
     </div>
 
-    <div class="field" v-if="parsed.preferences.length">
+    <div class="field" v-if="preferences.length">
       <span class="label">偏好</span>
       <div class="tags">
-        <span class="tag" v-for="pref in parsed.preferences" :key="pref">
+        <span class="tag" v-for="pref in preferences" :key="pref">
           {{ pref }}
         </span>
       </div>
     </div>
 
-    <div class="field" v-if="parsed.notes">
+    <div class="field" v-if="notes">
       <span class="label">备注</span>
-      <span class="value">{{ parsed.notes }}</span>
+      <span class="value">{{ notes }}</span>
     </div>
 
     <details class="raw-text">
@@ -53,51 +47,78 @@
 </template>
 
 <script setup lang="ts">
-import type { ParsedPartnerRequest } from "@partner-up-dev/backend";
+import { computed } from "vue";
 
-defineProps<{
-  parsed: ParsedPartnerRequest;
+type PartnersTuple = [number | null, number, number | null];
+
+type TimeWindow = [string | null, string | null];
+
+const props = defineProps<{
+  type: string;
+  time: TimeWindow;
+  location: string | null;
+  partners: PartnersTuple;
+  budget: string | null;
+  preferences: string[];
+  notes: string | null;
   rawText: string;
-  participants?: number;
 }>();
 
-const formatParticipants = (
-  min: number | null,
-  max: number | null,
-  current?: number,
-) => {
+const normalizeTimeValue = (value: string | null): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.toLowerCase() === "null") return null;
+  return trimmed;
+};
+
+const formatTimeWindow = (time: TimeWindow): string | null => {
+  const start = normalizeTimeValue(time[0]);
+  const end = normalizeTimeValue(time[1]);
+  if (start && end) return `${start} - ${end}`;
+  if (start) return start;
+  if (end) return end;
+  return null;
+};
+
+const formatPartners = (min: number | null, current: number, max: number | null) => {
   const parts: string[] = [];
 
-  // Show current/max if both are available
-  if (current !== undefined && max) {
+  if (max !== null) {
     parts.push(`${current}/${max}`);
-  } else if (current !== undefined) {
+  } else {
     parts.push(`已有${current}人`);
   }
 
-  // Add min requirement if exists
-  if (min) {
+  if (min !== null) {
     parts.push(`（至少 ${min} 人）`);
   }
 
-  // Fallback formats if no current count
   if (parts.length === 0) {
-    if (min && max) {
+    if (min !== null && max !== null) {
       if (min === max) {
         return `${min}人`;
       }
       return `${min}-${max}人`;
     }
-    if (min) {
+    if (min !== null) {
       return `至少${min}人`;
     }
-    if (max) {
+    if (max !== null) {
       return `最多${max}人`;
     }
   }
 
   return parts.join(" ");
 };
+
+const formattedTime = computed(() => formatTimeWindow(props.time));
+const formattedPartners = computed(() =>
+  formatPartners(props.partners[0], props.partners[1], props.partners[2]),
+);
+const shouldShowPartners = computed(() => {
+  const [min, current, max] = props.partners;
+  return min !== null || max !== null || current > 0;
+});
 </script>
 
 <style lang="scss" scoped>
