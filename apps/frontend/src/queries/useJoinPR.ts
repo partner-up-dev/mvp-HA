@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import type { PRId } from '@partner-up-dev/backend';
 import { client } from '@/lib/rpc';
+import { i18n } from "@/locales/i18n";
 
 export const useJoinPR = () => {
   const queryClient = useQueryClient();
@@ -13,7 +14,7 @@ export const useJoinPR = () => {
 
       if (!res.ok) {
         const error = (await res.json()) as { error?: string };
-        throw new Error(error.error || 'Failed to join partner request');
+        throw new Error(error.error || i18n.global.t("errors.joinRequestFailed"));
       }
 
       return await res.json();

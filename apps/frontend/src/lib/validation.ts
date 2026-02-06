@@ -1,30 +1,19 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { toTypedSchema } from "@vee-validate/zod";
-
-// Validation schema matching backend requirements
-export const createPRSchema = z.object({
-  rawText: z
-    .string()
-    .min(1, "è¯·è¾“å…¥æ­å­éœ€æ±‚æè¿°")
-    .max(2000, "æè¿°ä¸èƒ½è¶…è¿‡2000å­—ç¬¦")
-    .transform((val) => val.trim()),
-
-  pin: z.string().regex(/^\d{4}$/, "PINç å¿…é¡»æ˜¯4ä½æ•°å­—"),
-});
-
-export type CreatePRInput = z.infer<typeof createPRSchema>;
-
-// Convert to VeeValidate schema
-export const createPRValidationSchema = toTypedSchema(createPRSchema);
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
+import { i18n } from "@/locales/i18n";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
 const isoDateOrDateTimeSchema = z.union([isoDateTimeSchema, isoDateSchema]);
 
-// Partner request fields validation schema
-export const prFieldsSchema = z.object({
+export const pinSchema = z
+  .string()
+  .regex(/^\d{4}$/, i18n.global.t("validation.pinMustBeFourDigits"));
+
+const fieldsSchema: z.ZodType<PartnerRequestFields> = z.object({
   title: z.string().optional(),
-  type: z.string().min(1, "è¯·è¾“å…¥æ´»åŠ¨ç±»åž‹"),
+  type: z.string().min(1, i18n.global.t("validation.typeRequired")),
   time: z.tuple([
     isoDateOrDateTimeSchema.nullable(),
     isoDateOrDateTimeSchema.nullable(),
@@ -41,11 +30,33 @@ export const prFieldsSchema = z.object({
   notes: z.string().nullable(),
 });
 
-// Update content schema
-export const updateContentSchema = z.object({
-  fields: prFieldsSchema,
-  pin: z.string().regex(/^\d{4}$/, "PINç å¿…é¡»æ˜¯4ä½æ•°å­—"),
+export const createNaturalLanguagePRSchema = z
+  .object({
+    rawText: z
+      .string()
+      .min(1, i18n.global.t("validation.naturalLanguageRequired"))
+      .max(2000),
+    pin: pinSchema,
+  })
+  .refine(
+    ({ rawText }) => rawText.trim().split(/\s+/).filter(Boolean).length <= 50,
+    { message: i18n.global.t("validation.naturalLanguageWordLimit") },
+  );
+
+export const createNaturalLanguagePRValidationSchema = toTypedSchema(
+  createNaturalLanguagePRSchema,
+);
+
+export const partnerRequestFormSchema = z.object({
+  fields: fieldsSchema,
+  pin: pinSchema,
 });
 
-export type UpdateContentInput = z.infer<typeof updateContentSchema>;
-export const updateContentValidationSchema = toTypedSchema(updateContentSchema);
+export const partnerRequestFormValidationSchema = toTypedSchema(
+  partnerRequestFormSchema,
+);
+
+export type CreateNaturalLanguagePRInput = z.infer<
+  typeof createNaturalLanguagePRSchema
+>;
+export type PartnerRequestFormInput = z.infer<typeof partnerRequestFormSchema>;

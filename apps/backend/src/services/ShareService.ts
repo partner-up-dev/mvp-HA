@@ -1,5 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import type { PartnerRequest, PartnerRequestFields, PRId } from "../entities/partner-request";
+import type { PartnerRequestFields, PRId } from "../entities/partner-request";
 import { PartnerRequestService } from "./PartnerRequestService";
 import { LLMService, type PosterHtmlResponse } from "./LLMService";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
@@ -124,7 +124,17 @@ export class ShareService {
     return url;
   }
 
-  private toPartnerRequestFields(pr: PartnerRequest): PartnerRequestFields {
+  private toPartnerRequestFields(pr: {
+    title?: string;
+    type: string;
+    time: PartnerRequestFields["time"];
+    location: string | null;
+    expiresAt: Date | null;
+    partners: PartnerRequestFields["partners"];
+    budget: string | null;
+    preferences: string[];
+    notes: string | null;
+  }): PartnerRequestFields {
     return {
       title: pr.title ?? undefined,
       type: pr.type,

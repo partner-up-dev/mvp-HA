@@ -1,8 +1,8 @@
 <template>
   <div class="pin-input-container">
     <label class="label">
-      PIN码
-      <span class="hint">(4位数字)</span>
+      {{ t("pinInput.label") }}
+      <span class="hint">{{ t("pinInput.hint") }}</span>
     </label>
 
     <div class="pin-display">
@@ -12,7 +12,7 @@
         @input="handleInput"
         @blur="handleBlur"
         class="pin-field"
-        placeholder="••••"
+        :placeholder="t('pinInput.placeholder')"
         inputmode="numeric"
         maxlength="4"
         pattern="\d{4}"
@@ -21,18 +21,19 @@
         type="button"
         @click="regenerate"
         class="regenerate-btn"
-        title="重新生成"
+        :title="t('pinInput.regenerateTitle')"
       >
         <div class="i-mdi-refresh font-label-large"></div>
       </button>
     </div>
 
-    <p class="info-text">📋 修改状态时您会需要，请保存好此 PIN 码</p>
+    <p class="info-text">{{ t("pinInput.info") }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 
 const props = withDefaults(
   defineProps<{
@@ -42,6 +43,7 @@ const props = withDefaults(
     modelValue: "",
   },
 );
+const { t } = useI18n();
 
 const emit = defineEmits<{
   "update:modelValue": [value: string];

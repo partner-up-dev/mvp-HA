@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
+import { i18n } from "@/locales/i18n";
 
 interface UpdateContentInput {
   id: PRId;
@@ -20,7 +21,7 @@ export const useUpdatePRContent = () => {
 
       if (!res.ok) {
         const error = (await res.json()) as { error?: string };
-        throw new Error(error.error || "Failed to update content");
+        throw new Error(error.error || i18n.global.t("errors.updateContentFailed"));
       }
 
       return await res.json();

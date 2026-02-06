@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { isWeChatBrowser } from "@/lib/browser-detection";
 import { client } from "@/lib/rpc";
+import { i18n } from "@/locales/i18n";
 
 type WeChatSignatureResponse = {
   appId: string;
@@ -55,7 +56,7 @@ export const useWeChatShare = () => {
 
       try {
         if (!isWeChatSdkAvailable()) {
-          throw new Error("WeChat JS-SDK not loaded");
+          throw new Error(i18n.global.t("errors.wechatSdkNotLoaded"));
         }
 
         const res = await client.api.wechat["jssdk-signature"].$get({
@@ -64,7 +65,7 @@ export const useWeChatShare = () => {
 
         if (!res.ok) {
           const payload = (await res.json()) as { error?: string };
-          throw new Error(payload.error ?? "Failed to init WeChat JS-SDK");
+          throw new Error(payload.error ?? i18n.global.t("errors.wechatInitFailed"));
         }
 
         const signature = (await res.json()) as WeChatSignatureResponse;
@@ -80,7 +81,7 @@ export const useWeChatShare = () => {
           });
 
           const timeoutId = window.setTimeout(() => {
-            reject(new Error("WeChat JS-SDK init timeout"));
+            reject(new Error(i18n.global.t("errors.wechatInitTimeout")));
           }, 8000);
 
           wx?.ready(() => {
@@ -92,7 +93,12 @@ export const useWeChatShare = () => {
             window.clearTimeout(timeoutId);
             reject(
               new Error(
-                `WeChat JS-SDK init error: ${error instanceof Error ? error.message : "unknown"}`,
+                i18n.global.t("errors.wechatInitError", {
+                  message:
+                    error instanceof Error
+                      ? error.message
+                      : i18n.global.t("common.operationFailed"),
+                }),
               ),
             );
           });
@@ -101,7 +107,10 @@ export const useWeChatShare = () => {
         isReady.value = true;
         configuredUrl.value = currentUrl;
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Init failed";
+        const message =
+          error instanceof Error
+            ? error.message
+            : i18n.global.t("errors.initializeFailed");
         initError.value = message;
         isReady.value = false;
         configuredUrl.value = null;

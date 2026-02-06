@@ -1,14 +1,18 @@
 <template>
   <div class="form-field">
-    <label>{{ label }}</label>
+    <label>{{ labelText }}</label>
     <div class="time-range">
       <div class="time-block">
         <div class="time-inputs">
-          <input v-model="startDate" type="date" placeholder="请选择开始日期" />
+          <input
+            v-model="startDate"
+            type="date"
+            :placeholder="t('dateTimeRangePicker.startDatePlaceholder')"
+          />
           <input
             v-model="startTime"
             type="time"
-            placeholder="请选择开始时间"
+            :placeholder="t('dateTimeRangePicker.startTimePlaceholder')"
             :disabled="!startDate"
           />
         </div>
@@ -19,7 +23,7 @@
             :disabled="!startTime"
             @click="clearStartTime"
           >
-            清除时间
+            {{ t("dateTimeRangePicker.clearTime") }}
           </button>
           <button
             type="button"
@@ -27,17 +31,21 @@
             :disabled="!startDate && !startTime"
             @click="clearStart"
           >
-            清除
+            {{ t("dateTimeRangePicker.clear") }}
           </button>
         </div>
       </div>
       <div class="time-block">
         <div class="time-inputs">
-          <input v-model="endDate" type="date" placeholder="请选择结束日期" />
+          <input
+            v-model="endDate"
+            type="date"
+            :placeholder="t('dateTimeRangePicker.endDatePlaceholder')"
+          />
           <input
             v-model="endTime"
             type="time"
-            placeholder="请选择结束时间"
+            :placeholder="t('dateTimeRangePicker.endTimePlaceholder')"
             :disabled="!endDate"
           />
         </div>
@@ -48,7 +56,7 @@
             :disabled="!endTime"
             @click="clearEndTime"
           >
-            清除时间
+            {{ t("dateTimeRangePicker.clearTime") }}
           </button>
           <button
             type="button"
@@ -56,17 +64,18 @@
             :disabled="!endDate && !endTime"
             @click="clearEnd"
           >
-            清除
+            {{ t("dateTimeRangePicker.clear") }}
           </button>
         </div>
       </div>
     </div>
-    <p class="time-hint">{{ hint }}</p>
+    <p class="time-hint">{{ hintText }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
+import { computed, ref, watch, nextTick } from "vue";
+import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields } from "@partner-up-dev/backend";
 
 type TimeWindow = PartnerRequestFields["time"];
@@ -78,9 +87,19 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  label: "时间 (开始/结束)",
-  hint: "请选择开始和结束日期/时间（可省略）",
+  label: undefined,
+  hint: undefined,
 });
+
+const { t } = useI18n();
+
+const labelText = computed(
+  () => props.label ?? t("dateTimeRangePicker.defaultLabel"),
+);
+
+const hintText = computed(
+  () => props.hint ?? t("dateTimeRangePicker.defaultHint"),
+);
 
 const emit = defineEmits<{
   "update:modelValue": [TimeWindow];

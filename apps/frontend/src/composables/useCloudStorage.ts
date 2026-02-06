@@ -1,5 +1,6 @@
 import { ref, readonly } from "vue";
 import { API_URL, client } from "@/lib/rpc";
+import { i18n } from "@/locales/i18n";
 
 /**
  * Composable for uploading files to cloud storage
@@ -31,7 +32,10 @@ export const useCloudStorage = () => {
 
       if (!res.ok) {
         const error = (await res.json()) as { error?: string };
-        throw new Error(error.error || `Upload failed: ${res.statusText}`);
+        throw new Error(
+          error.error ||
+            `${i18n.global.t("errors.uploadFailed")}: ${res.statusText}`,
+        );
       }
 
       const { key } = await res.json();
@@ -40,7 +44,7 @@ export const useCloudStorage = () => {
       return new URL(`/api/upload/download/${key}`, base).toString();
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Upload failed";
+        error instanceof Error ? error.message : i18n.global.t("errors.uploadFailed");
       uploadError.value = errorMessage;
       throw new Error(errorMessage);
     } finally {

@@ -6,16 +6,18 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 const props = defineProps<{
   status: "OPEN" | "FULL" | "CLOSED";
 }>();
+const { t } = useI18n();
 
 const statusText = computed(() => {
   const map = {
-    OPEN: "可加入",
-    FULL: "已满员",
-    CLOSED: "已结束",
+    OPEN: t("status.open"),
+    FULL: t("status.full"),
+    CLOSED: t("status.closed"),
   };
   return map[props.status];
 });

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import type { PRId, PRStatusManual } from '@partner-up-dev/backend';
 import { client } from '@/lib/rpc';
+import { i18n } from "@/locales/i18n";
 
 interface UpdateStatusInput {
   id: PRId;
@@ -20,7 +21,7 @@ export const useUpdatePRStatus = () => {
 
       if (!res.ok) {
         const error = (await res.json()) as { error?: string };
-        throw new Error(error.error || 'Failed to update status');
+        throw new Error(error.error || i18n.global.t("errors.updateStatusFailed"));
       }
 
       return await res.json();

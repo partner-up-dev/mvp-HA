@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
 import type { PRId } from "@partner-up-dev/backend";
+import { i18n } from "@/locales/i18n";
 
 export const useGenerateXiaohongshuCaption = () => {
   return useMutation({
@@ -11,7 +12,7 @@ export const useGenerateXiaohongshuCaption = () => {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to generate caption");
+        throw new Error(i18n.global.t("errors.generateCaptionFailed"));
       }
 
       const data = (await res.json()) as {

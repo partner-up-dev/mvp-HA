@@ -1,0 +1,225 @@
+{
+  // Application
+  "app": {
+    "name": "搭一把",
+    "siteName": "搭一把 - PartnerUp"
+  },
+  "common": {
+    "loading": "加载中...",
+    "loadingLong": "正在加载...",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "create": "创建",
+    "close": "关闭",
+    "backToHome": "返回首页",
+    "submit": "提交",
+    "copied": "已复制!",
+    "copyFailed": "复制失败",
+    "operationFailed": "操作失败"
+  },
+  "status": {
+    "draft": "草稿",
+    "open": "可加入",
+    "active": "进行中",
+    "closed": "已结束",
+    "expired": "已过期",
+    "full": "已满员"
+  },
+  "home": {
+    "title": "搭一把",
+    "subtitle": "描述你的搭子需求，一键生成分享页面",
+    "structuredEntryPrefix": "找搭子一起",
+    "naturalLanguageEntry": "刚刚已经在群里发过了？",
+    "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
+    "topics": {
+      "movie": "看电影",
+      "sports": "打球",
+      "explore": "探店",
+      "hiking": "徒步",
+      "study": "学习"
+    }
+  },
+  "createPage": {
+    "title": "创建搭子请求",
+    "savePending": "保存中...",
+    "createPending": "创建中...",
+    "createFailed": "创建失败"
+  },
+  "prPage": {
+    "join": "加入",
+    "joining": "加入中...",
+    "exit": "退出",
+    "exiting": "退出中...",
+    "editContent": "编辑内容",
+    "modifyStatus": "修改状态",
+    "metaFallbackTitle": "搭子请求 - 搭一把",
+    "metaFallbackDescription": "查看搭子请求",
+    "metaTitleWithName": "{title} - 搭一把"
+  },
+  "createdPRList": {
+    "title": "我的搭子请求",
+    "empty": "还没有创建过搭子请求",
+    "loading": "正在加载你创建的请求...",
+    "loadFailed": "加载失败"
+  },
+  "dateTimeRangePicker": {
+    "defaultLabel": "时间 (开始/结束)",
+    "defaultHint": "请选择开始和结束日期/时间（可省略）",
+    "startDatePlaceholder": "请选择开始日期",
+    "startTimePlaceholder": "请选择开始时间",
+    "endDatePlaceholder": "请选择结束日期",
+    "endTimePlaceholder": "请选择结束时间",
+    "clearTime": "清除时间",
+    "clear": "清除"
+  },
+  "modifyStatusModal": {
+    "title": "修改需求状态",
+    "pinLabel": "输入PIN码确认",
+    "confirmAction": "确认修改",
+    "updateFailed": "修改失败"
+  },
+  "editContentModal": {
+    "title": "编辑搭子请求",
+    "confirmAction": "确认修改",
+    "updateFailed": "更新失败"
+  },
+  "share": {
+    "prevMethodAria": "上一个分享方式",
+    "nextMethodAria": "下一个分享方式",
+    "methods": {
+      "copyLink": "链接分享",
+      "wechat": "分享到微信",
+      "xiaohongshu": "分享到小红书"
+    },
+    "asLink": {
+      "previewTitle": "将复制的内容",
+      "copyButton": "复制链接",
+      "shareFailed": "分享失败"
+    },
+    "wechat": {
+      "previewTitle": "微信分享卡片预览",
+      "generating": "生成中...",
+      "guidanceLine1": "请点击微信右上角“...”",
+      "guidanceLine2": "选择“发送给朋友”或“分享到朋友圈”",
+      "switchStyle": "换一个",
+      "defaultShareTitle": "搭一搭 - PartnerUp",
+      "fallbackKeyText": "搭",
+      "thumbAlt": "微信分享缩略图",
+      "selfLabel": "你"
+    },
+    "xiaohongshu": {
+      "regenerateButton": "换一个",
+      "generating": "生成中...",
+      "captionPlaceholder": "编辑小红书文案...",
+      "posterAlt": "分享海报",
+      "saveHint": "长按图片保存到相册",
+      "shareHint": "或分享到您的小红书",
+      "posterGenerating": "生成海报中...",
+      "posterNotGenerated": "尚未生成海报",
+      "copyCaptionButton": "复制文案",
+      "downloadButton": "下载海报",
+      "wechatDownloadHint": "长按图片保存",
+      "openAppButton": "分享到小红书",
+      "generatePosterFirst": "请先生成海报",
+      "downloadFailed": "下载失败，请重试",
+      "defaultPosterStylePrompt": "简洁大方的信息展示风格，文字清晰易读，留白充足，色彩克制，传递可信感"
+    }
+  },
+  "prInput": {
+    "label": "描述你的搭子需求",
+    "placeholder": "例如：周末想找人一起去杭州玩两天，预算500左右，希望对方喜欢拍照..."
+  },
+  "pinInput": {
+    "label": "PIN码",
+    "hint": "(4位数字)",
+    "placeholder": "••••",
+    "regenerateTitle": "重新生成",
+    "info": "修改状态时您会需要，请保存好此 PIN 码"
+  },
+  "nlForm": {
+    "submit": "解析请求",
+    "parsing": "正在解析你的请求...",
+    "createFailed": "创建失败"
+  },
+  "partnerRequestForm": {
+    "title": "标题",
+    "titlePlaceholder": "周末徒步",
+    "type": "类型",
+    "typePlaceholder": "徒步、电影、运动",
+    "location": "地点",
+    "locationPlaceholder": "城市 / 地点",
+    "minPartners": "最少人数",
+    "minPartnersPlaceholder": "最少参与人数",
+    "maxPartners": "最多人数",
+    "maxPartnersPlaceholder": "最多参与人数",
+    "budget": "预算",
+    "budgetPlaceholder": "AA / 平摊 / 我请客",
+    "preferences": "偏好",
+    "preferencesPlaceholder": "按回车添加",
+    "removePreference": "删除",
+    "notes": "备注",
+    "notesPlaceholder": "补充说明",
+    "pin": "PIN",
+    "pinPlaceholder": "****",
+    "requiredMark": "*"
+  },
+  "prCard": {
+    "type": "类型",
+    "time": "时间",
+    "location": "地点",
+    "partners": "人数",
+    "budget": "预算",
+    "preferences": "偏好",
+    "notes": "备注",
+    "rawText": "原始描述",
+    "partnersCurrentWithMax": "{current}/{max}",
+    "partnersCurrentOnly": "已有{current}人",
+    "partnersAtLeastClause": "（至少 {min} 人）",
+    "partnersExact": "{count}人",
+    "partnersRange": "{min}-{max}人",
+    "partnersAtLeast": "至少{min}人",
+    "partnersAtMost": "最多{max}人"
+  },
+  "validation": {
+    "pinMustBeFourDigits": "PIN 必须是 4 位数字",
+    "typeRequired": "类型不能为空",
+    "naturalLanguageRequired": "请输入你的请求",
+    "naturalLanguageWordLimit": "自然语言输入不能超过 50 个词"
+  },
+  "errors": {
+    "createRequestFailed": "创建请求失败",
+    "updateStatusFailed": "更新状态失败",
+    "updateContentFailed": "更新内容失败",
+    "missingPartnerRequestId": "缺少搭子请求 ID",
+    "fetchRequestFailed": "获取请求失败",
+    "fetchCreatedRequestsFailed": "获取已创建的搭子请求失败",
+    "joinRequestFailed": "加入搭子请求失败",
+    "exitRequestFailed": "退出搭子请求失败",
+    "generateCaptionFailed": "生成文案失败",
+    "generateXhsPosterHtmlFailed": "生成小红书海报 HTML 失败",
+    "generateWechatThumbHtmlFailed": "生成微信缩略图 HTML 失败",
+    "uploadFailed": "上传失败",
+    "clipboardCopyFailed": "复制到剪贴板失败",
+    "canvasBlobFailed": "生成图片失败",
+    "posterElementMissing": "未找到海报元素",
+    "thumbnailElementMissing": "未找到缩略图元素",
+    "posterGenerationFailed": "生成海报失败：{message}",
+    "unsafeHtml": "不安全的 HTML 内容",
+    "iframeBodyUnavailable": "iframe 内容不可用",
+    "iframeDocumentUnavailable": "iframe 文档不可用",
+    "iframeLoadTimeout": "iframe 加载超时",
+    "wechatSdkNotLoaded": "微信 JS-SDK 未加载",
+    "wechatInitFailed": "微信 JS-SDK 初始化失败",
+    "wechatInitTimeout": "微信 JS-SDK 初始化超时",
+    "wechatInitError": "微信 JS-SDK 初始化错误：{message}",
+    "initializeFailed": "初始化失败"
+  },
+  "posterStyles": {
+    "fresh": "清新活泼",
+    "minimal": "极简风格",
+    "warm": "温暖风格",
+    "modern": "现代风格",
+    "elegant": "优雅风格"
+  }
+}

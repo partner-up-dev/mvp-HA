@@ -3,7 +3,9 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 import { LLMService } from "./LLMService";
 import type {
+  PartnerRequest,
   PRStatus,
+  CreatePRStructuredStatus,
   PartnerRequestFields,
   PRId,
 } from "../entities/partner-request";
@@ -12,7 +14,7 @@ const repo = new PartnerRequestRepository();
 const llmService = new LLMService();
 
 export class PartnerRequestService {
-  async createPR(rawText: string, pin: string, nowIso: string) {
+  async createPRFromNaturalLanguage(rawText: string, pin: string, nowIso: string) {
     // Validate PIN format (4 digits)
     if (!/^\d{4}$/.test(pin)) {
       throw new HTTPException(400, { message: "PIN must be exactly 4 digits" });
@@ -48,6 +50,39 @@ export class PartnerRequestService {
     return { id: request.id };
   }
 
+  async createPRFromStructured(
+    fields: PartnerRequestFields,
+    pin: string,
+    status: CreatePRStructuredStatus,
+  ) {
+    if (!/^\d{4}$/.test(pin)) {
+      throw new HTTPException(400, { message: "PIN must be exactly 4 digits" });
+    }
+
+    const partners: PartnerRequestFields["partners"] = [
+      fields.partners[0],
+      0,
+      fields.partners[2],
+    ];
+    const pinHash = await bcrypt.hash(pin, 10);
+    const request = await repo.create({
+      rawText: this.buildStructuredFallbackRawText(fields),
+      title: fields.title,
+      type: fields.type,
+      time: fields.time,
+      location: fields.location,
+      pinHash,
+      expiresAt: fields.expiresAt ? new Date(fields.expiresAt) : null,
+      partners,
+      budget: fields.budget,
+      preferences: fields.preferences,
+      notes: fields.notes,
+      status,
+    });
+
+    return { id: request.id };
+  }
+
   async getPR(id: PRId) {
     const request = await repo.findById(id);
     if (!request) {
@@ -55,8 +90,11 @@ export class PartnerRequestService {
     }
 
     const refreshed = await this.expireIfNeeded(request);
-    const { pinHash, ...publicData } = refreshed;
-    return publicData;
+    const { pinHash, title, ...rest } = refreshed;
+    return {
+      ...rest,
+      title: title ?? undefined,
+    };
   }
 
   async getPRSummariesByIds(ids: PRId[]) {
@@ -100,10 +138,10 @@ export class PartnerRequestService {
       throw new HTTPException(404, { message: "Partner request not found" });
     }
 
-    // Check status is OPEN
-    if (request.status !== "OPEN") {
+    // Check status is editable
+    if (request.status !== "OPEN" && request.status !== "DRAFT") {
       throw new HTTPException(400, {
-        message: "Cannot edit - only OPEN partner requests can be edited",
+        message: "Cannot edit - only OPEN or DRAFT partner requests can be edited",
       });
     }
 
@@ -228,11 +266,7 @@ export class PartnerRequestService {
     return publicData;
   }
 
-  private async expireIfNeeded(request: {
-    id: PRId;
-    status: PRStatus;
-    expiresAt: Date | null;
-  }) {
+  private async expireIfNeeded(request: PartnerRequest): Promise<PartnerRequest> {
     if (request.status !== "OPEN" && request.status !== "ACTIVE") {
       return request;
     }
@@ -247,5 +281,15 @@ export class PartnerRequestService {
 
     const updated = await repo.updateStatus(request.id, "EXPIRED");
     return updated ?? request;
+  }
+
+  private buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
+    const parts: string[] = [];
+    if (fields.title?.trim()) parts.push(fields.title.trim());
+    parts.push(`类型:${fields.type}`);
+    if (fields.location?.trim()) parts.push(`地点:${fields.location.trim()}`);
+    const [start, end] = fields.time;
+    if (start || end) parts.push(`时间:${start ?? "待定"}-${end ?? "待定"}`);
+    return parts.join(" | ");
   }
 }

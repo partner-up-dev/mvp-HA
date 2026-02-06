@@ -244,7 +244,7 @@ export class LLMService {
           caption: z.string().max(100),
           posterStylePrompt: z.string(),
         }),
-        system,
+        system: systemPrompt,
         prompt,
         temperature: 0.7,
       });

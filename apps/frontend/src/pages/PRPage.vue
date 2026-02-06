@@ -1,12 +1,12 @@
 <template>
   <div class="pr-page">
-    <LoadingState v-if="isLoading" message="加载中..." />
+    <LoadingState v-if="isLoading" :message="t('common.loading')" />
 
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
     <template v-else-if="data">
       <div class="page-header">
-        <button class="home-btn" @click="goHome" aria-label="返回首页">
+        <button class="home-btn" @click="goHome" :aria-label="t('common.backToHome')">
           <div class="i-mdi-arrow-left font-title-large"></div>
         </button>
         <h1 v-if="data.title" class="page-title">
@@ -37,7 +37,7 @@
           @click="handleJoin"
           :disabled="joinMutation.isPending.value"
         >
-          {{ joinMutation.isPending.value ? "加入中..." : "加入" }}
+          {{ joinMutation.isPending.value ? t("prPage.joining") : t("prPage.join") }}
         </button>
 
         <button
@@ -46,15 +46,15 @@
           @click="handleExit"
           :disabled="exitMutation.isPending.value"
         >
-          {{ exitMutation.isPending.value ? "退出中..." : "退出" }}
+          {{ exitMutation.isPending.value ? t("prPage.exiting") : t("prPage.exit") }}
         </button>
 
         <button
-          v-if="data.status === 'OPEN' && isCreator"
+          v-if="(data.status === 'OPEN' || data.status === 'DRAFT') && isCreator"
           class="edit-content-btn"
           @click="showEditModal = true"
         >
-          编辑内容
+          {{ t("prPage.editContent") }}
         </button>
 
         <button
@@ -62,7 +62,7 @@
           class="modify-btn"
           @click="showModifyModal = true"
         >
-          修改状态
+          {{ t("prPage.modifyStatus") }}
         </button>
       </section>
 
@@ -94,6 +94,7 @@
 import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
+import { useI18n } from "vue-i18n";
 import LoadingState from "@/components/LoadingState.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
@@ -110,6 +111,7 @@ import { useBodyScrollLock } from "@/lib/body-scroll-lock";
 
 const route = useRoute();
 const router = useRouter();
+const { t, locale } = useI18n();
 const id = computed<PRId | null>(() => {
   const rawId = Array.isArray(route.params.id)
     ? route.params.id[0]
@@ -155,7 +157,7 @@ const canJoin = computed(() => {
 const shareUrl = computed(() => window.location.href);
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString("zh-CN", {
+  return new Date(dateStr).toLocaleDateString(locale.value, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -176,7 +178,7 @@ const formatDateTime = (value: string | null): string | null => {
   if (!normalized) return null;
   const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("zh-CN", {
+  return date.toLocaleString(locale.value, {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -185,7 +187,7 @@ const formatDateTime = (value: string | null): string | null => {
   });
 };
 
-const localizedTime = computed(() => [
+const localizedTime = computed<[string | null, string | null]>(() => [
   formatDateTime(data.value?.time[0] ?? null),
   formatDateTime(data.value?.time[1] ?? null),
 ]);
@@ -213,12 +215,12 @@ const handleExit = async () => {
 // Set up dynamic meta tags
 const title = computed(() =>
   data.value?.title
-    ? `${data.value.title} - 搭一把`
-    : "搭子请求 - 搭一把",
+    ? t("prPage.metaTitleWithName", { title: data.value.title })
+    : t("prPage.metaFallbackTitle"),
 );
 
 const description = computed(
-  () => data.value?.type || "查看搭子请求",
+  () => data.value?.type || t("prPage.metaFallbackDescription"),
 );
 
 useHead({
@@ -230,7 +232,7 @@ useHead({
     { property: "og:description", content: description },
     { property: "og:type", content: "website" },
     { property: "og:url", content: shareUrl },
-    { property: "og:site_name", content: "搭一把 - PartnerUp" },
+    { property: "og:site_name", content: t("app.siteName") },
     // Twitter Card tags
     { name: "twitter:card", content: "summary" },
     { name: "twitter:title", content: title },

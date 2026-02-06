@@ -2,6 +2,7 @@ import { computed, createApp, nextTick, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import html2canvas from "html2canvas";
 import WechatThumbTemplate from "@/components/WechatThumbTemplate.vue";
+import { i18n } from "@/locales/i18n";
 
 const unwrapHTMLElement = (value: unknown): HTMLElement | null => {
   if (value instanceof HTMLElement) return value;
@@ -19,7 +20,7 @@ const canvasToBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error("Failed to convert canvas to blob"));
+          reject(new Error(i18n.global.t("errors.canvasBlobFailed")));
         } else {
           resolve(blob);
         }
@@ -52,7 +53,7 @@ export const useGenerateWechatThumbPoster = () => {
       const maybeExposed = vm as unknown as { thumbElement?: unknown };
       const element = unwrapHTMLElement(maybeExposed.thumbElement);
       if (!element) {
-        throw new Error("Failed to get thumbnail element");
+        throw new Error(i18n.global.t("errors.thumbnailElementMissing"));
       }
 
       const canvas = await html2canvas(element, {

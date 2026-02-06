@@ -5,7 +5,7 @@
         class="nav-btn"
         @click="goToPrevMethod"
         :disabled="enabledMethods.length <= 1"
-        aria-label="上一个分享方式"
+        :aria-label="t('share.prevMethodAria')"
       >
         <div class="i-mdi-chevron-left"></div>
       </button>
@@ -14,7 +14,7 @@
         class="nav-btn"
         @click="goToNextMethod"
         :disabled="enabledMethods.length <= 1"
-        aria-label="下一个分享方式"
+        :aria-label="t('share.nextMethodAria')"
       >
         <div class="i-mdi-chevron-right"></div>
       </button>
@@ -46,6 +46,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watchEffect } from "vue";
+import { useI18n } from "vue-i18n";
 import ShareAsLink from "./ShareAsLink/ShareAsLink.vue";
 import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/ShareToXiaohongshu.vue";
 import ShareToWechatChatMethod from "./ShareToWechat/ShareToWechat.vue";
@@ -88,16 +89,17 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 
 const allMethods = computed<ShareMethod[]>(() => [
-  { id: "COPY_LINK", label: "链接分享", enabled: true },
+  { id: "COPY_LINK", label: t("share.methods.copyLink"), enabled: true },
   {
     id: "WECHAT_CHAT",
-    label: "分享到微信",
+    label: t("share.methods.wechat"),
   },
   {
     id: "XIAOHONGSHU",
-    label: "分享到小红书",
+    label: t("share.methods.xiaohongshu"),
   },
 ]);
 
@@ -139,7 +141,7 @@ const currentMethod = computed(() => {
   const enabled = enabledMethods.value;
   return (
     enabled.find((m) => m.id === currentMethodId.value) ??
-    enabled[0] ?? { id: "COPY_LINK", label: "链接分享", enabled: true }
+    enabled[0] ?? { id: "COPY_LINK", label: t("share.methods.copyLink"), enabled: true }
   );
 });
 

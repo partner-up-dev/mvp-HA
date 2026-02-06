@@ -26,22 +26,23 @@
 
 ## Current State
 >
-> Last Updated: 2026-02-05 21:30
+> Last Updated: 2026-02-06 11:40
 
 ### Live Capabilities
 
-- PartnerRequest 创建: 支持从既有自然语言句子创建协作 PartnerRequest（LLM 解析标题/类型/时间区间/地点/人数(min/current/max)/预算/偏好/到期时间等结构化字段）。
-- PartnerRequest 时间: 创建时由前端提供 nowIso（UTC）作为解析参考，时间窗口允许日期或日期时间格式。
-- PartnerRequest 状态: 已实现 `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED` 的前端展示与流转。
+- PartnerRequest 创建: 首页支持自然语言创建（展开 `NLPRForm`）；新增 `/pr/new` 结构化创建页，支持“保存(DRAFT)”与“创建(OPEN)”。
+- PartnerRequest 时间: 自然语言创建时由前端提供 nowIso（UTC）作为解析参考；结构化创建与编辑复用 `PartnerRequestForm`。
+- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED` 的前端展示与流转。
 - 参与与流转: 支持加入/退出交互；达到最小人数自动转为 `ACTIVE`。
 - 分享能力: 支持复制链接分享；微信内置 WebView 分享卡片；小红书文案与海报生成、下载并跳转 App。
+- 国际化能力: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案位于 `src/locales/zh-CN.jsonc`，使用 `MessageSchema` 提供类型支持。
 
 ### Known Limitations & Mocks
 
 - EXPIRED 触发方式: 仅在读取 PR 时由后端懒触发过期状态。
 - 小红书发布: 无官方直发接口，仅生成文案/海报并引导用户手动保存与发布。
 - 微信分享环境: 仅在微信内置 WebView 且 JS-SDK 正常加载时生效。
-- Mock 模式: 通过 `VITE_USE_MOCK=true` 使用本地 Mock RPC（仅开发用途）。
+- 国际化语种: 当前仅支持 `zh-CN` 单语，未提供语言切换 UI。
 
 ### Immediate Next Focus
 

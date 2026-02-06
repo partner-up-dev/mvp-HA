@@ -3,19 +3,18 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { PartnerRequestService } from '../services/PartnerRequestService';
 import {
+  createNaturalLanguagePRSchema,
+  createStructuredPRSchema,
   prStatusManualSchema,
-  partnerRequestFieldsSchema,
 } from '../entities/partner-request';
 
 const app = new Hono();
 const service = new PartnerRequestService();
 
-// Request body schemas
-const createPRSchema = z.object({
-  rawText: z.string().min(1).max(2000),
-  pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
-  nowIso: z.string().datetime(),
-});
+const nlWordCountSchema = createNaturalLanguagePRSchema.refine(
+  ({ rawText }) => rawText.trim().split(/\s+/).filter(Boolean).length <= 50,
+  { message: 'Natural language input must be 50 words or fewer' },
+);
 
 const updateStatusSchema = z.object({
   status: prStatusManualSchema,
@@ -23,7 +22,7 @@ const updateStatusSchema = z.object({
 });
 
 const updateContentSchema = z.object({
-  fields: partnerRequestFieldsSchema,
+  fields: createStructuredPRSchema.shape.fields,
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
 });
 
@@ -36,13 +35,23 @@ const prIdParamSchema = z.object({
 });
 
 export const partnerRequestRoute = app
-  // POST /api/pr - Create partner request
+  // POST /api/pr - Create partner request from structured fields
   .post(
     '/',
-    zValidator('json', createPRSchema),
+    zValidator('json', createStructuredPRSchema),
+    async (c) => {
+      const { fields, pin, status } = c.req.valid('json');
+      const result = await service.createPRFromStructured(fields, pin, status);
+      return c.json(result, 201);
+    }
+  )
+  // POST /api/pr/natural_language - Create partner request from NL text
+  .post(
+    '/natural_language',
+    zValidator('json', nlWordCountSchema),
     async (c) => {
       const { rawText, pin, nowIso } = c.req.valid('json');
-      const result = await service.createPR(rawText, pin, nowIso);
+      const result = await service.createPRFromNaturalLanguage(rawText, pin, nowIso);
       return c.json(result, 201);
     }
   )

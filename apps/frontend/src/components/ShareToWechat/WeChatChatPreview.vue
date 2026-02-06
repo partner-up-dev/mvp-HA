@@ -8,14 +8,14 @@
             <p class="share-card-desc">{{ shareDesc }}</p>
           </div>
           <div class="share-card-thumb" :class="{ 'thumb-empty': !posterUrl }">
-            <img v-if="posterUrl" :src="posterUrl" alt="微信分享缩略图" />
+            <img v-if="posterUrl" :src="posterUrl" :alt="t('share.wechat.thumbAlt')" />
             <div v-else class="thumb-placeholder">{{ thumbPlaceholder }}</div>
           </div>
         </div>
       </div>
       <div class="chat-avatar">
         <div class="avatar-circle">
-          <span> 你 </span>
+          <span>{{ t("share.wechat.selfLabel") }}</span>
         </div>
       </div>
     </div>
@@ -23,6 +23,8 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
+
 interface Props {
   posterUrl: string | null;
   shareTitle: string;
@@ -31,6 +33,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

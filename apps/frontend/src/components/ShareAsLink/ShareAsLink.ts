@@ -1,3 +1,5 @@
+import { i18n } from "@/locales/i18n";
+
 export const normalizeUrl = (rawUrl: string, baseHref: string): string => {
   try {
     return new URL(rawUrl, baseHref).toString();
@@ -25,7 +27,6 @@ export const copyToClipboard = async (text: string): Promise<void> => {
   document.body.removeChild(textarea);
 
   if (!ok) {
-    throw new Error("Clipboard copy failed");
+    throw new Error(i18n.global.t("errors.clipboardCopyFailed"));
   }
 };
-

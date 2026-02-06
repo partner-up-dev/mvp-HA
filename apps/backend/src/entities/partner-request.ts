@@ -37,10 +37,35 @@ export const partnerRequestFieldsSchema = z.object({
 export type PartnerRequestFields = z.infer<typeof partnerRequestFieldsSchema>;
 
 // Status enum
-export const prStatusSchema = z.enum(["OPEN", "ACTIVE", "CLOSED", "EXPIRED"]);
+export const prStatusSchema = z.enum([
+  "DRAFT",
+  "OPEN",
+  "ACTIVE",
+  "CLOSED",
+  "EXPIRED",
+]);
 export type PRStatus = z.infer<typeof prStatusSchema>;
 export const prStatusManualSchema = z.enum(["OPEN", "ACTIVE", "CLOSED"]);
 export type PRStatusManual = z.infer<typeof prStatusManualSchema>;
+
+export const createPRStructuredStatusSchema = z.enum(["DRAFT", "OPEN"]);
+export type CreatePRStructuredStatus = z.infer<
+  typeof createPRStructuredStatusSchema
+>;
+
+export const pinSchema = z.string().regex(/^\d{4}$/, "PIN must be 4 digits");
+
+export const createStructuredPRSchema = z.object({
+  fields: partnerRequestFieldsSchema,
+  pin: pinSchema,
+  status: createPRStructuredStatusSchema,
+});
+
+export const createNaturalLanguagePRSchema = z.object({
+  rawText: z.string().min(1).max(2000),
+  pin: pinSchema,
+  nowIso: z.string().datetime(),
+});
 
 export const partnerRequestSummarySchema = z.object({
   id: z.number().int().positive(),

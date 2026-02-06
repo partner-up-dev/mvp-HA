@@ -4,7 +4,7 @@
 - 协作触发器：嵌入对话/行为中的触发方式，把自然语言冻结为 PartnerRequest。
 - PartnerRequest（搭子请求）：一次性协作单元，可被加入并自然结束的协作状态。
 - PartnerRequestPreset：行为模板，只提供默认参数、文案与 UI 表现。
-- PartnerRequestStatus：PartnerRequest 状态流转（OPEN / ACTIVE / CLOSED / EXPIRED）。
+- PartnerRequestStatus：PartnerRequest 状态流转（DRAFT / OPEN / ACTIVE / CLOSED / EXPIRED）。
 - Time Window：PartnerRequest 的时间窗口（start_at / end_at）。
 - expiresAt：PartnerRequest 到期自动结束时间（ISO 8601）。
 - Capacity：PartnerRequest 的人数阈值（min / max）。

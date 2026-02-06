@@ -1,4 +1,5 @@
 import html2canvas from "html2canvas";
+import { i18n } from "@/locales/i18n";
 
 const getHTMLElementCtor = (doc: Document): typeof HTMLElement | null => {
   const win = doc.defaultView;
@@ -24,7 +25,7 @@ const denyList: ReadonlyArray<RegExp> = [
 const assertHtmlSafe = (html: string): void => {
   for (const pattern of denyList) {
     if (pattern.test(html)) {
-      throw new Error("Unsafe HTML");
+      throw new Error(i18n.global.t("errors.unsafeHtml"));
     }
   }
 };
@@ -65,7 +66,7 @@ const pickRenderRoot = (
 
   const body = doc.body;
   if (!isHTMLElementInDoc(doc, body)) {
-    throw new Error("iframe body not available");
+    throw new Error(i18n.global.t("errors.iframeBodyUnavailable"));
   }
 
   const singleChild =
@@ -98,7 +99,7 @@ const waitForBody = async (doc: Document, timeoutMs = 1500): Promise<void> => {
     await new Promise<void>((resolve) => window.setTimeout(resolve, 16));
   }
 
-  throw new Error("iframe body not available");
+  throw new Error(i18n.global.t("errors.iframeBodyUnavailable"));
 };
 
 const canvasToBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
@@ -106,7 +107,7 @@ const canvasToBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error("Failed to convert canvas to blob"));
+          reject(new Error(i18n.global.t("errors.canvasBlobFailed")));
         } else {
           resolve(blob);
         }
@@ -142,7 +143,7 @@ export const renderPosterHtmlToBlob = async (input: {
   try {
     const loaded = new Promise<void>((resolve, reject) => {
       const timeoutId = window.setTimeout(() => {
-        reject(new Error("iframe load timeout"));
+        reject(new Error(i18n.global.t("errors.iframeLoadTimeout")));
       }, 8000);
 
       iframe.addEventListener(
@@ -159,7 +160,7 @@ export const renderPosterHtmlToBlob = async (input: {
     await loaded;
 
     const doc = iframe.contentDocument;
-    if (!doc) throw new Error("iframe document not available");
+    if (!doc) throw new Error(i18n.global.t("errors.iframeDocumentUnavailable"));
 
     await waitForBody(doc);
     await waitForFonts(doc);

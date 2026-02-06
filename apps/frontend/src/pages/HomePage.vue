@@ -1,52 +1,32 @@
 <template>
   <div class="home-page">
     <header class="header">
-      <h1>搭一把</h1>
-      <p>描述你的搭子需求，一键生成分享页面</p>
+      <h1>{{ t("home.title") }}</h1>
+      <p>{{ t("home.subtitle") }}</p>
     </header>
 
     <main class="main">
-      <form @submit="onSubmit">
-        <Field name="rawText" v-slot="{ field, errors }">
-          <div class="field-wrapper">
-            <PRInput
-              :model-value="field.value"
-              @update:model-value="field.onChange"
-              :disabled="mutation.isPending.value"
-            />
-            <span v-if="errors.length" class="error-message">
-              {{ errors[0] }}
-            </span>
-          </div>
-        </Field>
+      <section class="entry-panel">
+        <button class="entry-row" type="button" @click="goToStructuredCreate">
+          <span class="entry-text"
+            >{{ t("home.structuredEntryPrefix") }} {{ rotatingTopic }}</span
+          >
+          <span class="entry-icon i-mdi-chevron-right"></span>
+        </button>
 
-        <Field name="pin" v-slot="{ field, errors }">
-          <div class="field-wrapper">
-            <PINInput
-              :model-value="field.value"
-              @update:model-value="field.onChange"
-            />
-            <span v-if="errors.length" class="error-message">
-              {{ errors[0] }}
-            </span>
-          </div>
-        </Field>
+        <button class="entry-row" type="button" @click="toggleNLForm">
+          <span class="entry-text">{{ t("home.naturalLanguageEntry") }}</span>
+          <span
+            class="entry-icon"
+            :class="showNLForm ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
+          ></span>
+        </button>
+      </section>
 
-        <SubmitButton type="submit" :loading="mutation.isPending.value">
-          解析我的需求
-        </SubmitButton>
-      </form>
-
-      <LoadingState
-        v-if="mutation.isPending.value"
-        message="正在解析你的需求..."
-      />
-
-      <ErrorToast
-        v-if="mutation.isError.value"
-        :message="mutation.error.value?.message || '创建失败'"
-        @close="mutation.reset()"
-      />
+      <section v-if="showNLForm" class="nl-form-panel">
+        <p class="panel-title">{{ t("home.naturalLanguagePanelTitle") }}</p>
+        <NLPRForm />
+      </section>
 
       <CreatedPRList empty-mode="hide" />
     </main>
@@ -54,44 +34,46 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useForm, Field } from "vee-validate";
-import { createPRValidationSchema } from "@/lib/validation";
-import PRInput from "@/components/PRInput.vue";
-import PINInput from "@/components/PINInput.vue";
-import SubmitButton from "@/components/SubmitButton.vue";
-import LoadingState from "@/components/LoadingState.vue";
-import ErrorToast from "@/components/ErrorToast.vue";
+import { useI18n } from "vue-i18n";
 import CreatedPRList from "@/components/CreatedPRList.vue";
-import { useCreatePR } from "@/queries/useCreatePR";
-import { useUserPRStore } from "@/stores/userPRStore";
+import NLPRForm from "@/components/NLPRForm.vue";
 
 const router = useRouter();
-const mutation = useCreatePR();
-const userPRStore = useUserPRStore();
+const { t } = useI18n();
+const showNLForm = ref(true);
+const rotatingTopics = [
+  t("home.topics.movie"),
+  t("home.topics.sports"),
+  t("home.topics.explore"),
+  t("home.topics.hiking"),
+  t("home.topics.study"),
+];
+const topicIndex = ref(0);
+const rotatingTopic = ref(rotatingTopics[topicIndex.value]);
+let timer: number | null = null;
 
-const { handleSubmit, values: formValues } = useForm({
-  validationSchema: createPRValidationSchema,
-  initialValues: {
-    rawText: "",
-    pin: "",
-  },
+onMounted(() => {
+  timer = window.setInterval(() => {
+    topicIndex.value = (topicIndex.value + 1) % rotatingTopics.length;
+    rotatingTopic.value = rotatingTopics[topicIndex.value];
+  }, 2500);
 });
 
-const onSubmit = handleSubmit(async (values) => {
-  try {
-    const result = await mutation.mutateAsync({
-      rawText: values.rawText,
-      pin: values.pin,
-      nowIso: new Date().toISOString(),
-    });
-
-    userPRStore.addCreatedPR(result.id);
-    await router.push(`/pr/${result.id}`);
-  } catch (error) {
-    console.error("Submission error:", error);
+onUnmounted(() => {
+  if (timer !== null) {
+    window.clearInterval(timer);
   }
 });
+
+const goToStructuredCreate = async () => {
+  await router.push("/pr/new");
+};
+
+const toggleNLForm = () => {
+  showNLForm.value = !showNLForm.value;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -106,15 +88,13 @@ const onSubmit = handleSubmit(async (values) => {
 }
 
 .header {
-  text-align: center;
   padding: var(--sys-spacing-lg) 0;
 
   h1 {
     @include mx.pu-font(headline-large);
     color: var(--sys-color-primary);
-    margin-bottom: var(--sys-spacing-sm);
+    margin: 0;
   }
-
   p {
     @include mx.pu-font(body-large);
     color: var(--sys-color-on-surface-variant);
@@ -127,27 +107,47 @@ const onSubmit = handleSubmit(async (values) => {
   gap: var(--sys-spacing-med);
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-med);
+.entry-panel {
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  overflow: hidden;
+  background: var(--sys-color-surface-container);
 }
 
-.field-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-}
-
-.error-message {
-  color: var(--sys-color-error);
-  font-size: 0.875rem;
+.entry-row {
+  @include mx.pu-font(title-medium);
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-xs);
+  justify-content: space-between;
+  gap: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-med);
+  border: none;
+  background: transparent;
+  color: var(--sys-color-on-surface);
+  text-align: left;
+  cursor: pointer;
 
-  &::before {
-    content: "⚠";
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--sys-color-outline-variant);
   }
+}
+
+.entry-icon {
+  font-size: 1.25rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.nl-form-panel {
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-med);
+  background: var(--sys-color-surface);
+}
+
+.panel-title {
+  @include mx.pu-font(label-large);
+  color: var(--sys-color-on-surface-variant);
+  margin: 0 0 var(--sys-spacing-sm);
 }
 </style>

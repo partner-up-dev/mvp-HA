@@ -47,14 +47,14 @@ src/
 
 ## Current State
 >
-> Last Updated: 2026-02-05 19:18
+> Last Updated: 2026-02-06 11:40
 
 ### Live Capabilities
 
-- PartnerRequest 创建: 支持从既有自然语言句子创建协作 PartnerRequest（LLM 解析标题/类型/时间区间/地点/人数(min/current/max)/预算/偏好/到期时间等结构化字段）。
+- PartnerRequest 创建: 已拆分为两条 API：`POST /api/pr/natural_language`（自然语言）与 `POST /api/pr`（结构化字段 + 状态）。
 - PartnerRequest 时间: 解析时间窗口支持日期或日期时间（YYYY-MM-DD 或 ISO datetime），并基于前端传入的 nowIso 作为当前时间参考。
 - LLM 解析提示词: 解析提示词已拆分到独立文件，并强调仅在用户明确提供时间时才输出时间分量。
-- PartnerRequest 状态: 已实现 `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
+- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
 - 参与与流转: 支持加入/退出；达到最小人数自动转为 `ACTIVE`；受最大人数限制。
 - 分享能力: 提供小红书文案/海报与微信缩略图生成能力，并支持缓存到后端。
 

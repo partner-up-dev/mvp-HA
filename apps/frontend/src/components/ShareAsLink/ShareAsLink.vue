@@ -2,7 +2,7 @@
   <div class="share-as-link">
     <!-- Preview Section -->
     <div class="preview-section">
-      <h4 class="preview-title">将复制的内容</h4>
+      <h4 class="preview-title">{{ t("share.asLink.previewTitle") }}</h4>
       <div class="preview-content">
         <pre class="preview-text">{{ normalizedUrl }}</pre>
       </div>
@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { copyToClipboard, normalizeUrl } from "./ShareAsLink";
 
 interface Props {
@@ -34,6 +35,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 
 type ShareState = "idle" | "copied" | "error";
 const shareState = ref<ShareState>("idle");
@@ -48,9 +50,9 @@ const normalizedUrl = computed(() =>
 );
 
 const buttonLabel = computed(() => {
-  if (shareState.value === "copied") return "已复制!";
-  if (shareState.value === "error") return "分享失败";
-  return "复制链接";
+  if (shareState.value === "copied") return t("common.copied");
+  if (shareState.value === "error") return t("share.asLink.shareFailed");
+  return t("share.asLink.copyButton");
 });
 
 const flashState = (next: ShareState): void => {

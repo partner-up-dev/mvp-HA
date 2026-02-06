@@ -7,7 +7,11 @@
         @click="handleRegenerate"
         :disabled="isCaptionGenerating"
       >
-        {{ isCaptionGenerating ? "生成中..." : "🔄 换一个" }}
+        {{
+          isCaptionGenerating
+            ? t("share.xiaohongshu.generating")
+            : `🔄 ${t("share.xiaohongshu.regenerateButton")}`
+        }}
       </button>
     </div>
 
@@ -19,7 +23,7 @@
         rows="4"
         class="caption-textarea"
         :class="{ transitioning: isTransitioning }"
-        placeholder="编辑小红书文案..."
+        :placeholder="t('share.xiaohongshu.captionPlaceholder')"
         :disabled="isCaptionGenerating"
         @input="handleCaptionUpdate"
         @blur="handleCaptionBlur"
@@ -31,7 +35,7 @@
           <div class="poster-image-wrapper">
             <img
               :src="posterUrl"
-              alt="分享海报"
+              :alt="t('share.xiaohongshu.posterAlt')"
               class="poster-image"
               :class="{
                 'poster-transitioning': isPosterTransitioning,
@@ -43,18 +47,18 @@
             </div>
           </div>
           <div class="guidance-text">
-            <p>📱 长按图片保存到相册</p>
-            <p class="sub-text">或分享到您的小红书</p>
+            <p>📱 {{ t("share.xiaohongshu.saveHint") }}</p>
+            <p class="sub-text">{{ t("share.xiaohongshu.shareHint") }}</p>
           </div>
         </div>
         <div v-else-if="posterIsGenerating" class="generating-state">
           <div class="poster-placeholder">
             <div class="spinner"></div>
-            <p>🎨 生成海报中...</p>
+            <p>🎨 {{ t("share.xiaohongshu.posterGenerating") }}</p>
           </div>
         </div>
         <div v-else class="empty-state">
-          <p>尚未生成海报</p>
+          <p>{{ t("share.xiaohongshu.posterNotGenerated") }}</p>
         </div>
       </div>
     </div>
@@ -84,7 +88,7 @@
         </button>
       </div>
       <button class="primary-btn" @click="handleOpenApp">
-        分享到小红书
+        {{ t("share.xiaohongshu.openAppButton") }}
         <div class="i-mdi-arrow-top-right"></div>
       </button>
     </div>
@@ -93,6 +97,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onUnmounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { useAppScheme } from "@/composables/useAppScheme";
 import { useGenerateXiaohongshuCaption } from "@/queries/useGenerateXiaohongshuCaption";
 import { useGenerateXhsPosterHtml } from "@/queries/useGenerateXhsPosterHtml";
@@ -111,9 +116,6 @@ import {
   delayMs,
 } from "./ShareToXiaohongshu";
 
-const DEFAULT_POSTER_STYLE_PROMPT =
-  "简洁大方的信息展示风格，文字清晰易读，留白充足，色彩克制，传递可信感";
-
 interface Props {
   shareUrl: string;
   prId: PRId;
@@ -128,6 +130,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 
 // State
 const caption = ref<{ caption: string; posterStylePrompt: string } | null>(
@@ -135,7 +138,7 @@ const caption = ref<{ caption: string; posterStylePrompt: string } | null>(
 );
 const posterUrl = ref<string | null>(null);
 const posterIsGenerating = ref(false);
-const posterStylePrompt = ref(DEFAULT_POSTER_STYLE_PROMPT);
+const posterStylePrompt = ref("");
 const captionCounter = ref(0);
 const generatedCaptions = ref<
   Map<
@@ -160,18 +163,18 @@ const { openXiaohongshu } = useAppScheme();
  * Computed button label for copy caption
  */
 const copyButtonLabel = computed(() => {
-  if (copyState.value === "copied") return "已复制!";
-  if (copyState.value === "error") return "复制失败";
-  return "复制文案";
+  if (copyState.value === "copied") return t("common.copied");
+  if (copyState.value === "error") return t("common.copyFailed");
+  return t("share.xiaohongshu.copyCaptionButton");
 });
 
 /**
  * Computed button label for download poster
  */
 const downloadButtonLabel = computed(() => {
-  if (posterIsGenerating.value) return "生成中...";
-  if (isWeChatBrowser()) return "长按图片保存";
-  return "下载海报";
+  if (posterIsGenerating.value) return t("share.xiaohongshu.generating");
+  if (isWeChatBrowser()) return t("share.xiaohongshu.wechatDownloadHint");
+  return t("share.xiaohongshu.downloadButton");
 });
 
 /**
@@ -268,7 +271,7 @@ const handleCaptionUpdate = (event: Event) => {
   const target = event.target as HTMLTextAreaElement;
   if (caption.value) {
     caption.value.caption = target.value;
-    posterStylePrompt.value = DEFAULT_POSTER_STYLE_PROMPT;
+    posterStylePrompt.value = t("share.xiaohongshu.defaultPosterStylePrompt");
   }
 };
 
@@ -422,7 +425,7 @@ const handleCopyCaptionWithUrl = async () => {
  */
 const handleDownloadPoster = async () => {
   if (!posterUrl.value) {
-    alert("请先生成海报");
+    alert(t("share.xiaohongshu.generatePosterFirst"));
     return;
   }
   try {
@@ -431,7 +434,7 @@ const handleDownloadPoster = async () => {
     downloadBlob(blob, generatePosterFilename());
   } catch (error) {
     console.error("Failed to download poster:", error);
-    alert("❌ 下载失败，请重试");
+    alert(t("share.xiaohongshu.downloadFailed"));
   }
 };
 
@@ -443,6 +446,7 @@ const handleOpenApp = () => {
 };
 
 // Initialize caption on mount
+posterStylePrompt.value = t("share.xiaohongshu.defaultPosterStylePrompt");
 handleInitializeCaption();
 
 // Cleanup timeout on unmount

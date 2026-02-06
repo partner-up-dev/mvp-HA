@@ -5,6 +5,7 @@ import {
 } from "vue-router";
 import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
+import PRCreatePage from "@/pages/PRCreatePage.vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -16,6 +17,11 @@ const routes: RouteRecordRaw[] = [
     path: "/pr/:id",
     name: "pr",
     component: PRPage,
+  },
+  {
+    path: "/pr/new",
+    name: "pr-new",
+    component: PRCreatePage,
   },
 ];
 

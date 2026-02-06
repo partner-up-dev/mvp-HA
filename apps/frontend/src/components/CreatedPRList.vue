@@ -1,26 +1,26 @@
 <template>
   <section v-if="!shouldHide" class="created-section">
     <div class="created-header">
-      <h2 class="created-title">我的搭子请求</h2>
+      <h2 class="created-title">{{ t("createdPRList.title") }}</h2>
       <span v-if="userPRStore.createdPRs.length" class="created-count">
         {{ userPRStore.createdPRs.length }}
       </span>
     </div>
 
     <p v-if="!userPRStore.createdPRs.length && props.emptyMode === 'text'" class="created-empty">
-      还没有创建过搭子请求
+      {{ t("createdPRList.empty") }}
     </p>
 
     <LoadingState
       v-else-if="creatorPRsQuery.isLoading.value"
-      message="正在加载你创建的请求..."
+      :message="t('createdPRList.loading')"
     />
 
     <p v-else-if="creatorPRsQuery.error.value" class="created-error">
       {{
         creatorPRsQuery.error.value instanceof Error
           ? creatorPRsQuery.error.value.message
-          : "加载失败"
+          : t("createdPRList.loadFailed")
       }}
     </p>
 
@@ -51,6 +51,7 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import LoadingState from "@/components/LoadingState.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
 import { useCreatorPRs } from "@/queries/useCreatorPRs";
@@ -69,6 +70,7 @@ const props = withDefaults(
 );
 
 const router = useRouter();
+const { t, locale } = useI18n();
 const userPRStore = useUserPRStore();
 const creatorPRsQuery = useCreatorPRs();
 
@@ -81,7 +83,7 @@ const goToPR = (id: PRId) => {
 };
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString("zh-CN", {
+  return new Date(dateStr).toLocaleDateString(locale.value, {
     year: "numeric",
     month: "long",
     day: "numeric",

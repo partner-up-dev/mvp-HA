@@ -6,17 +6,20 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 const props = defineProps<{
-  status: "OPEN" | "ACTIVE" | "CLOSED" | "EXPIRED";
+  status: "DRAFT" | "OPEN" | "ACTIVE" | "CLOSED" | "EXPIRED";
 }>();
+const { t } = useI18n();
 
 const statusText = computed(() => {
   const map = {
-    OPEN: "可加入",
-    ACTIVE: "进行中",
-    CLOSED: "已结束",
-    EXPIRED: "已过期",
+    DRAFT: t("status.draft"),
+    OPEN: t("status.open"),
+    ACTIVE: t("status.active"),
+    CLOSED: t("status.closed"),
+    EXPIRED: t("status.expired"),
   };
   return map[props.status];
 });
@@ -28,6 +31,11 @@ const statusText = computed(() => {
   padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
   border-radius: var(--sys-radius-sm);
 
+  &.draft {
+    background: var(--sys-color-surface-container-highest);
+    color: var(--sys-color-on-surface);
+  }
+
   &.open {
     background: var(--sys-color-primary-container);
     color: var(--sys-color-on-primary-container);
@@ -38,11 +46,7 @@ const statusText = computed(() => {
     color: var(--sys-color-on-tertiary-container);
   }
 
-  &.closed {
-    background: var(--sys-color-surface-container);
-    color: var(--sys-color-on-surface-variant);
-  }
-
+  &.closed,
   &.expired {
     background: var(--sys-color-surface-container);
     color: var(--sys-color-on-surface-variant);

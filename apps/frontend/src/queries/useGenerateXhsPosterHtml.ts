@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
 import type { PRId } from "@partner-up-dev/backend";
+import { i18n } from "@/locales/i18n";
 
 export type PosterHtmlResponse = {
   html: string;
@@ -29,7 +30,9 @@ export const useGenerateXhsPosterHtml = () => {
 
       if (!res.ok) {
         const payload = (await res.json()) as { error?: string };
-        throw new Error(payload.error ?? "Failed to generate XHS poster HTML");
+        throw new Error(
+          payload.error ?? i18n.global.t("errors.generateXhsPosterHtmlFailed"),
+        );
       }
 
       return (await res.json()) as PosterHtmlResponse;

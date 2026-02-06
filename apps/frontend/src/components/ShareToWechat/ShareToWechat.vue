@@ -11,13 +11,13 @@
     </div>
 
     <div class="preview-section">
-      <h4 class="preview-title">微信分享卡片预览</h4>
+      <h4 class="preview-title">{{ t("share.wechat.previewTitle") }}</h4>
 
       <div class="poster-preview">
         <div v-if="isWorking" class="generating-state">
           <div class="poster-placeholder">
             <div class="spinner"></div>
-            <p>生成中...</p>
+            <p>{{ t("share.wechat.generating") }}</p>
           </div>
         </div>
         <div v-else>
@@ -34,8 +34,8 @@
     <div class="action-section">
       <div v-if="errorText" class="error-text">{{ errorText }}</div>
       <div v-else class="guidance-text">
-        <p>请点击微信右上角“…”</p>
-        <p class="sub-text">选择“发送给朋友”或“分享到朋友圈”</p>
+        <p>{{ t("share.wechat.guidanceLine1") }}</p>
+        <p class="sub-text">{{ t("share.wechat.guidanceLine2") }}</p>
       </div>
     </div>
   </div>
@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { useGenerateWechatThumbHtml } from "@/queries/useGenerateWechatThumbHtml";
 import { renderPosterHtmlToBlob } from "@/composables/renderHtmlPoster";
 import { useGenerateWechatThumbPoster } from "@/composables/useGenerateWechatThumbPoster";
@@ -53,6 +54,7 @@ import type { ShareToWechatChatProps } from "./ShareToWechat";
 import WeChatChatPreview from "./WeChatChatPreview.vue";
 
 const props = defineProps<ShareToWechatChatProps>();
+const { t } = useI18n();
 
 const styleIndex = ref(0);
 const errorMessage = ref<string | null>(null);
@@ -78,9 +80,9 @@ const isWorking = computed(
 );
 
 const switchButtonLabel = computed(() => {
-  if (isWorking.value) return "生成中...";
-  if (lastUploadedThumbnailUrl.value) return "换一个";
-  return "换一个";
+  if (isWorking.value) return t("share.wechat.generating");
+  if (lastUploadedThumbnailUrl.value) return t("share.wechat.switchStyle");
+  return t("share.wechat.switchStyle");
 });
 
 const normalizeShareUrl = (rawUrl: string): string => {
@@ -95,7 +97,7 @@ const normalizeShareUrl = (rawUrl: string): string => {
 
 const buildShareTitle = (): string => {
   const title = props.prData.title?.trim();
-  return title && title.length > 0 ? title : "搭一搭 - PartnerUp";
+  return title && title.length > 0 ? title : t("share.wechat.defaultShareTitle");
 };
 
 const truncateDesc = (raw: string, maxLen: number): string => {
@@ -113,7 +115,7 @@ const pickFallbackKeyText = (): string => {
   const type = props.prData.type?.trim();
   if (type && type.length > 0) return type.slice(0, 3);
 
-  return "搭";
+  return t("share.wechat.fallbackKeyText");
 };
 
 const shareTitle = computed(() => buildShareTitle());
@@ -178,7 +180,8 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
 
     styleIndex.value += 1;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "操作失败";
+    const message =
+      error instanceof Error ? error.message : t("common.operationFailed");
     errorMessage.value = message;
     isRendering.value = false;
   }

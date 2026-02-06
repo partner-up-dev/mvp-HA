@@ -1,6 +1,7 @@
 /**
  * Poster template types for Xiaohongshu poster generation
  */
+import { i18n } from "@/locales/i18n";
 
 export interface PosterStyle {
   id: string;
@@ -44,7 +45,7 @@ export const POSTER_STYLES: Record<number, PosterStyle> = {
   // 0: 活泼友好 (Friendly) - Fresh style
   0: {
     id: "fresh",
-    name: "清新活泼",
+    name: i18n.global.t("posterStyles.fresh"),
     background: {
       type: "gradient",
       colors: ["#F0F9E9", "#E6F3D3"],
@@ -70,7 +71,7 @@ export const POSTER_STYLES: Record<number, PosterStyle> = {
   // 1: 简洁干练 (Concise) - Minimal style
   1: {
     id: "minimal",
-    name: "极简风格",
+    name: i18n.global.t("posterStyles.minimal"),
     background: {
       type: "solid",
       colors: ["#FFFFFF"],
@@ -96,7 +97,7 @@ export const POSTER_STYLES: Record<number, PosterStyle> = {
   // 2: 温暖治愈 (Warm) - Warm style
   2: {
     id: "warm",
-    name: "温暖风格",
+    name: i18n.global.t("posterStyles.warm"),
     background: {
       type: "gradient",
       colors: ["#FFF5F0", "#FFE4D6"],
@@ -121,7 +122,7 @@ export const POSTER_STYLES: Record<number, PosterStyle> = {
   // 3: 潮流酷炫 (Trendy) - Modern style
   3: {
     id: "modern",
-    name: "现代风格",
+    name: i18n.global.t("posterStyles.modern"),
     background: {
       type: "gradient",
       colors: ["#F8F9FA", "#E9ECEF"],
@@ -147,7 +148,7 @@ export const POSTER_STYLES: Record<number, PosterStyle> = {
   // 4: 专业正式 (Professional) - Elegant style
   4: {
     id: "elegant",
-    name: "优雅风格",
+    name: i18n.global.t("posterStyles.elegant"),
     background: {
       type: "solid",
       colors: ["#FEF9F6"],

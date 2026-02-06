@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
 import type { PRId } from "@partner-up-dev/backend";
 import type { PosterHtmlResponse } from "./useGenerateXhsPosterHtml";
+import { i18n } from "@/locales/i18n";
 
 export const useGenerateWechatThumbHtml = () => {
   return useMutation({
@@ -21,7 +22,7 @@ export const useGenerateWechatThumbHtml = () => {
       if (!res.ok) {
         const payload = (await res.json()) as { error?: string };
         throw new Error(
-          payload.error ?? "Failed to generate WeChat thumbnail HTML",
+          payload.error ?? i18n.global.t("errors.generateWechatThumbHtmlFailed"),
         );
       }
 

@@ -2,7 +2,7 @@
   <Modal
     :open="open"
     max-width="360px"
-    title="修改需求状态"
+    :title="t('modifyStatusModal.title')"
     @close="handleClose"
   >
     <div class="status-options">
@@ -17,30 +17,30 @@
     </div>
 
     <div class="pin-input">
-      <label>输入PIN码确认</label>
+      <label>{{ t("modifyStatusModal.pinLabel") }}</label>
       <input
         v-model="modifyPin"
         type="password"
         inputmode="numeric"
         maxlength="4"
-        placeholder="****"
+        :placeholder="t('partnerRequestForm.pinPlaceholder')"
       />
     </div>
 
     <div class="modal-actions">
-      <button class="cancel-btn" @click="handleClose">取消</button>
+      <button class="cancel-btn" @click="handleClose">{{ t("common.cancel") }}</button>
       <SubmitButton
         :loading="updateMutation.isPending.value"
         :disabled="!modifyPin || modifyPin.length !== 4"
         @click="handleConfirm"
       >
-        确认修改
+        {{ t("modifyStatusModal.confirmAction") }}
       </SubmitButton>
     </div>
 
     <ErrorToast
       v-if="updateMutation.isError.value"
-      :message="updateMutation.error.value?.message || '修改失败'"
+      :message="updateMutation.error.value?.message || t('modifyStatusModal.updateFailed')"
       @close="updateMutation.reset()"
     />
   </Modal>
@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import Modal from "@/components/Modal.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
@@ -63,15 +64,16 @@ const props = defineProps<{
   open: boolean;
   prId: PRId;
 }>();
+const { t } = useI18n();
 
 const emit = defineEmits<{
   close: [];
 }>();
 
 const statusOptions: StatusOption[] = [
-  { value: "OPEN", label: "可加入" },
-  { value: "ACTIVE", label: "进行中" },
-  { value: "CLOSED", label: "已结束" },
+  { value: "OPEN", label: t("status.open") },
+  { value: "ACTIVE", label: t("status.active") },
+  { value: "CLOSED", label: t("status.closed") },
 ];
 
 const updateMutation = useUpdatePRStatus();

@@ -1,32 +1,32 @@
 <template>
   <article class="pr-card">
     <div class="field" v-if="type">
-      <span class="label">类型</span>
+      <span class="label">{{ t("prCard.type") }}</span>
       <span class="value">{{ type }}</span>
     </div>
 
     <div class="field" v-if="formattedTime">
-      <span class="label">时间</span>
+      <span class="label">{{ t("prCard.time") }}</span>
       <span class="value">{{ formattedTime }}</span>
     </div>
 
     <div class="field" v-if="location">
-      <span class="label">地点</span>
+      <span class="label">{{ t("prCard.location") }}</span>
       <span class="value">{{ location }}</span>
     </div>
 
     <div class="field" v-if="shouldShowPartners">
-      <span class="label">人数</span>
+      <span class="label">{{ t("prCard.partners") }}</span>
       <span class="value">{{ formattedPartners }}</span>
     </div>
 
     <div class="field" v-if="budget">
-      <span class="label">预算</span>
+      <span class="label">{{ t("prCard.budget") }}</span>
       <span class="value">{{ budget }}</span>
     </div>
 
     <div class="field" v-if="preferences.length">
-      <span class="label">偏好</span>
+      <span class="label">{{ t("prCard.preferences") }}</span>
       <div class="tags">
         <span class="tag" v-for="pref in preferences" :key="pref">
           {{ pref }}
@@ -35,12 +35,12 @@
     </div>
 
     <div class="field" v-if="notes">
-      <span class="label">备注</span>
+      <span class="label">{{ t("prCard.notes") }}</span>
       <span class="value">{{ notes }}</span>
     </div>
 
     <details class="raw-text">
-      <summary>原始描述</summary>
+      <summary>{{ t("prCard.rawText") }}</summary>
       <p>{{ rawText }}</p>
     </details>
   </article>
@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
 type PartnersTuple = [number | null, number, number | null];
 
@@ -63,6 +64,7 @@ const props = defineProps<{
   notes: string | null;
   rawText: string;
 }>();
+const { t } = useI18n();
 
 const normalizeTimeValue = (value: string | null): string | null => {
   if (!value) return null;
@@ -84,27 +86,27 @@ const formatPartners = (min: number | null, current: number, max: number | null)
   const parts: string[] = [];
 
   if (max !== null) {
-    parts.push(`${current}/${max}`);
+    parts.push(t("prCard.partnersCurrentWithMax", { current, max }));
   } else {
-    parts.push(`已有${current}人`);
+    parts.push(t("prCard.partnersCurrentOnly", { current }));
   }
 
   if (min !== null) {
-    parts.push(`（至少 ${min} 人）`);
+    parts.push(t("prCard.partnersAtLeastClause", { min }));
   }
 
   if (parts.length === 0) {
     if (min !== null && max !== null) {
       if (min === max) {
-        return `${min}人`;
+        return t("prCard.partnersExact", { count: min });
       }
-      return `${min}-${max}人`;
+      return t("prCard.partnersRange", { min, max });
     }
     if (min !== null) {
-      return `至少${min}人`;
+      return t("prCard.partnersAtLeast", { min });
     }
     if (max !== null) {
-      return `最多${max}人`;
+      return t("prCard.partnersAtMost", { max });
     }
   }
 

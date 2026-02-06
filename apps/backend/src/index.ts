@@ -46,10 +46,17 @@ export type AppType = typeof routes;
 // Export types for frontend use
 export type {
   PartnerRequestFields,
+  CreatePRStructuredStatus,
   PRStatus,
   PRStatusManual,
   PRId,
   PartnerRequestSummary,
+} from "./entities/partner-request";
+export {
+  partnerRequestFieldsSchema,
+  createStructuredPRSchema,
+  createNaturalLanguagePRSchema,
+  createPRStructuredStatusSchema,
 } from "./entities/partner-request";
 
 // Start server

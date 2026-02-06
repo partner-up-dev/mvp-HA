@@ -3,6 +3,7 @@ import type { ComponentPublicInstance } from "vue";
 import html2canvas from "html2canvas";
 import PosterTemplate from "@/components/PosterTemplate.vue";
 import type { PosterData } from "@/lib/poster-types";
+import { i18n } from "@/locales/i18n";
 
 const unwrapHTMLElement = (value: unknown): HTMLElement | null => {
   if (value instanceof HTMLElement) return value;
@@ -20,7 +21,7 @@ const canvasToBlob = async (canvas: HTMLCanvasElement): Promise<Blob> => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error("Failed to convert canvas to blob"));
+          reject(new Error(i18n.global.t("errors.canvasBlobFailed")));
         } else {
           resolve(blob);
         }
@@ -70,7 +71,7 @@ export const useGeneratePoster = () => {
       const maybeExposed = vm as unknown as { posterElement?: unknown };
       const posterElement = unwrapHTMLElement(maybeExposed.posterElement);
       if (!posterElement) {
-        throw new Error("Failed to get poster element");
+        throw new Error(i18n.global.t("errors.posterElementMissing"));
       }
 
       // Configure html2canvas options for high quality
@@ -111,7 +112,12 @@ export const useGeneratePoster = () => {
     } catch (error) {
       console.error("Failed to generate poster:", error);
       throw new Error(
-        `Poster generation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        i18n.global.t("errors.posterGenerationFailed", {
+          message:
+            error instanceof Error
+              ? error.message
+              : i18n.global.t("common.operationFailed"),
+        }),
       );
     } finally {
       isGenerating.value = false;

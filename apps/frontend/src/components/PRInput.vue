@@ -1,6 +1,6 @@
 <template>
   <div class="pr-input">
-    <label for="pr-text">描述你的搭子需求</label>
+    <label for="pr-text">{{ t("prInput.label") }}</label>
     <textarea
       id="pr-text"
       :value="modelValue"
@@ -8,7 +8,7 @@
         $emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)
       "
       :disabled="disabled"
-      placeholder="例如：周末想找人一起去杭州玩两天，预算500左右，希望对方喜欢拍照..."
+      :placeholder="t('prInput.placeholder')"
       rows="5"
       maxlength="2000"
     />
@@ -17,6 +17,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     modelValue?: string;

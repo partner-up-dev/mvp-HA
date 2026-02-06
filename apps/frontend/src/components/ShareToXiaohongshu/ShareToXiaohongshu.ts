@@ -1,5 +1,6 @@
 import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import type { PRId } from "@partner-up-dev/backend";
+import { i18n } from "@/locales/i18n";
 
 /**
  * Props for ShareToXiaohongshu component
@@ -49,7 +50,7 @@ export async function copyToClipboard(text: string): Promise<void> {
   document.body.removeChild(textarea);
 
   if (!ok) {
-    throw new Error("Clipboard copy failed");
+    throw new Error(i18n.global.t("errors.clipboardCopyFailed"));
   }
 }
 
