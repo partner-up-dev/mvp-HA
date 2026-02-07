@@ -30,7 +30,7 @@
     "title": "搭一把",
     "subtitle": "描述你的搭子需求，一键生成分享页面",
     "structuredEntryPrefix": "找搭子一起",
-    "naturalLanguageEntry": "刚刚已经在群里发过了？",
+    "naturalLanguageEntry": "刚刚在群里发过了？",
     "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
     "topics": {
       "movie": "看电影",
@@ -127,7 +127,7 @@
     }
   },
   "prInput": {
-    "label": "描述你的搭子需求",
+    "label": "自然语言描述你的搭子需求",
     "placeholder": "例如：周末想找人一起去杭州玩两天，预算500左右，希望对方喜欢拍照..."
   },
   "pinInput": {
@@ -138,7 +138,7 @@
     "info": "修改状态时您会需要，请保存好此 PIN 码"
   },
   "nlForm": {
-    "submit": "解析请求",
+    "submit": "解析",
     "parsing": "正在解析你的请求...",
     "createFailed": "创建失败"
   },

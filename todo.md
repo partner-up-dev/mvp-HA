@@ -26,3 +26,4 @@
     - [ ] 不是很 CTA （为此需要缩小 Header ）
   - [x] 刚刚我已经在群里发过了？ -> 展开textarea, 复制过来，自然语言自动识别
 - [x] 需要国际化支持，不然模型生成各种文本不一致
+- [ ] PR Auto Exipre 的计算逻辑不正确（应该用 close time 而不是 start time）

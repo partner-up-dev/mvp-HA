@@ -1,6 +1,6 @@
 <template>
   <div class="pr-input">
-    <label for="pr-text">{{ t("prInput.label") }}</label>
+    <!-- <label for="pr-text">{{ t("prInput.label") }}</label> -->
     <textarea
       id="pr-text"
       :value="modelValue"
