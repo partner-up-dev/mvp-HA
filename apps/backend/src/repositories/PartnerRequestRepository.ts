@@ -43,11 +43,7 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async updateFields(
-    id: PRId,
-    fields: PartnerRequestFields,
-    expiresAt: Date | null,
-  ) {
+  async updateFields(id: PRId, fields: PartnerRequestFields) {
     const result = await db
       .update(partnerRequests)
       .set({
@@ -55,7 +51,6 @@ export class PartnerRequestRepository {
         type: fields.type,
         time: fields.time,
         location: fields.location,
-        expiresAt,
         partners: fields.partners,
         budget: fields.budget,
         preferences: fields.preferences,

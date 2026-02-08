@@ -8,7 +8,6 @@ export const DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT = `你是一个搭子�
   - 若用户只给出日期，不要臆测时间，输出日期字符串
   - 无约束为 null
 - location: 地点，无则 null
-- expiresAt: ISO 8601 datetime 或 null，基于“当前时间”合理推断
 - partners: [min, current, max]，current 创建时为 0
 - budget: 预算，无则 null
 - preferences: 偏好数组

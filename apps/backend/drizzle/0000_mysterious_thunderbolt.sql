@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS "partner_requests" (
 	"type" text NOT NULL,
 	"time_window" text[] DEFAULT ARRAY[NULL, NULL]::text[] NOT NULL,
 	"location" text,
-	"expires_at" timestamp,
 	"partners" integer[] DEFAULT ARRAY[NULL, 0, NULL]::integer[] NOT NULL,
 	"budget" text,
 	"preferences" text[] DEFAULT ARRAY[]::text[] NOT NULL,

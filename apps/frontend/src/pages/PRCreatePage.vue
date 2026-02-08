@@ -1,7 +1,11 @@
 <template>
   <div class="create-page">
     <header class="page-header">
-      <button class="home-btn" @click="goHome" :aria-label="t('common.backToHome')">
+      <button
+        class="home-btn"
+        @click="goHome"
+        :aria-label="t('common.backToHome')"
+      >
         <div class="i-mdi-arrow-left font-title-large"></div>
       </button>
       <h1>{{ t("createPage.title") }}</h1>
@@ -44,7 +48,9 @@
 
     <ErrorToast
       v-if="createMutation.isError.value"
-      :message="createMutation.error.value?.message || t('createPage.createFailed')"
+      :message="
+        createMutation.error.value?.message || t('createPage.createFailed')
+      "
       @close="createMutation.reset()"
     />
   </div>
@@ -52,9 +58,12 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 import { useI18n } from "vue-i18n";
-import type { CreatePRStructuredStatus, PartnerRequestFields } from "@partner-up-dev/backend";
+import type {
+  CreatePRStructuredStatus,
+  PartnerRequestFields,
+} from "@partner-up-dev/backend";
 import PartnerRequestForm from "@/components/PartnerRequestForm.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
 import { useUserPRStore } from "@/stores/userPRStore";
@@ -62,21 +71,33 @@ import { useCreatePRFromStructured } from "@/queries/useCreatePR";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 
 const router = useRouter();
+const route = useRoute();
 const { t } = useI18n();
 const userPRStore = useUserPRStore();
 const createMutation = useCreatePRFromStructured();
 
-const initialFields: PartnerRequestFields = {
+const resolveTopic = (
+  value: LocationQueryValue | LocationQueryValue[] | undefined,
+): string | null => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const buildInitialFields = (topic: string | null): PartnerRequestFields => ({
   title: undefined,
-  type: "",
+  type: topic ?? "",
   time: [null, null],
   location: null,
-  expiresAt: null,
   partners: [null, 0, null],
   budget: null,
   preferences: [],
   notes: null,
-};
+});
+
+const initialFields = ref<PartnerRequestFields>(
+  buildInitialFields(resolveTopic(route.query.topic)),
+);
 
 const formRef = ref<InstanceType<typeof PartnerRequestForm> | null>(null);
 const pendingStatus = ref<CreatePRStructuredStatus>("OPEN");

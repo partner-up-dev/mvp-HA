@@ -118,7 +118,10 @@ export class ShareService {
     prId: PRId;
     style: number;
   }): Promise<string | null> {
-    const url = await this.prRepo.findWechatThumbnail(params.prId, params.style);
+    const url = await this.prRepo.findWechatThumbnail(
+      params.prId,
+      params.style,
+    );
     if (!url) return null;
     if (!this.isRemoteUrl(url)) return null;
     return url;
@@ -129,7 +132,6 @@ export class ShareService {
     type: string;
     time: PartnerRequestFields["time"];
     location: string | null;
-    expiresAt: Date | null;
     partners: PartnerRequestFields["partners"];
     budget: string | null;
     preferences: string[];
@@ -140,7 +142,6 @@ export class ShareService {
       type: pr.type,
       time: pr.time,
       location: pr.location,
-      expiresAt: pr.expiresAt ? pr.expiresAt.toISOString() : null,
       partners: pr.partners,
       budget: pr.budget,
       preferences: pr.preferences,

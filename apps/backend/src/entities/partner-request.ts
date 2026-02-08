@@ -23,7 +23,6 @@ export const partnerRequestFieldsSchema = z.object({
     isoDateOrDateTimeSchema.nullable(),
   ]),
   location: z.string().nullable(),
-  expiresAt: z.string().datetime().nullable(),
   partners: z.tuple([
     z.number().nullable(),
     z.number().int().nonnegative(),
@@ -119,7 +118,6 @@ export const partnerRequests = pgTable("partner_requests", {
     .notNull()
     .default(sql`ARRAY[NULL, 0, NULL]::integer[]`),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  expiresAt: timestamp("expires_at"),
   budget: text("budget"),
   preferences: text("preferences")
     .array()

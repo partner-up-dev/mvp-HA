@@ -7,7 +7,7 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 ## 核心形态
 
 - 一次性 PartnerRequest 页面（H5 / 小程序渲染）。
-- PartnerRequest 具备时间窗口与人数阈值，用于触发协作状态变化。
+- PartnerRequest 具备时间窗口与人数阈值，用于触发协作状态变化
 
 ## 合法使用路径
 

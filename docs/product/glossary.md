@@ -5,8 +5,7 @@
 - PartnerRequest（搭子请求）：一次性协作单元，可被加入并自然结束的协作状态。
 - PartnerRequestPreset：行为模板，只提供默认参数、文案与 UI 表现。
 - PartnerRequestStatus：PartnerRequest 状态流转（DRAFT / OPEN / ACTIVE / CLOSED / EXPIRED）。
-- Time Window：PartnerRequest 的时间窗口（start_at / end_at）。
-- expiresAt：PartnerRequest 到期自动结束时间（ISO 8601）。
+- Time Window：PartnerRequest 的时间窗口（start_at / end_at）
 - Capacity：PartnerRequest 的人数阈值（min / max）。
 - 分享链接：指向 PartnerRequest 页面、可复制传播的链接。
 - 小红书文案：用于发布到小红书的分享文本。

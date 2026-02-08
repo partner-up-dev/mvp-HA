@@ -1,4 +1,4 @@
-# 功能：创建协作 PartnerRequest
+# 功能：创建搭子请求 PartnerRequest
 
 ## 用户故事
 

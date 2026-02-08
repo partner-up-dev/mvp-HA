@@ -31,7 +31,6 @@ export const llmRoute = app.post(
       type: pr.type,
       time: pr.time,
       location: pr.location,
-      expiresAt: pr.expiresAt ? pr.expiresAt.toISOString() : null,
       partners: pr.partners,
       budget: pr.budget,
       preferences: pr.preferences,

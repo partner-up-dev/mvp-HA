@@ -195,7 +195,7 @@ export class LLMService {
     nowIso: string,
   ): Promise<PartnerRequestFields> {
     const systemPrompt = await this.getParsePartnerRequestSystemPrompt();
-    const system = `${systemPrompt}\n\nCurrent time (ISO 8601): ${nowIso}\n\nOutput must include expiresAt as ISO 8601 datetime string or null.`;
+    const system = `${systemPrompt}\n\nCurrent time (ISO 8601): ${nowIso}`;
 
     const { object } = await generateObject({
       model: this.client(env.LLM_DEFAULT_MODEL),
@@ -426,10 +426,8 @@ HTML/CSS 约束：
     if (timeWindow) parts.push(`时间：${timeWindow}`);
     if (pr.location) parts.push(`地点：${pr.location}`);
     const [minPartners, currentPartners, maxPartners] = pr.partners;
-    if (minPartners !== null)
-      parts.push(`最少人数：${minPartners}`);
-    if (maxPartners !== null)
-      parts.push(`最多人数：${maxPartners}`);
+    if (minPartners !== null) parts.push(`最少人数：${minPartners}`);
+    if (maxPartners !== null) parts.push(`最多人数：${maxPartners}`);
     parts.push(`当前人数：${currentPartners}`);
 
     parts.push(
@@ -471,14 +469,3 @@ HTML/CSS 约束：
     return null;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
