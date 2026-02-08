@@ -12,7 +12,9 @@
     <div class="form-field">
       <label
         >{{ t("partnerRequestForm.type") }}
-        <span class="required">{{ t("partnerRequestForm.requiredMark") }}</span></label
+        <span class="required">{{
+          t("partnerRequestForm.requiredMark")
+        }}</span></label
       >
       <input
         v-model="typeModel"
@@ -24,89 +26,104 @@
       </span>
     </div>
 
-    <DateTimeRangePicker v-model="timeModel" />
-
-    <div class="form-field">
-      <label>{{ t("partnerRequestForm.location") }}</label>
-      <input
-        v-model="locationInput"
-        type="text"
-        :placeholder="t('partnerRequestForm.locationPlaceholder')"
-      />
-    </div>
-
-    <div class="form-field">
-      <label>{{ t("partnerRequestForm.minPartners") }}</label>
-      <input
-        :value="minPartnersInput"
-        type="number"
-        :placeholder="t('partnerRequestForm.minPartnersPlaceholder')"
-        @input="onMinPartnersInput"
-      />
-    </div>
-
-    <div class="form-field">
-      <label>{{ t("partnerRequestForm.maxPartners") }}</label>
-      <input
-        :value="maxPartnersInput"
-        type="number"
-        :placeholder="t('partnerRequestForm.maxPartnersPlaceholder')"
-        @input="onMaxPartnersInput"
-      />
-    </div>
-
-    <div class="form-field">
-      <label>{{ t("partnerRequestForm.budget") }}</label>
-      <input
-        v-model="budgetInput"
-        type="text"
-        :placeholder="t('partnerRequestForm.budgetPlaceholder')"
-      />
-    </div>
-
-    <div class="form-field">
-      <label>{{ t("partnerRequestForm.preferences") }}</label>
-      <div class="tags-input">
-        <div class="tags">
-          <span v-for="(pref, index) in preferencesModel" :key="index" class="tag">
-            {{ pref }}
-            <button type="button" class="remove-tag" @click="removePreference(index)">
-              {{ t("partnerRequestForm.removePreference") }}
-            </button>
-          </span>
-        </div>
-        <input
-          v-model="newPreference"
-          type="text"
-          :placeholder="t('partnerRequestForm.preferencesPlaceholder')"
-          @keydown.enter.prevent="addPreference"
-        />
-      </div>
-    </div>
-
-    <div class="form-field">
-      <label>{{ t("partnerRequestForm.notes") }}</label>
-      <textarea
-        v-model="notesInput"
-        rows="3"
-        :placeholder="t('partnerRequestForm.notesPlaceholder')"
-      />
-    </div>
-
     <div class="form-field pin-field">
-      <label
-        >{{ t("partnerRequestForm.pin") }}
-        <span class="required">{{ t("partnerRequestForm.requiredMark") }}</span></label
-      >
-      <input
-        v-model="pinModel"
-        type="password"
-        inputmode="numeric"
-        maxlength="4"
-        :placeholder="t('partnerRequestForm.pinPlaceholder')"
-      />
+      <PINInput v-model="pinModel" />
       <span v-if="errors.pin" class="error-message">{{ errors.pin }}</span>
     </div>
+
+    <button
+      type="button"
+      class="advanced-toggle"
+      :aria-expanded="isAdvancedOpen"
+      @click="isAdvancedOpen = !isAdvancedOpen"
+    >
+      {{
+        isAdvancedOpen
+          ? t("partnerRequestForm.advancedHide")
+          : t("partnerRequestForm.advancedShow")
+      }}
+    </button>
+
+    <Transition name="advanced-fields">
+      <div v-if="isAdvancedOpen" class="advanced-section">
+        <DateTimeRangePicker v-model="timeModel" />
+
+        <div class="form-field">
+          <label>{{ t("partnerRequestForm.location") }}</label>
+          <input
+            v-model="locationInput"
+            type="text"
+            :placeholder="t('partnerRequestForm.locationPlaceholder')"
+          />
+        </div>
+
+        <div class="form-field">
+          <label>{{ t("partnerRequestForm.minPartners") }}</label>
+          <input
+            :value="minPartnersInput"
+            type="number"
+            :placeholder="t('partnerRequestForm.minPartnersPlaceholder')"
+            @input="onMinPartnersInput"
+          />
+        </div>
+
+        <div class="form-field">
+          <label>{{ t("partnerRequestForm.maxPartners") }}</label>
+          <input
+            :value="maxPartnersInput"
+            type="number"
+            :placeholder="t('partnerRequestForm.maxPartnersPlaceholder')"
+            @input="onMaxPartnersInput"
+          />
+        </div>
+
+        <div class="form-field">
+          <label>{{ t("partnerRequestForm.budget") }}</label>
+          <input
+            v-model="budgetInput"
+            type="text"
+            :placeholder="t('partnerRequestForm.budgetPlaceholder')"
+          />
+        </div>
+
+        <div class="form-field">
+          <label>{{ t("partnerRequestForm.preferences") }}</label>
+          <div class="tags-input">
+            <div class="tags">
+              <span
+                v-for="(pref, index) in preferencesModel"
+                :key="index"
+                class="tag"
+              >
+                {{ pref }}
+                <button
+                  type="button"
+                  class="remove-tag"
+                  @click="removePreference(index)"
+                >
+                  {{ t("partnerRequestForm.removePreference") }}
+                </button>
+              </span>
+            </div>
+            <input
+              v-model="newPreference"
+              type="text"
+              :placeholder="t('partnerRequestForm.preferencesPlaceholder')"
+              @keydown.enter.prevent="addPreference"
+            />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>{{ t("partnerRequestForm.notes") }}</label>
+          <textarea
+            v-model="notesInput"
+            rows="3"
+            :placeholder="t('partnerRequestForm.notesPlaceholder')"
+          />
+        </div>
+      </div>
+    </Transition>
   </form>
 </template>
 
@@ -118,6 +135,7 @@ import { useForm } from "vee-validate";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { partnerRequestFormValidationSchema } from "@/lib/validation";
 import DateTimeRangePicker from "@/components/DateTimeRangePicker.vue";
+import PINInput from "@/components/PINInput.vue";
 
 const props = defineProps<{
   initialFields: PartnerRequestFields;
@@ -133,7 +151,6 @@ const cloneFields = (fields: PartnerRequestFields): PartnerRequestFields => ({
   type: fields.type,
   time: [fields.time[0], fields.time[1]],
   location: fields.location,
-  expiresAt: fields.expiresAt,
   partners: [fields.partners[0], fields.partners[1], fields.partners[2]],
   budget: fields.budget,
   preferences: [...fields.preferences],
@@ -240,6 +257,7 @@ const onMaxPartnersInput = (event: Event) => {
 };
 
 const newPreference = ref("");
+const isAdvancedOpen = ref(false);
 
 const addPreference = () => {
   const pref = newPreference.value.trim();
@@ -306,10 +324,25 @@ defineExpose({
   }
 }
 
-.pin-field input {
-  @include mx.pu-font(title-medium);
-  text-align: center;
-  letter-spacing: 0.5em;
+.advanced-toggle {
+  @include mx.pu-font(label-large);
+  width: 100%;
+  min-height: var(--sys-size-large);
+  border: 1px dashed var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  background: transparent;
+  color: var(--sys-color-on-surface);
+  cursor: pointer;
+  margin-bottom: var(--sys-spacing-med);
+
+  &:hover {
+    background: var(--sys-color-surface-container);
+  }
+}
+
+.advanced-section {
+  display: flex;
+  flex-direction: column;
 }
 
 .tags-input {
@@ -360,5 +393,18 @@ defineExpose({
   margin-top: var(--sys-spacing-xs);
   color: var(--sys-color-error);
   @include mx.pu-font(label-medium);
+}
+
+.advanced-fields-enter-active,
+.advanced-fields-leave-active {
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+.advanced-fields-enter-from,
+.advanced-fields-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>

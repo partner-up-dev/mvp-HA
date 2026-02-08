@@ -19,11 +19,15 @@
   - 主要是文字重复
 - [ ] 创建搭子请求的流程应该是：
   - [x] 找搭子一起 <xxx>（轮换） -> 跳转填表单
-    - [ ] XXX的轮换效果有动画（？动画名称？）
-    - [ ] type 自动填充点击来时轮换到的文本
-    - [ ] 表单太长，让人感觉到有负担，把高级选项折叠
-    - [ ] 随机 PIN 怎么掉了？复用同一个组件
-    - [ ] 不是很 CTA （为此需要缩小 Header ）
+    - [x] XXX的轮换效果有动画（？动画名称？）
+    - [x] type 自动填充点击来时轮换到的文本
+    - [x] 表单太长，让人感觉到有负担，把高级选项折叠
+    - [x] 随机 PIN 怎么掉了？复用同一个组件
+    - [x] 不是很 CTA （为此需要缩小 Header ）
   - [x] 刚刚我已经在群里发过了？ -> 展开textarea, 复制过来，自然语言自动识别
+    - [ ] NL Input Placeholder 也 rotate （复用 form create entry 的 rotatingTopic）
 - [x] 需要国际化支持，不然模型生成各种文本不一致
-- [ ] PR Auto Exipre 的计算逻辑不正确（应该用 close time 而不是 start time）
+- [x] PR Auto Exipre 的计算逻辑不正确
+  - 应该是 current datetime > time_range end time
+  - 如果没有 endtime，则默认为 start time + 12h
+  - 如果都没有，跳过

@@ -120,7 +120,12 @@ onUnmounted(() => {
 });
 
 const goToStructuredCreate = async () => {
-  await router.push("/pr/new");
+  await router.push({
+    path: "/pr/new",
+    query: {
+      topic: rotatingTopic.value,
+    },
+  });
 };
 </script>
 

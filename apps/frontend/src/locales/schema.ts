@@ -162,6 +162,8 @@ export interface MessageSchema {
     pin: string;
     pinPlaceholder: string;
     requiredMark: string;
+    advancedShow: string;
+    advancedHide: string;
   };
   prCard: {
     type: string;

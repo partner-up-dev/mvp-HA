@@ -68,7 +68,6 @@ interface Props {
     type: string;
     time: PartnerRequestFields["time"];
     location: string | null;
-    expiresAt: string | null;
     partners: PartnerRequestFields["partners"];
     budget: string | null;
     preferences: string[];
@@ -109,7 +108,6 @@ const shareData = computed(() => ({
   type: props.prData.type,
   time: props.prData.time,
   location: props.prData.location,
-  expiresAt: props.prData.expiresAt,
   partners: props.prData.partners,
   budget: props.prData.budget,
   preferences: props.prData.preferences,
@@ -141,7 +139,11 @@ const currentMethod = computed(() => {
   const enabled = enabledMethods.value;
   return (
     enabled.find((m) => m.id === currentMethodId.value) ??
-    enabled[0] ?? { id: "COPY_LINK", label: t("share.methods.copyLink"), enabled: true }
+    enabled[0] ?? {
+      id: "COPY_LINK",
+      label: t("share.methods.copyLink"),
+      enabled: true,
+    }
   );
 });
 

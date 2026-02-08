@@ -19,7 +19,6 @@ const fieldsSchema: z.ZodType<PartnerRequestFields> = z.object({
     isoDateOrDateTimeSchema.nullable(),
   ]),
   location: z.string().nullable(),
-  expiresAt: z.string().datetime().nullable(),
   partners: z.tuple([
     z.number().nullable(),
     z.number().int().nonnegative(),
