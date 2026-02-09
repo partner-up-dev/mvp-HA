@@ -20,7 +20,7 @@
   },
   "status": {
     "draft": "草稿",
-    "open": "可加入",
+    "open": "找人中",
     "active": "进行中",
     "closed": "已结束",
     "expired": "已过期",
@@ -33,11 +33,26 @@
     "naturalLanguageEntry": "刚刚在群里发过了？",
     "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
     "topics": {
-      "movie": "看电影",
-      "sports": "打球",
-      "explore": "探店",
-      "hiking": "徒步",
-      "study": "学习"
+      "movie": {
+        "name": "看电影",
+        "example": "万胜围万达影院，周六都可，想看《流浪地球3》"
+      },
+      "sports": {
+        "name": "打篮球",
+        "example": "周三晚八点，健身广场，三对三"
+      },
+      "explore": {
+        "name": "探店",
+        "example": "这周末有人一起去逛山姆吗？想吃牛肉卷了"
+      },
+      "hiking": {
+        "name": "徒步",
+        "example": "想爬白云山看日出，这两周都可以"
+      },
+      "study": {
+        "name": "学习",
+        "example": "找人一起学习备考"
+      }
     }
   },
   "createPage": {
@@ -128,7 +143,7 @@
   },
   "prInput": {
     "label": "自然语言描述你的搭子需求",
-    "placeholder": "例如：周末想找人一起去杭州玩两天，预算500左右，希望对方喜欢拍照..."
+    "placeholder": "如：{example}"
   },
   "pinInput": {
     "label": "PIN码",

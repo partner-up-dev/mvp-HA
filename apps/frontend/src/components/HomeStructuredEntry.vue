@@ -2,7 +2,7 @@
   <button
     class="structured-entry"
     type="button"
-    :aria-label="`${t('home.structuredEntryPrefix')} ${rotatingTopic}`"
+    :aria-label="`${t('home.structuredEntryPrefix')} ${rotatingTopicName}`"
     @click="goToStructuredCreate"
   >
     <span class="structured-content entry-display">
@@ -31,23 +31,17 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { useHomeRotatingTopic } from "@/composables/useHomeRotatingTopic";
 
 const router = useRouter();
 const { t } = useI18n();
-const rotatingTopics = [
-  t("home.topics.movie"),
-  t("home.topics.sports"),
-  t("home.topics.explore"),
-  t("home.topics.hiking"),
-  t("home.topics.study"),
-];
-const topicIndex = ref(0);
-const rotatingTopic = ref(rotatingTopics[topicIndex.value]);
-const visibleTopicLength = ref(Array.from(rotatingTopic.value).length);
+const { rotatingTopics, rotatingTopicName, topicIndex, setTopicIndex } =
+  useHomeRotatingTopic();
+const visibleTopicLength = ref(Array.from(rotatingTopicName.value).length);
 const isErasing = ref(false);
 const topicAnimationCycle = ref(0);
 const rotatingTopicChars = computed(() =>
-  Array.from(rotatingTopic.value).slice(0, visibleTopicLength.value),
+  Array.from(rotatingTopicName.value).slice(0, visibleTopicLength.value),
 );
 const pendingTimers: Array<{ id: number; resolve: () => void }> = [];
 let stopTopicAnimation = false;
@@ -80,7 +74,7 @@ const runTopicAnimation = async () => {
     }
 
     isErasing.value = true;
-    const currentLength = Array.from(rotatingTopic.value).length;
+    const currentLength = Array.from(rotatingTopicName.value).length;
     for (
       let length = currentLength - 1;
       length >= 0 && !stopTopicAnimation;
@@ -95,9 +89,8 @@ const runTopicAnimation = async () => {
     }
 
     isErasing.value = false;
-    topicIndex.value = (topicIndex.value + 1) % rotatingTopics.length;
-    rotatingTopic.value = rotatingTopics[topicIndex.value];
-    visibleTopicLength.value = Array.from(rotatingTopic.value).length;
+    setTopicIndex(topicIndex.value + 1);
+    visibleTopicLength.value = Array.from(rotatingTopicName.value).length;
     topicAnimationCycle.value += 1;
 
     const enterDuration =
@@ -123,7 +116,7 @@ const goToStructuredCreate = async () => {
   await router.push({
     path: "/pr/new",
     query: {
-      topic: rotatingTopic.value,
+      topic: rotatingTopicName.value,
     },
   });
 };
@@ -162,7 +155,7 @@ const goToStructuredCreate = async () => {
 
 .topic-display {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   min-height: clamp(2rem, 9vw, var(--sys-typo-display-large-line-height));
   flex-wrap: wrap;
 }

@@ -26,8 +26,15 @@
       </span>
     </div>
 
-    <div class="form-field pin-field">
-      <PINInput v-model="pinModel" />
+    <div v-if="!pinHidden" class="form-field pin-field">
+      <PINInput
+        v-model="pinModel"
+        :pr-id="pinPrId"
+        :auto-generate="pinAutoGenerate"
+        :allow-regenerate="pinAllowRegenerate"
+        :show-label="pinShowLabel"
+        :show-info="pinShowInfo"
+      />
       <span v-if="errors.pin" class="error-message">{{ errors.pin }}</span>
     </div>
 
@@ -130,15 +137,25 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PartnerRequestFields } from "@partner-up-dev/backend";
+import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import { useForm } from "vee-validate";
 import type { PartnerRequestFormInput } from "@/lib/validation";
-import { partnerRequestFormValidationSchema } from "@/lib/validation";
+import {
+  partnerRequestFormOptionalPinValidationSchema,
+  partnerRequestFormValidationSchema,
+} from "@/lib/validation";
 import DateTimeRangePicker from "@/components/DateTimeRangePicker.vue";
 import PINInput from "@/components/PINInput.vue";
 
 const props = defineProps<{
   initialFields: PartnerRequestFields;
+  pinPrId?: PRId | null;
+  pinAutoGenerate?: boolean;
+  pinAllowRegenerate?: boolean;
+  pinShowLabel?: boolean;
+  pinShowInfo?: boolean;
+  pinRequired?: boolean;
+  pinHidden?: boolean;
 }>();
 const { t } = useI18n();
 
@@ -166,7 +183,10 @@ const {
   setFieldValue,
   meta,
 } = useForm<PartnerRequestFormInput>({
-  validationSchema: partnerRequestFormValidationSchema,
+  validationSchema:
+    props.pinRequired === false
+      ? partnerRequestFormOptionalPinValidationSchema
+      : partnerRequestFormValidationSchema,
   initialValues: {
     fields: cloneFields(props.initialFields),
     pin: "",

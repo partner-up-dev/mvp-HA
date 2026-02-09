@@ -8,26 +8,24 @@
         $emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)
       "
       :disabled="disabled"
-      :placeholder="t('prInput.placeholder')"
-      rows="5"
-      maxlength="2000"
+      :placeholder="placeholder"
+      rows="3"
+      maxlength="120"
     />
-    <span class="char-count">{{ (modelValue || "").length }} / 2000</span>
+    <span class="char-count">{{ (modelValue || "").length }} / 120</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
-
-const { t } = useI18n();
-
-const props = withDefaults(
+withDefaults(
   defineProps<{
     modelValue?: string;
     disabled?: boolean;
+    placeholder?: string;
   }>(),
   {
     modelValue: "",
+    placeholder: "",
   },
 );
 

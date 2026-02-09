@@ -51,8 +51,17 @@ export const partnerRequestFormSchema = z.object({
   pin: pinSchema,
 });
 
+export const partnerRequestFormOptionalPinSchema = z.object({
+  fields: fieldsSchema,
+  pin: z.string().optional(),
+});
+
 export const partnerRequestFormValidationSchema = toTypedSchema(
   partnerRequestFormSchema,
+);
+
+export const partnerRequestFormOptionalPinValidationSchema = toTypedSchema(
+  partnerRequestFormOptionalPinSchema,
 );
 
 export type CreateNaturalLanguagePRInput = z.infer<

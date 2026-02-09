@@ -32,11 +32,26 @@ export interface MessageSchema {
     naturalLanguageEntry: string;
     naturalLanguagePanelTitle: string;
     topics: {
-      movie: string;
-      sports: string;
-      explore: string;
-      hiking: string;
-      study: string;
+      movie: {
+        name: string;
+        example: string;
+      };
+      sports: {
+        name: string;
+        example: string;
+      };
+      explore: {
+        name: string;
+        example: string;
+      };
+      hiking: {
+        name: string;
+        example: string;
+      };
+      study: {
+        name: string;
+        example: string;
+      };
     };
   };
   createPage: {

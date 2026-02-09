@@ -18,17 +18,20 @@
 
     <div class="pin-input">
       <label>{{ t("modifyStatusModal.pinLabel") }}</label>
-      <input
+      <PINInput
         v-model="modifyPin"
-        type="password"
-        inputmode="numeric"
-        maxlength="4"
-        :placeholder="t('partnerRequestForm.pinPlaceholder')"
+        :pr-id="prId"
+        :auto-generate="false"
+        :allow-regenerate="false"
+        :show-label="false"
+        :show-info="false"
       />
     </div>
 
     <div class="modal-actions">
-      <button class="cancel-btn" @click="handleClose">{{ t("common.cancel") }}</button>
+      <button class="cancel-btn" @click="handleClose">
+        {{ t("common.cancel") }}
+      </button>
       <SubmitButton
         :loading="updateMutation.isPending.value"
         :disabled="!modifyPin || modifyPin.length !== 4"
@@ -40,7 +43,10 @@
 
     <ErrorToast
       v-if="updateMutation.isError.value"
-      :message="updateMutation.error.value?.message || t('modifyStatusModal.updateFailed')"
+      :message="
+        updateMutation.error.value?.message ||
+        t('modifyStatusModal.updateFailed')
+      "
       @close="updateMutation.reset()"
     />
   </Modal>
@@ -52,6 +58,7 @@ import { useI18n } from "vue-i18n";
 import Modal from "@/components/Modal.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
+import PINInput from "@/components/PINInput.vue";
 import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
 import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
 
@@ -129,22 +136,6 @@ const handleConfirm = async () => {
     display: block;
     margin-bottom: var(--sys-spacing-xs);
     color: var(--sys-color-on-surface-variant);
-  }
-
-  input {
-    @include mx.pu-font(title-medium);
-    width: 100%;
-    padding: var(--sys-spacing-sm);
-    border: 1px solid var(--sys-color-outline);
-    border-radius: var(--sys-radius-sm);
-    background: transparent;
-    text-align: center;
-    letter-spacing: 0.5em;
-
-    &:focus {
-      outline: none;
-      border-color: var(--sys-color-primary);
-    }
   }
 }
 

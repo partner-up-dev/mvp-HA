@@ -1,6 +1,4 @@
-﻿# AGENTS.md of PartnerUp MVP-HA (Frontend)
-
-本项目是一个基于 Vue 3 的前端应用，使用 Hono RPC Client 与后端通信，并利用 TanStack Vue Query 进行服务端状态管理。
+﻿# AGENTS.md of PartnerUp MVP-HA Frontend
 
 ## Tech Stacks
 
@@ -11,14 +9,16 @@
 
 ## Coding Guidelines
 
-### Type Safety
-
 - RPC Infer Type: Do not manually define interfaces for API returns; let TypeScript infer from the Hono client.
 - Request Params: If backend uses `zValidator`, mismatched param types will cause type errors — do not bypass with `as any`.
-
-### API Calls
-
 - Always use Hono RPC Client (`client`) for API requests instead of manual `fetch`.
+
+## Documents
+
+Read following documents when needed and keep them current:
+
+- Data Fetching: See `src/queries/AGENTS.md`.
+- Components: See `src/components/AGENTS.md`.
 
 ## Product Reference
 
@@ -47,8 +47,3 @@
 ### Immediate Next Focus
 
 - 目标：完善分享体验细节（小红书/微信的交互与样式一致性），并补齐过期状态的展示与提示文案。
-
-## Read more
-
-- Data Fetching: See `src/queries/AGENTS.md`.
-- Components: See `src/components/AGENTS.md`.

@@ -15,6 +15,7 @@
       <PartnerRequestForm
         ref="formRef"
         :initial-fields="initialFields"
+        :pin-pr-id="createdPrId"
         @submit="handleSubmit"
       />
     </main>
@@ -57,12 +58,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type {
   CreatePRStructuredStatus,
   PartnerRequestFields,
+  PRId,
 } from "@partner-up-dev/backend";
 import PartnerRequestForm from "@/components/PartnerRequestForm.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
@@ -101,6 +103,7 @@ const initialFields = ref<PartnerRequestFields>(
 
 const formRef = ref<InstanceType<typeof PartnerRequestForm> | null>(null);
 const pendingStatus = ref<CreatePRStructuredStatus>("OPEN");
+const createdPrId = ref<PRId | null>(null);
 
 const submitAs = (status: CreatePRStructuredStatus) => {
   pendingStatus.value = status;
@@ -114,6 +117,8 @@ const handleSubmit = async ({ fields, pin }: PartnerRequestFormInput) => {
     status: pendingStatus.value,
   });
 
+  createdPrId.value = result.id;
+  await nextTick();
   userPRStore.addCreatedPR(result.id);
   await router.push(`/pr/${result.id}`);
 };

@@ -3,37 +3,59 @@
     :open="open"
     max-width="480px"
     :title="t('editContentModal.title')"
-    @close="$emit('close')"
+    @close="handleClose"
   >
     <PartnerRequestForm
       ref="formRef"
       :initial-fields="initialFields"
+      :pin-auto-generate="false"
+      :pin-allow-regenerate="false"
+      :pin-show-info="false"
+      :pin-hidden="true"
+      :pin-required="false"
       @submit="handleSubmit"
     />
 
     <div class="modal-actions">
-      <button type="button" class="cancel-btn" @click="$emit('close')">
-        {{ t("common.cancel") }}
-      </button>
-      <SubmitButton
-        type="button"
-        :loading="updateMutation.isPending.value"
-        @click="formRef?.submitForm()"
-      >
-        {{ t("editContentModal.confirmAction") }}
-      </SubmitButton>
+      <div class="pin-input">
+        <label>{{ t("modifyStatusModal.pinLabel") }}</label>
+        <PINInput
+          v-model="editPin"
+          :pr-id="prId"
+          :auto-generate="false"
+          :allow-regenerate="false"
+          :show-label="false"
+          :show-info="false"
+        />
+      </div>
+      <div class="action-buttons">
+        <button type="button" class="cancel-btn" @click="handleClose">
+          {{ t("common.cancel") }}
+        </button>
+        <SubmitButton
+          type="button"
+          :loading="updateMutation.isPending.value"
+          :disabled="!isFormValid"
+          @click="formRef?.submitForm()"
+        >
+          {{ t("editContentModal.confirmAction") }}
+        </SubmitButton>
+      </div>
     </div>
 
     <ErrorToast
       v-if="updateMutation.isError.value"
-      :message="updateMutation.error.value?.message || t('editContentModal.updateFailed')"
+      :message="
+        updateMutation.error.value?.message ||
+        t('editContentModal.updateFailed')
+      "
       @close="updateMutation.reset()"
     />
   </Modal>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, isRef, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
@@ -42,6 +64,7 @@ import Modal from "@/components/Modal.vue";
 import SubmitButton from "@/components/SubmitButton.vue";
 import ErrorToast from "@/components/ErrorToast.vue";
 import PartnerRequestForm from "@/components/PartnerRequestForm.vue";
+import PINInput from "@/components/PINInput.vue";
 
 interface Props {
   open: boolean;
@@ -58,15 +81,27 @@ const emit = defineEmits<{
 
 const updateMutation = useUpdatePRContent();
 const formRef = ref<InstanceType<typeof PartnerRequestForm> | null>(null);
+const editPin = ref("");
+const isFormValid = computed(() => {
+  const canSubmit = formRef.value?.canSubmit;
+  const formOk = isRef(canSubmit) ? canSubmit.value : Boolean(canSubmit);
+  return formOk && editPin.value.length === 4;
+});
 
-const handleSubmit = async ({ fields, pin }: PartnerRequestFormInput) => {
+const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
+  if (editPin.value.length !== 4) return;
   await updateMutation.mutateAsync({
     id: props.prId,
     fields,
-    pin,
+    pin: editPin.value,
   });
 
   emit("success");
+  handleClose();
+};
+
+const handleClose = () => {
+  editPin.value = "";
   emit("close");
 };
 </script>
@@ -74,8 +109,23 @@ const handleSubmit = async ({ fields, pin }: PartnerRequestFormInput) => {
 <style lang="scss" scoped>
 .modal-actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  flex-direction: column;
+  gap: var(--sys-spacing-med);
   margin-top: var(--sys-spacing-lg);
+}
+
+.pin-input {
+  label {
+    @include mx.pu-font(label-medium);
+    display: block;
+    margin-bottom: var(--sys-spacing-xs);
+    color: var(--sys-color-on-surface-variant);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--sys-spacing-sm);
 }
 
 .cancel-btn {
