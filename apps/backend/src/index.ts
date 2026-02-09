@@ -12,6 +12,7 @@ import { llmRoute } from "./controllers/llm.controller";
 import { uploadRoute } from "./controllers/upload.controller";
 import { wechatRoute } from "./controllers/wechat.controller";
 import { shareRoute } from "./controllers/share.controller";
+import { wecomRoute } from "./controllers/wecom.controller";
 import { env } from "./lib/env";
 
 const app = new Hono();
@@ -35,7 +36,8 @@ const routes = app
   .route("/api/llm", llmRoute)
   .route("/api/share", shareRoute)
   .route("/api/upload", uploadRoute)
-  .route("/api/wechat", wechatRoute);
+  .route("/api/wechat", wechatRoute)
+  .route("/api/wecom", wecomRoute);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
