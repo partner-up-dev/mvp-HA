@@ -16,6 +16,9 @@
         ref="formRef"
         :initial-fields="initialFields"
         :pin-pr-id="createdPrId"
+        :pin-auto-generate="true"
+        :pin-show-label="true"
+        :pin-show-info="true"
         @submit="handleSubmit"
       />
     </main>
