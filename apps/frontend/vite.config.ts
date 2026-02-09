@@ -19,11 +19,44 @@ const jsoncPlugin = () => ({
   },
 });
 
+const deferCssPlugin = () => ({
+  name: "defer-css",
+  apply: "build",
+  transformIndexHtml(html: string) {
+    const stylesheetRegex = /<link\b([^>]*?)rel=["']stylesheet["']([^>]*?)>/gi;
+
+    return html.replace(stylesheetRegex, (match) => {
+      const attrs = match
+        .replace(/^<link\s*/i, "")
+        .replace(/\/>$/i, "")
+        .replace(/>$/i, "")
+        .trim();
+      const hrefMatch = attrs.match(/\bhref=["']([^"']+)["']/i);
+
+      if (!hrefMatch) {
+        return match;
+      }
+
+      const href = hrefMatch[1];
+      const rest = attrs
+        .replace(/\brel=["']stylesheet["']\s*/i, "")
+        .replace(/\bhref=["'][^"']+["']\s*/i, "")
+        .trim();
+      const extra = rest.length > 0 ? ` ${rest}` : "";
+
+      const preload = `<link rel="preload" as="style" href="${href}" onload="this.onload=null;this.rel='stylesheet'"${extra}>`;
+      const noscript = `<noscript><link rel="stylesheet" href="${href}"${extra}></noscript>`;
+
+      return `${preload}${noscript}`;
+    });
+  },
+});
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
   return {
-    plugins: [jsoncPlugin(), unocss(), vue()],
+    plugins: [jsoncPlugin(), deferCssPlugin(), unocss(), vue()],
     build: {
       outDir: "./dist",
       rollupOptions: {
