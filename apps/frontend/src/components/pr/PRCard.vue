@@ -47,23 +47,44 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, type PropType } from "vue";
 import { useI18n } from "vue-i18n";
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
 
-type PartnersTuple = [number | null, number, number | null];
-
-type TimeWindow = [string | null, string | null];
-
-const props = defineProps<{
-  type: string;
-  time: TimeWindow;
-  location: string | null;
-  partners: PartnersTuple;
-  budget: string | null;
-  preferences: string[];
-  notes: string | null;
-  rawText: string;
-}>();
+const props = defineProps({
+  type: {
+    type: String,
+    required: true,
+  },
+  time: {
+    type: Array as unknown as PropType<PartnerRequestFields["time"]>,
+    required: true,
+  },
+  location: {
+    type: null as unknown as PropType<string | null>,
+    required: true,
+  },
+  partners: {
+    type: Array as unknown as PropType<PartnerRequestFields["partners"]>,
+    required: true,
+  },
+  budget: {
+    type: null as unknown as PropType<string | null>,
+    required: true,
+  },
+  preferences: {
+    type: Array as PropType<string[]>,
+    required: true,
+  },
+  notes: {
+    type: null as unknown as PropType<string | null>,
+    required: true,
+  },
+  rawText: {
+    type: String,
+    required: true,
+  },
+});
 const { t } = useI18n();
 
 const normalizeTimeValue = (value: string | null): string | null => {
@@ -73,7 +94,9 @@ const normalizeTimeValue = (value: string | null): string | null => {
   return trimmed;
 };
 
-const formatTimeWindow = (time: TimeWindow): string | null => {
+const formatTimeWindow = (
+  time: PartnerRequestFields["time"],
+): string | null => {
   const start = normalizeTimeValue(time[0]);
   const end = normalizeTimeValue(time[1]);
   if (start && end) return `${start} - ${end}`;
@@ -82,7 +105,11 @@ const formatTimeWindow = (time: TimeWindow): string | null => {
   return null;
 };
 
-const formatPartners = (min: number | null, current: number, max: number | null) => {
+const formatPartners = (
+  min: number | null,
+  current: number,
+  max: number | null,
+) => {
   const parts: string[] = [];
 
   if (max !== null) {

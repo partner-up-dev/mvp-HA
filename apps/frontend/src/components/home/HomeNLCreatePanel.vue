@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import NLPRForm from "@/components/NLPRForm.vue";
+import NLPRForm from "@/components/pr/NLPRForm.vue";
 
 const { t } = useI18n();
 const showNLForm = ref(true);

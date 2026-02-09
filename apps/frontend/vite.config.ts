@@ -26,6 +26,27 @@ export default defineConfig(({ mode }) => {
     plugins: [jsoncPlugin(), unocss(), vue()],
     build: {
       outDir: "./dist",
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (id.includes("node_modules")) {
+              return "vendor";
+            }
+
+            if (
+              id.includes("src/components/share/") ||
+              id.includes("src/composables/useGeneratePoster") ||
+              id.includes("src/composables/useGenerateWechatThumbPoster") ||
+              id.includes("src/composables/renderHtmlPoster") ||
+              id.includes("src/lib/poster-types")
+            ) {
+              return "share";
+            }
+
+            return undefined;
+          },
+        },
+      },
     },
     resolve: {
       alias: {

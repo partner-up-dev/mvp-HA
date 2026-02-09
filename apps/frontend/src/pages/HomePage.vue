@@ -7,8 +7,8 @@
 
     <main class="main">
       <section class="entry-panel">
-        <HomeStructuredEntry />
-        <HomeNaturalLanguageEntry />
+        <HomeStructuredCreateCta />
+        <HomeNLCreatePanel />
       </section>
 
       <CreatedPRList empty-mode="hide" />
@@ -18,9 +18,9 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import CreatedPRList from "@/components/CreatedPRList.vue";
-import HomeNaturalLanguageEntry from "@/components/HomeNaturalLanguageEntry.vue";
-import HomeStructuredEntry from "@/components/HomeStructuredEntry.vue";
+import CreatedPRList from "@/components/pr/CreatedPRList.vue";
+import HomeNLCreatePanel from "@/components/home/HomeNLCreatePanel.vue";
+import HomeStructuredCreateCta from "@/components/home/HomeStructuredCreateCta.vue";
 
 const { t } = useI18n();
 </script>

@@ -106,30 +106,17 @@ import { renderPosterHtmlToBlob } from "@/composables/renderHtmlPoster";
 import { useCloudStorage } from "@/composables/useCloudStorage";
 import { isWeChatBrowser } from "@/lib/browser-detection";
 import { client } from "@/lib/rpc";
-import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
+import { copyToClipboard } from "@/lib/clipboard";
+import type { PRShareProps } from "@/components/share/types";
 import {
   TIMING_CONSTANTS,
-  copyToClipboard,
   downloadBlob,
   formatCaptionWithUrl,
   generatePosterFilename,
   delayMs,
 } from "./ShareToXiaohongshu";
 
-interface Props {
-  shareUrl: string;
-  prId: PRId;
-  prData: PartnerRequestFields & {
-    xiaohongshuPoster?: {
-      caption: string;
-      posterStylePrompt: string;
-      posterUrl: string;
-      createdAt: string;
-    } | null;
-  };
-}
-
-const props = defineProps<Props>();
+const props = defineProps<PRShareProps>();
 const { t } = useI18n();
 
 // State
@@ -353,7 +340,10 @@ const generatePosterForCurrentCaption = async (): Promise<void> => {
     posterUrl.value = nextPosterUrl;
 
     // Cache the poster URL in backend (only meaningful with remote URL)
-    if (nextPosterUrl.startsWith("https://") || nextPosterUrl.startsWith("http://")) {
+    if (
+      nextPosterUrl.startsWith("https://") ||
+      nextPosterUrl.startsWith("http://")
+    ) {
       try {
         await client.api.share.xiaohongshu["cache-poster"].$post({
           json: {

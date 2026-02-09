@@ -30,7 +30,6 @@
         v-show="currentMethod.id === 'WECHAT_CHAT'"
         :share-url="shareUrl"
         :pr-id="prId!"
-        :raw-text="prData.rawText"
         :pr-data="shareData"
       />
 
@@ -47,10 +46,10 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
-import ShareAsLink from "./ShareAsLink/ShareAsLink.vue";
-import ShareToXiaohongshuMethod from "./ShareToXiaohongshu/ShareToXiaohongshu.vue";
-import ShareToWechatChatMethod from "./ShareToWechat/ShareToWechat.vue";
-import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
+import ShareAsLink from "./as-link/ShareAsLink.vue";
+import ShareToXiaohongshuMethod from "./xhs/ShareToXiaohongshu.vue";
+import ShareToWechatChatMethod from "./wechat/ShareToWechatChat.vue";
+import type { PRShareProps } from "@/components/share/types";
 
 type ShareMethodId = "COPY_LINK" | "XIAOHONGSHU" | "WECHAT_CHAT";
 
@@ -60,34 +59,7 @@ interface ShareMethod {
   enabled?: boolean;
 }
 
-interface Props {
-  shareUrl: string;
-  prId: PRId;
-  prData: {
-    title?: string;
-    type: string;
-    time: PartnerRequestFields["time"];
-    location: string | null;
-    partners: PartnerRequestFields["partners"];
-    budget: string | null;
-    preferences: string[];
-    notes: string | null;
-    rawText: string;
-    xiaohongshuPoster?: {
-      caption: string;
-      posterStylePrompt: string;
-      posterUrl: string;
-      createdAt: string;
-    } | null;
-    wechatThumbnail?: {
-      style: number;
-      posterUrl: string;
-      createdAt: string;
-    } | null;
-  };
-}
-
-const props = defineProps<Props>();
+const props = defineProps<PRShareProps>();
 const { t } = useI18n();
 
 const allMethods = computed<ShareMethod[]>(() => [
@@ -104,14 +76,7 @@ const allMethods = computed<ShareMethod[]>(() => [
 
 const prId = computed(() => props.prId);
 const shareData = computed(() => ({
-  title: props.prData.title,
-  type: props.prData.type,
-  time: props.prData.time,
-  location: props.prData.location,
-  partners: props.prData.partners,
-  budget: props.prData.budget,
-  preferences: props.prData.preferences,
-  notes: props.prData.notes,
+  ...props.prData,
   xiaohongshuPoster: props.prData.xiaohongshuPoster ?? null,
   wechatThumbnail: props.prData.wechatThumbnail ?? null,
 }));

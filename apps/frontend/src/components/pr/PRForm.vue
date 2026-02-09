@@ -27,7 +27,7 @@
     </div>
 
     <div v-if="!pinHidden" class="form-field pin-field">
-      <PINInput
+      <PinInput
         v-model="pinModel"
         :pr-id="pinPrId"
         :auto-generate="pinAutoGenerate"
@@ -144,8 +144,9 @@ import {
   partnerRequestFormOptionalPinValidationSchema,
   partnerRequestFormValidationSchema,
 } from "@/lib/validation";
-import DateTimeRangePicker from "@/components/DateTimeRangePicker.vue";
-import PINInput from "@/components/PINInput.vue";
+import DateTimeRangePicker from "@/components/pr/DateTimeRangePicker.vue";
+import PinInput from "@/components/common/PinInput.vue";
+import { clonePRFields, parseNullableNumber } from "./pr-form";
 
 const props = defineProps<{
   initialFields: PartnerRequestFields;
@@ -163,17 +164,6 @@ const emit = defineEmits<{
   submit: [payload: PartnerRequestFormInput];
 }>();
 
-const cloneFields = (fields: PartnerRequestFields): PartnerRequestFields => ({
-  title: fields.title,
-  type: fields.type,
-  time: [fields.time[0], fields.time[1]],
-  location: fields.location,
-  partners: [fields.partners[0], fields.partners[1], fields.partners[2]],
-  budget: fields.budget,
-  preferences: [...fields.preferences],
-  notes: fields.notes,
-});
-
 const {
   defineField,
   values,
@@ -188,7 +178,7 @@ const {
       ? partnerRequestFormOptionalPinValidationSchema
       : partnerRequestFormValidationSchema,
   initialValues: {
-    fields: cloneFields(props.initialFields),
+    fields: clonePRFields(props.initialFields),
     pin: "",
   },
 });
@@ -198,7 +188,7 @@ watch(
   (nextFields) => {
     resetForm({
       values: {
-        fields: cloneFields(nextFields),
+        fields: clonePRFields(nextFields),
         pin: "",
       },
     });
@@ -250,12 +240,6 @@ const maxPartnersInput = computed(() =>
   values.fields.partners[2] === null ? "" : String(values.fields.partners[2]),
 );
 
-const parseNullableNumber = (value: string): number | null => {
-  if (value.trim().length === 0) return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
 const onMinPartnersInput = (event: Event) => {
   const value = (event.target as HTMLInputElement).value;
   const nextMin = parseNullableNumber(value);
@@ -302,129 +286,4 @@ defineExpose({
 });
 </script>
 
-<style lang="scss" scoped>
-.form-field {
-  margin-bottom: var(--sys-spacing-med);
-
-  label {
-    @include mx.pu-font(label-medium);
-    display: block;
-    margin-bottom: var(--sys-spacing-xs);
-    color: var(--sys-color-on-surface-variant);
-
-    .required {
-      color: var(--sys-color-error);
-    }
-  }
-
-  input,
-  textarea {
-    @include mx.pu-font(body-large);
-    width: 100%;
-    padding: var(--sys-spacing-sm);
-    border: 1px solid var(--sys-color-outline);
-    border-radius: var(--sys-radius-sm);
-    background: var(--sys-color-surface-container);
-    color: var(--sys-color-on-surface);
-
-    &::placeholder {
-      color: var(--sys-color-on-surface-variant);
-      opacity: 0.6;
-    }
-
-    &:focus {
-      outline: 2px solid var(--sys-color-primary);
-      outline-offset: -1px;
-    }
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 60px;
-  }
-}
-
-.advanced-toggle {
-  @include mx.pu-font(label-large);
-  width: 100%;
-  min-height: var(--sys-size-large);
-  border: 1px dashed var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  background: transparent;
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
-  margin-bottom: var(--sys-spacing-med);
-
-  &:hover {
-    background: var(--sys-color-surface-container);
-  }
-}
-
-.advanced-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.tags-input {
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  padding: var(--sys-spacing-xs);
-  background: var(--sys-color-surface-container);
-
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--sys-spacing-xs);
-    margin-bottom: var(--sys-spacing-xs);
-  }
-
-  .tag {
-    @include mx.pu-font(label-small);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--sys-spacing-xs);
-    padding: 2px var(--sys-spacing-xs);
-    background: var(--sys-color-primary-container);
-    color: var(--sys-color-on-primary-container);
-    border-radius: var(--sys-radius-sm);
-  }
-
-  input {
-    border: none;
-    background: none;
-    padding: var(--sys-spacing-xs);
-    width: 100%;
-
-    &:focus {
-      outline: none;
-    }
-  }
-}
-
-.remove-tag {
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.error-message {
-  display: block;
-  margin-top: var(--sys-spacing-xs);
-  color: var(--sys-color-error);
-  @include mx.pu-font(label-medium);
-}
-
-.advanced-fields-enter-active,
-.advanced-fields-leave-active {
-  transition:
-    opacity 200ms ease,
-    transform 200ms ease;
-}
-
-.advanced-fields-enter-from,
-.advanced-fields-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-</style>
+<style scoped lang="scss" src="./PRForm.scss"></style>

@@ -7,9 +7,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import type { PRStatus } from "@partner-up-dev/backend";
 
 const props = defineProps<{
-  status: "DRAFT" | "OPEN" | "ACTIVE" | "CLOSED" | "EXPIRED";
+  status: PRStatus;
 }>();
 const { t } = useI18n();
 

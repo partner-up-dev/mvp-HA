@@ -1,7 +1,7 @@
 import { computed, createApp, nextTick, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import html2canvas from "html2canvas";
-import WechatThumbTemplate from "@/components/WechatThumbTemplate.vue";
+import WechatThumbTemplate from "@/components/share/wechat/WechatShareThumbTemplate.vue";
 import { i18n } from "@/locales/i18n";
 
 const unwrapHTMLElement = (value: unknown): HTMLElement | null => {

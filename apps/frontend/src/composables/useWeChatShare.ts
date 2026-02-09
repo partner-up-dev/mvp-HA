@@ -10,12 +10,10 @@ type WeChatSignatureResponse = {
   signature: string;
 };
 
-type ShareCardData = {
-  title: string;
-  desc: string;
-  link: string;
-  imgUrl: string;
-};
+type ShareCardData = Pick<
+  WeChatShareToChatPayload,
+  "title" | "desc" | "link" | "imgUrl"
+>;
 
 const stripHash = (rawUrl: string): string => {
   try {
@@ -65,7 +63,9 @@ export const useWeChatShare = () => {
 
         if (!res.ok) {
           const payload = (await res.json()) as { error?: string };
-          throw new Error(payload.error ?? i18n.global.t("errors.wechatInitFailed"));
+          throw new Error(
+            payload.error ?? i18n.global.t("errors.wechatInitFailed"),
+          );
         }
 
         const signature = (await res.json()) as WeChatSignatureResponse;

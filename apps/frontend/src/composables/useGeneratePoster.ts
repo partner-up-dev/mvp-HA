@@ -1,7 +1,7 @@
 import { ref, computed, createApp, nextTick } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import html2canvas from "html2canvas";
-import PosterTemplate from "@/components/PosterTemplate.vue";
+import PosterTemplate from "@/components/share/posters/XhsPosterTemplate.vue";
 import type { PosterData } from "@/lib/poster-types";
 import { i18n } from "@/locales/i18n";
 

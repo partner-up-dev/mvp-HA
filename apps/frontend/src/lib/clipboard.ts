@@ -1,13 +1,5 @@
 import { i18n } from "@/locales/i18n";
 
-export const normalizeUrl = (rawUrl: string, baseHref: string): string => {
-  try {
-    return new URL(rawUrl, baseHref).toString();
-  } catch {
-    return rawUrl;
-  }
-};
-
 export const copyToClipboard = async (text: string): Promise<void> => {
   if (navigator.clipboard && window.isSecureContext) {
     await navigator.clipboard.writeText(text);

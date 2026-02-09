@@ -21,7 +21,7 @@
           </div>
         </div>
         <div v-else>
-          <WeChatChatPreview
+          <WechatChatPreview
             :poster-url="posterUrl"
             :share-title="shareTitle"
             :share-desc="shareDescPreview"
@@ -50,8 +50,8 @@ import { useGenerateWechatThumbPoster } from "@/composables/useGenerateWechatThu
 import { useCloudStorage } from "@/composables/useCloudStorage";
 import { useWeChatShare } from "@/composables/useWeChatShare";
 import { client } from "@/lib/rpc";
-import type { ShareToWechatChatProps } from "./ShareToWechat";
-import WeChatChatPreview from "./WeChatChatPreview.vue";
+import type { ShareToWechatChatProps } from "./ShareToWechatChat";
+import WechatChatPreview from "./WechatChatPreview.vue";
 
 const props = defineProps<ShareToWechatChatProps>();
 const { t } = useI18n();
@@ -97,7 +97,9 @@ const normalizeShareUrl = (rawUrl: string): string => {
 
 const buildShareTitle = (): string => {
   const title = props.prData.title?.trim();
-  return title && title.length > 0 ? title : t("share.wechat.defaultShareTitle");
+  return title && title.length > 0
+    ? title
+    : t("share.wechat.defaultShareTitle");
 };
 
 const truncateDesc = (raw: string, maxLen: number): string => {
@@ -106,7 +108,7 @@ const truncateDesc = (raw: string, maxLen: number): string => {
   return `${text.slice(0, maxLen - 1)}…`;
 };
 
-const buildShareDesc = (): string => truncateDesc(props.rawText, 80);
+const buildShareDesc = (): string => truncateDesc(props.prData.rawText, 80);
 
 const pickFallbackKeyText = (): string => {
   const title = props.prData.title?.trim();
@@ -120,7 +122,7 @@ const pickFallbackKeyText = (): string => {
 
 const shareTitle = computed(() => buildShareTitle());
 const shareDesc = computed(() => buildShareDesc());
-const shareDescPreview = computed(() => truncateDesc(props.rawText, 36));
+const shareDescPreview = computed(() => truncateDesc(props.prData.rawText, 36));
 const thumbPlaceholder = computed(() => pickFallbackKeyText());
 
 const handleGenerateAndUpdate = async (): Promise<void> => {
@@ -219,4 +221,4 @@ onMounted(() => {
 });
 </script>
 
-<style scoped lang="scss" src="./ShareToWechat.scss"></style>
+<style scoped lang="scss" src="./ShareToWechatChat.scss"></style>

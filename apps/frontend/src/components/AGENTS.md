@@ -58,7 +58,7 @@ All components MUST use the design token system via CSS variables and mixins.
 
 Learn available tokens in `src/styles/_sys.scss` and mixins in `src/styles/_mixins.scss`.
 
-Example: See `canonical.component.vue`
+Example: See `components/__examples__/CanonicalComponentExample.vue`
 
 Prohibited:
 
@@ -67,11 +67,15 @@ Prohibited:
 
 ## Components
 
-- Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.
-- DateTimeRangePicker.vue: Standalone time window picker for start/end date/time. Uses `v-model` to emit `[start, end]` values in `YYYY-MM-DD` or `YYYY-MM-DDTHH:mm` format.
-- SharePR.vue: Carousel host for multiple share methods. Renders per-method components (ShareAsLink/ShareAsLink.vue, ShareToXiaohongshu/ShareToXiaohongshu.vue, ShareToWechat/ShareToWechat.vue). Each method component internally owns its options, preview, and actions, ensuring proper state management and type safety. No duplicated types—imports PartnerRequestFields from @partner-up-dev/backend.
+- components/common/Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.
+- components/pr/DateTimeRangePicker.vue: Standalone time window picker for start/end date/time. Uses `v-model` to emit `[start, end]` values in `YYYY-MM-DD` or `YYYY-MM-DDTHH:mm` format.
+- components/pr/PRForm.vue: Structured PR creation/edit form. Uses `vee-validate` schemas from `src/lib/validation`.
+- components/share/PRShareCarousel.vue: Carousel host for share methods. Renders per-method components:
+  - components/share/as-link/ShareAsLink.vue
+  - components/share/xhs/ShareToXiaohongshu.vue
+  - components/share/wechat/ShareToWechatChat.vue
+  Each method component owns its options, preview, and actions and uses shared types from `components/share/types.ts`.
 
 ## Composables
 
 - `useCloudStorage()`: Handles file uploads to the backend and returns download URLs.
-

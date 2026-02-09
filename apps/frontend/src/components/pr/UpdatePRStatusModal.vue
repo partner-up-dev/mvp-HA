@@ -18,7 +18,7 @@
 
     <div class="pin-input">
       <label>{{ t("modifyStatusModal.pinLabel") }}</label>
-      <PINInput
+      <PinInput
         v-model="modifyPin"
         :pr-id="prId"
         :auto-generate="false"
@@ -55,10 +55,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import Modal from "@/components/Modal.vue";
-import SubmitButton from "@/components/SubmitButton.vue";
-import ErrorToast from "@/components/ErrorToast.vue";
-import PINInput from "@/components/PINInput.vue";
+import Modal from "@/components/common/Modal.vue";
+import SubmitButton from "@/components/common/SubmitButton.vue";
+import ErrorToast from "@/components/common/ErrorToast.vue";
+import PinInput from "@/components/common/PinInput.vue";
 import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
 import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
 

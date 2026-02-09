@@ -14,7 +14,7 @@
 
     <Field name="pin" v-slot="{ field, errors }">
       <div class="field-wrapper">
-        <PINInput
+        <PinInput
           :model-value="field.value"
           @update:model-value="field.onChange"
           :pr-id="createdPrId"
@@ -28,7 +28,7 @@
       {{ t("nlForm.submit") }}
     </SubmitButton>
 
-    <LoadingState
+    <LoadingIndicator
       v-if="mutation.isPending.value"
       :message="t('nlForm.parsing')"
     />
@@ -50,11 +50,11 @@ import { useUserPRStore } from "@/stores/userPRStore";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
 import { useCreatePRFromNaturalLanguage } from "@/queries/useCreatePR";
 import type { PRId } from "@partner-up-dev/backend";
-import PRInput from "@/components/PRInput.vue";
-import PINInput from "@/components/PINInput.vue";
-import SubmitButton from "@/components/SubmitButton.vue";
-import LoadingState from "@/components/LoadingState.vue";
-import ErrorToast from "@/components/ErrorToast.vue";
+import PRInput from "@/components/pr/PRInput.vue";
+import PinInput from "@/components/common/PinInput.vue";
+import SubmitButton from "@/components/common/SubmitButton.vue";
+import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
+import ErrorToast from "@/components/common/ErrorToast.vue";
 import { useHomeRotatingTopic } from "@/composables/useHomeRotatingTopic";
 
 const router = useRouter();

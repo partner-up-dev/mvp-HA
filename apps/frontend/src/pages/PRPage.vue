@@ -1,12 +1,16 @@
 <template>
   <div class="pr-page">
-    <LoadingState v-if="isLoading" :message="t('common.loading')" />
+    <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
 
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
     <template v-else-if="data">
       <div class="page-header">
-        <button class="home-btn" @click="goHome" :aria-label="t('common.backToHome')">
+        <button
+          class="home-btn"
+          @click="goHome"
+          :aria-label="t('common.backToHome')"
+        >
           <div class="i-mdi-arrow-left font-title-large"></div>
         </button>
         <h1 v-if="data.title" class="page-title">
@@ -15,7 +19,7 @@
       </div>
 
       <header class="header">
-        <StatusBadge :status="data.status" />
+        <PRStatusBadge :status="data.status" />
         <time class="created-at">{{ formatDate(data.createdAt) }}</time>
       </header>
 
@@ -37,7 +41,11 @@
           @click="handleJoin"
           :disabled="joinMutation.isPending.value"
         >
-          {{ joinMutation.isPending.value ? t("prPage.joining") : t("prPage.join") }}
+          {{
+            joinMutation.isPending.value
+              ? t("prPage.joining")
+              : t("prPage.join")
+          }}
         </button>
 
         <button
@@ -46,11 +54,17 @@
           @click="handleExit"
           :disabled="exitMutation.isPending.value"
         >
-          {{ exitMutation.isPending.value ? t("prPage.exiting") : t("prPage.exit") }}
+          {{
+            exitMutation.isPending.value
+              ? t("prPage.exiting")
+              : t("prPage.exit")
+          }}
         </button>
 
         <button
-          v-if="(data.status === 'OPEN' || data.status === 'DRAFT') && isCreator"
+          v-if="
+            (data.status === 'OPEN' || data.status === 'DRAFT') && isCreator
+          "
           class="edit-content-btn"
           @click="showEditModal = true"
         >
@@ -67,10 +81,15 @@
       </section>
 
       <!-- Share PR Component -->
-      <SharePR v-if="id !== null" :share-url="shareUrl" :pr-id="id" :pr-data="data" />
+      <PRShareCarousel
+        v-if="id !== null"
+        :share-url="shareUrl"
+        :pr-id="id"
+        :pr-data="data"
+      />
 
       <!-- Edit Content Modal -->
-      <EditContentModal
+      <EditPRContentModal
         v-if="showEditModal && id !== null"
         :open="showEditModal"
         :initial-fields="data"
@@ -80,7 +99,7 @@
       />
 
       <!-- Status Modify Modal -->
-      <ModifyStatusModal
+      <UpdatePRStatusModal
         v-if="id !== null"
         :open="showModifyModal"
         :pr-id="id"
@@ -95,13 +114,13 @@ import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
-import LoadingState from "@/components/LoadingState.vue";
-import ErrorToast from "@/components/ErrorToast.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
-import PRCard from "@/components/PRCard.vue";
-import SharePR from "@/components/SharePR.vue";
-import EditContentModal from "@/components/EditContentModal.vue";
-import ModifyStatusModal from "@/components/ModifyStatusModal.vue";
+import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
+import ErrorToast from "@/components/common/ErrorToast.vue";
+import PRStatusBadge from "@/components/common/PRStatusBadge.vue";
+import PRCard from "@/components/pr/PRCard.vue";
+import PRShareCarousel from "@/components/share/PRShareCarousel.vue";
+import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
+import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
 import { usePR } from "@/queries/usePR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useJoinPR } from "@/queries/useJoinPR";
@@ -388,8 +407,3 @@ useHead({
   }
 }
 </style>
-
-
-
-
-

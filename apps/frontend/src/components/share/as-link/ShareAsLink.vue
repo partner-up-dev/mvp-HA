@@ -28,7 +28,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { copyToClipboard, normalizeUrl } from "./ShareAsLink";
+import { copyToClipboard } from "@/lib/clipboard";
+import { normalizeUrl } from "./ShareAsLink";
 
 interface Props {
   shareUrl: string;

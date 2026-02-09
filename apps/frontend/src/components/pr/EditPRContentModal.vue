@@ -5,7 +5,7 @@
     :title="t('editContentModal.title')"
     @close="handleClose"
   >
-    <PartnerRequestForm
+    <PRForm
       ref="formRef"
       :initial-fields="initialFields"
       :pin-auto-generate="false"
@@ -19,7 +19,7 @@
     <div class="modal-actions">
       <div class="pin-input">
         <label>{{ t("modifyStatusModal.pinLabel") }}</label>
-        <PINInput
+        <PinInput
           v-model="editPin"
           :pr-id="prId"
           :auto-generate="false"
@@ -60,11 +60,11 @@ import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useUpdatePRContent } from "@/queries/useUpdatePRContent";
-import Modal from "@/components/Modal.vue";
-import SubmitButton from "@/components/SubmitButton.vue";
-import ErrorToast from "@/components/ErrorToast.vue";
-import PartnerRequestForm from "@/components/PartnerRequestForm.vue";
-import PINInput from "@/components/PINInput.vue";
+import Modal from "@/components/common/Modal.vue";
+import SubmitButton from "@/components/common/SubmitButton.vue";
+import ErrorToast from "@/components/common/ErrorToast.vue";
+import PRForm from "@/components/pr/PRForm.vue";
+import PinInput from "@/components/common/PinInput.vue";
 
 interface Props {
   open: boolean;
@@ -80,7 +80,7 @@ const emit = defineEmits<{
 }>();
 
 const updateMutation = useUpdatePRContent();
-const formRef = ref<InstanceType<typeof PartnerRequestForm> | null>(null);
+const formRef = ref<InstanceType<typeof PRForm> | null>(null);
 const editPin = ref("");
 const isFormValid = computed(() => {
   const canSubmit = formRef.value?.canSubmit;

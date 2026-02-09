@@ -7,11 +7,14 @@
       </span>
     </div>
 
-    <p v-if="!userPRStore.createdPRs.length && props.emptyMode === 'text'" class="created-empty">
+    <p
+      v-if="!userPRStore.createdPRs.length && props.emptyMode === 'text'"
+      class="created-empty"
+    >
       {{ t("createdPRList.empty") }}
     </p>
 
-    <LoadingState
+    <LoadingIndicator
       v-else-if="creatorPRsQuery.isLoading.value"
       :message="t('createdPRList.loading')"
     />
@@ -40,7 +43,7 @@
                 {{ formatDate(pr.createdAt) }}
               </time>
             </div>
-            <StatusBadge :status="pr.status" />
+            <PRStatusBadge :status="pr.status" />
           </div>
         </button>
       </li>
@@ -52,8 +55,8 @@
 import { useRouter } from "vue-router";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import LoadingState from "@/components/LoadingState.vue";
-import StatusBadge from "@/components/StatusBadge.vue";
+import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
+import PRStatusBadge from "@/components/common/PRStatusBadge.vue";
 import { useCreatorPRs } from "@/queries/useCreatorPRs";
 import { useUserPRStore } from "@/stores/userPRStore";
 import type { PRId } from "@partner-up-dev/backend";

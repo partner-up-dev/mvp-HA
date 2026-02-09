@@ -12,7 +12,7 @@
     </header>
 
     <main class="page-main">
-      <PartnerRequestForm
+      <PRForm
         ref="formRef"
         :initial-fields="initialFields"
         :pin-pr-id="createdPrId"
@@ -66,8 +66,8 @@ import type {
   PartnerRequestFields,
   PRId,
 } from "@partner-up-dev/backend";
-import PartnerRequestForm from "@/components/PartnerRequestForm.vue";
-import ErrorToast from "@/components/ErrorToast.vue";
+import PRForm from "@/components/pr/PRForm.vue";
+import ErrorToast from "@/components/common/ErrorToast.vue";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useCreatePRFromStructured } from "@/queries/useCreatePR";
 import type { PartnerRequestFormInput } from "@/lib/validation";
@@ -101,7 +101,7 @@ const initialFields = ref<PartnerRequestFields>(
   buildInitialFields(resolveTopic(route.query.topic)),
 );
 
-const formRef = ref<InstanceType<typeof PartnerRequestForm> | null>(null);
+const formRef = ref<InstanceType<typeof PRForm> | null>(null);
 const pendingStatus = ref<CreatePRStructuredStatus>("OPEN");
 const createdPrId = ref<PRId | null>(null);
 
