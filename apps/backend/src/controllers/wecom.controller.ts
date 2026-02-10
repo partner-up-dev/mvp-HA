@@ -97,6 +97,20 @@ const getEncryptDiagnostics = (value: string) => {
   };
 };
 
+const getCipherDiagnostics = (value: string) => {
+  const normalized = value.trim();
+  const buffer = Buffer.from(normalized, "base64");
+  const roundtrip = buffer.toString("base64");
+  const normalizedRoundtrip = normalized.replace(/=+$/, "");
+
+  return {
+    bufferLength: buffer.length,
+    bufferLengthMod16: buffer.length % 16,
+    base64LengthMod4: normalized.length % 4,
+    roundtripMatches: roundtrip.replace(/=+$/, "") === normalizedRoundtrip,
+  };
+};
+
 export const wecomRoute = app
   .get("/message", zValidator("query", wecomVerifySchema), async (c) => {
     const { msg_signature, timestamp, nonce, echostr } = c.req.valid("query");
@@ -153,6 +167,13 @@ export const wecomRoute = app
     const encryptedRaw = extractXmlTagValue(body, "Encrypt");
     const encrypted = encryptedRaw ? safeDecode(encryptedRaw) : null;
 
+    console.info("WeCom raw body diagnostics", {
+      bodyLength: body.length,
+      bodyHash: hashValue(body),
+      encryptRawLength: encryptedRaw?.length ?? 0,
+      encryptRawHash: encryptedRaw ? hashValue(encryptedRaw) : undefined,
+    });
+
     if (!encrypted) {
       console.warn("WeCom message missing Encrypt", {
         bodyLength: body.length,
@@ -180,6 +201,7 @@ export const wecomRoute = app
       encryptLength: encrypted.length,
       encryptHash: hashValue(encrypted),
     });
+    console.info("WeCom cipher diagnostics", getCipherDiagnostics(encrypted));
 
     const valid = verifySignature({
       token,
