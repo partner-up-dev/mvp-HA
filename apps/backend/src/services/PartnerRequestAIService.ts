@@ -5,11 +5,25 @@ import {
   type PartnerRequestFields,
 } from "../entities/partner-request";
 import { env } from "../lib/env";
+import { PromptTemplate } from "../lib/prompt-template";
 import { ConfigService } from "./ConfigService";
+import { buildPartnerRequestParsePromptVariablesJson } from "./llm/prompt-variables";
 import { DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT } from "./prompts/partnerRequestParsePrompt";
 
 const CONFIG_KEY_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT =
   "partner_request.parse_system_prompt";
+
+const PARTNER_REQUEST_PARSE_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
+  variablesJson: string;
+}>(
+  [
+    "Parse the user request and output structured PartnerRequest fields.",
+    "Use nowIso as the current reference time for date or datetime inference.",
+    "",
+    "Variables:",
+    "{variablesJson}",
+  ].join("\n"),
+);
 
 export class PartnerRequestAIService {
   private client: typeof openai;
@@ -37,19 +51,18 @@ export class PartnerRequestAIService {
       DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT,
     );
 
-    const prompt = [
-      "Parse the user request and output structured PartnerRequest fields.",
-      "",
-      `Current time (ISO 8601): ${nowIso}`,
-      "",
-      "User input:",
+    const variablesJson = buildPartnerRequestParsePromptVariablesJson(
       rawText,
-    ].join("\n");
+      nowIso,
+    );
+    const prompt = await PARTNER_REQUEST_PARSE_PROMPT_TEMPLATE.format({
+      variablesJson,
+    });
 
     const { object } = await generateObject({
       model: this.client(env.LLM_DEFAULT_MODEL),
       schema: partnerRequestFieldsSchema,
-      system: `${systemPrompt}\n\nCurrent time (ISO 8601): ${nowIso}`,
+      system: systemPrompt,
       prompt,
       temperature: 0.3,
     });

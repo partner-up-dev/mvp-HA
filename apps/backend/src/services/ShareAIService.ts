@@ -2,7 +2,13 @@ import { generateObject } from "ai";
 import { createOpenAI, openai } from "@ai-sdk/openai";
 import type { PartnerRequestFields } from "../entities/partner-request";
 import { env } from "../lib/env";
+import { PromptTemplate } from "../lib/prompt-template";
 import { ConfigService } from "./ConfigService";
+import {
+  buildWeChatThumbnailPromptVariablesJson,
+  buildXhsPosterHtmlPromptVariablesJson,
+  buildXiaohongshuCaptionPromptVariablesJson,
+} from "./llm/prompt-variables";
 import { z } from "zod";
 const CONFIG_KEY_XIAOHONGSHU_STYLE_PROMPT = "xiaohongshu_style_prompt";
 const CONFIG_KEY_SHARE_WECHAT_CARD_THUMBNAIL_HTML_STYLE_PROMPTS =
@@ -126,6 +132,46 @@ const wechatThumbnailHtmlResponseSchema = z.object({
     .optional(),
 });
 
+const XIAOHONGSHU_CAPTION_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
+  variablesJson: string;
+}>(
+  [
+    "Generate a Xiaohongshu caption and aligned posterStylePrompt from the variables.",
+    "",
+    "Variables:",
+    "{variablesJson}",
+  ].join("\n"),
+);
+
+const XHS_POSTER_HTML_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
+  variablesJson: string;
+}>(
+  [
+    "Generate Xiaohongshu poster HTML using the provided variables.",
+    "Use participants.stillNeededFromMin for the phrase \"还差几人\" (do not infer from max).",
+    "Return a complete HTML document string.",
+    "Do not include markdown fences.",
+    "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
+    "",
+    "Variables:",
+    "{variablesJson}",
+  ].join("\n"),
+);
+
+const WECHAT_THUMBNAIL_HTML_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
+  variablesJson: string;
+}>(
+  [
+    "Generate WeChat share thumbnail HTML and pick keyText (one emoji or <=3 Chinese characters).",
+    "Return a complete HTML document string.",
+    "Do not include markdown fences.",
+    "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
+    "",
+    "Variables:",
+    "{variablesJson}",
+  ].join("\n"),
+);
+
 // 多风格文案系统prompt定义（作为默认回退值）
 const XIAOHONGSHU_STYLE_PROMPTS = {
   friendly: DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
@@ -205,7 +251,7 @@ export class ShareAIService {
           : DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT;
     }
 
-    const prompt = this.buildXiaohongshuCaptionPrompt(prData);
+    const prompt = await this.buildXiaohongshuCaptionPrompt(prData);
 
     try {
       const { object } = await generateObject({
@@ -271,7 +317,7 @@ HTML/CSS 约束：
 
     const system = `${baseConstraints}\n\n设计风格：${params.posterStylePrompt}`;
 
-    const prompt = this.buildXhsPosterHtmlPrompt(params.pr, params.caption);
+    const prompt = await this.buildXhsPosterHtmlPrompt(params.pr, params.caption);
 
     const { object } = await generateObject({
       model: this.client(env.LLM_DEFAULT_MODEL),
@@ -291,7 +337,7 @@ HTML/CSS 约束：
     const stylePrompts = await this.getShareWeChatThumbnailHtmlStylePrompts();
     const system = this.pickPromptByIndex(stylePrompts, params.style);
 
-    const prompt = this.buildWeChatThumbnailHtmlPrompt(params.pr);
+    const prompt = await this.buildWeChatThumbnailHtmlPrompt(params.pr);
 
     const { object } = await generateObject({
       model: this.client(env.LLM_DEFAULT_MODEL),
@@ -304,26 +350,12 @@ HTML/CSS 约束：
     return object;
   }
 
-  private buildXiaohongshuCaptionPrompt(prData: PartnerRequestFields): string {
-    const [minPartners, currentPartners, maxPartners] = prData.partners;
-    const neededPartners =
-      maxPartners !== null
-        ? Math.max(maxPartners - currentPartners, 0)
-        : minPartners !== null
-          ? Math.max(minPartners - currentPartners, 0)
-          : null;
+  private async buildXiaohongshuCaptionPrompt(
+    prData: PartnerRequestFields,
+  ): Promise<string> {
+    const variablesJson = buildXiaohongshuCaptionPromptVariablesJson(prData);
 
-    const payload = {
-      partnerRequest: prData,
-      neededPartners,
-    };
-
-    return [
-      "Generate a Xiaohongshu caption and aligned posterStylePrompt from the variables.",
-      "",
-      "Variables:",
-      JSON.stringify(payload, null, 2),
-    ].join("\n");
+    return await XIAOHONGSHU_CAPTION_PROMPT_TEMPLATE.format({ variablesJson });
   }
 
   private async getXiaohongshuStylePrompts(): Promise<string[]> {
@@ -354,52 +386,23 @@ HTML/CSS 约束：
     );
   }
 
-  private buildXhsPosterHtmlPrompt(
+  private async buildXhsPosterHtmlPrompt(
     pr: PartnerRequestFields & { rawText: string },
     caption: string,
-  ): string {
-    const payload = {
-      caption,
-      partnerRequest: {
-        title: pr.title,
-        type: pr.type,
-        time: pr.time,
-        location: pr.location,
-        partners: pr.partners,
-      },
-    };
+  ): Promise<string> {
+    const variablesJson = buildXhsPosterHtmlPromptVariablesJson(pr, caption);
 
-    return [
-      "Generate Xiaohongshu poster HTML using the provided variables.",
-      "Return a complete HTML document string.",
-      "Do not include markdown fences.",
-      "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
-      "",
-      "Variables:",
-      JSON.stringify(payload, null, 2),
-    ].join("\n");
+    return await XHS_POSTER_HTML_PROMPT_TEMPLATE.format({ variablesJson });
   }
 
-  private buildWeChatThumbnailHtmlPrompt(
+  private async buildWeChatThumbnailHtmlPrompt(
     pr: PartnerRequestFields & { rawText: string },
-  ): string {
-    const payload = {
-      partnerRequest: {
-        title: pr.title,
-        type: pr.type,
-        location: pr.location,
-      },
-    };
+  ): Promise<string> {
+    const variablesJson = buildWeChatThumbnailPromptVariablesJson(pr);
 
-    return [
-      "Generate WeChat share thumbnail HTML and pick keyText (one emoji or <=3 Chinese characters).",
-      "Return a complete HTML document string.",
-      "Do not include markdown fences.",
-      "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
-      "",
-      "Variables:",
-      JSON.stringify(payload, null, 2),
-    ].join("\n");
+    return await WECHAT_THUMBNAIL_HTML_PROMPT_TEMPLATE.format({
+      variablesJson,
+    });
   }
 
 }
