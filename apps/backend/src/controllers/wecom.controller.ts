@@ -7,6 +7,7 @@ import { WeComService } from "../services/WeComService";
 import { env } from "../lib/env";
 import {
   decryptWeComMessage,
+  diagnoseWeComCiphertext,
   extractXmlTagValue,
   verifySignature,
 } from "../lib/wecom-crypto";
@@ -229,6 +230,21 @@ export const wecomRoute = app
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Decrypt failed";
+        try {
+          const paddingDiagnostics = diagnoseWeComCiphertext(
+            encodingAesKey,
+            encrypted,
+          );
+          console.warn("WeCom padding diagnostics", paddingDiagnostics);
+        } catch (diagnoseError) {
+          const diagMessage =
+            diagnoseError instanceof Error
+              ? diagnoseError.message
+              : "Padding diagnose failed";
+          console.warn("WeCom padding diagnostics failed", {
+            message: diagMessage,
+          });
+        }
         console.warn("WeCom message decrypt failed", {
           message,
           encryptLength: encrypted.length,
