@@ -1,22 +1,10 @@
 import { generateObject } from "ai";
 import { createOpenAI, openai } from "@ai-sdk/openai";
-import {
-  partnerRequestFieldsSchema,
-  type PartnerRequestFields,
-} from "../entities/partner-request";
+import type { PartnerRequestFields } from "../entities/partner-request";
 import { env } from "../lib/env";
 import { ConfigService } from "./ConfigService";
 import { z } from "zod";
-import { DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT } from "./prompts/partnerRequestParsePrompt";
-
-const CONFIG_KEY_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT =
-  "partner_request.parse_system_prompt";
-const CONFIG_KEY_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT =
-  "xiaohongshu.caption_system_prompt";
 const CONFIG_KEY_XIAOHONGSHU_STYLE_PROMPT = "xiaohongshu_style_prompt";
-
-const CONFIG_KEY_SHARE_XIAOHONGSHU_POSTER_HTML_STYLE_PROMPTS =
-  "share.xiaohongshu_poster_html_style_prompts";
 const CONFIG_KEY_SHARE_WECHAT_CARD_THUMBNAIL_HTML_STYLE_PROMPTS =
   "share.wechat_card_thumbnail_html_style_prompts";
 
@@ -173,7 +161,7 @@ const XIAOHONGSHU_STYLE_PROMPTS = {
 
 export type XiaohongshuStyle = keyof typeof XIAOHONGSHU_STYLE_PROMPTS;
 
-export class LLMService {
+export class ShareAIService {
   private client: typeof openai;
   private configService: ConfigService;
 
@@ -188,24 +176,6 @@ export class LLMService {
     }
 
     this.configService = new ConfigService();
-  }
-
-  async parseRequest(
-    rawText: string,
-    nowIso: string,
-  ): Promise<PartnerRequestFields> {
-    const systemPrompt = await this.getParsePartnerRequestSystemPrompt();
-    const system = `${systemPrompt}\n\nCurrent time (ISO 8601): ${nowIso}`;
-
-    const { object } = await generateObject({
-      model: this.client(env.LLM_DEFAULT_MODEL),
-      schema: partnerRequestFieldsSchema,
-      system,
-      prompt: rawText,
-      temperature: 0.3,
-    });
-
-    return object;
   }
 
   async generateXiaohongshuCaption(
@@ -254,7 +224,7 @@ export class LLMService {
         posterStylePrompt:
           object.posterStylePrompt || DEFAULT_POSTER_STYLE_PROMPT,
       };
-    } catch (error) {
+    } catch {
       // Fallback: generate caption only and use default posterStylePrompt
       const { object } = await generateObject({
         model: this.client(env.LLM_DEFAULT_MODEL),
@@ -335,40 +305,25 @@ HTML/CSS 约束：
   }
 
   private buildXiaohongshuCaptionPrompt(prData: PartnerRequestFields): string {
-    const parts: string[] = [];
-
-    if (prData.title) parts.push(`活动标题：${prData.title}`);
-    const timeWindow = this.formatTimeWindow(prData.time);
-    if (timeWindow) parts.push(`时间：${timeWindow}`);
-    if (prData.location) parts.push(`地点：${prData.location}`);
     const [minPartners, currentPartners, maxPartners] = prData.partners;
-    if (maxPartners !== null) {
-      const needed = Math.max(maxPartners - currentPartners, 0);
-      parts.push(`需要人数：还差${needed}人`);
-    } else if (minPartners !== null) {
-      const needed = Math.max(minPartners - currentPartners, 0);
-      parts.push(`最少需要：还差${needed}人`);
-    }
-    if (prData.preferences && prData.preferences.length > 0) {
-      parts.push(`偏好：${prData.preferences.join("、")}`);
-    }
-    if (prData.notes) parts.push(`其他说明：${prData.notes}`);
+    const neededPartners =
+      maxPartners !== null
+        ? Math.max(maxPartners - currentPartners, 0)
+        : minPartners !== null
+          ? Math.max(minPartners - currentPartners, 0)
+          : null;
 
-    return parts.join("\n");
-  }
+    const payload = {
+      partnerRequest: prData,
+      neededPartners,
+    };
 
-  private async getParsePartnerRequestSystemPrompt(): Promise<string> {
-    return await this.configService.getValueOrFallback(
-      CONFIG_KEY_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT,
-      DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT,
-    );
-  }
-
-  private async getXiaohongshuCaptionSystemPrompt(): Promise<string> {
-    return await this.configService.getValueOrFallback(
-      CONFIG_KEY_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
-      DEFAULT_XIAOHONGSHU_CAPTION_SYSTEM_PROMPT,
-    );
+    return [
+      "Generate a Xiaohongshu caption and aligned posterStylePrompt from the variables.",
+      "",
+      "Variables:",
+      JSON.stringify(payload, null, 2),
+    ].join("\n");
   }
 
   private async getXiaohongshuStylePrompts(): Promise<string[]> {
@@ -377,12 +332,6 @@ HTML/CSS 约束：
       CONFIG_KEY_XIAOHONGSHU_STYLE_PROMPT,
       fallback,
     );
-  }
-
-  private getRandomStyle(): XiaohongshuStyle {
-    const styles = Object.keys(XIAOHONGSHU_STYLE_PROMPTS) as XiaohongshuStyle[];
-    const randomIndex = Math.floor(Math.random() * styles.length);
-    return styles[randomIndex];
   }
 
   private pickPromptByIndex(prompts: string[], style?: number): string {
@@ -398,13 +347,6 @@ HTML/CSS 约束：
     return prompts[0];
   }
 
-  private async getShareXhsPosterHtmlStylePrompts(): Promise<string[]> {
-    return await this.configService.getJsonArrayOrFallback(
-      CONFIG_KEY_SHARE_XIAOHONGSHU_POSTER_HTML_STYLE_PROMPTS,
-      [...DEFAULT_SHARE_XHS_POSTER_HTML_STYLE_PROMPTS],
-    );
-  }
-
   private async getShareWeChatThumbnailHtmlStylePrompts(): Promise<string[]> {
     return await this.configService.getJsonArrayOrFallback(
       CONFIG_KEY_SHARE_WECHAT_CARD_THUMBNAIL_HTML_STYLE_PROMPTS,
@@ -416,56 +358,51 @@ HTML/CSS 约束：
     pr: PartnerRequestFields & { rawText: string },
     caption: string,
   ): string {
-    const parts: string[] = [];
-    parts.push(`海报文案（必须原样出现）：${caption}`);
+    const payload = {
+      caption,
+      partnerRequest: {
+        title: pr.title,
+        type: pr.type,
+        time: pr.time,
+        location: pr.location,
+        partners: pr.partners,
+      },
+    };
 
-    const title = pr.title?.trim();
-    if (title) parts.push(`标题：${title}`);
-    parts.push(`类型：${pr.type}`);
-    const timeWindow = this.formatTimeWindow(pr.time);
-    if (timeWindow) parts.push(`时间：${timeWindow}`);
-    if (pr.location) parts.push(`地点：${pr.location}`);
-    const [minPartners, currentPartners, maxPartners] = pr.partners;
-    if (minPartners !== null) parts.push(`最少人数：${minPartners}`);
-    if (maxPartners !== null) parts.push(`最多人数：${maxPartners}`);
-    parts.push(`当前人数：${currentPartners}`);
-
-    parts.push(
-      "\n输出要求：请输出 JSON，字段为 html,width,height,backgroundColor。不要输出解释。",
-    );
-    parts.push(
-      "HTML 要求：在 #poster-root 内布局，文本字号要非常大（建议 >= 56px），留白充足。",
-    );
-    return parts.join("\n");
+    return [
+      "Generate Xiaohongshu poster HTML using the provided variables.",
+      "Return a complete HTML document string.",
+      "Do not include markdown fences.",
+      "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
+      "",
+      "Variables:",
+      JSON.stringify(payload, null, 2),
+    ].join("\n");
   }
 
   private buildWeChatThumbnailHtmlPrompt(
     pr: PartnerRequestFields & { rawText: string },
   ): string {
-    const parts: string[] = [];
-    const title = pr.title?.trim();
-    if (title) parts.push(`标题：${title}`);
-    parts.push(`类型：${pr.type}`);
-    if (pr.location) parts.push(`地点：${pr.location}`);
+    const payload = {
+      partnerRequest: {
+        title: pr.title,
+        type: pr.type,
+        location: pr.location,
+      },
+    };
 
-    parts.push(
-      "从以上信息中选择一个 keyText：要么是 1 个 emoji，要么是 <=3 个汉字。",
-    );
-    parts.push(
-      "输出要求：请输出 JSON，字段为 html,width,height,backgroundColor,meta。meta.keyText 建议给出。不要输出解释。",
-    );
-    parts.push(
-      "视觉要求：极简、可信、无广告感；背景可用简单几何形状；keyText 居中且很大。",
-    );
-
-    return parts.join("\n");
+    return [
+      "Generate WeChat share thumbnail HTML and pick keyText (one emoji or <=3 Chinese characters).",
+      "Return a complete HTML document string.",
+      "Do not include markdown fences.",
+      "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
+      "",
+      "Variables:",
+      JSON.stringify(payload, null, 2),
+    ].join("\n");
   }
 
-  private formatTimeWindow(time: PartnerRequestFields["time"]): string | null {
-    const [start, end] = time;
-    if (start && end) return `${start} - ${end}`;
-    if (start) return start;
-    if (end) return end;
-    return null;
-  }
 }
+
+
+

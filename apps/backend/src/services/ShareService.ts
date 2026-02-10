@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import type { PartnerRequestFields, PRId } from "../entities/partner-request";
 import { PartnerRequestService } from "./PartnerRequestService";
-import { LLMService, type PosterHtmlResponse } from "./LLMService";
+import { ShareAIService, type PosterHtmlResponse } from "./ShareAIService";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 
 const denyList: ReadonlyArray<RegExp> = [
@@ -12,22 +12,117 @@ const denyList: ReadonlyArray<RegExp> = [
   /<iframe/i,
 ];
 
-const assertHtmlSafe = (html: string): void => {
+const findUnsafePattern = (html: string): RegExp | null => {
   for (const pattern of denyList) {
     if (pattern.test(html)) {
-      throw new HTTPException(500, { message: "LLM produced unsafe HTML" });
+      return pattern;
     }
+  }
+  return null;
+};
+
+const sanitizeGeneratedHtml = (html: string): string => {
+  let sanitized = html;
+  for (let i = 0; i < 3; i += 1) {
+    const next = sanitized
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<script[^>]*>/gi, "")
+      .replace(/<link\b[^>]*>/gi, "")
+      .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+      .replace(
+        /(?:\s|\/)on[a-z0-9_-]+\s*=\s*(?:"[\s\S]*?"|'[\s\S]*?'|[^\s>]+)/gi,
+        " ",
+      )
+      .replace(/(?:\s|\/)on[a-z0-9_-]+\s*=\s*(?=>)/gi, " ")
+      .replace(/javascript:/gi, "");
+
+    if (next === sanitized) {
+      break;
+    }
+    sanitized = next;
+  }
+
+  // Last-resort neutralization to avoid false positives on raw "on...=" tokens.
+  sanitized = sanitized.replace(/on\w+\s*=/gi, "data-removed=");
+
+  return sanitized;
+};
+
+const assertHtmlSafe = (html: string): void => {
+  const pattern = findUnsafePattern(html);
+  if (pattern) {
+    throw new HTTPException(500, {
+      message: `LLM produced unsafe HTML (${pattern.source})`,
+    });
+  }
+};
+
+const sanitizeAndAssertHtmlSafe = (html: string): string => {
+  const firstPattern = findUnsafePattern(html);
+  if (!firstPattern) {
+    return html;
+  }
+
+  const sanitized = sanitizeGeneratedHtml(html);
+  const secondPattern = findUnsafePattern(sanitized);
+  if (secondPattern) {
+    throw new HTTPException(500, {
+      message: `LLM produced unsafe HTML (${secondPattern.source})`,
+    });
+  }
+
+  return sanitized;
+};
+
+const buildStrictSafetyStylePrompt = (posterStylePrompt: string): string => {
+  const safetySuffix = [
+    "Safety constraints:",
+    "- Do NOT use <script>, <link>, <iframe>.",
+    "- Do NOT use inline event handlers like onclick/onerror.",
+    "- Do NOT use javascript: URLs.",
+    "- Return plain HTML only (no markdown code fences).",
+  ].join("\n");
+
+  if (posterStylePrompt.includes("Safety constraints:")) {
+    return posterStylePrompt;
+  }
+
+  return `${posterStylePrompt}\n\n${safetySuffix}`;
+};
+
+const sanitizePosterResponse = (
+  result: PosterHtmlResponse,
+): PosterHtmlResponse => {
+  return {
+    ...result,
+    html: sanitizeAndAssertHtmlSafe(result.html),
+  };
+};
+
+const sanitizeThumbnailResponse = (
+  result: PosterHtmlResponse,
+): PosterHtmlResponse => {
+  return {
+    ...result,
+    html: sanitizeAndAssertHtmlSafe(result.html),
+  };
+};
+
+const assertNotEmptyHtml = (html: string): void => {
+  if (html.trim().length === 0) {
+    throw new HTTPException(500, { message: "LLM produced empty HTML" });
   }
 };
 
 export class ShareService {
   private prService: PartnerRequestService;
-  private llmService: LLMService;
+  private shareAIService: ShareAIService;
   private prRepo: PartnerRequestRepository;
 
   constructor() {
     this.prService = new PartnerRequestService();
-    this.llmService = new LLMService();
+    this.shareAIService = new ShareAIService();
     this.prRepo = new PartnerRequestRepository();
   }
 
@@ -39,15 +134,34 @@ export class ShareService {
     // Always generate HTML (poster image URL caching is handled via cache endpoints)
     const pr = await this.prService.getPR(params.prId);
     const prFields = this.toPartnerRequestFields(pr);
-    const result = await this.llmService.generateXiaohongshuPosterHtml({
+    const result = await this.shareAIService.generateXiaohongshuPosterHtml({
       pr: { ...prFields, rawText: pr.rawText },
       caption: params.caption,
       posterStylePrompt: params.posterStylePrompt,
     });
 
-    assertHtmlSafe(result.html);
+    try {
+      const safe = sanitizePosterResponse(result);
+      assertNotEmptyHtml(safe.html);
+      assertHtmlSafe(safe.html);
+      return safe;
+    } catch {
+      // Retry once with stricter style constraints to reduce unsafe constructs.
+      const strictResult = await this.shareAIService.generateXiaohongshuPosterHtml(
+        {
+          pr: { ...prFields, rawText: pr.rawText },
+          caption: params.caption,
+          posterStylePrompt: buildStrictSafetyStylePrompt(
+            params.posterStylePrompt,
+          ),
+        },
+      );
 
-    return result;
+      const safe = sanitizePosterResponse(strictResult);
+      assertNotEmptyHtml(safe.html);
+      assertHtmlSafe(safe.html);
+      return safe;
+    }
   }
 
   async generateWeChatCardThumbnailHtml(params: {
@@ -58,14 +172,15 @@ export class ShareService {
     const pr = await this.prService.getPR(params.prId);
     const prFields = this.toPartnerRequestFields(pr);
 
-    const result = await this.llmService.generateWeChatCardThumbnailHtml({
+    const result = await this.shareAIService.generateWeChatCardThumbnailHtml({
       pr: { ...prFields, rawText: pr.rawText },
       style: params.style,
     });
 
-    assertHtmlSafe(result.html);
-
-    return result;
+    const safe = sanitizeThumbnailResponse(result);
+    assertNotEmptyHtml(safe.html);
+    assertHtmlSafe(safe.html);
+    return safe;
   }
 
   async cacheXiaohongshuPoster(params: {

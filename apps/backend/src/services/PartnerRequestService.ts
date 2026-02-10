@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
-import { LLMService } from "./LLMService";
+import { PartnerRequestAIService } from "./PartnerRequestAIService";
 import type {
   PartnerRequest,
   PRStatus,
@@ -11,7 +11,7 @@ import type {
 } from "../entities/partner-request";
 
 const repo = new PartnerRequestRepository();
-const llmService = new LLMService();
+const partnerRequestAIService = new PartnerRequestAIService();
 
 export class PartnerRequestService {
   async createPRFromNaturalLanguage(
@@ -25,7 +25,7 @@ export class PartnerRequestService {
     }
 
     // Parse with LLM
-    const fields = await llmService.parseRequest(rawText, nowIso);
+    const fields = await partnerRequestAIService.parseRequest(rawText, nowIso);
     const partners: PartnerRequestFields["partners"] = [
       fields.partners[0],
       0,
