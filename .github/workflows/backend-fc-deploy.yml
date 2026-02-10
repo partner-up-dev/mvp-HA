@@ -41,6 +41,12 @@ jobs:
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
       LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
       LLM_DEFAULT_MODEL: ${{ secrets.LLM_DEFAULT_MODEL }}
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      WECOM_TOKEN: ${{ secrets.WECOM_TOKEN }}
+      WECOM_ENCODING_AES_KEY: ${{ secrets.WECOM_ENCODING_AES_KEY }}
+      WECOM_CORP_ID: ${{ secrets.WECOM_CORP_ID }}
+      WECOM_APP_AGENT_ID: ${{ secrets.WECOM_APP_AGENT_ID }}
+      WECOM_APP_SECRET: ${{ secrets.WECOM_APP_SECRET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
