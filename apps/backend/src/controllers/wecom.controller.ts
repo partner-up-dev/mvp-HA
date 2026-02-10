@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { randomInt } from "crypto";
+import { createHash, randomInt } from "crypto";
 import { PartnerRequestService } from "../services/PartnerRequestService";
 import { WeComService } from "../services/WeComService";
 import { env } from "../lib/env";
@@ -39,6 +39,9 @@ const maskValue = (value: string) => {
   }
   return `${value.slice(0, 4)}***${value.slice(-4)}`;
 };
+
+const hashValue = (value: string) =>
+  createHash("sha1").update(value, "utf8").digest("hex");
 
 const getCryptoConfig = () => {
   const token = env.WECOM_TOKEN;
@@ -166,6 +169,17 @@ export const wecomRoute = app
     ) {
       console.warn("WeCom Encrypt diagnostics", encryptDiagnostics);
     }
+
+    console.info("WeCom decrypt debug", {
+      msgSignature: maskValue(decodedSignature),
+      tokenHash: hashValue(token),
+      encodingAesKeyMask: maskValue(encodingAesKey),
+      encodingAesKeyHash: hashValue(encodingAesKey),
+      corpIdMask: maskValue(corpId),
+      corpIdLength: corpId.length,
+      encryptLength: encrypted.length,
+      encryptHash: hashValue(encrypted),
+    });
 
     const valid = verifySignature({
       token,
