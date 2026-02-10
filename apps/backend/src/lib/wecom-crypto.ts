@@ -95,5 +95,5 @@ export const extractXmlTagValue = (xml: string, tag: string) => {
   if (!match) {
     return null;
   }
-  return match[1]?.trim() ?? null;
+  return match[1] ?? null;
 };

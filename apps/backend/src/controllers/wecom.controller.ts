@@ -215,14 +215,14 @@ export const wecomRoute = app
         });
         return;
       }
-      const msgType = extractXmlTagValue(xml, "MsgType");
+      const msgType = extractXmlTagValue(xml, "MsgType")?.trim();
       if (msgType !== "text") {
         return;
       }
 
       const content = extractXmlTagValue(xml, "Content");
-      const fromUser = extractXmlTagValue(xml, "FromUserName");
-      const createTime = extractXmlTagValue(xml, "CreateTime");
+      const fromUser = extractXmlTagValue(xml, "FromUserName")?.trim();
+      const createTime = extractXmlTagValue(xml, "CreateTime")?.trim();
 
       if (!content || !fromUser || !createTime) {
         return;
