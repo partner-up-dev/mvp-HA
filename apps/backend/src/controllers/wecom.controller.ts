@@ -68,6 +68,32 @@ const normalizeFrontendUrl = (raw: string) => {
 
 const generatePin = () => `${randomInt(0, 10_000)}`.padStart(4, "0");
 
+const getEncryptDiagnostics = (value: string) => {
+  let spaceCount = 0;
+  let plusCount = 0;
+  let nonBase64Count = 0;
+
+  for (const ch of value) {
+    if (ch === " ") {
+      spaceCount += 1;
+      continue;
+    }
+    if (ch === "+") {
+      plusCount += 1;
+    }
+    if (!/[A-Za-z0-9+/=]/.test(ch)) {
+      nonBase64Count += 1;
+    }
+  }
+
+  return {
+    length: value.length,
+    spaceCount,
+    plusCount,
+    nonBase64Count,
+  };
+};
+
 export const wecomRoute = app
   .get("/message", zValidator("query", wecomVerifySchema), async (c) => {
     const { msg_signature, timestamp, nonce, echostr } = c.req.valid("query");
@@ -131,6 +157,14 @@ export const wecomRoute = app
         corpIdLength: corpId.length,
       });
       return c.text("Missing Encrypt", 400);
+    }
+
+    const encryptDiagnostics = getEncryptDiagnostics(encrypted);
+    if (
+      encryptDiagnostics.spaceCount > 0 ||
+      encryptDiagnostics.nonBase64Count > 0
+    ) {
+      console.warn("WeCom Encrypt diagnostics", encryptDiagnostics);
     }
 
     const valid = verifySignature({
