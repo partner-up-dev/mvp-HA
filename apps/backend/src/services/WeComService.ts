@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { env } from "../lib/env";
+import { proxyFetch } from "../lib/proxy-fetch";
 
 type WeComAppConfig = {
   corpId: string;
@@ -60,7 +61,7 @@ export class WeComService {
     url.searchParams.set("corpid", corpId);
     url.searchParams.set("corpsecret", appSecret);
 
-    const res = await fetch(url);
+    const res = await proxyFetch(url);
     if (!res.ok) {
       throw new Error(`WeCom gettoken failed: ${res.status} ${res.statusText}`);
     }
@@ -93,7 +94,7 @@ export class WeComService {
       text: { content },
     };
 
-    const res = await fetch(url, {
+    const res = await proxyFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

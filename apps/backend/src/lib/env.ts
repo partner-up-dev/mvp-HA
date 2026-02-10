@@ -17,7 +17,7 @@ const envSchema = z.object({
   // WeChat Official Account (for JS-SDK signature)
   WECHAT_OFFICIAL_ACCOUNT_APP_ID: z.string().min(1).optional(),
   WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: z.string().min(1).optional(),
-  WECHAT_HTTP_PROXY: z.string().url().optional(),
+  FIXED_IP_HTTP_PROXY: z.string().url().optional(),
 
   // WeCom (Enterprise WeChat) self-built app
   WECOM_TOKEN: z.string().min(1).optional(),

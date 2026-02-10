@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import { ProxyAgent, fetch } from "undici";
 import { z } from "zod";
 import { env } from "../lib/env";
+import { proxyFetch } from "../lib/proxy-fetch";
 
 const weChatAccessTokenSchema = z.object({
   access_token: z.string().optional(),
@@ -53,13 +53,6 @@ const normalizeUrlForSignature = (rawUrl: string): string => {
   return parsed.toString();
 };
 
-const wechatProxyDispatcher = env.WECHAT_HTTP_PROXY
-  ? new ProxyAgent(env.WECHAT_HTTP_PROXY)
-  : undefined;
-
-const fetchWeChat = (url: URL): ReturnType<typeof fetch> =>
-  wechatProxyDispatcher ? fetch(url, { dispatcher: wechatProxyDispatcher }) : fetch(url);
-
 export type WeChatJssdkSignature = {
   appId: string;
   timestamp: number;
@@ -93,7 +86,7 @@ export class WeChatJssdkService {
     url.searchParams.set("appid", appId);
     url.searchParams.set("secret", appSecret);
 
-    const res = await fetchWeChat(url);
+    const res = await proxyFetch(url);
     if (!res.ok) {
       throw new Error(
         `WeChat access_token request failed: ${res.status} ${res.statusText}`,
@@ -130,7 +123,7 @@ export class WeChatJssdkService {
     url.searchParams.set("access_token", accessToken);
     url.searchParams.set("type", "jsapi");
 
-    const res = await fetchWeChat(url);
+    const res = await proxyFetch(url);
     if (!res.ok) {
       throw new Error(
         `WeChat jsapi_ticket request failed: ${res.status} ${res.statusText}`,

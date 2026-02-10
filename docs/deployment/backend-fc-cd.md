@@ -32,7 +32,7 @@ Configure the following secrets in the GitHub repository:
 | `DATABASE_URL` | Database connection string |
 | `WECHAT_OFFICIAL_ACCOUNT_APP_ID` | WeChat Official Account App ID |
 | `WECHAT_OFFICIAL_ACCOUNT_APP_SECRET` | WeChat Official Account App Secret |
-| `WECHAT_HTTP_PROXY` | Optional HTTP proxy for WeChat API requests |
+| `FIXED_IP_HTTP_PROXY` | Optional HTTP proxy for WeChat API requests |
 | `LLM_API_KEY` | LLM API key |
 | `LLM_BASE_URL` | LLM base URL |
 | `LLM_DEFAULT_MODEL` | LLM default model |
@@ -107,7 +107,7 @@ If you need to deploy locally (with Serverless Devs installed):
    DATABASE_URL=... \
    WECHAT_OFFICIAL_ACCOUNT_APP_ID=... \
    WECHAT_OFFICIAL_ACCOUNT_APP_SECRET=... \
-   WECHAT_HTTP_PROXY=... \
+   FIXED_IP_HTTP_PROXY=... \
    LLM_API_KEY=... \
    LLM_BASE_URL=... \
    LLM_DEFAULT_MODEL=... \
