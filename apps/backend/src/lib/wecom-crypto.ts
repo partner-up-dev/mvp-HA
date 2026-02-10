@@ -13,8 +13,15 @@ type WeComDecryptedPayload = {
   corpId: string;
 };
 
+const normalizeBase64 = (value: string) => {
+  const trimmed = value.trim().replace(/\s+/g, "");
+  const padNeeded = trimmed.length % 4 === 0 ? 0 : 4 - (trimmed.length % 4);
+  return padNeeded === 0 ? trimmed : `${trimmed}${"=".repeat(padNeeded)}`;
+};
+
 const getAesKey = (encodingAesKey: string) => {
-  const key = Buffer.from(`${encodingAesKey}=`, "base64");
+  const normalized = normalizeBase64(encodingAesKey);
+  const key = Buffer.from(normalized, "base64");
   if (key.length !== 32) {
     throw new Error("Invalid WECOM_ENCODING_AES_KEY");
   }
@@ -46,7 +53,8 @@ export const decryptWeComMessage = (
   const decipher = crypto.createDecipheriv("aes-256-cbc", aesKey, iv);
   decipher.setAutoPadding(true);
 
-  const encryptedBuffer = Buffer.from(encrypted, "base64");
+  const normalizedEncrypted = normalizeBase64(encrypted);
+  const encryptedBuffer = Buffer.from(normalizedEncrypted, "base64");
   const decrypted = Buffer.concat([
     decipher.update(encryptedBuffer),
     decipher.final(),
