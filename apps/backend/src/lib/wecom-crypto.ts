@@ -14,9 +14,14 @@ type WeComDecryptedPayload = {
 };
 
 const normalizeBase64 = (value: string) => {
-  const trimmed = value.trim().replace(/\s+/g, "");
-  const padNeeded = trimmed.length % 4 === 0 ? 0 : 4 - (trimmed.length % 4);
-  return padNeeded === 0 ? trimmed : `${trimmed}${"=".repeat(padNeeded)}`;
+  const trimmed = value.trim();
+  // Some gateways may convert '+' to spaces; normalize before stripping whitespace.
+  const normalizedSpaces = trimmed.replace(/\s/g, (char) =>
+    char === " " ? "+" : "",
+  );
+  const compact = normalizedSpaces.replace(/\s+/g, "");
+  const padNeeded = compact.length % 4 === 0 ? 0 : 4 - (compact.length % 4);
+  return padNeeded === 0 ? compact : `${compact}${"=".repeat(padNeeded)}`;
 };
 
 const getAesKey = (encodingAesKey: string) => {
