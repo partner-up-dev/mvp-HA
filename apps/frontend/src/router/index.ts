@@ -6,6 +6,7 @@ import {
 import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
+import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -22,6 +23,11 @@ const routes: RouteRecordRaw[] = [
     path: "/pr/new",
     name: "pr-new",
     component: PRCreatePage,
+  },
+  {
+    path: "/contact-author",
+    name: "contact-author",
+    component: ContactAuthorPage,
   },
 ];
 

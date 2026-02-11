@@ -50,6 +50,8 @@
       </button>
     </footer>
 
+    <Footer />
+
     <ErrorToast
       v-if="createMutation.isError.value"
       :message="
@@ -71,6 +73,7 @@ import type {
 } from "@partner-up-dev/backend";
 import PRForm from "@/components/pr/PRForm.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
+import Footer from "@/components/common/Footer.vue";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useCreatePRFromStructured } from "@/queries/useCreatePR";
 import type { PartnerRequestFormInput } from "@/lib/validation";

@@ -32,6 +32,9 @@
     "structuredEntryPrefix": "找搭子一起",
     "naturalLanguageEntry": "刚刚在群里发过了？",
     "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
+    "contactAuthorTitle": "功能建议 / 问题反馈",
+    "contactAuthorDescription": "可扫码联系作者，反馈 Bug 或提出新功能建议。",
+    "contactAuthorAction": "联系作者",
     "topics": {
       "movie": {
         "name": "看电影",
@@ -54,6 +57,13 @@
         "example": "找人一起学习备考"
       }
     }
+  },
+  "contactAuthorPage": {
+    "title": "联系作者",
+    "description": "扫码添加作者微信，欢迎反馈功能建议或问题。",
+    "footerEntry": "联系作者（功能建议 / Bug 反馈）",
+    "qrAlt": "作者微信二维码",
+    "qrMissing": "暂未配置作者微信二维码"
   },
   "createPage": {
     "title": "创建搭子请求",
@@ -230,7 +240,8 @@
     "wechatInitFailed": "微信 JS-SDK 初始化失败",
     "wechatInitTimeout": "微信 JS-SDK 初始化超时",
     "wechatInitError": "微信 JS-SDK 初始化错误：{message}",
-    "initializeFailed": "初始化失败"
+    "initializeFailed": "初始化失败",
+    "fetchPublicConfigFailed": "获取公共配置失败"
   },
   "posterStyles": {
     "fresh": "清新活泼",

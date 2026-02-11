@@ -31,6 +31,9 @@ export interface MessageSchema {
     structuredEntryPrefix: string;
     naturalLanguageEntry: string;
     naturalLanguagePanelTitle: string;
+    contactAuthorTitle: string;
+    contactAuthorDescription: string;
+    contactAuthorAction: string;
     topics: {
       movie: {
         name: string;
@@ -53,6 +56,13 @@ export interface MessageSchema {
         example: string;
       };
     };
+  };
+  contactAuthorPage: {
+    title: string;
+    description: string;
+    footerEntry: string;
+    qrAlt: string;
+    qrMissing: string;
   };
   createPage: {
     title: string;
@@ -230,6 +240,7 @@ export interface MessageSchema {
     wechatInitTimeout: string;
     wechatInitError: string;
     initializeFailed: string;
+    fetchPublicConfigFailed: string;
   };
   posterStyles: {
     fresh: string;

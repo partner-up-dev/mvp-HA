@@ -106,6 +106,8 @@
         @close="showModifyModal = false"
       />
     </template>
+
+    <Footer />
   </div>
 </template>
 
@@ -121,6 +123,7 @@ import PRCard from "@/components/pr/PRCard.vue";
 import PRShareCarousel from "@/components/share/PRShareCarousel.vue";
 import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
+import Footer from "@/components/common/Footer.vue";
 import { usePR } from "@/queries/usePR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useJoinPR } from "@/queries/useJoinPR";

@@ -47,7 +47,7 @@ src/
 
 ## Current State
 >
-> Last Updated: 2026-02-06 11:40
+> Last Updated: 2026-02-10 22:10
 
 ### Live Capabilities
 
@@ -57,6 +57,7 @@ src/
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
 - 参与与流转: 支持加入/退出；达到最小人数自动转为 `ACTIVE`；受最大人数限制。
 - 分享能力: 提供小红书文案/海报与微信缩略图生成能力，并支持缓存到后端。
+- 公共配置能力: 提供 `/api/config/public/:key` 只读配置查询（当前支持 `author_wechat_qr_code`）。
 
 ### Known Limitations & Mocks
 
