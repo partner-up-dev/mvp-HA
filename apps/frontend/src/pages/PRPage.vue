@@ -82,6 +82,7 @@
 
       <!-- Share PR Component -->
       <PRShareCarousel
+        class="space-m-t-lg space-p-x-sm"
         v-if="id !== null"
         :share-url="shareUrl"
         :pr-id="id"

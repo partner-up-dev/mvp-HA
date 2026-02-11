@@ -184,11 +184,6 @@ watchEffect((onCleanup) => {
 </script>
 
 <style lang="scss" scoped>
-.share-pr {
-  margin-top: var(--sys-spacing-lg);
-  padding: var(--sys-spacing-sm);
-}
-
 .carousel-header {
   display: flex;
   align-items: center;
