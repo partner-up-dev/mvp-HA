@@ -20,25 +20,39 @@
       </button>
     </div>
 
-    <div class="content-section">
-      <ShareAsLink
-        v-show="currentMethod.id === 'COPY_LINK'"
-        :share-url="shareUrl"
-      />
+    <div
+      class="content-section"
+      @pointerdown.capture="handleShareMethodInteraction"
+      @keydown.capture="handleShareMethodInteraction"
+      @input.capture="handleShareMethodInteraction"
+    >
+      <Transition :name="transitionName">
+        <ShareAsLink
+          v-show="currentMethod.id === 'COPY_LINK'"
+          class="method-pane"
+          :share-url="shareUrl"
+        />
+      </Transition>
 
-      <ShareToWechatChatMethod
-        v-show="currentMethod.id === 'WECHAT_CHAT'"
-        :share-url="shareUrl"
-        :pr-id="prId!"
-        :pr-data="shareData"
-      />
+      <Transition :name="transitionName">
+        <ShareToWechatChatMethod
+          v-show="currentMethod.id === 'WECHAT_CHAT'"
+          class="method-pane"
+          :share-url="shareUrl"
+          :pr-id="prId!"
+          :pr-data="shareData"
+        />
+      </Transition>
 
-      <ShareToXiaohongshuMethod
-        v-show="currentMethod.id === 'XIAOHONGSHU'"
-        :share-url="shareUrl"
-        :pr-id="prId!"
-        :pr-data="shareData"
-      />
+      <Transition :name="transitionName">
+        <ShareToXiaohongshuMethod
+          v-show="currentMethod.id === 'XIAOHONGSHU'"
+          class="method-pane"
+          :share-url="shareUrl"
+          :pr-id="prId!"
+          :pr-data="shareData"
+        />
+      </Transition>
     </div>
   </section>
 </template>
@@ -85,7 +99,10 @@ const enabledMethods = computed(() =>
   allMethods.value.filter((m) => m.enabled || m.enabled === undefined),
 );
 
-const currentMethodId = ref<ShareMethodId>("COPY_LINK");
+const currentMethodId = ref<ShareMethodId>("XIAOHONGSHU");
+const switchDirection = ref<"next" | "prev">("next");
+const hasUserInteracted = ref(false);
+const AUTO_ROTATE_INTERVAL_MS = 3000;
 
 watchEffect(() => {
   const enabled = enabledMethods.value;
@@ -112,7 +129,19 @@ const currentMethod = computed(() => {
   );
 });
 
-const goToPrevMethod = (): void => {
+const transitionName = computed(() =>
+  switchDirection.value === "next"
+    ? "method-switch-next"
+    : "method-switch-prev",
+);
+
+const markUserInteraction = (): void => {
+  hasUserInteracted.value = true;
+};
+
+const moveMethod = (offset: 1 | -1): void => {
+  switchDirection.value = offset === 1 ? "next" : "prev";
+
   const enabled = enabledMethods.value;
   if (enabled.length <= 1) return;
 
@@ -120,21 +149,38 @@ const goToPrevMethod = (): void => {
     0,
     enabled.findIndex((m) => m.id === currentMethod.value.id),
   );
-  const prevIndex = (currentIndex - 1 + enabled.length) % enabled.length;
-  currentMethodId.value = enabled[prevIndex].id;
+  const nextIndex = (currentIndex + offset + enabled.length) % enabled.length;
+  currentMethodId.value = enabled[nextIndex].id;
+};
+
+const goToPrevMethod = (): void => {
+  markUserInteraction();
+  moveMethod(-1);
 };
 
 const goToNextMethod = (): void => {
-  const enabled = enabledMethods.value;
-  if (enabled.length <= 1) return;
-
-  const currentIndex = Math.max(
-    0,
-    enabled.findIndex((m) => m.id === currentMethod.value.id),
-  );
-  const nextIndex = (currentIndex + 1) % enabled.length;
-  currentMethodId.value = enabled[nextIndex].id;
+  markUserInteraction();
+  moveMethod(1);
 };
+
+const handleShareMethodInteraction = (): void => {
+  markUserInteraction();
+};
+
+watchEffect((onCleanup) => {
+  if (typeof window === "undefined") return;
+  if (hasUserInteracted.value) return;
+  if (enabledMethods.value.length <= 1) return;
+
+  const timerId = window.setInterval(() => {
+    if (hasUserInteracted.value) return;
+    moveMethod(1);
+  }, AUTO_ROTATE_INTERVAL_MS);
+
+  onCleanup(() => {
+    window.clearInterval(timerId);
+  });
+});
 </script>
 
 <style lang="scss" scoped>
@@ -192,9 +238,66 @@ const goToNextMethod = (): void => {
 }
 
 .content-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-med);
+  position: relative;
+  height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.method-pane {
+  width: 100%;
+}
+
+.method-switch-next-enter-active,
+.method-switch-next-leave-active,
+.method-switch-prev-enter-active,
+.method-switch-prev-leave-active {
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease;
+}
+
+.method-switch-next-enter-from,
+.method-switch-next-leave-to {
+  opacity: 0;
+}
+
+.method-switch-next-enter-from {
+  transform: translateX(16px);
+}
+
+.method-switch-next-leave-to {
+  transform: translateX(-16px);
+}
+
+.method-switch-prev-enter-from,
+.method-switch-prev-leave-to {
+  opacity: 0;
+}
+
+.method-switch-prev-enter-from {
+  transform: translateX(-16px);
+}
+
+.method-switch-prev-leave-to {
+  transform: translateX(16px);
+}
+
+.method-switch-next-leave-active,
+.method-switch-prev-leave-active {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .method-switch-next-enter-active,
+  .method-switch-next-leave-active,
+  .method-switch-prev-enter-active,
+  .method-switch-prev-leave-active {
+    transition: none;
+  }
 }
 
 .empty-state {

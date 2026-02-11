@@ -20,7 +20,7 @@
       <!-- Caption Editor -->
       <textarea
         :value="caption?.caption"
-        rows="4"
+        rows="3"
         class="caption-textarea"
         :class="{ transitioning: isTransitioning }"
         :placeholder="t('share.xiaohongshu.captionPlaceholder')"
