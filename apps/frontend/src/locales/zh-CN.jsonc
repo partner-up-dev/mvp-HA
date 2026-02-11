@@ -113,13 +113,14 @@
     "prevMethodAria": "上一个分享方式",
     "nextMethodAria": "下一个分享方式",
     "methods": {
-      "copyLink": "链接分享",
+      "webShare": "系统分享",
       "wechat": "分享到微信",
       "xiaohongshu": "分享到小红书"
     },
     "asLink": {
-      "previewTitle": "将复制的内容",
-      "copyButton": "复制链接",
+      "previewTitle": "将分享的链接",
+      "shareButton": "立即分享",
+      "shared": "已分享",
       "shareFailed": "分享失败"
     },
     "wechat": {

@@ -112,13 +112,14 @@ export interface MessageSchema {
     prevMethodAria: string;
     nextMethodAria: string;
     methods: {
-      copyLink: string;
+      webShare: string;
       wechat: string;
       xiaohongshu: string;
     };
     asLink: {
       previewTitle: string;
-      copyButton: string;
+      shareButton: string;
+      shared: string;
       shareFailed: string;
     };
     wechat: {

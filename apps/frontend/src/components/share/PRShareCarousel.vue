@@ -28,7 +28,7 @@
     >
       <Transition :name="transitionName">
         <ShareAsLink
-          v-show="currentMethod.id === 'COPY_LINK'"
+          v-show="currentMethod.id === 'WEB_SHARE'"
           class="method-pane"
           :share-url="shareUrl"
         />
@@ -65,7 +65,7 @@ import ShareToXiaohongshuMethod from "./xhs/ShareToXiaohongshu.vue";
 import ShareToWechatChatMethod from "./wechat/ShareToWechatChat.vue";
 import type { PRShareProps } from "@/components/share/types";
 
-type ShareMethodId = "COPY_LINK" | "XIAOHONGSHU" | "WECHAT_CHAT";
+type ShareMethodId = "WEB_SHARE" | "XIAOHONGSHU" | "WECHAT_CHAT";
 
 interface ShareMethod {
   id: ShareMethodId;
@@ -77,7 +77,7 @@ const props = defineProps<PRShareProps>();
 const { t } = useI18n();
 
 const allMethods = computed<ShareMethod[]>(() => [
-  { id: "COPY_LINK", label: t("share.methods.copyLink"), enabled: true },
+  { id: "WEB_SHARE", label: t("share.methods.webShare"), enabled: true },
   {
     id: "WECHAT_CHAT",
     label: t("share.methods.wechat"),
@@ -107,7 +107,7 @@ const AUTO_ROTATE_INTERVAL_MS = 3000;
 watchEffect(() => {
   const enabled = enabledMethods.value;
   if (enabled.length === 0) {
-    currentMethodId.value = "COPY_LINK";
+    currentMethodId.value = "WEB_SHARE";
     return;
   }
 
@@ -122,8 +122,8 @@ const currentMethod = computed(() => {
   return (
     enabled.find((m) => m.id === currentMethodId.value) ??
     enabled[0] ?? {
-      id: "COPY_LINK",
-      label: t("share.methods.copyLink"),
+      id: "WEB_SHARE",
+      label: t("share.methods.webShare"),
       enabled: true,
     }
   );

@@ -34,7 +34,7 @@ Read following documents when needed and keep them current:
 - PartnerRequest 时间: 自然语言创建时由前端提供 nowIso（UTC）作为解析参考；结构化创建与编辑复用 `PartnerRequestForm`。
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED` 的前端展示与流转。
 - 参与与流转: 支持加入/退出交互；达到最小人数自动转为 `ACTIVE`。
-- 分享能力: 支持复制链接分享；微信内置 WebView 分享卡片；小红书文案与海报生成、下载并跳转 App。
+- 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；微信内置 WebView 分享卡片；小红书文案与海报生成、下载并跳转 App。
 - 国际化能力: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案位于 `src/locales/zh-CN.jsonc`，使用 `MessageSchema` 提供类型支持。
 - 作者联系能力: 首页与各页面页脚支持“联系作者”入口；`/contact-author` 页面可居中展示作者微信二维码（来自后端公共配置）。
 

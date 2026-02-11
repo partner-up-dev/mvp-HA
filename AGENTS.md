@@ -32,7 +32,7 @@ This is a pnpm workspace (monorepo) with following packages:
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
 - PartnerRequest 草稿: 新增 `DRAFT` 状态，结构化创建可先保存草稿再发布。
 - 参与与流转: 支持加入/退出；达到最小人数自动转为 `ACTIVE`；受最大人数限制。
-- 分享能力: 支持复制链接分享；支持微信聊天分享（WeChat WebView JS-SDK，生成含缩略图的分享卡片）；支持小红书文案与海报生成并下载/打开 App 分享。
+- 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；支持微信聊天分享（WeChat WebView JS-SDK，生成含缩略图的分享卡片）；支持小红书文案与海报生成并下载/打开 App 分享。
 - 前端国际化: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案集中在 `apps/frontend/src/locales/zh-CN.jsonc`，并通过 `MessageSchema` 进行类型约束。
 - 作者联系: 首页与页面底部提供“联系作者”入口；`/contact-author` 页面展示后端配置 `author_wechat_qr_code` 对应的微信二维码。
 
