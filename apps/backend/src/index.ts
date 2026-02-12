@@ -55,6 +55,7 @@ export type {
   PRStatusManual,
   PRId,
   PartnerRequestSummary,
+  WeekdayLabel,
 } from "./entities/partner-request";
 export {
   partnerRequestFieldsSchema,

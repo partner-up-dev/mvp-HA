@@ -71,6 +71,12 @@ const normalizeFrontendUrl = (raw: string) => {
 };
 
 const generatePin = () => `${randomInt(0, 10_000)}`.padStart(4, "0");
+const getShanghaiWeekdayLabel = (date: Date): string => {
+  return new Intl.DateTimeFormat("zh-CN", {
+    weekday: "short",
+    timeZone: "Asia/Shanghai",
+  }).format(date);
+};
 
 const getEncryptDiagnostics = (value: string) => {
   let spaceCount = 0;
@@ -277,11 +283,15 @@ export const wecomRoute = app
       }
 
       const nowIso = new Date(timestampSeconds * 1000).toISOString();
+      const nowWeekday = getShanghaiWeekdayLabel(
+        new Date(timestampSeconds * 1000),
+      );
       const pin = generatePin();
       const { id } = await prService.createPRFromNaturalLanguage(
         trimmedContent,
         pin,
         nowIso,
+        nowWeekday,
       );
 
       const frontendUrl = env.FRONTEND_URL;

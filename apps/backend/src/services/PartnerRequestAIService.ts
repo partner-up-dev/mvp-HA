@@ -3,6 +3,7 @@ import { createOpenAI, openai } from "@ai-sdk/openai";
 import {
   partnerRequestFieldsSchema,
   type PartnerRequestFields,
+  type WeekdayLabel,
 } from "../entities/partner-request";
 import { env } from "../lib/env";
 import { PromptTemplate } from "../lib/prompt-template";
@@ -18,7 +19,8 @@ const PARTNER_REQUEST_PARSE_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
 }>(
   [
     "Parse the user request and output structured PartnerRequest fields.",
-    "Use nowIso as the current reference time for date or datetime inference.",
+    "Use nowIso as the current reference time context.",
+    "If nowWeekday is provided, use it to resolve relative day expressions from the user's wall-clock perspective.",
     "",
     "Variables:",
     "{variablesJson}",
@@ -45,6 +47,7 @@ export class PartnerRequestAIService {
   async parseRequest(
     rawText: string,
     nowIso: string,
+    nowWeekday: WeekdayLabel | null,
   ): Promise<PartnerRequestFields> {
     const systemPrompt = await this.configService.getValueOrFallback(
       CONFIG_KEY_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT,
@@ -54,6 +57,7 @@ export class PartnerRequestAIService {
     const variablesJson = buildPartnerRequestParsePromptVariablesJson(
       rawText,
       nowIso,
+      nowWeekday,
     );
     const prompt = await PARTNER_REQUEST_PARSE_PROMPT_TEMPLATE.format({
       variablesJson,

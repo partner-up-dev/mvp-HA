@@ -50,8 +50,13 @@ export const partnerRequestRoute = app
     '/natural_language',
     zValidator('json', nlWordCountSchema),
     async (c) => {
-      const { rawText, pin, nowIso } = c.req.valid('json');
-      const result = await service.createPRFromNaturalLanguage(rawText, pin, nowIso);
+      const { rawText, pin, nowIso, nowWeekday } = c.req.valid('json');
+      const result = await service.createPRFromNaturalLanguage(
+        rawText,
+        pin,
+        nowIso,
+        nowWeekday ?? null,
+      );
       return c.json(result, 201);
     }
   )

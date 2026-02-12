@@ -3,6 +3,7 @@ import type {
   CreatePRStructuredStatus,
   PartnerRequestFields,
   PRId,
+  WeekdayLabel,
 } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
@@ -15,6 +16,7 @@ interface CreatePRFromNaturalLanguageInput {
   rawText: string;
   pin: string;
   nowIso: string;
+  nowWeekday: WeekdayLabel;
 }
 
 interface CreatePRFromStructuredInput {

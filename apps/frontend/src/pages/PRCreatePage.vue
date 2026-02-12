@@ -77,6 +77,7 @@ import Footer from "@/components/common/Footer.vue";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useCreatePRFromStructured } from "@/queries/useCreatePR";
 import type { PartnerRequestFormInput } from "@/lib/validation";
+import { usePageWeChatShare } from "@/composables/usePageWeChatShare";
 
 const router = useRouter();
 const route = useRoute();
@@ -110,6 +111,11 @@ const initialFields = ref<PartnerRequestFields>(
 const formRef = ref<InstanceType<typeof PRForm> | null>(null);
 const pendingStatus = ref<CreatePRStructuredStatus>("OPEN");
 const createdPrId = ref<PRId | null>(null);
+
+usePageWeChatShare({
+  title: () => `${t("createPage.title")} - ${t("app.name")}`,
+  desc: () => t("home.subtitle"),
+});
 
 const submitAs = (status: CreatePRStructuredStatus) => {
   pendingStatus.value = status;

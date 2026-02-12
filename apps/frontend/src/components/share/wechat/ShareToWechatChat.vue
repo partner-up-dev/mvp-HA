@@ -48,7 +48,7 @@ import { useGenerateWechatThumbHtml } from "@/queries/useGenerateWechatThumbHtml
 import { renderPosterHtmlToBlob } from "@/composables/renderHtmlPoster";
 import { useGenerateWechatThumbPoster } from "@/composables/useGenerateWechatThumbPoster";
 import { useCloudStorage } from "@/composables/useCloudStorage";
-import { useWeChatShare } from "@/composables/useWeChatShare";
+import { useWeChatShareCard } from "@/composables/useWeChatShareCard";
 import { client } from "@/lib/rpc";
 import type { ShareToWechatChatProps } from "./ShareToWechatChat";
 import WechatChatPreview from "./WechatChatPreview.vue";
@@ -69,7 +69,8 @@ const {
 const { generateThumb, isGenerating: isFallbackThumbGenerating } =
   useGenerateWechatThumbPoster();
 const { uploadFile, isUploading, uploadError } = useCloudStorage();
-const { initWeChatSdk, setWeChatShareCard, initError } = useWeChatShare();
+const { initWeChatSdk, updateWeChatShareCard, initError } =
+  useWeChatShareCard();
 
 const isWorking = computed(
   () =>
@@ -84,16 +85,6 @@ const switchButtonLabel = computed(() => {
   if (lastUploadedThumbnailUrl.value) return t("share.wechat.switchStyle");
   return t("share.wechat.switchStyle");
 });
-
-const normalizeShareUrl = (rawUrl: string): string => {
-  try {
-    const url = new URL(rawUrl);
-    url.hash = "";
-    return url.toString();
-  } catch {
-    return rawUrl.split("#")[0] ?? rawUrl;
-  }
-};
 
 const buildShareTitle = (): string => {
   const title = props.prData.title?.trim();
@@ -173,10 +164,10 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
       console.warn("Failed to cache thumbnail URL:", cacheError);
     }
 
-    await setWeChatShareCard({
+    await updateWeChatShareCard({
       title: shareTitle.value,
       desc: shareDesc.value,
-      link: normalizeShareUrl(props.shareUrl),
+      link: props.shareUrl,
       imgUrl: thumbnailUrl,
     });
 
@@ -197,10 +188,10 @@ const handleInitialize = async (): Promise<void> => {
       posterUrl.value = cached.posterUrl;
       styleIndex.value = cached.style + 1;
 
-      await setWeChatShareCard({
+      await updateWeChatShareCard({
         title: shareTitle.value,
         desc: shareDesc.value,
-        link: normalizeShareUrl(props.shareUrl),
+        link: props.shareUrl,
         imgUrl: cached.posterUrl,
       });
       return;

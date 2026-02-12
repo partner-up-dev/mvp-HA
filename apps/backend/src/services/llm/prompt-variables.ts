@@ -1,4 +1,7 @@
-import type { PartnerRequestFields } from "../../entities/partner-request";
+import type {
+  PartnerRequestFields,
+  WeekdayLabel,
+} from "../../entities/partner-request";
 import { toPromptJson, type PromptJsonObject } from "../../lib/prompt-variables";
 
 type SharePromptPartnerRequest = Pick<
@@ -85,11 +88,13 @@ export const buildWeChatThumbnailPromptVariablesJson = (
 export const buildPartnerRequestParsePromptVariablesJson = (
   rawText: string,
   nowIso: string,
+  nowWeekday: WeekdayLabel | null,
 ): string => {
   const normalizedRawText = rawText.trim().length > 0 ? rawText.trim() : rawText;
 
   return toPromptJson({
     nowIso,
+    nowWeekday,
     userInput: normalizedRawText,
   });
 };

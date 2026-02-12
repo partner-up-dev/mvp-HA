@@ -57,6 +57,12 @@ import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import { useHomeRotatingTopic } from "@/composables/useHomeRotatingTopic";
 
+const getLocalWeekdayLabel = (date: Date): string => {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+  }).format(date);
+};
+
 const router = useRouter();
 const { t } = useI18n();
 const userPRStore = useUserPRStore();
@@ -76,10 +82,12 @@ const { handleSubmit } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
+  const now = new Date();
   const result = await mutation.mutateAsync({
     rawText: values.rawText,
     pin: values.pin,
-    nowIso: new Date().toISOString(),
+    nowIso: now.toISOString(),
+    nowWeekday: getLocalWeekdayLabel(now),
   });
 
   createdPrId.value = result.id;

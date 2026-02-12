@@ -8,6 +8,7 @@ import type {
   CreatePRStructuredStatus,
   PartnerRequestFields,
   PRId,
+  WeekdayLabel,
 } from "../entities/partner-request";
 
 const repo = new PartnerRequestRepository();
@@ -18,6 +19,7 @@ export class PartnerRequestService {
     rawText: string,
     pin: string,
     nowIso: string,
+    nowWeekday: WeekdayLabel | null,
   ) {
     // Validate PIN format (4 digits)
     if (!/^\d{4}$/.test(pin)) {
@@ -25,7 +27,11 @@ export class PartnerRequestService {
     }
 
     // Parse with LLM
-    const fields = await partnerRequestAIService.parseRequest(rawText, nowIso);
+    const fields = await partnerRequestAIService.parseRequest(
+      rawText,
+      nowIso,
+      nowWeekday,
+    );
     const partners: PartnerRequestFields["partners"] = [
       fields.partners[0],
       0,

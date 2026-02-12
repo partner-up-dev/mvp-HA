@@ -50,6 +50,7 @@ import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
+import { usePageWeChatShare } from "@/composables/usePageWeChatShare";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -58,6 +59,11 @@ const publicConfigQuery = usePublicConfig(
 );
 
 const qrCodeUrl = computed(() => publicConfigQuery.data.value?.value ?? null);
+
+usePageWeChatShare({
+  title: () => `${t("contactAuthorPage.title")} - ${t("app.name")}`,
+  desc: () => t("contactAuthorPage.description"),
+});
 
 const goHome = () => {
   router.push("/");

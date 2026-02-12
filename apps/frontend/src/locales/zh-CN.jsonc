@@ -113,7 +113,7 @@
     "prevMethodAria": "上一个分享方式",
     "nextMethodAria": "下一个分享方式",
     "methods": {
-      "webShare": "系统分享",
+      "webShare": "链接分享",
       "wechat": "分享到微信",
       "xiaohongshu": "分享到小红书"
     },
