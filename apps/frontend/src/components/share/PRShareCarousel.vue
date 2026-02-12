@@ -234,7 +234,7 @@ watchEffect((onCleanup) => {
 
 .content-section {
   position: relative;
-  height: 60vh;
+  height: 66vh;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
