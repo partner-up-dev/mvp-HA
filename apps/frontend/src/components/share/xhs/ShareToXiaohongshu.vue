@@ -41,6 +41,7 @@
                 'poster-transitioning': isPosterTransitioning,
                 'poster-loading': posterIsGenerating,
               }"
+              @error="handlePosterLoadError"
             />
             <div v-if="posterIsGenerating" class="poster-loading-overlay">
               <div class="spinner"></div>
@@ -274,6 +275,17 @@ const handleCaptionBlur = () => {
   posterGenerationTimeoutId.value = window.setTimeout(() => {
     generatePosterForCurrentCaption();
   }, 100);
+};
+
+/**
+ * Handle poster image load error - regenerate poster
+ */
+const handlePosterLoadError = async (): Promise<void> => {
+  console.warn("Poster image failed to load, regenerating...");
+  posterUrl.value = null;
+  // Small delay to ensure UI updates before regenerating
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  await generatePosterForCurrentCaption();
 };
 
 /**

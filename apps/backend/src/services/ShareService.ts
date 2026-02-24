@@ -147,15 +147,14 @@ export class ShareService {
       return safe;
     } catch {
       // Retry once with stricter style constraints to reduce unsafe constructs.
-      const strictResult = await this.shareAIService.generateXiaohongshuPosterHtml(
-        {
+      const strictResult =
+        await this.shareAIService.generateXiaohongshuPosterHtml({
           pr: { ...prFields, rawText: pr.rawText },
           caption: params.caption,
           posterStylePrompt: buildStrictSafetyStylePrompt(
             params.posterStylePrompt,
           ),
-        },
-      );
+        });
 
       const safe = sanitizePosterResponse(strictResult);
       assertNotEmptyHtml(safe.html);
@@ -181,6 +180,19 @@ export class ShareService {
     assertNotEmptyHtml(safe.html);
     assertHtmlSafe(safe.html);
     return safe;
+  }
+
+  async generateWeChatCardDescription(params: { prId: PRId }): Promise<string> {
+    const pr = await this.prService.getPR(params.prId);
+    const prFields = this.toPartnerRequestFields(pr);
+
+    const description = await this.shareAIService.generateWeChatCardDescription(
+      {
+        pr: { ...prFields, rawText: pr.rawText },
+      },
+    );
+
+    return description;
   }
 
   async cacheXiaohongshuPoster(params: {

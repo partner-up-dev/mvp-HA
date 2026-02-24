@@ -43,6 +43,10 @@ const wechatGetCachedThumbnailRequestSchema = z.object({
   style: z.coerce.number().int(),
 });
 
+const wechatGenerateDescriptionRequestSchema = z.object({
+  prId: prIdSchema,
+});
+
 export const shareRoute = app
   .post(
     "/xiaohongshu/poster-html",
@@ -67,6 +71,17 @@ export const shareRoute = app
         style,
       });
       return c.json(result);
+    },
+  )
+  .post(
+    "/wechat-card/generate-description",
+    zValidator("json", wechatGenerateDescriptionRequestSchema),
+    async (c) => {
+      const { prId } = c.req.valid("json");
+      const description = await service.generateWeChatCardDescription({
+        prId,
+      });
+      return c.json({ description });
     },
   )
   .post(

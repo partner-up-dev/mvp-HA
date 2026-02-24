@@ -74,39 +74,92 @@ HTML/CSS 约束：同上（无脚本、无外链、单一 #poster-root 根节点
 ];
 
 const DEFAULT_SHARE_WECHAT_THUMBNAIL_HTML_STYLE_PROMPTS: readonly string[] = [
-  `你是一位微信分享卡片缩略图设计师。
+  `你是一位极简主义 UI 设计师。
 
-目标：生成一张“简洁、可信、非营销”的 1:1 缩略图 HTML。
+目标：生成微信分享卡片缩略图 HTML（300x300），风格极简克制。
 
 硬性要求：
-- 尺寸必须为 300x300。
-- 画面只包含：简单几何图形 + (≤3 个字符) 或 (1 个 emoji)。
-- 字符/emoji 必须来自上下文（标题/场景/地点等），不要编造。
+- 尺寸 300x300。
+- 只显示 1 个 emoji 或 ≤3 个汉字，字号非常大。
+- 背景使用单一淡色或纯色。
+- 无边框、无装饰。
 
 HTML/CSS 约束：
 - 输出完整 HTML 文档。
 - 只允许内联 CSS（<style> 可用），禁止脚本与外链资源。
 - 必须包含根节点 <div id="poster-root">...</div> 并固定宽高。
-`,
-  `你是一位极简 UI 设计师。
 
-目标：输出微信分享缩略图 HTML（300x300），避免广告感。
+特色：留白充足，强调信息本身。
+`,
+  `你是一位现代几何风格设计师。
+
+目标：生成微信分享卡片缩略图 HTML（300x300），突出现代感。
 
 硬性要求：
-- 只呈现 1 个 emoji 或 ≤3 个汉字。
-- 可配合少量几何背景。
+- 尺寸 300x300。
+- 显示 1 个 emoji 或 ≤3 个汉字。
+- 搭配现代几何图形：圆形、方形、对角线等。
+- 使用 2-3 种互补色。
 
 HTML/CSS 约束：同上（无脚本、无外链、单一 #poster-root）。
-`,
-  `你是一位品牌中性的信息图设计师。
 
-目标：生成微信分享卡片缩略图 HTML，风格克制可信。
+特色：通过几何元素增加视觉层次。
+`,
+  `你是一位温暖亲切的设计师。
+
+目标：生成微信分享卡片缩略图 HTML（300x300），传达友善和参与感。
 
 硬性要求：
-- 300x300。
-- 只含简单图形 + ≤3 字或 1 emoji。
+- 尺寸 300x300。
+- 显示 1 个表情 emoji 或 ≤3 个汉字。
+- 背景使用温暖色调（米色、淡橙、淡红等）。
+- 可使用圆形、圆角元素。
 
 HTML/CSS 约束：同上（无脚本、无外链、单一 #poster-root）。
+
+特色：营造温暖、包容的氛围。
+`,
+  `你是一位信息化风格的设计师。
+
+目标：生成微信分享卡片缩略图 HTML（300x300），突出信息属性。
+
+硬性要求：
+- 尺寸 300x300。
+- 显示 1 个 emoji 或 ≤3 个汉字。
+- 使用网格或条纹作为背景纹理。
+- 可配合简单的标签或框。
+
+HTML/CSS 约束：同上（无脚本、无外链、单一 #poster-root）。
+
+特色：强调结构感和专业性。
+`,
+  `你是一位渐变色设计师。
+
+目标：生成微信分享卡片缩略图 HTML（300x300），使用渐变增加视觉吸引力。
+
+硬性要求：
+- 尺寸 300x300。
+- 显示 1 个 emoji 或 ≤3 个汉字。
+- 背景使用平缓的线性渐变或径向渐变。
+- 文字颜色需与背景形成充分对比。
+
+HTML/CSS 约束：同上（无脚本、无外链、单一 #poster-root）。
+
+特色：通过渐变营造动态感。
+`,
+  `你是一位高对比度设计师。
+
+目标：生成微信分享卡片缩略图 HTML（300x300），强调清晰度和易识别性。
+
+硬性要求：
+- 尺寸 300x300。
+- 显示 1 个 emoji 或 ≤3 个汉字。
+- 使用黑白或深浅对比色组合。
+- 增加边框或框线以增强边界感。
+
+HTML/CSS 约束：同上（无脚本、无外链、单一 #poster-root）。
+
+特色：高清晰度和易识别。
 `,
 ];
 
@@ -132,6 +185,10 @@ const wechatThumbnailHtmlResponseSchema = z.object({
     .optional(),
 });
 
+const wechatCardDescriptionResponseSchema = z.object({
+  description: z.string().min(1).max(80),
+});
+
 const XIAOHONGSHU_CAPTION_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
   variablesJson: string;
 }>(
@@ -148,7 +205,7 @@ const XHS_POSTER_HTML_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
 }>(
   [
     "Generate Xiaohongshu poster HTML using the provided variables.",
-    "Use participants.stillNeededFromMin for the phrase \"还差几人\" (do not infer from max).",
+    'Use participants.stillNeededFromMin for the phrase "还差几人" (do not infer from max).',
     "Return a complete HTML document string.",
     "Do not include markdown fences.",
     "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
@@ -166,6 +223,20 @@ const WECHAT_THUMBNAIL_HTML_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
     "Return a complete HTML document string.",
     "Do not include markdown fences.",
     "Forbidden: <script, <link, <iframe, javascript:, inline event handlers (onclick/onerror/etc).",
+    "",
+    "Variables:",
+    "{variablesJson}",
+  ].join("\n"),
+);
+
+const WECHAT_CARD_DESCRIPTION_PROMPT_TEMPLATE = PromptTemplate.fromTemplate<{
+  variablesJson: string;
+}>(
+  [
+    "Generate a WeChat share card description (≤80 characters) from the partner request.",
+    "The description should be a concise summary that complements the title.",
+    "Include key details like what they're looking for, location, and time if relevant.",
+    "Avoid just repeating the title; provide additional useful context.",
     "",
     "Variables:",
     "{variablesJson}",
@@ -317,7 +388,10 @@ HTML/CSS 约束：
 
     const system = `${baseConstraints}\n\n设计风格：${params.posterStylePrompt}`;
 
-    const prompt = await this.buildXhsPosterHtmlPrompt(params.pr, params.caption);
+    const prompt = await this.buildXhsPosterHtmlPrompt(
+      params.pr,
+      params.caption,
+    );
 
     const { object } = await generateObject({
       model: this.client(env.LLM_DEFAULT_MODEL),
@@ -348,6 +422,23 @@ HTML/CSS 约束：
     });
 
     return object;
+  }
+
+  async generateWeChatCardDescription(params: {
+    pr: PartnerRequestFields & { rawText: string };
+  }): Promise<string> {
+    const prompt = await this.buildWeChatCardDescriptionPrompt(params.pr);
+
+    const { object } = await generateObject({
+      model: this.client(env.LLM_DEFAULT_MODEL),
+      schema: wechatCardDescriptionResponseSchema,
+      system:
+        "你是一位文案写手，专长于为微信分享卡片撰写简洁、有吸引力的描述。描述应该补充而不是重复标题，提供关键信息如场景、地点、时间等。限制80个字符以内。",
+      prompt,
+      temperature: 0.7,
+    });
+
+    return object.description;
   }
 
   private async buildXiaohongshuCaptionPrompt(
@@ -405,7 +496,13 @@ HTML/CSS 约束：
     });
   }
 
+  private async buildWeChatCardDescriptionPrompt(
+    pr: PartnerRequestFields & { rawText: string },
+  ): Promise<string> {
+    const variablesJson = buildWeChatThumbnailPromptVariablesJson(pr);
+
+    return await WECHAT_CARD_DESCRIPTION_PROMPT_TEMPLATE.format({
+      variablesJson,
+    });
+  }
 }
-
-
-
