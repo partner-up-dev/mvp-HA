@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
+import { queryKeys } from "@/shared/api/query-keys";
 import { i18n } from "@/locales/i18n";
 
 export const PUBLIC_CONFIG_KEYS = {
@@ -11,7 +12,7 @@ export type PublicConfigKey =
 
 export const usePublicConfig = (key: PublicConfigKey) => {
   return useQuery({
-    queryKey: ["public-config", key],
+    queryKey: queryKeys.config.public(key),
     queryFn: async () => {
       const res = await client.api.config.public[":key"].$get({
         param: { key },

@@ -1,17 +1,19 @@
-import { useQuery } from '@tanstack/vue-query';
-import { computed, watch } from 'vue';
-import { client } from '@/lib/rpc';
-import { useUserPRStore } from '@/stores/userPRStore';
-import type { PartnerRequestSummary, PRId } from '@partner-up-dev/backend';
+import { useQuery } from "@tanstack/vue-query";
+import { computed, watch } from "vue";
+import { client } from "@/lib/rpc";
+import { queryKeys } from "@/shared/api/query-keys";
+import { useUserPRStore } from "@/stores/userPRStore";
+import type { PartnerRequestSummary, PRId } from "@partner-up-dev/backend";
 import { i18n } from "@/locales/i18n";
 
 export const useCreatorPRs = () => {
   const userPRStore = useUserPRStore();
 
   const creatorIds = computed(() => userPRStore.createdPRs);
+  const queryKey = computed(() => queryKeys.pr.creator(creatorIds.value));
 
   const query = useQuery({
-    queryKey: ['partner-request', 'creator', creatorIds],
+    queryKey,
     queryFn: async () => {
       const idsSnapshot = [...creatorIds.value];
 

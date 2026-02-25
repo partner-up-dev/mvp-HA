@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import type { PRId } from '@partner-up-dev/backend';
-import { client } from '@/lib/rpc';
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import type { PRId } from "@partner-up-dev/backend";
+import { client } from "@/lib/rpc";
+import { queryKeys } from "@/shared/api/query-keys";
 import { i18n } from "@/locales/i18n";
 
 type ExitInput = {
@@ -12,23 +13,30 @@ export const useExitPR = () => {
 
   return useMutation({
     mutationFn: async ({ id }: ExitInput) => {
-      const res = await client.api.pr[':id'].exit.$post({
-        param: { id: id.toString() },
-      }, {
-        init: {
-          credentials: "include",
+      const res = await client.api.pr[":id"].exit.$post(
+        {
+          param: { id: id.toString() },
         },
-      });
+        {
+          init: {
+            credentials: "include",
+          },
+        },
+      );
 
       if (!res.ok) {
         const error = (await res.json()) as { error?: string };
-        throw new Error(error.error || i18n.global.t("errors.exitRequestFailed"));
+        throw new Error(
+          error.error || i18n.global.t("errors.exitRequestFailed"),
+        );
       }
 
       return await res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['partner-request', variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
     },
   });
 };

@@ -24,6 +24,10 @@
 - G05：已新增后台周期性时态维护（自动释放未确认槽位不再仅依赖读写惰性触发）。
 - G06：前端签到已补充“是否愿意再参加”二次确认并回传 `wouldJoinAgain`。
 
+### 已启动重构（进行中）
+
+- FRONTEND-REFACTOR：`PRPage` 已完成容器化拆分（page + widgets + feature hook），并上线统一 query key 工厂（详见 `FRONTEND-REFACTOR.md`）。
+
 ## GAP Cluster 聚合
 
 | Cluster | 聚合 GAP | 目标 | 计划文件 |
@@ -42,6 +46,8 @@
 2. 后端服务按领域拆分（替代单体 `PartnerRequestService` 持续膨胀）。
 3. 统一观测埋点 SDK（前后端同一事件命名与上下文）。
 4. 可中断的迁移策略（MVP 阶段可不兼容，允许 schema 重整与服务重编排）。
+
+前端另外有专项重构蓝图：`FRONTEND-REFACTOR.md`（页面拆分、feature 化、查询/鉴权/分享体系收敛）。
 
 ## 详细 GAP 清单（含 Cluster）
 
