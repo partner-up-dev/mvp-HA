@@ -47,10 +47,13 @@
 3. WeChat 参与动作鉴权已抽离到流程层：
    - `processes/wechat-auth/guards/requireWeChatActionAuth.ts`
 4. `usePRActions` 已切换到流程层 guard，页面不再直接处理 OAuth 跳转判断。
+5. `PRPage` 分享区域已下沉为 widget + feature share context：
+   - `features/share/usePRShareContext.ts`
+   - `widgets/pr/PRShareSection.vue`
 
 未完成（下一批）：
 
-1. 分享链路（微信/小红书）尚未迁移到 `features/share/*` 聚合架构。
+1. 分享链路内部能力（微信/小红书生成、缓存、降级）仍在 `components/share`，尚未完全迁移到 `features/share/*`。
 2. 统一埋点 SDK 与测试基建（FR-06）尚未开始。
 
 ## 目标架构（V2）

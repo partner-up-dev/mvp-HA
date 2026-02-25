@@ -50,14 +50,7 @@
         @modify-status="showModifyModal = true"
       />
 
-      <!-- Share PR Component -->
-      <PRShareCarousel
-        class="space-m-t-lg space-p-x-sm"
-        v-if="id !== null"
-        :share-url="shareUrl"
-        :pr-id="id"
-        :pr-data="prDetail"
-      />
+      <PRShareSection :pr-id="id" :share-url="shareUrl" :pr-data="prShareData" />
 
       <!-- Edit Content Modal -->
       <EditPRContentModal
@@ -90,17 +83,18 @@ import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import PRCard from "@/components/pr/PRCard.vue";
-import PRShareCarousel from "@/components/share/PRShareCarousel.vue";
 import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
 import Footer from "@/components/common/Footer.vue";
 import PRHeroHeader from "@/widgets/pr/PRHeroHeader.vue";
 import PRActionsPanel from "@/widgets/pr/PRActionsPanel.vue";
+import PRShareSection from "@/widgets/pr/PRShareSection.vue";
 import { usePR } from "@/queries/usePR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
 import { usePRActions } from "@/features/pr-actions/usePRActions";
+import { usePRShareContext } from "@/features/share/usePRShareContext";
 import type { PRDetailView } from "@/entities/pr/types";
 
 const route = useRoute();
@@ -135,7 +129,10 @@ const actions = usePRActions({
   isCreator,
 });
 
-const shareUrl = computed(() => window.location.href);
+const { shareUrl, prShareData } = usePRShareContext({
+  id,
+  pr: prDetail,
+});
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString(locale.value, {
