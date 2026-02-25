@@ -2,11 +2,11 @@
 
 ## 目标
 
-当搭子请求的时间窗口结束后，自动将状态从 `OPEN` / `ACTIVE` 变为 `EXPIRED`，避免过期请求继续被加入或传播。
+当搭子请求的时间窗口结束后，自动将状态从 `OPEN` / `READY` / `FULL` / `ACTIVE` 变为 `EXPIRED`，避免过期请求继续被加入或传播。
 
 ## 规则
 
-- 只对 `OPEN` / `ACTIVE` 状态的请求做过期判断。
+- 只对 `OPEN` / `READY` / `FULL` / `ACTIVE` 状态的请求做过期判断。
 - 过期时间取时间窗口的 `end_at`。
 - 若 `end_at` 为空且 `start_at` 存在，则默认 `end_at = start_at + 12h`。
 - 若 `start_at` / `end_at` 都为空，则不自动过期。

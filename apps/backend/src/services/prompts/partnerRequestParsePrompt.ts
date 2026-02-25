@@ -9,7 +9,7 @@ export const DEFAULT_PARTNER_REQUEST_PARSE_SYSTEM_PROMPT = `你是一个搭子�
   - 相对时间词（如“今天/明天/周末/下周末”）优先结合 nowIso 与 nowWeekday（若提供）解析
   - 无约束为 null
 - location: 地点，无则 null
-- partners: [min, current, max]，current 创建时为 0
+- partners: [min, current, max]，current 创建时为 1（包含创建者）
 - budget: 预算，无则 null
 - preferences: 偏好数组
 - notes: 备注，无则 null

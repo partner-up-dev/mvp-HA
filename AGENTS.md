@@ -29,10 +29,11 @@ This is a pnpm workspace (monorepo) with following packages:
 ### Live Capabilities
 
 - PartnerRequest 创建: 支持两条创建路径：`POST /api/pr/natural_language`（自然语言创建）与 `POST /api/pr`（结构化表单创建）。
-- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
+- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
 - PartnerRequest 草稿: 新增 `DRAFT` 状态，结构化创建可先保存草稿再发布。
-- 参与与流转: 支持加入/退出；达到最小人数自动转为 `ACTIVE`；受最大人数限制。
+- 参与与流转: 支持加入/退出；达到最小人数自动转为 `READY`，达到最大人数转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；支持微信聊天/朋友圈分享（WeChat WebView JS-SDK，PR 详情页可生成缩略图卡片，首页/创建页/联系作者页可直接配置分享卡片）；支持小红书文案与海报生成并下载/打开 App 分享。
+- 微信登录能力: 已接入微信 OAuth 基础设施（`/api/wechat/oauth/session|login|callback|logout`），前端在页面进入时会自动尝试登录（仅微信 WebView 触发）。
 - 前端国际化: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案集中在 `apps/frontend/src/locales/zh-CN.jsonc`，并通过 `MessageSchema` 进行类型约束。
 - 作者联系: 首页与页面底部提供“联系作者”入口；`/contact-author` 页面展示后端配置 `author_wechat_qr_code` 对应的微信二维码。
 

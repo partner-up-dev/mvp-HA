@@ -16,3 +16,4 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 - 点击首页 CTA 进入 `/pr/new`，通过结构化表单创建 PartnerRequest（可先保存为草稿）。
 - 点击首页或页面底部“联系作者”，进入 `/contact-author` 扫码反馈功能建议或 Bug。
 - 从历史 PartnerRequest 再发一个。
+- 在微信内打开页面时，系统会自动尝试完成微信登录（无独立登录页）。

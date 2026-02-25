@@ -63,7 +63,10 @@
 
         <button
           v-if="
-            (data.status === 'OPEN' || data.status === 'DRAFT') && isCreator
+            (data.status === 'OPEN' ||
+              data.status === 'READY' ||
+              data.status === 'DRAFT') &&
+            isCreator
           "
           class="edit-content-btn"
           @click="showEditModal = true"
@@ -169,7 +172,7 @@ const hasJoined = computed(() => {
 const canJoin = computed(() => {
   if (!data.value) return false;
   if (isCreator.value || hasJoined.value) return false;
-  if (data.value.status !== "OPEN" && data.value.status !== "ACTIVE")
+  if (data.value.status !== "OPEN" && data.value.status !== "READY")
     return false;
   const maxPartners = data.value.partners[2];
   const currentCount = data.value.partners[1];

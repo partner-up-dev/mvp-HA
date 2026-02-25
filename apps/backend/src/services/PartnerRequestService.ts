@@ -5,6 +5,7 @@ import { PartnerRequestAIService } from "./PartnerRequestAIService";
 import type {
   PartnerRequest,
   PRStatus,
+  PRStatusManual,
   CreatePRStructuredStatus,
   PartnerRequestFields,
   PRId,
@@ -34,7 +35,7 @@ export class PartnerRequestService {
     );
     const partners: PartnerRequestFields["partners"] = [
       fields.partners[0],
-      0,
+      1,
       fields.partners[2],
     ];
 
@@ -70,7 +71,7 @@ export class PartnerRequestService {
 
     const partners: PartnerRequestFields["partners"] = [
       fields.partners[0],
-      0,
+      1,
       fields.partners[2],
     ];
     const pinHash = await bcrypt.hash(pin, 10);
@@ -97,7 +98,7 @@ export class PartnerRequestService {
       throw new HTTPException(404, { message: "Partner request not found" });
     }
 
-    const refreshed = await this.expireIfNeeded(request);
+    const refreshed = await this.refreshTemporalStatus(request);
     const { pinHash, title, ...rest } = refreshed;
     return {
       ...rest,
@@ -111,7 +112,7 @@ export class PartnerRequestService {
 
     return rows.map((row) => ({
       id: row.id,
-      status: row.status,
+      status: this.toPublicStatus(row.status as string, row.time),
       partners: row.partners,
       createdAt: row.createdAt.toISOString(),
       title: row.title ?? undefined,
@@ -119,16 +120,28 @@ export class PartnerRequestService {
     }));
   }
 
-  async updatePRStatus(id: PRId, status: PRStatus, pin: string) {
+  async updatePRStatus(id: PRId, status: PRStatusManual, pin: string) {
     const request = await repo.findById(id);
     if (!request) {
       throw new HTTPException(404, { message: "Partner request not found" });
     }
+    const refreshedRequest = await this.refreshTemporalStatus(request);
 
     // Verify PIN
-    const isValid = await bcrypt.compare(pin, request.pinHash);
+    const isValid = await bcrypt.compare(pin, refreshedRequest.pinHash);
     if (!isValid) {
       throw new HTTPException(403, { message: "Invalid PIN" });
+    }
+
+    const currentStatus = refreshedRequest.status as string;
+    if (
+      status === "ACTIVE" &&
+      currentStatus !== "ACTIVE" &&
+      !this.isActivatableStatus(currentStatus)
+    ) {
+      throw new HTTPException(400, {
+        message: "Cannot set ACTIVE - only READY or FULL can become ACTIVE",
+      });
     }
 
     const updated = await repo.updateStatus(id, status);
@@ -145,24 +158,29 @@ export class PartnerRequestService {
     if (!request) {
       throw new HTTPException(404, { message: "Partner request not found" });
     }
+    const refreshedRequest = await this.refreshTemporalStatus(request);
 
     // Check status is editable
-    if (request.status !== "OPEN" && request.status !== "DRAFT") {
+    if (
+      refreshedRequest.status !== "OPEN" &&
+      refreshedRequest.status !== "READY" &&
+      refreshedRequest.status !== "DRAFT"
+    ) {
       throw new HTTPException(400, {
         message:
-          "Cannot edit - only OPEN or DRAFT partner requests can be edited",
+          "Cannot edit - only OPEN, READY or DRAFT partner requests can be edited",
       });
     }
 
     // Verify PIN
-    const isValid = await bcrypt.compare(pin, request.pinHash);
+    const isValid = await bcrypt.compare(pin, refreshedRequest.pinHash);
     if (!isValid) {
       throw new HTTPException(403, { message: "Invalid PIN" });
     }
 
     const normalizedPartners: PartnerRequestFields["partners"] = [
       fields.partners[0],
-      request.partners[1],
+      refreshedRequest.partners[1],
       fields.partners[2],
     ];
 
@@ -186,16 +204,16 @@ export class PartnerRequestService {
     if (!request) {
       throw new HTTPException(404, { message: "Partner request not found" });
     }
+    const refreshedRequest = await this.refreshTemporalStatus(request);
 
-    // Check if status is OPEN or ACTIVE
-    if (request.status !== "OPEN" && request.status !== "ACTIVE") {
+    if (!this.isJoinableStatus(refreshedRequest.status as string)) {
       throw new HTTPException(400, {
         message: "Cannot join - partner request is not open",
       });
     }
 
     // Check if already full (if max partners is specified)
-    const [minPartners, currentPartners, maxPartners] = request.partners;
+    const [minPartners, currentPartners, maxPartners] = refreshedRequest.partners;
     if (maxPartners !== null && currentPartners >= maxPartners) {
       throw new HTTPException(400, {
         message: "Cannot join - partner request is full",
@@ -213,19 +231,19 @@ export class PartnerRequestService {
       });
     }
 
-    const newParticipants = updated.partners[1];
-
-    // If min partners is reached and status is OPEN, change to ACTIVE
+    const nextStatus = this.deriveStatusFromPartners(updated.partners);
     if (
-      minPartners !== null &&
-      newParticipants >= minPartners &&
-      updated.status === "OPEN"
+      this.shouldRecalculateCapacityStatus(updated.status as string) &&
+      updated.status !== nextStatus
     ) {
-      const statusUpdated = await repo.updateStatus(id, "ACTIVE");
-      if (statusUpdated) {
-        const { pinHash, ...publicData } = statusUpdated;
-        return publicData;
+      const statusUpdated = await repo.updateStatus(id, nextStatus);
+      if (!statusUpdated) {
+        throw new HTTPException(500, {
+          message: "Failed to update partner request status",
+        });
       }
+      const { pinHash, ...publicData } = statusUpdated;
+      return publicData;
     }
 
     const { pinHash, ...publicData } = updated;
@@ -237,16 +255,23 @@ export class PartnerRequestService {
     if (!request) {
       throw new HTTPException(404, { message: "Partner request not found" });
     }
+    const refreshedRequest = await this.refreshTemporalStatus(request);
 
-    // Check if there are partners to exit
-    if (request.partners[1] <= 0) {
-      throw new HTTPException(400, { message: "No partners to exit" });
+    if (!this.isExitAllowedStatus(refreshedRequest.status as string)) {
+      throw new HTTPException(400, {
+        message: "Cannot exit - partner request is not open",
+      });
     }
 
-    const [minPartners, currentPartners, maxPartners] = request.partners;
+    // Check if there are partners to exit
+    if (refreshedRequest.partners[1] <= 1) {
+      throw new HTTPException(400, { message: "No joined partners to exit" });
+    }
+
+    const [minPartners, currentPartners, maxPartners] = refreshedRequest.partners;
     const updated = await repo.updatePartners(id, [
       minPartners,
-      Math.max(0, currentPartners - 1),
+      Math.max(1, currentPartners - 1),
       maxPartners,
     ]);
     if (!updated) {
@@ -255,19 +280,19 @@ export class PartnerRequestService {
       });
     }
 
-    const newParticipants = updated.partners[1];
-
-    // If partners drop below min partners and status is ACTIVE, change back to OPEN
+    const nextStatus = this.deriveStatusFromPartners(updated.partners);
     if (
-      minPartners !== null &&
-      newParticipants < minPartners &&
-      updated.status === "ACTIVE"
+      this.shouldRecalculateCapacityStatus(updated.status as string) &&
+      updated.status !== nextStatus
     ) {
-      const statusUpdated = await repo.updateStatus(id, "OPEN");
-      if (statusUpdated) {
-        const { pinHash, ...publicData } = statusUpdated;
-        return publicData;
+      const statusUpdated = await repo.updateStatus(id, nextStatus);
+      if (!statusUpdated) {
+        throw new HTTPException(500, {
+          message: "Failed to update partner request status",
+        });
       }
+      const { pinHash, ...publicData } = statusUpdated;
+      return publicData;
     }
 
     const { pinHash, ...publicData } = updated;
@@ -277,7 +302,7 @@ export class PartnerRequestService {
   private async expireIfNeeded(
     request: PartnerRequest,
   ): Promise<PartnerRequest> {
-    if (request.status !== "OPEN" && request.status !== "ACTIVE") {
+    if (!this.isExpirableStatus(request.status as string)) {
       return request;
     }
 
@@ -292,6 +317,130 @@ export class PartnerRequestService {
 
     const updated = await repo.updateStatus(request.id, "EXPIRED");
     return updated ?? request;
+  }
+
+  private async activateIfNeeded(
+    request: PartnerRequest,
+  ): Promise<PartnerRequest> {
+    if (!this.isActivatableStatus(request.status as string)) {
+      return request;
+    }
+
+    const windowStart = this.getTimeWindowStart(request.time);
+    if (!windowStart) {
+      return request;
+    }
+
+    const now = Date.now();
+    if (windowStart.getTime() > now) {
+      return request;
+    }
+
+    const windowClose = this.getTimeWindowClose(request.time);
+    if (windowClose && windowClose.getTime() <= now) {
+      return request;
+    }
+
+    const updated = await repo.updateStatus(request.id, "ACTIVE");
+    return updated ?? request;
+  }
+
+  private async refreshTemporalStatus(
+    request: PartnerRequest,
+  ): Promise<PartnerRequest> {
+    const activated = await this.activateIfNeeded(request);
+    return this.expireIfNeeded(activated);
+  }
+
+  private deriveStatusFromPartners(
+    partners: PartnerRequestFields["partners"],
+  ): PRStatus {
+    const [minPartners, currentPartners, maxPartners] = partners;
+    if (maxPartners !== null && currentPartners >= maxPartners) {
+      return "FULL";
+    }
+    if (minPartners !== null && currentPartners >= minPartners) {
+      return "READY";
+    }
+    return "OPEN";
+  }
+
+  private isJoinableStatus(status: string): boolean {
+    return status === "OPEN" || status === "READY";
+  }
+
+  private isExitAllowedStatus(status: string): boolean {
+    return (
+      status === "OPEN" ||
+      status === "READY" ||
+      status === "FULL" ||
+      status === "ACTIVE"
+    );
+  }
+
+  private shouldRecalculateCapacityStatus(status: string): boolean {
+    return status === "OPEN" || status === "READY" || status === "FULL";
+  }
+
+  private isActivatableStatus(status: string): boolean {
+    return status === "READY" || status === "FULL";
+  }
+
+  private isExpirableStatus(status: string): boolean {
+    return (
+      status === "OPEN" ||
+      status === "READY" ||
+      status === "FULL" ||
+      status === "ACTIVE"
+    );
+  }
+
+  private toPublicStatus(
+    rawStatus: string,
+    timeWindow: PartnerRequestFields["time"],
+  ): PRStatus {
+    if (
+      (rawStatus === "READY" || rawStatus === "FULL") &&
+      this.isWithinActiveWindow(timeWindow)
+    ) {
+      return "ACTIVE";
+    }
+
+    if (
+      rawStatus === "DRAFT" ||
+      rawStatus === "OPEN" ||
+      rawStatus === "READY" ||
+      rawStatus === "FULL" ||
+      rawStatus === "ACTIVE" ||
+      rawStatus === "CLOSED" ||
+      rawStatus === "EXPIRED"
+    ) {
+      return rawStatus;
+    }
+
+    return "OPEN";
+  }
+
+  private isWithinActiveWindow(
+    timeWindow: PartnerRequestFields["time"],
+  ): boolean {
+    const start = this.getTimeWindowStart(timeWindow);
+    if (!start) return false;
+
+    const now = Date.now();
+    if (start.getTime() > now) return false;
+
+    const close = this.getTimeWindowClose(timeWindow);
+    if (close && close.getTime() <= now) return false;
+
+    return true;
+  }
+
+  private getTimeWindowStart(
+    timeWindow: PartnerRequestFields["time"],
+  ): Date | null {
+    const [startRaw] = timeWindow;
+    return this.parseTimeWindowDate(startRaw);
   }
 
   private getTimeWindowClose(

@@ -16,8 +16,27 @@
 - [x] 分享到微信的 description 和 title 怎么能一样呢
 - [ ] 小红书的海报生成风格还是太杂乱，提示词需要优化
   - 主要是文字重复
-- [ ] 各页面都配置微信分享
+- [ ] 创建搭子请求的流程应该是：
+  - [x] 找搭子一起 <xxx>（轮换） -> 跳转填表单
+    - [x] XXX的轮换效果有动画（？动画名称？）
+    - [x] type 自动填充点击来时轮换到的文本
+    - [x] 表单太长，让人感觉到有负担，把高级选项折叠
+    - [x] 随机 PIN 怎么掉了？复用同一个组件
+    - [x] 不是很 CTA （为此需要缩小 Header ）
+  - [x] 刚刚我已经在群里发过了？ -> 展开textarea, 复制过来，自然语言自动识别
+    - [ ] NL Input Placeholder 也 rotate （复用 form create entry 的 rotatingTopic 以保持一致；没有动画，单纯的替换）
+- [x] 需要国际化支持，不然模型生成各种文本不一致
+- [x] PR Auto Exipre 的计算逻辑不正确
+  - 应该是 current datetime > time_range end time
+  - 如果没有 endtime，则默认为 start time + 12h
+  - 如果都没有，跳过
+- [ ] 本地保存 PIN 码与自动填充
+- [ ] 搭子请求NL解析肯定有问题，说周末找人，现在已经是周末结束了，竟然识别到2.9周一的时间窗口
+- [ ] 海报生成时还差几人应该以min计算而不是max
+- [ ] PRShare 也自动轮换，但是用户点击过一次切换按钮后就不了
+- [x] 各页面都配置微信分享
 - [ ] 在移动端的加载速度还有待优化
 - [ ] 跳转小红书App（最好能跳到笔记草稿页） <https://chatgpt.com/c/698b28a9-9990-83a8-bf9f-a00bd6158096>
 - [x] 因为 poster, thumbnail 会被自动清理，所以前端一旦发现 404，应该重新生成，而不是留着 broken image
-- [ ] 当WebHistory为空时，显示 home 而不是 back
+- [x] 当WebHistory为空时，显示 home 而不是 back
+- [ ] PR partners current默认为1啊，创建者自己也算啊

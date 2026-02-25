@@ -20,6 +20,7 @@ export interface MessageSchema {
   status: {
     draft: string;
     open: string;
+    ready: string;
     active: string;
     closed: string;
     expired: string;

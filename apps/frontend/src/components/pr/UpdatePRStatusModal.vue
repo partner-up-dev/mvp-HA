@@ -79,6 +79,7 @@ const emit = defineEmits<{
 
 const statusOptions: StatusOption[] = [
   { value: "OPEN", label: t("status.open") },
+  { value: "READY", label: t("status.ready") },
   { value: "ACTIVE", label: t("status.active") },
   { value: "CLOSED", label: t("status.closed") },
 ];

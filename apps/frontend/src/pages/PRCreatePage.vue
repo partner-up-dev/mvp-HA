@@ -97,7 +97,7 @@ const buildInitialFields = (topic: string | null): PartnerRequestFields => ({
   type: topic ?? "",
   time: [null, null],
   location: null,
-  partners: [null, 0, null],
+  partners: [null, 1, null],
   budget: null,
   preferences: [],
   notes: null,

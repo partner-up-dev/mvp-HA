@@ -21,10 +21,11 @@
   "status": {
     "draft": "草稿",
     "open": "找人中",
+    "ready": "已成团",
+    "full": "已满员",
     "active": "进行中",
     "closed": "已结束",
     "expired": "已过期",
-    "full": "已满员"
   },
   "home": {
     "title": "搭一把",

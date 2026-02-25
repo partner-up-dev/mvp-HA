@@ -18,6 +18,8 @@ const statusText = computed(() => {
   const map = {
     DRAFT: t("status.draft"),
     OPEN: t("status.open"),
+    READY: t("status.ready"),
+    FULL: t("status.full"),
     ACTIVE: t("status.active"),
     CLOSED: t("status.closed"),
     EXPIRED: t("status.expired"),
@@ -40,6 +42,16 @@ const statusText = computed(() => {
   &.open {
     background: var(--sys-color-primary-container);
     color: var(--sys-color-on-primary-container);
+  }
+
+  &.ready {
+    background: var(--sys-color-tertiary-container);
+    color: var(--sys-color-on-tertiary-container);
+  }
+
+  &.full {
+    background: var(--sys-color-error-container);
+    color: var(--sys-color-on-error-container);
   }
 
   &.active {

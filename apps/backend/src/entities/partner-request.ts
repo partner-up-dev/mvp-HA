@@ -41,12 +41,14 @@ export type PartnerRequestFields = z.infer<typeof partnerRequestFieldsSchema>;
 export const prStatusSchema = z.enum([
   "DRAFT",
   "OPEN",
+  "READY",
+  "FULL",
   "ACTIVE",
   "CLOSED",
   "EXPIRED",
 ]);
 export type PRStatus = z.infer<typeof prStatusSchema>;
-export const prStatusManualSchema = z.enum(["OPEN", "ACTIVE", "CLOSED"]);
+export const prStatusManualSchema = z.enum(["OPEN", "READY", "ACTIVE", "CLOSED"]);
 export type PRStatusManual = z.infer<typeof prStatusManualSchema>;
 
 export const createPRStructuredStatusSchema = z.enum(["DRAFT", "OPEN"]);
@@ -119,7 +121,7 @@ export const partnerRequests = pgTable("partner_requests", {
     .array()
     .$type<[number | null, number, number | null]>()
     .notNull()
-    .default(sql`ARRAY[NULL, 0, NULL]::integer[]`),
+    .default(sql`ARRAY[NULL, 1, NULL]::integer[]`),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   budget: text("budget"),
   preferences: text("preferences")
