@@ -5,18 +5,11 @@
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
     <template v-else-if="data">
-      <div class="page-header">
-        <button
-          class="home-btn"
-          @click="goHome"
-          :aria-label="t('common.backToHome')"
-        >
-          <div class="i-mdi-arrow-left font-title-large"></div>
-        </button>
+      <PageHeader>
         <h1 v-if="data.title" class="page-title">
           {{ data.title }}
         </h1>
-      </div>
+      </PageHeader>
 
       <header class="header">
         <PRStatusBadge :status="data.status" />
@@ -114,7 +107,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
@@ -125,6 +118,7 @@ import PRShareCarousel from "@/components/share/PRShareCarousel.vue";
 import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
 import Footer from "@/components/common/Footer.vue";
+import PageHeader from "@/components/common/PageHeader.vue";
 import { usePR } from "@/queries/usePR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useJoinPR } from "@/queries/useJoinPR";
@@ -133,7 +127,6 @@ import { useUserPRStore } from "@/stores/userPRStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
 
 const route = useRoute();
-const router = useRouter();
 const { t, locale } = useI18n();
 const id = computed<PRId | null>(() => {
   const rawId = Array.isArray(route.params.id)
@@ -252,10 +245,6 @@ const handleEditSuccess = () => {
   showEditModal.value = false;
 };
 
-const goHome = () => {
-  router.push("/");
-};
-
 const handleJoin = async () => {
   if (id.value === null) return;
   await joinMutation.mutateAsync(id.value);
@@ -308,41 +297,10 @@ useHead({
   min-height: var(--pu-vh);
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-lg);
-  min-width: 0;
-}
-
-.home-btn {
-  display: flex;
-  background: transparent;
-  border: none;
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
-  min-width: var(--sys-size-large);
-  min-height: var(--sys-size-large);
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background: var(--sys-color-surface-container);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
-}
-
 .page-title {
   @include mx.pu-font(headline-large);
   color: var(--sys-color-on-surface);
   margin: 0;
-  flex: 1;
   min-width: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;

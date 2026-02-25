@@ -1,15 +1,8 @@
 <template>
   <div class="create-page">
-    <header class="page-header">
-      <button
-        class="home-btn"
-        @click="goHome"
-        :aria-label="t('common.backToHome')"
-      >
-        <div class="i-mdi-arrow-left font-title-large"></div>
-      </button>
-      <h1>{{ t("createPage.title") }}</h1>
-    </header>
+    <PageHeader>
+      <h1 class="page-title">{{ t("createPage.title") }}</h1>
+    </PageHeader>
 
     <main class="page-main">
       <PRForm
@@ -74,6 +67,7 @@ import type {
 import PRForm from "@/components/pr/PRForm.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import Footer from "@/components/common/Footer.vue";
+import PageHeader from "@/components/common/PageHeader.vue";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useCreatePRFromStructured } from "@/queries/useCreatePR";
 import type { PartnerRequestFormInput } from "@/lib/validation";
@@ -128,10 +122,6 @@ const handleSubmit = async ({ fields, pin }: PartnerRequestFormInput) => {
   userPRStore.addCreatedPR(result.id);
   await router.push(`/pr/${result.id}`);
 };
-
-const goHome = () => {
-  router.push("/");
-};
 </script>
 
 <style lang="scss" scoped>
@@ -147,34 +137,10 @@ const goHome = () => {
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-lg);
-
-  h1 {
-    @include mx.pu-font(headline-medium);
-    color: var(--sys-color-on-surface);
-    margin: 0;
-  }
-}
-
-.home-btn {
-  display: flex;
-  background: transparent;
-  border: none;
+.page-title {
+  @include mx.pu-font(headline-medium);
   color: var(--sys-color-on-surface);
-  cursor: pointer;
-  min-width: var(--sys-size-large);
-  min-height: var(--sys-size-large);
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background: var(--sys-color-surface-container);
-  }
+  margin: 0;
 }
 
 .page-main {
