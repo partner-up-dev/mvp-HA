@@ -13,7 +13,7 @@
 ## 验收标准
 
 - 能生成与 PartnerRequest 一致的小红书文案。
-- 文案/海报中的“还差几人”按 `partners[min] - partners[current]` 计算（最小成团人数口径，不使用 max）。
+- 文案/海报中的“还差几人”按 `minPartners - partners.length` 计算（最小成团人数口径，不使用 maxPartners）。
 - 能生成可保存的分享海报。
 - 用户可完成复制或保存操作。
 

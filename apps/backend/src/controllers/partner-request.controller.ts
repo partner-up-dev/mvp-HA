@@ -1,15 +1,28 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
+import { getSignedCookie } from "hono/cookie";
+import { HTTPException } from "hono/http-exception";
 import { PartnerRequestService } from '../services/PartnerRequestService';
 import {
   createNaturalLanguagePRSchema,
   createStructuredPRSchema,
   prStatusManualSchema,
 } from '../entities/partner-request';
+import { WeChatOAuthService } from "../services/WeChatOAuthService";
 
 const app = new Hono();
 const service = new PartnerRequestService();
+const oauthService = new WeChatOAuthService();
+const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
+
+const oauthSessionCookiePayloadSchema = z.object({
+  openId: z.string().min(1),
+  issuedAtMs: z.number().int().positive(),
+  expiresAtMs: z.number().int().positive(),
+});
+
+type OAuthSessionCookiePayload = z.infer<typeof oauthSessionCookiePayloadSchema>;
 
 const nlWordCountSchema = createNaturalLanguagePRSchema.refine(
   ({ rawText }) => rawText.trim().split(/\s+/).filter(Boolean).length <= 50,
@@ -34,6 +47,73 @@ const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+const slotCheckInSchema = z.object({
+  didAttend: z.boolean(),
+  wouldJoinAgain: z.boolean().nullable().optional(),
+});
+
+const decodeSignedPayload = <T>(
+  rawValue: string,
+  schema: z.ZodType<T>,
+): T | null => {
+  try {
+    const json = Buffer.from(rawValue, "base64url").toString("utf8");
+    const parsed = JSON.parse(json) as unknown;
+    const result = schema.safeParse(parsed);
+    if (!result.success) return null;
+    return result.data;
+  } catch {
+    return null;
+  }
+};
+
+const readOAuthSession = async (
+  c: Context,
+): Promise<OAuthSessionCookiePayload | null> => {
+  if (!oauthService.isConfigured()) {
+    return null;
+  }
+
+  const sessionSecret = oauthService.getSessionSecret();
+  const cookieValue = await getSignedCookie(
+    c,
+    sessionSecret,
+    OAUTH_SESSION_COOKIE_NAME,
+  );
+  if (!cookieValue) {
+    return null;
+  }
+
+  return decodeSignedPayload(cookieValue, oauthSessionCookiePayloadSchema);
+};
+
+const requireAuthenticatedOpenId = async (c: Context): Promise<string> => {
+  if (!oauthService.isConfigured()) {
+    throw new HTTPException(503, {
+      message: "WeChat OAuth is not configured",
+    });
+  }
+
+  const sessionPayload = await readOAuthSession(c);
+  if (!sessionPayload || sessionPayload.expiresAtMs <= Date.now()) {
+    throw new HTTPException(401, {
+      message: "WeChat login required for slot actions",
+    });
+  }
+
+  return sessionPayload.openId;
+};
+
+const tryReadAuthenticatedOpenId = async (
+  c: Context,
+): Promise<string | null> => {
+  const sessionPayload = await readOAuthSession(c);
+  if (!sessionPayload || sessionPayload.expiresAtMs <= Date.now()) {
+    return null;
+  }
+  return sessionPayload.openId;
+};
+
 export const partnerRequestRoute = app
   // POST /api/pr - Create partner request from structured fields
   .post(
@@ -41,7 +121,13 @@ export const partnerRequestRoute = app
     zValidator('json', createStructuredPRSchema),
     async (c) => {
       const { fields, pin, status } = c.req.valid('json');
-      const result = await service.createPRFromStructured(fields, pin, status);
+      const openId = await tryReadAuthenticatedOpenId(c);
+      const result = await service.createPRFromStructured(
+        fields,
+        pin,
+        status,
+        openId,
+      );
       return c.json(result, 201);
     }
   )
@@ -51,11 +137,13 @@ export const partnerRequestRoute = app
     zValidator('json', nlWordCountSchema),
     async (c) => {
       const { rawText, pin, nowIso, nowWeekday } = c.req.valid('json');
+      const openId = await tryReadAuthenticatedOpenId(c);
       const result = await service.createPRFromNaturalLanguage(
         rawText,
         pin,
         nowIso,
         nowWeekday ?? null,
+        openId,
       );
       return c.json(result, 201);
     }
@@ -76,7 +164,8 @@ export const partnerRequestRoute = app
     zValidator('param', prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid('param');
-      const result = await service.getPR(id);
+      const openId = await tryReadAuthenticatedOpenId(c);
+      const result = await service.getPR(id, openId);
       return c.json(result);
     }
   )
@@ -110,7 +199,11 @@ export const partnerRequestRoute = app
     zValidator('param', prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid('param');
-      const result = await service.joinPR(id);
+      const openId = await requireAuthenticatedOpenId(c);
+      const result = await service.joinPRAsAuthenticatedUser(
+        id,
+        openId,
+      );
       return c.json(result);
     }
   )
@@ -120,7 +213,38 @@ export const partnerRequestRoute = app
     zValidator('param', prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid('param');
-      const result = await service.exitPR(id);
+      const openId = await requireAuthenticatedOpenId(c);
+      const result = await service.exitPRAsAuthenticatedUser(
+        id,
+        openId,
+      );
+      return c.json(result);
+    }
+  )
+  // POST /api/pr/:id/confirm - Confirm slot participation
+  .post(
+    '/:id/confirm',
+    zValidator('param', prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const openId = await requireAuthenticatedOpenId(c);
+      const result = await service.confirmPRSlot(id, openId);
+      return c.json(result);
+    }
+  )
+  // POST /api/pr/:id/check-in - Optional post-event attendance report
+  .post(
+    '/:id/check-in',
+    zValidator('param', prIdParamSchema),
+    zValidator("json", slotCheckInSchema),
+    async (c) => {
+      const { id } = c.req.valid('param');
+      const openId = await requireAuthenticatedOpenId(c);
+      const { didAttend, wouldJoinAgain } = c.req.valid("json");
+      const result = await service.checkInPRSlot(id, openId, {
+        didAttend,
+        wouldJoinAgain: wouldJoinAgain ?? null,
+      });
       return c.json(result);
     }
   );

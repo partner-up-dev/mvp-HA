@@ -11,15 +11,19 @@
 - 前端应用启动后调用 `GET /api/wechat/oauth/session` 检查当前登录态。
 - 若微信 OAuth 基础设施未配置，或当前已登录，则保持当前页面，不跳转。
 - 若已配置且当前未登录，前端重定向到 `GET /api/wechat/oauth/login`，并携带当前页面地址作为 `returnTo`。
-- 后端生成并校验 OAuth state（签名 cookie），跳转微信授权地址（`snsapi_base`）。
-- 微信回调 `GET /api/wechat/oauth/callback`，后端用 `code` 换取 `openid`，签发 HttpOnly 会话 cookie，再跳回 `returnTo` 页面。
+- 后端生成并校验 OAuth state（签名 cookie），跳转微信授权地址（`snsapi_userinfo`）。
+- 微信回调 `GET /api/wechat/oauth/callback`，后端用 `code` 换取 `openid` + OAuth access token；若为新用户（`users.open_id` 不存在）会调用 `sns/userinfo` 拉取 `nickname/sex/avatar` 并落库，再签发 HttpOnly 会话 cookie，最后跳回 `returnTo` 页面。
 - 需要清理会话时，前端可调用 `POST /api/wechat/oauth/logout`。
+- 参与相关接口（`/api/pr/:id/join`、`/api/pr/:id/exit`、`/api/pr/:id/confirm`、`/api/pr/:id/check-in`）会强制校验该会话 cookie，未登录不可执行。
 
 ## 验收标准
 
 - 无需新增登录页/注册页/用户页。
 - 微信内访问页面时，应用会自动尝试登录。
 - 后端提供会话查询、登录跳转、回调换取、登出清理四个接口。
+- 后端在 join/exit/confirm/check-in 场景必须校验会话有效期并读取 `openid` 绑定用户。
+- 新用户首次微信登录时，后端会一次性保存用户资料字段：`nickname`、`sex`、`avatar`。
+- 已存在用户重复登录时，不重复拉取并覆盖用户资料。
 - OAuth state 与会话 token 均为签名数据，不允许明文可篡改。
 - 已登录用户重复进入页面时不会再次触发授权跳转。
 - 未配置微信 OAuth 所需环境变量时，系统不会进入重定向死循环。

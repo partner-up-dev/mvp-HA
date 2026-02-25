@@ -234,30 +234,22 @@ const notesInput = computed({
 });
 
 const minPartnersInput = computed(() =>
-  values.fields.partners[0] === null ? "" : String(values.fields.partners[0]),
+  values.fields.minPartners === null ? "" : String(values.fields.minPartners),
 );
 const maxPartnersInput = computed(() =>
-  values.fields.partners[2] === null ? "" : String(values.fields.partners[2]),
+  values.fields.maxPartners === null ? "" : String(values.fields.maxPartners),
 );
 
 const onMinPartnersInput = (event: Event) => {
   const value = (event.target as HTMLInputElement).value;
   const nextMin = parseNullableNumber(value);
-  setFieldValue("fields.partners", [
-    nextMin,
-    values.fields.partners[1],
-    values.fields.partners[2],
-  ]);
+  setFieldValue("fields.minPartners", nextMin);
 };
 
 const onMaxPartnersInput = (event: Event) => {
   const value = (event.target as HTMLInputElement).value;
   const nextMax = parseNullableNumber(value);
-  setFieldValue("fields.partners", [
-    values.fields.partners[0],
-    values.fields.partners[1],
-    nextMax,
-  ]);
+  setFieldValue("fields.maxPartners", nextMax);
 };
 
 const newPreference = ref("");

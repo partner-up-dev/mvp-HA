@@ -55,7 +55,11 @@ src/
 - PartnerRequest 时间: 解析时间窗口支持日期或日期时间（YYYY-MM-DD 或 ISO datetime），并基于 nowIso 与 nowWeekday（可用时）作为当前时间参考。
 - LLM 解析提示词: 解析提示词已拆分到独立文件，并强调仅在用户明确提供时间时才输出时间分量。
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
-- 参与与流转: 支持加入/退出；达到最小人数自动转为 `READY`，达到最大人数转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。
+- 参与与流转: 支持加入/退出；达到最小人数自动转为 `READY`，达到最大人数自动转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。
+- 参与数据模型: 已迁移为 `minPartners` / `maxPartners` + `partners: partnerId[]`，并新增 `Partner`（含 `status`: `JOINED/CONFIRMED/RELEASED/ATTENDED`）用于 slot 级参与者标识。
+- 用户最小模型: 新增 `users` 表（`openid` 唯一绑定，含 `nickname/sex/avatar` + `ACTIVE/DISABLED`）；新用户首次微信登录会拉取并保存资料，join/exit 时会校验微信会话并绑定到 `partner.userId`。
+- 确认机制（5.2）: 新增 `/api/pr/:id/confirm`；`T-1h` 自动释放未确认 `JOINED` 槽位，`T-1h~T-30min` 加入即自动确认，`T-30min` 后禁止 join。
+- 签到回流（5.3）: 新增 `/api/pr/:id/check-in`，记录 `didAttend` / `wouldJoinAgain`，到场时槽位置为 `ATTENDED`。
 - 分享能力: 提供小红书文案/海报与微信缩略图生成能力，并支持缓存到后端。
 - 公共配置能力: 提供 `/api/config/public/:key` 只读配置查询（当前支持 `author_wechat_qr_code`）。
 

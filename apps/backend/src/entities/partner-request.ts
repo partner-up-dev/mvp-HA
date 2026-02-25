@@ -13,6 +13,7 @@ import { z } from "zod";
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
 const isoDateOrDateTimeSchema = z.union([isoDateTimeSchema, isoDateSchema]);
+const partnerSlotIdSchema = z.number().int().positive();
 const weekdayLabelSchema = z.string().trim().min(1).max(32);
 export type WeekdayLabel = z.infer<typeof weekdayLabelSchema>;
 
@@ -25,11 +26,9 @@ export const partnerRequestFieldsSchema = z.object({
     isoDateOrDateTimeSchema.nullable(),
   ]),
   location: z.string().nullable(),
-  partners: z.tuple([
-    z.number().nullable(),
-    z.number().int().nonnegative(),
-    z.number().nullable(),
-  ]),
+  minPartners: z.number().int().nonnegative().nullable(),
+  maxPartners: z.number().int().nonnegative().nullable(),
+  partners: z.array(partnerSlotIdSchema).default([]),
   budget: z.string().nullable(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
@@ -74,11 +73,9 @@ export const createNaturalLanguagePRSchema = z.object({
 export const partnerRequestSummarySchema = z.object({
   id: z.number().int().positive(),
   status: prStatusSchema,
-  partners: z.tuple([
-    z.number().nullable(),
-    z.number().int().nonnegative(),
-    z.number().nullable(),
-  ]),
+  minPartners: z.number().int().nonnegative().nullable(),
+  maxPartners: z.number().int().nonnegative().nullable(),
+  partners: z.array(partnerSlotIdSchema),
   createdAt: z.string(),
   title: z.string().optional(),
   type: z.string(),
@@ -117,11 +114,8 @@ export const partnerRequests = pgTable("partner_requests", {
   location: text("location"),
   status: text("status").$type<PRStatus>().notNull().default("OPEN"),
   pinHash: text("pin_hash").notNull(),
-  partners: integer("partners")
-    .array()
-    .$type<[number | null, number, number | null]>()
-    .notNull()
-    .default(sql`ARRAY[NULL, 1, NULL]::integer[]`),
+  minPartners: integer("min_partners"),
+  maxPartners: integer("max_partners"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   budget: text("budget"),
   preferences: text("preferences")
@@ -140,13 +134,15 @@ export const partnerRequests = pgTable("partner_requests", {
 // Zod schemas for validation
 export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
   time: partnerRequestFieldsSchema.shape.time,
-  partners: partnerRequestFieldsSchema.shape.partners,
+  minPartners: partnerRequestFieldsSchema.shape.minPartners,
+  maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   time: partnerRequestFieldsSchema.shape.time,
-  partners: partnerRequestFieldsSchema.shape.partners,
+  minPartners: partnerRequestFieldsSchema.shape.minPartners,
+  maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
 });
 

@@ -5,42 +5,19 @@ import type { PRId } from "@partner-up-dev/backend";
 export const useUserPRStore = defineStore(
   "userPR",
   () => {
-    // State
     const creatorOf = ref<PRId[]>([]);
-    const participantsOf = ref<PRId[]>([]);
     const prPIN = ref<Record<string, string>>({});
 
-    // Getters
     const isCreatorOf = computed(() => (prId: PRId) => {
       return creatorOf.value.includes(prId);
     });
 
-    const isParticipantOf = computed(() => (prId: PRId) => {
-      return participantsOf.value.includes(prId);
-    });
-
     const createdPRs = computed(() => creatorOf.value);
-    const joinedPRs = computed(() => participantsOf.value);
-
     const normalizePRKey = (prId: PRId) => String(prId);
 
-    // Actions
     function addCreatedPR(prId: PRId) {
       if (!creatorOf.value.includes(prId)) {
         creatorOf.value.push(prId);
-      }
-    }
-
-    function joinPR(prId: PRId) {
-      if (!participantsOf.value.includes(prId)) {
-        participantsOf.value.push(prId);
-      }
-    }
-
-    function exitPR(prId: PRId) {
-      const index = participantsOf.value.indexOf(prId);
-      if (index > -1) {
-        participantsOf.value.splice(index, 1);
       }
     }
 
@@ -65,24 +42,15 @@ export const useUserPRStore = defineStore(
 
     function reset() {
       creatorOf.value = [];
-      participantsOf.value = [];
       prPIN.value = {};
     }
 
     return {
-      // State
       creatorOf,
-      participantsOf,
       prPIN,
-      // Getters
       isCreatorOf,
-      isParticipantOf,
       createdPRs,
-      joinedPRs,
-      // Actions
       addCreatedPR,
-      joinPR,
-      exitPR,
       removeCreatedPR,
       setPRPin,
       getPRPin,
@@ -93,7 +61,7 @@ export const useUserPRStore = defineStore(
   {
     persist: {
       storage: localStorage,
-      pick: ["creatorOf", "participantsOf", "prPIN"],
+      pick: ["creatorOf", "prPIN"],
     },
   },
 );

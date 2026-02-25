@@ -3,13 +3,21 @@ import type { PRId } from '@partner-up-dev/backend';
 import { client } from '@/lib/rpc';
 import { i18n } from "@/locales/i18n";
 
+type JoinInput = {
+  id: PRId;
+};
+
 export const useJoinPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: PRId) => {
+    mutationFn: async ({ id }: JoinInput) => {
       const res = await client.api.pr[':id'].join.$post({
         param: { id: id.toString() },
+      }, {
+        init: {
+          credentials: "include",
+        },
       });
 
       if (!res.ok) {
@@ -19,8 +27,8 @@ export const useJoinPR = () => {
 
       return await res.json();
     },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['partner-request', id] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['partner-request', variables.id] });
     },
   });
 };

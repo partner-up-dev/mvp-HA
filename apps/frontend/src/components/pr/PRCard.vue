@@ -64,8 +64,16 @@ const props = defineProps({
     type: null as unknown as PropType<string | null>,
     required: true,
   },
+  minPartners: {
+    type: null as unknown as PropType<number | null>,
+    required: true,
+  },
+  maxPartners: {
+    type: null as unknown as PropType<number | null>,
+    required: true,
+  },
   partners: {
-    type: Array as unknown as PropType<PartnerRequestFields["partners"]>,
+    type: Array as PropType<PartnerRequestFields["partners"]>,
     required: true,
   },
   budget: {
@@ -141,12 +149,20 @@ const formatPartners = (
 };
 
 const formattedTime = computed(() => formatTimeWindow(props.time));
+const currentPartners = computed(() => props.partners.length);
 const formattedPartners = computed(() =>
-  formatPartners(props.partners[0], props.partners[1], props.partners[2]),
+  formatPartners(
+    props.minPartners,
+    currentPartners.value,
+    props.maxPartners,
+  ),
 );
 const shouldShowPartners = computed(() => {
-  const [min, current, max] = props.partners;
-  return min !== null || max !== null || current > 0;
+  return (
+    props.minPartners !== null ||
+    props.maxPartners !== null ||
+    currentPartners.value > 0
+  );
 });
 </script>
 

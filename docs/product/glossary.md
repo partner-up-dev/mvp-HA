@@ -7,7 +7,11 @@
 - PartnerRequestStatus：PartnerRequest 状态流转（DRAFT / OPEN / READY / FULL / ACTIVE / CLOSED / EXPIRED）。
 - Time Window：PartnerRequest 的时间窗口（start_at / end_at）
 - Capacity：PartnerRequest 的人数阈值（min / max）。
-- Current Partners：PartnerRequest 当前人数（`partners[1]`），包含创建者本人；创建时默认值为 `1`。
+- Current Partners：PartnerRequest 当前人数（`partners.length`），`partners` 为该 PR 下活跃槽位（JOINED / CONFIRMED / ATTENDED）的 `partnerId[]` 动态聚合结果。
+- SlotStatus（Partner.status）：单个参与槽位状态（JOINED / CONFIRMED / RELEASED / ATTENDED）。
+- Confirmation Window：确认时序窗口（T-1h 自动释放未确认槽位；T-1h~T-30min 加入即确认；T-30min 后禁止加入）。
+- Check-in Signal：签到回流信号（didAttend / wouldJoinAgain），用于近似到场率与复参与意愿。
+- User（最小模型）：基于微信 `openid` 建立的用户主体，含 `nickname`、`sex`、`avatar` 与 `status`（ACTIVE / DISABLED）。
 - 分享链接：指向 PartnerRequest 页面、可复制传播的链接。
 - 小红书文案：用于发布到小红书的分享文本。
 - 分享海报：用于社交平台传播的图片。

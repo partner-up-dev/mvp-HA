@@ -3,13 +3,21 @@ import type { PRId } from '@partner-up-dev/backend';
 import { client } from '@/lib/rpc';
 import { i18n } from "@/locales/i18n";
 
+type ExitInput = {
+  id: PRId;
+};
+
 export const useExitPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: PRId) => {
+    mutationFn: async ({ id }: ExitInput) => {
       const res = await client.api.pr[':id'].exit.$post({
         param: { id: id.toString() },
+      }, {
+        init: {
+          credentials: "include",
+        },
       });
 
       if (!res.ok) {
@@ -19,8 +27,8 @@ export const useExitPR = () => {
 
       return await res.json();
     },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['partner-request', id] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['partner-request', variables.id] });
     },
   });
 };

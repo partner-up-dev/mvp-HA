@@ -259,6 +259,8 @@ export class ShareService {
     type: string;
     time: PartnerRequestFields["time"];
     location: string | null;
+    minPartners: number | null;
+    maxPartners: number | null;
     partners: PartnerRequestFields["partners"];
     budget: string | null;
     preferences: string[];
@@ -269,6 +271,8 @@ export class ShareService {
       type: pr.type,
       time: pr.time,
       location: pr.location,
+      minPartners: pr.minPartners,
+      maxPartners: pr.maxPartners,
       partners: pr.partners,
       budget: pr.budget,
       preferences: pr.preferences,

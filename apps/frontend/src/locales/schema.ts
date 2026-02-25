@@ -76,6 +76,13 @@ export interface MessageSchema {
     joining: string;
     exit: string;
     exiting: string;
+    confirmSlot: string;
+    confirmingSlot: string;
+    checkInAttended: string;
+    checkInMissed: string;
+    checkingIn: string;
+    slotJoined: string;
+    slotNotJoined: string;
     editContent: string;
     modifyStatus: string;
     metaFallbackTitle: string;
@@ -227,6 +234,8 @@ export interface MessageSchema {
     fetchCreatedRequestsFailed: string;
     joinRequestFailed: string;
     exitRequestFailed: string;
+    confirmSlotFailed: string;
+    checkInSlotFailed: string;
     generateCaptionFailed: string;
     generateXhsPosterHtmlFailed: string;
     generateWechatThumbHtmlFailed: string;

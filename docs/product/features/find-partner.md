@@ -16,8 +16,14 @@
 - 结构化创建页使用统一表单组件，页脚提供：
   - “保存” -> 创建 `DRAFT` 状态请求。
   - “创建” -> 创建 `OPEN` 状态请求。
-- 创建成功后 `partners[current]` 默认记为 `1`（创建者自己计入当前人数）。
-- 编辑内容弹窗复用同一结构化表单组件并提交更新。
+- 创建成功时系统会按 `min/max` 预创建 `partners` 槽位；若创建者已有微信登录态，会占用其中一个槽位。
+- 详情页加入/退出时需走微信登录态校验：未登录会跳转 `/api/wechat/oauth/login`。
+- 加入成功时对应 `Partner.status` 置为 `JOINED`；在 `T-1h~T-30min` 窗口加入时会立即置为 `CONFIRMED`。
+- `T-1h` 时刻会自动释放仍为 `JOINED` 的槽位（变为 `RELEASED` 并从 PR 当前参与列表移除）。
+- `T-30min` 后禁止加入（event locked）。
+- 详情页提供“确认参与”动作，调用 `/api/pr/:id/confirm` 使槽位进入 `CONFIRMED`（若尚未确认）。
+- 详情页提供可选签到反馈（我已到场 / 我未到场），调用 `/api/pr/:id/check-in`；`didAttend=true` 时槽位进入 `ATTENDED`。
+- 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 
 ## 验收标准
 
@@ -25,7 +31,12 @@
 - `/pr/new` 页面存在头部、结构化表单主体、页脚双动作按钮（保存/创建）。
 - 自然语言创建请求命中 `/api/pr/natural_language`，并限制输入不超过 50 个单词。
 - 结构化创建请求命中 `/api/pr`，并按按钮行为创建 `DRAFT` 或 `OPEN`。
-- 新创建请求的 `partners[current]` 为 `1`，且该 `1` 包含创建者本人。
+- 新创建请求会按 `min/max` 创建槽位；当前参与人数由 `partners.pr_id` 下处于活跃状态的槽位动态聚合。
+- `POST /api/pr/:id/join` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
+- `POST /api/pr/:id/exit` 与 join 一致校验微信会话，确保只能退出当前登录用户绑定的槽位。
+- `POST /api/pr/:id/confirm` 与 `POST /api/pr/:id/check-in` 同样强制微信登录态。
+- 已到 `T-30min` 之后，join 请求会被拒绝（400）。
+- 到达 `T-1h` 且槽位未确认时，系统会在读取/操作时懒触发自动释放，保证结构状态收敛。
 - 编辑弹窗与结构化创建页使用同一表单组件与同一校验逻辑。
 
 ## 涉及端

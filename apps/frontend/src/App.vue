@@ -4,8 +4,10 @@
 
 <script setup lang="ts">
 import { RouterView } from "vue-router";
+import { useAutoWeChatLogin } from "@/composables/useAutoWeChatLogin";
 import { useRouteWeChatShare } from "@/composables/useRouteWeChatShare";
 
+useAutoWeChatLogin();
 useRouteWeChatShare();
 </script>
 

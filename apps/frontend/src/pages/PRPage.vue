@@ -27,12 +27,24 @@
         :type="data.type"
         :time="localizedTime"
         :location="data.location"
+        :min-partners="data.minPartners"
+        :max-partners="data.maxPartners"
         :partners="data.partners"
         :budget="data.budget"
         :preferences="data.preferences"
         :notes="data.notes"
         :raw-text="data.rawText"
       />
+
+      <section class="slot-state">
+        <p class="slot-state-text">
+          {{
+            hasJoined
+              ? t("prPage.slotJoined", { partnerId: shortPartnerId })
+              : t("prPage.slotNotJoined")
+          }}
+        </p>
+      </section>
 
       <section class="actions">
         <button
@@ -62,10 +74,47 @@
         </button>
 
         <button
+          v-if="hasJoined && canConfirm"
+          class="confirm-slot-btn"
+          @click="handleConfirmSlot"
+          :disabled="confirmSlotMutation.isPending.value"
+        >
+          {{
+            confirmSlotMutation.isPending.value
+              ? t("prPage.confirmingSlot")
+              : t("prPage.confirmSlot")
+          }}
+        </button>
+
+        <button
+          v-if="hasJoined && hasStarted"
+          class="checkin-attended-btn"
+          @click="handleCheckIn(true)"
+          :disabled="checkInSlotMutation.isPending.value"
+        >
+          {{
+            checkInSlotMutation.isPending.value
+              ? t("prPage.checkingIn")
+              : t("prPage.checkInAttended")
+          }}
+        </button>
+
+        <button
+          v-if="hasJoined && hasStarted"
+          class="checkin-missed-btn"
+          @click="handleCheckIn(false)"
+          :disabled="checkInSlotMutation.isPending.value"
+        >
+          {{
+            checkInSlotMutation.isPending.value
+              ? t("prPage.checkingIn")
+              : t("prPage.checkInMissed")
+          }}
+        </button>
+
+        <button
           v-if="
-            (data.status === 'OPEN' ||
-              data.status === 'READY' ||
-              data.status === 'DRAFT') &&
+            (data.status === 'OPEN' || data.status === 'DRAFT') &&
             isCreator
           "
           class="edit-content-btn"
@@ -132,8 +181,14 @@ import { usePR } from "@/queries/usePR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useJoinPR } from "@/queries/useJoinPR";
 import { useExitPR } from "@/queries/useExitPR";
+import { useConfirmPRSlot } from "@/queries/useConfirmPRSlot";
+import { useCheckInPRSlot } from "@/queries/useCheckInPRSlot";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
+import {
+  fetchOAuthSession,
+  redirectToWeChatOAuthLogin,
+} from "@/composables/useAutoWeChatLogin";
 
 const route = useRoute();
 const router = useRouter();
@@ -149,6 +204,8 @@ const id = computed<PRId | null>(() => {
 const { data, isLoading, error } = usePR(id);
 const joinMutation = useJoinPR();
 const exitMutation = useExitPR();
+const confirmSlotMutation = useConfirmPRSlot();
+const checkInSlotMutation = useCheckInPRSlot();
 const userPRStore = useUserPRStore();
 
 const showEditModal = ref(false);
@@ -164,8 +221,14 @@ const isCreator = computed(() => {
 
 // Check if current user has joined
 const hasJoined = computed(() => {
-  if (id.value === null) return false;
-  return userPRStore.isParticipantOf(id.value);
+  if (!data.value) return false;
+  return data.value.myPartnerId !== null;
+});
+
+const shortPartnerId = computed(() => {
+  const idValue = data.value?.myPartnerId;
+  if (idValue === null || idValue === undefined) return "-";
+  return String(idValue);
 });
 
 // Check if can join
@@ -174,13 +237,30 @@ const canJoin = computed(() => {
   if (isCreator.value || hasJoined.value) return false;
   if (data.value.status !== "OPEN" && data.value.status !== "READY")
     return false;
-  const maxPartners = data.value.partners[2];
-  const currentCount = data.value.partners[1];
+  const maxPartners = data.value.maxPartners;
+  const currentCount = data.value.partners.length;
   if (maxPartners !== null && currentCount >= maxPartners) return false;
   return true;
 });
 
 const shareUrl = computed(() => window.location.href);
+
+const hasStarted = computed(() => {
+  const startRaw = data.value?.time[0];
+  if (!startRaw) return false;
+  const parsed = new Date(startRaw);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return Date.now() >= parsed.getTime();
+});
+
+const canConfirm = computed(() => {
+  if (!data.value) return false;
+  if (!hasJoined.value) return false;
+  if (data.value.status === "EXPIRED" || data.value.status === "CLOSED") {
+    return false;
+  }
+  return true;
+});
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString(locale.value, {
@@ -259,16 +339,59 @@ const goHome = () => {
   router.push("/");
 };
 
+const ensureJoinActionAuthenticated = async (): Promise<boolean> => {
+  const session = await fetchOAuthSession();
+  if (session?.configured && !session.authenticated) {
+    redirectToWeChatOAuthLogin(window.location.href);
+    return false;
+  }
+  return true;
+};
+
 const handleJoin = async () => {
   if (id.value === null) return;
-  await joinMutation.mutateAsync(id.value);
-  userPRStore.joinPR(id.value);
+  if (!(await ensureJoinActionAuthenticated())) {
+    return;
+  }
+
+  await joinMutation.mutateAsync({
+    id: id.value,
+  });
 };
 
 const handleExit = async () => {
   if (id.value === null) return;
-  await exitMutation.mutateAsync(id.value);
-  userPRStore.exitPR(id.value);
+  if (!(await ensureJoinActionAuthenticated())) {
+    return;
+  }
+
+  await exitMutation.mutateAsync({
+    id: id.value,
+  });
+};
+
+const handleConfirmSlot = async () => {
+  if (id.value === null) return;
+  if (!(await ensureJoinActionAuthenticated())) {
+    return;
+  }
+
+  await confirmSlotMutation.mutateAsync({
+    id: id.value,
+  });
+};
+
+const handleCheckIn = async (didAttend: boolean) => {
+  if (id.value === null) return;
+  if (!(await ensureJoinActionAuthenticated())) {
+    return;
+  }
+
+  await checkInSlotMutation.mutateAsync({
+    id: id.value,
+    didAttend,
+    wouldJoinAgain: null,
+  });
 };
 
 // Set up dynamic meta tags
@@ -373,6 +496,15 @@ useHead({
   margin-top: var(--sys-spacing-lg);
 }
 
+.slot-state {
+  margin-top: var(--sys-spacing-med);
+}
+
+.slot-state-text {
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface-variant);
+}
+
 .actions > button {
   width: 100%;
 }
@@ -428,6 +560,36 @@ useHead({
     opacity: 0.6;
     cursor: not-allowed;
   }
+}
+
+.confirm-slot-btn,
+.checkin-attended-btn,
+.checkin-missed-btn {
+  @include mx.pu-font(label-large);
+  flex: 1;
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  min-height: var(--sys-size-large);
+  border-radius: var(--sys-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.confirm-slot-btn {
+  border: 1px solid var(--sys-color-primary);
+  background: transparent;
+  color: var(--sys-color-primary);
+}
+
+.checkin-attended-btn {
+  border: none;
+  background: var(--sys-color-tertiary);
+  color: var(--sys-color-on-tertiary);
+}
+
+.checkin-missed-btn {
+  border: 1px solid var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .edit-content-btn,

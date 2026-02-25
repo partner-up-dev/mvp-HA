@@ -51,20 +51,12 @@ export class PartnerRequestRepository {
         type: fields.type,
         time: fields.time,
         location: fields.location,
-        partners: fields.partners,
+        minPartners: fields.minPartners,
+        maxPartners: fields.maxPartners,
         budget: fields.budget,
         preferences: fields.preferences,
         notes: fields.notes,
       })
-      .where(eq(partnerRequests.id, id))
-      .returning();
-    return result[0] || null;
-  }
-
-  async updatePartners(id: PRId, partners: PartnerRequestFields["partners"]) {
-    const result = await db
-      .update(partnerRequests)
-      .set({ partners })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] || null;

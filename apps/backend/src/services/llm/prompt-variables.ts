@@ -6,7 +6,7 @@ import { toPromptJson, type PromptJsonObject } from "../../lib/prompt-variables"
 
 type SharePromptPartnerRequest = Pick<
   PartnerRequestFields,
-  "title" | "type" | "time" | "location" | "partners"
+  "title" | "type" | "time" | "location" | "minPartners" | "partners"
 >;
 
 type ParticipantSummary = {
@@ -16,9 +16,10 @@ type ParticipantSummary = {
 };
 
 const buildParticipantSummary = (
+  minParticipants: number | null,
   partners: PartnerRequestFields["partners"],
 ): ParticipantSummary => {
-  const [minParticipants, currentParticipants] = partners;
+  const currentParticipants = partners.length;
   const stillNeededFromMin =
     minParticipants === null
       ? null
@@ -35,7 +36,7 @@ const buildSharePromptContext = (
   pr: SharePromptPartnerRequest,
 ): PromptJsonObject => {
   const [startTime, endTime] = pr.time;
-  const participants = buildParticipantSummary(pr.partners);
+  const participants = buildParticipantSummary(pr.minPartners, pr.partners);
 
   return {
     activity: {

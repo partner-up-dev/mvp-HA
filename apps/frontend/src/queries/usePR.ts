@@ -15,6 +15,10 @@ export const usePR = (id: Ref<PRId | null>) => {
 
       const res = await client.api.pr[':id'].$get({
         param: { id: prId.toString() },
+      }, {
+        init: {
+          credentials: "include",
+        },
       });
 
       if (!res.ok) {

@@ -57,12 +57,16 @@ export type {
   PartnerRequestSummary,
   WeekdayLabel,
 } from "./entities/partner-request";
+export type { PartnerId, PartnerStatus } from "./entities/partner";
+export type { UserId, UserStatus, UserSex } from "./entities/user";
 export {
   partnerRequestFieldsSchema,
   createStructuredPRSchema,
   createNaturalLanguagePRSchema,
   createPRStructuredStatusSchema,
 } from "./entities/partner-request";
+export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
+export { userIdSchema, userStatusSchema, userSexSchema } from "./entities/user";
 
 // Start server
 serve({
