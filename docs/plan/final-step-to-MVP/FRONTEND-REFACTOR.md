@@ -62,10 +62,14 @@
 3. 链路级事件已覆盖创建/参与/确认/签到/分享切换与分享结果（成功/失败）。
 4. URL 规范化能力已上收至 shared util：
    - `shared/url/normalizeUrl.ts`
+5. WeChat / 小红书分享主逻辑已下沉到 feature hooks：
+   - `features/share/wechat/useShareToWechatChat.ts`
+   - `features/share/xhs/useShareToXiaohongshu.ts`
+6. 旧组件侧 wrapper 实现已清理（`ShareAsLink.ts` / `ShareToWechatChat.ts` / `ShareToXiaohongshu.ts`）。
 
 未完成（下一批）：
 
-1. 分享链路内部能力（微信/小红书生成、缓存、降级）仍有部分留在 `components/share/wechat|xhs`，尚未完全迁移到 `features/share/*`。
+1. 分享 UI 组件仍位于 `components/share/*`（当前策略：保留展示层在 components，业务流程在 features）。
 2. 埋点后端接收、落库与聚合任务尚未接入（当前为前端本地 debug 队列 + 控制台输出）。
 3. 可测试性基建（FR-06）尚未启动。
 

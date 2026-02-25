@@ -28,7 +28,7 @@
 
 - FRONTEND-REFACTOR：`PRPage` 已完成容器化拆分（page + widgets + feature hook），并上线统一 query key 工厂（详见 `FRONTEND-REFACTOR.md`）。
 - FRONTEND-REFACTOR：`PRCreatePage`、`HomePage` 已迁移到容器 + widgets，WeChat 参与动作鉴权已下沉到 `processes` 层。
-- FRONTEND-REFACTOR：`PRPage` 分享面板已迁移到 `features/share + widgets/pr` 组合层（分享内部实现迁移仍进行中）。
+- FRONTEND-REFACTOR：`PRPage` 分享面板已迁移到 `features/share + widgets/pr` 组合层，三种分享方式（链接/微信/小红书）业务逻辑已下沉至 feature hooks。
 - FRONTEND-REFACTOR：前端统一埋点 SDK（基础版）与分享 hooks 已落地；已覆盖 create/join/exit/confirm/check-in/share 关键事件，后端聚合能力待补齐。
 
 ## GAP Cluster 聚合
