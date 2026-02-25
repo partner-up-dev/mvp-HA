@@ -8,7 +8,12 @@
             <p class="share-card-desc">{{ shareDesc }}</p>
           </div>
           <div class="share-card-thumb" :class="{ 'thumb-empty': !posterUrl }">
-            <img v-if="posterUrl" :src="posterUrl" :alt="t('share.wechat.thumbAlt')" />
+            <img
+              v-if="posterUrl"
+              :src="posterUrl"
+              :alt="t('share.wechat.thumbAlt')"
+              @error="$emit('imageLoadError')"
+            />
             <div v-else class="thumb-placeholder">{{ thumbPlaceholder }}</div>
           </div>
         </div>
@@ -34,6 +39,10 @@ interface Props {
 
 const props = defineProps<Props>();
 const { t } = useI18n();
+
+defineEmits<{
+  imageLoadError: [];
+}>();
 </script>
 
 <style scoped lang="scss">

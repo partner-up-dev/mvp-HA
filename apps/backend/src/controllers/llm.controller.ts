@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { PartnerRequestService } from "../services/PartnerRequestService";
-import { LLMService, XiaohongshuStyle } from "../services/LLMService";
+import { ShareAIService, XiaohongshuStyle } from "../services/ShareAIService";
 import type { PartnerRequestFields } from "../entities/partner-request";
 
 const app = new Hono();
-const llmService = new LLMService();
+const shareAIService = new ShareAIService();
 const prService = new PartnerRequestService();
 
 const xiaohongshuCaptionRequestSchema = z.object({
@@ -64,7 +64,7 @@ export const llmRoute = app.post(
     }
 
     const { caption, posterStylePrompt } =
-      await llmService.generateXiaohongshuCaption(prFields, style);
+      await shareAIService.generateXiaohongshuCaption(prFields, style);
     return c.json({ caption, posterStylePrompt });
   },
 );

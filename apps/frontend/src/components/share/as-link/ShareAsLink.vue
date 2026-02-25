@@ -13,10 +13,10 @@
       <button
         class="action-btn"
         :class="{
-          success: shareState === 'copied',
+          success: shareState === 'shared' || shareState === 'copied',
           error: shareState === 'error',
         }"
-        @click="handleCopyLink"
+        @click="handleShare"
         :disabled="shareState !== 'idle'"
       >
         {{ buttonLabel }}
@@ -38,7 +38,7 @@ interface Props {
 const props = defineProps<Props>();
 const { t } = useI18n();
 
-type ShareState = "idle" | "copied" | "error";
+type ShareState = "idle" | "sharing" | "shared" | "copied" | "error";
 const shareState = ref<ShareState>("idle");
 
 const baseHref = computed(() => {
@@ -51,9 +51,11 @@ const normalizedUrl = computed(() =>
 );
 
 const buttonLabel = computed(() => {
+  if (shareState.value === "sharing") return t("common.loading");
+  if (shareState.value === "shared") return t("share.asLink.shared");
   if (shareState.value === "copied") return t("common.copied");
   if (shareState.value === "error") return t("share.asLink.shareFailed");
-  return t("share.asLink.copyButton");
+  return t("share.asLink.shareButton");
 });
 
 const flashState = (next: ShareState): void => {
@@ -63,12 +65,58 @@ const flashState = (next: ShareState): void => {
   }, 2000);
 };
 
-const handleCopyLink = async (): Promise<void> => {
+const getShareData = (): ShareData => {
+  const title = typeof document === "undefined" ? undefined : document.title;
+  return {
+    title,
+    url: normalizedUrl.value,
+  };
+};
+
+const isShareAbortError = (error: unknown): boolean => {
+  return (
+    error instanceof DOMException
+      ? error.name === "AbortError"
+      : Boolean(
+          typeof error === "object" &&
+            error !== null &&
+            "name" in error &&
+            error.name === "AbortError",
+        )
+  );
+};
+
+const tryNativeShare = async (): Promise<boolean> => {
+  if (typeof navigator === "undefined" || typeof navigator.share !== "function")
+    return false;
+  await navigator.share(getShareData());
+  return true;
+};
+
+const handleShare = async (): Promise<void> => {
+  if (shareState.value === "sharing") return;
+
+  shareState.value = "sharing";
+
+  try {
+    const didShare = await tryNativeShare();
+    if (didShare) {
+      flashState("shared");
+      return;
+    }
+  } catch (error) {
+    if (isShareAbortError(error)) {
+      shareState.value = "idle";
+      return;
+    }
+    console.error("Native share failed, fallback to copy:", error);
+  }
+
   try {
     await copyToClipboard(normalizedUrl.value);
     flashState("copied");
   } catch (error) {
-    console.error("Failed to copy:", error);
+    console.error("Failed to share/copy:", error);
     flashState("error");
   }
 };

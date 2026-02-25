@@ -31,6 +31,9 @@ export interface MessageSchema {
     structuredEntryPrefix: string;
     naturalLanguageEntry: string;
     naturalLanguagePanelTitle: string;
+    contactAuthorTitle: string;
+    contactAuthorDescription: string;
+    contactAuthorAction: string;
     topics: {
       movie: {
         name: string;
@@ -53,6 +56,13 @@ export interface MessageSchema {
         example: string;
       };
     };
+  };
+  contactAuthorPage: {
+    title: string;
+    description: string;
+    footerEntry: string;
+    qrAlt: string;
+    qrMissing: string;
   };
   createPage: {
     title: string;
@@ -102,13 +112,14 @@ export interface MessageSchema {
     prevMethodAria: string;
     nextMethodAria: string;
     methods: {
-      copyLink: string;
+      webShare: string;
       wechat: string;
       xiaohongshu: string;
     };
     asLink: {
       previewTitle: string;
-      copyButton: string;
+      shareButton: string;
+      shared: string;
       shareFailed: string;
     };
     wechat: {
@@ -118,6 +129,9 @@ export interface MessageSchema {
       guidanceLine2: string;
       switchStyle: string;
       defaultShareTitle: string;
+      pageDescriptionHome: string;
+      pageDescriptionCreate: string;
+      pageDescriptionContactAuthor: string;
       fallbackKeyText: string;
       thumbAlt: string;
       selfLabel: string;
@@ -230,6 +244,7 @@ export interface MessageSchema {
     wechatInitTimeout: string;
     wechatInitError: string;
     initializeFailed: string;
+    fetchPublicConfigFailed: string;
   };
   posterStyles: {
     fresh: string;

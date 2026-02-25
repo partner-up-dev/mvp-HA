@@ -13,6 +13,8 @@ import { z } from "zod";
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
 const isoDateOrDateTimeSchema = z.union([isoDateTimeSchema, isoDateSchema]);
+const weekdayLabelSchema = z.string().trim().min(1).max(32);
+export type WeekdayLabel = z.infer<typeof weekdayLabelSchema>;
 
 // Partner request fields (from LLM / client edits)
 export const partnerRequestFieldsSchema = z.object({
@@ -64,6 +66,7 @@ export const createNaturalLanguagePRSchema = z.object({
   rawText: z.string().min(1).max(2000),
   pin: pinSchema,
   nowIso: z.string().datetime(),
+  nowWeekday: weekdayLabelSchema.nullable().optional(),
 });
 
 export const partnerRequestSummarySchema = z.object({

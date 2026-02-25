@@ -32,6 +32,9 @@
     "structuredEntryPrefix": "找搭子一起",
     "naturalLanguageEntry": "刚刚在群里发过了？",
     "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
+    "contactAuthorTitle": "功能建议 / 问题反馈",
+    "contactAuthorDescription": "可扫码联系作者，反馈 Bug 或提出新功能建议。",
+    "contactAuthorAction": "联系作者",
     "topics": {
       "movie": {
         "name": "看电影",
@@ -54,6 +57,13 @@
         "example": "找人一起学习备考"
       }
     }
+  },
+  "contactAuthorPage": {
+    "title": "联系作者",
+    "description": "扫码添加作者微信，欢迎反馈功能建议或问题。",
+    "footerEntry": "联系作者（功能建议 / Bug 反馈）",
+    "qrAlt": "作者微信二维码",
+    "qrMissing": "暂未配置作者微信二维码"
   },
   "createPage": {
     "title": "创建搭子请求",
@@ -103,13 +113,14 @@
     "prevMethodAria": "上一个分享方式",
     "nextMethodAria": "下一个分享方式",
     "methods": {
-      "copyLink": "链接分享",
+      "webShare": "链接分享",
       "wechat": "分享到微信",
       "xiaohongshu": "分享到小红书"
     },
     "asLink": {
-      "previewTitle": "将复制的内容",
-      "copyButton": "复制链接",
+      "previewTitle": "将分享的链接",
+      "shareButton": "立即分享",
+      "shared": "已分享",
       "shareFailed": "分享失败"
     },
     "wechat": {
@@ -119,6 +130,9 @@
       "guidanceLine2": "选择“发送给朋友”或“分享到朋友圈”",
       "switchStyle": "换一个",
       "defaultShareTitle": "搭一搭 - PartnerUp",
+      "pageDescriptionHome": "一键把群聊里的搭子需求变成可加入的页面，马上发起一次真实协作。",
+      "pageDescriptionCreate": "把你的搭子需求整理成清晰卡片，发布后可直接在微信里分享给朋友。",
+      "pageDescriptionContactAuthor": "有功能建议或发现问题？来这里直接联系作者，反馈会被优先看到。",
       "fallbackKeyText": "搭",
       "thumbAlt": "微信分享缩略图",
       "selfLabel": "你"
@@ -128,7 +142,7 @@
       "generating": "生成中...",
       "captionPlaceholder": "编辑小红书文案...",
       "posterAlt": "分享海报",
-      "saveHint": "长按图片保存到相册",
+      "saveHint": "长按保存到相册",
       "shareHint": "或分享到您的小红书",
       "posterGenerating": "生成海报中...",
       "posterNotGenerated": "尚未生成海报",
@@ -230,7 +244,8 @@
     "wechatInitFailed": "微信 JS-SDK 初始化失败",
     "wechatInitTimeout": "微信 JS-SDK 初始化超时",
     "wechatInitError": "微信 JS-SDK 初始化错误：{message}",
-    "initializeFailed": "初始化失败"
+    "initializeFailed": "初始化失败",
+    "fetchPublicConfigFailed": "获取公共配置失败"
   },
   "posterStyles": {
     "fresh": "清新活泼",

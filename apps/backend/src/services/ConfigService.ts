@@ -5,7 +5,7 @@ import { ConfigRepository } from "../repositories/ConfigRepository";
 const repo = new ConfigRepository();
 
 export class ConfigService {
-  async getValueOrFallback(key: string, fallback: string): Promise<string> {
+  async getValue(key: string): Promise<string | null> {
     try {
       const value = await withTimeout(
         repo.findValueByKey(key),
@@ -14,10 +14,15 @@ export class ConfigService {
       );
 
       const trimmed = value?.trim();
-      return trimmed && trimmed.length > 0 ? trimmed : fallback;
+      return trimmed && trimmed.length > 0 ? trimmed : null;
     } catch {
-      return fallback;
+      return null;
     }
+  }
+
+  async getValueOrFallback(key: string, fallback: string): Promise<string> {
+    const value = await this.getValue(key);
+    return value ?? fallback;
   }
 
   async getJsonArrayOrFallback(

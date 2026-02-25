@@ -25,8 +25,68 @@ const stripHash = (rawUrl: string): string => {
   }
 };
 
+const WECHAT_SDK_URL = "https://res.wx.qq.com/open/js/jweixin-1.6.0.js";
+
 const isWeChatSdkAvailable = (): boolean =>
   typeof window !== "undefined" && typeof wx !== "undefined";
+
+let sdkLoadPromise: Promise<void> | null = null;
+
+const loadWeChatSdk = async (): Promise<void> => {
+  if (typeof window === "undefined") return;
+  if (isWeChatSdkAvailable()) return;
+  if (sdkLoadPromise) return await sdkLoadPromise;
+
+  sdkLoadPromise = new Promise<void>((resolve, reject) => {
+    const existingScript = document.querySelector(
+      `script[data-wechat-sdk="true"]`,
+    );
+    if (existingScript) {
+      if (isWeChatSdkAvailable()) {
+        resolve();
+        return;
+      }
+
+      const timeoutId = window.setTimeout(() => {
+        reject(new Error(i18n.global.t("errors.wechatSdkNotLoaded")));
+      }, 8000);
+
+      existingScript.addEventListener(
+        "load",
+        () => {
+          window.clearTimeout(timeoutId);
+          resolve();
+        },
+        { once: true },
+      );
+      existingScript.addEventListener(
+        "error",
+        () => {
+          window.clearTimeout(timeoutId);
+          reject(new Error(i18n.global.t("errors.wechatSdkNotLoaded")));
+        },
+        { once: true },
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = WECHAT_SDK_URL;
+    script.async = true;
+    script.dataset.wechatSdk = "true";
+    script.onload = () => resolve();
+    script.onerror = () =>
+      reject(new Error(i18n.global.t("errors.wechatSdkNotLoaded")));
+    document.head.appendChild(script);
+  });
+
+  try {
+    await sdkLoadPromise;
+  } catch (error) {
+    sdkLoadPromise = null;
+    throw error;
+  }
+};
 
 export const useWeChatShare = () => {
   const isInitializing = ref(false);
@@ -53,6 +113,8 @@ export const useWeChatShare = () => {
       initError.value = null;
 
       try {
+        await loadWeChatSdk();
+
         if (!isWeChatSdkAvailable()) {
           throw new Error(i18n.global.t("errors.wechatSdkNotLoaded"));
         }

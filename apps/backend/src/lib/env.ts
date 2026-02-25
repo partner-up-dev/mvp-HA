@@ -17,7 +17,17 @@ const envSchema = z.object({
   // WeChat Official Account (for JS-SDK signature)
   WECHAT_OFFICIAL_ACCOUNT_APP_ID: z.string().min(1).optional(),
   WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: z.string().min(1).optional(),
-  WECHAT_HTTP_PROXY: z.string().url().optional(),
+  FIXED_IP_HTTP_PROXY: z.string().url().optional(),
+
+  // WeCom (Enterprise WeChat) self-built app
+  WECOM_TOKEN: z.string().min(1).optional(),
+  WECOM_ENCODING_AES_KEY: z.string().min(1).optional(),
+  WECOM_CORP_ID: z.string().min(1).optional(),
+  WECOM_APP_AGENT_ID: z.coerce.number().int().positive().optional(),
+  WECOM_APP_SECRET: z.string().min(1).optional(),
+
+  // Frontend URL for share links
+  FRONTEND_URL: z.string().min(1).optional(),
 
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),

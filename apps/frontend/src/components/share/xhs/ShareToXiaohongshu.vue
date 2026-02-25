@@ -20,7 +20,7 @@
       <!-- Caption Editor -->
       <textarea
         :value="caption?.caption"
-        rows="4"
+        rows="3"
         class="caption-textarea"
         :class="{ transitioning: isTransitioning }"
         :placeholder="t('share.xiaohongshu.captionPlaceholder')"
@@ -41,6 +41,7 @@
                 'poster-transitioning': isPosterTransitioning,
                 'poster-loading': posterIsGenerating,
               }"
+              @error="handlePosterLoadError"
             />
             <div v-if="posterIsGenerating" class="poster-loading-overlay">
               <div class="spinner"></div>
@@ -48,7 +49,6 @@
           </div>
           <div class="guidance-text">
             <p>📱 {{ t("share.xiaohongshu.saveHint") }}</p>
-            <p class="sub-text">{{ t("share.xiaohongshu.shareHint") }}</p>
           </div>
         </div>
         <div v-else-if="posterIsGenerating" class="generating-state">
@@ -275,6 +275,17 @@ const handleCaptionBlur = () => {
   posterGenerationTimeoutId.value = window.setTimeout(() => {
     generatePosterForCurrentCaption();
   }, 100);
+};
+
+/**
+ * Handle poster image load error - regenerate poster
+ */
+const handlePosterLoadError = async (): Promise<void> => {
+  console.warn("Poster image failed to load, regenerating...");
+  posterUrl.value = null;
+  // Small delay to ensure UI updates before regenerating
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  await generatePosterForCurrentCaption();
 };
 
 /**

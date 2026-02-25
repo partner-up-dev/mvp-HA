@@ -66,10 +66,16 @@ resources:
         DATABASE_URL: ${env('DATABASE_URL')}
         WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${env('WECHAT_OFFICIAL_ACCOUNT_APP_ID')}
         WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${env('WECHAT_OFFICIAL_ACCOUNT_APP_SECRET')}
-        WECHAT_HTTP_PROXY: ${env('WECHAT_HTTP_PROXY')}
+        FIXED_IP_HTTP_PROXY: ${env('FIXED_IP_HTTP_PROXY')}
         LLM_API_KEY: ${env('LLM_API_KEY')}
         LLM_BASE_URL: ${env('LLM_BASE_URL')}
         LLM_DEFAULT_MODEL: ${env('LLM_DEFAULT_MODEL')}
+        FRONTEND_URL: ${env('FRONTEND_URL')}
+        WECOM_TOKEN: ${env('WECOM_TOKEN')}
+        WECOM_ENCODING_AES_KEY: ${env('WECOM_ENCODING_AES_KEY')}
+        WECOM_CORP_ID: ${env('WECOM_CORP_ID')}
+        WECOM_APP_AGENT_ID: ${env('WECOM_APP_AGENT_ID')}
+        WECOM_APP_SECRET: ${env('WECOM_APP_SECRET')}
       vpcConfig:
         vpcId: ${vars.vpcId}
         securityGroupId: ${vars.securityGroupId}

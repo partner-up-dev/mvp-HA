@@ -26,6 +26,7 @@
             :share-title="shareTitle"
             :share-desc="shareDescPreview"
             :thumb-placeholder="thumbPlaceholder"
+            @imageLoadError="handleThumbnailLoadError"
           />
         </div>
       </div>
@@ -48,7 +49,7 @@ import { useGenerateWechatThumbHtml } from "@/queries/useGenerateWechatThumbHtml
 import { renderPosterHtmlToBlob } from "@/composables/renderHtmlPoster";
 import { useGenerateWechatThumbPoster } from "@/composables/useGenerateWechatThumbPoster";
 import { useCloudStorage } from "@/composables/useCloudStorage";
-import { useWeChatShare } from "@/composables/useWeChatShare";
+import { useWeChatShareCard } from "@/composables/useWeChatShareCard";
 import { client } from "@/lib/rpc";
 import type { ShareToWechatChatProps } from "./ShareToWechatChat";
 import WechatChatPreview from "./WechatChatPreview.vue";
@@ -61,6 +62,8 @@ const errorMessage = ref<string | null>(null);
 const lastUploadedThumbnailUrl = ref<string | null>(null);
 const posterUrl = ref<string | null>(null);
 const isRendering = ref(false);
+const shareDesc = ref<string | null>(null);
+const isGeneratingDesc = ref(false);
 
 const {
   mutateAsync: generateThumbHtmlAsync,
@@ -69,7 +72,8 @@ const {
 const { generateThumb, isGenerating: isFallbackThumbGenerating } =
   useGenerateWechatThumbPoster();
 const { uploadFile, isUploading, uploadError } = useCloudStorage();
-const { initWeChatSdk, setWeChatShareCard, initError } = useWeChatShare();
+const { initWeChatSdk, updateWeChatShareCard, initError } =
+  useWeChatShareCard();
 
 const isWorking = computed(
   () =>
@@ -85,30 +89,12 @@ const switchButtonLabel = computed(() => {
   return t("share.wechat.switchStyle");
 });
 
-const normalizeShareUrl = (rawUrl: string): string => {
-  try {
-    const url = new URL(rawUrl);
-    url.hash = "";
-    return url.toString();
-  } catch {
-    return rawUrl.split("#")[0] ?? rawUrl;
-  }
-};
-
 const buildShareTitle = (): string => {
   const title = props.prData.title?.trim();
   return title && title.length > 0
     ? title
     : t("share.wechat.defaultShareTitle");
 };
-
-const truncateDesc = (raw: string, maxLen: number): string => {
-  const text = raw.replace(/\s+/g, " ").trim();
-  if (text.length <= maxLen) return text;
-  return `${text.slice(0, maxLen - 1)}…`;
-};
-
-const buildShareDesc = (): string => truncateDesc(props.prData.rawText, 80);
 
 const pickFallbackKeyText = (): string => {
   const title = props.prData.title?.trim();
@@ -121,9 +107,21 @@ const pickFallbackKeyText = (): string => {
 };
 
 const shareTitle = computed(() => buildShareTitle());
-const shareDesc = computed(() => buildShareDesc());
-const shareDescPreview = computed(() => truncateDesc(props.prData.rawText, 36));
+const shareDescPreview = computed(() => {
+  if (!shareDesc.value) return t("share.wechat.generating");
+  const text = shareDesc.value.replace(/\s+/g, " ").trim();
+  if (text.length <= 36) return text;
+  return `${text.slice(0, 35)}…`;
+});
 const thumbPlaceholder = computed(() => pickFallbackKeyText());
+
+const handleThumbnailLoadError = async (): Promise<void> => {
+  console.warn("Thumbnail image failed to load, regenerating...");
+  posterUrl.value = null;
+  // Small delay to ensure UI updates before regenerating
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  await handleGenerateAndUpdate();
+};
 
 const handleGenerateAndUpdate = async (): Promise<void> => {
   errorMessage.value = null;
@@ -157,7 +155,7 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
       isRendering.value = false;
     }
 
-    const thumbnailUrl = await uploadFile(blob, "wechat-share-thumb.png");
+    const thumbnailUrl = await uploadFile(blob);
     lastUploadedThumbnailUrl.value = thumbnailUrl;
     posterUrl.value = thumbnailUrl;
 
@@ -173,10 +171,10 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
       console.warn("Failed to cache thumbnail URL:", cacheError);
     }
 
-    await setWeChatShareCard({
+    await updateWeChatShareCard({
       title: shareTitle.value,
-      desc: shareDesc.value,
-      link: normalizeShareUrl(props.shareUrl),
+      desc: shareDesc.value || t("home.subtitle"),
+      link: props.shareUrl,
       imgUrl: thumbnailUrl,
     });
 
@@ -189,18 +187,51 @@ const handleGenerateAndUpdate = async (): Promise<void> => {
   }
 };
 
+const generateDescriptionAsync = async (): Promise<void> => {
+  if (shareDesc.value) return;
+
+  try {
+    isGeneratingDesc.value = true;
+    const res = await client.api.share["wechat-card"][
+      "generate-description"
+    ].$post({
+      json: {
+        prId: props.prId,
+      },
+    });
+
+    if (res.ok) {
+      const data = (await res.json()) as { description: string };
+      shareDesc.value = data.description;
+    } else {
+      console.warn("Failed to generate description, using rawText");
+      const text = props.prData.rawText.replace(/\s+/g, " ").trim();
+      shareDesc.value = text.length > 80 ? `${text.slice(0, 79)}…` : text;
+    }
+  } catch (error) {
+    console.warn("Error generating description:", error);
+    const text = props.prData.rawText.replace(/\s+/g, " ").trim();
+    shareDesc.value = text.length > 80 ? `${text.slice(0, 79)}…` : text;
+  } finally {
+    isGeneratingDesc.value = false;
+  }
+};
+
 const handleInitialize = async (): Promise<void> => {
   try {
+    // Generate description in parallel
+    generateDescriptionAsync().catch(console.error);
+
     if (props.prData.wechatThumbnail) {
       const cached = props.prData.wechatThumbnail;
       lastUploadedThumbnailUrl.value = cached.posterUrl;
       posterUrl.value = cached.posterUrl;
       styleIndex.value = cached.style + 1;
 
-      await setWeChatShareCard({
+      await updateWeChatShareCard({
         title: shareTitle.value,
-        desc: shareDesc.value,
-        link: normalizeShareUrl(props.shareUrl),
+        desc: shareDesc.value || t("home.subtitle"),
+        link: props.shareUrl,
         imgUrl: cached.posterUrl,
       });
       return;

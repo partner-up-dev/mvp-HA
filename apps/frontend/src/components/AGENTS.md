@@ -75,6 +75,7 @@ Prohibited:
   - components/share/xhs/ShareToXiaohongshu.vue
   - components/share/wechat/ShareToWechatChat.vue
   Each method component owns its options, preview, and actions and uses shared types from `components/share/types.ts`.
+  Carousel auto-rotates every 3 seconds and permanently stops for the current mount after user nav click or share-method content interaction.
 
 ## Composables
 

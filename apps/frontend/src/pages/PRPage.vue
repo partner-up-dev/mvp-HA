@@ -82,6 +82,7 @@
 
       <!-- Share PR Component -->
       <PRShareCarousel
+        class="space-m-t-lg space-p-x-sm"
         v-if="id !== null"
         :share-url="shareUrl"
         :pr-id="id"
@@ -106,6 +107,8 @@
         @close="showModifyModal = false"
       />
     </template>
+
+    <Footer />
   </div>
 </template>
 
@@ -121,6 +124,7 @@ import PRCard from "@/components/pr/PRCard.vue";
 import PRShareCarousel from "@/components/share/PRShareCarousel.vue";
 import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
+import Footer from "@/components/common/Footer.vue";
 import { usePR } from "@/queries/usePR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useJoinPR } from "@/queries/useJoinPR";
@@ -191,10 +195,43 @@ const normalizeTimeValue = (value: string | null): string | null => {
   if (!trimmed || trimmed.toLowerCase() === "null") return null;
   return trimmed;
 };
+const ISO_DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const parseIsoDateOnlyAsLocalDate = (value: string): Date | null => {
+  const [yearRaw, monthRaw, dayRaw] = value.split("-");
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+};
 
 const formatDateTime = (value: string | null): string | null => {
   const normalized = normalizeTimeValue(value);
   if (!normalized) return null;
+
+  if (ISO_DATE_ONLY_PATTERN.test(normalized)) {
+    const dateOnly = parseIsoDateOnlyAsLocalDate(normalized);
+    if (!dateOnly) return value;
+    return dateOnly.toLocaleDateString(locale.value, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+
   const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString(locale.value, {

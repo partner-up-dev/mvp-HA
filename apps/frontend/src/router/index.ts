@@ -6,22 +6,40 @@ import {
 import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
+import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
     name: "home",
     component: HomePage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
   },
   {
     path: "/pr/:id",
     name: "pr",
     component: PRPage,
+    meta: {
+      wechatSharePolicy: "skip",
+    },
   },
   {
     path: "/pr/new",
     name: "pr-new",
     component: PRCreatePage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/contact-author",
+    name: "contact-author",
+    component: ContactAuthorPage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
   },
 ];
 

@@ -4,6 +4,9 @@
 
 <script setup lang="ts">
 import { RouterView } from "vue-router";
+import { useRouteWeChatShare } from "@/composables/useRouteWeChatShare";
+
+useRouteWeChatShare();
 </script>
 
 <style lang="scss">

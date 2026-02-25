@@ -1,23 +1,25 @@
 import bcrypt from "bcryptjs";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
-import { LLMService } from "./LLMService";
+import { PartnerRequestAIService } from "./PartnerRequestAIService";
 import type {
   PartnerRequest,
   PRStatus,
   CreatePRStructuredStatus,
   PartnerRequestFields,
   PRId,
+  WeekdayLabel,
 } from "../entities/partner-request";
 
 const repo = new PartnerRequestRepository();
-const llmService = new LLMService();
+const partnerRequestAIService = new PartnerRequestAIService();
 
 export class PartnerRequestService {
   async createPRFromNaturalLanguage(
     rawText: string,
     pin: string,
     nowIso: string,
+    nowWeekday: WeekdayLabel | null,
   ) {
     // Validate PIN format (4 digits)
     if (!/^\d{4}$/.test(pin)) {
@@ -25,7 +27,11 @@ export class PartnerRequestService {
     }
 
     // Parse with LLM
-    const fields = await llmService.parseRequest(rawText, nowIso);
+    const fields = await partnerRequestAIService.parseRequest(
+      rawText,
+      nowIso,
+      nowWeekday,
+    );
     const partners: PartnerRequestFields["partners"] = [
       fields.partners[0],
       0,
