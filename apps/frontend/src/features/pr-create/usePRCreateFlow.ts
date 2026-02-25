@@ -8,6 +8,7 @@ import type {
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useCreatePRFromStructured } from "@/queries/useCreatePR";
 import { useUserPRStore } from "@/stores/userPRStore";
+import { trackEvent } from "@/shared/analytics/track";
 import PRForm from "@/components/pr/PRForm.vue";
 
 const resolveTopic = (
@@ -60,6 +61,10 @@ export const usePRCreateFlow = () => {
     createdPrId.value = result.id;
     await nextTick();
     userPRStore.addCreatedPR(result.id);
+    trackEvent("pr_create_success", {
+      prId: result.id,
+      status: pendingStatus.value,
+    });
     await router.push(`/pr/${result.id}`);
   };
 
@@ -78,4 +83,3 @@ export const usePRCreateFlow = () => {
     goHome,
   };
 };
-

@@ -29,6 +29,7 @@
 - FRONTEND-REFACTOR：`PRPage` 已完成容器化拆分（page + widgets + feature hook），并上线统一 query key 工厂（详见 `FRONTEND-REFACTOR.md`）。
 - FRONTEND-REFACTOR：`PRCreatePage`、`HomePage` 已迁移到容器 + widgets，WeChat 参与动作鉴权已下沉到 `processes` 层。
 - FRONTEND-REFACTOR：`PRPage` 分享面板已迁移到 `features/share + widgets/pr` 组合层（分享内部实现迁移仍进行中）。
+- FRONTEND-REFACTOR：前端统一埋点 SDK（基础版）与分享 hooks 已落地；已覆盖 create/join/exit/confirm/check-in/share 关键事件，后端聚合能力待补齐。
 
 ## GAP Cluster 聚合
 
@@ -62,7 +63,7 @@
 | G10 | GAPC-03 | Model C 需要 `resource_booking_deadline` 与取消策略展示 | 现有 schema 无 booking deadline 与取消窗口字段；前端无对应展示 | 运营约束字段与文案缺失 | 高 |
 | G11 | GAPC-03 | Model A 需要“申请报销”入口（PR=CLOSED 可见）+ 跳转 WeCom + 最小状态跟踪 | 路由仅有 `/`, `/pr/:id`, `/pr/new`, `/contact-author`；后端无 reimbursement 相关接口 | 报销闭环未实现 | 高 |
 | G12 | GAPC-05 | 安全基线：公开场地约束、明确规则、举报按钮 | 前端无举报入口页面；后端无举报接口；仅有联系作者入口 | 安全最小闭环未达标 | 高 |
-| G13 | GAPC-04 | 指标埋点：PV、join 转化、成团率、确认率、到场率、14日复购 | 代码中无 analytics/metrics/tracking 模块与存储结构（检索无命中） | L1 验证指标无法系统化产出 | 高 |
+| G13 | GAPC-04 | 指标埋点：PV、join 转化、成团率、确认率、到场率、14日复购 | 前端已新增 `shared/analytics/events.ts` + `track.ts` 并接入 create/join/exit/confirm/check-in/share；但后端无 ingest 落库与日聚合任务 | 指标体系仅完成前端采集起点，尚无法稳定产出 L1 指标 | 高 |
 | G14 | GAPC-02 | “实时”人数变化信号 | `usePR` 无轮询/订阅；仅在本端 mutation 后 invalidate query | 跨端不具备实时性（近似“本端即时”） | 中 |
 | G15 | GAPC-01 | 风险控制：0 join PR 可配置时长后自动隐藏 | 现有 PR 无 `hiddenAt/visibilityTTL` 等字段与任务 | 自动隐藏策略缺失 | 中 |
 | G16 | GAPC-04 | Anchor 与 Community 分析管线分离 | 无 PR 分类字段 + 无指标埋点模块 | 无法做分线分析 | 中 |

@@ -58,20 +58,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import ShareAsLink from "./as-link/ShareAsLink.vue";
 import ShareToXiaohongshuMethod from "./xhs/ShareToXiaohongshu.vue";
 import ShareToWechatChatMethod from "./wechat/ShareToWechatChat.vue";
 import type { PRShareProps } from "@/components/share/types";
-
-type ShareMethodId = "WEB_SHARE" | "XIAOHONGSHU" | "WECHAT_CHAT";
-
-interface ShareMethod {
-  id: ShareMethodId;
-  label: string;
-  enabled?: boolean;
-}
+import { useShareCarousel, type ShareMethod } from "@/features/share/useShareCarousel";
 
 const props = defineProps<PRShareProps>();
 const { t } = useI18n();
@@ -95,91 +88,15 @@ const shareData = computed(() => ({
   wechatThumbnail: props.prData.wechatThumbnail ?? null,
 }));
 
-const enabledMethods = computed(() =>
-  allMethods.value.filter((m) => m.enabled || m.enabled === undefined),
-);
-
-const currentMethodId = ref<ShareMethodId>("XIAOHONGSHU");
-const switchDirection = ref<"next" | "prev">("next");
-const hasUserInteracted = ref(false);
-const AUTO_ROTATE_INTERVAL_MS = 3000;
-
-watchEffect(() => {
-  const enabled = enabledMethods.value;
-  if (enabled.length === 0) {
-    currentMethodId.value = "WEB_SHARE";
-    return;
-  }
-
-  const stillEnabled = enabled.some((m) => m.id === currentMethodId.value);
-  if (!stillEnabled) {
-    currentMethodId.value = enabled[0].id;
-  }
-});
-
-const currentMethod = computed(() => {
-  const enabled = enabledMethods.value;
-  return (
-    enabled.find((m) => m.id === currentMethodId.value) ??
-    enabled[0] ?? {
-      id: "WEB_SHARE",
-      label: t("share.methods.webShare"),
-      enabled: true,
-    }
-  );
-});
-
-const transitionName = computed(() =>
-  switchDirection.value === "next"
-    ? "method-switch-next"
-    : "method-switch-prev",
-);
-
-const markUserInteraction = (): void => {
-  hasUserInteracted.value = true;
-};
-
-const moveMethod = (offset: 1 | -1): void => {
-  switchDirection.value = offset === 1 ? "next" : "prev";
-
-  const enabled = enabledMethods.value;
-  if (enabled.length <= 1) return;
-
-  const currentIndex = Math.max(
-    0,
-    enabled.findIndex((m) => m.id === currentMethod.value.id),
-  );
-  const nextIndex = (currentIndex + offset + enabled.length) % enabled.length;
-  currentMethodId.value = enabled[nextIndex].id;
-};
-
-const goToPrevMethod = (): void => {
-  markUserInteraction();
-  moveMethod(-1);
-};
-
-const goToNextMethod = (): void => {
-  markUserInteraction();
-  moveMethod(1);
-};
-
-const handleShareMethodInteraction = (): void => {
-  markUserInteraction();
-};
-
-watchEffect((onCleanup) => {
-  if (typeof window === "undefined") return;
-  if (hasUserInteracted.value) return;
-  if (enabledMethods.value.length <= 1) return;
-
-  const timerId = window.setInterval(() => {
-    if (hasUserInteracted.value) return;
-    moveMethod(1);
-  }, AUTO_ROTATE_INTERVAL_MS);
-
-  onCleanup(() => {
-    window.clearInterval(timerId);
-  });
+const {
+  enabledMethods,
+  currentMethod,
+  transitionName,
+  goToPrevMethod,
+  goToNextMethod,
+  handleShareMethodInteraction,
+} = useShareCarousel({
+  allMethods,
 });
 </script>
 

@@ -7,6 +7,7 @@ import { useConfirmPRSlot } from "@/queries/useConfirmPRSlot";
 import { useCheckInPRSlot } from "@/queries/useCheckInPRSlot";
 import type { PRDetailView } from "@/entities/pr/types";
 import { requireWeChatActionAuth } from "@/processes/wechat-auth/guards/requireWeChatActionAuth";
+import { trackEvent } from "@/shared/analytics/track";
 
 type UsePRActionsOptions = {
   id: ComputedRef<PRId | null>;
@@ -102,6 +103,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
     if (!(await ensureActionAuthenticated())) return;
 
     await joinMutation.mutateAsync({ id: id.value });
+    trackEvent("pr_join_success", { prId: id.value });
   };
 
   const handleExit = async () => {
@@ -109,6 +111,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
     if (!(await ensureActionAuthenticated())) return;
 
     await exitMutation.mutateAsync({ id: id.value });
+    trackEvent("pr_exit_success", { prId: id.value });
   };
 
   const handleConfirmSlot = async () => {
@@ -116,6 +119,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
     if (!(await ensureActionAuthenticated())) return;
 
     await confirmSlotMutation.mutateAsync({ id: id.value });
+    trackEvent("pr_confirm_success", { prId: id.value });
   };
 
   const prepareCheckIn = (didAttend: boolean) => {
@@ -133,6 +137,12 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
 
     await checkInSlotMutation.mutateAsync({
       id: id.value,
+      didAttend: pendingCheckInDidAttend.value,
+      wouldJoinAgain,
+    });
+
+    trackEvent("pr_checkin_submitted", {
+      prId: id.value,
       didAttend: pendingCheckInDidAttend.value,
       wouldJoinAgain,
     });

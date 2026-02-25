@@ -68,7 +68,8 @@
 当前状态（2026-02-25）：
 
 1. 前端已先行完成 query key 工厂统一（作为状态/埋点统一前置步骤）。
-2. `track` SDK 与事件协议尚未落地。
+2. 前端已落地类型化 `trackEvent` SDK 与基础事件协议（create/join/exit/confirm/check-in/share）。
+3. 事件目前仅进入前端本地 debug 队列，后端 ingest/outbox/聚合任务尚未落地。
 
 ### INFRA-05：运营日志基础能力
 

@@ -42,6 +42,31 @@
 2. 埋点失败不阻塞业务流。
 3. 本地开发可打开 debug 面板查看事件发送情况。
 
+## 进度更新（2026-02-25）
+
+已完成（Phase 1-部分）：
+
+1. 前端已新增类型化事件字典与 SDK：
+   - `apps/frontend/src/shared/analytics/events.ts`
+   - `apps/frontend/src/shared/analytics/track.ts`
+2. 已接入关键业务事件：
+   - `pr_create_success`
+   - `pr_join_success`
+   - `pr_exit_success`
+   - `pr_confirm_success`
+   - `pr_checkin_submitted`
+   - `share_method_switch`
+   - `share_link_native_success`
+   - `share_link_copy_success`
+   - `share_link_failed`
+3. 开发态可通过 `window.__PARTNER_UP_ANALYTICS_EVENTS__` 查看事件序列。
+
+未完成：
+
+1. `page_view`、`share_converted`、`repeat_join_14d` 等事件仍未落地。
+2. 后端 `analytics_events` 落库与按日聚合任务尚未启动。
+3. Anchor/Community 分线统计仍缺少实体字段与任务实现。
+
 ## 分阶段实施
 
 ### Phase 1：事件字典与 SDK
