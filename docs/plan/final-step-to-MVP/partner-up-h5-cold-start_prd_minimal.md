@@ -25,24 +25,26 @@ Validate that fixed-time, fixed-location, fixed-theme events can reliably:
 
 ## 2. Design Principles
 
-1. Login optional overall, but mandatory for Anchor PR participation (WeChat OpenID binding required)
+1. Login remains optional for browsing/creation, but participation actions require WeChat OpenID binding
 2. No profile feed
 3. No open browsing marketplace
 4. Extremely low cognitive load
 
 Identity Rule:
-- Anchor PR requires login (OpenID bound) to join.
-- Community PR does NOT require login (to preserve low-friction exploration).
+- At L1, all PR participation actions require login (OpenID bound): join / exit / confirm / check-in.
+- Community PR can still be explored and shared without login.
 
 5. Status becomes:
 
 - PR remains **OPEN** as long as current < max and join is allowed.
-- When current ≥ min, show a **READY** badge ("Min reached") but keep PR OPEN.
-- When current == max → FULL.
+- When current ≥ min, PR enters **READY** ("Min reached"), and join remains open.
+- When current == max → **FULL**.
+- When event window starts (from READY/FULL), PR enters **ACTIVE**.
+- When event window ends, PR enters **EXPIRED**.
 
 Rationale:
-"ACTIVE" is ambiguous to users (they may think joining is closed).
-READY communicates viability without implying closure.
+READY communicates viability before the event starts.  
+ACTIVE communicates "in progress" timing and supports downstream operational rules.
 
 System behavior:
 
@@ -56,7 +58,7 @@ System behavior:
 Pure H5 cannot push reminders.
 Attendance reliability becomes noisy.
 
-L1 introduces optional WeChat login.
+L1 introduces WeChat login as a participation baseline.
 
 Flow:
 
@@ -144,6 +146,7 @@ DRAFT
 → OPEN
 → READY (min reached, join still open)
 → FULL (max reached)
+→ ACTIVE (event window started)
 → EXPIRED
 → CLOSED
 
@@ -571,8 +574,8 @@ Preparation must happen quietly during L1.
 ### 13.1 Identity Foundation
 
 At L1:
-- Anchor PR participation requires OpenID binding.
-- Community PR remains usable without login.
+- All PR participation actions require OpenID binding.
+- Community PR remains discoverable/shareable without login.
 
 System must internally support:
 - Stable OpenID binding
@@ -702,4 +705,3 @@ Hidden scalability.
 ---
 
 End of Minimal PRD.
-

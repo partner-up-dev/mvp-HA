@@ -1,31 +1,75 @@
-# PartnerUp Cold Start Minimal PRD Gap (Code Snapshot: 2026-02-25)
+# GAP 分析：现有代码 vs `partner-up-h5-cold-start_prd_minimal.md`
 
-## 已实现基线（代码确认）
-- PR 创建双路径：自然语言 + 结构化（`apps/backend/src/controllers/partner-request.controller.ts`）。
-- 基础状态与流转：`DRAFT/OPEN/ACTIVE/CLOSED/EXPIRED`，并支持 join/exit（`apps/backend/src/services/PartnerRequestService.ts`）。
-- 分享链路：链接分享、微信卡片、小红书文案/海报（前后端 share 相关文件）。
-- 联系作者入口与公共配置读取（`/contact-author` + `/api/config/public/:key`）。
+更新时间：2026-02-25  
+对照范围：`apps/backend`、`apps/frontend` 当前主干代码（不含 `docs/plan` 历史草案）
 
-## 主要 GAP（相对 `docs/plan/final-step-to-MVP/partner-up-h5-cold-start_prd_minimal.md`）
+## 结论总览
 
-### P0（核心机制未落地）
-- 状态机不一致：PRD 需要 `READY/FULL` 语义；当前仍是 `ACTIVE`，且状态枚举无 `READY/FULL`（`entities/partner-request.ts`、`PRStatusBadge.vue`）。
-- 缺少 Slot 状态层：PRD 要求 `JOINED/CONFIRMED/RELEASED/ATTENDED`；当前仅有 `partners=[min,current,max]` 聚合计数，无参与者级别记录。
-- Anchor PR 登录约束未落地：PRD 要求 Anchor 参与必须 OpenID 绑定；当前虽已有 `/api/wechat/oauth/*` 会话能力，但尚未与 join/confirm 等业务鉴权绑定，无法执行 Anchor 强制规则。
-- 确认与释放机制缺失：无 T-24h/T-2h 提醒、T-1h 未确认释放、T-30min 锁定逻辑。
-- Check-in/到场回传缺失：无现场签到或事后“是否参加/是否愿再来”数据结构与 API。
-- Anchor Event + Batch 能力缺失：无 Anchor Event 实体、无批次扩容/同类异地推荐模型。
-- 经济模型缺失：无 `payment_model`、`discount_rate`、`subsidy_cap`、`resource_booking_deadline` 等字段与页面展示。
-- 报销最小闭环缺失：无 slot 级 `reimbursement_*` 字段、无“申请报销”入口与状态追踪。
+当前代码在「创建 / 基础状态流转 / 加入退出 / 分享 / 微信登录 / 基础确认与签到」上已有实现，但与 PRD 的 L1/L2 准备层仍有系统缺口，主要集中在：
 
-### P1（L1 稳定性与 L2 预埋不足）
-- 安全基线不完整：无“举报”入口/表单；无“公共场地限制”规则约束与提示。
-- 指标埋点缺失：未见 PV、join 转化、min 达成率、确认率、到场率、14 天复参与等埋点/统计通路。
-- 运维结构化日志缺失：未见 PR 级 `operation_log` 抽象（仅常规服务日志）。
+1. 供给扩展与 Anchor 运营（批次化、模板化、弱曝光治理）。
+2. 可靠性体系（提醒触达、实时感知、可靠性评分）。
+3. 经济与报销闭环（模型 A/C、规则展示、运营动作留痕）。
+4. 安全与增长观测（举报、指标体系、分线分析）。
 
-## 简短结论
-当前代码更接近“可创建/可分享/可加入的 PR MVP”，尚未进入 PRD 定义的“Anchor 密度实验 + 可靠性控制 + 经济层最小闭环”阶段。下一步应先补齐 `READY/FULL + Slot 状态 + 登录确认/释放` 三件套，再推进经济模型与报销链路。
+## 状态变更记录
 
-## 拆分展开
-- Frontend 详版：`docs/plan/final-step-to-MVP/frontend-gap.md`
-- Backend 详版：`docs/plan/final-step-to-MVP/backend-gap.md`
+### 已回写为 PRD 决策（不再计入 GAP）
+
+- G01：L1 统一要求参与动作登录（join/exit/confirm/check-in）。
+- G02：L1 保留 `ACTIVE` 作为对象状态并对外展示。
+
+### 已完成实现（不再计入 GAP）
+
+- G05：已新增后台周期性时态维护（自动释放未确认槽位不再仅依赖读写惰性触发）。
+- G06：前端签到已补充“是否愿意再参加”二次确认并回传 `wouldJoinAgain`。
+
+## GAP Cluster 聚合
+
+| Cluster | 聚合 GAP | 目标 | 计划文件 |
+|---|---|---|---|
+| GAPC-01 供给扩展引擎 | G07, G15, G17 | 让 Anchor Event 可批量复制、自动扩容、低质量供给自动收敛 | `GAPC-01-PLAN.md` |
+| GAPC-02 可靠性与触达 | G04, G14, G19 | 建立提醒、实时人数信号、可靠性评分闭环 | `GAPC-02-PLAN.md` |
+| GAPC-03 经济与报销闭环 | G08, G09, G10, G11, G18, G20 | 从数据模型到页面到运营动作，打通 A/C 经济层 | `GAPC-03-PLAN.md` |
+| GAPC-04 观测与分析管线 | G13, G16, G21 | 建立可用于 L1 决策的指标与分线分析能力 | `GAPC-04-PLAN.md` |
+| GAPC-05 安全基线 | G12 | 落地可见安全姿态与最小举报链路 | `GAPC-05-PLAN.md` |
+
+## 共享 Infra（跨 Cluster）
+
+多个 Cluster 共享基础设施重构，单独抽离为 `INFRA-PLAN.md`，重点是：
+
+1. 事件驱动骨架（Domain Event + Outbox + Job Runner）。
+2. 后端服务按领域拆分（替代单体 `PartnerRequestService` 持续膨胀）。
+3. 统一观测埋点 SDK（前后端同一事件命名与上下文）。
+4. 可中断的迁移策略（MVP 阶段可不兼容，允许 schema 重整与服务重编排）。
+
+## 详细 GAP 清单（含 Cluster）
+
+| ID | Cluster | PRD 要求 | 现状证据（代码） | GAP 结论 | 优先级 |
+|---|---|---|---|---|---|
+| G04 | GAPC-02 | T-24h / T-2h 提醒 + 可选公众号订阅 | 代码中无 reminder/subscription 相关实体、任务、接口；仅有 OAuth 与分享能力 | 提醒机制未实现 | 高 |
+| G07 | GAPC-01 | Anchor Event 批次化（同锚点多 batch）、满员后推荐同类型异地活动、可自动开新 batch | `apps/backend/src/entities` 仅有 `partner-request/partner/user/config`；无 `anchor_event`、`batch_id`；无相关推荐接口 | 6.2 批次化核心能力未实现 | 高 |
+| G08 | GAPC-03 | PR 页面明确展示“场地由平台预定 / 折扣已应用 / 支付规则” | `apps/frontend/src/components/pr/PRCard.vue` 仅展示 type/time/location/partners/budget/preferences/notes | 运营责任与支付规则展示缺失 | 高 |
+| G09 | GAPC-03 | Model C（≤12元免费）与 Model A（报销）的最小数据结构 | `apps/backend/src/entities/partner-request.ts`、`apps/backend/src/entities/partner.ts`、`apps/backend/drizzle/0000_outgoing_mongu.sql` 无 `payment_model/discount_rate/subsidy_cap/reimbursement_*` 字段 | 经济模型尚未建模 | 高 |
+| G10 | GAPC-03 | Model C 需要 `resource_booking_deadline` 与取消策略展示 | 现有 schema 无 booking deadline 与取消窗口字段；前端无对应展示 | 运营约束字段与文案缺失 | 高 |
+| G11 | GAPC-03 | Model A 需要“申请报销”入口（PR=CLOSED 可见）+ 跳转 WeCom + 最小状态跟踪 | 路由仅有 `/`, `/pr/:id`, `/pr/new`, `/contact-author`；后端无 reimbursement 相关接口 | 报销闭环未实现 | 高 |
+| G12 | GAPC-05 | 安全基线：公开场地约束、明确规则、举报按钮 | 前端无举报入口页面；后端无举报接口；仅有联系作者入口 | 安全最小闭环未达标 | 高 |
+| G13 | GAPC-04 | 指标埋点：PV、join 转化、成团率、确认率、到场率、14日复购 | 代码中无 analytics/metrics/tracking 模块与存储结构（检索无命中） | L1 验证指标无法系统化产出 | 高 |
+| G14 | GAPC-02 | “实时”人数变化信号 | `usePR` 无轮询/订阅；仅在本端 mutation 后 invalidate query | 跨端不具备实时性（近似“本端即时”） | 中 |
+| G15 | GAPC-01 | 风险控制：0 join PR 可配置时长后自动隐藏 | 现有 PR 无 `hiddenAt/visibilityTTL` 等字段与任务 | 自动隐藏策略缺失 | 中 |
+| G16 | GAPC-04 | Anchor 与 Community 分析管线分离 | 无 PR 分类字段 + 无指标埋点模块 | 无法做分线分析 | 中 |
+| G17 | GAPC-01 | L2 预备：事件模板系统（type/capacity/booking/cost model） | 无 template 实体与模板管理接口 | 未做可复制运营抽象 | 中 |
+| G18 | GAPC-03 | L2 预备：支付可扩展字段（`payment_model`、slot 级 `payment_status`） | `partner_requests`/`partners` 表均未预留相关字段 | 经济层扩展性不足 | 中 |
+| G19 | GAPC-02 | L2 预备：可靠性评分（join→confirm、confirm→attend、release frequency） | 虽存储了 slot 行为，但无评分计算与持久化字段/任务 | 数据在，评分层未实现 | 中 |
+| G20 | GAPC-03 | L2 预备：运营动作结构化日志（`operation_log`） | PR schema 无 `operation_log`，后端无 ops log 记录机制 | 后续迁移为运营后台风险高 | 中 |
+| G21 | GAPC-04 | L2 预备：场景分类统计（type 频率、share→join、fill rate） | 无对应统计口径落库/任务 | 场景扩张依据不足 | 中 |
+
+## 已有能力（避免误判为 GAP）
+
+以下能力与 PRD 方向基本一致（或已部分对齐）：
+
+- 双创建路径：自然语言与结构化创建（`/api/pr/natural_language`、`/api/pr`）。
+- Slot 状态机基础：`JOINED/CONFIRMED/RELEASED/ATTENDED` 已落库。
+- 加入时间窗口约束：`T-1h~T-30min` 自动确认、`T-30min` 后禁止加入。
+- 可选签到基础能力：支持到场/未到场上报。
+- 无全局广场/无推荐 feed：当前仅本地“我创建的 PR”列表。
