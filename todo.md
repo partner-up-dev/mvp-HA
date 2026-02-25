@@ -20,3 +20,4 @@
 - [ ] 在移动端的加载速度还有待优化
 - [ ] 跳转小红书App（最好能跳到笔记草稿页） <https://chatgpt.com/c/698b28a9-9990-83a8-bf9f-a00bd6158096>
 - [x] 因为 poster, thumbnail 会被自动清理，所以前端一旦发现 404，应该重新生成，而不是留着 broken image
+- [ ] 当WebHistory为空时，显示 home 而不是 back

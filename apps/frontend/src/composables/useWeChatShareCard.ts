@@ -18,7 +18,7 @@ const resolveDefaultLink = (): string => {
 
 const resolveDefaultImageUrl = (): string => {
   if (typeof window === "undefined") return "";
-  return new URL("/favicon.ico", window.location.origin).toString();
+  return new URL("/share-logo.png", window.location.origin).toString();
 };
 
 export const useWeChatShareCard = () => {

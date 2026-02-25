@@ -27,14 +27,8 @@ import { useI18n } from "vue-i18n";
 import CreatedPRList from "@/components/pr/CreatedPRList.vue";
 import HomeNLCreatePanel from "@/components/home/HomeNLCreatePanel.vue";
 import HomeStructuredCreateCta from "@/components/home/HomeStructuredCreateCta.vue";
-import { usePageWeChatShare } from "@/composables/usePageWeChatShare";
 
 const { t } = useI18n();
-
-usePageWeChatShare({
-  title: () => t("app.siteName"),
-  desc: () => t("home.subtitle"),
-});
 </script>
 
 <style lang="scss" scoped>

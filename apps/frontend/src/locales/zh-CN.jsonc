@@ -130,6 +130,9 @@
       "guidanceLine2": "选择“发送给朋友”或“分享到朋友圈”",
       "switchStyle": "换一个",
       "defaultShareTitle": "搭一搭 - PartnerUp",
+      "pageDescriptionHome": "一键把群聊里的搭子需求变成可加入的页面，马上发起一次真实协作。",
+      "pageDescriptionCreate": "把你的搭子需求整理成清晰卡片，发布后可直接在微信里分享给朋友。",
+      "pageDescriptionContactAuthor": "有功能建议或发现问题？来这里直接联系作者，反馈会被优先看到。",
       "fallbackKeyText": "搭",
       "thumbAlt": "微信分享缩略图",
       "selfLabel": "你"

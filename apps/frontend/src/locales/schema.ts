@@ -129,6 +129,9 @@ export interface MessageSchema {
       guidanceLine2: string;
       switchStyle: string;
       defaultShareTitle: string;
+      pageDescriptionHome: string;
+      pageDescriptionCreate: string;
+      pageDescriptionContactAuthor: string;
       fallbackKeyText: string;
       thumbAlt: string;
       selfLabel: string;
