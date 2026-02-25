@@ -81,6 +81,11 @@ export interface MessageSchema {
     checkInAttended: string;
     checkInMissed: string;
     checkingIn: string;
+    checkInFollowupQuestion: string;
+    checkInFollowupForAttended: string;
+    checkInFollowupForMissed: string;
+    wouldJoinAgainYes: string;
+    wouldJoinAgainNo: string;
     slotJoined: string;
     slotNotJoined: string;
     editContent: string;

@@ -89,7 +89,7 @@
         <button
           v-if="hasJoined && hasStarted"
           class="checkin-attended-btn"
-          @click="handleCheckIn(true)"
+          @click="prepareCheckIn(true)"
           :disabled="checkInSlotMutation.isPending.value"
         >
           {{
@@ -102,7 +102,7 @@
         <button
           v-if="hasJoined && hasStarted"
           class="checkin-missed-btn"
-          @click="handleCheckIn(false)"
+          @click="prepareCheckIn(false)"
           :disabled="checkInSlotMutation.isPending.value"
         >
           {{
@@ -130,6 +130,42 @@
         >
           {{ t("prPage.modifyStatus") }}
         </button>
+      </section>
+
+      <section
+        v-if="hasJoined && hasStarted && pendingCheckInDidAttend !== null"
+        class="checkin-followup"
+      >
+        <p class="checkin-followup-text">
+          {{
+            t("prPage.checkInFollowupQuestion", {
+              status: checkInFollowupStatusLabel,
+            })
+          }}
+        </p>
+        <div class="checkin-followup-actions">
+          <button
+            class="checkin-followup-btn confirm"
+            :disabled="checkInSlotMutation.isPending.value"
+            @click="submitCheckIn(true)"
+          >
+            {{ t("prPage.wouldJoinAgainYes") }}
+          </button>
+          <button
+            class="checkin-followup-btn decline"
+            :disabled="checkInSlotMutation.isPending.value"
+            @click="submitCheckIn(false)"
+          >
+            {{ t("prPage.wouldJoinAgainNo") }}
+          </button>
+          <button
+            class="checkin-followup-btn cancel"
+            :disabled="checkInSlotMutation.isPending.value"
+            @click="cancelPendingCheckIn"
+          >
+            {{ t("common.cancel") }}
+          </button>
+        </div>
       </section>
 
       <!-- Share PR Component -->
@@ -210,6 +246,7 @@ const userPRStore = useUserPRStore();
 
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
+const pendingCheckInDidAttend = ref<boolean | null>(null);
 
 useBodyScrollLock(computed(() => showEditModal.value || showModifyModal.value));
 
@@ -260,6 +297,13 @@ const canConfirm = computed(() => {
     return false;
   }
   return true;
+});
+
+const checkInFollowupStatusLabel = computed(() => {
+  if (pendingCheckInDidAttend.value === true) {
+    return t("prPage.checkInFollowupForAttended");
+  }
+  return t("prPage.checkInFollowupForMissed");
 });
 
 const formatDate = (dateStr: string) => {
@@ -381,17 +425,27 @@ const handleConfirmSlot = async () => {
   });
 };
 
-const handleCheckIn = async (didAttend: boolean) => {
+const prepareCheckIn = (didAttend: boolean) => {
+  pendingCheckInDidAttend.value = didAttend;
+};
+
+const cancelPendingCheckIn = () => {
+  pendingCheckInDidAttend.value = null;
+};
+
+const submitCheckIn = async (wouldJoinAgain: boolean) => {
   if (id.value === null) return;
+  if (pendingCheckInDidAttend.value === null) return;
   if (!(await ensureJoinActionAuthenticated())) {
     return;
   }
 
   await checkInSlotMutation.mutateAsync({
     id: id.value,
-    didAttend,
-    wouldJoinAgain: null,
+    didAttend: pendingCheckInDidAttend.value,
+    wouldJoinAgain,
   });
+  pendingCheckInDidAttend.value = null;
 };
 
 // Set up dynamic meta tags
@@ -503,6 +557,53 @@ useHead({
 .slot-state-text {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.checkin-followup {
+  margin-top: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-low);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+}
+
+.checkin-followup-text {
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface);
+}
+
+.checkin-followup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sys-spacing-sm);
+}
+
+.checkin-followup-btn {
+  @include mx.pu-font(label-large);
+  min-height: var(--sys-size-large);
+  border-radius: var(--sys-radius-sm);
+  cursor: pointer;
+  border: 1px solid var(--sys-color-outline);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.checkin-followup-btn.confirm {
+  border: none;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+
+.checkin-followup-btn.cancel {
+  grid-column: 1 / -1;
 }
 
 .actions > button {

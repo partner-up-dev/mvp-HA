@@ -33,6 +33,14 @@ const envSchema = z.object({
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),
 
+  // Background temporal maintenance for PR lifecycle.
+  // Set to 0 to disable periodic scanning.
+  PR_TEMPORAL_MAINTENANCE_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(60_000),
+
   PORT: z.coerce.number().default(3000),
 });
 

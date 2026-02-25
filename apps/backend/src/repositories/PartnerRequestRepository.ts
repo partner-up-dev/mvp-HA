@@ -34,6 +34,15 @@ export class PartnerRequestRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async findByStatuses(statuses: PRStatus[]) {
+    if (statuses.length === 0) return [];
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(inArray(partnerRequests.status, statuses))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async updateStatus(id: PRId, status: PRStatus) {
     const result = await db
       .update(partnerRequests)

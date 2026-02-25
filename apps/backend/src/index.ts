@@ -14,9 +14,11 @@ import { wechatRoute } from "./controllers/wechat.controller";
 import { shareRoute } from "./controllers/share.controller";
 import { wecomRoute } from "./controllers/wecom.controller";
 import { configRoute } from "./controllers/config.controller";
+import { PartnerRequestService } from "./services/PartnerRequestService";
 import { env } from "./lib/env";
 
 const app = new Hono();
+const partnerRequestService = new PartnerRequestService();
 
 // Middleware
 app.use("*", logger());
@@ -68,10 +70,48 @@ export {
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export { userIdSchema, userStatusSchema, userSexSchema } from "./entities/user";
 
+const startTemporalMaintenanceLoop = () => {
+  const intervalMs = env.PR_TEMPORAL_MAINTENANCE_INTERVAL_MS;
+  if (intervalMs <= 0) {
+    console.info("Temporal maintenance loop disabled");
+    return;
+  }
+
+  let running = false;
+  const runTick = async () => {
+    if (running) return;
+    running = true;
+    try {
+      const { processed, failed } =
+        await partnerRequestService.runTemporalMaintenanceTick();
+      if (failed > 0) {
+        console.warn("Temporal maintenance tick completed with failures", {
+          processed,
+          failed,
+        });
+      }
+    } catch (error) {
+      console.error("Temporal maintenance tick crashed", error);
+    } finally {
+      running = false;
+    }
+  };
+
+  void runTick();
+  const timer = setInterval(() => {
+    void runTick();
+  }, intervalMs);
+  timer.unref?.();
+
+  console.info("Temporal maintenance loop started", { intervalMs });
+};
+
 // Start server
 serve({
   fetch: app.fetch,
   port: env.PORT,
 });
+
+startTemporalMaintenanceLoop();
 
 console.log(`Server running on http://localhost:${env.PORT}`);

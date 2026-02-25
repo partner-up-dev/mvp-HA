@@ -29,6 +29,33 @@ type PublicPR = Omit<PartnerRequest, "pinHash" | "title"> & {
 };
 
 export class PartnerRequestService {
+  async runTemporalMaintenanceTick() {
+    const candidates = await repo.findByStatuses([
+      "OPEN",
+      "READY",
+      "FULL",
+      "ACTIVE",
+    ]);
+
+    let failed = 0;
+    for (const request of candidates) {
+      try {
+        await this.refreshTemporalStatus(request);
+      } catch (error) {
+        failed += 1;
+        console.error("Temporal maintenance failed", {
+          prId: request.id,
+          error,
+        });
+      }
+    }
+
+    return {
+      processed: candidates.length,
+      failed,
+    };
+  }
+
   async createPRFromNaturalLanguage(
     rawText: string,
     pin: string,
