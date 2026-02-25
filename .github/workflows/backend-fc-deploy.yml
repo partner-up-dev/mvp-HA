@@ -9,11 +9,15 @@ on:
         default: false
   push:
     branches:
-      - main
       - master
+      - develop
     paths:
       - "apps/backend/**"
       - ".github/workflows/backend-fc-deploy.yml"
+
+concurrency:
+  group: backend-fc-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -79,14 +83,7 @@ jobs:
 
       - name: Prepare node_modules layer
         if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
-        run: |
-          rm -rf apps/backend/.layer
-          mkdir -p apps/backend/.layer/nodejs
-          pnpm --filter @partner-up-dev/backend deploy --prod --node-linker=hoisted apps/backend/.layer/nodejs
-          if [ ! -d "apps/backend/.layer/nodejs/node_modules" ]; then
-            echo "Layer build failed: node_modules not found in apps/backend/.layer/nodejs"
-            exit 1
-          fi
+        run: bash scripts/ci/fc/prepare_node_modules_layer.sh
 
       - name: Install Serverless Devs CLI
         run: npm install -g @serverless-devs/s
@@ -96,22 +93,11 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
-        run: |
-          s config add -a default -f \
-          --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
-          --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
-          --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID"
+        run: bash scripts/ci/fc/configure_aliyun_credentials.sh
 
       - name: Publish node_modules layer
         if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
-        run: |
-          s cli fc3 layer publish \
-            --region "$ALIYUN_FC_REGION" \
-            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
-            --code apps/backend/.layer \
-            --compatible-runtime custom.debian12 \
-            --description "PartnerUp backend production node_modules" \
-            -a default
+        run: bash scripts/ci/fc/publish_node_modules_layer.sh
 
       - name: Clean up old layer versions (keep 3)
         if: steps.changes.outputs.layer == 'true' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
@@ -120,31 +106,7 @@ jobs:
       - name: Resolve latest layer ARN
         id: layer_arn
         if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
-        run: |
-          RAW_ARN="$(python3 scripts/fc_layer_latest_arn.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --access default)"
-          export RAW_ARN
-          NORMALIZED_ARN="$(python3 - <<'PY'
-          import os
-          import re
-          import sys
-
-          raw = os.environ["RAW_ARN"].strip()
-          account_id = os.environ.get("ALIBABA_CLOUD_ACCOUNT_ID", "").strip()
-
-          pattern = re.compile(r"^(acs:fc:[a-z0-9-]+:)([^:]+)(:layers/.+/versions/.+)$")
-          match = pattern.match(raw)
-          if not match:
-              print(f"Invalid layer ARN: {raw}", file=sys.stderr)
-              sys.exit(1)
-
-          if not account_id.isdigit():
-              print("Invalid ALIBABA_CLOUD_ACCOUNT_ID; must be digits.", file=sys.stderr)
-              sys.exit(1)
-
-          print(f"{match.group(1)}{account_id}{match.group(3)}")
-          PY
-          )"
-          echo "layer_arn=$NORMALIZED_ARN" >> "$GITHUB_OUTPUT"
+        run: bash scripts/ci/fc/resolve_latest_layer_arn.sh
         env:
           ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
 
@@ -162,14 +124,18 @@ jobs:
 
       - name: Prepare Function Compute package
         if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
-        run: |
-          rm -rf apps/backend/.fc-package
-          mkdir -p apps/backend/.fc-package
-          cp -R apps/backend/dist apps/backend/.fc-package/
-          cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
+        run: bash scripts/ci/fc/prepare_fc_package.sh
 
       - name: Deploy to Aliyun FC
         if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
         env:
           ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ steps.layer_arn.outputs.layer_arn }}
         run: s deploy -y -t apps/backend/s.yaml
+
+      - name: Publish FC function version
+        if: (github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true') && github.ref_name == 'master'
+        run: bash scripts/ci/fc/publish_function_version.sh
+
+      - name: Publish FC alias
+        if: (github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true') && github.ref_name == 'master'
+        run: bash scripts/ci/fc/publish_production_alias.sh
