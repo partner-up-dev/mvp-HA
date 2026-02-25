@@ -27,6 +27,7 @@
 ### 已启动重构（进行中）
 
 - FRONTEND-REFACTOR：`PRPage` 已完成容器化拆分（page + widgets + feature hook），并上线统一 query key 工厂（详见 `FRONTEND-REFACTOR.md`）。
+- FRONTEND-REFACTOR：`PRCreatePage`、`HomePage` 已迁移到容器 + widgets，WeChat 参与动作鉴权已下沉到 `processes` 层。
 
 ## GAP Cluster 聚合
 

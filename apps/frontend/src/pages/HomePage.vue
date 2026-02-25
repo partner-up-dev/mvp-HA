@@ -1,34 +1,15 @@
 <template>
   <div class="home-page">
-    <header class="header">
-      <h1>{{ t("home.title") }}</h1>
-      <p>{{ t("home.subtitle") }}</p>
-    </header>
-
-    <main class="main">
-      <section class="entry-panel">
-        <HomeStructuredCreateCta />
-        <HomeNLCreatePanel />
-      </section>
-
-      <CreatedPRList empty-mode="hide" />
-    </main>
-
-    <RouterLink class="contact-entry" :to="{ name: 'contact-author' }">
-      <h2>{{ t("home.contactAuthorTitle") }}</h2>
-      <p>{{ t("home.contactAuthorDescription") }}</p>
-    </RouterLink>
+    <HomeHero />
+    <HomeEntryPanel />
+    <HomeContactEntry />
   </div>
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
-import { useI18n } from "vue-i18n";
-import CreatedPRList from "@/components/pr/CreatedPRList.vue";
-import HomeNLCreatePanel from "@/components/home/HomeNLCreatePanel.vue";
-import HomeStructuredCreateCta from "@/components/home/HomeStructuredCreateCta.vue";
-
-const { t } = useI18n();
+import HomeHero from "@/widgets/home/HomeHero.vue";
+import HomeEntryPanel from "@/widgets/home/HomeEntryPanel.vue";
+import HomeContactEntry from "@/widgets/home/HomeContactEntry.vue";
 </script>
 
 <style lang="scss" scoped>
@@ -40,55 +21,5 @@ const { t } = useI18n();
     calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
     calc(var(--sys-spacing-med) + var(--pu-safe-left));
   min-height: var(--pu-vh);
-}
-
-.header {
-  padding: var(--sys-spacing-lg) 0;
-
-  h1 {
-    @include mx.pu-font(headline-large);
-    color: var(--sys-color-primary);
-    margin: 0;
-  }
-  p {
-    @include mx.pu-font(body-large);
-    color: var(--sys-color-on-surface-variant);
-  }
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-med);
-}
-
-.entry-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-lg);
-}
-
-.contact-entry {
-  text-decoration: none;
-  margin-top: var(--sys-spacing-lg);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container-low);
-  padding: var(--sys-spacing-med);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-
-  h2 {
-    @include mx.pu-font(title-medium);
-    color: var(--sys-color-on-surface);
-    margin: 0;
-  }
-
-  p {
-    @include mx.pu-font(body-medium);
-    color: var(--sys-color-on-surface-variant);
-    margin: 0;
-  }
 }
 </style>

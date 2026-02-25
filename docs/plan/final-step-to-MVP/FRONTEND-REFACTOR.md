@@ -37,11 +37,21 @@
 3. PR 相关 queries/mutations 已统一接入 query key 工厂（detail/creator/public config）。
 4. 构建配置已允许 `widgets/features` 使用统一样式 mixin 注入。
 
+已完成（第二批落地）：
+
+1. `PRCreatePage` 已迁移为容器 + feature hook + widgets：
+   - `features/pr-create/usePRCreateFlow.ts`
+   - `widgets/pr-create/*`
+2. `HomePage` 已迁移为容器 + widgets：
+   - `widgets/home/*`
+3. WeChat 参与动作鉴权已抽离到流程层：
+   - `processes/wechat-auth/guards/requireWeChatActionAuth.ts`
+4. `usePRActions` 已切换到流程层 guard，页面不再直接处理 OAuth 跳转判断。
+
 未完成（下一批）：
 
-1. 其他页面（`PRCreatePage`、`HomePage`、分享链路）尚未迁移到新分层。
-2. route/feature guard 尚未抽象到 `processes/wechat-auth/guards`。
-3. 统一埋点 SDK 与测试基建（FR-06）尚未开始。
+1. 分享链路（微信/小红书）尚未迁移到 `features/share/*` 聚合架构。
+2. 统一埋点 SDK 与测试基建（FR-06）尚未开始。
 
 ## 目标架构（V2）
 

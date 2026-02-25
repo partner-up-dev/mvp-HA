@@ -6,10 +6,7 @@ import { useExitPR } from "@/queries/useExitPR";
 import { useConfirmPRSlot } from "@/queries/useConfirmPRSlot";
 import { useCheckInPRSlot } from "@/queries/useCheckInPRSlot";
 import type { PRDetailView } from "@/entities/pr/types";
-import {
-  fetchOAuthSession,
-  redirectToWeChatOAuthLogin,
-} from "@/composables/useAutoWeChatLogin";
+import { requireWeChatActionAuth } from "@/processes/wechat-auth/guards/requireWeChatActionAuth";
 
 type UsePRActionsOptions = {
   id: ComputedRef<PRId | null>;
@@ -97,12 +94,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
   const checkInPending = computed(() => checkInSlotMutation.isPending.value);
 
   const ensureActionAuthenticated = async (): Promise<boolean> => {
-    const session = await fetchOAuthSession();
-    if (session?.configured && !session.authenticated) {
-      redirectToWeChatOAuthLogin(window.location.href);
-      return false;
-    }
-    return true;
+    return requireWeChatActionAuth(window.location.href);
   };
 
   const handleJoin = async () => {
@@ -171,4 +163,3 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
     submitCheckIn,
   };
 };
-
