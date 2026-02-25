@@ -6,6 +6,7 @@ export interface MessageSchema {
   common: {
     loading: string;
     loadingLong: string;
+    backToPrevious: string;
     cancel: string;
     confirm: string;
     save: string;

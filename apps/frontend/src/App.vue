@@ -5,8 +5,10 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import { useRouteWeChatShare } from "@/composables/useRouteWeChatShare";
+import { useWeChatAutoLogin } from "@/composables/useWeChatAutoLogin";
 
 useRouteWeChatShare();
+useWeChatAutoLogin();
 </script>
 
 <style lang="scss">

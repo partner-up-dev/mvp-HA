@@ -18,9 +18,33 @@ import { env } from "./lib/env";
 
 const app = new Hono();
 
+const corsAllowedOrigins = (env.FRONTEND_URL ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+  .flatMap((origin) => {
+    try {
+      return [new URL(origin).origin];
+    } catch {
+      return [];
+    }
+  });
+
+const resolveCorsOrigin = (requestOrigin: string): string | undefined => {
+  if (!requestOrigin) return undefined;
+  if (corsAllowedOrigins.length === 0) return requestOrigin;
+  return corsAllowedOrigins.includes(requestOrigin) ? requestOrigin : undefined;
+};
+
 // Middleware
 app.use("*", logger());
-app.use("*", cors());
+app.use(
+  "*",
+  cors({
+    origin: resolveCorsOrigin,
+    credentials: true,
+  }),
+);
 
 // Global error handler
 app.onError((err, c) => {
