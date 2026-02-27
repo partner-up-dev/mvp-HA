@@ -1,0 +1,46 @@
+edition: 3.0.0
+name: partnerup-backend-job-runner-trigger
+access: default
+
+vars:
+  region: ${env('ALIYUN_FC_REGION')}
+  functionName: ${env('ALIYUN_FC_JOB_RUNNER_TRIGGER_FUNCTION_NAME')}
+  roleArn: ${env('ALIYUN_FC_ROLE_ARN')}
+  resourceGroupId: ${env('ALIYUN_FC_RESOURCE_GROUP_ID')}
+  tickUrl: ${env('ALIYUN_FC_JOB_RUNNER_TICK_URL')}
+  cronExpression: ${env('ALIYUN_FC_JOB_RUNNER_TRIGGER_CRON')}
+
+resources:
+  job_runner_trigger:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: ${vars.functionName}
+      handler: job-runner-trigger.handler
+      role: ${vars.roleArn}
+      disableOndemand: false
+      description: "Timer trigger: invoke backend /internal/jobs/tick"
+      timeout: 30
+      diskSize: 512
+      memorySize: 128
+      cpu: 0.05
+      runtime: nodejs20
+      resourceGroupId: ${vars.resourceGroupId}
+      instanceIsolationMode: SHARE
+      instanceConcurrency: 1
+      sessionAffinity: NONE
+      tags:
+        - Key: project
+          Value: mvp-HA
+      code: ./
+      environmentVariables:
+        JOB_RUNNER_TICK_URL: ${vars.tickUrl}
+        JOB_RUNNER_INTERNAL_TOKEN: ${env('JOB_RUNNER_INTERNAL_TOKEN')}
+      triggers:
+        - triggerName: job-runner-timer
+          triggerType: timer
+          qualifier: LATEST
+          triggerConfig:
+            cronExpression: ${vars.cronExpression}
+            enable: true
+            payload: "{}"

@@ -34,6 +34,6 @@ It sends `POST` requests to backend `/internal/jobs/tick` endpoints.
 
 ## Deployment
 
-- FC resource is declared in `apps/backend/s.yaml` as `job_runner_trigger`.
+- FC template: `apps/backend/fc-job-runner-trigger/s.yaml`.
 - CI workflow for this function:
   `.github/workflows/job-runner-trigger-fc-deploy.yml`
