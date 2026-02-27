@@ -33,13 +33,45 @@ const envSchema = z.object({
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),
 
-  // Background temporal maintenance for PR lifecycle.
-  // Set to 0 to disable periodic scanning.
-  PR_TEMPORAL_MAINTENANCE_INTERVAL_MS: z.coerce
+  // Internal endpoint auth token for external job tick trigger.
+  JOB_RUNNER_INTERNAL_TOKEN: z.string().min(1).optional(),
+  JOB_RUNNER_CLAIM_BATCH_SIZE: z.coerce.number().int().positive().default(20),
+  JOB_RUNNER_MAX_BATCHES_PER_TICK: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3),
+  JOB_RUNNER_TICK_BUDGET_MS: z.coerce.number().int().positive().default(3_000),
+  JOB_RUNNER_LEASE_MS: z.coerce.number().int().positive().default(60_000),
+
+  // Request-tail best-effort job tick (compensates coarse external scheduler).
+  REQUEST_TAIL_JOB_TICK_BUDGET_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(80),
+  REQUEST_TAIL_JOB_TICK_MAX_BATCHES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1),
+  REQUEST_TAIL_JOB_TICK_MIN_INTERVAL_MS: z.coerce
     .number()
     .int()
     .nonnegative()
-    .default(60_000),
+    .default(30_000),
+
+  // Request-tail outbox drain budget.
+  OUTBOX_REQUEST_DRAIN_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(80),
+  OUTBOX_REQUEST_DRAIN_MAX_BATCHES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1),
 
   PORT: z.coerce.number().default(3000),
 });

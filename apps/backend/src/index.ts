@@ -16,16 +16,65 @@ import { wecomRoute } from "./controllers/wecom.controller";
 import { configRoute } from "./controllers/config.controller";
 import { analyticsRoute } from "./controllers/analytics.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
-import { runTemporalMaintenanceTick } from "./domains/pr-core";
+import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { jobRunner } from "./infra/jobs";
 import { processOutboxBatch } from "./infra/events";
 import { env } from "./lib/env";
+import { withTimeout } from "./lib/with-timeout";
 
 const app = new Hono();
 
 // Middleware
 app.use("*", logger());
 app.use("*", cors());
+app.use("*", async (c, next) => {
+  try {
+    await next();
+  } finally {
+    if (
+      c.req.method === "OPTIONS" ||
+      c.req.path === "/health" ||
+      c.req.path.startsWith("/internal/")
+    ) {
+      return;
+    }
+
+    try {
+      for (let i = 0; i < env.OUTBOX_REQUEST_DRAIN_MAX_BATCHES; i += 1) {
+        const processed = await withTimeout(
+          processOutboxBatch(),
+          env.OUTBOX_REQUEST_DRAIN_TIMEOUT_MS,
+          "Request-tail outbox drain timed out",
+        );
+        if (processed === 0) break;
+      }
+    } catch (error) {
+      console.error("[RequestTail] outbox drain failed", error);
+    }
+
+    if (Date.now() < nextRequestTailJobTickAtMs) {
+      return;
+    }
+    nextRequestTailJobTickAtMs =
+      Date.now() + env.REQUEST_TAIL_JOB_TICK_MIN_INTERVAL_MS;
+
+    try {
+      await withTimeout(
+        jobRunner.runDueJobs({
+          source: "request-tail",
+          batchSize: env.JOB_RUNNER_CLAIM_BATCH_SIZE,
+          maxBatches: env.REQUEST_TAIL_JOB_TICK_MAX_BATCHES,
+          budgetMs: env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
+          leaseMs: env.JOB_RUNNER_LEASE_MS,
+        }),
+        env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
+        "Request-tail job tick timed out",
+      );
+    } catch (error) {
+      console.error("[RequestTail] job tick failed", error);
+    }
+  }
+});
 
 // Global error handler
 app.onError((err, c) => {
@@ -46,13 +95,16 @@ const routes = app
   .route("/api/wechat", wechatRoute)
   .route("/api/wecom", wecomRoute)
   .route("/api/config", configRoute)
-  .route("/api/analytics", analyticsRoute);
+  .route("/api/analytics", analyticsRoute)
+  .route("/internal/jobs", internalJobsRoute);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok", jobs: jobRunner.status() }));
 
 // Export type for RPC client
 export type AppType = typeof routes;
+
+let nextRequestTailJobTickAtMs = 0;
 
 // Export types for frontend use
 export type {
@@ -92,43 +144,10 @@ export {
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export { userIdSchema, userStatusSchema, userSexSchema } from "./entities/user";
 
-// ---------------------------------------------------------------------------
-// Register background jobs via unified JobRunner (INFRA-03)
-// ---------------------------------------------------------------------------
-
-const registerBackgroundJobs = () => {
-  // Temporal maintenance: expire / activate / release-unconfirmed
-  jobRunner.register({
-    name: "temporal-maintenance",
-    intervalMs: env.PR_TEMPORAL_MAINTENANCE_INTERVAL_MS,
-    enabled: env.PR_TEMPORAL_MAINTENANCE_INTERVAL_MS > 0,
-    async handler() {
-      const { processed, failed } = await runTemporalMaintenanceTick();
-      if (failed > 0) {
-        console.warn("Temporal maintenance tick completed with failures", {
-          processed,
-          failed,
-        });
-      }
-    },
-  });
-
-  // Outbox event processor
-  jobRunner.register({
-    name: "outbox-processor",
-    intervalMs: 5_000,
-    async handler() {
-      await processOutboxBatch();
-    },
-  });
-};
-
 // Start server
 serve({
   fetch: app.fetch,
   port: env.PORT,
 });
-
-registerBackgroundJobs();
 
 console.log(`Server running on http://localhost:${env.PORT}`);

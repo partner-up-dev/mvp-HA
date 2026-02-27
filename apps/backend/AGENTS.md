@@ -23,13 +23,13 @@ Controller  ──►  UseCase (per domain)  ──►  Domain Service  ──�
                         └──►  Analytics Ingestor
 ```
 
-Background jobs (temporal maintenance, outbox processing) are managed by the unified **JobRunner** (replaces scattered `setInterval`).
+Background tasks are managed by a DB-backed JobRunner (delayed jobs + due-job claiming). In scale-to-0 serverless, execution is driven by internal tick endpoints and request-tail best-effort kicks instead of in-process intervals.
 
 ## File Structure
 
 ```
 src/
-├── entities/             # Drizzle schema definitions (partner-request, partner, user, config, domain-event, outbox-event, operation-log)
+├── entities/             # Drizzle schema definitions (partner-request, partner, user, config, domain-event, outbox-event, operation-log, job)
 ├── repositories/         # Data access layer (pure CRUD)
 ├── services/             # Legacy service facades (thin wrappers delegating to domains/)
 ├── domains/
@@ -44,7 +44,7 @@ src/
 │   └── operation-log/    # Operation log service (INFRA-05)
 ├── controllers/          # Hono routes + validation (no business logic)
 ├── lib/                  # DB engine + utilities
-└── index.ts              # Entrypoint, mounts routes, registers jobs, exports AppType
+└── index.ts              # Entrypoint, mounts routes, request-tail maintenance, exports AppType
 ```
 
 ## Development Guidelines
@@ -54,7 +54,7 @@ src/
 - Domain Use-Cases (src/domains/): **new code should import use-cases directly** instead of going through service facades.
 - Controller Layer (src/controllers): see `src/controllers/AGENTS.md`
 - Infra Layer (src/infra/): event bus, job runner, analytics ingest, operation log — cross-cutting concerns.
-- Better not use interval, background jobs, the backend is being deployed in scale-to-0 serverless.
+- Better not use interval, background jobs, the backend is being deployed in a scale-to-0 serverless.
 
 ## Best Practice Checklist
 
@@ -64,11 +64,11 @@ src/
 4. Error Handling: Use global `app.onError` to unify error response shapes.
 5. Domain Events: Key business actions must emit domain events via `eventBus.publish()` + `writeToOutbox()`.
 6. Operation Logs: Use `operationLogService.log()` (fire-and-forget) for audit trail on domain actions.
-7. Background Jobs: Register periodic/delayed jobs through `jobRunner.register()` — never use raw `setInterval`.
+7. Background Jobs: Persist delayed jobs through `jobRunner.scheduleOnce()` and drive execution via tick endpoints / request-tail kick — never use raw `setInterval`.
 
 ## Current State
 >
-> Last Updated: 2026-02-26 16:00
+> Last Updated: 2026-02-27 19:00
 
 ### Live Capabilities
 
@@ -83,19 +83,19 @@ src/
 - 签到回流（5.3）: 新增 `/api/pr/:id/check-in`，记录 `didAttend` / `wouldJoinAgain`，到场时槽位置为 `ATTENDED`。
 - 分享能力: 提供小红书文案/海报与微信缩略图生成能力，并支持缓存到后端。
 - 公共配置能力: 提供 `/api/config/public/:key` 只读配置查询（当前支持 `author_wechat_qr_code`）。
-- **领域拆分与用例化 (INFRA-01)**: `PartnerRequestService` 已拆分为独立 use-case 函数（`createPRFromNaturalLanguage`、`createPRFromStructured`、`joinPR`、`exitPR`、`confirmSlot`、`checkIn`、`updatePRStatus`、`updatePRContent` 等），业务规则归位到 `domains/pr-core/services/`（time-window、status-rules、slot-management）。原 `PartnerRequestService` 保留为薄 facade 以兼容存量调用方。
-- **Outbox 事件骨架 (INFRA-02)**: 新增 `domain_events` 与 `outbox_events`（含 `operation_logs`）表；所有关键动作（create/join/exit/confirm/check-in/status-change/content-update）写出领域事件到 outbox。Worker 定期轮询消费 outbox 事件。
-- **任务执行框架 (INFRA-03)**: 统一 `JobRunner` 取代散落的 `setInterval`，支持周期任务、延迟/一次性任务、不重入执行守卫、健康检查（`/health` 返回 jobs 运行状态）。
-- **统一埋点 SDK 后端接入 (INFRA-04)**: 新增 `POST /api/analytics/events` 批量接收前端埋点事件并落库到 `domain_events`。
-- **运营日志基础能力 (INFRA-05)**: 新增 `operation_logs` 表与 `operationLogService.log()` 通用写入接口；每个领域动作自动附带操作日志。
+- 领域拆分与用例化 (INFRA-01): `PartnerRequestService` 已拆分为独立 use-case 函数（`createPRFromNaturalLanguage`、`createPRFromStructured`、`joinPR`、`exitPR`、`confirmSlot`、`checkIn`、`updatePRStatus`、`updatePRContent` 等），业务规则归位到 `domains/pr-core/services/`（time-window、status-rules、slot-management）。原 `PartnerRequestService` 保留为薄 facade 以兼容存量调用方。
+- Outbox 事件骨架: 新增 `domain_events` 与 `outbox_events`（含 `operation_logs`）表；所有关键动作（create/join/exit/confirm/check-in/status-change/content-update）写出领域事件到 outbox。Outbox 消费支持请求尾批处理，并采用行锁 claim 防重复领取。
+- 任务执行框架 : `JobRunner` 已升级为 DB-backed 执行器（支持延迟/一次性任务、tolerance 窗口、租约与重试）；提供 `/internal/jobs/tick` 供外部定时触发，并支持请求尾 best-effort 补偿执行。
+- 统一埋点 SDK 后端接入: 新增 `POST /api/analytics/events` 批量接收前端埋点事件并落库到 `domain_events`。
+- 运营日志基础能力: 新增 `operation_logs` 表与 `operationLogService.log()` 通用写入接口；每个领域动作自动附带操作日志。
 
 ### Known Limitations & Mocks
 
-- EXPIRED 触发方式: 同时支持懒触发（读取 PR 时）和 JobRunner 周期扫描，但仍无分布式锁。
+- EXPIRED 触发方式: 目前主要依赖请求路径中的懒触发刷新（读取/加入/退出/确认/签到等用例会先 refresh），无独立全量后台扫描。
 - 小红书发布: 无官方直发接口，仅生成文案/海报并引导用户手动保存与发布。
 - 微信分享环境: 仅在微信内置 WebView 且 JS-SDK 正常加载时生效。
 - WeCom 时间语义: 企业微信回调仅提供 UTC timestamp；后端按 `Asia/Shanghai` 推断 `nowWeekday` 供自然语言解析。
-- Outbox Worker: 当前为进程内轮询（5s 间隔），尚未接入外部消息队列。
+- Outbox Worker: 当前为请求尾批处理（best-effort）；仍未接入外部消息队列与独立 worker。
 - Analytics Ingest: 仅落库，尚未实现聚合查询或仪表盘。
 - Operation Log: 仅写入，尚未提供管理端查询 UI。
 

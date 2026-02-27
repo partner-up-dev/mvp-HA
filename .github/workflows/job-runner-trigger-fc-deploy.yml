@@ -1,0 +1,73 @@
+name: Deploy Job Runner Trigger to Aliyun FC
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - develop
+    paths:
+      - "apps/backend/fc-job-runner-trigger/**"
+      - "apps/backend/s.yaml"
+      - ".github/workflows/job-runner-trigger-fc-deploy.yml"
+
+concurrency:
+  group: job-runner-trigger-fc-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ALIYUN_FC_REGION: ${{ vars.ALIYUN_FC_REGION }}
+      ALIYUN_FC_FUNCTION_NAME: ${{ vars.ALIYUN_FC_JOB_RUNNER_TRIGGER_FUNCTION_NAME }}
+      ALIYUN_FC_JOB_RUNNER_TRIGGER_FUNCTION_NAME: ${{ vars.ALIYUN_FC_JOB_RUNNER_TRIGGER_FUNCTION_NAME }}
+      ALIYUN_FC_JOB_RUNNER_TICK_URL: ${{ vars.ALIYUN_FC_JOB_RUNNER_TICK_URL }}
+      ALIYUN_FC_JOB_RUNNER_TRIGGER_CRON: ${{ vars.ALIYUN_FC_JOB_RUNNER_TRIGGER_CRON || '0 */30 * * * *' }}
+      ALIYUN_FC_ROLE_ARN: ${{ vars.ALIYUN_FC_ROLE_ARN }}
+      ALIYUN_FC_RESOURCE_GROUP_ID: ${{ vars.ALIYUN_FC_RESOURCE_GROUP_ID }}
+      ALIYUN_FC_NODE_MODULES_LAYER_NAME: ${{ vars.ALIYUN_FC_NODE_MODULES_LAYER_NAME }}
+      JOB_RUNNER_INTERNAL_TOKEN: ${{ secrets.JOB_RUNNER_INTERNAL_TOKEN }}
+      JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS: ${{ vars.JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Serverless Devs CLI
+        run: npm install -g @serverless-devs/s
+
+      - name: Configure Aliyun credentials
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
+        run: bash scripts/ci/fc/configure_aliyun_credentials.sh
+
+      - name: Resolve latest layer ARN (template compatibility)
+        id: layer_arn
+        run: bash scripts/ci/fc/resolve_latest_layer_arn.sh
+        env:
+          ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
+
+      - name: Deploy job runner trigger function
+        env:
+          ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ steps.layer_arn.outputs.layer_arn }}
+        run: s job_runner_trigger deploy -y -t apps/backend/s.yaml
+
+      - name: Publish FC function version
+        if: github.ref_name == 'master'
+        run: bash scripts/ci/fc/publish_function_version.sh
+
+      - name: Publish FC alias
+        if: github.ref_name == 'master'
+        run: bash scripts/ci/fc/publish_production_alias.sh

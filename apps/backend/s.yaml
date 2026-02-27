@@ -5,6 +5,9 @@ access: default
 vars:
   region: ${env('ALIYUN_FC_REGION')}
   functionName: ${env('ALIYUN_FC_FUNCTION_NAME')}
+  jobRunnerTriggerFunctionName: ${env('ALIYUN_FC_JOB_RUNNER_TRIGGER_FUNCTION_NAME')}
+  jobRunnerTickUrl: ${env('ALIYUN_FC_JOB_RUNNER_TICK_URL')}
+  jobRunnerTriggerCron: ${env('ALIYUN_FC_JOB_RUNNER_TRIGGER_CRON')}
   nodeModulesLayerArn: ${env('ALIYUN_FC_NODE_MODULES_LAYER_ARN')}
   roleArn: ${env('ALIYUN_FC_ROLE_ARN')}
   resourceGroupId: ${env('ALIYUN_FC_RESOURCE_GROUP_ID')}
@@ -91,3 +94,38 @@ resources:
             readOnly: false
       layers:
         - ${vars.nodeModulesLayerArn}
+
+  job_runner_trigger:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: ${vars.jobRunnerTriggerFunctionName}
+      handler: job-runner-trigger.handler
+      role: ${vars.roleArn}
+      disableOndemand: false
+      description: "Timer trigger: invoke backend /internal/jobs/tick"
+      timeout: 30
+      diskSize: 512
+      memorySize: 128
+      cpu: 0.05
+      runtime: nodejs20
+      resourceGroupId: ${vars.resourceGroupId}
+      instanceIsolationMode: SHARE
+      instanceConcurrency: 1
+      sessionAffinity: NONE
+      tags:
+        - Key: project
+          Value: mvp-HA
+      code: ./fc-job-runner-trigger
+      environmentVariables:
+        JOB_RUNNER_TICK_URL: ${vars.jobRunnerTickUrl}
+        JOB_RUNNER_INTERNAL_TOKEN: ${env('JOB_RUNNER_INTERNAL_TOKEN')}
+        JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS: ${env('JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS')}
+      triggers:
+        - triggerName: job-runner-timer
+          triggerType: timer
+          qualifier: LATEST
+          triggerConfig:
+            cronExpression: ${vars.jobRunnerTriggerCron}
+            enable: true
+            payload: "{}"

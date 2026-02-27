@@ -20,7 +20,6 @@ import {
   exitPR as exitPRUseCase,
   confirmSlot as confirmSlotUseCase,
   checkIn as checkInUseCase,
-  runTemporalMaintenanceTick as temporalMaintenanceUseCase,
 } from "../domains/pr-core";
 import type { PublicPR } from "../domains/pr-core";
 import type {
@@ -32,10 +31,6 @@ import type {
 } from "../entities/partner-request";
 
 export class PartnerRequestService {
-  async runTemporalMaintenanceTick() {
-    return temporalMaintenanceUseCase();
-  }
-
   async createPRFromNaturalLanguage(
     rawText: string,
     pin: string,
