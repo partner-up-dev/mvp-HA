@@ -57,7 +57,7 @@
 | ID | Cluster | PRD 要求 | 现状证据（代码） | GAP 结论 | 优先级 |
 |---|---|---|---|---|---|
 | G04 | GAPC-02 | T-24h / T-2h 提醒 + 可选公众号订阅 | 代码中无 reminder/subscription 相关实体、任务、接口；仅有 OAuth 与分享能力 | 提醒机制未实现 | 高 |
-| G07 | GAPC-01 | Anchor Event 批次化（同锚点多 batch）、满员后推荐同类型异地活动、可自动开新 batch | `apps/backend/src/entities` 仅有 `partner-request/partner/user/config`；无 `anchor_event`、`batch_id`；无相关推荐接口 | 6.2 批次化核心能力未实现 | 高 |
+| G07 | GAPC-01 | Anchor Event 三层供给（Event→Batch→PR）、PR 满员后同 Batch 自动开新 PR（不同地点）、推荐候选批次（不同时间窗口）、事件耗尽引导 | `apps/backend/src/entities` 仅有 `partner-request/partner/user/config`；无 `anchor_event`、`batch_id`；无相关推荐接口 | 6.2 三层供给核心能力未实现 | 高 |
 | G08 | GAPC-03 | PR 页面明确展示“场地由平台预定 / 折扣已应用 / 支付规则” | `apps/frontend/src/components/pr/PRCard.vue` 仅展示 type/time/location/partners/budget/preferences/notes | 运营责任与支付规则展示缺失 | 高 |
 | G09 | GAPC-03 | Model C（≤12元免费）与 Model A（报销）的最小数据结构 | `apps/backend/src/entities/partner-request.ts`、`apps/backend/src/entities/partner.ts`、`apps/backend/drizzle/0000_outgoing_mongu.sql` 无 `payment_model/discount_rate/subsidy_cap/reimbursement_*` 字段 | 经济模型尚未建模 | 高 |
 | G10 | GAPC-03 | Model C 需要 `resource_booking_deadline` 与取消策略展示 | 现有 schema 无 booking deadline 与取消窗口字段；前端无对应展示 | 运营约束字段与文案缺失 | 高 |

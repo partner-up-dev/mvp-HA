@@ -14,6 +14,8 @@ import {
   exitPR,
   confirmSlot,
   checkIn,
+  recommendAlternativeBatches,
+  acceptAlternativeBatch,
 } from "../domains/pr-core";
 import {
   createNaturalLanguagePRSchema,
@@ -62,6 +64,10 @@ const prIdParamSchema = z.object({
 const slotCheckInSchema = z.object({
   didAttend: z.boolean(),
   wouldJoinAgain: z.boolean().nullable().optional(),
+});
+
+const acceptAlternativeBatchSchema = z.object({
+  targetTimeWindow: createStructuredPRSchema.shape.fields.shape.time,
 });
 
 const decodeSignedPayload = <T>(
@@ -164,6 +170,28 @@ export const partnerRequestRoute = app
     const result = await getPR(id, openId);
     return c.json(result);
   })
+  // GET /api/pr/:id/alternative-batches - Recommend alternative batches (different time window, same location)
+  .get(
+    "/:id/alternative-batches",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const result = await recommendAlternativeBatches(id);
+      return c.json(result);
+    },
+  )
+  // POST /api/pr/:id/accept-alternative-batch - Accept recommendation (create batch/PR only)
+  .post(
+    "/:id/accept-alternative-batch",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", acceptAlternativeBatchSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { targetTimeWindow } = c.req.valid("json");
+      const result = await acceptAlternativeBatch(id, targetTimeWindow);
+      return c.json(result);
+    },
+  )
   // PATCH /api/pr/:id/status - Update status
   .patch(
     "/:id/status",

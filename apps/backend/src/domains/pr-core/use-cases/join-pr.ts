@@ -14,6 +14,7 @@ import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import { expandFullAnchorPR } from "../../anchor-event";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -94,6 +95,15 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
   }
 
   await recalculatePRStatus(id);
+
+  const afterRecalculate = await prRepo.findById(id);
+  if (
+    afterRecalculate &&
+    afterRecalculate.prKind === "ANCHOR" &&
+    afterRecalculate.status === "FULL"
+  ) {
+    await expandFullAnchorPR(id);
+  }
 
   // Emit domain event
   const event = await eventBus.publish(

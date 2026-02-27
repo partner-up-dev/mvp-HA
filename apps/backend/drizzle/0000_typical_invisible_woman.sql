@@ -1,3 +1,24 @@
+CREATE TABLE IF NOT EXISTS "anchor_event_batches" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"anchor_event_id" bigint NOT NULL,
+	"time_window" text[] DEFAULT ARRAY[NULL, NULL]::text[] NOT NULL,
+	"status" text DEFAULT 'OPEN' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "anchor_events" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"title" text NOT NULL,
+	"type" text NOT NULL,
+	"description" text,
+	"location_pool" jsonb NOT NULL,
+	"time_window_pool" jsonb NOT NULL,
+	"cover_image" text,
+	"status" text DEFAULT 'ACTIVE' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "config" (
 	"key" text PRIMARY KEY NOT NULL,
 	"value" text NOT NULL
@@ -29,7 +50,12 @@ CREATE TABLE IF NOT EXISTS "partner_requests" (
 	"preferences" text[] DEFAULT ARRAY[]::text[] NOT NULL,
 	"notes" text,
 	"xiaohongshu_poster" jsonb DEFAULT 'null'::jsonb,
-	"wechat_thumbnail" jsonb DEFAULT 'null'::jsonb
+	"wechat_thumbnail" jsonb DEFAULT 'null'::jsonb,
+	"pr_kind" text DEFAULT 'COMMUNITY' NOT NULL,
+	"anchor_event_id" bigint,
+	"batch_id" bigint,
+	"visibility_status" text DEFAULT 'VISIBLE' NOT NULL,
+	"auto_hide_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "partners" (
@@ -79,6 +105,24 @@ CREATE TABLE IF NOT EXISTS "operation_logs" (
 	"result_status" text DEFAULT 'success' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "anchor_event_batches" ADD CONSTRAINT "anchor_event_batches_anchor_event_id_anchor_events_id_fk" FOREIGN KEY ("anchor_event_id") REFERENCES "public"."anchor_events"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "partner_requests" ADD CONSTRAINT "partner_requests_anchor_event_id_anchor_events_id_fk" FOREIGN KEY ("anchor_event_id") REFERENCES "public"."anchor_events"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "partner_requests" ADD CONSTRAINT "partner_requests_batch_id_anchor_event_batches_id_fk" FOREIGN KEY ("batch_id") REFERENCES "public"."anchor_event_batches"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "partners" ADD CONSTRAINT "partners_pr_id_partner_requests_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."partner_requests"("id") ON DELETE cascade ON UPDATE no action;

@@ -34,7 +34,9 @@
         :show-edit-content-action="actions.showEditContentAction.value"
         :show-modify-status-action="actions.showModifyStatusAction.value"
         :show-check-in-followup="actions.showCheckInFollowup.value"
-        :check-in-followup-status-label="actions.checkInFollowupStatusLabel.value"
+        :check-in-followup-status-label="
+          actions.checkInFollowupStatusLabel.value
+        "
         :slot-state-text="actions.slotStateText.value"
         :join-pending="actions.joinPending.value"
         :exit-pending="actions.exitPending.value"
@@ -50,7 +52,78 @@
         @modify-status="showModifyModal = true"
       />
 
-      <PRShareSection :pr-id="id" :share-url="shareUrl" :pr-data="prShareData" />
+      <section
+        v-if="sameBatchAlternatives.length > 0"
+        class="same-batch-section"
+      >
+        <h2 class="same-batch-title">{{ t("prPage.sameBatch.title") }}</h2>
+        <p class="same-batch-subtitle">
+          {{ t("prPage.sameBatch.subtitle") }}
+        </p>
+        <div class="same-batch-list">
+          <router-link
+            v-for="item in sameBatchAlternatives"
+            :key="item.id"
+            :to="{ name: 'pr', params: { id: item.id } }"
+            class="same-batch-item"
+          >
+            <span class="same-batch-item__location"
+              >📍 {{ item.location }}</span
+            >
+            <span class="same-batch-item__status">{{
+              t(`prStatus.${item.status}`)
+            }}</span>
+          </router-link>
+        </div>
+      </section>
+
+      <section v-if="showAlternativeBatches" class="alternative-batch-section">
+        <h2 class="alternative-batch-title">
+          {{ t("prPage.alternativeBatch.title") }}
+        </h2>
+        <p class="alternative-batch-subtitle">
+          {{ t("prPage.alternativeBatch.subtitle") }}
+        </p>
+
+        <div v-if="isAlternativeLoading" class="alternative-batch-loading">
+          {{ t("common.loading") }}
+        </div>
+        <div
+          v-else-if="alternativeBatchRecommendations.length === 0"
+          class="alternative-batch-empty"
+        >
+          {{ t("prPage.alternativeBatch.empty") }}
+        </div>
+        <div v-else class="alternative-batch-list">
+          <div
+            v-for="item in alternativeBatchRecommendations"
+            :key="`${item.timeWindow[0]}-${item.timeWindow[1]}`"
+            class="alternative-batch-item"
+          >
+            <div class="alternative-batch-item__meta">
+              <span class="alternative-batch-item__time">
+                {{ formatBatchWindowLabel(item.timeWindow) }}
+              </span>
+              <span class="alternative-batch-item__location">
+                📍 {{ item.location }}
+              </span>
+            </div>
+            <button
+              class="alternative-batch-item__action"
+              :disabled="acceptAlternativeBatchMutation.isPending.value"
+              @click="handleAcceptAlternativeBatch(item.timeWindow)"
+            >
+              {{ t("prPage.alternativeBatch.accept") }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <PRShareSection
+        :pr-id="id"
+        :share-url="shareUrl"
+        :pr-data="prShareData"
+      />
 
       <!-- Edit Content Modal -->
       <EditPRContentModal
@@ -90,6 +163,10 @@ import PRHeroHeader from "@/widgets/pr/PRHeroHeader.vue";
 import PRActionsPanel from "@/widgets/pr/PRActionsPanel.vue";
 import PRShareSection from "@/widgets/pr/PRShareSection.vue";
 import { usePR } from "@/queries/usePR";
+import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
+import { useAlternativeBatches } from "@/queries/useAlternativeBatches";
+import { useAcceptAlternativeBatch } from "@/queries/useAcceptAlternativeBatch";
+import { useJoinPR } from "@/queries/useJoinPR";
 import type { PRId } from "@partner-up-dev/backend";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
@@ -110,6 +187,46 @@ const id = computed<PRId | null>(() => {
 
 const { data, isLoading, error } = usePR(id);
 const prDetail = computed(() => data.value as PRDetailView | undefined);
+
+const anchorEventId = computed<number | null>(() => {
+  const value = prDetail.value?.anchorEventId;
+  return typeof value === "number" && value > 0 ? value : null;
+});
+const { data: anchorEventDetail } = useAnchorEventDetail(anchorEventId);
+const showAlternativeBatches = computed(
+  () =>
+    prDetail.value?.prKind === "ANCHOR" &&
+    prDetail.value?.status === "FULL" &&
+    id.value !== null,
+);
+const { data: alternativeBatchData, isLoading: isAlternativeLoading } =
+  useAlternativeBatches(id, showAlternativeBatches);
+const acceptAlternativeBatchMutation = useAcceptAlternativeBatch();
+const joinMutation = useJoinPR();
+
+const sameBatchAlternatives = computed(() => {
+  const current = prDetail.value;
+  const detail = anchorEventDetail.value;
+  if (!current || !detail) return [];
+  if (current.prKind !== "ANCHOR" || current.status !== "FULL") return [];
+  if (current.batchId === null || current.batchId === undefined) return [];
+
+  const batch = detail.batches.find((b) => b.id === current.batchId);
+  if (!batch) return [];
+
+  return batch.prs.filter(
+    (pr) =>
+      pr.id !== current.id &&
+      pr.location !== null &&
+      pr.status !== "FULL" &&
+      pr.status !== "EXPIRED" &&
+      pr.status !== "CLOSED",
+  );
+});
+
+const alternativeBatchRecommendations = computed(
+  () => alternativeBatchData.value?.recommendations ?? [],
+);
 const userPRStore = useUserPRStore();
 
 const showEditModal = ref(false);
@@ -203,6 +320,26 @@ const localizedTime = computed<[string | null, string | null]>(() => [
   formatDateTime(prDetail.value?.time[1] ?? null),
 ]);
 
+const formatBatchWindowLabel = (timeWindow: [string | null, string | null]) => {
+  const [start, end] = timeWindow;
+  const startText =
+    formatDateTime(start) ?? t("prPage.alternativeBatch.unknownTime");
+  const endText = formatDateTime(end);
+  return endText ? `${startText} - ${endText}` : startText;
+};
+
+const handleAcceptAlternativeBatch = async (
+  targetTimeWindow: [string | null, string | null],
+) => {
+  if (id.value === null) return;
+  const result = await acceptAlternativeBatchMutation.mutateAsync({
+    id: id.value,
+    targetTimeWindow,
+  });
+  await joinMutation.mutateAsync({ id: result.prId as PRId });
+  await router.push({ name: "pr", params: { id: result.prId } });
+};
+
 const handleEditSuccess = () => {
   showEditModal.value = false;
 };
@@ -249,5 +386,120 @@ useHead({
     calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
     calc(var(--sys-spacing-med) + var(--pu-safe-left));
   min-height: var(--pu-vh);
+}
+
+.same-batch-section {
+  margin-top: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-med);
+  border-radius: 12px;
+  background: var(--sys-color-surface-container);
+}
+
+.same-batch-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.same-batch-subtitle {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.same-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.same-batch-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.75rem;
+  border-radius: 10px;
+  background: var(--sys-color-surface-container-high);
+  text-decoration: none;
+  color: inherit;
+}
+
+.same-batch-item__location {
+  font-size: 0.875rem;
+}
+
+.same-batch-item__status {
+  font-size: 0.75rem;
+  color: var(--sys-color-primary);
+}
+
+.alternative-batch-section {
+  margin-top: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-med);
+  border-radius: 12px;
+  background: var(--sys-color-surface-container);
+}
+
+.alternative-batch-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.alternative-batch-subtitle {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.alternative-batch-loading,
+.alternative-batch-empty {
+  font-size: 0.875rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.alternative-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.alternative-batch-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0.75rem;
+  border-radius: 10px;
+  background: var(--sys-color-surface-container-high);
+}
+
+.alternative-batch-item__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.alternative-batch-item__time {
+  font-size: 0.8125rem;
+}
+
+.alternative-batch-item__location {
+  font-size: 0.75rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.alternative-batch-item__action {
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
 }
 </style>

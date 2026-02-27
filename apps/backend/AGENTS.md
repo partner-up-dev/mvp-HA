@@ -54,6 +54,7 @@ src/
 - Domain Use-Cases (src/domains/): **new code should import use-cases directly** instead of going through service facades.
 - Controller Layer (src/controllers): see `src/controllers/AGENTS.md`
 - Infra Layer (src/infra/): event bus, job runner, analytics ingest, operation log — cross-cutting concerns.
+- Better not use interval, background jobs, the backend is being deployed in scale-to-0 serverless.
 
 ## Best Practice Checklist
 
@@ -64,10 +65,6 @@ src/
 5. Domain Events: Key business actions must emit domain events via `eventBus.publish()` + `writeToOutbox()`.
 6. Operation Logs: Use `operationLogService.log()` (fire-and-forget) for audit trail on domain actions.
 7. Background Jobs: Register periodic/delayed jobs through `jobRunner.register()` — never use raw `setInterval`.
-
-## Product Reference
-
-- See `docs/product/overview.md` for H-A MVP definition and scope.
 
 ## Current State
 >

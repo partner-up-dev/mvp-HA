@@ -7,6 +7,8 @@ import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
+import EventPlazaPage from "@/pages/EventPlazaPage.vue";
+import AnchorEventPage from "@/pages/AnchorEventPage.vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -39,6 +41,22 @@ const routes: RouteRecordRaw[] = [
     component: ContactAuthorPage,
     meta: {
       wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/events",
+    name: "event-plaza",
+    component: EventPlazaPage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/events/:eventId",
+    name: "anchor-event",
+    component: AnchorEventPage,
+    meta: {
+      wechatSharePolicy: "skip",
     },
   },
 ];

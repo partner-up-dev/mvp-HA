@@ -29,6 +29,8 @@
 - [ ] 跳转小红书App（最好能跳到笔记草稿页） <https://chatgpt.com/c/698b28a9-9990-83a8-bf9f-a00bd6158096>
 - [ ] 保留PIN机制，但是存储PIN在用户表中，如果登陆了，则 PIN 填充相关 UI 都不显示，直接隐性使用；如果未登录则显示
 - [ ] datetime picker 的编辑体验有待优化
+- [ ] 允许 Partner 的 user-id 在 joined 时也为空（但限制在 Community PR 类型中）
+- [ ] Event Highlights (LandingPage), Event Plaza Page, Event Page (batch as tab)
 
 ## Others
 

@@ -9,3 +9,5 @@ export { exitPR } from "./exit-pr";
 export { confirmSlot } from "./confirm-slot";
 export { checkIn } from "./check-in";
 export { runTemporalMaintenanceTick } from "./temporal-maintenance";
+export { recommendAlternativeBatches } from "./recommend-alternative-batches";
+export { acceptAlternativeBatch } from "./accept-alternative-batch";

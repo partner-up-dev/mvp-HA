@@ -19,7 +19,7 @@ Validate that fixed-time, fixed-location, fixed-theme events can reliably:
 2. Maintain controllable attendance
 3. Generate repeat participation
 
-(Aligned with Cold Start L1 strategic baseline.) 
+(Aligned with Cold Start L1 strategic baseline.)
 
 ---
 
@@ -31,10 +31,11 @@ Validate that fixed-time, fixed-location, fixed-theme events can reliably:
 4. Extremely low cognitive load
 
 Identity Rule:
+
 - At L1, all PR participation actions require login (OpenID bound): join / exit / confirm / check-in.
 - Community PR can still be explored and shared without login.
 
-5. Status becomes:
+1. Status becomes:
 
 - PR remains **OPEN** as long as current < max and join is allowed.
 - When current ≥ min, PR enters **READY** ("Min reached"), and join remains open.
@@ -175,50 +176,64 @@ Slot state represents individual commitment.
 
 ### 6.2 Anchor Event Batching + Capacity Strategy
 
-Anchor Event
-├── Batch PR #1
-├── Batch PR #2
-├── Batch PR #3
+#### Hierarchy
 
-When:
-current == max
-AND event time not passed
+Anchor Event (locks **type**, provides a pool of locations and time windows)
+├── Anchor Event Batch (locks **time window**; batch full = no more available locations under this time window)
+│   ├── Anchor PR #1 (locks **location** + time window)
+│   ├── Anchor PR #2 (locks **location** + time window)
+│   └── ...
+├── Anchor Event Batch (different time window)
+│   ├── Anchor PR ...
+│   └── ...
+└── ...
+
+Key distinctions:
+
+- **Anchor Event** = a type of activity (e.g., badminton, KTV, running). It defines the pool of available locations and time windows.
+- **Anchor Event Batch** = a specific time window within an Anchor Event. It draws from the Anchor Event's location pool.
+- **Anchor PR** = a concrete partner request that locks both a specific location and the batch's time window.
+
+#### When an Anchor PR becomes FULL
 
 System behavior can combine three mechanisms simultaneously:
 
-Option A — Mark Current Batch as FULL
+Option A — Mark Current Anchor PR as FULL
 
-- Current batch becomes FULL
+- Current PR becomes FULL
 - Remains visible for transparency
 
-Option B — Suggest Alternative Anchor Events (Same Type, Different Location)
+Option B — Auto-create New Anchor PR Under Same Batch
 
-- Pre-configured Anchor Events of same type
-- Different location
-- Same or nearby time window
-- Shown as "Other nearby sessions"
-
-Option C — Auto-create New Batch Under Same Anchor Event
-
-- Same time
-- Same location
-- Same type
-- New batch\_id
+- Triggered automatically when an Anchor PR reaches max capacity
+- The new PR is created from the **same Anchor Event Batch** (same time window)
+- Assigns a **different available location** from the Anchor Event's location pool
 - current reset to 0
+
+Option C — Suggest Alternative Anchor Event Batch
+
+- Shown when user views a FULL Anchor PR
+- Suggests batches with a **different time window** but the **same location** (or nearby locations)
+- If user accepts, a **new batch** is created (if not already existing for that time window), a **new Anchor PR** is created under it, and the user is **automatically joined**
 
 These three are not mutually exclusive.
 They operate together to preserve liquidity surface.
 
-Important:
-Same type + different location = Different Anchor Event.
-They are not auto-location mutations.
-They are separate predefined events.
+#### Special Case — Anchor Event Fully Exhausted
+
+When: all time windows × all locations are occupied → no more available batches can be created.
+
+System behavior:
+
+1. **Prompt user to subscribe** to the WeChat Official Account for notifications when capacity becomes available (e.g., slot released, new Anchor PR created under this event).
+2. **Prompt user to discover other types of events** at the Event Plaza page.
 
 Analytics separation:
 
 - Anchor Event density
 - Batch fill rate
-- Cross-event suggestion conversion
+- Cross-batch suggestion conversion
+- Exhaustion → subscription conversion rate
 
 ---
 
@@ -452,8 +467,6 @@ Payment + subsidy become behavioral levers, not just accounting tools.
 
 ---
 
-
-
 Venue + discount are first-class properties of Anchor Event.
 
 ---
@@ -574,15 +587,18 @@ Preparation must happen quietly during L1.
 ### 13.1 Identity Foundation
 
 At L1:
+
 - All PR participation actions require OpenID binding.
 - Community PR remains discoverable/shareable without login.
 
 System must internally support:
+
 - Stable OpenID binding
 - Cross-event participation history
 - Slot reliability scoring (internal only)
 
 L2 will require:
+
 - Persistent user identity
 - Reputation abstraction
 - Reliability weighting in batching

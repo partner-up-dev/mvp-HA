@@ -1,9 +1,145 @@
 {
-  "id": "ee2efcde-f68f-4bee-ba4d-fa46f680037d",
+  "id": "a6365de8-66e8-40a8-8802-3129bcd8cd1f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.anchor_event_batches": {
+      "name": "anchor_event_batches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "anchor_event_id": {
+          "name": "anchor_event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_window": {
+          "name": "time_window",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[NULL, NULL]::text[]"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'OPEN'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "anchor_event_batches_anchor_event_id_anchor_events_id_fk": {
+          "name": "anchor_event_batches_anchor_event_id_anchor_events_id_fk",
+          "tableFrom": "anchor_event_batches",
+          "tableTo": "anchor_events",
+          "columnsFrom": [
+            "anchor_event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.anchor_events": {
+      "name": "anchor_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_pool": {
+          "name": "location_pool",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_window_pool": {
+          "name": "time_window_pool",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cover_image": {
+          "name": "cover_image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.config": {
       "name": "config",
       "schema": "",
@@ -192,10 +328,69 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'null'::jsonb"
+        },
+        "pr_kind": {
+          "name": "pr_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'COMMUNITY'"
+        },
+        "anchor_event_id": {
+          "name": "anchor_event_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visibility_status": {
+          "name": "visibility_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'VISIBLE'"
+        },
+        "auto_hide_at": {
+          "name": "auto_hide_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "partner_requests_anchor_event_id_anchor_events_id_fk": {
+          "name": "partner_requests_anchor_event_id_anchor_events_id_fk",
+          "tableFrom": "partner_requests",
+          "tableTo": "anchor_events",
+          "columnsFrom": [
+            "anchor_event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "partner_requests_batch_id_anchor_event_batches_id_fk": {
+          "name": "partner_requests_batch_id_anchor_event_batches_id_fk",
+          "tableFrom": "partner_requests",
+          "tableTo": "anchor_event_batches",
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

@@ -93,7 +93,18 @@
     "modifyStatus": "修改状态",
     "metaFallbackTitle": "搭子请求 - 搭一把",
     "metaFallbackDescription": "查看搭子请求",
-    "metaTitleWithName": "{title} - 搭一把"
+    "metaTitleWithName": "{title} - 搭一把",
+    "sameBatch": {
+      "title": "同一时段其它场地",
+      "subtitle": "当前场次已满，可选择同批次下的其他地点"
+    },
+    "alternativeBatch": {
+      "title": "其它时段推荐",
+      "subtitle": "同一地点在其它时段还有机会，点击即可自动加入",
+      "accept": "加入该时段",
+      "empty": "暂时没有可推荐的其它时段",
+      "unknownTime": "时间待定"
+    }
   },
   "createdPRList": {
     "title": "我的搭子请求",
@@ -268,5 +279,32 @@
     "warm": "温暖风格",
     "modern": "现代风格",
     "elegant": "优雅风格"
+  },
+  // Event Plaza & Anchor Event
+  "eventPlaza": {
+    "title": "活动广场",
+    "subtitle": "探索附近的活动场次",
+    "locationCount": "{count} 个场地可选",
+    "noEvents": "暂无活动",
+    "loadFailed": "加载活动列表失败"
+  },
+  "anchorEvent": {
+    "backToPlaza": "活动广场",
+    "loadFailed": "加载活动详情失败",
+    "noBatches": "暂无可用场次",
+    "noPRsInBatch": "该时段暂无可用场地",
+    "batchLabel": "场次",
+    "exhausted": "该活动所有场次已满",
+    "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
+    "discoverOthers": "发现其他活动"
+  },
+  "prStatus": {
+    "DRAFT": "草稿",
+    "OPEN": "招募中",
+    "READY": "已成团",
+    "FULL": "已满员",
+    "ACTIVE": "进行中",
+    "CLOSED": "已结束",
+    "EXPIRED": "已过期"
   }
 }

@@ -1,6 +1,7 @@
 import {
   pgTable,
   bigserial,
+  bigint,
   text,
   jsonb,
   timestamp,
@@ -9,6 +10,11 @@ import {
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { anchorEvents, type AnchorEventId } from "./anchor-event";
+import {
+  anchorEventBatches,
+  type AnchorEventBatchId,
+} from "./anchor-event-batch";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
@@ -47,8 +53,19 @@ export const prStatusSchema = z.enum([
   "EXPIRED",
 ]);
 export type PRStatus = z.infer<typeof prStatusSchema>;
-export const prStatusManualSchema = z.enum(["OPEN", "READY", "ACTIVE", "CLOSED"]);
+export const prStatusManualSchema = z.enum([
+  "OPEN",
+  "READY",
+  "ACTIVE",
+  "CLOSED",
+]);
 export type PRStatusManual = z.infer<typeof prStatusManualSchema>;
+
+export const prKindSchema = z.enum(["ANCHOR", "COMMUNITY"]);
+export type PRKind = z.infer<typeof prKindSchema>;
+
+export const visibilityStatusSchema = z.enum(["VISIBLE", "HIDDEN"]);
+export type VisibilityStatus = z.infer<typeof visibilityStatusSchema>;
 
 export const createPRStructuredStatusSchema = z.enum(["DRAFT", "OPEN"]);
 export type CreatePRStructuredStatus = z.infer<
@@ -129,6 +146,19 @@ export const partnerRequests = pgTable("partner_requests", {
   wechatThumbnail: jsonb("wechat_thumbnail")
     .$type<WechatThumbnailCache | null>()
     .default(null),
+  // --- GAPC-01: Anchor Event integration ---
+  prKind: text("pr_kind").$type<PRKind>().notNull().default("COMMUNITY"),
+  anchorEventId: bigint("anchor_event_id", { mode: "number" })
+    .$type<AnchorEventId | null>()
+    .references(() => anchorEvents.id, { onDelete: "set null" }),
+  batchId: bigint("batch_id", { mode: "number" })
+    .$type<AnchorEventBatchId | null>()
+    .references(() => anchorEventBatches.id, { onDelete: "set null" }),
+  visibilityStatus: text("visibility_status")
+    .$type<VisibilityStatus>()
+    .notNull()
+    .default("VISIBLE"),
+  autoHideAt: timestamp("auto_hide_at"),
 });
 
 // Zod schemas for validation

@@ -5,3 +5,5 @@ export * from "./user";
 export * from "./domain-event";
 export * from "./outbox-event";
 export * from "./operation-log";
+export * from "./anchor-event";
+export * from "./anchor-event-batch";

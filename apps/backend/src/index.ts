@@ -15,6 +15,7 @@ import { shareRoute } from "./controllers/share.controller";
 import { wecomRoute } from "./controllers/wecom.controller";
 import { configRoute } from "./controllers/config.controller";
 import { analyticsRoute } from "./controllers/analytics.controller";
+import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { runTemporalMaintenanceTick } from "./domains/pr-core";
 import { jobRunner } from "./infra/jobs";
 import { processOutboxBatch } from "./infra/events";
@@ -38,6 +39,7 @@ app.onError((err, c) => {
 // Mount routes
 const routes = app
   .route("/api/pr", partnerRequestRoute)
+  .route("/api/events", anchorEventRoute)
   .route("/api/llm", llmRoute)
   .route("/api/share", shareRoute)
   .route("/api/upload", uploadRoute)
@@ -64,6 +66,23 @@ export type {
 } from "./entities/partner-request";
 export type { PartnerId, PartnerStatus } from "./entities/partner";
 export type { UserId, UserStatus, UserSex } from "./entities/user";
+export type {
+  AnchorEventId,
+  AnchorEventStatus,
+  LocationEntry,
+  TimeWindowEntry,
+} from "./entities/anchor-event";
+export type {
+  AnchorEventBatchId,
+  AnchorEventBatchStatus,
+} from "./entities/anchor-event-batch";
+export type { PRKind, VisibilityStatus } from "./entities/partner-request";
+export type {
+  AnchorEventSummary,
+  AnchorEventDetail,
+  BatchDetail,
+  AnchorPRSummary,
+} from "./domains/anchor-event";
 export {
   partnerRequestFieldsSchema,
   createStructuredPRSchema,

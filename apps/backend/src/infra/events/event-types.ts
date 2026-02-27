@@ -14,6 +14,7 @@ export type DomainEventType =
   | "pr.created"
   | "pr.status_changed"
   | "pr.content_updated"
+  | "anchor.pr.auto_created"
   | "partner.joined"
   | "partner.exited"
   | "partner.confirmed"
@@ -40,6 +41,15 @@ export interface PRStatusChangedPayload {
 
 export interface PRContentUpdatedPayload {
   prId: number;
+}
+
+export interface AnchorPRAutoCreatedPayload {
+  sourcePrId: number;
+  createdPrId: number;
+  anchorEventId: number | null;
+  batchId: number | null;
+  location: string | null;
+  activeCountAtSource: number;
 }
 
 export interface PartnerJoinedPayload {
@@ -82,6 +92,7 @@ export interface DomainEventPayloadMap {
   "pr.created": PRCreatedPayload;
   "pr.status_changed": PRStatusChangedPayload;
   "pr.content_updated": PRContentUpdatedPayload;
+  "anchor.pr.auto_created": AnchorPRAutoCreatedPayload;
   "partner.joined": PartnerJoinedPayload;
   "partner.exited": PartnerExitedPayload;
   "partner.confirmed": PartnerConfirmedPayload;

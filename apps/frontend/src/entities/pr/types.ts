@@ -26,6 +26,11 @@ export type PRDetailView = {
   budget: string | null;
   preferences: string[];
   notes: string | null;
+  prKind?: "ANCHOR" | "COMMUNITY";
+  anchorEventId?: number | null;
+  batchId?: number | null;
+  visibilityStatus?: "VISIBLE" | "HIDDEN";
+  autoHideAt?: string | null;
   partners: number[];
   myPartnerId: number | null;
   title?: string;
