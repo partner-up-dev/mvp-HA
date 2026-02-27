@@ -120,7 +120,6 @@ resources:
       environmentVariables:
         JOB_RUNNER_TICK_URL: ${vars.jobRunnerTickUrl}
         JOB_RUNNER_INTERNAL_TOKEN: ${env('JOB_RUNNER_INTERNAL_TOKEN')}
-        JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS: ${env('JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS')}
       triggers:
         - triggerName: job-runner-timer
           triggerType: timer
