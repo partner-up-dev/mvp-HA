@@ -3,6 +3,16 @@ CREATE TABLE IF NOT EXISTS "config" (
 	"value" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "domain_events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"type" text NOT NULL,
+	"aggregate_type" text NOT NULL,
+	"aggregate_id" text NOT NULL,
+	"payload" jsonb NOT NULL,
+	"occurred_at" timestamp DEFAULT now() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "partner_requests" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"raw_text" text NOT NULL,
@@ -48,6 +58,28 @@ CREATE TABLE IF NOT EXISTS "users" (
 	CONSTRAINT "users_open_id_unique" UNIQUE("open_id")
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "outbox_events" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"event_id" uuid NOT NULL,
+	"status" text DEFAULT 'PENDING' NOT NULL,
+	"attempts" integer DEFAULT 0 NOT NULL,
+	"last_attempted_at" timestamp,
+	"completed_at" timestamp,
+	"error" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "operation_logs" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"actor_id" text,
+	"action" text NOT NULL,
+	"aggregate_type" text NOT NULL,
+	"aggregate_id" text NOT NULL,
+	"detail" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"result_status" text DEFAULT 'success' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "partners" ADD CONSTRAINT "partners_pr_id_partner_requests_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."partner_requests"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
@@ -56,6 +88,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "partners" ADD CONSTRAINT "partners_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "outbox_events" ADD CONSTRAINT "outbox_events_event_id_domain_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."domain_events"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

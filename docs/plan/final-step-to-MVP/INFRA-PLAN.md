@@ -65,11 +65,13 @@
 2. 后端统一接收与落库协议。
 3. 事件命名和字段强约束（类型化 schema）。
 
-当前状态（2026-02-25）：
+当前状态（2026-02-26）：
 
 1. 前端已先行完成 query key 工厂统一（作为状态/埋点统一前置步骤）。
 2. 前端已落地类型化 `trackEvent` SDK 与基础事件协议（create/join/exit/confirm/check-in/share）。
-3. 事件目前仅进入前端本地 debug 队列，后端 ingest/outbox/聚合任务尚未落地。
+3. 后端新增 `POST /api/analytics/events` 批量接收端点并落库到 `domain_events`，前端可对接。
+4. 分享链路埋点触发点已迁移到 feature hooks（as-link/carousel/wechat/xhs），组件层已基本不直接处理埋点逻辑。
+5. 后端 outbox/聚合任务尚未落地（仅落库，聚合查询/仪表盘待后续）。
 
 ### INFRA-05：运营日志基础能力
 
@@ -98,8 +100,8 @@
 
 ## 里程碑建议
 
-1. M1（基础重构）：INFRA-01 + INFRA-02
-2. M2（可运行任务）：INFRA-03
-3. M3（可观测闭环）：INFRA-04 + INFRA-05
+1. M1（基础重构）：INFRA-01 + INFRA-02 ✅ **已完成**
+2. M2（可运行任务）：INFRA-03 ✅ **已完成**
+3. M3（可观测闭环）：INFRA-04 + INFRA-05 ✅ **已完成**（INFRA-04 前端 SDK 已完成 + 后端 ingest 已完成；INFRA-05 operation_logs 写入已完成；聚合查询/仪表盘待后续）
 
-完成 M1 后再并行推进各 GAPC，可显著减少重复开发与返工。
+完成 M1–M3 后可并行推进各 GAPC，接入事件消费者（提醒、评分、经济模型、举报处理）。

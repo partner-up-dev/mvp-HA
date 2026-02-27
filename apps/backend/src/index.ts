@@ -14,11 +14,13 @@ import { wechatRoute } from "./controllers/wechat.controller";
 import { shareRoute } from "./controllers/share.controller";
 import { wecomRoute } from "./controllers/wecom.controller";
 import { configRoute } from "./controllers/config.controller";
-import { PartnerRequestService } from "./services/PartnerRequestService";
+import { analyticsRoute } from "./controllers/analytics.controller";
+import { runTemporalMaintenanceTick } from "./domains/pr-core";
+import { jobRunner } from "./infra/jobs";
+import { processOutboxBatch } from "./infra/events";
 import { env } from "./lib/env";
 
 const app = new Hono();
-const partnerRequestService = new PartnerRequestService();
 
 // Middleware
 app.use("*", logger());
@@ -41,10 +43,11 @@ const routes = app
   .route("/api/upload", uploadRoute)
   .route("/api/wechat", wechatRoute)
   .route("/api/wecom", wecomRoute)
-  .route("/api/config", configRoute);
+  .route("/api/config", configRoute)
+  .route("/api/analytics", analyticsRoute);
 
 // Health check
-app.get("/health", (c) => c.json({ status: "ok" }));
+app.get("/health", (c) => c.json({ status: "ok", jobs: jobRunner.status() }));
 
 // Export type for RPC client
 export type AppType = typeof routes;
@@ -70,40 +73,35 @@ export {
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export { userIdSchema, userStatusSchema, userSexSchema } from "./entities/user";
 
-const startTemporalMaintenanceLoop = () => {
-  const intervalMs = env.PR_TEMPORAL_MAINTENANCE_INTERVAL_MS;
-  if (intervalMs <= 0) {
-    console.info("Temporal maintenance loop disabled");
-    return;
-  }
+// ---------------------------------------------------------------------------
+// Register background jobs via unified JobRunner (INFRA-03)
+// ---------------------------------------------------------------------------
 
-  let running = false;
-  const runTick = async () => {
-    if (running) return;
-    running = true;
-    try {
-      const { processed, failed } =
-        await partnerRequestService.runTemporalMaintenanceTick();
+const registerBackgroundJobs = () => {
+  // Temporal maintenance: expire / activate / release-unconfirmed
+  jobRunner.register({
+    name: "temporal-maintenance",
+    intervalMs: env.PR_TEMPORAL_MAINTENANCE_INTERVAL_MS,
+    enabled: env.PR_TEMPORAL_MAINTENANCE_INTERVAL_MS > 0,
+    async handler() {
+      const { processed, failed } = await runTemporalMaintenanceTick();
       if (failed > 0) {
         console.warn("Temporal maintenance tick completed with failures", {
           processed,
           failed,
         });
       }
-    } catch (error) {
-      console.error("Temporal maintenance tick crashed", error);
-    } finally {
-      running = false;
-    }
-  };
+    },
+  });
 
-  void runTick();
-  const timer = setInterval(() => {
-    void runTick();
-  }, intervalMs);
-  timer.unref?.();
-
-  console.info("Temporal maintenance loop started", { intervalMs });
+  // Outbox event processor
+  jobRunner.register({
+    name: "outbox-processor",
+    intervalMs: 5_000,
+    async handler() {
+      await processOutboxBatch();
+    },
+  });
 };
 
 // Start server
@@ -112,6 +110,6 @@ serve({
   port: env.PORT,
 });
 
-startTemporalMaintenanceLoop();
+registerBackgroundJobs();
 
 console.log(`Server running on http://localhost:${env.PORT}`);

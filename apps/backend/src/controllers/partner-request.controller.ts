@@ -1,18 +1,28 @@
-import { Hono, type Context } from 'hono';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import { Hono, type Context } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 import { getSignedCookie } from "hono/cookie";
 import { HTTPException } from "hono/http-exception";
-import { PartnerRequestService } from '../services/PartnerRequestService';
+import {
+  createPRFromStructured,
+  createPRFromNaturalLanguage,
+  getPR,
+  getPRSummariesByIds,
+  updatePRStatus,
+  updatePRContent,
+  joinPR,
+  exitPR,
+  confirmSlot,
+  checkIn,
+} from "../domains/pr-core";
 import {
   createNaturalLanguagePRSchema,
   createStructuredPRSchema,
   prStatusManualSchema,
-} from '../entities/partner-request';
+} from "../entities/partner-request";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
 
 const app = new Hono();
-const service = new PartnerRequestService();
 const oauthService = new WeChatOAuthService();
 const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
 
@@ -22,21 +32,23 @@ const oauthSessionCookiePayloadSchema = z.object({
   expiresAtMs: z.number().int().positive(),
 });
 
-type OAuthSessionCookiePayload = z.infer<typeof oauthSessionCookiePayloadSchema>;
+type OAuthSessionCookiePayload = z.infer<
+  typeof oauthSessionCookiePayloadSchema
+>;
 
 const nlWordCountSchema = createNaturalLanguagePRSchema.refine(
   ({ rawText }) => rawText.trim().split(/\s+/).filter(Boolean).length <= 50,
-  { message: 'Natural language input must be 50 words or fewer' },
+  { message: "Natural language input must be 50 words or fewer" },
 );
 
 const updateStatusSchema = z.object({
   status: prStatusManualSchema,
-  pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
+  pin: z.string().regex(/^\d{4}$/, "PIN must be 4 digits"),
 });
 
 const updateContentSchema = z.object({
   fields: createStructuredPRSchema.shape.fields,
-  pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
+  pin: z.string().regex(/^\d{4}$/, "PIN must be 4 digits"),
 });
 
 const batchGetSchema = z.object({
@@ -116,29 +128,20 @@ const tryReadAuthenticatedOpenId = async (
 
 export const partnerRequestRoute = app
   // POST /api/pr - Create partner request from structured fields
-  .post(
-    '/',
-    zValidator('json', createStructuredPRSchema),
-    async (c) => {
-      const { fields, pin, status } = c.req.valid('json');
-      const openId = await tryReadAuthenticatedOpenId(c);
-      const result = await service.createPRFromStructured(
-        fields,
-        pin,
-        status,
-        openId,
-      );
-      return c.json(result, 201);
-    }
-  )
+  .post("/", zValidator("json", createStructuredPRSchema), async (c) => {
+    const { fields, pin, status } = c.req.valid("json");
+    const openId = await tryReadAuthenticatedOpenId(c);
+    const result = await createPRFromStructured(fields, pin, status, openId);
+    return c.json(result, 201);
+  })
   // POST /api/pr/natural_language - Create partner request from NL text
   .post(
-    '/natural_language',
-    zValidator('json', nlWordCountSchema),
+    "/natural_language",
+    zValidator("json", nlWordCountSchema),
     async (c) => {
-      const { rawText, pin, nowIso, nowWeekday } = c.req.valid('json');
+      const { rawText, pin, nowIso, nowWeekday } = c.req.valid("json");
       const openId = await tryReadAuthenticatedOpenId(c);
-      const result = await service.createPRFromNaturalLanguage(
+      const result = await createPRFromNaturalLanguage(
         rawText,
         pin,
         nowIso,
@@ -146,105 +149,79 @@ export const partnerRequestRoute = app
         openId,
       );
       return c.json(result, 201);
-    }
+    },
   )
   // POST /api/pr/batch - Batch get partner request summaries
-  .post(
-    '/batch',
-    zValidator('json', batchGetSchema),
-    async (c) => {
-      const { ids } = c.req.valid('json');
-      const result = await service.getPRSummariesByIds(ids);
-      return c.json(result);
-    }
-  )
+  .post("/batch", zValidator("json", batchGetSchema), async (c) => {
+    const { ids } = c.req.valid("json");
+    const result = await getPRSummariesByIds(ids);
+    return c.json(result);
+  })
   // GET /api/pr/:id - Get partner request
-  .get(
-    '/:id',
-    zValidator('param', prIdParamSchema),
-    async (c) => {
-      const { id } = c.req.valid('param');
-      const openId = await tryReadAuthenticatedOpenId(c);
-      const result = await service.getPR(id, openId);
-      return c.json(result);
-    }
-  )
+  .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    const openId = await tryReadAuthenticatedOpenId(c);
+    const result = await getPR(id, openId);
+    return c.json(result);
+  })
   // PATCH /api/pr/:id/status - Update status
   .patch(
-    '/:id/status',
-    zValidator('param', prIdParamSchema),
-    zValidator('json', updateStatusSchema),
+    "/:id/status",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", updateStatusSchema),
     async (c) => {
-      const { id } = c.req.valid('param');
-      const { status, pin } = c.req.valid('json');
-      const result = await service.updatePRStatus(id, status, pin);
+      const { id } = c.req.valid("param");
+      const { status, pin } = c.req.valid("json");
+      const result = await updatePRStatus(id, status, pin);
       return c.json(result);
-    }
+    },
   )
   // PATCH /api/pr/:id/content - Update content
   .patch(
-    '/:id/content',
-    zValidator('param', prIdParamSchema),
-    zValidator('json', updateContentSchema),
+    "/:id/content",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", updateContentSchema),
     async (c) => {
-      const { id } = c.req.valid('param');
-      const { fields, pin } = c.req.valid('json');
-      const result = await service.updatePRContent(id, fields, pin);
+      const { id } = c.req.valid("param");
+      const { fields, pin } = c.req.valid("json");
+      const result = await updatePRContent(id, fields, pin);
       return c.json(result);
-    }
+    },
   )
   // POST /api/pr/:id/join - Join partner request
-  .post(
-    '/:id/join',
-    zValidator('param', prIdParamSchema),
-    async (c) => {
-      const { id } = c.req.valid('param');
-      const openId = await requireAuthenticatedOpenId(c);
-      const result = await service.joinPRAsAuthenticatedUser(
-        id,
-        openId,
-      );
-      return c.json(result);
-    }
-  )
+  .post("/:id/join", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    const openId = await requireAuthenticatedOpenId(c);
+    const result = await joinPR(id, openId);
+    return c.json(result);
+  })
   // POST /api/pr/:id/exit - Exit partner request
-  .post(
-    '/:id/exit',
-    zValidator('param', prIdParamSchema),
-    async (c) => {
-      const { id } = c.req.valid('param');
-      const openId = await requireAuthenticatedOpenId(c);
-      const result = await service.exitPRAsAuthenticatedUser(
-        id,
-        openId,
-      );
-      return c.json(result);
-    }
-  )
+  .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    const openId = await requireAuthenticatedOpenId(c);
+    const result = await exitPR(id, openId);
+    return c.json(result);
+  })
   // POST /api/pr/:id/confirm - Confirm slot participation
-  .post(
-    '/:id/confirm',
-    zValidator('param', prIdParamSchema),
-    async (c) => {
-      const { id } = c.req.valid('param');
-      const openId = await requireAuthenticatedOpenId(c);
-      const result = await service.confirmPRSlot(id, openId);
-      return c.json(result);
-    }
-  )
+  .post("/:id/confirm", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    const openId = await requireAuthenticatedOpenId(c);
+    const result = await confirmSlot(id, openId);
+    return c.json(result);
+  })
   // POST /api/pr/:id/check-in - Optional post-event attendance report
   .post(
-    '/:id/check-in',
-    zValidator('param', prIdParamSchema),
+    "/:id/check-in",
+    zValidator("param", prIdParamSchema),
     zValidator("json", slotCheckInSchema),
     async (c) => {
-      const { id } = c.req.valid('param');
+      const { id } = c.req.valid("param");
       const openId = await requireAuthenticatedOpenId(c);
       const { didAttend, wouldJoinAgain } = c.req.valid("json");
-      const result = await service.checkInPRSlot(id, openId, {
+      const result = await checkIn(id, openId, {
         didAttend,
         wouldJoinAgain: wouldJoinAgain ?? null,
       });
       return c.json(result);
-    }
+    },
   );

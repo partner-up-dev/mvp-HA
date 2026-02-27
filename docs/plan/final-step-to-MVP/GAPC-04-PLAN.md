@@ -60,12 +60,20 @@
    - `share_link_copy_success`
    - `share_link_failed`
 3. 开发态可通过 `window.__PARTNER_UP_ANALYTICS_EVENTS__` 查看事件序列。
+4. 埋点触发点已从页面/组件逐步收敛到 feature hooks，当前主要落位：
+   - `features/pr-create/usePRCreateFlow.ts`
+   - `features/pr-actions/usePRActions.ts`
+   - `features/share/as-link/useShareAsLink.ts`
+   - `features/share/useShareCarousel.ts`
+   - `features/share/wechat/useShareToWechatChat.ts`
+   - `features/share/xhs/useShareToXiaohongshu.ts`
 
 未完成：
 
 1. `page_view`、`share_converted`、`repeat_join_14d` 等事件仍未落地。
 2. 后端 `analytics_events` 落库与按日聚合任务尚未启动。
 3. Anchor/Community 分线统计仍缺少实体字段与任务实现。
+4. 事件 payload 尚未统一补齐 `prKind/type/actorId` 等分线聚合关键字段。
 
 ## 分阶段实施
 

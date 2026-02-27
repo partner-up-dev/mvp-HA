@@ -20,6 +20,43 @@ Read following documents when needed and keep them current:
 - Data Fetching: See `src/queries/AGENTS.md`.
 - Components: See `src/components/AGENTS.md`.
 
+## File Structure
+
+```
+src/
+├── pages/                  # Page components (4 main routes)
+├── components/             # Reusable UI components
+│   ├── common/             # Shared components (Modal, Footer, etc.)
+│   ├── home/               # Home page components
+│   ├── pr/                 # PR-related components
+│   └── share/              # Sharing components
+├── features/               # Feature modules (business logic)
+│   ├── pr-actions/         # PR actions (join/exit/confirm/check-in)
+│   ├── pr-create/          # PR creation flow
+│   └── share/              # Share functionality
+├── queries/                # TanStack Vue Query hooks (data fetching)
+├── composables/            # Vue composition functions (reusable logic)
+├── stores/                 # Pinia state management
+├── widgets/                # Complex UI components (page-specific)
+│   ├── home/
+│   ├── pr/
+│   └── pr-create/
+├── processes/              # Background processes
+│   └── wechat-auth/        # WeChat OAuth flow
+├── shared/                 # Cross-app shared utilities
+│   ├── api/                # API-related utilities
+│   ├── analytics/          # Analytics tracking
+│   └── url/                # URL handling
+├── lib/                    # Utility functions (rpc, validation, etc.)
+├── entities/               # Data models
+├── locales/                # i18n translations (zh-CN only, currently)
+├── router/                 # Vue Router configuration
+├── types/                  # TypeScript type definitions
+├── styles/                 # Global SCSS styles
+├── App.vue                 # Root component
+└── main.ts                 # Application entry point
+```
+
 ## Product Reference
 
 - See `docs/product/overview.md` for H-A MVP definition and scope.
@@ -40,6 +77,7 @@ Read following documents when needed and keep them current:
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；微信内置 WebView 分享卡片（PR 详情页支持缩略图卡片，首页/创建页/联系作者页可直接分享至聊天与朋友圈）；小红书文案与海报生成、下载并跳转 App。
 - 国际化能力: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案位于 `src/locales/zh-CN.jsonc`，使用 `MessageSchema` 提供类型支持。
 - 作者联系能力: 首页与各页面页脚支持“联系作者”入口；`/contact-author` 页面可居中展示作者微信二维码（来自后端公共配置）。
+
 ### Known Limitations & Mocks
 
 - EXPIRED 触发方式: 仅在读取 PR 时由后端懒触发过期状态。

@@ -5,6 +5,12 @@ This is a pnpm workspace (monorepo) with following packages:
 - `apps/backend`
 - `apps/frontend`
 
+## Gloassary
+
+These are top-most glossary, read more in `docs/product/glossary.md`:
+
+- 搭子请求 PartnerRequest: 承载搭子活动全生命周期的领域，从找搭子到开展活动
+
 ## Development Workflow
 
 - [RECOMMENDED] Read following documents when you need
@@ -15,7 +21,8 @@ This is a pnpm workspace (monorepo) with following packages:
   - `docs/product/features/*.md`
 - You MUST ensure the documentations stay aligned with code. (documents in `docs/plan`, `docs/task` are temporarily, don't read or update them)
 - This is a pnpm workspace, use `pnpm` to manage dependencies, run scripts.
-- Git commit message follows `feat|fix|ref|docs|chore(module): subtitle \n description detailed in bullet potions`
+- Git commit message follows `feat|fix|ref|docs|chore(module): subtitle \n description detailed in bullet potions`.
+- Make sure the build passes.
 
 ## Coding Guidelines
 
@@ -24,7 +31,7 @@ This is a pnpm workspace (monorepo) with following packages:
 
 ## Current State
 >
-> Last Updated: 2026-02-10T22:10Z+08:00
+> Last Updated: 2026-02-26T16:00Z+08:00
 
 ### Live Capabilities
 
@@ -39,7 +46,7 @@ This is a pnpm workspace (monorepo) with following packages:
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；支持微信聊天/朋友圈分享（WeChat WebView JS-SDK，PR 详情页可生成缩略图卡片，首页/创建页/联系作者页可直接配置分享卡片）；支持小红书文案与海报生成并下载/打开 App 分享。
 - 微信登录能力: 已接入微信 OAuth 基础设施（`/api/wechat/oauth/session|login|callback|logout`），前端在页面进入时会自动尝试登录（仅微信 WebView 触发）；加入/退出/确认/签到会强制校验登录态。
 - 前端国际化: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案集中在 `apps/frontend/src/locales/zh-CN.jsonc`，并通过 `MessageSchema` 进行类型约束。
-- 作者联系: 首页与页面底部提供“联系作者”入口；`/contact-author` 页面展示后端配置 `author_wechat_qr_code` 对应的微信二维码。
+- 作者联系: 首页与页面底部提供“联系作者”入口；`/contact-author` 页面展示后端配置 `author_wechat_qr_code` 对应的微信二维码。- 后端领域拆分: `PartnerRequestService` 已拆分为独立 use-case 函数（INFRA-01）；引入 Outbox 事件骨架（INFRA-02）、统一 JobRunner（INFRA-03）、埋点 ingest 端点（INFRA-04）、运营日志（INFRA-05）。
 
 ### Known Limitations & Mocks
 
