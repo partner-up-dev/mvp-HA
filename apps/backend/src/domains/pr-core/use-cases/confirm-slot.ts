@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
@@ -10,6 +11,7 @@ import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const userRepo = new UserRepository();
 
 export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -28,6 +30,7 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
 
   if (slot.status === "JOINED") {
     await partnerRepo.markConfirmed(slot.id);
+    await userRepo.applyReliabilityDelta(user.id, { confirmed: 1 });
 
     // Emit domain event
     const event = await eventBus.publish(

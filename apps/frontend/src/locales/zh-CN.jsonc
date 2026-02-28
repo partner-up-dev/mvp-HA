@@ -104,6 +104,18 @@
       "accept": "加入该时段",
       "empty": "暂时没有可推荐的其它时段",
       "unknownTime": "时间待定"
+    },
+    "wechatReminder": {
+      "title": "公众号提醒",
+      "enableAction": "开启提醒",
+      "disableAction": "关闭提醒",
+      "updating": "更新中...",
+      "loginAction": "去微信登录",
+      "nonWechatHint": "当前不在微信环境，无法开启公众号提醒。",
+      "unconfiguredHint": "当前环境未配置公众号提醒通道。",
+      "loginHint": "需要先完成微信登录后才能开启提醒。",
+      "enabledHint": "已开启提醒：活动前 24 小时和 2 小时会发送通知。",
+      "disabledHint": "提醒已关闭，可随时开启。"
     }
   },
   "createdPRList": {
@@ -271,7 +283,9 @@
     "wechatInitTimeout": "微信 JS-SDK 初始化超时",
     "wechatInitError": "微信 JS-SDK 初始化错误：{message}",
     "initializeFailed": "初始化失败",
-    "fetchPublicConfigFailed": "获取公共配置失败"
+    "fetchPublicConfigFailed": "获取公共配置失败",
+    "fetchWechatReminderSubscriptionFailed": "获取公众号提醒状态失败",
+    "updateWechatReminderSubscriptionFailed": "更新公众号提醒状态失败"
   },
   "posterStyles": {
     "fresh": "清新活泼",

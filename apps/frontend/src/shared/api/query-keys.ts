@@ -16,4 +16,7 @@ export const queryKeys = {
     detail: (eventId: number | null) =>
       ["anchor-event", "detail", eventId] as const,
   },
+  wechat: {
+    reminderSubscription: () => ["wechat", "reminder-subscription"] as const,
+  },
 } as const;

@@ -8,3 +8,4 @@ export * from "./operation-log";
 export * from "./anchor-event";
 export * from "./anchor-event-batch";
 export * from "./job";
+export * from "./notification-delivery";

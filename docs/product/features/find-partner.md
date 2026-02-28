@@ -23,6 +23,11 @@
 - `T-30min` 后禁止加入（event locked）。
 - 详情页提供“确认参与”动作，调用 `/api/pr/:id/confirm` 使槽位进入 `CONFIRMED`（若尚未确认）。
 - 详情页提供可选签到反馈（我已到场 / 我未到场），调用 `/api/pr/:id/check-in`；`didAttend=true` 时槽位进入 `ATTENDED`。
+- 详情页提供“公众号提醒”开关，查询/更新接口为：
+  - `GET /api/wechat/reminders/subscription`
+  - `POST /api/wechat/reminders/subscription`（`enabled: boolean`）
+- 开启提醒后，系统会为已加入槽位调度 `T-24h` 与 `T-2h` 提醒任务。
+- 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 
 ## 验收标准
@@ -35,6 +40,9 @@
 - `POST /api/pr/:id/join` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - `POST /api/pr/:id/exit` 与 join 一致校验微信会话，确保只能退出当前登录用户绑定的槽位。
 - `POST /api/pr/:id/confirm` 与 `POST /api/pr/:id/check-in` 同样强制微信登录态。
+- `POST /api/wechat/reminders/subscription` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
+- 开启提醒后会创建具备 dedupe 的延迟任务；关闭提醒后会删除对应未执行任务并返回删除数量。
+- 提醒任务执行后会写入 `notification_deliveries`（包含 `result/errorCode/jobId`）。
 - 已到 `T-30min` 之后，join 请求会被拒绝（400）。
 - 到达 `T-1h` 且槽位未确认时，系统会在读取/操作时懒触发自动释放，保证结构状态收敛。
 - 编辑弹窗与结构化创建页使用同一表单组件与同一校验逻辑。

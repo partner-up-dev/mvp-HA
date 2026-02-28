@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, like, sql } from "drizzle-orm";
 import { jobs } from "../../entities/job";
 import { db } from "../../lib/db";
 
@@ -59,6 +59,12 @@ export interface JobHandlerContext {
   attempts: number;
   runAt: Date;
   source: "request-tail" | "external-trigger" | "manual";
+}
+
+export interface DeletePendingJobsByDedupeConfig {
+  jobType: string;
+  dedupeKey?: string;
+  dedupeKeyPrefix?: string;
 }
 
 export type JobHandler = (
@@ -140,6 +146,35 @@ class JobRunnerImpl {
 
   unregisterHandler(jobType: string): void {
     this.handlers.delete(jobType);
+  }
+
+  async deletePendingJobsByDedupe(
+    config: DeletePendingJobsByDedupeConfig,
+  ): Promise<number> {
+    const dedupeKey = config.dedupeKey?.trim();
+    const dedupeKeyPrefix = config.dedupeKeyPrefix?.trim();
+    if (!dedupeKey && !dedupeKeyPrefix) {
+      throw new Error("deletePendingJobsByDedupe requires key or key prefix");
+    }
+
+    const conditions = [
+      eq(jobs.jobType, config.jobType),
+      inArray(jobs.status, ["PENDING", "RETRY"]),
+    ];
+
+    if (dedupeKey) {
+      conditions.push(eq(jobs.dedupeKey, dedupeKey));
+    }
+    if (dedupeKeyPrefix) {
+      conditions.push(like(jobs.dedupeKey, `${dedupeKeyPrefix}%`));
+    }
+
+    const deletedRows = await db
+      .delete(jobs)
+      .where(and(...conditions))
+      .returning({ id: jobs.id });
+
+    return deletedRows.length;
   }
 
   async scheduleOnce(config: ScheduleOnceConfig): Promise<ScheduleOnceResult> {

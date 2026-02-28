@@ -5,6 +5,7 @@
 
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
+import { UserRepository } from "../../repositories/UserRepository";
 import type { PartnerRequest } from "../../entities/partner-request";
 import {
   getTimeWindowStart,
@@ -16,9 +17,11 @@ import {
   isExpirableStatus,
 } from "./services/status-rules";
 import { recalculatePRStatus } from "./services/slot-management.service";
+import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const userRepo = new UserRepository();
 
 /**
  * Refresh a PR's temporal state: release unconfirmed slots, activate if
@@ -81,6 +84,10 @@ async function releaseUnconfirmedSlotsIfNeeded(
   if (releasing.length === 0) return;
 
   for (const slot of releasing) {
+    if (slot.userId) {
+      await userRepo.applyReliabilityDelta(slot.userId, { released: 1 });
+      await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
+    }
     await partnerRepo.markReleased(slot.id);
   }
 

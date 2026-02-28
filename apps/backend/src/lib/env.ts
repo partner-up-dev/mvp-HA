@@ -18,6 +18,8 @@ const envSchema = z.object({
   WECHAT_OFFICIAL_ACCOUNT_APP_ID: z.string().min(1).optional(),
   WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: z.string().min(1).optional(),
   WECHAT_AUTH_SESSION_SECRET: z.string().min(1).optional(),
+  WECHAT_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),
+  WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),
   FIXED_IP_HTTP_PROXY: z.string().url().optional(),
 
   // WeCom (Enterprise WeChat) self-built app

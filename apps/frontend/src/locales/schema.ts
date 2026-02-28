@@ -93,6 +93,29 @@ export interface MessageSchema {
     metaFallbackTitle: string;
     metaFallbackDescription: string;
     metaTitleWithName: string;
+    sameBatch: {
+      title: string;
+      subtitle: string;
+    };
+    alternativeBatch: {
+      title: string;
+      subtitle: string;
+      accept: string;
+      empty: string;
+      unknownTime: string;
+    };
+    wechatReminder: {
+      title: string;
+      enableAction: string;
+      disableAction: string;
+      updating: string;
+      loginAction: string;
+      nonWechatHint: string;
+      unconfiguredHint: string;
+      loginHint: string;
+      enabledHint: string;
+      disabledHint: string;
+    };
   };
   createdPRList: {
     title: string;
@@ -260,6 +283,8 @@ export interface MessageSchema {
     wechatInitError: string;
     initializeFailed: string;
     fetchPublicConfigFailed: string;
+    fetchWechatReminderSubscriptionFailed: string;
+    updateWechatReminderSubscriptionFailed: string;
   };
   posterStyles: {
     fresh: string;

@@ -37,6 +37,19 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
+  async findActiveByUserId(userId: UserId) {
+    return db
+      .select()
+      .from(partners)
+      .where(
+        and(
+          eq(partners.userId, userId),
+          inArray(partners.status, ["JOINED", "CONFIRMED", "ATTENDED"]),
+        ),
+      )
+      .orderBy(desc(partners.id));
+  }
+
   async findFirstReleasedSlot(prId: PRId) {
     const result = await db
       .select()

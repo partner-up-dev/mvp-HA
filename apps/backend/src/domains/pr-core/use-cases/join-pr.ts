@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { PartnerStatus } from "../../../entities/partner";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
@@ -15,9 +16,11 @@ import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { expandFullAnchorPR } from "../../anchor-event";
+import { scheduleWeChatReminderJobsForParticipant } from "../../../infra/notifications";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const userRepo = new UserRepository();
 
 export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -50,6 +53,7 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
       shouldAutoConfirmImmediately(refreshedRequest.time)
     ) {
       await partnerRepo.markConfirmed(existing.id);
+      await userRepo.applyReliabilityDelta(user.id, { confirmed: 1 });
     }
     const latest = await prRepo.findById(id);
     if (!latest) {
@@ -57,6 +61,7 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
         message: "Failed to reload partner request",
       });
     }
+    await scheduleWeChatReminderJobsForParticipant(latest, user.id);
     return toPublicPR(latest, user.id);
   }
 
@@ -93,6 +98,11 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
       message: "Cannot join - partner request is full",
     });
   }
+
+  await userRepo.applyReliabilityDelta(user.id, {
+    joined: 1,
+    confirmed: targetStatus === "CONFIRMED" ? 1 : 0,
+  });
 
   await recalculatePRStatus(id);
 
@@ -133,5 +143,6 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
       message: "Failed to reload partner request",
     });
   }
+  await scheduleWeChatReminderJobsForParticipant(latest, user.id);
   return toPublicPR(latest, user.id);
 }

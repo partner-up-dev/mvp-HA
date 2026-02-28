@@ -8,11 +8,17 @@ import { env } from "../lib/env";
 import { WeChatJssdkService } from "../services/WeChatJssdkService";
 import { WeChatLoginService } from "../services/WeChatLoginService";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
+import { UserRepository } from "../repositories/UserRepository";
+import {
+  cancelWeChatReminderJobsForUser,
+  rebuildWeChatReminderJobsForUser,
+} from "../infra/notifications";
 
 const app = new Hono();
 const jssdkService = new WeChatJssdkService();
 const oauthService = new WeChatOAuthService();
 const loginService = new WeChatLoginService();
+const userRepo = new UserRepository();
 
 const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
 const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
@@ -42,6 +48,9 @@ const oauthSessionCookiePayloadSchema = z.object({
   openId: z.string().min(1),
   issuedAtMs: z.number().int().positive(),
   expiresAtMs: z.number().int().positive(),
+});
+const reminderSubscriptionUpdateSchema = z.object({
+  enabled: z.boolean(),
 });
 
 type OAuthStateCookiePayload = z.infer<typeof oauthStateCookiePayloadSchema>;
@@ -263,6 +272,105 @@ export const wechatRoute = app
       openId: sessionPayload.openId,
     });
   })
+  .get("/reminders/subscription", async (c) => {
+    if (!oauthService.isConfigured()) {
+      return c.json({
+        configured: false,
+        authenticated: false,
+        enabled: false,
+        optInAt: null,
+      });
+    }
+
+    const sessionSecret = oauthService.getSessionSecret();
+    const sessionPayload = await readSignedCookiePayload(
+      c,
+      OAUTH_SESSION_COOKIE_NAME,
+      sessionSecret,
+      oauthSessionCookiePayloadSchema,
+    );
+
+    if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
+      clearOAuthSessionCookie(c);
+      return c.json({
+        configured: true,
+        authenticated: false,
+        enabled: false,
+        optInAt: null,
+      });
+    }
+
+    const user = await userRepo.findByOpenId(sessionPayload.openId);
+    if (!user) {
+      return c.json({
+        configured: true,
+        authenticated: true,
+        enabled: false,
+        optInAt: null,
+      });
+    }
+
+    return c.json({
+      configured: true,
+      authenticated: true,
+      enabled: user.wechatReminderOptIn,
+      optInAt: user.wechatReminderOptInAt
+        ? user.wechatReminderOptInAt.toISOString()
+        : null,
+    });
+  })
+  .post(
+    "/reminders/subscription",
+    zValidator("json", reminderSubscriptionUpdateSchema),
+    async (c) => {
+      if (!oauthService.isConfigured()) {
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
+
+      const sessionSecret = oauthService.getSessionSecret();
+      const sessionPayload = await readSignedCookiePayload(
+        c,
+        OAUTH_SESSION_COOKIE_NAME,
+        sessionSecret,
+        oauthSessionCookiePayloadSchema,
+      );
+
+      if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
+        clearOAuthSessionCookie(c);
+        return c.json({ error: "WeChat login required" }, 401);
+      }
+
+      const user = await userRepo.findByOpenId(sessionPayload.openId);
+      if (!user) {
+        return c.json({ error: "User not found" }, 404);
+      }
+
+      const { enabled } = c.req.valid("json");
+      const updatedUser = await userRepo.updateWechatReminderSubscription(
+        user.id,
+        enabled,
+      );
+      if (!updatedUser) {
+        return c.json({ error: "Failed to update reminder subscription" }, 500);
+      }
+
+      let deletedJobs = 0;
+      if (enabled) {
+        await rebuildWeChatReminderJobsForUser(user.id);
+      } else {
+        deletedJobs = await cancelWeChatReminderJobsForUser(user.id);
+      }
+
+      return c.json({
+        ok: true,
+        enabled: updatedUser.wechatReminderOptIn,
+        optInAt: updatedUser.wechatReminderOptInAt
+          ? updatedUser.wechatReminderOptInAt.toISOString()
+          : null,
+        deletedJobs,
+      });
+    },
+  )
   .get("/oauth/login", zValidator("query", oauthLoginQuerySchema), async (c) => {
     if (!oauthService.isConfigured()) {
       return c.json({ error: "WeChat OAuth is not configured" }, 503);

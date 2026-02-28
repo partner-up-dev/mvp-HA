@@ -53,6 +53,45 @@
       />
 
       <section
+        v-if="actions.hasJoined.value"
+        class="wechat-reminder-section"
+      >
+        <h2 class="wechat-reminder-title">
+          {{ t("prPage.wechatReminder.title") }}
+        </h2>
+        <p class="wechat-reminder-description">
+          {{ reminderHintText }}
+        </p>
+
+        <button
+          v-if="canToggleReminder"
+          class="wechat-reminder-action"
+          :disabled="reminderTogglePending"
+          @click="handleToggleWechatReminder"
+        >
+          {{
+            reminderTogglePending
+              ? t("prPage.wechatReminder.updating")
+              : reminderEnabled
+                ? t("prPage.wechatReminder.disableAction")
+                : t("prPage.wechatReminder.enableAction")
+          }}
+        </button>
+
+        <button
+          v-else-if="
+            isWeChatEnv &&
+            reminderConfigured &&
+            !reminderAuthenticated
+          "
+          class="wechat-reminder-action secondary"
+          @click="handleGoWechatLogin"
+        >
+          {{ t("prPage.wechatReminder.loginAction") }}
+        </button>
+      </section>
+
+      <section
         v-if="sameBatchAlternatives.length > 0"
         class="same-batch-section"
       >
@@ -149,7 +188,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onBeforeUnmount, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
@@ -167,12 +206,17 @@ import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
 import { useAlternativeBatches } from "@/queries/useAlternativeBatches";
 import { useAcceptAlternativeBatch } from "@/queries/useAcceptAlternativeBatch";
 import { useJoinPR } from "@/queries/useJoinPR";
+import { useWeChatReminderSubscription } from "@/queries/useWeChatReminderSubscription";
+import { useUpdateWeChatReminderSubscription } from "@/queries/useUpdateWeChatReminderSubscription";
 import type { PRId } from "@partner-up-dev/backend";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
 import { usePRActions } from "@/features/pr-actions/usePRActions";
 import { usePRShareContext } from "@/features/share/usePRShareContext";
 import type { PRDetailView } from "@/entities/pr/types";
+import { isWeChatBrowser } from "@/lib/browser-detection";
+import { requireWeChatActionAuth } from "@/processes/wechat-auth/guards/requireWeChatActionAuth";
+import { redirectToWeChatOAuthLogin } from "@/composables/useAutoWeChatLogin";
 
 const route = useRoute();
 const router = useRouter();
@@ -185,7 +229,7 @@ const id = computed<PRId | null>(() => {
   return Number.isFinite(parsed) && parsed > 0 ? (parsed as PRId) : null;
 });
 
-const { data, isLoading, error } = usePR(id);
+const { data, isLoading, error, refetch } = usePR(id);
 const prDetail = computed(() => data.value as PRDetailView | undefined);
 
 const anchorEventId = computed<number | null>(() => {
@@ -203,6 +247,9 @@ const { data: alternativeBatchData, isLoading: isAlternativeLoading } =
   useAlternativeBatches(id, showAlternativeBatches);
 const acceptAlternativeBatchMutation = useAcceptAlternativeBatch();
 const joinMutation = useJoinPR();
+const wechatReminderSubscriptionQuery = useWeChatReminderSubscription();
+const updateWechatReminderSubscriptionMutation =
+  useUpdateWeChatReminderSubscription();
 
 const sameBatchAlternatives = computed(() => {
   const current = prDetail.value;
@@ -240,11 +287,141 @@ const isCreator = computed(() => {
   return userPRStore.isCreatorOf(id.value);
 });
 
+const LIVE_POLL_INTERVAL_MS = 1_000;
+const LIVE_POLL_MAX_ATTEMPTS = 20;
+const livePollAttemptCount = ref(0);
+const livePollTimerId = ref<number | null>(null);
+const livePollInFlight = ref(false);
+
+const stopLivePolling = () => {
+  if (livePollTimerId.value !== null) {
+    window.clearInterval(livePollTimerId.value);
+    livePollTimerId.value = null;
+  }
+};
+
+const tickLivePolling = async () => {
+  if (id.value === null) {
+    stopLivePolling();
+    return;
+  }
+  if (livePollAttemptCount.value >= LIVE_POLL_MAX_ATTEMPTS) {
+    stopLivePolling();
+    return;
+  }
+  if (livePollInFlight.value) {
+    return;
+  }
+
+  livePollAttemptCount.value += 1;
+  livePollInFlight.value = true;
+  try {
+    await refetch();
+  } finally {
+    livePollInFlight.value = false;
+    if (livePollAttemptCount.value >= LIVE_POLL_MAX_ATTEMPTS) {
+      stopLivePolling();
+    }
+  }
+};
+
+const startLivePolling = () => {
+  if (id.value === null || livePollTimerId.value !== null) {
+    return;
+  }
+  livePollTimerId.value = window.setInterval(() => {
+    void tickLivePolling();
+  }, LIVE_POLL_INTERVAL_MS);
+};
+
+const resetLivePolling = () => {
+  livePollAttemptCount.value = 0;
+  if (id.value === null) {
+    stopLivePolling();
+    return;
+  }
+  if (livePollTimerId.value === null) {
+    startLivePolling();
+  }
+};
+
+watch(
+  id,
+  (nextId) => {
+    stopLivePolling();
+    livePollAttemptCount.value = 0;
+    livePollInFlight.value = false;
+    if (nextId !== null) {
+      startLivePolling();
+    }
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  stopLivePolling();
+});
+
 const actions = usePRActions({
   id,
   pr: prDetail,
   isCreator,
+  onActionSuccess: resetLivePolling,
 });
+
+const isWeChatEnv = computed(() =>
+  typeof navigator === "undefined" ? false : isWeChatBrowser(),
+);
+
+const reminderConfigured = computed(
+  () => wechatReminderSubscriptionQuery.data.value?.configured ?? false,
+);
+const reminderAuthenticated = computed(
+  () => wechatReminderSubscriptionQuery.data.value?.authenticated ?? false,
+);
+const reminderEnabled = computed(
+  () => wechatReminderSubscriptionQuery.data.value?.enabled ?? false,
+);
+const reminderTogglePending = computed(
+  () => updateWechatReminderSubscriptionMutation.isPending.value,
+);
+const canToggleReminder = computed(
+  () =>
+    isWeChatEnv.value &&
+    reminderConfigured.value &&
+    reminderAuthenticated.value &&
+    !wechatReminderSubscriptionQuery.isLoading.value,
+);
+
+const reminderHintText = computed(() => {
+  if (!isWeChatEnv.value) {
+    return t("prPage.wechatReminder.nonWechatHint");
+  }
+  if (!reminderConfigured.value) {
+    return t("prPage.wechatReminder.unconfiguredHint");
+  }
+  if (!reminderAuthenticated.value) {
+    return t("prPage.wechatReminder.loginHint");
+  }
+  return reminderEnabled.value
+    ? t("prPage.wechatReminder.enabledHint")
+    : t("prPage.wechatReminder.disabledHint");
+});
+
+const handleToggleWechatReminder = async () => {
+  if (id.value === null) return;
+  if (!isWeChatEnv.value) return;
+  if (!(await requireWeChatActionAuth(window.location.href))) return;
+
+  await updateWechatReminderSubscriptionMutation.mutateAsync({
+    enabled: !reminderEnabled.value,
+  });
+};
+
+const handleGoWechatLogin = () => {
+  if (typeof window === "undefined") return;
+  redirectToWeChatOAuthLogin(window.location.href);
+};
 
 const { shareUrl, prShareData } = usePRShareContext({
   id,
@@ -386,6 +563,46 @@ useHead({
     calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
     calc(var(--sys-spacing-med) + var(--pu-safe-left));
   min-height: var(--pu-vh);
+}
+
+.wechat-reminder-section {
+  margin-top: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-med);
+  border-radius: 12px;
+  background: var(--sys-color-surface-container);
+}
+
+.wechat-reminder-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.wechat-reminder-description {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.wechat-reminder-action {
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.wechat-reminder-action.secondary {
+  border: 1px solid var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .same-batch-section {

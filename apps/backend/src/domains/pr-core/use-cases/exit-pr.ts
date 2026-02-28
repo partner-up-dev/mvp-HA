@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { isExitAllowedStatus } from "../services/status-rules";
@@ -9,9 +10,11 @@ import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import { cancelWeChatReminderJobsForParticipant } from "../../../infra/notifications";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const userRepo = new UserRepository();
 
 export async function exitPR(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -35,6 +38,8 @@ export async function exitPR(id: PRId, openId: string): Promise<PublicPR> {
   }
 
   await partnerRepo.markReleased(activeSlot.id);
+  await userRepo.applyReliabilityDelta(user.id, { released: 1 });
+  await cancelWeChatReminderJobsForParticipant(id, user.id);
   await recalculatePRStatus(id);
 
   // Emit domain event

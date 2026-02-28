@@ -1,4 +1,11 @@
-import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  doublePrecision,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -24,6 +31,29 @@ export const users = pgTable("users", {
   sex: integer("sex").$type<UserSex>(),
   avatar: text("avatar"),
   status: text("status").$type<UserStatus>().notNull().default("ACTIVE"),
+  reliabilityJoinCount: integer("reliability_join_count")
+    .notNull()
+    .default(0),
+  reliabilityConfirmCount: integer("reliability_confirm_count")
+    .notNull()
+    .default(0),
+  reliabilityAttendCount: integer("reliability_attend_count")
+    .notNull()
+    .default(0),
+  reliabilityReleaseCount: integer("reliability_release_count")
+    .notNull()
+    .default(0),
+  joinToConfirmRatio: doublePrecision("join_to_confirm_ratio")
+    .notNull()
+    .default(0),
+  confirmToAttendRatio: doublePrecision("confirm_to_attend_ratio")
+    .notNull()
+    .default(0),
+  releaseFrequency: doublePrecision("release_frequency").notNull().default(0),
+  wechatReminderOptIn: boolean("wechat_reminder_opt_in")
+    .notNull()
+    .default(false),
+  wechatReminderOptInAt: timestamp("wechat_reminder_opt_in_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

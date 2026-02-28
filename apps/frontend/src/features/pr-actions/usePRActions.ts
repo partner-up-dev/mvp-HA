@@ -13,9 +13,15 @@ type UsePRActionsOptions = {
   id: ComputedRef<PRId | null>;
   pr: ComputedRef<PRDetailView | undefined>;
   isCreator: ComputedRef<boolean>;
+  onActionSuccess?: () => void;
 };
 
-export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
+export const usePRActions = ({
+  id,
+  pr,
+  isCreator,
+  onActionSuccess,
+}: UsePRActionsOptions) => {
   const { t } = useI18n();
 
   const joinMutation = useJoinPR();
@@ -104,6 +110,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
 
     await joinMutation.mutateAsync({ id: id.value });
     trackEvent("pr_join_success", { prId: id.value });
+    onActionSuccess?.();
   };
 
   const handleExit = async () => {
@@ -112,6 +119,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
 
     await exitMutation.mutateAsync({ id: id.value });
     trackEvent("pr_exit_success", { prId: id.value });
+    onActionSuccess?.();
   };
 
   const handleConfirmSlot = async () => {
@@ -120,6 +128,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
 
     await confirmSlotMutation.mutateAsync({ id: id.value });
     trackEvent("pr_confirm_success", { prId: id.value });
+    onActionSuccess?.();
   };
 
   const prepareCheckIn = (didAttend: boolean) => {
@@ -146,6 +155,7 @@ export const usePRActions = ({ id, pr, isCreator }: UsePRActionsOptions) => {
       didAttend: pendingCheckInDidAttend.value,
       wouldJoinAgain,
     });
+    onActionSuccess?.();
 
     pendingCheckInDidAttend.value = null;
   };

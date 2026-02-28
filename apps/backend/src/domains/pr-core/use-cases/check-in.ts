@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { hasEventStarted } from "../services/time-window.service";
@@ -11,6 +12,7 @@ import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const userRepo = new UserRepository();
 
 export async function checkIn(
   id: PRId,
@@ -40,6 +42,9 @@ export async function checkIn(
   const updatedSlot = await partnerRepo.reportCheckIn(slot.id, payload);
   if (!updatedSlot) {
     throw new HTTPException(500, { message: "Failed to submit check-in" });
+  }
+  if (payload.didAttend && slot.status !== "ATTENDED") {
+    await userRepo.applyReliabilityDelta(user.id, { attended: 1 });
   }
 
   // Emit domain event

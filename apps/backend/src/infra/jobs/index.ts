@@ -6,4 +6,5 @@ export type {
   RunDueJobsSummary,
   JobHandler,
   JobHandlerContext,
+  DeletePendingJobsByDedupeConfig,
 } from "./job-runner";

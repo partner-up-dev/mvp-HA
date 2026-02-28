@@ -19,10 +19,12 @@ import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { jobRunner } from "./infra/jobs";
 import { processOutboxBatch } from "./infra/events";
+import { registerWeChatReminderJobs } from "./infra/notifications";
 import { env } from "./lib/env";
 import { withTimeout } from "./lib/with-timeout";
 
 const app = new Hono();
+registerWeChatReminderJobs();
 
 // Middleware
 app.use("*", logger());

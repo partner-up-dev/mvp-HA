@@ -42,6 +42,7 @@ These are top-most glossary, read more in `docs/product/glossary.md`:
 - 参与数据模型: 已从聚合元组迁移为 `minPartners` / `maxPartners` + `partners: partnerId[]`，并引入 `Partner`（含 `status`：`JOINED/CONFIRMED/RELEASED/ATTENDED`）。
 - 用户最小模型: 新增 `User`（`openid` 绑定，含 `nickname/sex/avatar` + `status`：`ACTIVE/DISABLED`）；新用户首次微信登录会拉取并保存资料，join/exit 通过微信会话完成 `Partner` 绑定校验。
 - 确认机制（5.2）: 新增 slot 确认与时序规则；`T-1h` 未确认槽位会自动释放，`T-1h~T-30min` 加入即自动确认为 `CONFIRMED`，`T-30min` 后禁止加入。
+- 公众号提醒（5.2）: 新增提醒订阅开关（`GET/POST /api/wechat/reminders/subscription`）；开启后优先通过“服务号订阅通知”通道调度 `T-24h/T-2h` 提醒（旧模板消息通道保留为兼容兜底），退出/释放/关闭提醒会删除未执行任务，并写入 `notification_deliveries`。
 - 签到回流（5.3）: 新增可选签到（到场/未到场 + 是否愿意再参加），`didAttend=true` 时槽位状态流转为 `ATTENDED`。
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；支持微信聊天/朋友圈分享（WeChat WebView JS-SDK，PR 详情页可生成缩略图卡片，首页/创建页/联系作者页可直接配置分享卡片）；支持小红书文案与海报生成并下载/打开 App 分享。
 - 微信登录能力: 已接入微信 OAuth 基础设施（`/api/wechat/oauth/session|login|callback|logout`），前端在页面进入时会自动尝试登录（仅微信 WebView 触发）；加入/退出/确认/签到会强制校验登录态。

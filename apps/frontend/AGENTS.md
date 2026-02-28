@@ -74,6 +74,7 @@ src/
 - 参与数据模型: 已适配 `minPartners` / `maxPartners` + `partners: partnerId[]`，加入/退出按当前设备 `partnerId` 进行 slot 级交互；后端会将该 `partnerId` 绑定到微信 `openid` 对应用户。
 - 微信登录约束: 详情页加入/退出/确认参与/签到反馈前会检查微信会话，未登录则重定向 OAuth 登录；请求携带 `credentials: include` 以发送会话 cookie。
 - 确认与签到交互: 详情页新增“确认参与”“我已到场/我未到场”按钮，分别调用 `/confirm` 与 `/check-in`。
+- 公众号提醒交互: 详情页新增“公众号提醒”开关；微信环境且已登录时可开启/关闭（`GET/POST /api/wechat/reminders/subscription`），非微信或未登录时展示降级提示。
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；微信内置 WebView 分享卡片（PR 详情页支持缩略图卡片，首页/创建页/联系作者页可直接分享至聊天与朋友圈）；小红书文案与海报生成、下载并跳转 App。
 - 国际化能力: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案位于 `src/locales/zh-CN.jsonc`，使用 `MessageSchema` 提供类型支持。
 - 作者联系能力: 首页与各页面页脚支持“联系作者”入口；`/contact-author` 页面可居中展示作者微信二维码（来自后端公共配置）。
