@@ -25,7 +25,10 @@
         :raw-text="prDetail.rawText"
       />
 
-      <section class="economy-entry-section">
+      <section
+        v-if="prDetail?.prKind === 'ANCHOR'"
+        class="economy-entry-section"
+      >
         <router-link
           v-if="id !== null"
           :to="{ name: 'pr-economy', params: { id } }"
@@ -310,8 +313,8 @@ const isCreator = computed(() => {
   return userPRStore.isCreatorOf(id.value);
 });
 
-const LIVE_POLL_INTERVAL_MS = 1_000;
-const LIVE_POLL_MAX_ATTEMPTS = 20;
+const LIVE_POLL_INTERVAL_MS = 2_000;
+const LIVE_POLL_MAX_ATTEMPTS = 10;
 const livePollAttemptCount = ref(0);
 const livePollTimerId = ref<number | null>(null);
 const livePollInFlight = ref(false);

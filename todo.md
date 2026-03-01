@@ -32,6 +32,9 @@
 - [ ] 允许 Partner 的 user-id 在 joined 时也为空（但限制在 Community PR 类型中）
 - [ ] Event Highlights (LandingPage), Event Plaza Page, Event Page (batch as tab)
 - [ ] PR Detail Page Refactor (Anchor PR / Community PR 分开)
+- [ ] PR Page "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
+- [ ] raw_text, pin 对于 Anchor PR 来说是可选的
+      还是说 Anchor PR 也会自动生成 PIN 并且自动保存在 users 表中（毕竟加入肯定要登录的了）？
 
 ## Others
 
