@@ -6,6 +6,7 @@ import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { isExitAllowedStatus } from "../services/status-rules";
 import { recalculatePRStatus } from "../services/slot-management.service";
+import { isBookingDeadlineReached } from "../services/time-window.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
@@ -34,6 +35,15 @@ export async function exitPR(id: PRId, openId: string): Promise<PublicPR> {
   if (!activeSlot) {
     throw new HTTPException(400, {
       message: "Cannot exit - partner is not joined",
+    });
+  }
+
+  if (
+    isBookingDeadlineReached(refreshedRequest.resourceBookingDeadlineAt) &&
+    (activeSlot.status === "CONFIRMED" || activeSlot.status === "ATTENDED")
+  ) {
+    throw new HTTPException(400, {
+      message: "Cannot exit - slot is locked after booking deadline",
     });
   }
 

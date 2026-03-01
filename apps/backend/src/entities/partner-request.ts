@@ -6,6 +6,7 @@ import {
   jsonb,
   timestamp,
   integer,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -48,6 +49,7 @@ export const prStatusSchema = z.enum([
   "OPEN",
   "READY",
   "FULL",
+  "LOCKED_TO_START",
   "ACTIVE",
   "CLOSED",
   "EXPIRED",
@@ -66,6 +68,15 @@ export type PRKind = z.infer<typeof prKindSchema>;
 
 export const visibilityStatusSchema = z.enum(["VISIBLE", "HIDDEN"]);
 export type VisibilityStatus = z.infer<typeof visibilityStatusSchema>;
+
+export const paymentModelSchema = z.enum(["A", "C"]);
+export type PaymentModel = z.infer<typeof paymentModelSchema>;
+
+export const economicPolicyScopeSchema = z.enum([
+  "EVENT_DEFAULT",
+  "BATCH_OVERRIDE",
+]);
+export type EconomicPolicyScope = z.infer<typeof economicPolicyScopeSchema>;
 
 export const createPRStructuredStatusSchema = z.enum(["DRAFT", "OPEN"]);
 export type CreatePRStructuredStatus = z.infer<
@@ -159,6 +170,15 @@ export const partnerRequests = pgTable("partner_requests", {
     .notNull()
     .default("VISIBLE"),
   autoHideAt: timestamp("auto_hide_at"),
+  resourceBookingDeadlineAt: timestamp("resource_booking_deadline_at"),
+  paymentModelApplied: text("payment_model_applied").$type<PaymentModel | null>(),
+  discountRateApplied: doublePrecision("discount_rate_applied"),
+  subsidyCapApplied: integer("subsidy_cap_applied"),
+  cancellationPolicyApplied: text("cancellation_policy_applied"),
+  economicPolicyScopeApplied: text("economic_policy_scope_applied").$type<
+    EconomicPolicyScope | null
+  >(),
+  economicPolicyVersionApplied: integer("economic_policy_version_applied"),
 });
 
 // Zod schemas for validation
@@ -167,6 +187,8 @@ export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
+  paymentModelApplied: paymentModelSchema.nullable(),
+  economicPolicyScopeApplied: economicPolicyScopeSchema.nullable(),
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
@@ -174,6 +196,8 @@ export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
+  paymentModelApplied: paymentModelSchema.nullable(),
+  economicPolicyScopeApplied: economicPolicyScopeSchema.nullable(),
 });
 
 // Type inference

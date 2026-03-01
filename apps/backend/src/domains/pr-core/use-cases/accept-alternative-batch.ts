@@ -4,6 +4,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { resolveDesiredSlotCount } from "../services/slot-management.service";
+import { resolveAnchorEconomicPolicy } from "../services/economic-policy.service";
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
@@ -123,6 +124,11 @@ export async function acceptAlternativeBatch(
     let createdPr = false;
     if (!targetPR) {
       const pinHash = await bcrypt.hash(generateSystemPin(), 10);
+      const resolvedPolicy = resolveAnchorEconomicPolicy(
+        event,
+        targetBatch,
+        targetTimeWindow,
+      );
       const insertedPR = await tx
         .insert(partnerRequests)
         .values({
@@ -143,6 +149,14 @@ export async function acceptAlternativeBatch(
           batchId: targetBatch.id,
           visibilityStatus: "VISIBLE",
           autoHideAt: source.autoHideAt,
+          resourceBookingDeadlineAt: resolvedPolicy.resourceBookingDeadlineAt,
+          paymentModelApplied: resolvedPolicy.paymentModelApplied,
+          discountRateApplied: resolvedPolicy.discountRateApplied,
+          subsidyCapApplied: resolvedPolicy.subsidyCapApplied,
+          cancellationPolicyApplied: resolvedPolicy.cancellationPolicyApplied,
+          economicPolicyScopeApplied: resolvedPolicy.economicPolicyScopeApplied,
+          economicPolicyVersionApplied:
+            resolvedPolicy.economicPolicyVersionApplied,
         })
         .returning();
       targetPR = insertedPR[0];

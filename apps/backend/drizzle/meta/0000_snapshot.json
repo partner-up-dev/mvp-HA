@@ -1,5 +1,5 @@
 {
-  "id": "cbb37f35-5c74-428d-8a3e-90e974d6c8a9",
+  "id": "d9b70165-420d-4d10-b178-89b19d4d967f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -33,6 +33,25 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'OPEN'"
+        },
+        "discount_rate_override": {
+          "name": "discount_rate_override",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subsidy_cap_override": {
+          "name": "subsidy_cap_override",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "economic_policy_version": {
+          "name": "economic_policy_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "created_at": {
           "name": "created_at",
@@ -116,6 +135,37 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'ACTIVE'"
+        },
+        "payment_model": {
+          "name": "payment_model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'C'"
+        },
+        "discount_rate_default": {
+          "name": "discount_rate_default",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subsidy_cap_default": {
+          "name": "subsidy_cap_default",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resource_booking_deadline_rule": {
+          "name": "resource_booking_deadline_rule",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancellation_policy": {
+          "name": "cancellation_policy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -360,6 +410,48 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "resource_booking_deadline_at": {
+          "name": "resource_booking_deadline_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_model_applied": {
+          "name": "payment_model_applied",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "discount_rate_applied": {
+          "name": "discount_rate_applied",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subsidy_cap_applied": {
+          "name": "subsidy_cap_applied",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancellation_policy_applied": {
+          "name": "cancellation_policy_applied",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "economic_policy_scope_applied": {
+          "name": "economic_policy_scope_applied",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "economic_policy_version_applied": {
+          "name": "economic_policy_version_applied",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -459,6 +551,51 @@
         "would_join_again": {
           "name": "would_join_again",
           "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_status": {
+          "name": "payment_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'NONE'"
+        },
+        "reimbursement_requested": {
+          "name": "reimbursement_requested",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "reimbursement_status": {
+          "name": "reimbursement_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'NONE'"
+        },
+        "reimbursement_amount": {
+          "name": "reimbursement_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reimbursement_requested_at": {
+          "name": "reimbursement_requested_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reimbursement_reviewed_at": {
+          "name": "reimbursement_reviewed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reimbursement_paid_at": {
+          "name": "reimbursement_paid_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },

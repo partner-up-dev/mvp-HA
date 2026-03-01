@@ -31,6 +31,7 @@
 - [ ] datetime picker 的编辑体验有待优化
 - [ ] 允许 Partner 的 user-id 在 joined 时也为空（但限制在 Community PR 类型中）
 - [ ] Event Highlights (LandingPage), Event Plaza Page, Event Page (batch as tab)
+- [ ] PR Detail Page Refactor (Anchor PR / Community PR 分开)
 
 ## Others
 

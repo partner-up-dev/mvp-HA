@@ -255,6 +255,9 @@ function formatBatchLabel(
     &--active {
       color: var(--sys-color-primary);
     }
+    &--locked_to_start {
+      color: var(--sys-color-secondary);
+    }
   }
 
   &__meta {

@@ -150,6 +150,13 @@ export class PartnerRepository {
         checkInAt: null,
         didAttend: null,
         wouldJoinAgain: null,
+        paymentStatus: "NONE",
+        reimbursementRequested: false,
+        reimbursementStatus: "NONE",
+        reimbursementAmount: null,
+        reimbursementRequestedAt: null,
+        reimbursementReviewedAt: null,
+        reimbursementPaidAt: null,
       })
       .where(eq(partners.id, id))
       .returning();
@@ -203,6 +210,13 @@ export class PartnerRepository {
         checkInAt: null,
         didAttend: null,
         wouldJoinAgain: null,
+        paymentStatus: "NONE",
+        reimbursementRequested: false,
+        reimbursementStatus: "NONE",
+        reimbursementAmount: null,
+        reimbursementRequestedAt: null,
+        reimbursementReviewedAt: null,
+        reimbursementPaidAt: null,
         releasedAt: now,
       })
       .where(eq(partners.id, id))

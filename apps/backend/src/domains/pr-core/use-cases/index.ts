@@ -10,3 +10,4 @@ export { confirmSlot } from "./confirm-slot";
 export { checkIn } from "./check-in";
 export { recommendAlternativeBatches } from "./recommend-alternative-batches";
 export { acceptAlternativeBatch } from "./accept-alternative-batch";
+export { getReimbursementStatus } from "./get-reimbursement-status";

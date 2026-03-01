@@ -7,6 +7,8 @@ export const queryKeys = {
     detail: (id: PRId | null) => ["partner-request", "detail", id] as const,
     creator: (ids: readonly PRId[]) =>
       ["partner-request", "creator", normalizeIds(ids)] as const,
+    reimbursementStatus: (id: PRId | null) =>
+      ["partner-request", "reimbursement-status", id] as const,
   },
   config: {
     public: (key: string) => ["config", "public", key] as const,

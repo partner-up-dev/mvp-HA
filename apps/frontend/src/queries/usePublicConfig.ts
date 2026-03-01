@@ -5,6 +5,7 @@ import { i18n } from "@/locales/i18n";
 
 export const PUBLIC_CONFIG_KEYS = {
   authorWechatQrCode: "author_wechat_qr_code",
+  wecomServiceQrCode: "wecom_service_qr_code",
 } as const;
 
 export type PublicConfigKey =

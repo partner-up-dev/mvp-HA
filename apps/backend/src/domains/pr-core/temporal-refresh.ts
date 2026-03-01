@@ -11,6 +11,7 @@ import {
   getTimeWindowStart,
   getTimeWindowClose,
   getConfirmDeadline,
+  isBookingDeadlineReached,
 } from "./services/time-window.service";
 import {
   isActivatableStatus,
@@ -18,6 +19,7 @@ import {
 } from "./services/status-rules";
 import { recalculatePRStatus } from "./services/slot-management.service";
 import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
+import { operationLogService } from "../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -30,9 +32,13 @@ const userRepo = new UserRepository();
 export async function refreshTemporalStatus(
   request: PartnerRequest,
 ): Promise<PartnerRequest> {
-  await releaseUnconfirmedSlotsIfNeeded(request);
+  await lockToStartIfNeeded(request);
+  const afterLock = await prRepo.findById(request.id);
+  const lockNormalized = afterLock ?? request;
+
+  await releaseUnconfirmedSlotsIfNeeded(lockNormalized);
   const afterRelease = await prRepo.findById(request.id);
-  const normalized = afterRelease ?? request;
+  const normalized = afterRelease ?? lockNormalized;
   const activated = await activateIfNeeded(normalized);
   return expireIfNeeded(activated);
 }
@@ -72,12 +78,55 @@ async function expireIfNeeded(
   return updated ?? request;
 }
 
+function shouldLockToStart(request: PartnerRequest): boolean {
+  if (
+    request.status !== "OPEN" &&
+    request.status !== "READY" &&
+    request.status !== "FULL"
+  ) {
+    return false;
+  }
+  return isBookingDeadlineReached(request.resourceBookingDeadlineAt);
+}
+
+async function lockToStartIfNeeded(request: PartnerRequest): Promise<void> {
+  if (!shouldLockToStart(request)) return;
+
+  const updated = await prRepo.updateStatus(request.id, "LOCKED_TO_START");
+  if (!updated || updated.status !== "LOCKED_TO_START") return;
+
+  operationLogService.log({
+    actorId: null,
+    action: "pr.status.locked_to_start",
+    aggregateType: "partner_request",
+    aggregateId: String(request.id),
+    detail: {
+      previousStatus: request.status,
+      resourceBookingDeadlineAt:
+        request.resourceBookingDeadlineAt?.toISOString() ?? null,
+      trigger: "booking_deadline",
+    },
+  });
+}
+
+function resolveReleaseTrigger(
+  request: PartnerRequest,
+): "booking_deadline" | "t_minus_1h" | null {
+  if (isBookingDeadlineReached(request.resourceBookingDeadlineAt)) {
+    return "booking_deadline";
+  }
+
+  const confirmDeadline = getConfirmDeadline(request.time);
+  if (!confirmDeadline) return null;
+  if (Date.now() < confirmDeadline.getTime()) return null;
+  return "t_minus_1h";
+}
+
 async function releaseUnconfirmedSlotsIfNeeded(
   request: PartnerRequest,
 ): Promise<void> {
-  const confirmDeadline = getConfirmDeadline(request.time);
-  if (!confirmDeadline) return;
-  if (Date.now() < confirmDeadline.getTime()) return;
+  const trigger = resolveReleaseTrigger(request);
+  if (!trigger) return;
 
   const slots = await partnerRepo.findByPrId(request.id);
   const releasing = slots.filter((slot) => slot.status === "JOINED");
@@ -89,6 +138,17 @@ async function releaseUnconfirmedSlotsIfNeeded(
       await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
     }
     await partnerRepo.markReleased(slot.id);
+
+    operationLogService.log({
+      actorId: slot.userId,
+      action: "partner.auto_release_unconfirmed",
+      aggregateType: "partner_request",
+      aggregateId: String(request.id),
+      detail: {
+        partnerId: slot.id,
+        trigger,
+      },
+    });
   }
 
   await recalculatePRStatus(request.id);

@@ -4,6 +4,8 @@ import {
   bigint,
   text,
   timestamp,
+  doublePrecision,
+  integer,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -39,6 +41,11 @@ export const anchorEventBatches = pgTable("anchor_event_batches", {
     .$type<AnchorEventBatchStatus>()
     .notNull()
     .default("OPEN"),
+  discountRateOverride: doublePrecision("discount_rate_override"),
+  subsidyCapOverride: bigint("subsidy_cap_override", { mode: "number" }),
+  economicPolicyVersion: integer("economic_policy_version")
+    .notNull()
+    .default(1),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

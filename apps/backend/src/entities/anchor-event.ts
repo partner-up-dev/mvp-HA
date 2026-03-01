@@ -4,6 +4,8 @@ import {
   text,
   jsonb,
   timestamp,
+  doublePrecision,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -14,6 +16,11 @@ import { z } from "zod";
 
 export const anchorEventStatusSchema = z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]);
 export type AnchorEventStatus = z.infer<typeof anchorEventStatusSchema>;
+
+export const anchorEventPaymentModelSchema = z.enum(["A", "C"]);
+export type AnchorEventPaymentModel = z.infer<
+  typeof anchorEventPaymentModelSchema
+>;
 
 /** A location entry in the pool: identifier + optional display label */
 export const locationEntrySchema = z.object({
@@ -44,6 +51,14 @@ export const anchorEvents = pgTable("anchor_events", {
     .notNull(),
   coverImage: text("cover_image"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
+  paymentModel: text("payment_model")
+    .$type<AnchorEventPaymentModel>()
+    .notNull()
+    .default("C"),
+  discountRateDefault: doublePrecision("discount_rate_default"),
+  subsidyCapDefault: bigint("subsidy_cap_default", { mode: "number" }),
+  resourceBookingDeadlineRule: text("resource_booking_deadline_rule"),
+  cancellationPolicy: text("cancellation_policy"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

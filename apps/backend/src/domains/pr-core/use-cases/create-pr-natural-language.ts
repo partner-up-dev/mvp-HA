@@ -10,6 +10,7 @@ import {
   assertPartnerBoundsValid,
   initializeSlotsForPR,
 } from "../services/slot-management.service";
+import { resolveCommunityEconomicPolicy } from "../services/economic-policy.service";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
@@ -32,6 +33,7 @@ export async function createPRFromNaturalLanguage(
   assertPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
 
   const pinHash = await bcrypt.hash(pin, 10);
+  const economicPolicy = resolveCommunityEconomicPolicy();
   const request = await prRepo.create({
     rawText,
     title: fields.title,
@@ -45,6 +47,13 @@ export async function createPRFromNaturalLanguage(
     preferences: fields.preferences,
     notes: fields.notes,
     status: "OPEN",
+    resourceBookingDeadlineAt: economicPolicy.resourceBookingDeadlineAt,
+    paymentModelApplied: economicPolicy.paymentModelApplied,
+    discountRateApplied: economicPolicy.discountRateApplied,
+    subsidyCapApplied: economicPolicy.subsidyCapApplied,
+    cancellationPolicyApplied: economicPolicy.cancellationPolicyApplied,
+    economicPolicyScopeApplied: economicPolicy.economicPolicyScopeApplied,
+    economicPolicyVersionApplied: economicPolicy.economicPolicyVersionApplied,
   });
 
   const creatorUserId = creatorOpenId

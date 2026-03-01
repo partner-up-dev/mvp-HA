@@ -33,7 +33,8 @@ export async function updatePRStatus(
     !isActivatableStatus(currentStatus)
   ) {
     throw new HTTPException(400, {
-      message: "Cannot set ACTIVE - only READY or FULL can become ACTIVE",
+      message:
+        "Cannot set ACTIVE - only READY, FULL, or LOCKED_TO_START can become ACTIVE",
     });
   }
 

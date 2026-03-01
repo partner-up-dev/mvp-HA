@@ -4,11 +4,13 @@
 - 协作触发器：嵌入对话/行为中的触发方式，把自然语言冻结为 PartnerRequest。
 - PartnerRequest（搭子请求）：一次性协作单元，可被加入并自然结束的协作状态。
 - PartnerRequestPreset：行为模板，只提供默认参数、文案与 UI 表现。
-- PartnerRequestStatus：PartnerRequest 状态流转（DRAFT / OPEN / READY / FULL / ACTIVE / CLOSED / EXPIRED）。
+- PartnerRequestStatus：PartnerRequest 状态流转（DRAFT / OPEN / READY / FULL / LOCKED_TO_START / ACTIVE / CLOSED / EXPIRED）。
 - Time Window：PartnerRequest 的时间窗口（start_at / end_at）
 - Capacity：PartnerRequest 的人数阈值（min / max）。
 - Current Partners：PartnerRequest 当前人数（`partners.length`），`partners` 为该 PR 下活跃槽位（JOINED / CONFIRMED / ATTENDED）的 `partnerId[]` 动态聚合结果。
 - SlotStatus（Partner.status）：单个参与槽位状态（JOINED / CONFIRMED / RELEASED / ATTENDED）。
+- PaymentModel（L1）：支付模型（A=用户先付后报销，C=平台补贴）。
+- ReimbursementStatus：报销状态（NONE / PENDING / APPROVED / REJECTED / PAID）。
 - Confirmation Window：确认时序窗口（T-1h 自动释放未确认槽位；T-1h~T-30min 加入即确认；T-30min 后禁止加入）。
 - Check-in Signal：签到回流信号（didAttend / wouldJoinAgain），用于近似到场率与复参与意愿。
 - User（最小模型）：基于微信 `openid` 建立的用户主体，含 `nickname`、`sex`、`avatar` 与 `status`（ACTIVE / DISABLED）。

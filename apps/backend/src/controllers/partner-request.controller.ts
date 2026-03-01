@@ -16,6 +16,7 @@ import {
   checkIn,
   recommendAlternativeBatches,
   acceptAlternativeBatch,
+  getReimbursementStatus,
 } from "../domains/pr-core";
 import {
   createNaturalLanguagePRSchema,
@@ -250,6 +251,17 @@ export const partnerRequestRoute = app
         didAttend,
         wouldJoinAgain: wouldJoinAgain ?? null,
       });
+      return c.json(result);
+    },
+  )
+  // GET /api/pr/:id/reimbursement/status - Reimbursement eligibility and status
+  .get(
+    "/:id/reimbursement/status",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const openId = await requireAuthenticatedOpenId(c);
+      const result = await getReimbursementStatus(id, openId);
       return c.json(result);
     },
   );

@@ -308,18 +308,19 @@ Use case:
 Mechanism:
 
 - User pays merchant directly
-- After PR status becomes EXPIRED (activity finished), reimbursement process may begin
+- After PR status becomes EXPIRED (activity finished), reimbursement process may begin for eligible attendees
 - If PR becomes EXPIRED due to cancellation or failure to reach min, reimbursement not applicable
 
 Rules:
 
-- Each event type defines discount\_rate
-- Each PR defines subsidy\_cap
-- reimbursement = min(actual\_cost × discount\_rate, subsidy\_cap)
+- Anchor Event defines default discount\_rate and subsidy\_cap
+- Anchor Event Batch can override discount\_rate and subsidy\_cap
+- PR settlement uses resolved policy: `batch override > event default`
+- reimbursement = min(actual\_cost × resolved discount\_rate, resolved subsidy\_cap)
 
 Important:
-Reimbursement does NOT require attendance confirmation.
-Reimbursement only requires that PR successfully occurred (not cancelled).
+Reimbursement REQUIRES attendance confirmation.
+Only participants with slot status = ATTENDED can request reimbursement, and only when PR successfully occurred (not cancelled).
 
 Model B (Platform prepay + collect from users) remains excluded at L1.
 
@@ -375,11 +376,11 @@ Model A is acceptable if:
 
 - Reimbursement process is semi-automated
 - Subsidy cap is strictly enforced
-- Event type defines discount\_rate in advance
+- Event default + optional batch override define discount\_rate in advance
 
 ---
 
-- receipt\_upload (optional, Model A only)
+- no receipt\_upload field in H5 (Model A uses WeCom customer service chat to collect bill materials)
 - reimbursement\_amount (calculated)
 - reimbursement\_status (none | pending | approved | rejected | paid)
 
@@ -391,7 +392,7 @@ Model C does NOT require dynamic subsidy budget tracking.
 
 Required capabilities:
 
-1. Clear economic rule display on PR page:
+1. Keep a lightweight entry card on PR detail page, and show full economic rules on a dedicated rule page:
 
    - "Free for participants"
    - Per-person limit (≤ 12 CNY)
@@ -405,7 +406,8 @@ Required capabilities:
 3. Cancellation policy display:
 
    - If user releases before confirmation deadline → no risk
-   - After booking deadline → no release allowed
+   - At booking deadline, apply the same auto-release effect as T-1h for unconfirmed slots (idempotent)
+   - After booking deadline, confirmed slots are locked from manual release
 
 4. Admin-side manual booking checklist (operational, not system-complex)
 
@@ -420,17 +422,18 @@ leverage WeChat ecosystem tools:
 
 H5 Requirements:
 
-1. Simple "Apply for Reimbursement" button (visible only when PR = CLOSED)
+1. Simple "Apply for Reimbursement" button (visible only when PR is ended (`EXPIRED`/`CLOSED`) and current user's slot status = `ATTENDED`)
 
 2. Redirect to:
 
    - WeCom service account (cause only this channel can make transfer to user)
 
-3. Copy the PR link for user and prompt user send this to the WeCom service account
+3. Copy the PR link for user and prompt user to send this in WeCom customer service chat
 
-Receipt handling:
+Bill handling (via WeCom customer service):
 
-- User sends receipt image via WeChat customer channel
+- No receipt upload form in H5
+- User sends bill details/materials in WeCom customer service chat
 - Manual review by operations
 - Manual transfer via WeChat Pay
 
@@ -467,7 +470,7 @@ Payment + subsidy become behavioral levers, not just accounting tools.
 
 ---
 
-Venue + discount are first-class properties of Anchor Event.
+Venue + discount are first-class properties of Anchor Event, with optional per-batch overrides.
 
 ---
 
@@ -643,10 +646,10 @@ L2 should introduce:
 
 Therefore L1 system must:
 
-- Keep payment\_model field extensible
-- Keep slot-level payment\_status generic
+- Keep payment\_model scoped to current L1 models only (A/C)
+- Keep slot-level payment\_status generic for current reimbursement workflow
 
-Do not hard-code A/C assumptions.
+No Model B field reservation is required at L1.
 
 ---
 

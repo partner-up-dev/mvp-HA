@@ -23,6 +23,7 @@
     "open": "找人中",
     "ready": "已成团",
     "full": "已满员",
+    "lockedToStart": "待开始锁定",
     "active": "进行中",
     "closed": "已结束",
     "expired": "已过期",
@@ -94,6 +95,15 @@
     "metaFallbackTitle": "搭子请求 - 搭一把",
     "metaFallbackDescription": "查看搭子请求",
     "metaTitleWithName": "{title} - 搭一把",
+    "economyEntry": {
+      "title": "经济与预订规则",
+      "viewAction": "查看详情",
+      "modelA": "支付模型：Model A（报销）",
+      "modelC": "支付模型：Model C（平台补贴）",
+      "modelUnknown": "支付模型：待配置",
+      "deadlineUnset": "预订截止：未设置",
+      "deadlineWithValue": "预订截止：{deadline}"
+    },
     "sameBatch": {
       "title": "同一时段其它场地",
       "subtitle": "当前场次已满，可选择同批次下的其他地点"
@@ -116,6 +126,59 @@
       "loginHint": "需要先完成微信登录后才能开启提醒。",
       "enabledHint": "已开启提醒：活动前 24 小时和 2 小时会发送通知。",
       "disabledHint": "提醒已关闭，可随时开启。"
+    }
+  },
+  "prEconomy": {
+    "title": "经济与预订规则",
+    "subtitle": "统一查看支付/补贴/预订与报销说明",
+    "backToDetail": "返回活动详情",
+    "common": {
+      "notSet": "未设置"
+    },
+    "model": {
+      "title": "支付与补贴",
+      "paymentModel": "支付模型",
+      "discountRate": "折扣比例",
+      "subsidyCap": "补贴上限",
+      "policyScope": "策略来源",
+      "modelA": "Model A（用户先付后报销）",
+      "modelC": "Model C（平台补贴）",
+      "scopeEventDefault": "Event 默认策略",
+      "scopeBatchOverride": "Batch 覆盖策略"
+    },
+    "booking": {
+      "title": "预订与取消",
+      "deadline": "预订截止时间",
+      "lockState": "当前锁定状态",
+      "cancellationPolicy": "取消策略",
+      "locked": "已锁定（不可加入）",
+      "passed": "已过截止（已确认槽位不可退出）",
+      "notLocked": "未锁定"
+    },
+    "reimbursement": {
+      "title": "报销",
+      "eligibility": "申请资格",
+      "eligible": "可申请",
+      "ineligible": "暂不可申请",
+      "status": "申请状态",
+      "amount": "报销金额",
+      "statusNone": "未申请",
+      "statusPending": "待处理",
+      "statusApproved": "已通过",
+      "statusRejected": "已拒绝",
+      "statusPaid": "已打款",
+      "reasonModelNotA": "仅 Model A 支持报销",
+      "reasonPrNotClosed": "活动未关闭，暂不可申请",
+      "reasonSlotNotEligible": "仅到场（ATTENDED）用户可申请",
+      "reasonAlreadyRequested": "已提交申请，请等待处理",
+      "promptTitle": "PR 已关闭，可进入报销流程",
+      "promptDesc": "点击下方按钮获取企业微信客服二维码，发送账单信息后由人工处理。",
+      "openWecomQr": "打开客服二维码",
+      "wecomTitle": "企业微信客服处理",
+      "wecomDesc": "请通过企业微信客服发送账单信息并等待人工审核与转账。",
+      "wecomModalTitle": "企业微信客服二维码",
+      "wecomQrAlt": "企业微信客服二维码",
+      "wecomQrMissing": "暂未配置企业微信客服二维码"
     }
   },
   "createdPRList": {
@@ -285,7 +348,8 @@
     "initializeFailed": "初始化失败",
     "fetchPublicConfigFailed": "获取公共配置失败",
     "fetchWechatReminderSubscriptionFailed": "获取公众号提醒状态失败",
-    "updateWechatReminderSubscriptionFailed": "更新公众号提醒状态失败"
+    "updateWechatReminderSubscriptionFailed": "更新公众号提醒状态失败",
+    "fetchReimbursementStatusFailed": "获取报销状态失败"
   },
   "posterStyles": {
     "fresh": "清新活泼",
@@ -317,6 +381,7 @@
     "OPEN": "招募中",
     "READY": "已成团",
     "FULL": "已满员",
+    "LOCKED_TO_START": "待开始锁定",
     "ACTIVE": "进行中",
     "CLOSED": "已结束",
     "EXPIRED": "已过期"

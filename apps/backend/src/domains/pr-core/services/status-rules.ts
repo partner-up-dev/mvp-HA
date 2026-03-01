@@ -35,7 +35,7 @@ export function shouldRecalculateCapacityStatus(status: string): boolean {
 
 /** Statuses eligible for automatic activation (READY / FULL → ACTIVE). */
 export function isActivatableStatus(status: string): boolean {
-  return status === "READY" || status === "FULL";
+  return status === "READY" || status === "FULL" || status === "LOCKED_TO_START";
 }
 
 /** Statuses eligible to transition to EXPIRED. */
@@ -44,6 +44,7 @@ export function isExpirableStatus(status: string): boolean {
     status === "OPEN" ||
     status === "READY" ||
     status === "FULL" ||
+    status === "LOCKED_TO_START" ||
     status === "ACTIVE"
   );
 }
@@ -86,6 +87,7 @@ export function toPublicStatus(
     rawStatus === "OPEN" ||
     rawStatus === "READY" ||
     rawStatus === "FULL" ||
+    rawStatus === "LOCKED_TO_START" ||
     rawStatus === "ACTIVE" ||
     rawStatus === "CLOSED" ||
     rawStatus === "EXPIRED"

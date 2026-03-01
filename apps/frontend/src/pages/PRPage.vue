@@ -25,6 +25,29 @@
         :raw-text="prDetail.rawText"
       />
 
+      <section class="economy-entry-section">
+        <router-link
+          v-if="id !== null"
+          :to="{ name: 'pr-economy', params: { id } }"
+          class="economy-entry-card"
+        >
+          <div class="economy-entry-card__header">
+            <h2 class="economy-entry-card__title">
+              {{ t("prPage.economyEntry.title") }}
+            </h2>
+            <span class="economy-entry-card__action">{{
+              t("prPage.economyEntry.viewAction")
+            }}</span>
+          </div>
+          <p class="economy-entry-card__summary">
+            {{ economySummaryModel }}
+          </p>
+          <p class="economy-entry-card__summary">
+            {{ economySummaryDeadline }}
+          </p>
+        </router-link>
+      </section>
+
       <PRActionsPanel
         :can-join="actions.canJoin.value"
         :has-joined="actions.hasJoined.value"
@@ -505,6 +528,27 @@ const formatBatchWindowLabel = (timeWindow: [string | null, string | null]) => {
   return endText ? `${startText} - ${endText}` : startText;
 };
 
+const economySummaryModel = computed(() => {
+  const model = prDetail.value?.paymentModelApplied;
+  if (model === "A") {
+    return t("prPage.economyEntry.modelA");
+  }
+  if (model === "C") {
+    return t("prPage.economyEntry.modelC");
+  }
+  return t("prPage.economyEntry.modelUnknown");
+});
+
+const economySummaryDeadline = computed(() => {
+  const deadline = prDetail.value?.resourceBookingDeadlineAt ?? null;
+  if (!deadline) {
+    return t("prPage.economyEntry.deadlineUnset");
+  }
+  return t("prPage.economyEntry.deadlineWithValue", {
+    deadline: formatDateTime(deadline) ?? t("prPage.economyEntry.deadlineUnset"),
+  });
+});
+
 const handleAcceptAlternativeBatch = async (
   targetTimeWindow: [string | null, string | null],
 ) => {
@@ -570,6 +614,43 @@ useHead({
   padding: var(--sys-spacing-med);
   border-radius: 12px;
   background: var(--sys-color-surface-container);
+}
+
+.economy-entry-section {
+  margin-top: var(--sys-spacing-lg);
+}
+
+.economy-entry-card {
+  display: block;
+  padding: var(--sys-spacing-med);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--sys-color-surface-container);
+}
+
+.economy-entry-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sys-spacing-sm);
+}
+
+.economy-entry-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.economy-entry-card__action {
+  font-size: 0.75rem;
+  color: var(--sys-color-primary);
+}
+
+.economy-entry-card__summary {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--sys-color-on-surface-variant);
 }
 
 .wechat-reminder-title {

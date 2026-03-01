@@ -3,6 +3,9 @@ CREATE TABLE IF NOT EXISTS "anchor_event_batches" (
 	"anchor_event_id" bigint NOT NULL,
 	"time_window" text[] DEFAULT ARRAY[NULL, NULL]::text[] NOT NULL,
 	"status" text DEFAULT 'OPEN' NOT NULL,
+	"discount_rate_override" double precision,
+	"subsidy_cap_override" bigint,
+	"economic_policy_version" integer DEFAULT 1 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -15,6 +18,11 @@ CREATE TABLE IF NOT EXISTS "anchor_events" (
 	"time_window_pool" jsonb NOT NULL,
 	"cover_image" text,
 	"status" text DEFAULT 'ACTIVE' NOT NULL,
+	"payment_model" text DEFAULT 'C' NOT NULL,
+	"discount_rate_default" double precision,
+	"subsidy_cap_default" bigint,
+	"resource_booking_deadline_rule" text,
+	"cancellation_policy" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -55,7 +63,14 @@ CREATE TABLE IF NOT EXISTS "partner_requests" (
 	"anchor_event_id" bigint,
 	"batch_id" bigint,
 	"visibility_status" text DEFAULT 'VISIBLE' NOT NULL,
-	"auto_hide_at" timestamp
+	"auto_hide_at" timestamp,
+	"resource_booking_deadline_at" timestamp,
+	"payment_model_applied" text,
+	"discount_rate_applied" double precision,
+	"subsidy_cap_applied" integer,
+	"cancellation_policy_applied" text,
+	"economic_policy_scope_applied" text,
+	"economic_policy_version_applied" integer
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "partners" (
@@ -69,6 +84,13 @@ CREATE TABLE IF NOT EXISTS "partners" (
 	"check_in_at" timestamp,
 	"did_attend" boolean,
 	"would_join_again" boolean,
+	"payment_status" text DEFAULT 'NONE' NOT NULL,
+	"reimbursement_requested" boolean DEFAULT false NOT NULL,
+	"reimbursement_status" text DEFAULT 'NONE' NOT NULL,
+	"reimbursement_amount" bigint,
+	"reimbursement_requested_at" timestamp,
+	"reimbursement_reviewed_at" timestamp,
+	"reimbursement_paid_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

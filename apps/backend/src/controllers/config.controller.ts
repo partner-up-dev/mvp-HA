@@ -7,7 +7,7 @@ const app = new Hono();
 const configService = new ConfigService();
 
 const publicConfigParamSchema = z.object({
-  key: z.enum(["author_wechat_qr_code"]),
+  key: z.enum(["author_wechat_qr_code", "wecom_service_qr_code"]),
 });
 
 export const configRoute = app.get(

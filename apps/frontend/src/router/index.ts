@@ -6,6 +6,7 @@ import {
 import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
+import PREconomyPage from "@/pages/PREconomyPage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
 import AnchorEventPage from "@/pages/AnchorEventPage.vue";
@@ -23,6 +24,14 @@ const routes: RouteRecordRaw[] = [
     path: "/pr/:id",
     name: "pr",
     component: PRPage,
+    meta: {
+      wechatSharePolicy: "skip",
+    },
+  },
+  {
+    path: "/pr/:id/economy",
+    name: "pr-economy",
+    component: PREconomyPage,
     meta: {
       wechatSharePolicy: "skip",
     },

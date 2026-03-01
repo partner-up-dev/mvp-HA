@@ -118,7 +118,12 @@ export type {
   PartnerRequestSummary,
   WeekdayLabel,
 } from "./entities/partner-request";
-export type { PartnerId, PartnerStatus } from "./entities/partner";
+export type {
+  PartnerId,
+  PartnerStatus,
+  PartnerPaymentStatus,
+  ReimbursementStatus,
+} from "./entities/partner";
 export type { UserId, UserStatus, UserSex } from "./entities/user";
 export type {
   AnchorEventId,

@@ -31,6 +31,13 @@ export type PRDetailView = {
   batchId?: number | null;
   visibilityStatus?: "VISIBLE" | "HIDDEN";
   autoHideAt?: string | null;
+  resourceBookingDeadlineAt?: string | null;
+  paymentModelApplied?: "A" | "C" | null;
+  discountRateApplied?: number | null;
+  subsidyCapApplied?: number | null;
+  cancellationPolicyApplied?: string | null;
+  economicPolicyScopeApplied?: "EVENT_DEFAULT" | "BATCH_OVERRIDE" | null;
+  economicPolicyVersionApplied?: number | null;
   partners: number[];
   myPartnerId: number | null;
   title?: string;

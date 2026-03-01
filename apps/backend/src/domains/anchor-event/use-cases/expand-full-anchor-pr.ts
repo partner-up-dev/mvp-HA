@@ -2,14 +2,17 @@ import bcrypt from "bcryptjs";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
+import { resolveAnchorEconomicPolicy } from "../../pr-core/services/economic-policy.service";
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
+const batchRepo = new AnchorEventBatchRepository();
 const partnerRepo = new PartnerRepository();
 
 const isOccupiedStatus = (status: string): boolean =>
@@ -56,6 +59,8 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   if (!event || event.status !== "ACTIVE") {
     return;
   }
+  const batch = await batchRepo.findById(fullPR.batchId);
+  if (!batch) return;
 
   const batchPRs = await prRepo.findByBatchId(fullPR.batchId);
   const occupiedLocations = new Set(
@@ -84,6 +89,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   }
 
   const pinHash = await bcrypt.hash(generateSystemPin(), 10);
+  const resolvedPolicy = resolveAnchorEconomicPolicy(event, batch, fullPR.time);
   const created = await prRepo.create({
     rawText: fullPR.rawText,
     title: fullPR.title,
@@ -102,6 +108,13 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     batchId: fullPR.batchId,
     visibilityStatus: "VISIBLE",
     autoHideAt: fullPR.autoHideAt,
+    resourceBookingDeadlineAt: resolvedPolicy.resourceBookingDeadlineAt,
+    paymentModelApplied: resolvedPolicy.paymentModelApplied,
+    discountRateApplied: resolvedPolicy.discountRateApplied,
+    subsidyCapApplied: resolvedPolicy.subsidyCapApplied,
+    cancellationPolicyApplied: resolvedPolicy.cancellationPolicyApplied,
+    economicPolicyScopeApplied: resolvedPolicy.economicPolicyScopeApplied,
+    economicPolicyVersionApplied: resolvedPolicy.economicPolicyVersionApplied,
   });
 
   await initializeSlotsForPR(
