@@ -9,3 +9,6 @@ export * from "./anchor-event";
 export * from "./anchor-event-batch";
 export * from "./job";
 export * from "./notification-delivery";
+export * from "./analytics-daily-anchor";
+export * from "./analytics-daily-community";
+export * from "./scenario-type-metric";

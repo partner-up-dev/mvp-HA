@@ -32,6 +32,10 @@ export const usePRActions = ({
   const pendingCheckInDidAttend = ref<boolean | null>(null);
 
   const hasJoined = computed(() => pr.value?.myPartnerId !== null);
+  const analyticsPRContext = computed(() => ({
+    prKind: pr.value?.prKind,
+    scenarioType: pr.value?.type,
+  }));
 
   const shortPartnerId = computed(() => {
     const idValue = pr.value?.myPartnerId;
@@ -109,7 +113,10 @@ export const usePRActions = ({
     if (!(await ensureActionAuthenticated())) return;
 
     await joinMutation.mutateAsync({ id: id.value });
-    trackEvent("pr_join_success", { prId: id.value });
+    trackEvent("pr_join_success", {
+      prId: id.value,
+      ...analyticsPRContext.value,
+    });
     onActionSuccess?.();
   };
 
@@ -118,7 +125,10 @@ export const usePRActions = ({
     if (!(await ensureActionAuthenticated())) return;
 
     await exitMutation.mutateAsync({ id: id.value });
-    trackEvent("pr_exit_success", { prId: id.value });
+    trackEvent("pr_exit_success", {
+      prId: id.value,
+      ...analyticsPRContext.value,
+    });
     onActionSuccess?.();
   };
 
@@ -127,7 +137,10 @@ export const usePRActions = ({
     if (!(await ensureActionAuthenticated())) return;
 
     await confirmSlotMutation.mutateAsync({ id: id.value });
-    trackEvent("pr_confirm_success", { prId: id.value });
+    trackEvent("pr_confirm_success", {
+      prId: id.value,
+      ...analyticsPRContext.value,
+    });
     onActionSuccess?.();
   };
 
@@ -154,6 +167,7 @@ export const usePRActions = ({
       prId: id.value,
       didAttend: pendingCheckInDidAttend.value,
       wouldJoinAgain,
+      ...analyticsPRContext.value,
     });
     onActionSuccess?.();
 

@@ -27,6 +27,19 @@ const isShareAbortError = (error: unknown): boolean => {
   );
 };
 
+const resolvePRIdFromShareUrl = (url: string): number | undefined => {
+  try {
+    const parsed = new URL(url);
+    const matched = parsed.pathname.match(/^\/pr\/(\d+)(?:\/|$)/);
+    if (!matched) return undefined;
+    const id = Number.parseInt(matched[1], 10);
+    if (!Number.isFinite(id) || id <= 0) return undefined;
+    return id;
+  } catch {
+    return undefined;
+  }
+};
+
 export const useShareAsLink = ({
   shareUrl,
   getShareFailedText,
@@ -84,11 +97,16 @@ export const useShareAsLink = ({
     if (shareState.value === "sharing") return;
 
     shareState.value = "sharing";
+    const prId = resolvePRIdFromShareUrl(normalizedUrl.value);
+    const analyticsContext = prId ? { prId } : {};
 
     try {
       const didShare = await tryNativeShare();
       if (didShare) {
-        trackEvent("share_link_native_success", { url: normalizedUrl.value });
+        trackEvent("share_link_native_success", {
+          url: normalizedUrl.value,
+          ...analyticsContext,
+        });
         flashState("shared");
         return;
       }
@@ -100,18 +118,23 @@ export const useShareAsLink = ({
       trackEvent("share_link_failed", {
         url: normalizedUrl.value,
         stage: "native",
+        ...analyticsContext,
       });
       console.error("Native share failed, fallback to copy:", error);
     }
 
     try {
       await copyToClipboard(normalizedUrl.value);
-      trackEvent("share_link_copy_success", { url: normalizedUrl.value });
+      trackEvent("share_link_copy_success", {
+        url: normalizedUrl.value,
+        ...analyticsContext,
+      });
       flashState("copied");
     } catch (error) {
       trackEvent("share_link_failed", {
         url: normalizedUrl.value,
         stage: "copy",
+        ...analyticsContext,
       });
       console.error("Failed to share/copy:", error);
       flashState("error");
@@ -125,4 +148,3 @@ export const useShareAsLink = ({
     handleShare,
   };
 };
-

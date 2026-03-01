@@ -3,6 +3,7 @@ import {
   createWebHistory,
   type RouteRecordRaw,
 } from "vue-router";
+import { trackEvent } from "@/shared/analytics/track";
 import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
@@ -86,4 +87,19 @@ export const router = createRouter({
 
     return { left: 0, top: 0 };
   },
+});
+
+const parsePositiveInt = (value: unknown): number | undefined => {
+  if (typeof value !== "string") return undefined;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return parsed;
+};
+
+router.afterEach((to) => {
+  trackEvent("page_view", {
+    page: to.fullPath,
+    routeName: typeof to.name === "string" ? to.name : undefined,
+    prId: parsePositiveInt(to.params.id),
+  });
 });

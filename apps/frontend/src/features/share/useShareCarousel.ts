@@ -21,6 +21,15 @@ const FALLBACK_METHOD: ShareMethod = {
   enabled: true,
 };
 
+const resolveCurrentPRId = (): number | undefined => {
+  if (typeof window === "undefined") return undefined;
+  const matched = window.location.pathname.match(/^\/pr\/(\d+)(?:\/|$)/);
+  if (!matched) return undefined;
+  const id = Number.parseInt(matched[1], 10);
+  if (!Number.isFinite(id) || id <= 0) return undefined;
+  return id;
+};
+
 export const useShareCarousel = ({
   allMethods,
   defaultMethodId = "XIAOHONGSHU",
@@ -82,16 +91,20 @@ export const useShareCarousel = ({
   const goToPrevMethod = (): void => {
     markUserInteraction();
     moveMethod(-1);
+    const prId = resolveCurrentPRId();
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
+      prId,
     });
   };
 
   const goToNextMethod = (): void => {
     markUserInteraction();
     moveMethod(1);
+    const prId = resolveCurrentPRId();
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
+      prId,
     });
   };
 
@@ -123,4 +136,3 @@ export const useShareCarousel = ({
     handleShareMethodInteraction,
   };
 };
-

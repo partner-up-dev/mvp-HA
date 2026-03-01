@@ -13,28 +13,37 @@
 
 事件标准化：
 
-1. 定义统一事件字典：
-   - `page_view`
-   - `join_attempt` / `join_success`
-   - `min_reached`
-   - `slot_confirmed`
-   - `check_in_submitted`
-   - `share_clicked` / `share_converted`
-   - `repeat_join_14d`
-2. 每个事件包含：
-   - `prId`
-   - `prKind` (`ANCHOR`/`COMMUNITY`)
-   - `type`
-   - `actorId`（匿名或用户）
-   - `occurredAt`
+1. 统一事件字典以已上线命名为准（canonical）：
+   - `pr_create_success`
+   - `pr_join_success`
+   - `pr_exit_success`
+   - `pr_confirm_success`
+   - `pr_checkin_submitted`
+   - `share_method_switch`
+   - `share_link_native_success`
+   - `share_link_copy_success`
+   - `share_link_failed`
+   - `page_view`（待补）
+2. 迁移规则：旧计划命名映射到 canonical，禁止新写入旧命名：
+   - `join_success` -> `pr_join_success`
+   - `slot_confirmed` -> `pr_confirm_success`
+   - `check_in_submitted` -> `pr_checkin_submitted`
+   - `share_clicked` -> `share_method_switch` / `share_link_*`
+   - `share_converted` -> 下游聚合指标（非原始事件）
+   - `repeat_join_14d` -> 下游聚合指标（非原始事件）
+3. 事件协议采用 INFRA-04 已落地 contract：
+   - 顶层字段：`type`、`payload`、`occurredAt`、`sessionId?`
+   - `payload` 按事件类型约束，不强制所有事件都包含 `prId/prKind/type/actorId`
+   - 分线聚合推荐字段（按需出现）：`prId?`、`prKind?` (`ANCHOR`/`COMMUNITY`)、`scenarioType?`、`actorId?`
 
 后端：
 
-1. 新增 `analytics_events` 事件表。
-2. 新增聚合任务与结果表：
+1. 原始埋点持续落库到 `domain_events`（`type=analytics.*`），不新增 `analytics_events` 原始表。
+2. 新增聚合任务与结果表（下游）：
    - `analytics_daily_anchor`
    - `analytics_daily_community`
    - `scenario_type_metrics`
+3. 维持 “raw events -> aggregate tables/views” 的单向管线，避免双写。
 
 前端：
 
@@ -42,7 +51,7 @@
 2. 埋点失败不阻塞业务流。
 3. 本地开发可打开 debug 面板查看事件发送情况。
 
-## 进度更新（2026-02-25）
+## 进度更新（2026-03-01）
 
 已完成（Phase 1-部分）：
 
@@ -70,42 +79,64 @@
 
 未完成：
 
-1. `page_view`、`share_converted`、`repeat_join_14d` 等事件仍未落地。
-2. 后端 `analytics_events` 落库与按日聚合任务尚未启动。
-3. Anchor/Community 分线统计仍缺少实体字段与任务实现。
-4. 事件 payload 尚未统一补齐 `prKind/type/actorId` 等分线聚合关键字段。
+1. `page_view` 仍未落地。
+2. 历史/旧计划事件命名尚未完成迁移到 canonical（含下游口径映射）。
+3. 后端按日聚合任务与结果表尚未启动（raw ingest 已上线并落 `domain_events`）。
+4. Anchor/Community 分线统计仍缺少 `prKind` 等关键字段补齐与任务实现。
+5. `share_converted`、`repeat_join_14d` 尚未在下游聚合中实现（不作为原始事件上报）。
 
 ## 分阶段实施
 
 ### Phase 1：事件字典与 SDK
 
-1. 确认事件命名和字段规范。
+1. 锁定 canonical 事件命名，并完成旧命名迁移映射。
 2. 前后端接入同一事件协议。
-3. 关键路径先覆盖：PV、join、confirm、check-in、share。
+3. 关键路径覆盖：PV、join、confirm、check-in、share。
+4. 输出事件字典版本清单（含废弃事件与替代关系）。
 
 ### Phase 2：聚合与分线
 
 1. 建立 Anchor/Community 两套日聚合任务。
-2. 输出 L1 关键指标：
+2. 输出 L1 六项核心指标：
    - join conversion
    - min-group success
    - confirmation rate
    - actual check-in rate
+   - share-to-join conversion
    - repeat join 14d
+3. 明确衍生指标口径：
+   - `repeat join 14d` 为窗口聚合指标（非原始事件）
+   - `share-to-join conversion` 由分享与 join 事件关联计算（非原始事件）
 
 ### Phase 3：场景分类分析
 
-1. 按 `type` 聚合 fill rate 与 share-to-join。
+1. 按 `scenarioType` 聚合 fill rate 与 share-to-join。
 2. 形成场景优先级榜单（内部使用）。
 3. 支持后续模板策略调参。
 
+## 时间口径（强约束）
+
+1. 日聚合权威时区：`UTC+8`（`Asia/Shanghai`）。
+2. 每日窗口：`00:00:00` - `23:59:59.999`（`UTC+8`）。
+3. `repeat join 14d` 以 `UTC+8` 自然日窗口计算（含当天回看 14 天）。
+4. 所有聚合作业必须显式声明时区，禁止依赖数据库/运行环境默认时区。
+
 ## 验收标准
 
-1. L1 六项核心指标可按日稳定产出。
+1. L1 六项核心指标可按日稳定产出，且与以下口径一致：
+   - join conversion
+   - min-group success
+   - confirmation rate
+   - actual check-in rate
+   - share-to-join conversion
+   - repeat join 14d
 2. Anchor 与 Community 指标可以独立查询，口径不混用。
 3. 场景统计结果可驱动模板和投放决策。
+4. 原始事件仅落 `domain_events`，下游聚合不出现双写源。
+5. 所有按日与 14 日窗口指标均以 `UTC+8` 计算并通过回归校验。
 
 ## 风险与决策
 
 1. 先保证事件正确性，再优化实时性和 BI 展示。
 2. MVP 阶段可先用数据库聚合，不引入重型数仓组件。
+3. 事件命名迁移阶段需维护映射表，防止新旧口径并存导致指标抖动。

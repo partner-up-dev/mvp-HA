@@ -18,6 +18,10 @@ import { analyticsRoute } from "./controllers/analytics.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { jobRunner } from "./infra/jobs";
+import {
+  bootstrapAnalyticsAggregationJobs,
+  registerAnalyticsAggregationJobs,
+} from "./infra/analytics";
 import { processOutboxBatch } from "./infra/events";
 import { registerWeChatReminderJobs } from "./infra/notifications";
 import { env } from "./lib/env";
@@ -25,6 +29,10 @@ import { withTimeout } from "./lib/with-timeout";
 
 const app = new Hono();
 registerWeChatReminderJobs();
+registerAnalyticsAggregationJobs();
+void bootstrapAnalyticsAggregationJobs().catch((error) => {
+  console.error("[Analytics] failed to bootstrap daily aggregation jobs", error);
+});
 
 // Middleware
 app.use("*", logger());

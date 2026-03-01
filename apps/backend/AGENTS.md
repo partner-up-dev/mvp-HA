@@ -87,7 +87,8 @@ src/
 - 领域拆分与用例化 (INFRA-01): `PartnerRequestService` 已拆分为独立 use-case 函数（`createPRFromNaturalLanguage`、`createPRFromStructured`、`joinPR`、`exitPR`、`confirmSlot`、`checkIn`、`updatePRStatus`、`updatePRContent` 等），业务规则归位到 `domains/pr-core/services/`（time-window、status-rules、slot-management）。原 `PartnerRequestService` 保留为薄 facade 以兼容存量调用方。
 - Outbox 事件骨架: 新增 `domain_events` 与 `outbox_events`（含 `operation_logs`）表；所有关键动作（create/join/exit/confirm/check-in/status-change/content-update）写出领域事件到 outbox。Outbox 消费支持请求尾批处理，并采用行锁 claim 防重复领取。
 - 任务执行框架 : `JobRunner` 已升级为 DB-backed 执行器（支持延迟/一次性任务、tolerance 窗口、租约与重试）；提供 `/internal/jobs/tick` 供外部定时触发，并支持请求尾 best-effort 补偿执行。
-- 统一埋点 SDK 后端接入: 新增 `POST /api/analytics/events` 批量接收前端埋点事件并落库到 `domain_events`。
+- 统一埋点 SDK 后端接入: `POST /api/analytics/events` 批量接收埋点并落库到 `domain_events`，支持旧事件名迁移映射（join/confirm/check-in/share）与衍生指标事件丢弃（`share_converted`/`repeat_join_14d`）。
+- Analytics 聚合任务: 新增 `analytics.aggregate.daily` JobRunner 任务，按 `UTC+8`（`Asia/Shanghai`）生成 `analytics_daily_anchor`、`analytics_daily_community`、`scenario_type_metrics`。
 - 运营日志基础能力: 新增 `operation_logs` 表与 `operationLogService.log()` 通用写入接口；每个领域动作自动附带操作日志。
 
 ### Known Limitations & Mocks
@@ -97,7 +98,7 @@ src/
 - 微信分享环境: 仅在微信内置 WebView 且 JS-SDK 正常加载时生效。
 - WeCom 时间语义: 企业微信回调仅提供 UTC timestamp；后端按 `Asia/Shanghai` 推断 `nowWeekday` 供自然语言解析。
 - Outbox Worker: 当前为请求尾批处理（best-effort）；仍未接入外部消息队列与独立 worker。
-- Analytics Ingest: 仅落库，尚未实现聚合查询或仪表盘。
+- Analytics: 已实现落库 + 日聚合结果表；尚未提供 BI 仪表盘与管理端查询界面。
 - Operation Log: 仅写入，尚未提供管理端查询 UI。
 
 ### Immediate Next Focus

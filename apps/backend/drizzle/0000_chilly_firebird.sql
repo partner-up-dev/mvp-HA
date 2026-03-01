@@ -1,3 +1,45 @@
+CREATE TABLE IF NOT EXISTS "analytics_daily_anchor" (
+	"date_key" date PRIMARY KEY NOT NULL,
+	"page_views" integer DEFAULT 0 NOT NULL,
+	"join_successes" integer DEFAULT 0 NOT NULL,
+	"join_conversion" double precision DEFAULT 0 NOT NULL,
+	"min_group_successes" integer DEFAULT 0 NOT NULL,
+	"eligible_pr_count" integer DEFAULT 0 NOT NULL,
+	"min_group_success_rate" double precision DEFAULT 0 NOT NULL,
+	"confirmation_successes" integer DEFAULT 0 NOT NULL,
+	"confirmation_rate" double precision DEFAULT 0 NOT NULL,
+	"checkin_submitted_count" integer DEFAULT 0 NOT NULL,
+	"checkin_attended_count" integer DEFAULT 0 NOT NULL,
+	"actual_checkin_rate" double precision DEFAULT 0 NOT NULL,
+	"share_successes" integer DEFAULT 0 NOT NULL,
+	"share_to_join_conversion" double precision DEFAULT 0 NOT NULL,
+	"unique_join_users_14d" integer DEFAULT 0 NOT NULL,
+	"repeat_join_users_14d" integer DEFAULT 0 NOT NULL,
+	"repeat_join_14d_rate" double precision DEFAULT 0 NOT NULL,
+	"computed_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "analytics_daily_community" (
+	"date_key" date PRIMARY KEY NOT NULL,
+	"page_views" integer DEFAULT 0 NOT NULL,
+	"join_successes" integer DEFAULT 0 NOT NULL,
+	"join_conversion" double precision DEFAULT 0 NOT NULL,
+	"min_group_successes" integer DEFAULT 0 NOT NULL,
+	"eligible_pr_count" integer DEFAULT 0 NOT NULL,
+	"min_group_success_rate" double precision DEFAULT 0 NOT NULL,
+	"confirmation_successes" integer DEFAULT 0 NOT NULL,
+	"confirmation_rate" double precision DEFAULT 0 NOT NULL,
+	"checkin_submitted_count" integer DEFAULT 0 NOT NULL,
+	"checkin_attended_count" integer DEFAULT 0 NOT NULL,
+	"actual_checkin_rate" double precision DEFAULT 0 NOT NULL,
+	"share_successes" integer DEFAULT 0 NOT NULL,
+	"share_to_join_conversion" double precision DEFAULT 0 NOT NULL,
+	"unique_join_users_14d" integer DEFAULT 0 NOT NULL,
+	"repeat_join_users_14d" integer DEFAULT 0 NOT NULL,
+	"repeat_join_14d_rate" double precision DEFAULT 0 NOT NULL,
+	"computed_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "anchor_event_batches" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"anchor_event_id" bigint NOT NULL,
@@ -169,6 +211,20 @@ CREATE TABLE IF NOT EXISTS "notification_deliveries" (
 	"error_code" text,
 	"error_message" text,
 	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "scenario_type_metrics" (
+	"date_key" date NOT NULL,
+	"pr_kind" text NOT NULL,
+	"scenario_type" text NOT NULL,
+	"pr_count" integer DEFAULT 0 NOT NULL,
+	"page_views" integer DEFAULT 0 NOT NULL,
+	"join_successes" integer DEFAULT 0 NOT NULL,
+	"share_successes" integer DEFAULT 0 NOT NULL,
+	"fill_rate" double precision DEFAULT 0 NOT NULL,
+	"share_to_join_conversion" double precision DEFAULT 0 NOT NULL,
+	"computed_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "scenario_type_metrics_date_key_pr_kind_scenario_type_pk" PRIMARY KEY("date_key","pr_kind","scenario_type")
 );
 --> statement-breakpoint
 DO $$ BEGIN

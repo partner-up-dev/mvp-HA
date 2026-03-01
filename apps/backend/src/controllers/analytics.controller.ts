@@ -9,11 +9,14 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { ingestAnalyticsEvents } from "../infra/analytics";
+import { acceptedAnalyticsEventTypes } from "../infra/analytics";
 
 const app = new Hono();
 
+const analyticsEventTypeSchema = z.enum(acceptedAnalyticsEventTypes);
+
 const analyticsEventSchema = z.object({
-  type: z.string().min(1).max(128),
+  type: analyticsEventTypeSchema,
   payload: z.record(z.unknown()),
   occurredAt: z.string().datetime(),
   sessionId: z.string().max(128).optional(),
@@ -28,12 +31,12 @@ export const analyticsRoute = app.post(
   zValidator("json", batchSchema),
   async (c) => {
     const { events } = c.req.valid("json");
-    const count = await ingestAnalyticsEvents(
+    const result = await ingestAnalyticsEvents(
       events.map((e) => ({
         ...e,
         payload: e.payload as Record<string, unknown>,
       })),
     );
-    return c.json({ ingested: count });
+    return c.json(result);
   },
 );

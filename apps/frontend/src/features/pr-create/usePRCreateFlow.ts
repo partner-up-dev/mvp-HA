@@ -64,6 +64,8 @@ export const usePRCreateFlow = () => {
     trackEvent("pr_create_success", {
       prId: result.id,
       status: pendingStatus.value,
+      prKind: "COMMUNITY",
+      scenarioType: fields.type,
     });
     await router.push(`/pr/${result.id}`);
   };
