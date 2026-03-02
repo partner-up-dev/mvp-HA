@@ -42,9 +42,7 @@ const valueItems = computed(() => [
 .value-props {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  padding-top: var(--sys-spacing-md);
-  border-top: 1px solid var(--sys-color-outline-variant);
+  gap: clamp(0.9rem, 3.8vw, 1.35rem);
 }
 
 h2 {
@@ -58,10 +56,9 @@ h2 {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-med);
   padding: 0;
   margin: 0;
-  counter-reset: value-step;
 }
 
 .value-item {

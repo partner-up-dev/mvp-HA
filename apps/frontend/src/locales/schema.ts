@@ -54,9 +54,15 @@ export interface MessageSchema {
       plazaEntryTitle: string;
       plazaEntryDescription: string;
       plazaEntryAction: string;
+      secondaryActionsTitle: string;
+      secondaryActionsHint: string;
       secondaryCreateTitle: string;
       secondaryCreateDescription: string;
       secondaryCreateAction: string;
+      footerIntroTitle: string;
+      footerIntroBody: string;
+      footerNavTitle: string;
+      footerNavHome: string;
     };
     bookmarkNudge: {
       title: string;

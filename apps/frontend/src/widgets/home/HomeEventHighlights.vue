@@ -82,15 +82,13 @@ const trackHighlightClick = (eventId: number, index: number) => {
 .event-highlights {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: clamp(1rem, 4vw, 1.8rem);
 }
 
 .highlights-header {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
-  padding-top: var(--sys-spacing-lg);
-  border-top: 1px solid var(--sys-color-outline-variant);
 
   h2 {
     @include mx.pu-font(headline-small);
@@ -132,7 +130,7 @@ const trackHighlightClick = (eventId: number, index: number) => {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-lg);
+  gap: clamp(1.1rem, 5vw, 2.1rem);
   margin: 0;
   padding: 0;
 }
@@ -143,7 +141,8 @@ const trackHighlightClick = (eventId: number, index: number) => {
   flex-direction: column;
   gap: var(--sys-spacing-sm);
   padding-bottom: var(--sys-spacing-lg);
-  border-bottom: 1px solid color-mix(in srgb, var(--sys-color-outline) 55%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--sys-color-outline) 55%, transparent);
 
   &:active {
     opacity: 0.78;

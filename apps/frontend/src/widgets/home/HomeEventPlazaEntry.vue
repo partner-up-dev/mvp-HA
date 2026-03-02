@@ -36,9 +36,7 @@ const handleClick = () => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-lg) 0;
-  border-top: 1px solid var(--sys-color-outline-variant);
-  border-bottom: 1px solid var(--sys-color-outline-variant);
+  padding: var(--sys-spacing-sm) 0 0;
 }
 
 .plaza-kicker {

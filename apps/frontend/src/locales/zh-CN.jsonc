@@ -56,9 +56,15 @@
       "plazaEntryTitle": "去活动广场找灵感",
       "plazaEntryDescription": "按活动浏览，看看现在有什么可加入。",
       "plazaEntryAction": "进入活动广场",
+      "secondaryActionsTitle": "下一步",
+      "secondaryActionsHint": "确定想法后，可以直接发起你的搭子请求。",
       "secondaryCreateTitle": "想发起自己的搭子？",
       "secondaryCreateDescription": "在创建页填写信息，可先保存草稿再发布。",
-      "secondaryCreateAction": "去创建页"
+      "secondaryCreateAction": "去创建页",
+      "footerIntroTitle": "搭一把 / PartnerUp",
+      "footerIntroBody": "把群里的一句话变成可被加入、可自然结束的协作请求。",
+      "footerNavTitle": "底部导航",
+      "footerNavHome": "首页"
     },
     "bookmarkNudge": {
       "title": "先收藏这个页面",

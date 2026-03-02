@@ -1,5 +1,6 @@
 <template>
   <header class="hero">
+    <p class="eyebrow">{{ t("home.title") }}</p>
     <h1>{{ t("home.landing.heroTitle") }}</h1>
     <p class="subtitle">{{ t("home.landing.heroSubtitle") }}</p>
 
