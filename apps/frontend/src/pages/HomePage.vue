@@ -40,6 +40,10 @@
                 </div>
                 <span class="creator-action-text">
                   {{ t("home.landing.secondaryCreateAction") }}
+                  <span
+                    class="creator-action-icon i-mdi:arrow-right"
+                    aria-hidden="true"
+                  ></span>
                 </span>
               </RouterLink>
             </section>
@@ -57,7 +61,11 @@
             class="footer-nav-link"
             :to="{ name: link.routeName }"
           >
-            {{ link.label }}
+            <span class="footer-nav-label">{{ link.label }}</span>
+            <span
+              class="footer-nav-icon i-mdi:arrow-right"
+              aria-hidden="true"
+            ></span>
           </RouterLink>
         </nav>
         <div class="footer-brand-main">
@@ -491,8 +499,11 @@ onUnmounted(() => {
     transform 180ms ease,
     color 180ms ease;
 
-  &::after {
-    content: " \2192";
+  .creator-action-icon {
+    margin-left: var(--sys-spacing-xs);
+    display: inline-block;
+    vertical-align: middle;
+    @include mx.pu-icon(medium);
   }
 }
 
@@ -559,7 +570,6 @@ onUnmounted(() => {
   transition:
     color 180ms ease,
     opacity 180ms ease;
-
   &::before {
     content: "";
     position: absolute;
@@ -573,8 +583,11 @@ onUnmounted(() => {
     transition: transform 180ms ease;
   }
 
-  &::after {
-    content: " \2192";
+  .footer-nav-icon {
+    margin-left: var(--sys-spacing-xs);
+    display: inline-block;
+    vertical-align: middle;
+    @include mx.pu-icon(medium);
   }
 
   &:hover {

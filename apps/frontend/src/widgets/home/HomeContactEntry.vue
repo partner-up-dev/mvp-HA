@@ -6,6 +6,10 @@
     </div>
     <span class="contact-action">
       {{ t("home.contactAuthorAction") }}
+      <span
+        class="contact-action-icon i-mdi:arrow-right"
+        aria-hidden="true"
+      ></span>
     </span>
   </RouterLink>
 </template>
@@ -62,8 +66,11 @@ const { t } = useI18n();
   flex-shrink: 0;
   transition: transform 180ms ease;
 
-  &::after {
-    content: " \2192";
+  .contact-action-icon {
+    margin-left: var(--sys-spacing-xs);
+    display: inline-block;
+    vertical-align: middle;
+    @include mx.pu-icon(medium);
   }
 }
 

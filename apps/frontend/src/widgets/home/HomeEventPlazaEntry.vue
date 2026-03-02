@@ -12,7 +12,13 @@
         </h2>
         <p>{{ t("home.landing.plazaEntryDescription") }}</p>
       </div>
-      <span class="plaza-action">{{ t("home.landing.plazaEntryAction") }}</span>
+      <span class="plaza-action">
+        {{ t("home.landing.plazaEntryAction") }}
+        <span
+          class="plaza-action-icon i-mdi:arrow-right"
+          aria-hidden="true"
+        ></span>
+      </span>
     </RouterLink>
   </section>
 </template>
@@ -90,8 +96,11 @@ const handleClick = () => {
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
 
-  &::after {
-    content: " \2192";
+  .plaza-action-icon {
+    margin-left: var(--sys-spacing-xs);
+    display: inline-block;
+    vertical-align: middle;
+    @include mx.pu-icon(medium);
   }
 }
 </style>
