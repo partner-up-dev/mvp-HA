@@ -22,6 +22,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
     env:
       ALIYUN_FC_REGION: ${{ vars.ALIYUN_FC_REGION }}
       ALIYUN_FC_FUNCTION_NAME: ${{ vars.ALIYUN_FC_FUNCTION_NAME }}
@@ -43,8 +44,8 @@ jobs:
       WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${{ secrets.WECHAT_OFFICIAL_ACCOUNT_APP_ID }}
       WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${{ secrets.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-      LLM_DEFAULT_MODEL: ${{ secrets.LLM_DEFAULT_MODEL }}
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_DEFAULT_MODEL: ${{ vars.LLM_DEFAULT_MODEL }}
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
       WECOM_TOKEN: ${{ secrets.WECOM_TOKEN }}
       WECOM_ENCODING_AES_KEY: ${{ secrets.WECOM_ENCODING_AES_KEY }}
