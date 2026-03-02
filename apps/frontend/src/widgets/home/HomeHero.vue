@@ -6,7 +6,10 @@
         {{ typedHeroTitle }}
       </span>
       <span
-        v-if="heroTitleTyping.length > 0 && typedHeroTitle.length < heroTitleTyping.length"
+        v-if="
+          heroTitleTyping.length > 0 &&
+          typedHeroTitle.length < heroTitleTyping.length
+        "
         class="hero-title-caret"
         aria-hidden="true"
       ></span>
@@ -36,7 +39,17 @@
     <div class="hero-art" aria-hidden="true">
       <span class="hero-art-ring"></span>
       <span class="hero-art-ring hero-art-ring--offset"></span>
-      <span class="hero-art-mark">搭一把</span>
+      <div class="hero-art-mark">
+        <img
+          src="/share-logo.png"
+          alt=""
+          class="hero-art-mark-image"
+          :class="{ loading: logoLoading }"
+          @load="logoLoading = false"
+          @error="logoLoading = false"
+        />
+        <span v-if="logoLoading" class="hero-art-mark-fallback">搭一把</span>
+      </div>
     </div>
   </header>
 </template>
@@ -81,6 +94,7 @@ const heroTitlePrefix = computed(() => heroTitleParts.value.prefix);
 const heroTitleTyping = computed(() => heroTitleParts.value.typing);
 const typedHeroTitle = ref("");
 const showMeta = ref(false);
+const logoLoading = ref(true);
 
 let typingTimeoutId: number | null = null;
 let valueRevealTimeoutId: number | null = null;
@@ -335,10 +349,32 @@ onUnmounted(() => {
 }
 
 .hero-art-mark {
-  @include mx.pu-font(title-large);
   position: absolute;
   right: 0;
   top: 7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6rem;
+  height: 6rem;
+}
+
+.hero-art-mark-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+
+.hero-art-mark-image.loading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hero-art-mark-fallback {
+  @include mx.pu-font(title-large);
+  position: absolute;
   letter-spacing: 0.12em;
   color: var(--sys-color-outline);
 }
@@ -378,6 +414,12 @@ onUnmounted(() => {
     right: -2.9rem;
     width: 10.2rem;
     height: 10.2rem;
+  }
+
+  .hero-art-mark {
+    width: 5rem;
+    height: 5rem;
+    top: 6.5rem;
   }
 }
 
