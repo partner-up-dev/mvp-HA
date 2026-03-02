@@ -37,7 +37,7 @@ PRPage can now be shared as a WeChat “card” (title + description + thumbnail
 
 ## Share Card Content Rules
 
-- Title: `parsed.title` (fallback: “搭一搭 - PartnerUp”)
+- Title: `parsed.title` (fallback: “搭一把 - 轻松安全找搭子”)
 - Description: `rawText` (truncated)
 - Thumbnail: generated poster image (uploaded, public URL)
 
@@ -46,4 +46,3 @@ PRPage can now be shared as a WeChat “card” (title + description + thumbnail
 - `pnpm --filter @partner-up-dev/backend typecheck` ✅
 - `pnpm --filter @partner-up-dev/frontend build` ✅
 - `pnpm build` ✅
-

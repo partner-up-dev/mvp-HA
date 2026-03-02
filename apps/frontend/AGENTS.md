@@ -12,6 +12,7 @@
 - RPC Infer Type: Do not manually define interfaces for API returns; let TypeScript infer from the Hono client.
 - Request Params: If backend uses `zValidator`, mismatched param types will cause type errors — do not bypass with `as any`.
 - Always use Hono RPC Client (`client`) for API requests instead of manual `fetch`.
+- UnoCSS Icon Preset configured, use icons by `class="i-mdi-icon-name"`.
 
 ## Documents
 

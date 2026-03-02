@@ -15,34 +15,7 @@
     </div>
 
     <div v-else-if="events && events.length > 0" class="event-grid">
-      <router-link
-        v-for="event in events"
-        :key="event.id"
-        :to="{ name: 'anchor-event', params: { eventId: event.id } }"
-        class="event-card"
-      >
-        <div
-          v-if="event.coverImage"
-          class="event-cover"
-          :style="{ backgroundImage: `url(${event.coverImage})` }"
-        />
-        <div v-else class="event-cover event-cover--placeholder">
-          <span class="event-type-icon">{{ event.type }}</span>
-        </div>
-        <div class="event-info">
-          <h3 class="event-title">{{ event.title }}</h3>
-          <p v-if="event.description" class="event-desc">
-            {{ event.description }}
-          </p>
-          <div class="event-meta">
-            <span class="event-locations">
-              {{
-                t("eventPlaza.locationCount", { count: event.locationCount })
-              }}
-            </span>
-          </div>
-        </div>
-      </router-link>
+      <EventCard v-for="event in events" :key="event.id" :event="event" />
     </div>
 
     <div v-else class="empty-state">
@@ -55,6 +28,7 @@
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import PageHeader from "@/components/common/PageHeader.vue";
+import EventCard from "@/components/event/EventCard.vue";
 import { useAnchorEvents } from "@/queries/useAnchorEvents";
 
 const { t } = useI18n();
@@ -91,63 +65,6 @@ const goHome = () => router.push("/");
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.event-card {
-  display: flex;
-  flex-direction: column;
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--sys-color-surface-container);
-  text-decoration: none;
-  color: inherit;
-  transition: transform 0.15s ease;
-
-  &:active {
-    transform: scale(0.98);
-  }
-}
-
-.event-cover {
-  width: 100%;
-  height: 140px;
-  background-size: cover;
-  background-position: center;
-
-  &--placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--sys-color-primary-container);
-    color: var(--sys-color-on-primary-container);
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-}
-
-.event-info {
-  padding: 0.75rem 1rem 1rem;
-}
-
-.event-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.event-desc {
-  font-size: 0.8125rem;
-  color: var(--sys-color-on-surface-variant);
-  margin-bottom: 0.5rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.event-meta {
-  font-size: 0.75rem;
-  color: var(--sys-color-outline);
 }
 
 .loading-state,

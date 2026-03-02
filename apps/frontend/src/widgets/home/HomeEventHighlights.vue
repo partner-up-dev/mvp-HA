@@ -1,7 +1,9 @@
 <template>
   <section class="event-highlights" aria-labelledby="home-highlights-title">
     <header class="highlights-header">
-      <h2 id="home-highlights-title">{{ t("home.landing.highlightsTitle") }}</h2>
+      <h2 id="home-highlights-title">
+        {{ t("home.landing.highlightsTitle") }}
+      </h2>
       <p>{{ t("home.landing.highlightsSubtitle") }}</p>
     </header>
 
@@ -16,39 +18,16 @@
       </RouterLink>
     </div>
 
-    <ul v-else class="highlights-list">
+    <ul v-else class="highlights-list swiper-no-swiping">
       <li
         v-for="(event, index) in highlightEvents"
         :key="event.id"
         class="highlight-item"
       >
-        <RouterLink
-          class="highlight-link"
-          :to="{ name: 'anchor-event', params: { eventId: event.id } }"
+        <EventCard
+          :event="event"
           @click="trackHighlightClick(event.id, index)"
-        >
-          <span class="highlight-order" aria-hidden="true">{{
-            String(index + 1).padStart(2, "0")
-          }}</span>
-
-          <h3>{{ event.title }}</h3>
-
-          <div
-            v-if="event.coverImage"
-            class="highlight-cover"
-            :style="{ backgroundImage: `url(${event.coverImage})` }"
-          ></div>
-          <div v-else class="highlight-cover highlight-cover--placeholder">
-            <span>{{ event.type }}</span>
-          </div>
-
-          <p v-if="event.description" class="highlight-desc">
-            {{ event.description }}
-          </p>
-          <span class="highlight-meta">
-            {{ t("eventPlaza.locationCount", { count: event.locationCount }) }}
-          </span>
-        </RouterLink>
+        />
       </li>
     </ul>
   </section>
@@ -56,8 +35,8 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
+import EventCard from "@/components/event/EventCard.vue";
 import { useAnchorEvents } from "@/queries/useAnchorEvents";
 import { trackEvent } from "@/shared/analytics/track";
 
@@ -83,6 +62,9 @@ const trackHighlightClick = (eventId: number, index: number) => {
   display: flex;
   flex-direction: column;
   gap: clamp(1rem, 4vw, 1.8rem);
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
 .highlights-header {
@@ -129,86 +111,37 @@ const trackHighlightClick = (eventId: number, index: number) => {
 .highlights-list {
   list-style: none;
   display: flex;
-  flex-direction: column;
-  gap: clamp(1.1rem, 5vw, 2.1rem);
+  flex-direction: row;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  gap: clamp(0.8rem, 3vw, 1.2rem);
   margin: 0;
-  padding: 0;
+  padding: 0 0 clamp(0.2rem, 1.2vw, 0.45rem);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
-.highlight-link {
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding-bottom: var(--sys-spacing-lg);
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--sys-color-outline) 55%, transparent);
+.highlight-item {
+  flex: 0 0 clamp(14.8rem, 72vw, 19.4rem);
+  max-width: 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
 
-  &:active {
-    opacity: 0.78;
+@media (max-width: 768px) {
+  .highlights-list {
+    gap: var(--sys-spacing-sm);
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
+  .highlight-item {
+    flex-basis: clamp(14.4rem, 79vw, 17.2rem);
   }
-}
-
-.highlight-order {
-  @include mx.pu-font(label-medium);
-  letter-spacing: 0.12em;
-  color: var(--sys-color-on-surface-variant);
-}
-
-.highlight-link h3 {
-  @include mx.pu-font(title-large);
-  color: var(--sys-color-on-surface);
-  margin: 0;
-  text-wrap: balance;
-}
-
-.highlight-cover {
-  width: min(100%, 22rem);
-  aspect-ratio: 4 / 3;
-  border-radius: 999px;
-  background-size: cover;
-  background-position: center;
-  background-color: color-mix(
-    in srgb,
-    var(--sys-color-surface-container) 80%,
-    transparent
-  );
-}
-
-.highlight-cover--placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sys-color-on-surface-variant);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-tertiary-container) 65%,
-    transparent
-  );
-
-  span {
-    @include mx.pu-font(title-medium);
-  }
-}
-
-.highlight-desc {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
-  margin: 0;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-
-.highlight-meta {
-  @include mx.pu-font(label-medium);
-  color: color-mix(in srgb, var(--sys-color-primary) 80%, var(--sys-color-on-surface));
-  letter-spacing: 0.04em;
 }
 </style>

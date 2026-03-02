@@ -20,12 +20,22 @@ const { t } = useI18n();
 <style lang="scss" scoped>
 .contact-entry {
   text-decoration: none;
-  padding: var(--sys-spacing-xs) 0;
+  padding: calc(var(--sys-spacing-xs) + 0.15rem) 0.2rem;
+  min-height: 3rem;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--sys-spacing-sm);
-  border-top: 1px dashed color-mix(in srgb, var(--sys-color-outline) 55%, transparent);
+  transition: opacity 180ms ease;
+
+  &:hover {
+    opacity: 0.88;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+  }
 }
 
 .contact-copy {
@@ -50,9 +60,33 @@ const { t } = useI18n();
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
+  transition: transform 180ms ease;
 
   &::after {
     content: " \2192";
+  }
+}
+
+.contact-entry:hover .contact-action {
+  transform: translateX(3px);
+}
+
+@media (max-width: 768px) {
+  .contact-entry {
+    min-height: 3.4rem;
+    padding: calc(var(--sys-spacing-sm) + 0.2rem) 0.25rem;
+  }
+
+  .contact-copy h2 {
+    @include mx.pu-font(title-large);
+  }
+
+  .contact-copy p {
+    @include mx.pu-font(body-large);
+  }
+
+  .contact-action {
+    @include mx.pu-font(title-small);
   }
 }
 </style>

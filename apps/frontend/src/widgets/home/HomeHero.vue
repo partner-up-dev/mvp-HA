@@ -1,22 +1,35 @@
 <template>
   <header class="hero">
-    <p class="eyebrow">{{ t("home.title") }}</p>
-    <h1>{{ t("home.landing.heroTitle") }}</h1>
-    <p class="subtitle">{{ t("home.landing.heroSubtitle") }}</p>
+    <h1 class="hero-title" :aria-label="heroTitleRaw">
+      <span class="hero-title-prefix">{{ heroTitlePrefix }}</span>
+      <span v-if="heroTitleTyping" class="hero-title-typing" aria-hidden="true">
+        {{ typedHeroTitle }}
+      </span>
+      <span
+        v-if="heroTitleTyping.length > 0 && typedHeroTitle.length < heroTitleTyping.length"
+        class="hero-title-caret"
+        aria-hidden="true"
+      ></span>
+    </h1>
+    <p class="subtitle" :class="{ 'is-visible': showMeta }">
+      {{ t("home.landing.heroSubtitle") }}
+    </p>
 
-    <div class="hero-actions">
+    <div class="hero-actions" :class="{ 'is-visible': showMeta }">
       <RouterLink
         class="hero-action hero-action--primary"
         :to="{ name: 'event-plaza' }"
         @click="handlePrimaryClick"
       >
         {{ t("home.landing.heroPrimaryAction") }}
+        <span class="i-mdi-arrow-right" />
       </RouterLink>
       <RouterLink
         class="hero-action hero-action--secondary"
         :to="{ name: 'pr-new' }"
       >
         {{ t("home.landing.heroSecondaryAction") }}
+        <span class="i-mdi-arrow-right" />
       </RouterLink>
     </div>
 
@@ -29,17 +42,148 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { trackEvent } from "@/shared/analytics/track";
 
 const { t } = useI18n();
+const emit = defineEmits<{
+  (event: "reveal-values"): void;
+}>();
+
+const HERO_TYPING_START_DELAY_MS = 180;
+const HERO_TYPING_BASE_INTERVAL_MS = 92;
+const HERO_TYPING_PUNCTUATION_INTERVAL_MS = 140;
+const HERO_META_REVEAL_REMAINING_CHARS = 2;
+const HERO_VALUE_REVEAL_DELAY_MS = 280;
+
+const heroTitleRaw = computed(() => t("home.landing.heroTitle").trim());
+
+const heroTitleParts = computed(() => {
+  const rawTitle = heroTitleRaw.value;
+  const splitIndex = rawTitle.search(/[，,]/);
+
+  if (splitIndex < 0 || splitIndex + 1 >= rawTitle.length) {
+    return {
+      prefix: rawTitle,
+      typing: "",
+    };
+  }
+
+  return {
+    prefix: rawTitle.slice(0, splitIndex + 1),
+    typing: rawTitle.slice(splitIndex + 1).trimStart(),
+  };
+});
+
+const heroTitlePrefix = computed(() => heroTitleParts.value.prefix);
+const heroTitleTyping = computed(() => heroTitleParts.value.typing);
+const typedHeroTitle = ref("");
+const showMeta = ref(false);
+
+let typingTimeoutId: number | null = null;
+let valueRevealTimeoutId: number | null = null;
+let hasEmittedValueReveal = false;
+
+const clearAnimationTimers = () => {
+  if (typeof window === "undefined") return;
+  if (typingTimeoutId !== null) {
+    window.clearTimeout(typingTimeoutId);
+    typingTimeoutId = null;
+  }
+  if (valueRevealTimeoutId !== null) {
+    window.clearTimeout(valueRevealTimeoutId);
+    valueRevealTimeoutId = null;
+  }
+};
+
+const emitValueReveal = () => {
+  if (hasEmittedValueReveal) return;
+  hasEmittedValueReveal = true;
+  emit("reveal-values");
+};
+
+const scheduleValueReveal = () => {
+  if (typeof window === "undefined") return;
+  if (valueRevealTimeoutId !== null || hasEmittedValueReveal) return;
+
+  valueRevealTimeoutId = window.setTimeout(() => {
+    valueRevealTimeoutId = null;
+    emitValueReveal();
+  }, HERO_VALUE_REVEAL_DELAY_MS);
+};
+
+const revealMeta = () => {
+  if (showMeta.value) return;
+  showMeta.value = true;
+  scheduleValueReveal();
+};
+
+const getTypingInterval = (char: string): number => {
+  return /[，。！？,.!?]/.test(char)
+    ? HERO_TYPING_PUNCTUATION_INTERVAL_MS
+    : HERO_TYPING_BASE_INTERVAL_MS;
+};
+
+const typeNextCharacter = (index: number) => {
+  const target = heroTitleTyping.value;
+  if (index >= target.length) {
+    typedHeroTitle.value = target;
+    revealMeta();
+    return;
+  }
+
+  typedHeroTitle.value = target.slice(0, index + 1);
+
+  const remainingChars = target.length - (index + 1);
+  if (remainingChars <= HERO_META_REVEAL_REMAINING_CHARS) {
+    revealMeta();
+  }
+
+  const currentChar = target[index] ?? "";
+  typingTimeoutId = window.setTimeout(() => {
+    typeNextCharacter(index + 1);
+  }, getTypingInterval(currentChar));
+};
+
+const startHeroAnimation = () => {
+  clearAnimationTimers();
+  hasEmittedValueReveal = false;
+  typedHeroTitle.value = "";
+  showMeta.value = false;
+
+  if (typeof window === "undefined") return;
+  const target = heroTitleTyping.value;
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  if (prefersReducedMotion || target.length === 0) {
+    typedHeroTitle.value = target;
+    showMeta.value = true;
+    emitValueReveal();
+    return;
+  }
+
+  typingTimeoutId = window.setTimeout(() => {
+    typeNextCharacter(0);
+  }, HERO_TYPING_START_DELAY_MS);
+};
 
 const handlePrimaryClick = () => {
   trackEvent("home_hero_primary_click", {
     target: "event-plaza",
   });
 };
+
+onMounted(() => {
+  startHeroAnimation();
+});
+
+onUnmounted(() => {
+  clearAnimationTimers();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -52,14 +196,7 @@ const handlePrimaryClick = () => {
   gap: var(--sys-spacing-med);
 }
 
-.eyebrow {
-  @include mx.pu-font(label-large);
-  color: var(--sys-color-on-surface-variant);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-h1 {
+.hero-title {
   @include mx.pu-font(display-large);
   color: var(--sys-color-on-surface);
   margin: 0;
@@ -68,10 +205,39 @@ h1 {
   text-wrap: balance;
 }
 
+.hero-title-prefix,
+.hero-title-typing {
+  display: inline;
+}
+
+.hero-title-typing {
+  white-space: nowrap;
+}
+
+.hero-title-caret {
+  display: inline-block;
+  width: 0.08em;
+  height: 0.94em;
+  margin-left: 0.06em;
+  background: currentColor;
+  vertical-align: text-bottom;
+  animation: hero-caret-blink 900ms steps(1) infinite;
+}
+
 .subtitle {
   @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface-variant);
   max-width: 30ch;
+  opacity: 0;
+  transform: translate3d(0, 0.55rem, 0);
+  transition:
+    opacity 320ms ease,
+    transform 320ms ease;
+}
+
+.subtitle.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
 }
 
 .hero-actions {
@@ -80,20 +246,41 @@ h1 {
   gap: var(--sys-spacing-sm);
   margin-top: var(--sys-spacing-sm);
   z-index: 1;
+  opacity: 0;
+  transform: translate3d(0, 0.6rem, 0);
+  pointer-events: none;
+  transition:
+    opacity 340ms ease,
+    transform 340ms ease;
+}
+
+.hero-actions.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  pointer-events: auto;
 }
 
 .hero-action {
   @include mx.pu-font(label-large);
   width: fit-content;
+  min-height: 2.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   text-decoration: none;
-  padding: 0;
-  border: none;
+  padding: 0.56rem 0.84rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
   transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
     color 180ms ease,
-    opacity 180ms ease;
+    opacity 180ms ease,
+    transform 180ms ease;
 
   &:active {
     opacity: 0.78;
+    transform: scale(0.98);
   }
 
   &:focus-visible {
@@ -104,17 +291,22 @@ h1 {
 
 .hero-action--primary {
   color: var(--sys-color-primary);
-  text-decoration: underline;
-  text-underline-offset: 0.22em;
-  text-decoration-thickness: 2px;
-
-  &::after {
-    content: " \2192";
-  }
+  border-color: color-mix(in srgb, var(--sys-color-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--sys-color-primary) 12%, transparent);
 }
 
 .hero-action--secondary {
   color: var(--sys-color-on-surface-variant);
+  border-color: color-mix(in srgb, var(--sys-color-outline) 50%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-surface-container-low) 60%,
+    transparent
+  );
+}
+
+.hero-action:hover {
+  opacity: 0.92;
 }
 
 .hero-art {
@@ -148,6 +340,65 @@ h1 {
   right: 0;
   top: 7rem;
   letter-spacing: 0.12em;
-  color: color-mix(in srgb, var(--sys-color-outline) 35%, transparent);
+  color: var(--sys-color-outline);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: clamp(2.7rem, 10.5vw, 4.7rem) 0;
+    gap: clamp(0.9rem, 4vw, 1.3rem);
+  }
+
+  .hero-title {
+    max-width: 8.8ch;
+  }
+
+  .subtitle {
+    @include mx.pu-font(title-small);
+    max-width: 25ch;
+  }
+
+  .hero-actions {
+    gap: var(--sys-spacing-xs);
+  }
+
+  .hero-action {
+    @include mx.pu-font(title-small);
+    min-height: 3.15rem;
+    padding: 0.68rem 1rem;
+  }
+
+  .hero-art-ring {
+    right: -5.8rem;
+    width: 14.2rem;
+    height: 14.2rem;
+  }
+
+  .hero-art-ring--offset {
+    right: -2.9rem;
+    width: 10.2rem;
+    height: 10.2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subtitle,
+  .hero-actions,
+  .hero-action,
+  .hero-title-caret {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@keyframes hero-caret-blink {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
 }
 </style>
