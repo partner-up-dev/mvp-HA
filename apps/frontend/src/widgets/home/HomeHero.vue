@@ -1,6 +1,5 @@
 <template>
   <header class="hero">
-    <p class="eyebrow">{{ t("home.title") }}</p>
     <h1>{{ t("home.landing.heroTitle") }}</h1>
     <p class="subtitle">{{ t("home.landing.heroSubtitle") }}</p>
 
@@ -21,9 +20,9 @@
     </div>
 
     <div class="hero-art" aria-hidden="true">
-      <span class="hero-art-circle hero-art-circle--primary"></span>
-      <span class="hero-art-circle hero-art-circle--secondary"></span>
-      <span class="hero-art-grid"></span>
+      <span class="hero-art-ring"></span>
+      <span class="hero-art-ring hero-art-ring--offset"></span>
+      <span class="hero-art-mark">搭一把</span>
     </div>
   </header>
 </template>
@@ -45,30 +44,17 @@ const handlePrimaryClick = () => {
 <style lang="scss" scoped>
 .hero {
   position: relative;
-  overflow: hidden;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  background:
-    radial-gradient(
-      circle at 85% -10%,
-      color-mix(in srgb, var(--sys-color-primary) 28%, transparent) 0%,
-      transparent 48%
-    ),
-    linear-gradient(
-      160deg,
-      var(--sys-color-surface-container-lowest) 0%,
-      var(--sys-color-surface-container) 100%
-    );
-  padding: var(--sys-spacing-lg) var(--sys-spacing-med);
+  overflow: clip;
+  padding: clamp(2.5rem, 9vw, 4.5rem) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-med);
 }
 
 .eyebrow {
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -76,37 +62,37 @@ h1 {
   @include mx.pu-font(display-large);
   color: var(--sys-color-on-surface);
   margin: 0;
-  max-width: 11ch;
-  line-height: 1.1;
+  max-width: 9.5ch;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
 .subtitle {
   @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface-variant);
-  max-width: 26ch;
+  max-width: 30ch;
 }
 
 .hero-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
-  margin-top: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-sm);
   z-index: 1;
 }
 
 .hero-action {
   @include mx.pu-font(label-large);
-  border-radius: var(--sys-radius-sm);
+  width: fit-content;
   text-decoration: none;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-  border: 1px solid transparent;
+  padding: 0;
+  border: none;
   transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    transform 180ms ease;
+    color 180ms ease,
+    opacity 180ms ease;
 
   &:active {
-    transform: translateY(1px);
+    opacity: 0.78;
   }
 
   &:focus-visible {
@@ -116,14 +102,18 @@ h1 {
 }
 
 .hero-action--primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
+  color: var(--sys-color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 2px;
+
+  &::after {
+    content: " \2192";
+  }
 }
 
 .hero-action--secondary {
-  background: var(--sys-color-surface-container-lowest);
-  border-color: var(--sys-color-outline-variant);
-  color: var(--sys-color-on-surface);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .hero-art {
@@ -132,40 +122,31 @@ h1 {
   pointer-events: none;
 }
 
-.hero-art-circle {
+.hero-art-ring {
   position: absolute;
+  right: -5.2rem;
+  top: -1.6rem;
+  width: 13.8rem;
+  height: 13.8rem;
   border-radius: 999px;
-  display: block;
+  border: 1px solid
+    color-mix(in srgb, var(--sys-color-primary) 28%, transparent);
 }
 
-.hero-art-circle--primary {
-  width: 9rem;
-  height: 9rem;
-  right: -3rem;
-  top: -2.5rem;
-  background: color-mix(in srgb, var(--sys-color-primary) 20%, transparent);
+.hero-art-ring--offset {
+  right: -2.6rem;
+  top: 2.2rem;
+  width: 9.8rem;
+  height: 9.8rem;
+  border-color: color-mix(in srgb, var(--sys-color-tertiary) 25%, transparent);
 }
 
-.hero-art-circle--secondary {
-  width: 5.5rem;
-  height: 5.5rem;
-  right: 1rem;
-  bottom: -2rem;
-  background: color-mix(in srgb, var(--sys-color-tertiary) 22%, transparent);
-}
-
-.hero-art-grid {
+.hero-art-mark {
+  @include mx.pu-font(title-large);
   position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  width: 7rem;
-  height: 4rem;
-  transform: translateY(-50%);
-  opacity: 0.25;
-  background-image: radial-gradient(
-    var(--sys-color-outline-variant) 1px,
-    transparent 1px
-  );
-  background-size: 0.5rem 0.5rem;
+  right: 0;
+  top: 7rem;
+  letter-spacing: 0.12em;
+  color: color-mix(in srgb, var(--sys-color-outline) 35%, transparent);
 }
 </style>

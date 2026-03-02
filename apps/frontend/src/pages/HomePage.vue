@@ -37,34 +37,67 @@ const { t } = useI18n();
 
 <style lang="scss" scoped>
 .home-page {
-  max-width: 560px;
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  max-width: 680px;
   margin: 0 auto;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
+  padding: calc(var(--sys-spacing-lg) + var(--pu-safe-top))
     calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-lg) + var(--pu-safe-bottom))
     calc(var(--sys-spacing-med) + var(--pu-safe-left));
   min-height: var(--pu-vh);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: clamp(1.5rem, 6vw, 3rem);
+}
+
+.home-page::before,
+.home-page::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 999px;
+}
+
+.home-page::before {
+  width: 15rem;
+  height: 15rem;
+  top: 4rem;
+  right: -7rem;
+  background: color-mix(in srgb, var(--sys-color-tertiary) 16%, transparent);
+  filter: blur(4px);
+}
+
+.home-page::after {
+  width: 12rem;
+  height: 12rem;
+  top: 18rem;
+  left: -8rem;
+  background: color-mix(in srgb, var(--sys-color-primary) 13%, transparent);
+}
+
+.home-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .secondary-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-med);
+  padding-top: var(--sys-spacing-md);
+  border-top: 1px solid var(--sys-color-outline-variant);
   margin-bottom: calc(var(--sys-spacing-lg) + var(--pu-safe-bottom));
 }
 
 .secondary-entry {
   text-decoration: none;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container-low);
-  padding: var(--sys-spacing-med);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  padding: var(--sys-spacing-xs) 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
   gap: var(--sys-spacing-sm);
 }
 
@@ -74,7 +107,7 @@ const { t } = useI18n();
   gap: var(--sys-spacing-xs);
 
   h2 {
-    @include mx.pu-font(title-medium);
+    @include mx.pu-font(headline-small);
     color: var(--sys-color-on-surface);
     margin: 0;
   }
@@ -88,7 +121,11 @@ const { t } = useI18n();
 
 .secondary-action-text {
   @include mx.pu-font(label-large);
-  color: var(--sys-color-primary);
+  color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
+
+  &::after {
+    content: " \2192";
+  }
 }
 </style>

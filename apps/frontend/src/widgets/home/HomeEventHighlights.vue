@@ -27,6 +27,12 @@
           :to="{ name: 'anchor-event', params: { eventId: event.id } }"
           @click="trackHighlightClick(event.id, index)"
         >
+          <span class="highlight-order" aria-hidden="true">{{
+            String(index + 1).padStart(2, "0")
+          }}</span>
+
+          <h3>{{ event.title }}</h3>
+
           <div
             v-if="event.coverImage"
             class="highlight-cover"
@@ -36,15 +42,12 @@
             <span>{{ event.type }}</span>
           </div>
 
-          <div class="highlight-content">
-            <h3>{{ event.title }}</h3>
-            <p v-if="event.description" class="highlight-desc">
-              {{ event.description }}
-            </p>
-            <span class="highlight-meta">
-              {{ t("eventPlaza.locationCount", { count: event.locationCount }) }}
-            </span>
-          </div>
+          <p v-if="event.description" class="highlight-desc">
+            {{ event.description }}
+          </p>
+          <span class="highlight-meta">
+            {{ t("eventPlaza.locationCount", { count: event.locationCount }) }}
+          </span>
         </RouterLink>
       </li>
     </ul>
@@ -79,16 +82,18 @@ const trackHighlightClick = (eventId: number, index: number) => {
 .event-highlights {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-med);
 }
 
 .highlights-header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-sm);
+  padding-top: var(--sys-spacing-lg);
+  border-top: 1px solid var(--sys-color-outline-variant);
 
   h2 {
-    @include mx.pu-font(title-medium);
+    @include mx.pu-font(headline-small);
     color: var(--sys-color-on-surface);
     margin: 0;
   }
@@ -110,10 +115,7 @@ const trackHighlightClick = (eventId: number, index: number) => {
 }
 
 .empty-state {
-  border: 1px dashed var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container-low);
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-sm) 0;
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
@@ -130,27 +132,21 @@ const trackHighlightClick = (eventId: number, index: number) => {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-lg);
   margin: 0;
   padding: 0;
 }
 
-.highlight-item {
-  margin: 0;
-}
-
 .highlight-link {
   text-decoration: none;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container-low);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 180ms ease;
+  gap: var(--sys-spacing-sm);
+  padding-bottom: var(--sys-spacing-lg);
+  border-bottom: 1px solid color-mix(in srgb, var(--sys-color-outline) 55%, transparent);
 
   &:active {
-    transform: translateY(1px);
+    opacity: 0.78;
   }
 
   &:focus-visible {
@@ -159,41 +155,50 @@ const trackHighlightClick = (eventId: number, index: number) => {
   }
 }
 
+.highlight-order {
+  @include mx.pu-font(label-medium);
+  letter-spacing: 0.12em;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.highlight-link h3 {
+  @include mx.pu-font(title-large);
+  color: var(--sys-color-on-surface);
+  margin: 0;
+  text-wrap: balance;
+}
+
 .highlight-cover {
-  width: 100%;
-  aspect-ratio: 16 / 7;
+  width: min(100%, 22rem);
+  aspect-ratio: 4 / 3;
+  border-radius: 999px;
   background-size: cover;
   background-position: center;
-  background-color: var(--sys-color-surface-container);
+  background-color: color-mix(
+    in srgb,
+    var(--sys-color-surface-container) 80%,
+    transparent
+  );
 }
 
 .highlight-cover--placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--sys-color-on-primary-container);
-  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-surface-variant);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-tertiary-container) 65%,
+    transparent
+  );
 
   span {
-    @include mx.pu-font(title-small);
-  }
-}
-
-.highlight-content {
-  padding: var(--sys-spacing-med);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-
-  h3 {
-    @include mx.pu-font(title-small);
-    color: var(--sys-color-on-surface);
-    margin: 0;
+    @include mx.pu-font(title-medium);
   }
 }
 
 .highlight-desc {
-  @include mx.pu-font(body-small);
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
   margin: 0;
   display: -webkit-box;
@@ -204,6 +209,7 @@ const trackHighlightClick = (eventId: number, index: number) => {
 
 .highlight-meta {
   @include mx.pu-font(label-medium);
-  color: var(--sys-color-on-surface-variant);
+  color: color-mix(in srgb, var(--sys-color-primary) 80%, var(--sys-color-on-surface));
+  letter-spacing: 0.04em;
 }
 </style>

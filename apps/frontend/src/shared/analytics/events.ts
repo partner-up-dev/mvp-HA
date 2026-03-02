@@ -10,7 +10,12 @@ export type CanonicalAnalyticsEventName =
   | "share_method_switch"
   | "share_link_native_success"
   | "share_link_copy_success"
-  | "share_link_failed";
+  | "share_link_failed"
+  | "home_hero_primary_click"
+  | "home_event_highlight_click"
+  | "home_event_plaza_entry_click"
+  | "home_bookmark_nudge_shown"
+  | "home_bookmark_action_click";
 
 export type LegacyAnalyticsEventName =
   | "join_success"
@@ -74,6 +79,25 @@ type CanonicalAnalyticsPayloadMap = {
   share_link_failed: PRContextPayload & {
     url: string;
     stage: "native" | "copy";
+  };
+  home_hero_primary_click: PRContextPayload & {
+    target: "event-plaza";
+  };
+  home_event_highlight_click: PRContextPayload & {
+    eventId: number;
+    index: number;
+  };
+  home_event_plaza_entry_click: PRContextPayload & {
+    source: "landing";
+  };
+  home_bookmark_nudge_shown: PRContextPayload & {
+    triggerDepthPercent: number;
+    triggerMode: "time" | "bottom";
+    environment: "wechat" | "browser";
+  };
+  home_bookmark_action_click: PRContextPayload & {
+    action: "bookmark_hint" | "copy_link" | "dismiss";
+    environment: "wechat" | "browser";
   };
 };
 

@@ -20,14 +20,12 @@ const { t } = useI18n();
 <style lang="scss" scoped>
 .contact-entry {
   text-decoration: none;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container-low);
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-xs) 0;
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--sys-spacing-sm);
+  border-top: 1px dashed color-mix(in srgb, var(--sys-color-outline) 55%, transparent);
 }
 
 .contact-copy {
@@ -36,7 +34,7 @@ const { t } = useI18n();
   gap: var(--sys-spacing-xs);
 
   h2 {
-    @include mx.pu-font(title-medium);
+    @include mx.pu-font(headline-small);
     color: var(--sys-color-on-surface);
     margin: 0;
   }
@@ -50,7 +48,11 @@ const { t } = useI18n();
 
 .contact-action {
   @include mx.pu-font(label-large);
-  color: var(--sys-color-primary);
+  color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
+
+  &::after {
+    content: " \2192";
+  }
 }
 </style>

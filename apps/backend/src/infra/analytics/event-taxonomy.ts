@@ -9,6 +9,11 @@ export const canonicalAnalyticsEventTypes = [
   "share_link_native_success",
   "share_link_copy_success",
   "share_link_failed",
+  "home_hero_primary_click",
+  "home_event_highlight_click",
+  "home_event_plaza_entry_click",
+  "home_bookmark_nudge_shown",
+  "home_bookmark_action_click",
 ] as const;
 
 export type CanonicalAnalyticsEventType =
