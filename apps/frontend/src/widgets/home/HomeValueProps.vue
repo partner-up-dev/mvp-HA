@@ -24,7 +24,10 @@
             ></span>
             <span class="value-text">{{ t(item.key) }}</span>
           </span>
-          <span v-if="index === 0" class="i-mdi-arrow-right ml-auto"></span>
+          <span
+            v-if="index === 0"
+            class="i-mdi-arrow-right ml-auto color-primary value-arrow"
+          ></span>
         </RouterLink>
       </li>
     </ol>
@@ -151,13 +154,17 @@ h2.is-visible {
 
 .value-icon {
   @include mx.pu-icon(small, true);
-  color: var(--sys-color-primary);
+  color: var(--sys-color-secondary);
   flex-shrink: 0;
 }
 
 .value-text {
   @include mx.pu-font(title-medium);
   color: var(--sys-color-on-surface);
+}
+
+.value-arrow {
+  @include mx.pu-icon(medium, true);
 }
 
 @media (max-width: 768px) {
