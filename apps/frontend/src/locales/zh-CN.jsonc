@@ -30,13 +30,45 @@
   },
   "home": {
     "title": "搭一把",
-    "subtitle": "描述你的搭子需求，一键生成分享页面",
+    "subtitle": "把一句话变成可加入的搭子请求",
     "structuredEntryPrefix": "找搭子一起",
     "naturalLanguageEntry": "刚刚在群里发过了？",
     "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
     "contactAuthorTitle": "功能建议 / 问题反馈",
     "contactAuthorDescription": "可扫码联系作者，反馈 Bug 或提出新功能建议。",
     "contactAuthorAction": "联系作者",
+    "landing": {
+      "heroTitle": "今天，不用一个人",
+      "heroSubtitle": "先看看正在发生的活动，再决定要不要发起你的搭子请求。",
+      "heroPrimaryAction": "看看正在发生的活动",
+      "heroSecondaryAction": "我想发起一个搭子",
+      "valuePropsTitle": "三步找到同伴",
+      "valueProps": {
+        "item1": "一句话发起",
+        "item2": "人数满即成团",
+        "item3": "分享后直接可加入"
+      },
+      "highlightsTitle": "活动",
+      "highlightsSubtitle": "我们举办了一系列活动，从羽毛球到茶话会；另有场地、饮品补贴。",
+      "highlightsEmpty": "活动正在上新中，先去活动广场逛逛",
+      "highlightsLoadFailed": "活动加载失败，请稍后重试",
+      "highlightsOpenPlaza": "进入活动广场",
+      "plazaEntryTitle": "去活动广场找灵感",
+      "plazaEntryDescription": "按活动浏览，看看现在有什么可加入。",
+      "plazaEntryAction": "进入活动广场",
+      "secondaryCreateTitle": "想发起自己的搭子？",
+      "secondaryCreateDescription": "在创建页填写信息，可先保存草稿再发布。",
+      "secondaryCreateAction": "去创建页"
+    },
+    "bookmarkNudge": {
+      "title": "先收藏这个页面",
+      "wechatHint": "点击右上角···可收藏到微信，想找搭子时一键回来。",
+      "browserHint": "将本站加入浏览器书签，随时回来找搭子。",
+      "bookmarkAction": "我知道了",
+      "copyAction": "复制首页链接",
+      "copiedAction": "已复制",
+      "dismissAction": "稍后再说"
+    },
     "topics": {
       "movie": {
         "name": "看电影",

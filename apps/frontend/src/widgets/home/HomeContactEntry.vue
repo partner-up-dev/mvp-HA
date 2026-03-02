@@ -1,7 +1,12 @@
 <template>
   <RouterLink class="contact-entry" :to="{ name: 'contact-author' }">
-    <h2>{{ t("home.contactAuthorTitle") }}</h2>
-    <p>{{ t("home.contactAuthorDescription") }}</p>
+    <div class="contact-copy">
+      <h2>{{ t("home.contactAuthorTitle") }}</h2>
+      <p>{{ t("home.contactAuthorDescription") }}</p>
+    </div>
+    <span class="contact-action">
+      {{ t("home.contactAuthorAction") }}
+    </span>
   </RouterLink>
 </template>
 
@@ -15,11 +20,17 @@ const { t } = useI18n();
 <style lang="scss" scoped>
 .contact-entry {
   text-decoration: none;
-  margin-top: var(--sys-spacing-lg);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-radius-sm);
   background: var(--sys-color-surface-container-low);
   padding: var(--sys-spacing-med);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sys-spacing-sm);
+}
+
+.contact-copy {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-xs);
@@ -36,5 +47,10 @@ const { t } = useI18n();
     margin: 0;
   }
 }
-</style>
 
+.contact-action {
+  @include mx.pu-font(label-large);
+  color: var(--sys-color-primary);
+  flex-shrink: 0;
+}
+</style>

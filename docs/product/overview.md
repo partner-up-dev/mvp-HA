@@ -12,7 +12,7 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 ## 合法使用路径
 
 - 打开别人发来的 PartnerRequest 链接。
-- 在首页展开自然语言输入后，粘贴一句原话生成 PartnerRequest。
+- 在首页浏览活动亮点或进入活动广场，获得灵感后决定是否发起 PartnerRequest。
 - 点击首页 CTA 进入 `/pr/new`，通过结构化表单创建 PartnerRequest（可先保存为草稿）。
 - 点击首页或页面底部“联系作者”，进入 `/contact-author` 扫码反馈功能建议或 Bug。
 - 从历史 PartnerRequest 再发一个。

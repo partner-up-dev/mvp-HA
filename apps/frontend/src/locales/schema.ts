@@ -35,6 +35,38 @@ export interface MessageSchema {
     contactAuthorTitle: string;
     contactAuthorDescription: string;
     contactAuthorAction: string;
+    landing: {
+      heroTitle: string;
+      heroSubtitle: string;
+      heroPrimaryAction: string;
+      heroSecondaryAction: string;
+      valuePropsTitle: string;
+      valueProps: {
+        item1: string;
+        item2: string;
+        item3: string;
+      };
+      highlightsTitle: string;
+      highlightsSubtitle: string;
+      highlightsEmpty: string;
+      highlightsLoadFailed: string;
+      highlightsOpenPlaza: string;
+      plazaEntryTitle: string;
+      plazaEntryDescription: string;
+      plazaEntryAction: string;
+      secondaryCreateTitle: string;
+      secondaryCreateDescription: string;
+      secondaryCreateAction: string;
+    };
+    bookmarkNudge: {
+      title: string;
+      wechatHint: string;
+      browserHint: string;
+      bookmarkAction: string;
+      copyAction: string;
+      copiedAction: string;
+      dismissAction: string;
+    };
     topics: {
       movie: {
         name: string;
