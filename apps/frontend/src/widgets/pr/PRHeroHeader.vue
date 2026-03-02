@@ -1,23 +1,20 @@
 <template>
-  <div class="page-header">
-    <button class="home-btn" @click="emit('back')" :aria-label="t('common.backToHome')">
-      <div class="i-mdi-arrow-left font-title-large"></div>
-    </button>
-    <h1 v-if="title" class="page-title">
-      {{ title }}
-    </h1>
-  </div>
-
-  <header class="status-header">
-    <PRStatusBadge :status="status" />
-    <time class="created-at">{{ createdAtLabel }}</time>
-  </header>
+  <PageHeader
+    :title="title ?? t('prPage.metaFallbackTitle')"
+    @back="emit('back')"
+  >
+    <template #meta>
+      <PRStatusBadge :status="status" />
+      <time class="created-at">{{ createdAtLabel }}</time>
+    </template>
+  </PageHeader>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import type { PRStatus } from "@partner-up-dev/backend";
 import PRStatusBadge from "@/components/common/PRStatusBadge.vue";
+import PageHeader from "@/components/common/PageHeader.vue";
 
 defineProps<{
   title?: string;
@@ -88,4 +85,3 @@ const { t } = useI18n();
   color: var(--sys-color-on-surface-variant);
 }
 </style>
-

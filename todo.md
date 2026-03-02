@@ -3,6 +3,7 @@
 ## Deployment
 
 - [ ] CICD 还有可以优化的（不需要检查层依赖、层清理、包清理）
+- [ ] CICD 数据库迁移
 - [ ] 后端、数据库都是按需启动的，冷启动会比较慢，Loading需要有更多变化（比如“再等一下下”）
 - [ ] 后端冷启动及其缓慢，RuntimeInitialization消耗6s；函数 Invocation 消耗 6 秒（仅仅是 js-sdk signature req哦）
 - [ ] 在移动端的加载速度还有待优化
@@ -30,11 +31,12 @@
 - [ ] 保留PIN机制，但是存储PIN在用户表中，如果登陆了，则 PIN 填充相关 UI 都不显示，直接隐性使用；如果未登录则显示
 - [ ] datetime picker 的编辑体验有待优化
 - [ ] 允许 Partner 的 user-id 在 joined 时也为空（但限制在 Community PR 类型中）
-- [ ] Event Highlights (LandingPage), Event Plaza Page, Event Page (batch as tab)
-- [ ] PR Detail Page Refactor (Anchor PR / Community PR 分开)
 - [ ] PR Page "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
+- [ ] PR Detail Page Refactor (Anchor PR / Community PR 分开)
 - [ ] raw_text, pin 对于 Anchor PR 来说是可选的
       还是说 Anchor PR 也会自动生成 PIN 并且自动保存在 users 表中（毕竟加入肯定要登录的了）？
+- [x] Event Plaza Page, Event Page (batch as tab)
+- [ ] Event Highlights Section (LandingPage)
 
 ## Others
 

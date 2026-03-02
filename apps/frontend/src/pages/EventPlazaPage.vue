@@ -1,7 +1,10 @@
 <template>
   <div class="event-plaza-page">
-    <h1 class="page-title">{{ t("eventPlaza.title") }}</h1>
-    <p class="page-subtitle">{{ t("eventPlaza.subtitle") }}</p>
+    <PageHeader
+      :title="t('eventPlaza.title')"
+      :subtitle="t('eventPlaza.subtitle')"
+      @back="goHome"
+    />
 
     <div v-if="isLoading" class="loading-state">
       {{ t("common.loading") }}
@@ -50,10 +53,15 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import PageHeader from "@/components/common/PageHeader.vue";
 import { useAnchorEvents } from "@/queries/useAnchorEvents";
 
 const { t } = useI18n();
+const router = useRouter();
 const { data: events, isLoading, isError } = useAnchorEvents();
+
+const goHome = () => router.push("/");
 </script>
 
 <style lang="scss" scoped>

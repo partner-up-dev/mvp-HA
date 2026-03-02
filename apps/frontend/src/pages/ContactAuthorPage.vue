@@ -1,15 +1,6 @@
 <template>
   <div class="contact-author-page">
-    <header class="page-header">
-      <button
-        class="home-btn"
-        @click="goHome"
-        :aria-label="t('common.backToHome')"
-      >
-        <div class="i-mdi-arrow-left font-title-large"></div>
-      </button>
-      <h1>{{ t("contactAuthorPage.title") }}</h1>
-    </header>
+    <PageHeader :title="t('contactAuthorPage.title')" @back="goHome" />
 
     <LoadingIndicator
       v-if="publicConfigQuery.isLoading.value"
@@ -49,6 +40,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
+import PageHeader from "@/components/common/PageHeader.vue";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
 
 const router = useRouter();

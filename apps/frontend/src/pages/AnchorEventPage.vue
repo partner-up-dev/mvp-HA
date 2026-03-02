@@ -15,15 +15,11 @@
 
     <!-- Content -->
     <template v-else-if="detail">
-      <header class="event-header">
-        <router-link :to="{ name: 'event-plaza' }" class="back-btn">
-          ← {{ t("anchorEvent.backToPlaza") }}
-        </router-link>
-        <h1 class="event-title">{{ detail.title }}</h1>
-        <p v-if="detail.description" class="event-desc">
-          {{ detail.description }}
-        </p>
-      </header>
+      <PageHeader
+        :title="detail.title"
+        :subtitle="detail.description ?? undefined"
+        @back="goBackToPlaza"
+      />
 
       <!-- Batch tabs -->
       <div v-if="detail.batches.length > 0" class="batch-section">
@@ -98,12 +94,19 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import PageHeader from "@/components/common/PageHeader.vue";
 import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
 
 const route = useRoute();
 const { t } = useI18n();
+
+const router = useRouter();
+
+const goBackToPlaza = () => {
+  router.push({ name: "event-plaza" });
+};
 
 const eventId = computed(() => {
   const raw = route.params.eventId;
