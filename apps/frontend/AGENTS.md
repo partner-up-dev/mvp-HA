@@ -68,7 +68,7 @@ src/
 
 ### Live Capabilities
 
-- PartnerRequest 创建: 首页已重构为 Landing（Hero + 活动亮点 + 活动广场入口 + 次级动作），不再默认嵌入创建表单；`/pr/new` 结构化创建页支持“保存(DRAFT)”与“创建(OPEN)”。
+- PartnerRequest 创建: 首页已重构为 Landing（Hero + 双版面活动 Campaign + 次级动作），活动区不再使用模板化 EventCard，而是按羽毛球/慢跑/茶话会/口语练习分别展示营销内容；`/pr/new` 结构化创建页支持“保存(DRAFT)”与“创建(OPEN)”。
 - PartnerRequest 时间: 自然语言创建时由前端提供 nowIso（UTC）与 nowWeekday（用户本地周几）作为解析参考；结构化创建与编辑复用 `PartnerRequestForm`。
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED` 的前端展示与流转。
 - 参与与流转: 支持加入/退出交互；达到最小人数自动转为 `READY`，达到最大人数转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。

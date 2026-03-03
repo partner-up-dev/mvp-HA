@@ -56,7 +56,7 @@ import { useRouter } from "vue-router";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
-import PRStatusBadge from "@/components/common/PRStatusBadge.vue";
+import PRStatusBadge from "@/components/pr/PRStatusBadge.vue";
 import { useCreatorPRs } from "@/queries/useCreatorPRs";
 import { useUserPRStore } from "@/stores/userPRStore";
 import type { PRId } from "@partner-up-dev/backend";

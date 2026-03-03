@@ -22,12 +22,58 @@ export type AnchorEventPaymentModel = z.infer<
   typeof anchorEventPaymentModelSchema
 >;
 
-/** A location entry in the pool: identifier + optional display label */
-export const locationEntrySchema = z.object({
-  key: z.string().min(1),
-  label: z.string().min(1),
-});
+/** A location entry in the pool: POI.id */
+export const locationEntrySchema = z.string().min(1);
 export type LocationEntry = z.infer<typeof locationEntrySchema>;
+
+type LegacyLocationEntry = {
+  id?: unknown;
+  key?: unknown;
+  label?: unknown;
+};
+
+const normalizeLocationString = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const normalizeLocationValue = (value: unknown): string | null => {
+  const direct = normalizeLocationString(value);
+  if (direct) {
+    return direct;
+  }
+
+  if (typeof value === "object" && value !== null) {
+    const entry = value as LegacyLocationEntry;
+    const id = normalizeLocationString(entry.id);
+    if (id) return id;
+    const key = normalizeLocationString(entry.key);
+    if (key) return key;
+    const label = normalizeLocationString(entry.label);
+    if (label) return label;
+  }
+
+  return null;
+};
+
+export const normalizeLocationPool = (rawPool: unknown): LocationEntry[] => {
+  if (!Array.isArray(rawPool)) {
+    return [];
+  }
+
+  const unique = new Set<LocationEntry>();
+  for (const item of rawPool) {
+    const normalized = normalizeLocationValue(item);
+    if (!normalized) continue;
+    unique.add(normalized);
+  }
+
+  return Array.from(unique);
+};
 
 /** A time-window entry: [start, end] in the same format PR uses (ISO date or datetime, nullable) */
 export const timeWindowEntrySchema = z.tuple([

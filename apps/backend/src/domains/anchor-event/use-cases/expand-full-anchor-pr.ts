@@ -9,6 +9,7 @@ import { resolveAnchorEconomicPolicy } from "../../pr-core/services/economic-pol
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import { normalizeLocationPool } from "../../../entities/anchor-event";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -19,13 +20,11 @@ const isOccupiedStatus = (status: string): boolean =>
   status !== "EXPIRED" && status !== "CLOSED";
 
 const findNextAvailableLocation = (
-  pool: Array<{ key: string; label: string }>,
+  pool: string[],
   occupiedLocations: Set<string>,
 ): string | null => {
-  for (const entry of pool) {
-    const keyTaken = occupiedLocations.has(entry.key);
-    const labelTaken = occupiedLocations.has(entry.label);
-    if (!keyTaken && !labelTaken) return entry.label;
+  for (const location of pool) {
+    if (!occupiedLocations.has(location)) return location;
   }
   return null;
 };
@@ -69,12 +68,12 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
       .map((pr) => pr.location as string),
   );
 
-  const locationPool = event.locationPool ?? [];
-  const targetLocationKey = findNextAvailableLocation(
+  const locationPool = normalizeLocationPool(event.locationPool);
+  const targetLocation = findNextAvailableLocation(
     locationPool,
     occupiedLocations,
   );
-  if (!targetLocationKey) {
+  if (!targetLocation) {
     return;
   }
 
@@ -82,7 +81,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   // do not create a duplicate.
   const existingAtTarget = await prRepo.findByBatchIdAndLocation(
     fullPR.batchId,
-    targetLocationKey,
+    targetLocation,
   );
   if (existingAtTarget.some((pr) => isOccupiedStatus(pr.status))) {
     return;
@@ -95,7 +94,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     title: fullPR.title,
     type: fullPR.type,
     time: fullPR.time,
-    location: targetLocationKey,
+    location: targetLocation,
     status: "OPEN",
     pinHash,
     minPartners: fullPR.minPartners,

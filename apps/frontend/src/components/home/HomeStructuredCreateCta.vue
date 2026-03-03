@@ -2,7 +2,7 @@
   <button
     class="structured-entry"
     type="button"
-    :aria-label="`${t('home.structuredEntryPrefix')} ${rotatingTopicName}`"
+    :aria-label="`${t('home.structuredEntryPrefix')} ${activeTopicName}`"
     @click="goToStructuredCreate"
   >
     <span class="structured-content entry-display">
@@ -10,7 +10,7 @@
       <span class="topic-display">
         <span
           v-for="(char, index) in rotatingTopicChars"
-          :key="`${topicAnimationCycle}-${index}-${char}`"
+          :key="`${animationCycle}-${index}-${char}`"
           class="topic-char"
           :style="{ '--char-index': String(index) }"
         >
@@ -28,95 +28,42 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHomeRotatingTopic } from "@/composables/useHomeRotatingTopic";
+import { useRotatingTextWithTypeWriter } from "@/composables/useRotatingTextWithTypeWriter";
 
 const router = useRouter();
 const { t } = useI18n();
-const { rotatingTopics, rotatingTopicName, topicIndex, setTopicIndex } =
-  useHomeRotatingTopic();
-const visibleTopicLength = ref(Array.from(rotatingTopicName.value).length);
-const isErasing = ref(false);
-const topicAnimationCycle = ref(0);
-const rotatingTopicChars = computed(() =>
-  Array.from(rotatingTopicName.value).slice(0, visibleTopicLength.value),
-);
-const pendingTimers: Array<{ id: number; resolve: () => void }> = [];
-let stopTopicAnimation = false;
+const { rotatingTopics } = useHomeRotatingTopic();
 
 const TOPIC_HOLD_MS = 1300;
 const ERASE_STEP_MS = 90;
-const ENTER_STAGGER_MS = 55;
-const ENTER_BASE_MS = 350;
+const TYPE_STEP_MS = 88;
 
-const wait = async (delayMs: number) => {
-  await new Promise<void>((resolve) => {
-    const timeoutId = window.setTimeout(() => {
-      const timeoutIndex = pendingTimers.findIndex(
-        (timer) => timer.id === timeoutId,
-      );
-      if (timeoutIndex >= 0) {
-        pendingTimers.splice(timeoutIndex, 1);
-      }
-      resolve();
-    }, delayMs);
-    pendingTimers.push({ id: timeoutId, resolve });
-  });
-};
-
-const runTopicAnimation = async () => {
-  while (!stopTopicAnimation) {
-    await wait(TOPIC_HOLD_MS);
-    if (stopTopicAnimation) {
-      break;
-    }
-
-    isErasing.value = true;
-    const currentLength = Array.from(rotatingTopicName.value).length;
-    for (
-      let length = currentLength - 1;
-      length >= 0 && !stopTopicAnimation;
-      length -= 1
-    ) {
-      visibleTopicLength.value = length;
-      await wait(ERASE_STEP_MS);
-    }
-
-    if (stopTopicAnimation) {
-      break;
-    }
-
-    isErasing.value = false;
-    setTopicIndex(topicIndex.value + 1);
-    visibleTopicLength.value = Array.from(rotatingTopicName.value).length;
-    topicAnimationCycle.value += 1;
-
-    const enterDuration =
-      ENTER_BASE_MS + visibleTopicLength.value * ENTER_STAGGER_MS;
-    await wait(Math.max(TOPIC_HOLD_MS, enterDuration));
-  }
-};
-
-onMounted(() => {
-  void runTopicAnimation();
+const topicNames = computed(() => rotatingTopics.map((topic) => topic.name));
+const {
+  displayText: rotatingTopicName,
+  currentValue: activeTopicName,
+  isErasing,
+  animationCycle,
+} = useRotatingTextWithTypeWriter(topicNames, {
+  mode: "typewriter",
+  holdMs: TOPIC_HOLD_MS,
+  typeStepMs: TYPE_STEP_MS,
+  eraseStepMs: ERASE_STEP_MS,
 });
 
-onUnmounted(() => {
-  stopTopicAnimation = true;
-  for (const pendingTimer of pendingTimers) {
-    window.clearTimeout(pendingTimer.id);
-    pendingTimer.resolve();
-  }
-  pendingTimers.length = 0;
-});
+const rotatingTopicChars = computed(() => Array.from(rotatingTopicName.value));
 
 const goToStructuredCreate = async () => {
+  const topicForQuery = activeTopicName.value || topicNames.value[0] || "";
+
   await router.push({
     path: "/pr/new",
     query: {
-      topic: rotatingTopicName.value,
+      topic: topicForQuery,
     },
   });
 };
@@ -213,3 +160,4 @@ const goToStructuredCreate = async () => {
   }
 }
 </style>
+

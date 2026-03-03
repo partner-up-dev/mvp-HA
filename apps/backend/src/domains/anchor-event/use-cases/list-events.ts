@@ -3,7 +3,10 @@
  */
 
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import type { AnchorEvent } from "../../../entities/anchor-event";
+import {
+  type AnchorEvent,
+  normalizeLocationPool,
+} from "../../../entities/anchor-event";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 
 const repo = new AnchorEventRepository();
@@ -23,18 +26,7 @@ export interface AnchorEventSummary {
 }
 
 function getLocationLabels(event: AnchorEvent): string[] {
-  if (!Array.isArray(event.locationPool)) {
-    return [];
-  }
-
-  const dedupedLabels = new Set<string>();
-  for (const location of event.locationPool) {
-    const label = location.label.trim();
-    if (!label) continue;
-    dedupedLabels.add(label);
-  }
-
-  return Array.from(dedupedLabels);
+  return normalizeLocationPool(event.locationPool);
 }
 
 function toSummary(

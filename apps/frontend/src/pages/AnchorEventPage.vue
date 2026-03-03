@@ -43,35 +43,12 @@
             {{ t("anchorEvent.noPRsInBatch") }}
           </div>
           <div v-else class="pr-list">
-            <router-link
+            <AnchorEventPRCard
               v-for="pr in selectedBatch.prs"
               :key="pr.id"
-              :to="{ name: 'pr', params: { id: pr.id } }"
-              class="pr-card"
-            >
-              <div class="pr-card__header">
-                <span class="pr-card__title">
-                  {{ pr.title || pr.type }}
-                </span>
-                <span
-                  class="pr-card__status"
-                  :class="`pr-card__status--${pr.status.toLowerCase()}`"
-                >
-                  {{ t(`prStatus.${pr.status}`) }}
-                </span>
-              </div>
-              <div class="pr-card__meta">
-                <span v-if="pr.location" class="pr-card__location">
-                  📍 {{ pr.location }}
-                </span>
-                <span class="pr-card__partners">
-                  👥 {{ pr.partnerCount }}
-                  <template v-if="pr.maxPartners">
-                    / {{ pr.maxPartners }}
-                  </template>
-                </span>
-              </div>
-            </router-link>
+              :pr="pr"
+              :cover-image="resolveCoverImage(pr.location)"
+            />
           </div>
         </div>
       </div>
@@ -97,7 +74,9 @@ import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/components/common/PageHeader.vue";
+import AnchorEventPRCard from "@/components/event/AnchorEventPRCard.vue";
 import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
+import { usePoisByIds } from "@/queries/usePoisByIds";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -123,20 +102,63 @@ const selectedBatch = computed(() => {
   return detail.value.batches[selectedBatchIndex.value] ?? null;
 });
 
+const selectedBatchPoiIdsCsv = computed(() => {
+  const prs = selectedBatch.value?.prs ?? [];
+  const uniqueLocationIds = Array.from(
+    new Set(
+      prs
+        .map((pr) => (pr.location ? pr.location.trim() : ""))
+        .filter((locationId) => locationId.length > 0),
+    ),
+  );
+  return uniqueLocationIds.length > 0 ? uniqueLocationIds.join(",") : null;
+});
+
+const { data: selectedBatchPois } = usePoisByIds(selectedBatchPoiIdsCsv);
+
+const poiCoverById = computed(() => {
+  const map = new Map<string, string>();
+  for (const poi of selectedBatchPois.value ?? []) {
+    const cover = poi.gallery
+      .map((imageUrl) => imageUrl.trim())
+      .find((imageUrl) => imageUrl.length > 0);
+    if (cover) {
+      map.set(poi.id, cover);
+    }
+  }
+  return map;
+});
+
+const resolveCoverImage = (location: string | null): string | null => {
+  if (!location) return null;
+  const locationId = location.trim();
+  if (!locationId) return null;
+  return poiCoverById.value.get(locationId) ?? null;
+};
+
 function formatBatchLabel(
   timeWindow: [string | null, string | null],
   index: number,
 ): string {
   const [start] = timeWindow;
   if (start) {
-    // Show a short date or datetime label
+    // Show a compact date + time label for each batch tab.
     try {
       const d = new Date(start);
-      return d.toLocaleDateString("zh-CN", {
+      if (Number.isNaN(d.getTime())) {
+        return `${t("anchorEvent.batchLabel")} ${index + 1}`;
+      }
+      const datePart = d.toLocaleDateString("zh-CN", {
         month: "short",
         day: "numeric",
         weekday: "short",
       });
+      const timePart = d.toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      return `${datePart} ${timePart}`;
     } catch {
       return `${t("anchorEvent.batchLabel")} ${index + 1}`;
     }
@@ -213,62 +235,6 @@ function formatBatchLabel(
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.pr-card {
-  display: block;
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
-  background: var(--sys-color-surface-container);
-  text-decoration: none;
-  color: inherit;
-  transition: transform 0.15s ease;
-
-  &:active {
-    transform: scale(0.98);
-  }
-
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.375rem;
-  }
-
-  &__title {
-    font-size: 0.9375rem;
-    font-weight: 600;
-  }
-
-  &__status {
-    font-size: 0.75rem;
-    padding: 0.125rem 0.5rem;
-    border-radius: 999px;
-    background: var(--sys-color-surface-container-high);
-
-    &--open {
-      color: var(--sys-color-primary);
-    }
-    &--ready {
-      color: var(--sys-color-tertiary);
-    }
-    &--full {
-      color: var(--sys-color-error);
-    }
-    &--active {
-      color: var(--sys-color-primary);
-    }
-    &--locked_to_start {
-      color: var(--sys-color-secondary);
-    }
-  }
-
-  &__meta {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.8125rem;
-    color: var(--sys-color-on-surface-variant);
-  }
 }
 
 /* Exhaustion banner */

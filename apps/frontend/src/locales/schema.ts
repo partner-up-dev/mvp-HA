@@ -54,6 +54,41 @@ export interface MessageSchema {
       plazaEntryTitle: string;
       plazaEntryDescription: string;
       plazaEntryAction: string;
+      eventCampaigns: {
+        gatewayAction: string;
+        badminton: {
+          kicker: string;
+          title: string;
+          description: string;
+          ctaWithLocation: string;
+          fallbackLocation: string;
+          imagePlaceholder: string;
+        };
+        running: {
+          kicker: string;
+          titleWithLocation: string;
+          description: string;
+          ctaWithTime: string;
+          ctaFallback: string;
+          fallbackLocation: string;
+          imagePlaceholder: string;
+        };
+        teaTalk: {
+          kicker: string;
+          title: string;
+          description: string;
+          ctaWithLocation: string;
+          fallbackLocation: string;
+          imagePlaceholder: string;
+        };
+        speaking: {
+          kicker: string;
+          title: string;
+          description: string;
+          cta: string;
+          imagePlaceholder: string;
+        };
+      };
       secondaryActionsTitle: string;
       secondaryActionsHint: string;
       secondaryCreateTitle: string;
@@ -272,6 +307,15 @@ export interface MessageSchema {
     type: string;
     time: string;
     location: string;
+    viewLocationImages: string;
+    locationGallery: {
+      title: string;
+      empty: string;
+      prev: string;
+      next: string;
+      counter: string;
+      imageAlt: string;
+    };
     partners: string;
     budget: string;
     preferences: string;

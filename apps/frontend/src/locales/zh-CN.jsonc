@@ -56,6 +56,41 @@
       "plazaEntryTitle": "去活动广场找灵感",
       "plazaEntryDescription": "按活动浏览，看看现在有什么可加入。",
       "plazaEntryAction": "进入活动广场",
+      "eventCampaigns": {
+        "gatewayAction": "去活动广场看全部活动",
+        "badminton": {
+          "kicker": "羽毛球",
+          "title": "下课就能开打",
+          "description": "不用组熟人局，来了就能上场。",
+          "ctaWithLocation": "就在{location}",
+          "fallbackLocation": "校园球馆",
+          "imagePlaceholder": "羽毛球活动图占位"
+        },
+        "running": {
+          "kicker": "慢跑",
+          "titleWithLocation": "{location}，慢慢跑",
+          "description": "不拼速度，先把第一圈跑起来。",
+          "ctaWithTime": "就{time}",
+          "ctaFallback": "看慢跑场次",
+          "fallbackLocation": "学校操场",
+          "imagePlaceholder": "慢跑活动图占位"
+        },
+        "teaTalk": {
+          "kicker": "茶话会",
+          "title": "喝杯茶，认识新同学",
+          "description": "按兴趣匹配，奶茶我们包。",
+          "ctaWithLocation": "就在{location}",
+          "fallbackLocation": "校园奶茶店",
+          "imagePlaceholder": "茶话会活动图占位"
+        },
+        "speaking": {
+          "kicker": "口语练习",
+          "title": "先开口，再进步",
+          "description": "不求完美发音，先把表达说出来。",
+          "cta": "看口语练习场次",
+          "imagePlaceholder": "口语练习活动图占位"
+        }
+      },
       "secondaryActionsTitle": "发起活动",
       "secondaryActionsHint": "如果你已经有想法，现在就创建一个可分享的搭子请求。",
       "secondaryCreateTitle": "30 秒发起你的搭子",
@@ -336,6 +371,15 @@
     "type": "类型",
     "time": "时间",
     "location": "地点",
+    "viewLocationImages": "查看图片",
+    "locationGallery": {
+      "title": "场地图片",
+      "empty": "暂无可用图片",
+      "prev": "上一张",
+      "next": "下一张",
+      "counter": "{current} / {total}",
+      "imageAlt": "场地图片 {index}"
+    },
     "partners": "人数",
     "budget": "预算",
     "preferences": "偏好",

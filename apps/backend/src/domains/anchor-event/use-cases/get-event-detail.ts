@@ -11,9 +11,9 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
   AnchorEventId,
-  LocationEntry,
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
+import { normalizeLocationPool } from "../../../entities/anchor-event";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
 import type { PartnerRequest } from "../../../entities/partner-request";
 
@@ -51,7 +51,7 @@ export interface AnchorEventDetail {
   title: string;
   type: string;
   description: string | null;
-  locationPool: LocationEntry[];
+  locationPool: string[];
   timeWindowPool: TimeWindowEntry[];
   coverImage: string | null;
   status: string;
@@ -118,9 +118,7 @@ export async function getAnchorEventDetail(
   }
 
   // Check exhaustion: all location × timeWindow combos are occupied (have a non-expired PR)
-  const locationPool = Array.isArray(event.locationPool)
-    ? event.locationPool
-    : [];
+  const locationPool = normalizeLocationPool(event.locationPool);
   const totalLocations = locationPool.length;
   const totalBatches = batches.length;
   const totalSlots = totalLocations * totalBatches;

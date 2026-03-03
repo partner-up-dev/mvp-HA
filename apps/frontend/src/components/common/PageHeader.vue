@@ -127,4 +127,9 @@ function handleBack() {
   margin-top: var(--sys-spacing-sm);
   gap: var(--sys-spacing-sm);
 }
+
+.page-header__meta--vertical {
+  flex-direction: column;
+  align-items: flex-start;
+}
 </style>

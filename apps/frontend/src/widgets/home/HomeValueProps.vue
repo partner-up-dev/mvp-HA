@@ -76,10 +76,8 @@ const valueItems = computed(() => [
 }
 
 h2 {
-  @include mx.pu-font(title-small);
+  @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface-variant);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
   opacity: 0;
   transform: translate3d(0, 0.4rem, 0);
   transition:
@@ -142,7 +140,7 @@ h2.is-visible {
 
 .value-order {
   @include mx.pu-font(title-medium);
-  color: color-mix(in srgb, var(--sys-color-outline) 70%, transparent);
+  color: var(--sys-color-on-surface-variant);
   min-width: 2.5ch;
 }
 

@@ -18,9 +18,22 @@
 
       <SwiperSlide class="home-swiper-slide">
         <section class="home-section home-section--event">
-          <div class="section-paper section-paper--event">
-            <HomeEventHighlights />
-            <HomeEventPlazaEntry />
+          <div class="event-canvas">
+            <HomeEventSlideOne
+              :badminton="campaigns.badminton"
+              :running="campaigns.running"
+            />
+          </div>
+        </section>
+      </SwiperSlide>
+
+      <SwiperSlide class="home-swiper-slide">
+        <section class="home-section home-section--event">
+          <div class="event-canvas">
+            <HomeEventSlideTwo
+              :tea-talk="campaigns.teaTalk"
+              :speaking="campaigns.speaking"
+            />
           </div>
         </section>
       </SwiperSlide>
@@ -59,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { Swiper as SwiperInstance } from "swiper";
@@ -68,12 +81,14 @@ import { A11y, FreeMode, Mousewheel } from "swiper/modules";
 import "swiper/css";
 import HomeHero from "@/widgets/home/HomeHero.vue";
 import HomeValueProps from "@/widgets/home/HomeValueProps.vue";
-import HomeEventHighlights from "@/widgets/home/HomeEventHighlights.vue";
-import HomeEventPlazaEntry from "@/widgets/home/HomeEventPlazaEntry.vue";
+import HomeEventSlideOne from "@/widgets/home/HomeEventSlideOne.vue";
+import HomeEventSlideTwo from "@/widgets/home/HomeEventSlideTwo.vue";
 import HomeBookmarkNudge from "@/widgets/home/HomeBookmarkNudge.vue";
 import HomeFooter from "@/widgets/home/HomeFooter.vue";
+import { useHomeEventCampaignData } from "@/composables/useHomeEventCampaignData";
 
 const { t } = useI18n();
+const { campaigns } = useHomeEventCampaignData();
 
 // footer moved to HomeFooter component
 
@@ -89,8 +104,7 @@ const pageSwiperOptions = {
   threshold: 0,
   touchReleaseOnEdges: true,
   touchStartPreventDefault: false,
-  noSwiping: true,
-  noSwipingSelector: ".highlights-list",
+  noSwiping: false,
   longSwipesRatio: 0.14,
   freeMode: {
     enabled: true,
@@ -306,6 +320,16 @@ onUnmounted(() => {
   min-height: 0;
 }
 
+.event-canvas {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.9rem, 3.2vw, 1.2rem) 0;
+}
+
 .section-paper {
   width: 100%;
   height: 100%;
@@ -318,17 +342,6 @@ onUnmounted(() => {
   justify-content: center;
   gap: clamp(1rem, 4vw, 1.9rem);
   @include mx.pu-elevation(1);
-}
-
-.section-paper--event {
-  justify-content: flex-start;
-  overflow: hidden;
-}
-
-.section-paper--event :deep(.event-highlights) {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
 }
 
 .section-paper--creator {

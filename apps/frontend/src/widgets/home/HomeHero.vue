@@ -257,7 +257,7 @@ onUnmounted(() => {
 .hero-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-med);
   margin-top: var(--sys-spacing-sm);
   z-index: 1;
   opacity: 0;
@@ -390,16 +390,16 @@ onUnmounted(() => {
   }
 
   .subtitle {
-    @include mx.pu-font(title-small);
+    @include mx.pu-font(body-large);
     max-width: 25ch;
   }
 
   .hero-actions {
-    gap: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-sm);
   }
 
   .hero-action {
-    @include mx.pu-font(title-small);
+    @include mx.pu-font(body-large);
     min-height: 3.15rem;
     padding: 0.68rem 1rem;
   }
