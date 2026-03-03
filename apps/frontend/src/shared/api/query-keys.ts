@@ -18,6 +18,9 @@ export const queryKeys = {
     detail: (eventId: number | null) =>
       ["anchor-event", "detail", eventId] as const,
   },
+  poi: {
+    byIds: (idsCsv: string) => ["poi", "by-ids", idsCsv] as const,
+  },
   wechat: {
     reminderSubscription: () => ["wechat", "reminder-subscription"] as const,
   },

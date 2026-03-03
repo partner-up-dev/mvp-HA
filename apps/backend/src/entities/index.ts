@@ -12,3 +12,4 @@ export * from "./notification-delivery";
 export * from "./analytics-daily-anchor";
 export * from "./analytics-daily-community";
 export * from "./scenario-type-metric";
+export * from "./poi";

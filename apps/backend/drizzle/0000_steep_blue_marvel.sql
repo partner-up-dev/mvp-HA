@@ -227,6 +227,13 @@ CREATE TABLE IF NOT EXISTS "scenario_type_metrics" (
 	CONSTRAINT "scenario_type_metrics_date_key_pr_kind_scenario_type_pk" PRIMARY KEY("date_key","pr_kind","scenario_type")
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "pois" (
+	"id" text PRIMARY KEY NOT NULL,
+	"gallery" text[] DEFAULT '{}' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "anchor_event_batches" ADD CONSTRAINT "anchor_event_batches_anchor_event_id_anchor_events_id_fk" FOREIGN KEY ("anchor_event_id") REFERENCES "public"."anchor_events"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION

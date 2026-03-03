@@ -21,6 +21,7 @@
     首页应该更多转向 Landing Page，避免嵌入复杂的表单、文本，使用更大、艺术的字。
 - [x] 各页面都配置微信分享
 - [ ] Event Highlights Section (不是简单地列出来，而是专门为一些活动设计的，所以不是动态的)
+- [ ] 收藏弹窗的弹出位置有问题
 
 ## PR
 
@@ -37,11 +38,18 @@
 - [ ] raw_text, pin 对于 Anchor PR 来说是可选的
       还是说 Anchor PR 也会自动生成 PIN 并且自动保存在 users 表中（毕竟加入肯定要登录的了）？
 - [ ] Community PR 和 Anchor PR 拆开两个表
+- [ ] 添加一个 hybird 页面合并 form create 和 NL create
 
 ## Event
 
 - [x] Event Plaza Page, Event Page (batch as tab)
-- [ ] location gallery
+- [ ] event page cover image
+
+### POIs
+
+- [ ] id, gallery; id is natural language
+- [ ] nickname (shorter friendly name)
+- [ ] show in event card, PR page
 
 ## Others
 

@@ -17,6 +17,7 @@ import { configRoute } from "./controllers/config.controller";
 import { analyticsRoute } from "./controllers/analytics.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalJobsRoute } from "./controllers/internal-jobs.controller";
+import { poiRoute } from "./controllers/poi.controller";
 import { jobRunner } from "./infra/jobs";
 import {
   bootstrapAnalyticsAggregationJobs,
@@ -31,7 +32,10 @@ const app = new Hono();
 registerWeChatReminderJobs();
 registerAnalyticsAggregationJobs();
 void bootstrapAnalyticsAggregationJobs().catch((error) => {
-  console.error("[Analytics] failed to bootstrap daily aggregation jobs", error);
+  console.error(
+    "[Analytics] failed to bootstrap daily aggregation jobs",
+    error,
+  );
 });
 
 // Middleware
@@ -106,6 +110,7 @@ const routes = app
   .route("/api/wecom", wecomRoute)
   .route("/api/config", configRoute)
   .route("/api/analytics", analyticsRoute)
+  .route("/api/pois", poiRoute)
   .route("/internal/jobs", internalJobsRoute);
 
 // Health check

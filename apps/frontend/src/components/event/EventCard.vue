@@ -9,6 +9,11 @@
       class="event-cover"
       :style="{ backgroundImage: `url(${event.coverImage})` }"
     />
+    <div
+      v-else-if="activeFallbackImage"
+      class="event-cover"
+      :style="{ backgroundImage: `url(${activeFallbackImage})` }"
+    />
     <div v-else class="event-cover event-cover--placeholder">
       <span>{{ event.type }}</span>
     </div>
@@ -28,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import type { AnchorEventListResponse } from "@/queries/useAnchorEvents";
@@ -43,6 +49,57 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+const fallbackGallery = computed(() => {
+  const gallery = props.event.fallbackGallery;
+  if (!Array.isArray(gallery)) {
+    return [];
+  }
+
+  return gallery.map((url) => url.trim()).filter((url) => url.length > 0);
+});
+
+const fallbackIndex = ref(0);
+const activeFallbackImage = computed(() => {
+  if (props.event.coverImage || fallbackGallery.value.length === 0) {
+    return null;
+  }
+
+  const safeIndex = fallbackIndex.value % fallbackGallery.value.length;
+  return fallbackGallery.value[safeIndex] ?? null;
+});
+
+watch(fallbackGallery, () => {
+  fallbackIndex.value = 0;
+});
+
+let fallbackTimerId: number | null = null;
+
+watchEffect(() => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (props.event.coverImage || fallbackGallery.value.length <= 1) {
+    if (fallbackTimerId !== null) {
+      window.clearInterval(fallbackTimerId);
+      fallbackTimerId = null;
+    }
+    return;
+  }
+
+  fallbackTimerId = window.setInterval(() => {
+    fallbackIndex.value =
+      (fallbackIndex.value + 1) % fallbackGallery.value.length;
+  }, 2200);
+});
+
+onBeforeUnmount(() => {
+  if (fallbackTimerId !== null) {
+    window.clearInterval(fallbackTimerId);
+    fallbackTimerId = null;
+  }
+});
 
 const handleClick = () => {
   emit("click", props.event.id);

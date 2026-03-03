@@ -23,7 +23,18 @@
         :preferences="prDetail.preferences"
         :notes="prDetail.notes"
         :raw-text="prDetail.rawText"
-      />
+      >
+        <template #location-extra>
+          <button
+            v-if="locationGallery.length > 0"
+            class="location-gallery-link"
+            type="button"
+            @click="showLocationGalleryModal = true"
+          >
+            {{ t("prCard.viewLocationImages") }}
+          </button>
+        </template>
+      </PRCard>
 
       <section
         v-if="prDetail?.prKind === 'ANCHOR'"
@@ -78,10 +89,7 @@
         @modify-status="showModifyModal = true"
       />
 
-      <section
-        v-if="actions.hasJoined.value"
-        class="wechat-reminder-section"
-      >
+      <section v-if="actions.hasJoined.value" class="wechat-reminder-section">
         <h2 class="wechat-reminder-title">
           {{ t("prPage.wechatReminder.title") }}
         </h2>
@@ -106,9 +114,7 @@
 
         <button
           v-else-if="
-            isWeChatEnv &&
-            reminderConfigured &&
-            !reminderAuthenticated
+            isWeChatEnv && reminderConfigured && !reminderAuthenticated
           "
           class="wechat-reminder-action secondary"
           @click="handleGoWechatLogin"
@@ -207,6 +213,12 @@
         :pr-id="id"
         @close="showModifyModal = false"
       />
+
+      <PRLocationGalleryModal
+        :open="showLocationGalleryModal"
+        :images="locationGallery"
+        @close="showLocationGalleryModal = false"
+      />
     </template>
 
     <Footer />
@@ -221,6 +233,7 @@ import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import PRCard from "@/components/pr/PRCard.vue";
+import PRLocationGalleryModal from "@/components/pr/PRLocationGalleryModal.vue";
 import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
 import Footer from "@/components/common/Footer.vue";
@@ -234,6 +247,7 @@ import { useAcceptAlternativeBatch } from "@/queries/useAcceptAlternativeBatch";
 import { useJoinPR } from "@/queries/useJoinPR";
 import { useWeChatReminderSubscription } from "@/queries/useWeChatReminderSubscription";
 import { useUpdateWeChatReminderSubscription } from "@/queries/useUpdateWeChatReminderSubscription";
+import { usePoisByIds } from "@/queries/usePoisByIds";
 import type { PRId } from "@partner-up-dev/backend";
 import { useUserPRStore } from "@/stores/userPRStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
@@ -304,8 +318,48 @@ const userPRStore = useUserPRStore();
 
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
+const showLocationGalleryModal = ref(false);
 
-useBodyScrollLock(computed(() => showEditModal.value || showModifyModal.value));
+const locationId = computed(() => {
+  const location = prDetail.value?.location;
+  if (!location) return null;
+  const normalized = location.trim();
+  return normalized.length > 0 ? normalized : null;
+});
+
+const poiIdsCsv = computed(() => (locationId.value ? locationId.value : null));
+const { data: poisByIdsData } = usePoisByIds(poiIdsCsv);
+
+const locationGallery = computed(() => {
+  const targetLocationId = locationId.value;
+  if (!targetLocationId) {
+    return [];
+  }
+
+  const matchedPoi = (poisByIdsData.value ?? []).find(
+    (poi) => poi.id === targetLocationId,
+  );
+  if (!matchedPoi) {
+    return [];
+  }
+
+  return matchedPoi.gallery
+    .map((url) => url.trim())
+    .filter((url) => url.length > 0);
+});
+
+watch(locationId, () => {
+  showLocationGalleryModal.value = false;
+});
+
+useBodyScrollLock(
+  computed(
+    () =>
+      showEditModal.value ||
+      showModifyModal.value ||
+      showLocationGalleryModal.value,
+  ),
+);
 
 // Check if current user is creator
 const isCreator = computed(() => {
@@ -548,7 +602,8 @@ const economySummaryDeadline = computed(() => {
     return t("prPage.economyEntry.deadlineUnset");
   }
   return t("prPage.economyEntry.deadlineWithValue", {
-    deadline: formatDateTime(deadline) ?? t("prPage.economyEntry.deadlineUnset"),
+    deadline:
+      formatDateTime(deadline) ?? t("prPage.economyEntry.deadlineUnset"),
   });
 });
 
@@ -802,5 +857,17 @@ useHead({
     opacity: 0.65;
     cursor: not-allowed;
   }
+}
+
+.location-gallery-link {
+  @include mx.pu-font(label-medium);
+  border: none;
+  padding: 0;
+  margin-top: var(--sys-spacing-xs);
+  color: var(--sys-color-primary);
+  background: transparent;
+  width: fit-content;
+  cursor: pointer;
+  text-decoration: underline;
 }
 </style>

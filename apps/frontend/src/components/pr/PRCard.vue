@@ -13,6 +13,7 @@
     <div class="field" v-if="location">
       <span class="label">{{ t("prCard.location") }}</span>
       <span class="value">{{ location }}</span>
+      <slot name="location-extra" />
     </div>
 
     <div class="field" v-if="shouldShowPartners">
@@ -151,11 +152,7 @@ const formatPartners = (
 const formattedTime = computed(() => formatTimeWindow(props.time));
 const currentPartners = computed(() => props.partners.length);
 const formattedPartners = computed(() =>
-  formatPartners(
-    props.minPartners,
-    currentPartners.value,
-    props.maxPartners,
-  ),
+  formatPartners(props.minPartners, currentPartners.value, props.maxPartners),
 );
 const shouldShowPartners = computed(() => {
   return (
