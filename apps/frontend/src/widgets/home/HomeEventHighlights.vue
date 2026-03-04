@@ -207,12 +207,11 @@ watchEffect(() => {
   min-width: 0;
   gap: clamp(0.8rem, 3vw, 1.2rem);
   margin: 0;
-  margin-top: clamp(0.18rem, 0.7vw, 0.42rem);
   margin-inline: calc(50% - 50vw);
-  padding-top: 0;
+  padding-top: var(--sys-spacing-sm);
+  padding-bottom: var(--sys-spacing-sm);
   padding-left: calc(var(--highlight-rail-inset) + var(--pu-safe-left));
   padding-right: calc(var(--highlight-rail-inset) + var(--pu-safe-right));
-  padding-bottom: clamp(0.26rem, 1.3vw, 0.52rem);
   overflow-x: auto;
   overflow-y: visible;
   scroll-snap-type: x mandatory;
@@ -224,6 +223,7 @@ watchEffect(() => {
   touch-action: pan-x;
   position: relative;
   z-index: 3;
+  background-color: var(--sys-color-surface);
 }
 
 .highlight-item {

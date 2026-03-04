@@ -45,6 +45,7 @@
 - [ ] partner section
 - [ ] incoming state
 - [ ] user input cache
+- [ ] 我的搭子请求列表
 
 ## Event
 

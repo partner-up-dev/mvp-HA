@@ -13,7 +13,8 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 
 - 打开别人发来的 PartnerRequest 链接。
 - 在首页浏览活动亮点或进入活动广场，获得灵感后决定是否发起 PartnerRequest。
-- 点击首页 CTA 进入 `/pr/new`，在同一页面使用自然语言或结构化表单创建 PartnerRequest（结构化模式可先保存为草稿）。
+- 点击首页价值点「从一句话开始」可展开内联自然语言创建表单（两行：NL 输入 + PIN/发送），直接创建 PartnerRequest。
+- 也可通过首页次级 CTA 进入 `/pr/new`，在同一页面使用自然语言或结构化表单创建 PartnerRequest（结构化模式可先保存为草稿）。
 - 点击首页或页面底部“联系作者”，进入 `/contact-author` 扫码反馈功能建议或 Bug。
 - 从历史 PartnerRequest 再发一个。
 - 在微信内打开页面时，系统会自动尝试完成微信登录（无独立登录页）。

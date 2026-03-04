@@ -45,8 +45,8 @@
       "valuePropsTitle": "三步找到搭子",
       "valueProps": {
         "item1": "从一句话开始",
-        "item2": "无需登录即可加入",
-        "item3": "一键分享微信、小红书"
+        "item2": "一键分享微信、小红书",
+        "item3": "无需登录即可加入"
       },
       "highlightsTitle": "线下活动",
       "highlightsSubtitle": "我们举办了一系列线下活动，从羽毛球到茶话会；特别提供场地、饮品补贴。",
@@ -55,7 +55,7 @@
       "highlightsOpenPlaza": "进入活动广场",
       "plazaEntryTitle": "大家都在找什么搭子",
       "plazaEntryDescription": "按活动浏览，看看现在有什么可加入。",
-      "plazaEntryAction": "前往活动广场",
+      "plazaEntryAction": "所有活动",
       "eventCampaigns": {
         "gatewayAction": "去活动广场看全部活动",
         "badminton": {
@@ -154,7 +154,7 @@
       "secondaryCreateDescription": "填写核心信息，立即生成可加入、可传播的活动页面。",
       "secondaryCreateAction": "立即发起",
       "footerIntroTitle": "搭一把 / PartnerUp",
-      "footerIntroBody": "快速、便捷、安全地找到适合你的搭子",
+      "footerIntroBody": "安全、快速地找对搭子",
       "footerNavTitle": "底部导航",
       "footerNavHome": "首页"
     },
