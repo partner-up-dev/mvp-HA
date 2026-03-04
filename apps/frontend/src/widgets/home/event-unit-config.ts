@@ -1,22 +1,22 @@
 import type { AnchorEventListResponse } from "@/queries/useAnchorEvents";
 
-export const HOME_EVENT_CAMPAIGN_KEYS = [
+export const HOME_EVENT_UNIT_KEYS = [
   "badminton",
   "running",
   "teaTalk",
   "speaking",
 ] as const;
 
-export type HomeEventCampaignKey = (typeof HOME_EVENT_CAMPAIGN_KEYS)[number];
+export type HomeEventUnitKey = (typeof HOME_EVENT_UNIT_KEYS)[number];
 
-type HomeEventCampaignConfig = {
+type HomeEventUnitConfig = {
   keywords: string[];
   fallbackLocation: string;
 };
 
-export const HOME_EVENT_CAMPAIGN_CONFIG: Record<
-  HomeEventCampaignKey,
-  HomeEventCampaignConfig
+export const HOME_EVENT_UNIT_CONFIG: Record<
+  HomeEventUnitKey,
+  HomeEventUnitConfig
 > = {
   badminton: {
     keywords: ["羽毛球", "badminton"],
@@ -36,12 +36,12 @@ export const HOME_EVENT_CAMPAIGN_CONFIG: Record<
   },
 };
 
-export type HomeEventCampaignMatchedMap = Record<
-  HomeEventCampaignKey,
+export type HomeEventUnitMatchedMap = Record<
+  HomeEventUnitKey,
   AnchorEventListResponse[number] | null
 >;
 
-const createEmptyMatchMap = (): HomeEventCampaignMatchedMap => ({
+const createEmptyMatchMap = (): HomeEventUnitMatchedMap => ({
   badminton: null,
   running: null,
   teaTalk: null,
@@ -62,9 +62,9 @@ const getMatchScore = (
   }, 0);
 };
 
-export const matchHomeEventCampaigns = (
+export const matchHomeEventUnits = (
   events: AnchorEventListResponse,
-): HomeEventCampaignMatchedMap => {
+): HomeEventUnitMatchedMap => {
   if (!Array.isArray(events) || events.length === 0) {
     return createEmptyMatchMap();
   }
@@ -72,8 +72,8 @@ export const matchHomeEventCampaigns = (
   const remainingEvents = [...events];
   const matchedMap = createEmptyMatchMap();
 
-  for (const key of HOME_EVENT_CAMPAIGN_KEYS) {
-    const config = HOME_EVENT_CAMPAIGN_CONFIG[key];
+  for (const key of HOME_EVENT_UNIT_KEYS) {
+    const config = HOME_EVENT_UNIT_CONFIG[key];
 
     let bestIndex = -1;
     let bestScore = 0;

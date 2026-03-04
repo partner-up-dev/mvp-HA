@@ -1,69 +1,42 @@
 <template>
   <div class="home-page">
-    <Swiper
-      class="home-swiper"
-      v-bind="pageSwiperOptions"
-      :modules="pageSwiperModules"
-      @swiper="handleSwiperReady"
-    >
-      <SwiperSlide class="home-swiper-slide">
-        <section class="home-section home-section--hero">
-          <HomeHero @reveal-values="handleHeroValuesReveal" />
-          <HomeValueProps
-            class="hero-values"
-            :start-reveal="shouldRevealHeroValues"
-          />
-        </section>
-      </SwiperSlide>
+    <main class="home-flow">
+      <section class="home-section home-section--hero">
+        <HomeHero @reveal-values="handleHeroValuesReveal" />
+        <HomeValueProps
+          class="hero-values"
+          :start-reveal="shouldRevealHeroValues"
+        />
+      </section>
 
-      <SwiperSlide class="home-swiper-slide">
-        <section class="home-section home-section--event">
-          <div class="event-canvas">
-            <HomeEventSlideOne
-              :badminton="campaigns.badminton"
-              :running="campaigns.running"
-            />
-          </div>
-        </section>
-      </SwiperSlide>
+      <section class="home-section home-section--event">
+        <HomeEventSectionV2 class="event-canvas" />
+      </section>
 
-      <SwiperSlide class="home-swiper-slide">
-        <section class="home-section home-section--event">
-          <div class="event-canvas">
-            <HomeEventSlideTwo
-              :tea-talk="campaigns.teaTalk"
-              :speaking="campaigns.speaking"
-            />
-          </div>
-        </section>
-      </SwiperSlide>
-
-      <SwiperSlide class="home-swiper-slide">
-        <section class="home-section home-section--creator">
-          <div class="section-paper section-paper--creator">
-            <header class="section-header section-header--creator">
-              <h2>{{ t("home.landing.secondaryActionsTitle") }}</h2>
-              <p>{{ t("home.landing.secondaryActionsHint") }}</p>
-            </header>
-            <section class="creator-actions">
-              <RouterLink class="creator-entry" :to="{ name: 'pr-new' }">
-                <div class="creator-copy">
-                  <h3>{{ t("home.landing.secondaryCreateTitle") }}</h3>
-                  <p>{{ t("home.landing.secondaryCreateDescription") }}</p>
-                </div>
-                <span class="creator-action-text">
-                  {{ t("home.landing.secondaryCreateAction") }}
-                  <span
-                    class="creator-action-icon i-mdi:arrow-right"
-                    aria-hidden="true"
-                  ></span>
-                </span>
-              </RouterLink>
-            </section>
-          </div>
-        </section>
-      </SwiperSlide>
-    </Swiper>
+      <section class="home-section home-section--creator">
+        <div class="section-paper section-paper--creator">
+          <header class="section-header section-header--creator">
+            <h2>{{ t("home.landing.secondaryActionsTitle") }}</h2>
+            <p>{{ t("home.landing.secondaryActionsHint") }}</p>
+          </header>
+          <section class="creator-actions">
+            <RouterLink class="creator-entry" :to="{ name: 'pr-new' }">
+              <div class="creator-copy">
+                <h3>{{ t("home.landing.secondaryCreateTitle") }}</h3>
+                <p>{{ t("home.landing.secondaryCreateDescription") }}</p>
+              </div>
+              <span class="creator-action-text">
+                {{ t("home.landing.secondaryCreateAction") }}
+                <span
+                  class="creator-action-icon i-mdi:arrow-right"
+                  aria-hidden="true"
+                ></span>
+              </span>
+            </RouterLink>
+          </section>
+        </div>
+      </section>
+    </main>
 
     <HomeFooter />
 
@@ -75,144 +48,44 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
-import type { Swiper as SwiperInstance } from "swiper";
-import { Swiper, SwiperSlide } from "swiper/vue";
-import { A11y, FreeMode, Mousewheel } from "swiper/modules";
-import "swiper/css";
 import HomeHero from "@/widgets/home/HomeHero.vue";
 import HomeValueProps from "@/widgets/home/HomeValueProps.vue";
-import HomeEventSlideOne from "@/widgets/home/HomeEventSlideOne.vue";
-import HomeEventSlideTwo from "@/widgets/home/HomeEventSlideTwo.vue";
+import HomeEventSectionV2 from "@/widgets/home/HomeEventSectionV2.vue";
 import HomeBookmarkNudge from "@/widgets/home/HomeBookmarkNudge.vue";
 import HomeFooter from "@/widgets/home/HomeFooter.vue";
-import { useHomeEventCampaignData } from "@/composables/useHomeEventCampaignData";
+
+const HOME_SCROLL_SNAP_CLASS = "home-scroll-snap";
 
 const { t } = useI18n();
-const { campaigns } = useHomeEventCampaignData();
 
 // footer moved to HomeFooter component
 
-const pageSwiperModules = [Mousewheel, FreeMode, A11y];
-
-const pageSwiperOptions = {
-  direction: "vertical" as const,
-  initialSlide: 0,
-  slidesPerView: 1,
-  autoHeight: false,
-  speed: 620,
-  resistanceRatio: 0.4,
-  threshold: 0,
-  touchReleaseOnEdges: true,
-  touchStartPreventDefault: false,
-  noSwiping: false,
-  longSwipesRatio: 0.14,
-  freeMode: {
-    enabled: true,
-    sticky: true,
-    momentum: true,
-    minimumVelocity: 0.08,
-    momentumRatio: 0.48,
-    momentumVelocityRatio: 0.7,
-  },
-  mousewheel: {
-    forceToAxis: true,
-    releaseOnEdges: true,
-    thresholdDelta: 8,
-    sensitivity: 0.92,
-  },
-};
-
-const FOOTER_SCROLL_THRESHOLD = 1;
-const swiperRef = ref<SwiperInstance | null>(null);
 const shouldRevealHeroValues = ref(false);
-const initialResetFrame = ref<number | null>(null);
-const initialResetTimeoutId = ref<number | null>(null);
 
 const handleHeroValuesReveal = () => {
   shouldRevealHeroValues.value = true;
 };
 
-const setSwiperInteractionEnabled = (enabled: boolean) => {
-  const swiper = swiperRef.value;
-  if (!swiper) return;
-
-  swiper.allowTouchMove = enabled;
-  if (swiper.mousewheel) {
-    if (enabled) {
-      swiper.mousewheel.enable();
-    } else {
-      swiper.mousewheel.disable();
-    }
-  }
-};
-
-const syncSwiperInteractionWithPageScroll = () => {
-  if (typeof window === "undefined") return;
-  const shouldEnableSwiper = window.scrollY <= FOOTER_SCROLL_THRESHOLD;
-  setSwiperInteractionEnabled(shouldEnableSwiper);
-};
-
-const resetViewportToHero = () => {
-  if (typeof window === "undefined") return;
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-
-  const swiper = swiperRef.value;
-  if (!swiper) {
-    syncSwiperInteractionWithPageScroll();
-    return;
-  }
-
-  swiper.slideTo(0, 0, false);
-  swiper.updateSlidesClasses();
-  syncSwiperInteractionWithPageScroll();
-};
-
-const scheduleInitialViewportReset = () => {
-  if (typeof window === "undefined") return;
-  resetViewportToHero();
-
-  initialResetFrame.value = window.requestAnimationFrame(() => {
-    resetViewportToHero();
-  });
-
-  initialResetTimeoutId.value = window.setTimeout(() => {
-    resetViewportToHero();
-  }, 96);
-};
-
-const handleSwiperReady = (swiper: SwiperInstance) => {
-  swiperRef.value = swiper;
-  resetViewportToHero();
-};
-
 onMounted(() => {
   if (typeof window === "undefined") return;
-  window.addEventListener("scroll", syncSwiperInteractionWithPageScroll, {
-    passive: true,
-  });
-  window.addEventListener("resize", syncSwiperInteractionWithPageScroll, {
-    passive: true,
-  });
-  scheduleInitialViewportReset();
+  document.documentElement.classList.add(HOME_SCROLL_SNAP_CLASS);
+  document.body.classList.add(HOME_SCROLL_SNAP_CLASS);
 });
 
 onUnmounted(() => {
   if (typeof window === "undefined") return;
-  window.removeEventListener("scroll", syncSwiperInteractionWithPageScroll);
-  window.removeEventListener("resize", syncSwiperInteractionWithPageScroll);
-  if (initialResetFrame.value !== null) {
-    window.cancelAnimationFrame(initialResetFrame.value);
-  }
-  if (initialResetTimeoutId.value !== null) {
-    window.clearTimeout(initialResetTimeoutId.value);
-  }
-  swiperRef.value = null;
+  document.documentElement.classList.remove(HOME_SCROLL_SNAP_CLASS);
+  document.body.classList.remove(HOME_SCROLL_SNAP_CLASS);
 });
 </script>
 
 <style lang="scss" scoped>
+:global(html.home-scroll-snap),
+:global(body.home-scroll-snap) {
+  scroll-snap-type: y proximity;
+}
+
 .home-page {
-  --home-section-min-height: var(--pu-vh);
   position: relative;
   isolation: isolate;
   overflow-x: clip;
@@ -253,11 +126,19 @@ onUnmounted(() => {
   z-index: 1;
 }
 
+.home-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .home-section {
   position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
   justify-content: center;
   gap: clamp(1rem, 4vw, 1.9rem);
   padding-block: clamp(1.25rem, 5vw, 3rem);
@@ -269,6 +150,7 @@ onUnmounted(() => {
 }
 
 .home-section--hero {
+  min-height: var(--pu-vh);
   justify-content: space-between;
   padding-top: calc(clamp(1.25rem, 5vw, 3rem) + var(--pu-safe-top));
   animation-delay: 60ms;
@@ -287,60 +169,25 @@ onUnmounted(() => {
   animation-delay: 200ms;
 }
 
-.home-swiper {
-  width: 100%;
-  height: var(--home-section-min-height);
-  min-height: var(--home-section-min-height);
-}
-
-.home-swiper-slide {
-  display: flex;
-  align-items: stretch;
-  height: 100%;
-  min-height: 0;
-}
-
-.home-swiper-slide :deep(.home-section) {
-  flex: 1;
-  height: 100%;
-  min-height: 0;
-}
-
-.home-swiper :deep(.swiper-wrapper) {
-  align-items: stretch;
-}
-
-.home-swiper :deep(.swiper-slide) {
-  height: 100%;
-}
-
-.home-section--event,
-.home-section--creator {
-  height: 100%;
-  min-height: 0;
-}
-
 .event-canvas {
   width: 100%;
-  height: 100%;
   min-width: 0;
-  min-height: 0;
   display: flex;
   flex-direction: column;
+  gap: clamp(0.95rem, 3.4vw, 1.35rem);
   padding: clamp(0.9rem, 3.2vw, 1.2rem) 0;
 }
 
 .section-paper {
   width: 100%;
-  height: 100%;
   min-width: 0;
-  min-height: 0;
   border-radius: var(--sys-radius-lg);
   border: 1px solid var(--sys-color-outline);
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: clamp(1rem, 4vw, 1.9rem);
+  padding: clamp(1rem, 3.6vw, 1.4rem);
   @include mx.pu-elevation(1);
 }
 

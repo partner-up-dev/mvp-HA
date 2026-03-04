@@ -12,6 +12,10 @@ export type CanonicalAnalyticsEventName =
   | "share_link_copy_success"
   | "share_link_failed"
   | "home_hero_primary_click"
+  | "home_event_section_impression"
+  | "home_event_card_impression"
+  | "home_event_card_click"
+  | "home_event_all_click"
   | "home_event_highlight_click"
   | "home_event_plaza_entry_click"
   | "home_bookmark_nudge_shown"
@@ -82,6 +86,28 @@ type CanonicalAnalyticsPayloadMap = {
   };
   home_hero_primary_click: PRContextPayload & {
     target: "event-plaza";
+  };
+  home_event_section_impression: PRContextPayload & {
+    source: "landing_v2";
+    hasMappedUnit: boolean;
+    unitCount: number;
+  };
+  home_event_card_impression: PRContextPayload & {
+    unitKey: "badminton" | "running" | "teaTalk" | "speaking";
+    isLead: boolean;
+    remainingSlots: number | null;
+    startsSoon: boolean;
+    eventId?: number;
+  };
+  home_event_card_click: PRContextPayload & {
+    unitKey: "badminton" | "running" | "teaTalk" | "speaking";
+    isLead: boolean;
+    remainingSlots: number | null;
+    startsSoon: boolean;
+    eventId?: number;
+  };
+  home_event_all_click: PRContextPayload & {
+    source: "landing_v2";
   };
   home_event_highlight_click: PRContextPayload & {
     eventId: number;

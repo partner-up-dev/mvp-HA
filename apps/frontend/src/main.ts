@@ -9,6 +9,10 @@ import { i18n } from "./locales/i18n";
 import "uno.css";
 import "./styles/index.scss";
 
+if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
 const app = createApp(App);
 const head = createHead();
 const pinia = createPinia();
