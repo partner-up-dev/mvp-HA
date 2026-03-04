@@ -64,11 +64,11 @@ src/
 
 ## Current State
 >
-> Last Updated: 2026-03-01 22:10
+> Last Updated: 2026-03-04 17:30
 
 ### Live Capabilities
 
-- PartnerRequest 创建: 首页已重构为 Landing（Hero + 活动亮点 + 次级动作），活动区恢复为 `EventHighlights + EventPlazaEntry`（横向活动卡片 + 活动广场入口）；`/pr/new` 结构化创建页支持“保存(DRAFT)”与“创建(OPEN)”。
+- PartnerRequest 创建: 首页已重构为 Landing（Hero + 活动亮点 + 次级动作），活动区恢复为 `EventHighlights + EventPlazaEntry`（横向活动卡片 + 活动广场入口）；`/pr/new` 融合自然语言与结构化创建，结构化模式支持“保存(DRAFT)”与“创建(OPEN)”，并保留 `/pr/new/form` 纯结构化入口。
 - PartnerRequest 时间: 自然语言创建时由前端提供 nowIso（UTC）与 nowWeekday（用户本地周几）作为解析参考；结构化创建与编辑复用 `PartnerRequestForm`。
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED` 的前端展示与流转。
 - 参与与流转: 支持加入/退出交互；达到最小人数自动转为 `READY`，达到最大人数转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。

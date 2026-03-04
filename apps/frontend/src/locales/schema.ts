@@ -197,6 +197,13 @@ export interface MessageSchema {
   };
   createPage: {
     title: string;
+    modeSwitchAria: string;
+    nlModeTab: string;
+    formModeTab: string;
+    nlModeTitle: string;
+    nlModeDescription: string;
+    formModeTitle: string;
+    formModeDescription: string;
     savePending: string;
     createPending: string;
     createFailed: string;

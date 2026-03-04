@@ -11,7 +11,7 @@
 
       <section class="home-section home-section--event">
         <div class="section-paper section-paper--event">
-          <HomeEventHighlights class="event-canvas" />
+          <HomeEventHighlights class="event-canvas event-canvas--breakout" />
           <HomeEventPlazaEntry />
         </div>
       </section>
@@ -179,6 +179,11 @@ onUnmounted(() => {
   min-width: 0;
 }
 
+.event-canvas--breakout {
+  position: relative;
+  z-index: 2;
+}
+
 .section-paper {
   width: 100%;
   min-width: 0;
@@ -197,6 +202,9 @@ onUnmounted(() => {
 
 .section-paper--event {
   justify-content: flex-start;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
 }
 
 .section-header {

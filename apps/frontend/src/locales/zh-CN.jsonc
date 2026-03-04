@@ -48,14 +48,14 @@
         "item2": "无需登录即可加入",
         "item3": "一键分享微信、小红书"
       },
-      "highlightsTitle": "活动",
-      "highlightsSubtitle": "我们举办了一系列活动，从羽毛球到茶话会；另有场地、饮品补贴。",
+      "highlightsTitle": "线下活动",
+      "highlightsSubtitle": "我们举办了一系列线下活动，从羽毛球到茶话会；特别提供场地、饮品补贴。",
       "highlightsEmpty": "活动正在上新中，先去活动广场逛逛",
       "highlightsLoadFailed": "活动加载失败，请稍后重试",
       "highlightsOpenPlaza": "进入活动广场",
-      "plazaEntryTitle": "去活动广场找灵感",
+      "plazaEntryTitle": "大家都在找什么搭子",
       "plazaEntryDescription": "按活动浏览，看看现在有什么可加入。",
-      "plazaEntryAction": "进入活动广场",
+      "plazaEntryAction": "前往活动广场",
       "eventCampaigns": {
         "gatewayAction": "去活动广场看全部活动",
         "badminton": {
@@ -199,6 +199,13 @@
   },
   "createPage": {
     "title": "创建搭子请求",
+    "modeSwitchAria": "创建方式切换",
+    "nlModeTab": "自然语言",
+    "formModeTab": "结构化表单",
+    "nlModeTitle": "一句话创建",
+    "nlModeDescription": "复制你在群里说过的话，系统会自动解析并创建请求。",
+    "formModeTitle": "手动填写细节",
+    "formModeDescription": "逐项填写活动信息，支持保存草稿后再发布。",
     "savePending": "保存中...",
     "createPending": "创建中...",
     "createFailed": "创建失败"

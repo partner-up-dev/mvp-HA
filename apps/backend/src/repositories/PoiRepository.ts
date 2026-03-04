@@ -13,6 +13,10 @@ const normalizeIds = (ids: string[]): string[] => {
 };
 
 export class PoiRepository {
+  async listAll(): Promise<Poi[]> {
+    return await db.select().from(pois);
+  }
+
   async findByIds(ids: string[]): Promise<Poi[]> {
     const normalizedIds = normalizeIds(ids);
     if (normalizedIds.length === 0) {

@@ -5,9 +5,14 @@
     @click="handleClick"
   >
     <div
-      v-if="event.coverImage"
+      v-if="coverImage"
       class="event-cover"
-      :style="{ backgroundImage: `url(${event.coverImage})` }"
+      :style="{ backgroundImage: `url(${coverImage})` }"
+    />
+    <div
+      v-else-if="poisGalleryCoverImage"
+      class="event-cover"
+      :style="{ backgroundImage: `url(${poisGalleryCoverImage})` }"
     />
     <div
       v-else-if="activeFallbackImage"
@@ -50,18 +55,70 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const fallbackGallery = computed(() => {
-  const gallery = props.event.fallbackGallery;
-  if (!Array.isArray(gallery)) {
+const normalizeImageUrl = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const normalizeGallery = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
     return [];
   }
 
-  return gallery.map((url) => url.trim()).filter((url) => url.length > 0);
+  const uniqueUrls = new Set<string>();
+  for (const item of value) {
+    const normalizedUrl = normalizeImageUrl(item);
+    if (!normalizedUrl) {
+      continue;
+    }
+    uniqueUrls.add(normalizedUrl);
+  }
+
+  return Array.from(uniqueUrls);
+};
+
+const readRecordValue = (value: unknown, key: string): unknown => {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  return (value as Record<string, unknown>)[key];
+};
+
+const coverImage = computed(() => normalizeImageUrl(props.event.coverImage));
+
+const poisGallery = computed(() => {
+  const pois = readRecordValue(props.event, "pois");
+  if (!Array.isArray(pois)) {
+    return [];
+  }
+
+  const uniqueUrls = new Set<string>();
+  for (const poi of pois) {
+    const gallery = readRecordValue(poi, "gallery");
+    for (const imageUrl of normalizeGallery(gallery)) {
+      uniqueUrls.add(imageUrl);
+    }
+  }
+
+  return Array.from(uniqueUrls);
 });
+
+const poisGalleryCoverImage = computed(() => poisGallery.value[0] ?? null);
+
+const fallbackGallery = computed(() => normalizeGallery(props.event.fallbackGallery));
 
 const fallbackIndex = ref(0);
 const activeFallbackImage = computed(() => {
-  if (props.event.coverImage || fallbackGallery.value.length === 0) {
+  if (
+    coverImage.value ||
+    poisGalleryCoverImage.value ||
+    fallbackGallery.value.length === 0
+  ) {
     return null;
   }
 
@@ -75,30 +132,40 @@ watch(fallbackGallery, () => {
 
 let fallbackTimerId: number | null = null;
 
-watchEffect(() => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (props.event.coverImage || fallbackGallery.value.length <= 1) {
-    if (fallbackTimerId !== null) {
-      window.clearInterval(fallbackTimerId);
-      fallbackTimerId = null;
-    }
-    return;
-  }
-
-  fallbackTimerId = window.setInterval(() => {
-    fallbackIndex.value =
-      (fallbackIndex.value + 1) % fallbackGallery.value.length;
-  }, 2200);
-});
-
-onBeforeUnmount(() => {
+const clearFallbackTimer = () => {
   if (fallbackTimerId !== null) {
     window.clearInterval(fallbackTimerId);
     fallbackTimerId = null;
   }
+};
+
+watchEffect((onCleanup) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (
+    coverImage.value ||
+    poisGalleryCoverImage.value ||
+    fallbackGallery.value.length <= 1
+  ) {
+    clearFallbackTimer();
+    return;
+  }
+
+  clearFallbackTimer();
+  fallbackTimerId = window.setInterval(() => {
+    fallbackIndex.value =
+      (fallbackIndex.value + 1) % fallbackGallery.value.length;
+  }, 2200);
+
+  onCleanup(() => {
+    clearFallbackTimer();
+  });
+});
+
+onBeforeUnmount(() => {
+  clearFallbackTimer();
 });
 
 const handleClick = () => {

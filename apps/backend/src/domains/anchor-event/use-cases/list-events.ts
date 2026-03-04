@@ -20,9 +20,25 @@ export interface AnchorEventSummary {
   coverImage: string | null;
   locationCount: number;
   locationPool: string[];
+  pois: Array<{
+    id: string;
+    gallery: string[];
+  }>;
   fallbackGallery: string[];
   status: string;
   createdAt: string;
+}
+
+const LOCATION_LOOKUP_PUNCTUATION_RE = /[\s\u3000\-_/.,，。、()（）[\]【】·•]/g;
+
+function normalizeLocationLookupKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(LOCATION_LOOKUP_PUNCTUATION_RE, "")
+    .replace(/校区/g, "")
+    .replace(/校园/g, "")
+    .replace(/校/g, "");
 }
 
 function getLocationLabels(event: AnchorEvent): string[] {
@@ -32,6 +48,10 @@ function getLocationLabels(event: AnchorEvent): string[] {
 function toSummary(
   e: AnchorEvent,
   locationPool: string[],
+  pois: Array<{
+    id: string;
+    gallery: string[];
+  }>,
   fallbackGallery: string[],
 ): AnchorEventSummary {
   return {
@@ -42,6 +62,7 @@ function toSummary(
     coverImage: e.coverImage,
     locationCount: Array.isArray(e.locationPool) ? e.locationPool.length : 0,
     locationPool,
+    pois,
     fallbackGallery,
     status: e.status,
     createdAt: e.createdAt.toISOString(),
@@ -58,25 +79,73 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
     }
   }
 
-  const pois = await poiRepo.findByIds(Array.from(uniqueLocationLabels));
-  const fallbackGalleryByPoiId = new Map<string, string[]>();
+  const locationLabels = Array.from(uniqueLocationLabels);
+  const pois = await poiRepo.findByIds(locationLabels);
+  const poiById = new Map<string, { id: string; gallery: string[] }>();
   for (const poi of pois) {
-    fallbackGalleryByPoiId.set(poi.id, poi.gallery);
+    poiById.set(poi.id, {
+      id: poi.id,
+      gallery: poi.gallery,
+    });
+  }
+
+  const needNormalizedFallback = pois.length < locationLabels.length;
+  const poisByNormalizedId = new Map<string, Array<{ id: string; gallery: string[] }>>();
+  if (needNormalizedFallback) {
+    const allPois = await poiRepo.listAll();
+    for (const poi of allPois) {
+      const normalizedPoiId = normalizeLocationLookupKey(poi.id);
+      if (!normalizedPoiId) {
+        continue;
+      }
+
+      const existingPois = poisByNormalizedId.get(normalizedPoiId) ?? [];
+      existingPois.push({
+        id: poi.id,
+        gallery: poi.gallery,
+      });
+      poisByNormalizedId.set(normalizedPoiId, existingPois);
+    }
   }
 
   return events.map((event) => {
     const locationPool = getLocationLabels(event);
+    const matchedPoisById = new Map<string, { id: string; gallery: string[] }>();
     const fallbackGallerySet = new Set<string>();
 
     for (const label of locationPool) {
-      const gallery = fallbackGalleryByPoiId.get(label) ?? [];
-      for (const imageUrl of gallery) {
-        const normalizedUrl = imageUrl.trim();
-        if (!normalizedUrl) continue;
-        fallbackGallerySet.add(normalizedUrl);
+      const exactPoi = poiById.get(label);
+      if (exactPoi) {
+        matchedPoisById.set(exactPoi.id, exactPoi);
+        for (const imageUrl of exactPoi.gallery) {
+          const normalizedUrl = imageUrl.trim();
+          if (!normalizedUrl) continue;
+          fallbackGallerySet.add(normalizedUrl);
+        }
+        continue;
+      }
+
+      if (needNormalizedFallback) {
+        const normalizedLabel = normalizeLocationLookupKey(label);
+        if (normalizedLabel) {
+          const normalizedPois = poisByNormalizedId.get(normalizedLabel) ?? [];
+          for (const normalizedPoi of normalizedPois) {
+            matchedPoisById.set(normalizedPoi.id, normalizedPoi);
+            for (const imageUrl of normalizedPoi.gallery) {
+              const normalizedUrl = imageUrl.trim();
+              if (!normalizedUrl) continue;
+              fallbackGallerySet.add(normalizedUrl);
+            }
+          }
+        }
       }
     }
 
-    return toSummary(event, locationPool, Array.from(fallbackGallerySet));
+    return toSummary(
+      event,
+      locationPool,
+      Array.from(matchedPoisById.values()),
+      Array.from(fallbackGallerySet),
+    );
   });
 }

@@ -23,19 +23,12 @@
 
       <!-- Batch tabs -->
       <div v-if="detail.batches.length > 0" class="batch-section">
-        <div class="batch-tabs" role="tablist">
-          <button
-            v-for="(batch, index) in detail.batches"
-            :key="batch.id"
-            role="tab"
-            :aria-selected="selectedBatchIndex === index"
-            class="batch-tab"
-            :class="{ 'batch-tab--active': selectedBatchIndex === index }"
-            @click="selectedBatchIndex = index"
-          >
-            {{ formatBatchLabel(batch.timeWindow, index) }}
-          </button>
-        </div>
+        <TabBar
+          :items="batchTabs"
+          :model-value="selectedBatchIndex"
+          :aria-label="t('anchorEvent.batchLabel')"
+          @update:model-value="handleBatchTabChange"
+        />
 
         <!-- Selected batch PRs -->
         <div v-if="selectedBatch" class="batch-content" role="tabpanel">
@@ -74,6 +67,7 @@ import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/components/common/PageHeader.vue";
+import TabBar from "@/components/common/TabBar.vue";
 import AnchorEventPRCard from "@/components/event/AnchorEventPRCard.vue";
 import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
 import { usePoisByIds } from "@/queries/usePoisByIds";
@@ -96,6 +90,19 @@ const eventId = computed(() => {
 const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
 
 const selectedBatchIndex = ref(0);
+
+const batchTabs = computed(() => {
+  const batches = detail.value?.batches ?? [];
+  return batches.map((batch, index) => ({
+    key: index,
+    label: formatBatchLabel(batch.timeWindow, index),
+  }));
+});
+
+const handleBatchTabChange = (value: string | number) => {
+  if (typeof value !== "number") return;
+  selectedBatchIndex.value = value;
+};
 
 const selectedBatch = computed(() => {
   if (!detail.value?.batches) return null;
@@ -202,32 +209,12 @@ function formatBatchLabel(
   color: var(--sys-color-on-surface-variant);
 }
 
-/* Batch tabs */
-.batch-tabs {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.5rem;
+.batch-section {
   margin-bottom: 1rem;
 }
 
-.batch-tab {
-  flex-shrink: 0;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: transparent;
-  color: var(--sys-color-on-surface);
-  font-size: 0.8125rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &--active {
-    background: var(--sys-color-primary);
-    color: var(--sys-color-on-primary);
-    border-color: var(--sys-color-primary);
-  }
+.batch-section :deep(.tab-bar) {
+  margin-bottom: 1rem;
 }
 
 /* PR list */

@@ -133,10 +133,13 @@ watchEffect(() => {
 .event-highlights {
   display: flex;
   flex-direction: column;
-  gap: clamp(1rem, 4vw, 1.8rem);
+  gap: calc(var(--sys-spacing-lg) + var(--sys-spacing-med));
   width: 100%;
   min-width: 0;
   min-height: 0;
+  position: relative;
+  isolation: isolate;
+  --highlight-rail-inset: clamp(0.5rem, 2vw, 2rem);
 }
 
 .highlights-header {
@@ -144,6 +147,8 @@ watchEffect(() => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
+  position: relative;
+  z-index: 4;
 
   h2 {
     @include mx.pu-font(headline-small);
@@ -162,6 +167,12 @@ watchEffect(() => {
 .empty-state,
 .highlights-list {
   @include mx.pu-motion-enter(0.65rem);
+}
+
+.state-text,
+.empty-state {
+  position: relative;
+  z-index: 1;
 }
 
 .state-text {
@@ -191,19 +202,28 @@ watchEffect(() => {
   list-style: none;
   display: flex;
   flex-direction: row;
-  width: 100%;
-  max-width: 100%;
+  width: 100vw;
+  max-width: none;
   min-width: 0;
   gap: clamp(0.8rem, 3vw, 1.2rem);
   margin: 0;
-  padding: 0 0 clamp(0.2rem, 1.2vw, 0.45rem);
+  margin-top: clamp(0.18rem, 0.7vw, 0.42rem);
+  margin-inline: calc(50% - 50vw);
+  padding-top: 0;
+  padding-left: calc(var(--highlight-rail-inset) + var(--pu-safe-left));
+  padding-right: calc(var(--highlight-rail-inset) + var(--pu-safe-right));
+  padding-bottom: clamp(0.26rem, 1.3vw, 0.52rem);
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: 0;
+  scroll-padding-inline: calc(
+    var(--highlight-rail-inset) + var(--pu-safe-left)
+  );
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
+  position: relative;
+  z-index: 3;
 }
 
 .highlight-item {

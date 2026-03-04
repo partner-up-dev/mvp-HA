@@ -7,6 +7,7 @@ import { trackEvent } from "@/shared/analytics/track";
 import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
+import PRFormCreatePage from "@/pages/PRFormCreatePage.vue";
 import PREconomyPage from "@/pages/PREconomyPage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
@@ -41,6 +42,14 @@ const routes: RouteRecordRaw[] = [
     path: "/pr/new",
     name: "pr-new",
     component: PRCreatePage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/pr/new/form",
+    name: "pr-form-new",
+    component: PRFormCreatePage,
     meta: {
       wechatSharePolicy: "route",
     },

@@ -117,8 +117,9 @@ const footerNavLinks = computed(() => [
   align-items: center;
   width: fit-content;
   min-height: 2.75rem;
-  text-decoration: none;
   color: var(--sys-color-on-surface-variant);
+  text-decoration: none;
+
   transition:
     color 180ms ease,
     opacity 180ms ease;
@@ -139,8 +140,14 @@ const footerNavLinks = computed(() => [
     margin-left: var(--sys-spacing-xs);
     display: inline-block;
     vertical-align: middle;
+    // color: var(--sys-color-secondary);
     @include mx.pu-icon(medium);
   }
+
+  // .footer-nav-label {
+  //   text-decoration: underline;
+  //   text-underline-offset: 3px;
+  // }
 
   &:hover {
     color: var(--sys-color-on-surface);
