@@ -10,7 +10,10 @@
       </section>
 
       <section class="home-section home-section--event">
-        <HomeEventSectionV2 class="event-canvas" />
+        <div class="section-paper section-paper--event">
+          <HomeEventHighlights class="event-canvas" />
+          <HomeEventPlazaEntry />
+        </div>
       </section>
 
       <section class="home-section home-section--creator">
@@ -50,7 +53,8 @@ import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import HomeHero from "@/widgets/home/HomeHero.vue";
 import HomeValueProps from "@/widgets/home/HomeValueProps.vue";
-import HomeEventSectionV2 from "@/widgets/home/HomeEventSectionV2.vue";
+import HomeEventHighlights from "@/widgets/home/HomeEventHighlights.vue";
+import HomeEventPlazaEntry from "@/widgets/home/HomeEventPlazaEntry.vue";
 import HomeBookmarkNudge from "@/widgets/home/HomeBookmarkNudge.vue";
 import HomeFooter from "@/widgets/home/HomeFooter.vue";
 
@@ -121,7 +125,8 @@ onUnmounted(() => {
   animation: home-glow-drift-b 14s ease-in-out infinite alternate;
 }
 
-.home-page > * {
+.home-page > .home-flow,
+.home-page > .home-section--footer {
   position: relative;
   z-index: 1;
 }
@@ -172,10 +177,6 @@ onUnmounted(() => {
 .event-canvas {
   width: 100%;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(0.95rem, 3.4vw, 1.35rem);
-  padding: clamp(0.9rem, 3.2vw, 1.2rem) 0;
 }
 
 .section-paper {
@@ -192,6 +193,10 @@ onUnmounted(() => {
 }
 
 .section-paper--creator {
+}
+
+.section-paper--event {
+  justify-content: flex-start;
 }
 
 .section-header {

@@ -1,6 +1,11 @@
 <template>
   <Transition name="nudge-fade">
-    <aside v-if="isVisible" class="bookmark-nudge" role="status" aria-live="polite">
+    <aside
+      v-if="isVisible"
+      class="bookmark-nudge"
+      role="status"
+      aria-live="polite"
+    >
       <button
         class="dismiss-btn"
         type="button"
@@ -20,11 +25,23 @@
       </p>
 
       <div class="nudge-actions">
-        <button class="nudge-action nudge-action--ghost" type="button" @click="handleBookmarkHint">
+        <button
+          class="nudge-action nudge-action--ghost"
+          type="button"
+          @click="handleBookmarkHint"
+        >
           {{ t("home.bookmarkNudge.bookmarkAction") }}
         </button>
-        <button class="nudge-action nudge-action--primary" type="button" @click="handleCopyLink">
-          {{ copied ? t("home.bookmarkNudge.copiedAction") : t("home.bookmarkNudge.copyAction") }}
+        <button
+          class="nudge-action nudge-action--primary"
+          type="button"
+          @click="handleCopyLink"
+        >
+          {{
+            copied
+              ? t("home.bookmarkNudge.copiedAction")
+              : t("home.bookmarkNudge.copyAction")
+          }}
         </button>
       </div>
     </aside>
@@ -94,15 +111,15 @@ const handleDismiss = () => {
   transform: translateX(-50%);
   bottom: calc(var(--sys-spacing-med) + var(--pu-safe-bottom));
   width: min(100% - (var(--sys-spacing-med) * 2), 30rem);
-  background: var(--sys-color-surface-container-lowest);
+  background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-med);
   padding: var(--sys-spacing-med);
-  @include mx.pu-elevation(2);
   z-index: 20;
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-xs);
+  @include mx.pu-elevation(4);
 }
 
 .dismiss-btn {
