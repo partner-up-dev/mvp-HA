@@ -78,7 +78,7 @@ src/
 - 公众号提醒交互: 详情页新增“公众号提醒”开关；微信环境且已登录时可开启/关闭（`GET/POST /api/wechat/reminders/subscription`），非微信或未登录时展示降级提示。
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；微信内置 WebView 分享卡片（PR 详情页支持缩略图卡片，首页/创建页/联系客服页可直接分享至聊天与朋友圈）；小红书文案与海报生成、下载并跳转 App。
 - 国际化能力: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案位于 `src/locales/zh-CN.jsonc`，使用 `MessageSchema` 提供类型支持。
-- 客服联系能力: 首页与各页面页脚支持“联系客服”入口；`/contact-support` 页面会根据微信内外环境自动跳转企业微信客服链接（优先读取后端公共配置，失败时回退默认链接），`/contact-author` 保留兼容重定向。
+- 客服联系能力: 首页与各页面页脚保留“联系作者”入口（跳转 `/contact-support`）；`/contact-support` 页面会根据微信内外环境自动跳转企业微信客服链接（优先读取后端公共配置，加载中/失败/缺失时回退默认链接），并提供前往 `/contact-author` 的作者反馈入口。
 
 ### Known Limitations & Mocks
 

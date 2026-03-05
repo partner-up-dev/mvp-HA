@@ -47,7 +47,7 @@ These are top-most glossary, read more in `docs/product/glossary.md`:
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；支持微信聊天/朋友圈分享（WeChat WebView JS-SDK，PR 详情页可生成缩略图卡片，首页/创建页/联系客服页可直接配置分享卡片）；支持小红书文案与海报生成并下载/打开 App 分享。
 - 微信登录能力: 已接入微信 OAuth 基础设施（`/api/wechat/oauth/session|login|callback|logout`），前端在页面进入时会自动尝试登录（仅微信 WebView 触发）；加入/退出/确认/签到会强制校验登录态。
 - 前端国际化: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案集中在 `apps/frontend/src/locales/zh-CN.jsonc`，并通过 `MessageSchema` 进行类型约束。
-- 客服联系: 首页与页面底部提供“联系客服”入口；`/contact-support` 页面按微信内外环境自动跳转企业微信客服链接，支持后端公共配置覆盖并在缺失时回退默认链接（`/contact-author` 保留兼容重定向）。
+- 客服联系: 首页与页面底部保留“联系作者”入口（统一跳转 `/contact-support`）；`/contact-support` 页面按微信内外环境自动跳转企业微信客服链接，并提供前往 `/contact-author` 的作者反馈入口；客服链接支持后端公共配置覆盖并在加载中/失败/缺失时回退默认链接。
 - 后端领域拆分: `PartnerRequestService` 已拆分为独立 use-case 函数（INFRA-01）；引入 Outbox 事件骨架（INFRA-02）、统一 JobRunner（INFRA-03）、埋点 ingest 端点（INFRA-04）、运营日志（INFRA-05）。
 
 ### Known Limitations & Mocks

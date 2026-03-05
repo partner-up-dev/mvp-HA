@@ -9,6 +9,7 @@ import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
 import PRFormCreatePage from "@/pages/PRFormCreatePage.vue";
 import PREconomyPage from "@/pages/PREconomyPage.vue";
+import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
 import AnchorEventPage from "@/pages/AnchorEventPage.vue";
@@ -64,11 +65,11 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: "/contact-author",
-    redirect: (to) => ({
-      path: "/contact-support",
-      query: to.query,
-      hash: to.hash,
-    }),
+    name: "contact-author",
+    component: ContactAuthorPage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
   },
   {
     path: "/events",
