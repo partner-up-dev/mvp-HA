@@ -1,19 +1,32 @@
 <template>
   <div class="contact-support-page">
-    <PageHeader :title="t('contactAuthorPage.title')" @back="goHome" />
+    <PageHeader :title="t('contactSupportPage.title')" @back="goHome" />
 
     <main class="page-main">
-      <p class="description">{{ t("contactAuthorPage.description") }}</p>
-      <a class="support-action" :href="supportLink">
-        {{ t("home.contactAuthorAction") }}
+      <p class="description">{{ t("contactSupportPage.description") }}</p>
+
+      <section class="guidance-list" :aria-label="t('contactSupportPage.guideTitle')">
+        <h2>{{ t("contactSupportPage.guideTitle") }}</h2>
+        <ul>
+          <li>{{ t("contactSupportPage.useCases.support") }}</li>
+          <li>{{ t("contactSupportPage.useCases.author") }}</li>
+        </ul>
+      </section>
+
+      <a class="support-action" :href="supportLink" target="_blank" rel="noopener noreferrer">
+        {{ t("contactSupportPage.supportAction") }}
       </a>
+
+      <RouterLink class="author-link" :to="{ name: 'contact-author' }">
+        {{ t("contactSupportPage.authorEntry") }}
+      </RouterLink>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/components/common/PageHeader.vue";
 import { isWeChatBrowser } from "@/lib/browser-detection";
@@ -48,16 +61,43 @@ const normalizeHttpUrl = (value: string | null | undefined): string | null => {
   }
 };
 
+const resolveSupportLink = (
+  configuredValue: string | null | undefined,
+  fallback: string,
+): string => {
+  return normalizeHttpUrl(configuredValue) ?? fallback;
+};
+
 const supportLinkWechatIn = computed(
-  () =>
-    normalizeHttpUrl(supportLinkWechatInQuery.data.value?.value) ??
-    DEFAULT_SUPPORT_LINK_WECHAT_IN,
+  () => {
+    if (
+      supportLinkWechatInQuery.isLoading.value ||
+      supportLinkWechatInQuery.error.value
+    ) {
+      return DEFAULT_SUPPORT_LINK_WECHAT_IN;
+    }
+
+    return resolveSupportLink(
+      supportLinkWechatInQuery.data.value?.value,
+      DEFAULT_SUPPORT_LINK_WECHAT_IN,
+    );
+  },
 );
 
 const supportLinkWechatOut = computed(
-  () =>
-    normalizeHttpUrl(supportLinkWechatOutQuery.data.value?.value) ??
-    DEFAULT_SUPPORT_LINK_WECHAT_OUT,
+  () => {
+    if (
+      supportLinkWechatOutQuery.isLoading.value ||
+      supportLinkWechatOutQuery.error.value
+    ) {
+      return DEFAULT_SUPPORT_LINK_WECHAT_OUT;
+    }
+
+    return resolveSupportLink(
+      supportLinkWechatOutQuery.data.value?.value,
+      DEFAULT_SUPPORT_LINK_WECHAT_OUT,
+    );
+  },
 );
 
 const supportLink = computed(() =>
@@ -91,7 +131,32 @@ const goHome = () => {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
   text-align: center;
-  max-width: 28ch;
+  max-width: 32ch;
+}
+
+.guidance-list {
+  width: min(100%, 33rem);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border-radius: var(--sys-radius-md);
+  background: var(--sys-color-surface-container);
+
+  h2 {
+    @include mx.pu-font(title-small);
+    margin: 0 0 var(--sys-spacing-xs);
+    color: var(--sys-color-on-surface);
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: var(--sys-spacing-xs);
+  }
+
+  li {
+    @include mx.pu-font(body-medium);
+    color: var(--sys-color-on-surface-variant);
+  }
 }
 
 .support-action {
@@ -118,6 +183,37 @@ const goHome = () => {
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: 2px;
+  }
+}
+
+.author-link {
+  @include mx.pu-font(label-large);
+  color: var(--sys-color-secondary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+    border-radius: var(--sys-radius-xs);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-main {
+    align-items: stretch;
+  }
+
+  .description,
+  .author-link {
+    text-align: center;
+  }
+
+  .support-action {
+    width: 100%;
   }
 }
 </style>

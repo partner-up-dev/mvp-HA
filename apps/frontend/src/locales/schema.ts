@@ -195,6 +195,17 @@ export interface MessageSchema {
     qrAlt: string;
     qrMissing: string;
   };
+  contactSupportPage: {
+    title: string;
+    description: string;
+    guideTitle: string;
+    supportAction: string;
+    authorEntry: string;
+    useCases: {
+      support: string;
+      author: string;
+    };
+  };
   createPage: {
     title: string;
     modeSwitchAria: string;
@@ -304,6 +315,7 @@ export interface MessageSchema {
       defaultShareTitle: string;
       pageDescriptionHome: string;
       pageDescriptionCreate: string;
+      pageDescriptionContactSupport: string;
       pageDescriptionContactAuthor: string;
       fallbackKeyText: string;
       thumbAlt: string;

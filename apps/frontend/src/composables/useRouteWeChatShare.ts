@@ -26,6 +26,11 @@ const resolveRouteShareCardText = (
       };
     case "contact-support":
       return {
+        title: `${i18n.global.t("contactSupportPage.title")} - ${i18n.global.t("app.name")}`,
+        desc: i18n.global.t("share.wechat.pageDescriptionContactSupport"),
+      };
+    case "contact-author":
+      return {
         title: `${i18n.global.t("contactAuthorPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionContactAuthor"),
       };
