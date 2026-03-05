@@ -3,8 +3,6 @@
     <PageHeader :title="t('contactSupportPage.title')" @back="goHome" />
 
     <main class="page-main">
-      <p class="description">{{ t("contactSupportPage.description") }}</p>
-
       <section class="guidance-list" :aria-label="t('contactSupportPage.guideTitle')">
         <h2>{{ t("contactSupportPage.guideTitle") }}</h2>
         <ul>
@@ -125,13 +123,6 @@ const goHome = () => {
   align-items: center;
   justify-content: center;
   gap: var(--sys-spacing-med);
-}
-
-.description {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
-  text-align: center;
-  max-width: 32ch;
 }
 
 .guidance-list {
