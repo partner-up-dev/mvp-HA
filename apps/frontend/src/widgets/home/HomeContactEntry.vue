@@ -1,5 +1,5 @@
 <template>
-  <RouterLink class="contact-entry" :to="{ name: 'contact-author' }">
+  <RouterLink class="contact-entry" :to="{ name: 'contact-support' }">
     <div class="contact-copy">
       <h2>{{ t("home.contactAuthorTitle") }}</h2>
       <p>{{ t("home.contactAuthorDescription") }}</p>

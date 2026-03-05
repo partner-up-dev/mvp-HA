@@ -56,7 +56,7 @@ const footerNavLinks = computed(() => [
     label: t("createPage.title"),
   },
   {
-    routeName: "contact-author",
+    routeName: "contact-support",
     label: t("contactAuthorPage.title"),
   },
 ]);

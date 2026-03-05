@@ -1,6 +1,6 @@
 <template>
   <footer class="contact-author-footer">
-    <RouterLink class="contact-author-link" :to="{ name: 'contact-author' }">
+    <RouterLink class="contact-author-link" :to="{ name: 'contact-support' }">
       {{ t("contactAuthorPage.footerEntry") }}
     </RouterLink>
   </footer>

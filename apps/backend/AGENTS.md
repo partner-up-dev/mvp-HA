@@ -83,7 +83,7 @@ src/
 - 公众号提醒（5.2）: 新增 `GET/POST /api/wechat/reminders/subscription`；开启后为已加入槽位调度 `T-24h/T-2h` 任务（优先服务号订阅通知 `message/subscribe/bizsend`，模板消息通道保留兜底），退出/释放/关闭提醒会删除待执行任务，发送结果落库 `notification_deliveries`。
 - 签到回流（5.3）: 新增 `/api/pr/:id/check-in`，记录 `didAttend` / `wouldJoinAgain`，到场时槽位置为 `ATTENDED`。
 - 分享能力: 提供小红书文案/海报与微信缩略图生成能力，并支持缓存到后端。
-- 公共配置能力: 提供 `/api/config/public/:key` 只读配置查询（当前支持 `author_wechat_qr_code`）。
+- 公共配置能力: 提供 `/api/config/public/:key` 只读配置查询（当前支持 `author_wechat_qr_code`、`wecom_service_qr_code`、`wecom_support_link_wechat_in`、`wecom_support_link_wechat_out`）。
 - 领域拆分与用例化 (INFRA-01): `PartnerRequestService` 已拆分为独立 use-case 函数（`createPRFromNaturalLanguage`、`createPRFromStructured`、`joinPR`、`exitPR`、`confirmSlot`、`checkIn`、`updatePRStatus`、`updatePRContent` 等），业务规则归位到 `domains/pr-core/services/`（time-window、status-rules、slot-management）。原 `PartnerRequestService` 保留为薄 facade 以兼容存量调用方。
 - Outbox 事件骨架: 新增 `domain_events` 与 `outbox_events`（含 `operation_logs`）表；所有关键动作（create/join/exit/confirm/check-in/status-change/content-update）写出领域事件到 outbox。Outbox 消费支持请求尾批处理，并采用行锁 claim 防重复领取。
 - 任务执行框架 : `JobRunner` 已升级为 DB-backed 执行器（支持延迟/一次性任务、tolerance 窗口、租约与重试）；提供 `/internal/jobs/tick` 供外部定时触发，并支持请求尾 best-effort 补偿执行。

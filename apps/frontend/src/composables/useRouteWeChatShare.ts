@@ -24,7 +24,7 @@ const resolveRouteShareCardText = (
         title: `${i18n.global.t("createPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionCreate"),
       };
-    case "contact-author":
+    case "contact-support":
       return {
         title: `${i18n.global.t("contactAuthorPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionContactAuthor"),

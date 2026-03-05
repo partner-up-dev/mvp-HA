@@ -34,9 +34,9 @@
     "structuredEntryPrefix": "找搭子一起",
     "naturalLanguageEntry": "刚刚在群里发过了？",
     "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
-    "contactAuthorTitle": "功能建议 / 问题反馈",
-    "contactAuthorDescription": "可扫码联系作者，反馈 Bug 或提出新功能建议。",
-    "contactAuthorAction": "联系作者",
+    "contactAuthorTitle": "联系客服",
+    "contactAuthorDescription": "如有功能建议或问题反馈，可联系企业微信客服。",
+    "contactAuthorAction": "联系客服",
     "landing": {
       "heroTitle": "今天，不用一个人",
       "heroSubtitle": "在搭一把，快速、便捷、安全地找到适合你的搭子",
@@ -191,11 +191,11 @@
     }
   },
   "contactAuthorPage": {
-    "title": "联系作者",
-    "description": "扫码添加作者微信，欢迎反馈功能建议或问题。",
-    "footerEntry": "联系作者（功能建议 / Bug 反馈）",
-    "qrAlt": "作者微信二维码",
-    "qrMissing": "暂未配置作者微信二维码"
+    "title": "联系客服",
+    "description": "点击下方按钮，系统将根据当前环境自动跳转到企业微信客服。",
+    "footerEntry": "联系客服（功能建议 / Bug 反馈）",
+    "qrAlt": "企业微信客服二维码",
+    "qrMissing": "暂未配置企业微信客服二维码"
   },
   "createPage": {
     "title": "创建搭子请求",
@@ -368,7 +368,7 @@
       "defaultShareTitle": "搭一把 - 轻松安全找搭子",
       "pageDescriptionHome": "一键把群聊里的搭子需求变成可加入的页面，马上发起一次真实协作。",
       "pageDescriptionCreate": "把你的搭子需求整理成清晰卡片，发布后可直接在微信里分享给朋友。",
-      "pageDescriptionContactAuthor": "有功能建议或发现问题？来这里直接联系作者，反馈会被优先看到。",
+      "pageDescriptionContactAuthor": "有功能建议或发现问题？来这里直接联系客服，反馈会被优先处理。",
       "fallbackKeyText": "搭",
       "thumbAlt": "微信分享缩略图",
       "selfLabel": "你"
