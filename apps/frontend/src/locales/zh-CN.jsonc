@@ -34,9 +34,9 @@
     "structuredEntryPrefix": "找搭子一起",
     "naturalLanguageEntry": "刚刚在群里发过了？",
     "naturalLanguagePanelTitle": "复制过来，自然语言自动识别",
-    "contactAuthorTitle": "联系作者",
-    "contactAuthorDescription": "如有功能建议或问题反馈，可联系团队作者。",
-    "contactAuthorAction": "联系作者",
+    "contactAuthorTitle": "联系团队",
+    "contactAuthorDescription": "如有功能建议或问题反馈，可联系团队创始人。",
+    "contactAuthorAction": "联系团队",
     "landing": {
       "heroTitle": "今天，不用一个人",
       "heroSubtitle": "在搭一把，快速、便捷、安全地找到适合你的搭子",
