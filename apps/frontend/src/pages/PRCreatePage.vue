@@ -1,8 +1,10 @@
 <template>
-  <div class="create-page">
-    <PRCreateHeader @back="goHome" />
+  <PageScaffoldFlow class="create-page">
+    <template #header>
+      <PRCreateHeader @back="goHome" />
+    </template>
 
-    <main class="page-main">
+    <div class="page-main">
       <TabBar
         :items="modeTabs"
         :model-value="activeMode"
@@ -28,32 +30,42 @@
         <PRForm
           ref="formRef"
           :initial-fields="initialFields"
-          :pin-pr-id="createdPrId"
-          :pin-auto-generate="true"
-          :pin-show-label="true"
-          :pin-show-info="true"
           @submit="handleSubmit"
         />
       </section>
-    </main>
+    </div>
 
-    <PRCreateFooterActions
-      v-if="activeMode === 'form'"
-      :pending="createMutation.isPending.value"
-      :pending-status="pendingStatus"
-      @submit-as="submitAs"
-    />
+    <template #actions>
+      <PRCreateFooterActions
+        v-if="activeMode === 'form'"
+        :pending="
+          createMutation.isPending.value || publishMutation.isPending.value
+        "
+        :pending-status="pendingStatus"
+        @submit-as="submitAs"
+      />
+    </template>
 
-    <Footer />
+    <template #footer>
+      <Footer />
+    </template>
 
     <ErrorToast
-      v-if="activeMode === 'form' && createMutation.isError.value"
-      :message="
-        createMutation.error.value?.message || t('createPage.createFailed')
+      v-if="
+        activeMode === 'form' &&
+        (createMutation.isError.value || publishMutation.isError.value)
       "
-      @close="createMutation.reset()"
+      :message="
+        createMutation.error.value?.message ||
+        publishMutation.error.value?.message ||
+        t('createPage.createFailed')
+      "
+      @close="
+        createMutation.reset();
+        publishMutation.reset();
+      "
     />
-  </div>
+  </PageScaffoldFlow>
 </template>
 
 <script setup lang="ts">
@@ -65,6 +77,7 @@ import NLPRForm from "@/components/pr/NLPRForm.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import Footer from "@/components/common/Footer.vue";
 import TabBar from "@/components/common/TabBar.vue";
+import PageScaffoldFlow from "@/widgets/common/PageScaffoldFlow.vue";
 import PRCreateHeader from "@/widgets/pr-create/PRCreateHeader.vue";
 import PRCreateFooterActions from "@/widgets/pr-create/PRCreateFooterActions.vue";
 import { usePRCreateFlow } from "@/features/pr-create/usePRCreateFlow";
@@ -86,10 +99,10 @@ const { t } = useI18n();
 const route = useRoute();
 const {
   createMutation,
+  publishMutation,
   initialFields,
   formRef,
   pendingStatus,
-  createdPrId,
   submitAs,
   handleSubmit,
   goHome,
@@ -117,6 +130,7 @@ const setMode = (mode: "nl" | "form") => {
   activeMode.value = mode;
   if (mode === "nl") {
     createMutation.reset();
+    publishMutation.reset();
   }
 };
 
@@ -127,20 +141,7 @@ const handleModeChange = (value: string | number) => {
 </script>
 
 <style lang="scss" scoped>
-.create-page {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  min-height: var(--pu-vh);
-  display: flex;
-  flex-direction: column;
-}
-
 .page-main {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-med);

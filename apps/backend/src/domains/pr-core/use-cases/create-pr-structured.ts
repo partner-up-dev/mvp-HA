@@ -1,16 +1,18 @@
 import bcrypt from "bcryptjs";
-import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type {
   PartnerRequestFields,
-  CreatePRStructuredStatus,
 } from "../../../entities/partner-request";
+import type { UserId } from "../../../entities/user";
 import {
   assertPartnerBoundsValid,
   initializeSlotsForPR,
 } from "../services/slot-management.service";
 import { resolveCommunityEconomicPolicy } from "../services/economic-policy.service";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import {
+  resolveDraftCreator,
+  type CreatorIdentityInput,
+} from "../services/creator-identity.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
@@ -26,19 +28,24 @@ function buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
   return parts.join(" | ");
 }
 
+const generateLegacyPin = (): string =>
+  String(Math.floor(Math.random() * 10_000)).padStart(4, "0");
+
+export type CreatePRResult = {
+  id: number;
+  createdBy: UserId | null;
+};
+
 export async function createPRFromStructured(
   fields: PartnerRequestFields,
-  pin: string,
-  status: CreatePRStructuredStatus,
-  creatorOpenId?: string | null,
-): Promise<{ id: number }> {
-  if (!/^\d{4}$/.test(pin)) {
-    throw new HTTPException(400, { message: "PIN must be exactly 4 digits" });
-  }
-
+  creatorIdentity: CreatorIdentityInput,
+): Promise<CreatePRResult> {
   assertPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
 
-  const pinHash = await bcrypt.hash(pin, 10);
+  const creator = await resolveDraftCreator(creatorIdentity);
+  const createdBy = creator?.id ?? null;
+
+  const pinHash = await bcrypt.hash(generateLegacyPin(), 10);
   const economicPolicy = resolveCommunityEconomicPolicy();
   const request = await prRepo.create({
     rawText: buildStructuredFallbackRawText(fields),
@@ -52,7 +59,8 @@ export async function createPRFromStructured(
     budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
-    status,
+    status: "DRAFT",
+    createdBy,
     resourceBookingDeadlineAt: economicPolicy.resourceBookingDeadlineAt,
     paymentModelApplied: economicPolicy.paymentModelApplied,
     discountRateApplied: economicPolicy.discountRateApplied,
@@ -62,19 +70,14 @@ export async function createPRFromStructured(
     economicPolicyVersionApplied: economicPolicy.economicPolicyVersionApplied,
   });
 
-  const creatorUserId = creatorOpenId
-    ? (await resolveUserByOpenId(creatorOpenId)).id
-    : null;
-
   await initializeSlotsForPR(
     request.id,
     fields.minPartners,
     fields.maxPartners,
-    creatorUserId,
+    null,
     fields.time,
   );
 
-  // Emit domain event
   const event = await eventBus.publish(
     "pr.created",
     "partner_request",
@@ -82,19 +85,22 @@ export async function createPRFromStructured(
     {
       prId: request.id,
       source: "structured",
-      status,
-      creatorOpenId: creatorOpenId ?? null,
+      status: "DRAFT",
+      creatorOpenId: creatorIdentity.oauthOpenId,
     },
   );
   void writeToOutbox(event);
 
   operationLogService.log({
-    actorId: creatorOpenId ?? null,
+    actorId: createdBy,
     action: "pr.create_structured",
     aggregateType: "partner_request",
     aggregateId: String(request.id),
-    detail: { status },
+    detail: { status: "DRAFT" },
   });
 
-  return { id: request.id };
+  return {
+    id: request.id,
+    createdBy,
+  };
 }

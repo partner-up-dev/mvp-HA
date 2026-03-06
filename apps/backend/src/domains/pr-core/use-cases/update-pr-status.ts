@@ -1,7 +1,7 @@
-import bcrypt from "bcryptjs";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId, PRStatusManual } from "../../../entities/partner-request";
+import type { UserId } from "../../../entities/user";
 import { isActivatableStatus } from "../services/status-rules";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
@@ -13,18 +13,13 @@ const prRepo = new PartnerRequestRepository();
 export async function updatePRStatus(
   id: PRId,
   status: PRStatusManual,
-  pin: string,
+  actorUserId: UserId | null,
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
-
-  const isValid = await bcrypt.compare(pin, refreshedRequest.pinHash);
-  if (!isValid) {
-    throw new HTTPException(403, { message: "Invalid PIN" });
-  }
 
   const currentStatus = refreshedRequest.status as string;
   if (
@@ -58,7 +53,7 @@ export async function updatePRStatus(
   void writeToOutbox(event);
 
   operationLogService.log({
-    actorId: null,
+    actorId: actorUserId,
     action: "pr.update_status",
     aggregateType: "partner_request",
     aggregateId: String(id),

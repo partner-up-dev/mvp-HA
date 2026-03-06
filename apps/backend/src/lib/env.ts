@@ -32,6 +32,15 @@ const envSchema = z.object({
   // Frontend URL for share links
   FRONTEND_URL: z.string().min(1).optional(),
 
+  // Access token (JWT-like HMAC token) config.
+  AUTH_JWT_SECRET: z.string().min(16).default("dev-auth-secret-change-me"),
+  AUTH_JWT_EXPIRES_SECONDS: z.coerce.number().int().positive().default(86_400),
+  AUTH_JWT_RENEW_WINDOW_SECONDS: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(3_600),
+
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),
 

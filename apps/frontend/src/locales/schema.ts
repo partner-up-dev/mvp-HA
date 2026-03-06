@@ -151,10 +151,14 @@ export interface MessageSchema {
       secondaryCreateTitle: string;
       secondaryCreateDescription: string;
       secondaryCreateAction: string;
+      secondaryMineTitle: string;
+      secondaryMineDescription: string;
+      secondaryMineAction: string;
       footerIntroTitle: string;
       footerIntroBody: string;
       footerNavTitle: string;
       footerNavHome: string;
+      footerNavMine: string;
     };
     bookmarkNudge: {
       title: string;
@@ -238,6 +242,17 @@ export interface MessageSchema {
     slotNotJoined: string;
     editContent: string;
     modifyStatus: string;
+    publishDraft: {
+      title: string;
+      description: string;
+      action: string;
+      pending: string;
+    };
+    pinHelp: {
+      title: string;
+      description: string;
+      currentPin: string;
+    };
     metaFallbackTitle: string;
     metaFallbackDescription: string;
     metaTitleWithName: string;
@@ -269,6 +284,17 @@ export interface MessageSchema {
     title: string;
     empty: string;
     loading: string;
+    loadFailed: string;
+  };
+  myPrsPage: {
+    title: string;
+    description: string;
+    authHint: string;
+    createdTitle: string;
+    joinedTitle: string;
+    loading: string;
+    createdEmpty: string;
+    joinedEmpty: string;
     loadFailed: string;
   };
   dateTimeRangePicker: {
@@ -373,8 +399,6 @@ export interface MessageSchema {
     removePreference: string;
     notes: string;
     notesPlaceholder: string;
-    pin: string;
-    pinPlaceholder: string;
     requiredMark: string;
     advancedShow: string;
     advancedHide: string;
@@ -413,11 +437,14 @@ export interface MessageSchema {
   };
   errors: {
     createRequestFailed: string;
+    publishRequestFailed: string;
     updateStatusFailed: string;
     updateContentFailed: string;
     missingPartnerRequestId: string;
     fetchRequestFailed: string;
     fetchCreatedRequestsFailed: string;
+    fetchMyCreatedRequestsFailed: string;
+    fetchMyJoinedRequestsFailed: string;
     joinRequestFailed: string;
     exitRequestFailed: string;
     confirmSlotFailed: string;

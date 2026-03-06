@@ -4,9 +4,11 @@
 
 <script setup lang="ts">
 import { RouterView } from "vue-router";
+import { useAuthSessionBootstrap } from "@/composables/useAuthSessionBootstrap";
 import { useAutoWeChatLogin } from "@/composables/useAutoWeChatLogin";
 import { useRouteWeChatShare } from "@/composables/useRouteWeChatShare";
 
+useAuthSessionBootstrap();
 useAutoWeChatLogin();
 useRouteWeChatShare();
 </script>

@@ -26,18 +26,6 @@
       </span>
     </div>
 
-    <div v-if="!pinHidden" class="form-field pin-field">
-      <PinInput
-        v-model="pinModel"
-        :pr-id="pinPrId"
-        :auto-generate="pinAutoGenerate"
-        :allow-regenerate="pinAllowRegenerate"
-        :show-label="pinShowLabel"
-        :show-info="pinShowInfo"
-      />
-      <span v-if="errors.pin" class="error-message">{{ errors.pin }}</span>
-    </div>
-
     <button
       type="button"
       class="advanced-toggle"
@@ -137,26 +125,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import { useForm } from "vee-validate";
 import type { PartnerRequestFormInput } from "@/lib/validation";
-import {
-  partnerRequestFormOptionalPinValidationSchema,
-  partnerRequestFormValidationSchema,
-} from "@/lib/validation";
+import { partnerRequestFormValidationSchema } from "@/lib/validation";
 import DateTimeRangePicker from "@/components/pr/DateTimeRangePicker.vue";
-import PinInput from "@/components/common/PinInput.vue";
 import { clonePRFields, parseNullableNumber } from "./pr-form";
 
 const props = defineProps<{
   initialFields: PartnerRequestFields;
-  pinPrId?: PRId | null;
-  pinAutoGenerate?: boolean;
-  pinAllowRegenerate?: boolean;
-  pinShowLabel?: boolean;
-  pinShowInfo?: boolean;
-  pinRequired?: boolean;
-  pinHidden?: boolean;
 }>();
 const { t } = useI18n();
 
@@ -173,13 +150,9 @@ const {
   setFieldValue,
   meta,
 } = useForm<PartnerRequestFormInput>({
-  validationSchema:
-    props.pinRequired === false
-      ? partnerRequestFormOptionalPinValidationSchema
-      : partnerRequestFormValidationSchema,
+  validationSchema: partnerRequestFormValidationSchema,
   initialValues: {
     fields: clonePRFields(props.initialFields),
-    pin: "",
   },
 });
 
@@ -189,7 +162,6 @@ watch(
     resetForm({
       values: {
         fields: clonePRFields(nextFields),
-        pin: "",
       },
     });
   },
@@ -203,7 +175,6 @@ const [locationModel] = defineField("fields.location");
 const [budgetModel] = defineField("fields.budget");
 const [notesModel] = defineField("fields.notes");
 const [preferencesModel] = defineField("fields.preferences");
-const [pinModel] = defineField("pin");
 
 const titleInput = computed({
   get: () => titleModel.value ?? "",

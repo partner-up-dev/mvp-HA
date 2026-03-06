@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { createHash, randomInt } from "crypto";
+import { createHash } from "crypto";
 import { PartnerRequestService } from "../services/PartnerRequestService";
 import { WeComService } from "../services/WeComService";
 import { env } from "../lib/env";
@@ -70,7 +70,6 @@ const normalizeFrontendUrl = (raw: string) => {
   return withProtocol.replace(/\/+$/, "");
 };
 
-const generatePin = () => `${randomInt(0, 10_000)}`.padStart(4, "0");
 const getShanghaiWeekdayLabel = (date: Date): string => {
   return new Intl.DateTimeFormat("zh-CN", {
     weekday: "short",
@@ -286,12 +285,14 @@ export const wecomRoute = app
       const nowWeekday = getShanghaiWeekdayLabel(
         new Date(timestampSeconds * 1000),
       );
-      const pin = generatePin();
       const { id } = await prService.createPRFromNaturalLanguage(
         trimmedContent,
-        pin,
         nowIso,
         nowWeekday,
+        {
+          authenticatedUserId: null,
+          oauthOpenId: null,
+        },
       );
 
       const frontendUrl = env.FRONTEND_URL;
@@ -300,7 +301,7 @@ export const wecomRoute = app
       }
 
       const shareUrl = `${normalizeFrontendUrl(frontendUrl)}/pr/${id}`;
-      const reply = `搭子请求已创建：${shareUrl}\nPIN：${pin}`;
+      const reply = `搭子请求草稿已创建：${shareUrl}\n打开链接发布后会生成你的用户 PIN。`;
 
       await wecomService.sendTextMessage({
         toUser: fromUser,

@@ -26,6 +26,7 @@ export type PRDetailView = {
   budget: string | null;
   preferences: string[];
   notes: string | null;
+  createdBy?: string | null;
   prKind?: "ANCHOR" | "COMMUNITY";
   anchorEventId?: number | null;
   batchId?: number | null;

@@ -16,6 +16,7 @@ import {
   anchorEventBatches,
   type AnchorEventBatchId,
 } from "./anchor-event-batch";
+import { users, type UserId } from "./user";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
@@ -78,22 +79,17 @@ export const economicPolicyScopeSchema = z.enum([
 ]);
 export type EconomicPolicyScope = z.infer<typeof economicPolicyScopeSchema>;
 
-export const createPRStructuredStatusSchema = z.enum(["DRAFT", "OPEN"]);
+export const createPRStructuredStatusSchema = z.literal("DRAFT");
 export type CreatePRStructuredStatus = z.infer<
   typeof createPRStructuredStatusSchema
 >;
 
 export const pinSchema = z.string().regex(/^\d{4}$/, "PIN must be 4 digits");
 
-export const createStructuredPRSchema = z.object({
-  fields: partnerRequestFieldsSchema,
-  pin: pinSchema,
-  status: createPRStructuredStatusSchema,
-});
+export const createStructuredPRSchema = partnerRequestFieldsSchema;
 
 export const createNaturalLanguagePRSchema = z.object({
   rawText: z.string().min(1).max(2000),
-  pin: pinSchema,
   nowIso: z.string().datetime(),
   nowWeekday: weekdayLabelSchema.nullable().optional(),
 });
@@ -151,6 +147,9 @@ export const partnerRequests = pgTable("partner_requests", {
     .notNull()
     .default(sql`ARRAY[]::text[]`),
   notes: text("notes"),
+  createdBy: text("created_by")
+    .$type<UserId | null>()
+    .references(() => users.id, { onDelete: "set null" }),
   xiaohongshuPoster: jsonb("xiaohongshu_poster")
     .$type<XiaohongshuPosterCache | null>()
     .default(null),

@@ -1,5 +1,5 @@
 <template>
-  <div class="pr-economy-page">
+  <PageScaffold class="pr-economy-page">
     <header class="page-header">
       <router-link
         v-if="id !== null"
@@ -142,7 +142,7 @@
         </p>
       </div>
     </Modal>
-  </div>
+  </PageScaffold>
 </template>
 
 <script setup lang="ts">
@@ -153,6 +153,7 @@ import type { PRId } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import Modal from "@/components/common/Modal.vue";
+import PageScaffold from "@/widgets/common/PageScaffold.vue";
 import { usePR } from "@/queries/usePR";
 import { useReimbursementStatus } from "@/queries/useReimbursementStatus";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
@@ -292,16 +293,6 @@ const reimbursementReasonText = (
 </script>
 
 <style lang="scss" scoped>
-.pr-economy-page {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  min-height: var(--pu-vh);
-}
-
 .page-header {
   margin-bottom: var(--sys-spacing-lg);
 }

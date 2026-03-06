@@ -6,16 +6,20 @@
       :disabled="pending"
       @click="emit('submit-as', 'DRAFT')"
     >
-      {{ pending && pendingStatus === "DRAFT" ? t("createPage.savePending") : t("common.save") }}
+      {{
+        pending && pendingStatus === "DRAFT"
+          ? t("createPage.savePending")
+          : t("common.save")
+      }}
     </button>
     <button
       class="create-btn"
       type="button"
       :disabled="pending"
-      @click="emit('submit-as', 'OPEN')"
+      @click="emit('submit-as', 'PUBLISH')"
     >
       {{
-        pending && pendingStatus === "OPEN"
+        pending && pendingStatus === "PUBLISH"
           ? t("createPage.createPending")
           : t("common.create")
       }}
@@ -25,15 +29,15 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { CreatePRStructuredStatus } from "@partner-up-dev/backend";
+import type { CreateSubmissionMode } from "@/features/pr-create/usePRCreateFlow";
 
 defineProps<{
   pending: boolean;
-  pendingStatus: CreatePRStructuredStatus;
+  pendingStatus: CreateSubmissionMode;
 }>();
 
 const emit = defineEmits<{
-  "submit-as": [status: CreatePRStructuredStatus];
+  "submit-as": [status: CreateSubmissionMode];
 }>();
 
 const { t } = useI18n();
@@ -67,4 +71,3 @@ const { t } = useI18n();
   color: var(--sys-color-on-primary);
 }
 </style>
-

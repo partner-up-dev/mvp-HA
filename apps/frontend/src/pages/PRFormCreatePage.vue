@@ -1,35 +1,44 @@
 <template>
-  <div class="create-page">
-    <PRCreateHeader @back="goHome" />
+  <PageScaffoldFlow class="create-page">
+    <template #header>
+      <PRCreateHeader @back="goHome" />
+    </template>
 
-    <main class="page-main">
+    <div class="page-main">
       <PRForm
         ref="formRef"
         :initial-fields="initialFields"
-        :pin-pr-id="createdPrId"
-        :pin-auto-generate="true"
-        :pin-show-label="true"
-        :pin-show-info="true"
         @submit="handleSubmit"
       />
-    </main>
+    </div>
 
-    <PRCreateFooterActions
-      :pending="createMutation.isPending.value"
-      :pending-status="pendingStatus"
-      @submit-as="submitAs"
-    />
+    <template #actions>
+      <PRCreateFooterActions
+        :pending="
+          createMutation.isPending.value || publishMutation.isPending.value
+        "
+        :pending-status="pendingStatus"
+        @submit-as="submitAs"
+      />
+    </template>
 
-    <Footer />
+    <template #footer>
+      <Footer />
+    </template>
 
     <ErrorToast
-      v-if="createMutation.isError.value"
+      v-if="createMutation.isError.value || publishMutation.isError.value"
       :message="
-        createMutation.error.value?.message || t('createPage.createFailed')
+        createMutation.error.value?.message ||
+        publishMutation.error.value?.message ||
+        t('createPage.createFailed')
       "
-      @close="createMutation.reset()"
+      @close="
+        createMutation.reset();
+        publishMutation.reset();
+      "
     />
-  </div>
+  </PageScaffoldFlow>
 </template>
 
 <script setup lang="ts">
@@ -37,6 +46,7 @@ import { useI18n } from "vue-i18n";
 import PRForm from "@/components/pr/PRForm.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import Footer from "@/components/common/Footer.vue";
+import PageScaffoldFlow from "@/widgets/common/PageScaffoldFlow.vue";
 import PRCreateHeader from "@/widgets/pr-create/PRCreateHeader.vue";
 import PRCreateFooterActions from "@/widgets/pr-create/PRCreateFooterActions.vue";
 import { usePRCreateFlow } from "@/features/pr-create/usePRCreateFlow";
@@ -44,10 +54,10 @@ import { usePRCreateFlow } from "@/features/pr-create/usePRCreateFlow";
 const { t } = useI18n();
 const {
   createMutation,
+  publishMutation,
   initialFields,
   formRef,
   pendingStatus,
-  createdPrId,
   submitAs,
   handleSubmit,
   goHome,
@@ -55,18 +65,6 @@ const {
 </script>
 
 <style lang="scss" scoped>
-.create-page {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  min-height: var(--pu-vh);
-  display: flex;
-  flex-direction: column;
-}
-
 .page-main {
   flex: 1;
 }

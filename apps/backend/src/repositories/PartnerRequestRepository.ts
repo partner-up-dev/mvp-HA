@@ -12,6 +12,7 @@ import {
 } from "../entities/partner-request";
 import type { AnchorEventId } from "../entities/anchor-event";
 import type { AnchorEventBatchId } from "../entities/anchor-event-batch";
+import type { UserId } from "../entities/user";
 import { desc, eq, and, inArray } from "drizzle-orm";
 
 export class PartnerRequestRepository {
@@ -46,6 +47,14 @@ export class PartnerRequestRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async findByCreatorId(userId: UserId) {
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(eq(partnerRequests.createdBy, userId))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async updateStatus(id: PRId, status: PRStatus) {
     const result = await db
       .update(partnerRequests)
@@ -69,6 +78,15 @@ export class PartnerRequestRepository {
         preferences: fields.preferences,
         notes: fields.notes,
       })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async setCreatedBy(id: PRId, userId: UserId) {
+    const result = await db
+      .update(partnerRequests)
+      .set({ createdBy: userId })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] || null;

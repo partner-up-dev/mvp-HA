@@ -1,6 +1,8 @@
 <template>
-  <div class="contact-author-page">
-    <PageHeader :title="t('contactAuthorPage.title')" @back="goHome" />
+  <PageScaffoldCentered class="contact-author-page">
+    <template #header>
+      <PageHeader :title="t('contactAuthorPage.title')" @back="goHome" />
+    </template>
 
     <LoadingIndicator
       v-if="publicConfigQuery.isLoading.value"
@@ -17,7 +19,7 @@
       persistent
     />
 
-    <main v-else class="page-main">
+    <section v-else class="author-content">
       <p class="description">{{ t("contactAuthorPage.description") }}</p>
       <div class="qr-frame">
         <img
@@ -30,8 +32,8 @@
           {{ t("contactAuthorPage.qrMissing") }}
         </p>
       </div>
-    </main>
-  </div>
+    </section>
+  </PageScaffoldCentered>
 </template>
 
 <script setup lang="ts">
@@ -41,6 +43,7 @@ import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import PageHeader from "@/components/common/PageHeader.vue";
+import PageScaffoldCentered from "@/widgets/common/PageScaffoldCentered.vue";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
 
 const router = useRouter();
@@ -55,20 +58,10 @@ const goHome = () => {
 </script>
 
 <style lang="scss" scoped>
-.contact-author-page {
-  margin: 0 auto;
-  padding: var(--sys-spacing-med);
-  min-height: var(--pu-vh);
-  display: flex;
-  flex-direction: column;
-}
-
-.page-main {
-  flex: 1;
+.author-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: var(--sys-spacing-lg);
 }
 

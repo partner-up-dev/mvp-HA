@@ -8,20 +8,14 @@
     <PRForm
       ref="formRef"
       :initial-fields="initialFields"
-      :pin-auto-generate="false"
-      :pin-allow-regenerate="false"
-      :pin-show-info="false"
-      :pin-hidden="true"
-      :pin-required="false"
       @submit="handleSubmit"
     />
 
     <div class="modal-actions">
-      <div class="pin-input">
+      <div v-if="requiresPin" class="pin-input">
         <label>{{ t("modifyStatusModal.pinLabel") }}</label>
         <PinInput
           v-model="editPin"
-          :pr-id="prId"
           :auto-generate="false"
           :allow-regenerate="false"
           :show-label="false"
@@ -60,6 +54,7 @@ import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useUpdatePRContent } from "@/queries/useUpdatePRContent";
+import { useUserSessionStore, type AuthSessionPayload } from "@/stores/userSessionStore";
 import Modal from "@/components/common/Modal.vue";
 import SubmitButton from "@/components/common/SubmitButton.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
@@ -80,21 +75,33 @@ const emit = defineEmits<{
 }>();
 
 const updateMutation = useUpdatePRContent();
+const userSessionStore = useUserSessionStore();
 const formRef = ref<InstanceType<typeof PRForm> | null>(null);
 const editPin = ref("");
+const requiresPin = computed(() => userSessionStore.role === "anonymous");
 const isFormValid = computed(() => {
   const canSubmit = formRef.value?.canSubmit;
   const formOk = isRef(canSubmit) ? canSubmit.value : Boolean(canSubmit);
+  if (!requiresPin.value) {
+    return formOk;
+  }
   return formOk && editPin.value.length === 4;
 });
 
 const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
-  if (editPin.value.length !== 4) return;
-  await updateMutation.mutateAsync({
+  const pin = requiresPin.value ? editPin.value : undefined;
+  if (requiresPin.value && (!pin || pin.length !== 4)) return;
+
+  const result = await updateMutation.mutateAsync({
     id: props.prId,
     fields,
-    pin: editPin.value,
+    pin,
   });
+
+  const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
+  if (authPayload) {
+    userSessionStore.applyAuthSession(authPayload);
+  }
 
   emit("success");
   handleClose();

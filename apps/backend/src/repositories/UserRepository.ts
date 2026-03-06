@@ -3,6 +3,11 @@ import { db } from "../lib/db";
 import { users, type NewUser, type UserId } from "../entities/user";
 
 export class UserRepository {
+  async create(data: NewUser) {
+    const result = await db.insert(users).values(data).returning();
+    return result[0] ?? null;
+  }
+
   async findById(id: UserId) {
     const result = await db.select().from(users).where(eq(users.id, id));
     return result[0] ?? null;
@@ -18,6 +23,18 @@ export class UserRepository {
       .insert(users)
       .values(data)
       .onConflictDoNothing({ target: users.openId })
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async updatePinHash(userId: UserId, pinHash: string) {
+    const result = await db
+      .update(users)
+      .set({
+        pinHash,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
       .returning();
     return result[0] ?? null;
   }

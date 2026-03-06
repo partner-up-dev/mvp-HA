@@ -8,6 +8,7 @@ import HomePage from "@/pages/HomePage.vue";
 import PRPage from "@/pages/PRPage.vue";
 import PRCreatePage from "@/pages/PRCreatePage.vue";
 import PRFormCreatePage from "@/pages/PRFormCreatePage.vue";
+import MyPRsPage from "@/pages/MyPRsPage.vue";
 import PREconomyPage from "@/pages/PREconomyPage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
@@ -19,6 +20,14 @@ const routes: RouteRecordRaw[] = [
     path: "/",
     name: "home",
     component: HomePage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/pr/mine",
+    name: "pr-mine",
+    component: MyPRsPage,
     meta: {
       wechatSharePolicy: "route",
     },

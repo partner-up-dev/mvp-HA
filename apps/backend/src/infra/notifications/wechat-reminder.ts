@@ -202,6 +202,17 @@ async function handleReminderJob(
     return;
   }
 
+  if (!user.openId) {
+    await recordDelivery({
+      jobId: context.jobId,
+      payload,
+      result: "SKIPPED",
+      errorCode: "USER_OPENID_MISSING",
+      errorMessage: "User has no bound WeChat openId",
+    });
+    return;
+  }
+
   const startAt = getTimeWindowStart(request.time);
   if (!startAt || startAt.getTime() <= Date.now()) {
     await recordDelivery({

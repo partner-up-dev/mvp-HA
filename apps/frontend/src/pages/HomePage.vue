@@ -36,6 +36,19 @@
                 ></span>
               </span>
             </RouterLink>
+            <RouterLink class="creator-entry" :to="{ name: 'pr-mine' }">
+              <div class="creator-copy">
+                <h3>{{ t("home.landing.secondaryMineTitle") }}</h3>
+                <p>{{ t("home.landing.secondaryMineDescription") }}</p>
+              </div>
+              <span class="creator-action-text">
+                {{ t("home.landing.secondaryMineAction") }}
+                <span
+                  class="creator-action-icon i-mdi:arrow-right"
+                  aria-hidden="true"
+                ></span>
+              </span>
+            </RouterLink>
           </section>
         </div>
       </section>

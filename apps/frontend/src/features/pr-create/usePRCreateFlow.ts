@@ -1,15 +1,17 @@
 import { nextTick, ref } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 import type {
-  CreatePRStructuredStatus,
   PartnerRequestFields,
-  PRId,
 } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useCreatePRFromStructured } from "@/queries/useCreatePR";
-import { useUserPRStore } from "@/stores/userPRStore";
+import { usePublishPR } from "@/queries/usePublishPR";
+import { useUserSessionStore } from "@/stores/userSessionStore";
 import { trackEvent } from "@/shared/analytics/track";
 import PRForm from "@/components/pr/PRForm.vue";
+import { ensureAuthSessionBootstrapped } from "@/composables/useAuthSessionBootstrap";
+
+export type CreateSubmissionMode = "DRAFT" | "PUBLISH";
 
 const resolveTopic = (
   value: LocationQueryValue | LocationQueryValue[] | undefined,
@@ -35,38 +37,50 @@ const buildInitialFields = (topic: string | null): PartnerRequestFields => ({
 export const usePRCreateFlow = () => {
   const router = useRouter();
   const route = useRoute();
-  const userPRStore = useUserPRStore();
+  const userSessionStore = useUserSessionStore();
   const createMutation = useCreatePRFromStructured();
+  const publishMutation = usePublishPR();
 
   const initialFields = ref<PartnerRequestFields>(
     buildInitialFields(resolveTopic(route.query.topic)),
   );
 
   const formRef = ref<InstanceType<typeof PRForm> | null>(null);
-  const pendingStatus = ref<CreatePRStructuredStatus>("OPEN");
-  const createdPrId = ref<PRId | null>(null);
+  const pendingStatus = ref<CreateSubmissionMode>("PUBLISH");
 
-  const submitAs = (status: CreatePRStructuredStatus) => {
+  const submitAs = (status: CreateSubmissionMode) => {
     pendingStatus.value = status;
     formRef.value?.submitForm();
   };
 
-  const handleSubmit = async ({ fields, pin }: PartnerRequestFormInput) => {
+  const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
+    await ensureAuthSessionBootstrapped();
+
     const result = await createMutation.mutateAsync({
       fields,
-      pin,
-      status: pendingStatus.value,
     });
 
-    createdPrId.value = result.id;
+    let createdStatus: "DRAFT" | "OPEN" = "DRAFT";
+    if (pendingStatus.value === "PUBLISH") {
+      const publishResult = await publishMutation.mutateAsync({ id: result.id });
+      if (publishResult.auth) {
+        userSessionStore.applyAuthSession(publishResult.auth);
+      }
+      createdStatus = "OPEN";
+    }
+
     await nextTick();
-    userPRStore.addCreatedPR(result.id);
     trackEvent("pr_create_success", {
       prId: result.id,
-      status: pendingStatus.value,
+      status: createdStatus,
       prKind: "COMMUNITY",
       scenarioType: fields.type,
     });
+    if (createdStatus === "OPEN") {
+      await router.push(`/pr/${result.id}?entry=create`);
+      return;
+    }
+
     await router.push(`/pr/${result.id}`);
   };
 
@@ -76,10 +90,10 @@ export const usePRCreateFlow = () => {
 
   return {
     createMutation,
+    publishMutation,
     initialFields,
     formRef,
     pendingStatus,
-    createdPrId,
     submitAs,
     handleSubmit,
     goHome,

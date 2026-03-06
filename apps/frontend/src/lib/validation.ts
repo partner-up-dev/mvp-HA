@@ -33,7 +33,6 @@ export const createNaturalLanguagePRSchema = z
       .string()
       .min(1, i18n.global.t("validation.naturalLanguageRequired"))
       .max(2000),
-    pin: pinSchema,
   })
   .refine(
     ({ rawText }) => rawText.trim().split(/\s+/).filter(Boolean).length <= 50,
@@ -46,20 +45,10 @@ export const createNaturalLanguagePRValidationSchema = toTypedSchema(
 
 export const partnerRequestFormSchema = z.object({
   fields: fieldsSchema,
-  pin: pinSchema,
-});
-
-export const partnerRequestFormOptionalPinSchema = z.object({
-  fields: fieldsSchema,
-  pin: z.string().optional(),
 });
 
 export const partnerRequestFormValidationSchema = toTypedSchema(
   partnerRequestFormSchema,
-);
-
-export const partnerRequestFormOptionalPinValidationSchema = toTypedSchema(
-  partnerRequestFormOptionalPinSchema,
 );
 
 export type CreateNaturalLanguagePRInput = z.infer<

@@ -16,11 +16,10 @@
       </button>
     </div>
 
-    <div class="pin-input">
+    <div v-if="requiresPin" class="pin-input">
       <label>{{ t("modifyStatusModal.pinLabel") }}</label>
       <PinInput
         v-model="modifyPin"
-        :pr-id="prId"
         :auto-generate="false"
         :allow-regenerate="false"
         :show-label="false"
@@ -34,7 +33,7 @@
       </button>
       <SubmitButton
         :loading="updateMutation.isPending.value"
-        :disabled="!modifyPin || modifyPin.length !== 4"
+        :disabled="requiresPin && (!modifyPin || modifyPin.length !== 4)"
         @click="handleConfirm"
       >
         {{ t("modifyStatusModal.confirmAction") }}
@@ -53,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import Modal from "@/components/common/Modal.vue";
 import SubmitButton from "@/components/common/SubmitButton.vue";
@@ -61,6 +60,7 @@ import ErrorToast from "@/components/common/ErrorToast.vue";
 import PinInput from "@/components/common/PinInput.vue";
 import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
 import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
+import { useUserSessionStore, type AuthSessionPayload } from "@/stores/userSessionStore";
 
 interface StatusOption {
   value: PRStatusManual;
@@ -85,8 +85,10 @@ const statusOptions: StatusOption[] = [
 ];
 
 const updateMutation = useUpdatePRStatus();
+const userSessionStore = useUserSessionStore();
 const selectedStatus = ref<PRStatusManual>("OPEN");
 const modifyPin = ref("");
+const requiresPin = computed(() => userSessionStore.role === "anonymous");
 
 const handleClose = () => {
   selectedStatus.value = "OPEN";
@@ -95,11 +97,21 @@ const handleClose = () => {
 };
 
 const handleConfirm = async () => {
-  await updateMutation.mutateAsync({
+  const pin = requiresPin.value ? modifyPin.value : undefined;
+  if (requiresPin.value && (!pin || pin.length !== 4)) {
+    return;
+  }
+
+  const result = await updateMutation.mutateAsync({
     id: props.prId,
     status: selectedStatus.value,
-    pin: modifyPin.value,
+    pin,
   });
+
+  const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
+  if (authPayload) {
+    userSessionStore.applyAuthSession(authPayload);
+  }
 
   handleClose();
 };

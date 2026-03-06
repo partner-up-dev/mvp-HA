@@ -9,11 +9,13 @@
 - Capacity：PartnerRequest 的人数阈值（min / max）。
 - Current Partners：PartnerRequest 当前人数（`partners.length`），`partners` 为该 PR 下活跃槽位（JOINED / CONFIRMED / ATTENDED）的 `partnerId[]` 动态聚合结果。
 - SlotStatus（Partner.status）：单个参与槽位状态（JOINED / CONFIRMED / RELEASED / ATTENDED）。
+- User PIN：用户级 4 位数字 PIN（存储为 `users.pin_hash`），用于匿名创建者编辑内容/状态时完成所有权校验；校验成功后会升级为 authenticated token。
+- PR PIN（废弃语义）：旧版本绑定在 PR 级别的 PIN，不再用于业务鉴权流程。
 - PaymentModel（L1）：支付模型（A=用户先付后报销，C=平台补贴）。
 - ReimbursementStatus：报销状态（NONE / PENDING / APPROVED / REJECTED / PAID）。
 - Confirmation Window：确认时序窗口（T-1h 自动释放未确认槽位；T-1h~T-30min 加入即确认；T-30min 后禁止加入）。
 - Check-in Signal：签到回流信号（didAttend / wouldJoinAgain），用于近似到场率与复参与意愿。
-- User（最小模型）：基于微信 `openid` 建立的用户主体，含 `nickname`、`sex`、`avatar` 与 `status`（ACTIVE / DISABLED）。
+- User（最小模型）：用户主体（可本地创建并后续绑定微信 `openid`），含 `nickname`、`sex`、`avatar`、`pin_hash` 与 `status`（ACTIVE / DISABLED）。
 - 分享链接：指向 PartnerRequest 页面、可复制传播的链接。
 - 小红书文案：用于发布到小红书的分享文本。
 - 分享海报：用于社交平台传播的图片。

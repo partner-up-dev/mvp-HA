@@ -12,8 +12,11 @@
 import {
   createPRFromNaturalLanguage as createPRFromNLUseCase,
   createPRFromStructured as createPRStructuredUseCase,
+  publishPR as publishPRUseCase,
   getPR as getPRUseCase,
   getPRSummariesByIds as getPRSummariesUseCase,
+  getMyCreatedPRs as getMyCreatedPRsUseCase,
+  getMyJoinedPRs as getMyJoinedPRsUseCase,
   updatePRStatus as updatePRStatusUseCase,
   updatePRContent as updatePRContentUseCase,
   joinPR as joinPRUseCase,
@@ -26,34 +29,30 @@ import type {
   PartnerRequestFields,
   PRId,
   PRStatusManual,
-  CreatePRStructuredStatus,
   WeekdayLabel,
 } from "../entities/partner-request";
+import type { UserId } from "../entities/user";
+import type { CreatorIdentityInput } from "../domains/pr-core/services/creator-identity.service";
 
 export class PartnerRequestService {
   async createPRFromNaturalLanguage(
     rawText: string,
-    pin: string,
     nowIso: string,
     nowWeekday: WeekdayLabel | null,
-    creatorOpenId?: string | null,
+    creatorIdentity: CreatorIdentityInput,
   ) {
-    return createPRFromNLUseCase(
-      rawText,
-      pin,
-      nowIso,
-      nowWeekday,
-      creatorOpenId,
-    );
+    return createPRFromNLUseCase(rawText, nowIso, nowWeekday, creatorIdentity);
   }
 
   async createPRFromStructured(
     fields: PartnerRequestFields,
-    pin: string,
-    status: CreatePRStructuredStatus,
-    creatorOpenId?: string | null,
+    creatorIdentity: CreatorIdentityInput,
   ) {
-    return createPRStructuredUseCase(fields, pin, status, creatorOpenId);
+    return createPRStructuredUseCase(fields, creatorIdentity);
+  }
+
+  async publishPR(id: PRId, creatorIdentity: CreatorIdentityInput) {
+    return publishPRUseCase(id, creatorIdentity);
   }
 
   async getPR(id: PRId, viewerOpenId?: string | null): Promise<PublicPR> {
@@ -64,12 +63,24 @@ export class PartnerRequestService {
     return getPRSummariesUseCase(ids);
   }
 
-  async updatePRStatus(id: PRId, status: PRStatusManual, pin: string) {
-    return updatePRStatusUseCase(id, status, pin);
+  async getMyCreatedPRs(userId: UserId) {
+    return getMyCreatedPRsUseCase(userId);
   }
 
-  async updatePRContent(id: PRId, fields: PartnerRequestFields, pin: string) {
-    return updatePRContentUseCase(id, fields, pin);
+  async getMyJoinedPRs(userId: UserId) {
+    return getMyJoinedPRsUseCase(userId);
+  }
+
+  async updatePRStatus(id: PRId, status: PRStatusManual, actorUserId: UserId | null) {
+    return updatePRStatusUseCase(id, status, actorUserId);
+  }
+
+  async updatePRContent(
+    id: PRId,
+    fields: PartnerRequestFields,
+    actorUserId: UserId | null,
+  ) {
+    return updatePRContentUseCase(id, fields, actorUserId);
   }
 
   async joinPRAsAuthenticatedUser(id: PRId, openId: string) {

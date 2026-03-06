@@ -1,5 +1,5 @@
 <template>
-  <div class="anchor-event-page">
+  <PageScaffold class="anchor-event-page">
     <!-- Loading -->
     <div v-if="isLoading" class="loading-state">
       {{ t("common.loading") }}
@@ -59,7 +59,7 @@
         </router-link>
       </div>
     </template>
-  </div>
+  </PageScaffold>
 </template>
 
 <script setup lang="ts">
@@ -69,6 +69,7 @@ import { useI18n } from "vue-i18n";
 import PageHeader from "@/components/common/PageHeader.vue";
 import TabBar from "@/components/common/TabBar.vue";
 import AnchorEventPRCard from "@/components/event/AnchorEventPRCard.vue";
+import PageScaffold from "@/widgets/common/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
 import { usePoisByIds } from "@/queries/usePoisByIds";
 
@@ -175,16 +176,6 @@ function formatBatchLabel(
 </script>
 
 <style lang="scss" scoped>
-.anchor-event-page {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  min-height: var(--pu-vh);
-}
-
 .event-header {
   margin-bottom: 1.25rem;
 }

@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/vue-query";
 import type {
-  CreatePRStructuredStatus,
   PartnerRequestFields,
   PRId,
   WeekdayLabel,
@@ -8,25 +7,22 @@ import type {
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 
-interface CreatePRResult {
+interface CreateDraftResult {
   id: PRId;
 }
 
 interface CreatePRFromNaturalLanguageInput {
   rawText: string;
-  pin: string;
   nowIso: string;
   nowWeekday: WeekdayLabel;
 }
 
 interface CreatePRFromStructuredInput {
   fields: PartnerRequestFields;
-  pin: string;
-  status: CreatePRStructuredStatus;
 }
 
 export const useCreatePRFromNaturalLanguage = () => {
-  return useMutation<CreatePRResult, Error, CreatePRFromNaturalLanguageInput>({
+  return useMutation<CreateDraftResult, Error, CreatePRFromNaturalLanguageInput>({
     mutationFn: async (input) => {
       const res = await client.api.pr.natural_language.$post({
         json: input,
@@ -45,10 +41,10 @@ export const useCreatePRFromNaturalLanguage = () => {
 };
 
 export const useCreatePRFromStructured = () => {
-  return useMutation<CreatePRResult, Error, CreatePRFromStructuredInput>({
+  return useMutation<CreateDraftResult, Error, CreatePRFromStructuredInput>({
     mutationFn: async (input) => {
       const res = await client.api.pr.$post({
-        json: input,
+        json: input.fields,
       });
 
       if (!res.ok) {

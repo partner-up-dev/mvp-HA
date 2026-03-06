@@ -8,6 +8,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
 import { partnerRequestRoute } from "./controllers/partner-request.controller";
+import { authRoute } from "./controllers/auth.controller";
 import { llmRoute } from "./controllers/llm.controller";
 import { uploadRoute } from "./controllers/upload.controller";
 import { wechatRoute } from "./controllers/wechat.controller";
@@ -40,7 +41,20 @@ void bootstrapAnalyticsAggregationJobs().catch((error) => {
 
 // Middleware
 app.use("*", logger());
-app.use("*", cors());
+app.use(
+  "*",
+  cors({
+    origin: (origin) => origin ?? "*",
+    credentials: true,
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-User-Id",
+      "X-User-Pin",
+    ],
+    exposeHeaders: ["x-access-token"],
+  }),
+);
 app.use("*", async (c, next) => {
   try {
     await next();
@@ -101,6 +115,7 @@ app.onError((err, c) => {
 
 // Mount routes
 const routes = app
+  .route("/api/auth", authRoute)
   .route("/api/pr", partnerRequestRoute)
   .route("/api/events", anchorEventRoute)
   .route("/api/llm", llmRoute)

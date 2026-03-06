@@ -10,13 +10,14 @@ import { toPublicStatus } from "../services/status-rules";
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 
-export async function getPRSummariesByIds(
-  ids: PRId[],
+export async function buildPartnerRequestSummaries(
+  rows: Array<Awaited<ReturnType<PartnerRequestRepository["findById"]>>>,
 ): Promise<PartnerRequestSummary[]> {
-  const uniqueIds = Array.from(new Set(ids));
-  const rows = await prRepo.findByIds(uniqueIds);
+  const filteredRows = rows.filter((row): row is NonNullable<typeof row> =>
+    Boolean(row),
+  );
   const refreshedRows = await Promise.all(
-    rows.map((row) => refreshTemporalStatus(row)),
+    filteredRows.map((row) => refreshTemporalStatus(row)),
   );
 
   return Promise.all(
@@ -34,4 +35,12 @@ export async function getPRSummariesByIds(
       };
     }),
   );
+}
+
+export async function getPRSummariesByIds(
+  ids: PRId[],
+): Promise<PartnerRequestSummary[]> {
+  const uniqueIds = Array.from(new Set(ids));
+  const rows = await prRepo.findByIds(uniqueIds);
+  return buildPartnerRequestSummaries(rows);
 }

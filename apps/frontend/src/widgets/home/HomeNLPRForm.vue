@@ -6,38 +6,20 @@
           class="nl-input"
           type="text"
           :value="field.value"
-          @input="
-            field.onChange(($event.target as HTMLInputElement).value)
-          "
+          @input="field.onChange(($event.target as HTMLInputElement).value)"
           :placeholder="placeholderText"
-          :disabled="mutation.isPending.value"
+          :disabled="isSubmitting"
           maxlength="2000"
           autocomplete="off"
-        />
-      </div>
-      <span v-if="errors.length" class="error-message">{{ errors[0] }}</span>
-    </Field>
-
-    <Field name="pin" v-slot="{ field, errors }">
-      <div class="row row--action">
-        <PinInput
-          class="pin-input"
-          :model-value="field.value"
-          @update:model-value="field.onChange"
-          :pr-id="createdPrId"
-          :disabled="mutation.isPending.value"
-          :show-label="false"
-          :show-info="false"
-          :allow-regenerate="false"
         />
         <button
           class="send-button"
           type="submit"
-          :disabled="mutation.isPending.value"
+          :disabled="isSubmitting"
           :aria-label="t('nlForm.submit')"
         >
           <span
-            v-if="mutation.isPending.value"
+            v-if="isSubmitting"
             class="spinner"
             aria-hidden="true"
           ></span>
@@ -46,32 +28,39 @@
             class="i-mdi-send-outline send-icon"
             aria-hidden="true"
           ></span>
-          <span class="send-label">{{ t("nlForm.submit") }}</span>
         </button>
       </div>
-      <span v-if="errors.length" class="error-message">{{ errors[0] }}</span>
+      <span
+        v-if="errors.length"
+        class="error-message"
+        style="flex-basis: 100%"
+        >{{ errors[0] }}</span
+      >
     </Field>
 
     <ErrorToast
-      v-if="mutation.isError.value"
-      :message="mutation.error.value?.message || t('nlForm.createFailed')"
-      @close="mutation.reset()"
+      v-if="createMutation.isError.value || publishMutation.isError.value"
+      :message="submitErrorMessage"
+      @close="
+        createMutation.reset();
+        publishMutation.reset();
+      "
     />
   </form>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from "vue";
+import { computed } from "vue";
 import { Field, useForm } from "vee-validate";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import type { PRId } from "@partner-up-dev/backend";
-import PinInput from "@/components/common/PinInput.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
-import { useUserPRStore } from "@/stores/userPRStore";
+import { useUserSessionStore } from "@/stores/userSessionStore";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
 import { useCreatePRFromNaturalLanguage } from "@/queries/useCreatePR";
+import { usePublishPR } from "@/queries/usePublishPR";
 import { useHomeRotatingTopic } from "@/composables/useHomeRotatingTopic";
+import { ensureAuthSessionBootstrapped } from "@/composables/useAuthSessionBootstrap";
 
 const getLocalWeekdayLabel = (date: Date): string => {
   return new Intl.DateTimeFormat(undefined, {
@@ -81,43 +70,56 @@ const getLocalWeekdayLabel = (date: Date): string => {
 
 const router = useRouter();
 const { t } = useI18n();
-const userPRStore = useUserPRStore();
-const mutation = useCreatePRFromNaturalLanguage();
-const createdPrId = ref<PRId | null>(null);
+const userSessionStore = useUserSessionStore();
+const createMutation = useCreatePRFromNaturalLanguage();
+const publishMutation = usePublishPR();
 const { rotatingTopicExample } = useHomeRotatingTopic();
 const placeholderText = computed(() =>
   t("prInput.placeholder", { example: rotatingTopicExample.value }),
+);
+const isSubmitting = computed(
+  () => createMutation.isPending.value || publishMutation.isPending.value,
+);
+const submitErrorMessage = computed(
+  () =>
+    createMutation.error.value?.message ||
+    publishMutation.error.value?.message ||
+    t("nlForm.createFailed"),
 );
 
 const { handleSubmit } = useForm({
   validationSchema: createNaturalLanguagePRValidationSchema,
   initialValues: {
     rawText: "",
-    pin: "",
   },
 });
 
 const onSubmit = handleSubmit(async (values) => {
+  await ensureAuthSessionBootstrapped();
+
   const now = new Date();
-  const result = await mutation.mutateAsync({
+  const draft = await createMutation.mutateAsync({
     rawText: values.rawText,
-    pin: values.pin,
     nowIso: now.toISOString(),
     nowWeekday: getLocalWeekdayLabel(now),
   });
 
-  createdPrId.value = result.id;
-  await nextTick();
-  userPRStore.addCreatedPR(result.id);
-  await router.push(`/pr/${result.id}`);
+  const publishResult = await publishMutation.mutateAsync({ id: draft.id });
+  if (publishResult.auth) {
+    userSessionStore.applyAuthSession(publishResult.auth);
+  }
+
+  await router.push(`/pr/${draft.id}?entry=create`);
 });
 </script>
 
 <style lang="scss" scoped>
 .home-nl-form {
   display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--sys-spacing-sm);
+  align-items: flex-start;
 }
 
 .row {
@@ -127,20 +129,17 @@ const onSubmit = handleSubmit(async (values) => {
 }
 
 .row--input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .nl-input {
   @include mx.pu-font(body-large);
   width: 100%;
-  height: 2.9rem;
+  height: var(--sys-size-large);
   border: 1px solid var(--sys-color-outline);
   border-radius: var(--sys-radius-sm);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-low) 70%,
-    transparent
-  );
+  background: var(--sys-color-surface-container);
   color: var(--sys-color-on-surface);
   padding: 0 var(--sys-spacing-med);
   transition:
@@ -154,7 +153,7 @@ const onSubmit = handleSubmit(async (values) => {
   &:focus {
     outline: none;
     border-color: var(--sys-color-primary);
-    background: var(--sys-color-surface-container-low);
+    background: var(--sys-color-surface);
   }
 
   &:disabled {
@@ -163,39 +162,21 @@ const onSubmit = handleSubmit(async (values) => {
 }
 
 .row--action {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.pin-input {
-  min-width: 0;
-
-  :deep(.pin-field) {
-    text-align: left;
-    letter-spacing: 0.2rem;
-    padding-left: var(--sys-spacing-med);
-    padding-right: var(--sys-spacing-med);
-    background: color-mix(
-      in srgb,
-      var(--sys-color-surface-container-low) 70%,
-      transparent
-    );
-  }
+  flex-shrink: 0;
 }
 
 .send-button {
   @include mx.pu-font(label-large);
   min-width: 4.8rem;
   height: var(--sys-size-large);
-  border: 1px solid color-mix(in srgb, var(--sys-color-primary) 52%, transparent);
+  border: 1px solid var(--sys-color-primary);
   border-radius: var(--sys-radius-sm);
-  background: color-mix(in srgb, var(--sys-color-primary) 14%, transparent);
-  color: var(--sys-color-primary);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.28rem;
+  gap: var(--sys-spacing-xs);
   padding: 0 var(--sys-spacing-sm);
   cursor: pointer;
   transition:
@@ -228,10 +209,6 @@ const onSubmit = handleSubmit(async (values) => {
   @include mx.pu-icon(small, true);
 }
 
-.send-label {
-  @include mx.pu-font(label-medium);
-}
-
 .spinner {
   width: 0.9rem;
   height: 0.9rem;
@@ -247,12 +224,12 @@ const onSubmit = handleSubmit(async (values) => {
 }
 
 @media (max-width: 768px) {
-  .nl-input {
-    height: 3.1rem;
+  .home-nl-form {
+    gap: var(--sys-spacing-xs);
   }
 
   .send-button {
-    min-width: 5.2rem;
+    min-width: var(--sys-size-large);
   }
 
   .send-label {

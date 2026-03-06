@@ -1,5 +1,5 @@
 <template>
-  <div class="pr-page">
+  <PageScaffold class="pr-page">
     <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
 
     <ErrorToast v-else-if="error" :message="error.message" persistent />
@@ -11,6 +11,38 @@
         :created-at-label="formatDate(prDetail.createdAt)"
         @back="goHome"
       />
+
+      <section v-if="prDetail.status === 'DRAFT'" class="draft-publish-section">
+        <h2 class="draft-publish-title">
+          {{ t("prPage.publishDraft.title") }}
+        </h2>
+        <p class="draft-publish-description">
+          {{ t("prPage.publishDraft.description") }}
+        </p>
+        <button
+          class="draft-publish-action"
+          :disabled="publishMutation.isPending.value"
+          @click="handlePublishDraft"
+        >
+          {{
+            publishMutation.isPending.value
+              ? t("prPage.publishDraft.pending")
+              : t("prPage.publishDraft.action")
+          }}
+        </button>
+      </section>
+
+      <section v-if="showPinHelpCard" class="pin-help-section">
+        <h2 class="pin-help-title">{{ t("prPage.pinHelp.title") }}</h2>
+        <p class="pin-help-description">
+          {{ t("prPage.pinHelp.description") }}
+        </p>
+        <p v-if="userSessionStore.userPin" class="pin-help-pin">
+          {{
+            t("prPage.pinHelp.currentPin", { pin: userSessionStore.userPin })
+          }}
+        </p>
+      </section>
 
       <PRCard
         :type="prDetail.type"
@@ -222,7 +254,7 @@
     </template>
 
     <Footer />
-  </div>
+  </PageScaffold>
 </template>
 
 <script setup lang="ts">
@@ -237,6 +269,7 @@ import PRLocationGalleryModal from "@/components/pr/PRLocationGalleryModal.vue";
 import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
 import Footer from "@/components/common/Footer.vue";
+import PageScaffold from "@/widgets/common/PageScaffold.vue";
 import PRHeroHeader from "@/widgets/pr/PRHeroHeader.vue";
 import PRActionsPanel from "@/widgets/pr/PRActionsPanel.vue";
 import PRShareSection from "@/widgets/pr/PRShareSection.vue";
@@ -245,17 +278,21 @@ import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
 import { useAlternativeBatches } from "@/queries/useAlternativeBatches";
 import { useAcceptAlternativeBatch } from "@/queries/useAcceptAlternativeBatch";
 import { useJoinPR } from "@/queries/useJoinPR";
+import { usePublishPR } from "@/queries/usePublishPR";
 import { useWeChatReminderSubscription } from "@/queries/useWeChatReminderSubscription";
 import { useUpdateWeChatReminderSubscription } from "@/queries/useUpdateWeChatReminderSubscription";
 import { usePoisByIds } from "@/queries/usePoisByIds";
 import type { PRId } from "@partner-up-dev/backend";
-import { useUserPRStore } from "@/stores/userPRStore";
+import {
+  useUserSessionStore,
+  type AuthSessionPayload,
+} from "@/stores/userSessionStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
 import { usePRActions } from "@/features/pr-actions/usePRActions";
 import { usePRShareContext } from "@/features/share/usePRShareContext";
 import type { PRDetailView } from "@/entities/pr/types";
 import { isWeChatBrowser } from "@/lib/browser-detection";
-import { requireWeChatActionAuth } from "@/processes/wechat-auth/guards/requireWeChatActionAuth";
+import { requireWeChatActionAuth } from "@/composables/requireWeChatActionAuth";
 import { redirectToWeChatOAuthLogin } from "@/composables/useAutoWeChatLogin";
 
 const route = useRoute();
@@ -287,6 +324,7 @@ const { data: alternativeBatchData, isLoading: isAlternativeLoading } =
   useAlternativeBatches(id, showAlternativeBatches);
 const acceptAlternativeBatchMutation = useAcceptAlternativeBatch();
 const joinMutation = useJoinPR();
+const publishMutation = usePublishPR();
 const wechatReminderSubscriptionQuery = useWeChatReminderSubscription();
 const updateWechatReminderSubscriptionMutation =
   useUpdateWeChatReminderSubscription();
@@ -314,7 +352,7 @@ const sameBatchAlternatives = computed(() => {
 const alternativeBatchRecommendations = computed(
   () => alternativeBatchData.value?.recommendations ?? [],
 );
-const userPRStore = useUserPRStore();
+const userSessionStore = useUserSessionStore();
 
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
@@ -363,8 +401,9 @@ useBodyScrollLock(
 
 // Check if current user is creator
 const isCreator = computed(() => {
-  if (id.value === null) return false;
-  return userPRStore.isCreatorOf(id.value);
+  const createdBy = prDetail.value?.createdBy ?? null;
+  if (!createdBy) return false;
+  return userSessionStore.userId === createdBy;
 });
 
 const LIVE_POLL_INTERVAL_MS = 2_000;
@@ -501,6 +540,34 @@ const handleToggleWechatReminder = async () => {
 const handleGoWechatLogin = () => {
   if (typeof window === "undefined") return;
   redirectToWeChatOAuthLogin(window.location.href);
+};
+
+const creationEntry = computed(() => {
+  const raw = route.query.entry;
+  if (typeof raw === "string") return raw;
+  if (Array.isArray(raw)) return raw[0] ?? null;
+  return null;
+});
+
+const showPinHelpCard = computed(() => {
+  if (!isCreator.value) return false;
+  return creationEntry.value === "create" || creationEntry.value === "publish";
+});
+
+const handlePublishDraft = async () => {
+  if (id.value === null) return;
+
+  if (isWeChatEnv.value && typeof window !== "undefined") {
+    void requireWeChatActionAuth(window.location.href);
+  }
+
+  const result = await publishMutation.mutateAsync({ id: id.value });
+  const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
+  if (authPayload) {
+    userSessionStore.applyAuthSession(authPayload);
+  }
+  await router.replace({ query: { ...route.query, entry: "publish" } });
+  await refetch();
 };
 
 const { shareUrl, prShareData } = usePRShareContext({
@@ -657,14 +724,48 @@ useHead({
 </script>
 
 <style lang="scss" scoped>
-.pr-page {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  min-height: var(--pu-vh);
+.draft-publish-section,
+.pin-help-section {
+  margin: var(--sys-spacing-lg) 0;
+  padding: var(--sys-spacing-med);
+  border-radius: 12px;
+  background: var(--sys-color-surface-container);
+}
+
+.draft-publish-title,
+.pin-help-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.draft-publish-description,
+.pin-help-description {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.pin-help-pin {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sys-color-primary);
+}
+
+.draft-publish-action {
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
 }
 
 .wechat-reminder-section {

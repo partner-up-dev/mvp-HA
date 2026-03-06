@@ -1,25 +1,25 @@
 <template>
-  <div class="contact-support-page">
-    <PageHeader :title="t('contactSupportPage.title')" @back="goHome" />
+  <PageScaffoldCentered class="contact-support-page">
+    <template #header>
+      <PageHeader :title="t('contactSupportPage.title')" @back="goHome" />
+    </template>
 
-    <main class="page-main">
-      <section class="guidance-list" :aria-label="t('contactSupportPage.guideTitle')">
-        <h2>{{ t("contactSupportPage.guideTitle") }}</h2>
-        <ul>
-          <li>{{ t("contactSupportPage.useCases.support") }}</li>
-          <li>{{ t("contactSupportPage.useCases.author") }}</li>
-        </ul>
-      </section>
+    <section class="guidance-list" :aria-label="t('contactSupportPage.guideTitle')">
+      <h2>{{ t("contactSupportPage.guideTitle") }}</h2>
+      <ul>
+        <li>{{ t("contactSupportPage.useCases.support") }}</li>
+        <li>{{ t("contactSupportPage.useCases.author") }}</li>
+      </ul>
+    </section>
 
-      <a class="support-action" :href="supportLink" target="_blank" rel="noopener noreferrer">
-        {{ t("contactSupportPage.supportAction") }}
-      </a>
+    <a class="support-action" :href="supportLink" target="_blank" rel="noopener noreferrer">
+      {{ t("contactSupportPage.supportAction") }}
+    </a>
 
-      <RouterLink class="author-link" :to="{ name: 'contact-author' }">
-        {{ t("contactSupportPage.authorEntry") }}
-      </RouterLink>
-    </main>
-  </div>
+    <RouterLink class="author-link" :to="{ name: 'contact-author' }">
+      {{ t("contactSupportPage.authorEntry") }}
+    </RouterLink>
+  </PageScaffoldCentered>
 </template>
 
 <script setup lang="ts">
@@ -27,6 +27,7 @@ import { computed } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/components/common/PageHeader.vue";
+import PageScaffoldCentered from "@/widgets/common/PageScaffoldCentered.vue";
 import { isWeChatBrowser } from "@/lib/browser-detection";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
 
@@ -108,23 +109,6 @@ const goHome = () => {
 </script>
 
 <style lang="scss" scoped>
-.contact-support-page {
-  margin: 0 auto;
-  padding: var(--sys-spacing-med);
-  min-height: var(--pu-vh);
-  display: flex;
-  flex-direction: column;
-}
-
-.page-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sys-spacing-med);
-}
-
 .guidance-list {
   width: min(100%, 33rem);
   padding: var(--sys-spacing-sm) var(--sys-spacing-med);
@@ -194,11 +178,10 @@ const goHome = () => {
 }
 
 @media (max-width: 768px) {
-  .page-main {
+  .contact-support-page :deep(.page-scaffold-centered__main) {
     align-items: stretch;
   }
 
-  .description,
   .author-link {
     text-align: center;
   }

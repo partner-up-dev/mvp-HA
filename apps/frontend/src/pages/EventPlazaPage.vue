@@ -1,5 +1,5 @@
 <template>
-  <div class="event-plaza-page">
+  <PageScaffold class="event-plaza-page">
     <PageHeader
       :title="t('eventPlaza.title')"
       :subtitle="t('eventPlaza.subtitle')"
@@ -21,7 +21,7 @@
     <div v-else class="empty-state">
       {{ t("eventPlaza.noEvents") }}
     </div>
-  </div>
+  </PageScaffold>
 </template>
 
 <script setup lang="ts">
@@ -29,6 +29,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import PageHeader from "@/components/common/PageHeader.vue";
 import EventCard from "@/components/event/EventCard.vue";
+import PageScaffold from "@/widgets/common/PageScaffold.vue";
 import { useAnchorEvents } from "@/queries/useAnchorEvents";
 
 const { t } = useI18n();
@@ -39,16 +40,6 @@ const goHome = () => router.push("/");
 </script>
 
 <style lang="scss" scoped>
-.event-plaza-page {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  min-height: var(--pu-vh);
-}
-
 .page-title {
   font-size: 1.5rem;
   font-weight: 700;

@@ -15,7 +15,7 @@ $light: (
     primary: fn.map-deep-get(ref.$color, primary, 80),
     primary-container: fn.map-deep-get(ref.$color, primary, 40),
     on-primary: fn.map-deep-get(ref.$color, primary, 100),
-    on-primary-container: fn.map-deep-get(ref.$color, primary, 30),
+    on-primary-container: fn.map-deep-get(ref.$color, primary, 90),
     // Secondary colors
     secondary: fn.map-deep-get(ref.$color, secondary, 80),
     secondary-container: fn.map-deep-get(ref.$color, secondary, 40),
@@ -61,7 +61,7 @@ $dark: (
     primary: fn.map-deep-get(ref.$color, primary, 70),
     primary-container: fn.map-deep-get(ref.$color, primary, 90),
     on-primary: fn.map-deep-get(ref.$color, primary, 20),
-    on-primary-container: fn.map-deep-get(ref.$color, primary, 10),
+    on-primary-container: fn.map-deep-get(ref.$color, primary, 30),
     // Secondary colors
     secondary: fn.map-deep-get(ref.$color, secondary, 70),
     secondary-container: fn.map-deep-get(ref.$color, secondary, 90),

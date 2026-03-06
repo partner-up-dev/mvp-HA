@@ -7,7 +7,7 @@ import { i18n } from "@/locales/i18n";
 interface UpdateStatusInput {
   id: PRId;
   status: PRStatusManual;
-  pin: string;
+  pin?: string;
 }
 
 export const useUpdatePRStatus = () => {
@@ -17,7 +17,7 @@ export const useUpdatePRStatus = () => {
     mutationFn: async ({ id, status, pin }: UpdateStatusInput) => {
       const res = await client.api.pr[":id"].status.$patch({
         param: { id: id.toString() },
-        json: { status, pin },
+        json: pin ? { status, pin } : { status },
       });
 
       if (!res.ok) {

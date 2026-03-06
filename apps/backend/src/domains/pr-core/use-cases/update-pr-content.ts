@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -6,6 +5,7 @@ import type {
   PRId,
   PartnerRequestFields,
 } from "../../../entities/partner-request";
+import type { UserId } from "../../../entities/user";
 import {
   assertPartnerBoundsValid,
   syncSlotCapacity,
@@ -22,7 +22,7 @@ const partnerRepo = new PartnerRepository();
 export async function updatePRContent(
   id: PRId,
   fields: PartnerRequestFields,
-  pin: string,
+  actorUserId: UserId | null,
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -38,11 +38,6 @@ export async function updatePRContent(
       message:
         "Cannot edit - only OPEN or DRAFT partner requests can be edited",
     });
-  }
-
-  const isValid = await bcrypt.compare(pin, refreshedRequest.pinHash);
-  if (!isValid) {
-    throw new HTTPException(403, { message: "Invalid PIN" });
   }
 
   const minMaxChanged =
@@ -86,7 +81,7 @@ export async function updatePRContent(
   void writeToOutbox(event);
 
   operationLogService.log({
-    actorId: null,
+    actorId: actorUserId,
     action: "pr.update_content",
     aggregateType: "partner_request",
     aggregateId: String(id),

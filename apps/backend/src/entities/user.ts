@@ -26,7 +26,8 @@ export type UserSex = z.infer<typeof userSexSchema>;
 
 export const users = pgTable("users", {
   id: text("id").$type<UserId>().primaryKey(),
-  openId: text("open_id").notNull().unique(),
+  openId: text("open_id").unique(),
+  pinHash: text("pin_hash"),
   nickname: text("nickname"),
   sex: integer("sex").$type<UserSex>(),
   avatar: text("avatar"),

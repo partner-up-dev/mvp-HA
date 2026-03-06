@@ -28,6 +28,7 @@ These are top-most glossary, read more in `docs/product/glossary.md`:
 
 - No any: The use of any is strictly prohibited.
 - Async/Await: Always use async/await over raw Promises.
+- Follow DRY.
 
 ## Current State
 >

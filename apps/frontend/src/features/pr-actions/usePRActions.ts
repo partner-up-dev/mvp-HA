@@ -6,7 +6,7 @@ import { useExitPR } from "@/queries/useExitPR";
 import { useConfirmPRSlot } from "@/queries/useConfirmPRSlot";
 import { useCheckInPRSlot } from "@/queries/useCheckInPRSlot";
 import type { PRDetailView } from "@/entities/pr/types";
-import { requireWeChatActionAuth } from "@/processes/wechat-auth/guards/requireWeChatActionAuth";
+import { requireWeChatActionAuth } from "@/composables/requireWeChatActionAuth";
 import { trackEvent } from "@/shared/analytics/track";
 
 type UsePRActionsOptions = {
@@ -77,7 +77,9 @@ export const usePRActions = ({
 
   const showEditContentAction = computed(() => {
     const status = pr.value?.status;
-    return Boolean(isCreator.value && (status === "OPEN" || status === "DRAFT"));
+    return Boolean(
+      isCreator.value && (status === "OPEN" || status === "DRAFT"),
+    );
   });
 
   const showModifyStatusAction = computed(() => Boolean(isCreator.value));
@@ -96,7 +98,10 @@ export const usePRActions = ({
   });
 
   const showCheckInFollowup = computed(
-    () => hasJoined.value && hasStarted.value && pendingCheckInDidAttend.value !== null,
+    () =>
+      hasJoined.value &&
+      hasStarted.value &&
+      pendingCheckInDidAttend.value !== null,
   );
 
   const joinPending = computed(() => joinMutation.isPending.value);

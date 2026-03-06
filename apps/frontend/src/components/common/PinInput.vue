@@ -35,15 +35,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PRId } from "@partner-up-dev/backend";
-import { useUserPRStore } from "@/stores/userPRStore";
 
 const props = withDefaults(
   defineProps<{
     modelValue?: string;
-    prId?: PRId | null;
     autoGenerate?: boolean;
     allowRegenerate?: boolean;
     inputType?: "text" | "password";
@@ -53,7 +50,6 @@ const props = withDefaults(
   }>(),
   {
     modelValue: "",
-    prId: null,
     autoGenerate: true,
     allowRegenerate: true,
     inputType: "text",
@@ -63,8 +59,6 @@ const props = withDefaults(
   },
 );
 const { t } = useI18n();
-const userPRStore = useUserPRStore();
-const isHydrating = ref(false);
 
 const emit = defineEmits<{
   "update:modelValue": [value: string];
@@ -96,57 +90,9 @@ const regenerate = () => {
   emit("update:modelValue", generatePIN());
 };
 
-const hydrateFromStore = (prId: PRId | null) => {
-  if (!prId) return false;
-  const storedPin = userPRStore.getPRPin(prId);
-  if (!storedPin) return false;
-  isHydrating.value = true;
-  emit("update:modelValue", storedPin);
-  isHydrating.value = false;
-  return true;
-};
-
-const persistPin = (value: string, prId: PRId | null) => {
-  if (!prId) return;
-  if (value.length !== 4) return;
-  userPRStore.setPRPin(prId, value);
-};
-
-watch(
-  () => props.prId,
-  (nextPrId) => {
-    if (props.disabled) return;
-    if (!nextPrId) return;
-    const hydrated = hydrateFromStore(nextPrId);
-    if (!hydrated && !props.modelValue && props.autoGenerate) {
-      regenerate();
-      return;
-    }
-    if (props.modelValue) {
-      persistPin(props.modelValue, nextPrId);
-    }
-  },
-  { immediate: true },
-);
-
-watch(
-  () => props.modelValue,
-  (nextValue) => {
-    if (isHydrating.value) return;
-    if (props.disabled) return;
-    if (!props.prId) return;
-    if (!nextValue) {
-      userPRStore.clearPRPin(props.prId);
-      return;
-    }
-    persistPin(nextValue, props.prId);
-  },
-);
-
 // Auto-generate on mount if empty and no persisted PIN
 onMounted(() => {
   if (props.disabled) return;
-  if (props.prId) return;
   if (!props.modelValue && props.autoGenerate) {
     regenerate();
   }

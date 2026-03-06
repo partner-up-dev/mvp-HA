@@ -56,8 +56,12 @@ const footerNavLinks = computed(() => [
     label: t("createPage.title"),
   },
   {
+    routeName: "pr-mine",
+    label: t("home.landing.footerNavMine"),
+  },
+  {
     routeName: "contact-support",
-    label: t("contactAuthorPage.title"),
+    label: t("contactSupportPage.title"),
   },
 ]);
 </script>

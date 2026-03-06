@@ -7,7 +7,7 @@ import { i18n } from "@/locales/i18n";
 interface UpdateContentInput {
   id: PRId;
   fields: PartnerRequestFields;
-  pin: string;
+  pin?: string;
 }
 
 export const useUpdatePRContent = () => {
@@ -17,7 +17,7 @@ export const useUpdatePRContent = () => {
     mutationFn: async ({ id, fields, pin }: UpdateContentInput) => {
       const res = await client.api.pr[":id"].content.$patch({
         param: { id: id.toString() },
-        json: { fields, pin },
+        json: pin ? { fields, pin } : { fields },
       });
 
       if (!res.ok) {
