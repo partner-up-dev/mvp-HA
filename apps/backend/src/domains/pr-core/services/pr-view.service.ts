@@ -4,15 +4,19 @@
  */
 
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import type { PartnerRequest } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 
 const partnerRepo = new PartnerRepository();
+const communityPRRepo = new CommunityPRRepository();
 
-export type PublicPR = Omit<PartnerRequest, "pinHash" | "title"> & {
+export type PublicPR = Omit<PartnerRequest, "title"> & {
   title?: string;
   partners: number[];
   myPartnerId: number | null;
+  rawText: string | null;
+  budget: string | null;
 };
 
 export async function toPublicPR(
@@ -29,11 +33,21 @@ export async function toPublicPR(
     myPartnerId = slot?.id ?? null;
   }
 
-  const { pinHash, title, ...rest } = request;
+  const { title, ...rest } = request;
+  let rawText: string | null = null;
+  let budget: string | null = null;
+  if (request.prKind === "COMMUNITY") {
+    const community = await communityPRRepo.findByPrId(request.id);
+    rawText = community?.rawText ?? null;
+    budget = community?.budget ?? null;
+  }
+
   return {
     ...rest,
     title: title ?? undefined,
     partners,
     myPartnerId,
+    rawText,
+    budget,
   };
 }

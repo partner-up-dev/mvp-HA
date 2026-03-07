@@ -30,8 +30,12 @@ export type PublishPRResult = {
 };
 
 const resolvePublishedStatus = (
+  prKind: "ANCHOR" | "COMMUNITY",
   timeWindow: [string | null, string | null],
 ): "JOINED" | "CONFIRMED" => {
+  if (prKind !== "ANCHOR") {
+    return "JOINED";
+  }
   if (shouldAutoConfirmImmediately(timeWindow) || isJoinLockedByTime(timeWindow)) {
     return "CONFIRMED";
   }
@@ -49,7 +53,7 @@ const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
     return;
   }
 
-  const targetStatus = resolvePublishedStatus(request.time);
+  const targetStatus = resolvePublishedStatus(request.prKind, request.time);
   const released = await partnerRepo.findFirstReleasedSlot(prId);
   if (released) {
     await partnerRepo.assignSlot(released.id, creatorUserId, targetStatus);

@@ -19,7 +19,7 @@ const resolveRouteShareCardText = (
         title: i18n.global.t("app.siteName"),
         desc: i18n.global.t("share.wechat.pageDescriptionHome"),
       };
-    case "pr-new":
+    case "community-pr-create":
       return {
         title: `${i18n.global.t("createPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionCreate"),

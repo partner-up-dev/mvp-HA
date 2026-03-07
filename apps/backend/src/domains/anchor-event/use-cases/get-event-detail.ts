@@ -7,7 +7,10 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
+import {
+  AnchorPRRepository,
+  type AnchorPRRecord,
+} from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
   AnchorEventId,
@@ -19,7 +22,7 @@ import type { PartnerRequest } from "../../../entities/partner-request";
 
 const eventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
-const prRepo = new PartnerRequestRepository();
+const anchorPRRepo = new AnchorPRRepository();
 const partnerRepo = new PartnerRepository();
 
 // ---------------------------------------------------------------------------
@@ -65,7 +68,8 @@ export interface AnchorEventDetail {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function toPRSummary(pr: PartnerRequest): AnchorPRSummary {
+function toPRSummary(record: AnchorPRRecord): AnchorPRSummary {
+  const pr = record.root;
   return {
     id: pr.id,
     title: pr.title,
@@ -82,7 +86,7 @@ function toPRSummary(pr: PartnerRequest): AnchorPRSummary {
 
 function toBatchDetail(
   batch: AnchorEventBatch,
-  prs: PartnerRequest[],
+  prs: AnchorPRRecord[],
 ): BatchDetail {
   return {
     id: batch.id,
@@ -109,7 +113,7 @@ export async function getAnchorEventDetail(
   // Fetch PRs for each batch
   const batchDetails: BatchDetail[] = [];
   for (const batch of batches) {
-    const prs = await prRepo.findByBatchId(batch.id);
+    const prs = await anchorPRRepo.findVisibleByBatchId(batch.id);
     const detail = toBatchDetail(batch, prs);
     for (const pr of detail.prs) {
       pr.partnerCount = await partnerRepo.countActiveByPrId(pr.id);

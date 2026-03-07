@@ -9,6 +9,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import type { PartnerStatus } from "../../../entities/partner";
 import type {
   PRId,
+  PRKind,
   PartnerRequestFields,
 } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -69,6 +70,7 @@ export function resolveDesiredSlotCount(
 
 export async function initializeSlotsForPR(
   prId: PRId,
+  prKind: PRKind,
   minPartners: number | null,
   maxPartners: number | null,
   creatorUserId: UserId | null,
@@ -78,7 +80,9 @@ export async function initializeSlotsForPR(
 
   if (creatorUserId) {
     const creatorStatus: PartnerStatus =
-      shouldAutoConfirmImmediately(timeWindow) || isJoinLockedByTime(timeWindow)
+      prKind === "ANCHOR" &&
+      (shouldAutoConfirmImmediately(timeWindow) ||
+        isJoinLockedByTime(timeWindow))
         ? "CONFIRMED"
         : "JOINED";
     await partnerRepo.createSlot({

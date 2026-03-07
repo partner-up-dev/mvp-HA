@@ -8,12 +8,9 @@ import {
   type WechatThumbnailCache,
   type PartnerRequest,
   type PartnerRequestFields,
-  type VisibilityStatus,
 } from "../entities/partner-request";
-import type { AnchorEventId } from "../entities/anchor-event";
-import type { AnchorEventBatchId } from "../entities/anchor-event-batch";
 import type { UserId } from "../entities/user";
-import { desc, eq, and, inArray } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 
 export class PartnerRequestRepository {
   async create(data: NewPartnerRequest) {
@@ -74,7 +71,6 @@ export class PartnerRequestRepository {
         location: fields.location,
         minPartners: fields.minPartners,
         maxPartners: fields.maxPartners,
-        budget: fields.budget,
         preferences: fields.preferences,
         notes: fields.notes,
       })
@@ -155,63 +151,6 @@ export class PartnerRequestRepository {
     await db
       .update(partnerRequests)
       .set({ xiaohongshuPoster: null, wechatThumbnail: null })
-      .where(eq(partnerRequests.id, id));
-  }
-
-  // --- GAPC-01: Anchor Event queries ---
-
-  async findByBatchId(batchId: AnchorEventBatchId): Promise<PartnerRequest[]> {
-    return await db
-      .select()
-      .from(partnerRequests)
-      .where(
-        and(
-          eq(partnerRequests.batchId, batchId),
-          eq(partnerRequests.visibilityStatus, "VISIBLE"),
-        ),
-      )
-      .orderBy(desc(partnerRequests.createdAt));
-  }
-
-  async findByBatchIdAndLocation(
-    batchId: AnchorEventBatchId,
-    location: string,
-  ): Promise<PartnerRequest[]> {
-    return await db
-      .select()
-      .from(partnerRequests)
-      .where(
-        and(
-          eq(partnerRequests.batchId, batchId),
-          eq(partnerRequests.location, location),
-          eq(partnerRequests.visibilityStatus, "VISIBLE"),
-        ),
-      )
-      .orderBy(desc(partnerRequests.createdAt));
-  }
-
-  async findByAnchorEventId(
-    anchorEventId: AnchorEventId,
-  ): Promise<PartnerRequest[]> {
-    return await db
-      .select()
-      .from(partnerRequests)
-      .where(
-        and(
-          eq(partnerRequests.anchorEventId, anchorEventId),
-          eq(partnerRequests.visibilityStatus, "VISIBLE"),
-        ),
-      )
-      .orderBy(desc(partnerRequests.createdAt));
-  }
-
-  async updateVisibilityStatus(
-    id: PRId,
-    visibilityStatus: VisibilityStatus,
-  ): Promise<void> {
-    await db
-      .update(partnerRequests)
-      .set({ visibilityStatus })
       .where(eq(partnerRequests.id, id));
   }
 }

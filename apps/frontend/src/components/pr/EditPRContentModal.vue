@@ -8,6 +8,7 @@
     <PRForm
       ref="formRef"
       :initial-fields="initialFields"
+      :show-budget-field="scenario === 'COMMUNITY'"
       @submit="handleSubmit"
     />
 
@@ -28,7 +29,7 @@
         </button>
         <SubmitButton
           type="button"
-          :loading="updateMutation.isPending.value"
+          :loading="isUpdatePending"
           :disabled="!isFormValid"
           @click="formRef?.submitForm()"
         >
@@ -38,12 +39,9 @@
     </div>
 
     <ErrorToast
-      v-if="updateMutation.isError.value"
-      :message="
-        updateMutation.error.value?.message ||
-        t('editContentModal.updateFailed')
-      "
-      @close="updateMutation.reset()"
+      v-if="hasUpdateError"
+      :message="updateError?.message || t('editContentModal.updateFailed')"
+      @close="resetUpdateMutation"
     />
   </Modal>
 </template>
@@ -51,20 +49,30 @@
 <script setup lang="ts">
 import { computed, isRef, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
+import type { PRId, PRKind } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
-import { useUpdatePRContent } from "@/queries/useUpdatePRContent";
-import { useUserSessionStore, type AuthSessionPayload } from "@/stores/userSessionStore";
+import { useUpdateAnchorPRContent } from "@/queries/useAnchorPR";
+import { useUpdateCommunityPRContent } from "@/queries/useCommunityPR";
+import {
+  useUserSessionStore,
+  type AuthSessionPayload,
+} from "@/stores/userSessionStore";
 import Modal from "@/components/common/Modal.vue";
 import SubmitButton from "@/components/common/SubmitButton.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import PRForm from "@/components/pr/PRForm.vue";
 import PinInput from "@/components/common/PinInput.vue";
+import {
+  toAnchorPRFields,
+  toCommunityPRFields,
+  type PRFormFields,
+} from "@/entities/pr/types";
 
 interface Props {
   open: boolean;
-  initialFields: PartnerRequestFields;
+  initialFields: PRFormFields;
   prId: PRId;
+  scenario: PRKind;
 }
 
 const props = defineProps<Props>();
@@ -74,11 +82,17 @@ const emit = defineEmits<{
   success: [];
 }>();
 
-const updateMutation = useUpdatePRContent();
+const communityUpdateMutation = useUpdateCommunityPRContent();
+const anchorUpdateMutation = useUpdateAnchorPRContent();
 const userSessionStore = useUserSessionStore();
 const formRef = ref<InstanceType<typeof PRForm> | null>(null);
 const editPin = ref("");
 const requiresPin = computed(() => userSessionStore.role === "anonymous");
+const getUpdateMutation = () =>
+  props.scenario === "ANCHOR" ? anchorUpdateMutation : communityUpdateMutation;
+const isUpdatePending = computed(() => getUpdateMutation().isPending.value);
+const hasUpdateError = computed(() => getUpdateMutation().isError.value);
+const updateError = computed(() => getUpdateMutation().error.value);
 const isFormValid = computed(() => {
   const canSubmit = formRef.value?.canSubmit;
   const formOk = isRef(canSubmit) ? canSubmit.value : Boolean(canSubmit);
@@ -92,11 +106,18 @@ const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
   const pin = requiresPin.value ? editPin.value : undefined;
   if (requiresPin.value && (!pin || pin.length !== 4)) return;
 
-  const result = await updateMutation.mutateAsync({
-    id: props.prId,
-    fields,
-    pin,
-  });
+  const result =
+    props.scenario === "ANCHOR"
+      ? await anchorUpdateMutation.mutateAsync({
+          id: props.prId,
+          fields: toAnchorPRFields(fields),
+          pin,
+        })
+      : await communityUpdateMutation.mutateAsync({
+          id: props.prId,
+          fields: toCommunityPRFields(fields),
+          pin,
+        });
 
   const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
   if (authPayload) {
@@ -110,6 +131,10 @@ const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
 const handleClose = () => {
   editPin.value = "";
   emit("close");
+};
+
+const resetUpdateMutation = () => {
+  getUpdateMutation().reset();
 };
 </script>
 

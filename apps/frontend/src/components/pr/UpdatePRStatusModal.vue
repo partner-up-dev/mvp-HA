@@ -32,7 +32,7 @@
         {{ t("common.cancel") }}
       </button>
       <SubmitButton
-        :loading="updateMutation.isPending.value"
+        :loading="isUpdatePending"
         :disabled="requiresPin && (!modifyPin || modifyPin.length !== 4)"
         @click="handleConfirm"
       >
@@ -41,12 +41,9 @@
     </div>
 
     <ErrorToast
-      v-if="updateMutation.isError.value"
-      :message="
-        updateMutation.error.value?.message ||
-        t('modifyStatusModal.updateFailed')
-      "
-      @close="updateMutation.reset()"
+      v-if="hasUpdateError"
+      :message="updateError?.message || t('modifyStatusModal.updateFailed')"
+      @close="resetUpdateMutation"
     />
   </Modal>
 </template>
@@ -58,9 +55,13 @@ import Modal from "@/components/common/Modal.vue";
 import SubmitButton from "@/components/common/SubmitButton.vue";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import PinInput from "@/components/common/PinInput.vue";
-import { useUpdatePRStatus } from "@/queries/useUpdatePRStatus";
-import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
-import { useUserSessionStore, type AuthSessionPayload } from "@/stores/userSessionStore";
+import { useUpdateAnchorPRStatus } from "@/queries/useAnchorPR";
+import { useUpdateCommunityPRStatus } from "@/queries/useCommunityPR";
+import type { PRId, PRKind, PRStatusManual } from "@partner-up-dev/backend";
+import {
+  useUserSessionStore,
+  type AuthSessionPayload,
+} from "@/stores/userSessionStore";
 
 interface StatusOption {
   value: PRStatusManual;
@@ -70,6 +71,7 @@ interface StatusOption {
 const props = defineProps<{
   open: boolean;
   prId: PRId;
+  scenario: PRKind;
 }>();
 const { t } = useI18n();
 
@@ -84,11 +86,17 @@ const statusOptions: StatusOption[] = [
   { value: "CLOSED", label: t("status.closed") },
 ];
 
-const updateMutation = useUpdatePRStatus();
+const communityUpdateMutation = useUpdateCommunityPRStatus();
+const anchorUpdateMutation = useUpdateAnchorPRStatus();
 const userSessionStore = useUserSessionStore();
 const selectedStatus = ref<PRStatusManual>("OPEN");
 const modifyPin = ref("");
 const requiresPin = computed(() => userSessionStore.role === "anonymous");
+const getUpdateMutation = () =>
+  props.scenario === "ANCHOR" ? anchorUpdateMutation : communityUpdateMutation;
+const isUpdatePending = computed(() => getUpdateMutation().isPending.value);
+const hasUpdateError = computed(() => getUpdateMutation().isError.value);
+const updateError = computed(() => getUpdateMutation().error.value);
 
 const handleClose = () => {
   selectedStatus.value = "OPEN";
@@ -102,7 +110,7 @@ const handleConfirm = async () => {
     return;
   }
 
-  const result = await updateMutation.mutateAsync({
+  const result = await getUpdateMutation().mutateAsync({
     id: props.prId,
     status: selectedStatus.value,
     pin,
@@ -114,6 +122,10 @@ const handleConfirm = async () => {
   }
 
   handleClose();
+};
+
+const resetUpdateMutation = () => {
+  getUpdateMutation().reset();
 };
 </script>
 

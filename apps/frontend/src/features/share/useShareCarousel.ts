@@ -1,5 +1,6 @@
 import { computed, ref, watchEffect, type ComputedRef } from "vue";
 import { trackEvent } from "@/shared/analytics/track";
+import { parsePRIdFromPathname } from "@/entities/pr/routes";
 
 export type ShareMethodId = "WEB_SHARE" | "XIAOHONGSHU" | "WECHAT_CHAT";
 
@@ -23,11 +24,7 @@ const FALLBACK_METHOD: ShareMethod = {
 
 const resolveCurrentPRId = (): number | undefined => {
   if (typeof window === "undefined") return undefined;
-  const matched = window.location.pathname.match(/^\/pr\/(\d+)(?:\/|$)/);
-  if (!matched) return undefined;
-  const id = Number.parseInt(matched[1], 10);
-  if (!Number.isFinite(id) || id <= 0) return undefined;
-  return id;
+  return parsePRIdFromPathname(window.location.pathname) ?? undefined;
 };
 
 export const useShareCarousel = ({

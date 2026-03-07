@@ -9,6 +9,7 @@ import { WeChatJssdkService } from "../services/WeChatJssdkService";
 import { WeChatLoginService } from "../services/WeChatLoginService";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
 import { UserRepository } from "../repositories/UserRepository";
+import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
 import {
   cancelWeChatReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
@@ -19,6 +20,7 @@ const jssdkService = new WeChatJssdkService();
 const oauthService = new WeChatOAuthService();
 const loginService = new WeChatLoginService();
 const userRepo = new UserRepository();
+const userNotificationOptRepo = new UserNotificationOptRepository();
 
 const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
 const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
@@ -309,13 +311,14 @@ export const wechatRoute = app
         optInAt: null,
       });
     }
+    const notificationOpt = await userNotificationOptRepo.findByUserId(user.id);
 
     return c.json({
       configured: true,
       authenticated: true,
-      enabled: user.wechatReminderOptIn,
-      optInAt: user.wechatReminderOptInAt
-        ? user.wechatReminderOptInAt.toISOString()
+      enabled: notificationOpt?.wechatReminderOptIn ?? false,
+      optInAt: notificationOpt?.wechatReminderOptInAt
+        ? notificationOpt.wechatReminderOptInAt.toISOString()
         : null,
     });
   })
@@ -346,11 +349,12 @@ export const wechatRoute = app
       }
 
       const { enabled } = c.req.valid("json");
-      const updatedUser = await userRepo.updateWechatReminderSubscription(
+      const updatedNotificationOpt =
+        await userNotificationOptRepo.upsertWechatReminderSubscription(
         user.id,
         enabled,
       );
-      if (!updatedUser) {
+      if (!updatedNotificationOpt) {
         return c.json({ error: "Failed to update reminder subscription" }, 500);
       }
 
@@ -363,9 +367,9 @@ export const wechatRoute = app
 
       return c.json({
         ok: true,
-        enabled: updatedUser.wechatReminderOptIn,
-        optInAt: updatedUser.wechatReminderOptInAt
-          ? updatedUser.wechatReminderOptInAt.toISOString()
+        enabled: updatedNotificationOpt.wechatReminderOptIn,
+        optInAt: updatedNotificationOpt.wechatReminderOptInAt
+          ? updatedNotificationOpt.wechatReminderOptInAt.toISOString()
           : null,
         deletedJobs,
       });

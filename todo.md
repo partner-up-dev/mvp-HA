@@ -3,8 +3,7 @@
 ## Deployment
 
 - [ ] CICD 还有可以优化的（不需要检查层依赖、层清理、包清理）
-- [ ] CICD 数据库迁移
-- [ ] 后端、数据库都是按需启动的，冷启动会比较慢，Loading需要有更多变化（比如“再等一下下”）
+- [ ] 数据库迁移（开发/部署）工作流
 - [ ] 【HIGH】后端冷启动及其缓慢，RuntimeInitialization消耗6s；函数 Invocation 消耗 6 秒（仅仅是 js-sdk signature req哦）
 - [ ] 在移动端的加载速度还有待优化
 - [x] 多环境支持：后端通过httpTrigger+函数别名 (`https://test.api-app.partner-up.cn`)；前端创建另一个Page (`https://test.app.partner-up.cn`)
@@ -32,7 +31,8 @@
 - [ ] Anchor PR / Community PR 分开不同的页面和不同的表（但仍然会有可复用的组件）
   - [ ] raw_text 对于 Anchor PR 来说是可选的
   - [ ] 还有更多的外键约束
-- [ ] 我的搭子请求列表
+- [x] 我的搭子请求列表
+- [ ] min-partners 必须大于1 （记得告诉 NL parsing LLM）
 
 ### Detail Page
 
@@ -57,6 +57,7 @@
 - [x] 因为 poster, thumbnail 会被自动清理，所以前端一旦发现 404，应该重新生成，而不是留着 broken image
 - [x] 分享到微信的“换一个”没有发现风格区别
 - [x] 分享到微信的 description 和 title 怎么能一样呢
+- [ ] PRShareSection 布局重构
 - [ ] 跳转小红书App（最好能跳到笔记草稿页） <https://chatgpt.com/c/698b28a9-9990-83a8-bf9f-a00bd6158096>
 
 ## Event

@@ -17,9 +17,36 @@ type UseShareToWechatChatOptions = {
   t: Translate;
 };
 
-const toShareDescriptionFallback = (rawText: string): string => {
-  const text = rawText.replace(/\s+/g, " ").trim();
+const truncateShareText = (value: string): string => {
+  const text = value.replace(/\s+/g, " ").trim();
   return text.length > 80 ? `${text.slice(0, 79)}…` : text;
+};
+
+const toShareDescriptionFallback = (
+  prData: PRShareData,
+  t: Translate,
+): string => {
+  const rawText = truncateShareText(prData.rawText ?? "");
+  if (rawText) return rawText;
+
+  const summary = truncateShareText(
+    [
+      prData.type,
+      prData.location,
+      prData.budget ?? null,
+      ...prData.preferences.slice(0, 2),
+      prData.notes,
+    ]
+      .filter(
+        (item): item is string =>
+          typeof item === "string" && item.trim().length > 0,
+      )
+      .join(" · "),
+  );
+  if (summary) return summary;
+
+  const title = truncateShareText(prData.title ?? "");
+  return title || t("home.subtitle");
 };
 
 export const useShareToWechatChat = ({
@@ -176,12 +203,12 @@ export const useShareToWechatChat = ({
         const data = (await res.json()) as { description: string };
         shareDesc.value = data.description;
       } else {
-        console.warn("Failed to generate description, using rawText");
-        shareDesc.value = toShareDescriptionFallback(prData.rawText);
+        console.warn("Failed to generate description, using fallback summary");
+        shareDesc.value = toShareDescriptionFallback(prData, t);
       }
     } catch (error) {
       console.warn("Error generating description:", error);
-      shareDesc.value = toShareDescriptionFallback(prData.rawText);
+      shareDesc.value = toShareDescriptionFallback(prData, t);
     } finally {
       isGeneratingDesc.value = false;
     }
@@ -232,4 +259,3 @@ export const useShareToWechatChat = ({
     handleThumbnailLoadError,
   };
 };
-

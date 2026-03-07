@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -35,7 +36,7 @@ export const notificationDeliveries = pgTable(
       .$type<PRId>()
       .notNull()
       .references(() => partnerRequests.id, { onDelete: "cascade" }),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .$type<UserId>()
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -64,4 +65,3 @@ export const selectNotificationDeliverySchema =
 export type NotificationDeliveryRow = typeof notificationDeliveries.$inferSelect;
 export type NewNotificationDeliveryRow =
   typeof notificationDeliveries.$inferInsert;
-

@@ -1,8 +1,8 @@
-import type { PartnerRequestFields } from "@partner-up-dev/backend";
+import type { PRFormFields } from "@/entities/pr/types";
 
 export const clonePRFields = (
-  fields: PartnerRequestFields,
-): PartnerRequestFields => ({
+  fields: PRFormFields,
+): PRFormFields => ({
   title: fields.title,
   type: fields.type,
   time: [fields.time[0], fields.time[1]],

@@ -8,6 +8,7 @@ import { userIdSchema, type UserId } from "../../entities/user";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { UserRepository } from "../../repositories/UserRepository";
+import { UserNotificationOptRepository } from "../../repositories/UserNotificationOptRepository";
 import { NotificationDeliveryRepository } from "../../repositories/NotificationDeliveryRepository";
 import { getTimeWindowStart } from "../../domains/pr-core/services/time-window.service";
 import { jobRunner, type JobHandlerContext } from "../jobs";
@@ -37,6 +38,7 @@ type ReminderJobPayload = z.infer<typeof reminderJobPayloadSchema>;
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userRepo = new UserRepository();
+const userNotificationOptRepo = new UserNotificationOptRepository();
 const deliveryRepo = new NotificationDeliveryRepository();
 const subscriptionMessageService = new WeChatSubscriptionMessageService();
 const templateService = new WeChatTemplateMessageService();
@@ -66,12 +68,15 @@ const getReminderRunAt = (
   return new Date(start.getTime() - reminderOffsetMsByType[reminderType]);
 };
 
-const resolvePrUrl = (prId: PRId): string | null => {
+const resolvePrUrl = (request: PartnerRequest): string | null => {
   const frontendUrl = env.FRONTEND_URL?.trim();
   if (!frontendUrl) return null;
   try {
     const url = new URL(frontendUrl);
-    url.pathname = `/pr/${prId}`;
+    url.pathname =
+      request.prKind === "ANCHOR"
+        ? `/apr/${request.id}`
+        : `/cpr/${request.id}`;
     url.search = "";
     url.hash = "";
     return url.toString();
@@ -179,7 +184,8 @@ async function handleReminderJob(
     return;
   }
 
-  if (!user.wechatReminderOptIn) {
+  const notificationOpt = await userNotificationOptRepo.findByUserId(user.id);
+  if (!notificationOpt?.wechatReminderOptIn) {
     await recordDelivery({
       jobId: context.jobId,
       payload,
@@ -268,7 +274,7 @@ async function handleReminderJob(
         title: resolveReminderTitle(request),
         startAtLabel: formatReminderTimeLabel(startAt),
         location: request.location,
-        prUrl: resolvePrUrl(request.id),
+        prUrl: resolvePrUrl(request),
       });
     }
 
@@ -303,7 +309,10 @@ export async function scheduleWeChatReminderJobsForParticipant(
   userId: UserId,
 ): Promise<void> {
   const user = await userRepo.findById(userId);
-  if (!user || !user.wechatReminderOptIn) {
+  const notificationOpt = user
+    ? await userNotificationOptRepo.findByUserId(userId)
+    : null;
+  if (!user || !notificationOpt?.wechatReminderOptIn) {
     return;
   }
 

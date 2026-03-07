@@ -25,6 +25,9 @@ export async function buildPartnerRequestSummaries(
       const partners = await partnerRepo.listActiveIdsByPrId(row.id);
       return {
         id: row.id,
+        prKind: row.prKind,
+        canonicalPath:
+          row.prKind === "ANCHOR" ? `/apr/${row.id}` : `/cpr/${row.id}`,
         status: toPublicStatus(row.status as string, row.time),
         minPartners: row.minPartners,
         maxPartners: row.maxPartners,

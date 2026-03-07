@@ -36,5 +36,5 @@ export async function resolveUserByOpenId(openId: string): Promise<User> {
 }
 
 function generateUserId(): UserId {
-  return `u_${randomUUID().replace(/-/g, "")}` as UserId;
+  return randomUUID() as UserId;
 }

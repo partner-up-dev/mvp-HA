@@ -1,7 +1,8 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { UserRepository } from "../../../repositories/UserRepository";
+import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { isExitAllowedStatus } from "../services/status-rules";
@@ -15,7 +16,8 @@ import { cancelWeChatReminderJobsForParticipant } from "../../../infra/notificat
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const userRepo = new UserRepository();
+const userReliabilityRepo = new UserReliabilityRepository();
+const anchorPRRepo = new AnchorPRRepository();
 
 export async function exitPR(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -39,16 +41,19 @@ export async function exitPR(id: PRId, openId: string): Promise<PublicPR> {
   }
 
   if (
-    isBookingDeadlineReached(refreshedRequest.resourceBookingDeadlineAt) &&
+    refreshedRequest.prKind === "ANCHOR" &&
     (activeSlot.status === "CONFIRMED" || activeSlot.status === "ATTENDED")
   ) {
-    throw new HTTPException(400, {
-      message: "Cannot exit - slot is locked after booking deadline",
-    });
+    const anchor = await anchorPRRepo.findByPrId(id);
+    if (isBookingDeadlineReached(anchor?.resourceBookingDeadlineAt ?? null)) {
+      throw new HTTPException(400, {
+        message: "Cannot exit - slot is locked after booking deadline",
+      });
+    }
   }
 
   await partnerRepo.markReleased(activeSlot.id);
-  await userRepo.applyReliabilityDelta(user.id, { released: 1 });
+  await userReliabilityRepo.applyDelta(user.id, { released: 1 });
   await cancelWeChatReminderJobsForParticipant(id, user.id);
   await recalculatePRStatus(id);
 

@@ -33,6 +33,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useHomeRotatingTopic } from "@/composables/useHomeRotatingTopic";
 import { useRotatingTextWithTypeWriter } from "@/composables/useRotatingTextWithTypeWriter";
+import { communityPRCreatePath } from "@/entities/pr/routes";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -61,7 +62,7 @@ const goToStructuredCreate = async () => {
   const topicForQuery = activeTopicName.value || topicNames.value[0] || "";
 
   await router.push({
-    path: "/pr/new",
+    path: communityPRCreatePath(),
     query: {
       topic: topicForQuery,
     },

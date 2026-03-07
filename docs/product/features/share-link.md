@@ -6,7 +6,7 @@
 
 ## 流程
 
-- 用户创建 PartnerRequest 或打开自己的 PartnerRequest 页面。
+- 用户创建 Community PR 或打开自己的 Community PR / Anchor PR 页面。
 - 页面展示可分享的链接与“立即分享”操作。
 - 优先调用 Web Share API 打开系统分享面板。
 - 若环境不支持或调用失败，回退为复制链接到剪贴板。
@@ -15,7 +15,7 @@
 
 - 支持 Web Share API 的环境可拉起系统分享面板。
 - 不支持或调用失败时可自动回退为复制链接。
-- 被分享者打开链接可进入对应 PartnerRequest 页面。
+- 被分享者打开链接可进入对应的 `/cpr/:id` 或 `/apr/:id` 页面。
 
 ## 涉及端
 

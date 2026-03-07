@@ -2,17 +2,17 @@
 
 ## 用户故事
 
-- 作为发起者，我想把 PartnerRequest 生成适合小红书发布的内容，便于传播。
+- 作为发起者，我想把 Community PR 或 Anchor PR 生成适合小红书发布的内容，便于传播。
 
 ## 流程
 
-- 用户在 PartnerRequest 页面选择分享到小红书。
+- 用户在 Community PR 页面（`/cpr/:id`）或 Anchor PR 页面（`/apr/:id`）选择分享到小红书。
 - 系统生成小红书文案与海报。
 - 用户复制文案或保存海报后发布。
 
 ## 验收标准
 
-- 能生成与 PartnerRequest 一致的小红书文案。
+- 能生成与当前 PR 一致的小红书文案。
 - 文案/海报中的“还差几人”按 `minPartners - partners.length` 计算（最小成团人数口径，不使用 maxPartners）。
 - 能生成可保存的分享海报。
 - 用户可完成复制或保存操作。

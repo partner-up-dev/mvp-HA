@@ -2,11 +2,13 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import type { PRId } from "../../../entities/partner-request";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
+const anchorPRRepo = new AnchorPRRepository();
 
 const windowsEqual = (
   a: [string | null, string | null],
@@ -36,38 +38,43 @@ export interface AlternativeBatchRecommendationResult {
 export async function recommendAlternativeBatches(
   sourcePrId: PRId,
 ): Promise<AlternativeBatchRecommendationResult> {
-  const source = await prRepo.findById(sourcePrId);
-  if (!source) {
+  const sourceRequest = await prRepo.findById(sourcePrId);
+  if (!sourceRequest) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
-  if (
-    source.prKind !== "ANCHOR" ||
-    source.anchorEventId === null ||
-    source.batchId === null
-  ) {
+  if (sourceRequest.prKind !== "ANCHOR") {
     throw new HTTPException(400, {
       message:
         "Alternative batch recommendation is only available for anchor PR",
     });
   }
+  const sourceRecord = await anchorPRRepo.findRecordByPrId(sourcePrId);
+  if (!sourceRecord) {
+    throw new HTTPException(500, {
+      message: "Anchor PR subtype row missing",
+    });
+  }
+
+  const source = sourceRecord.root;
+  const anchor = sourceRecord.anchor;
   if (!source.location) {
     throw new HTTPException(400, {
       message: "Current anchor PR has no location",
     });
   }
 
-  const event = await anchorEventRepo.findById(source.anchorEventId);
+  const event = await anchorEventRepo.findById(anchor.anchorEventId);
   if (!event) {
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
 
-  const sourceBatch = await batchRepo.findById(source.batchId);
+  const sourceBatch = await batchRepo.findById(anchor.batchId);
   if (!sourceBatch) {
     throw new HTTPException(404, { message: "Anchor event batch not found" });
   }
 
   const existingBatches = await batchRepo.findByAnchorEventId(
-    source.anchorEventId,
+    anchor.anchorEventId,
   );
 
   const recommendations: AlternativeBatchRecommendation[] = [];
@@ -90,12 +97,12 @@ export async function recommendAlternativeBatches(
       continue;
     }
 
-    const prsAtSameLocation = await prRepo.findByBatchIdAndLocation(
+    const prsAtSameLocation = await anchorPRRepo.findVisibleByBatchIdAndLocation(
       matchedBatch.id,
       source.location,
     );
-    const joinable = prsAtSameLocation.find((pr) =>
-      hasJoinableStatus(pr.status),
+    const joinable = prsAtSameLocation.find((record) =>
+      hasJoinableStatus(record.root.status),
     );
 
     recommendations.push({
@@ -103,7 +110,7 @@ export async function recommendAlternativeBatches(
       timeWindow,
       location: source.location,
       hasJoinablePr: !!joinable,
-      joinablePrId: joinable?.id ?? null,
+      joinablePrId: joinable?.root.id ?? null,
       createOnAccept: !joinable,
     });
   }

@@ -46,6 +46,6 @@ export class WeChatLoginService {
   }
 
   private generateUserId(): UserId {
-    return `u_${randomUUID().replace(/-/g, "")}`;
+    return randomUUID() as UserId;
   }
 }

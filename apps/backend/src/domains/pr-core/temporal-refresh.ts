@@ -5,7 +5,8 @@
 
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
-import { UserRepository } from "../../repositories/UserRepository";
+import { UserReliabilityRepository } from "../../repositories/UserReliabilityRepository";
+import { AnchorPRRepository } from "../../repositories/AnchorPRRepository";
 import type { PartnerRequest } from "../../entities/partner-request";
 import {
   getTimeWindowStart,
@@ -23,7 +24,8 @@ import { operationLogService } from "../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const userRepo = new UserRepository();
+const userReliabilityRepo = new UserReliabilityRepository();
+const anchorPRRepo = new AnchorPRRepository();
 
 /**
  * Refresh a PR's temporal state: release unconfirmed slots, activate if
@@ -32,11 +34,20 @@ const userRepo = new UserRepository();
 export async function refreshTemporalStatus(
   request: PartnerRequest,
 ): Promise<PartnerRequest> {
-  await lockToStartIfNeeded(request);
+  const resourceBookingDeadlineAt =
+    request.prKind === "ANCHOR"
+      ? (await anchorPRRepo.findByPrId(request.id))?.resourceBookingDeadlineAt ??
+        null
+      : null;
+
+  await lockToStartIfNeeded(request, resourceBookingDeadlineAt);
   const afterLock = await prRepo.findById(request.id);
   const lockNormalized = afterLock ?? request;
 
-  await releaseUnconfirmedSlotsIfNeeded(lockNormalized);
+  await releaseUnconfirmedSlotsIfNeeded(
+    lockNormalized,
+    resourceBookingDeadlineAt,
+  );
   const afterRelease = await prRepo.findById(request.id);
   const normalized = afterRelease ?? lockNormalized;
   const activated = await activateIfNeeded(normalized);
@@ -78,7 +89,13 @@ async function expireIfNeeded(
   return updated ?? request;
 }
 
-function shouldLockToStart(request: PartnerRequest): boolean {
+function shouldLockToStart(
+  request: PartnerRequest,
+  resourceBookingDeadlineAt: Date | null,
+): boolean {
+  if (request.prKind !== "ANCHOR") {
+    return false;
+  }
   if (
     request.status !== "OPEN" &&
     request.status !== "READY" &&
@@ -86,11 +103,14 @@ function shouldLockToStart(request: PartnerRequest): boolean {
   ) {
     return false;
   }
-  return isBookingDeadlineReached(request.resourceBookingDeadlineAt);
+  return isBookingDeadlineReached(resourceBookingDeadlineAt);
 }
 
-async function lockToStartIfNeeded(request: PartnerRequest): Promise<void> {
-  if (!shouldLockToStart(request)) return;
+async function lockToStartIfNeeded(
+  request: PartnerRequest,
+  resourceBookingDeadlineAt: Date | null,
+): Promise<void> {
+  if (!shouldLockToStart(request, resourceBookingDeadlineAt)) return;
 
   const updated = await prRepo.updateStatus(request.id, "LOCKED_TO_START");
   if (!updated || updated.status !== "LOCKED_TO_START") return;
@@ -102,8 +122,7 @@ async function lockToStartIfNeeded(request: PartnerRequest): Promise<void> {
     aggregateId: String(request.id),
     detail: {
       previousStatus: request.status,
-      resourceBookingDeadlineAt:
-        request.resourceBookingDeadlineAt?.toISOString() ?? null,
+      resourceBookingDeadlineAt: resourceBookingDeadlineAt?.toISOString() ?? null,
       trigger: "booking_deadline",
     },
   });
@@ -111,8 +130,12 @@ async function lockToStartIfNeeded(request: PartnerRequest): Promise<void> {
 
 function resolveReleaseTrigger(
   request: PartnerRequest,
+  resourceBookingDeadlineAt: Date | null,
 ): "booking_deadline" | "t_minus_1h" | null {
-  if (isBookingDeadlineReached(request.resourceBookingDeadlineAt)) {
+  if (request.prKind !== "ANCHOR") {
+    return null;
+  }
+  if (isBookingDeadlineReached(resourceBookingDeadlineAt)) {
     return "booking_deadline";
   }
 
@@ -124,8 +147,9 @@ function resolveReleaseTrigger(
 
 async function releaseUnconfirmedSlotsIfNeeded(
   request: PartnerRequest,
+  resourceBookingDeadlineAt: Date | null,
 ): Promise<void> {
-  const trigger = resolveReleaseTrigger(request);
+  const trigger = resolveReleaseTrigger(request, resourceBookingDeadlineAt);
   if (!trigger) return;
 
   const slots = await partnerRepo.findByPrId(request.id);
@@ -134,7 +158,7 @@ async function releaseUnconfirmedSlotsIfNeeded(
 
   for (const slot of releasing) {
     if (slot.userId) {
-      await userRepo.applyReliabilityDelta(slot.userId, { released: 1 });
+      await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
       await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
     }
     await partnerRepo.markReleased(slot.id);

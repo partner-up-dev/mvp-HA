@@ -251,7 +251,7 @@
       "pending": "发布中..."
     },
     "pinHelp": {
-      "title": "你的用户 PIN",
+      "title": "PIN",
       "description": "您不需要注册，但是为了避免其他人随意修改您的搭子请求，我们为您生成了 PIN，请妥善保管。",
       "currentPin": "您的 PIN：{pin}"
     },

@@ -21,8 +21,6 @@ import {
   updatePRContent as updatePRContentUseCase,
   joinPR as joinPRUseCase,
   exitPR as exitPRUseCase,
-  confirmSlot as confirmSlotUseCase,
-  checkIn as checkInUseCase,
 } from "../domains/pr-core";
 import type { PublicPR } from "../domains/pr-core";
 import type {
@@ -89,17 +87,5 @@ export class PartnerRequestService {
 
   async exitPRAsAuthenticatedUser(id: PRId, openId: string) {
     return exitPRUseCase(id, openId);
-  }
-
-  async confirmPRSlot(id: PRId, openId: string) {
-    return confirmSlotUseCase(id, openId);
-  }
-
-  async checkInPRSlot(
-    id: PRId,
-    openId: string,
-    payload: { didAttend: boolean; wouldJoinAgain: boolean | null },
-  ) {
-    return checkInUseCase(id, openId, payload);
   }
 }

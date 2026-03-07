@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { toTypedSchema } from "@vee-validate/zod";
-import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import { i18n } from "@/locales/i18n";
+import type { PRFormFields } from "@/entities/pr/types";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
@@ -11,7 +11,7 @@ export const pinSchema = z
   .string()
   .regex(/^\d{4}$/, i18n.global.t("validation.pinMustBeFourDigits"));
 
-const fieldsSchema: z.ZodType<PartnerRequestFields> = z.object({
+const fieldsSchema: z.ZodType<PRFormFields> = z.object({
   title: z.string().optional(),
   type: z.string().min(1, i18n.global.t("validation.typeRequired")),
   time: z.tuple([
@@ -22,7 +22,7 @@ const fieldsSchema: z.ZodType<PartnerRequestFields> = z.object({
   minPartners: z.number().int().nonnegative().nullable(),
   maxPartners: z.number().int().nonnegative().nullable(),
   partners: z.array(z.number().int().positive()),
-  budget: z.string().nullable(),
+  budget: z.string().nullable().optional(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
 });

@@ -52,7 +52,7 @@ const footerNavLinks = computed(() => [
     label: t("eventPlaza.title"),
   },
   {
-    routeName: "pr-new",
+    routeName: "community-pr-create",
     label: t("createPage.title"),
   },
   {

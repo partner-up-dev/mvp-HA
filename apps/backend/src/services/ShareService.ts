@@ -135,7 +135,7 @@ export class ShareService {
     const pr = await this.prService.getPR(params.prId);
     const prFields = this.toPartnerRequestFields(pr);
     const result = await this.shareAIService.generateXiaohongshuPosterHtml({
-      pr: { ...prFields, rawText: pr.rawText },
+      pr: prFields,
       caption: params.caption,
       posterStylePrompt: params.posterStylePrompt,
     });
@@ -149,7 +149,7 @@ export class ShareService {
       // Retry once with stricter style constraints to reduce unsafe constructs.
       const strictResult =
         await this.shareAIService.generateXiaohongshuPosterHtml({
-          pr: { ...prFields, rawText: pr.rawText },
+          pr: prFields,
           caption: params.caption,
           posterStylePrompt: buildStrictSafetyStylePrompt(
             params.posterStylePrompt,
@@ -172,7 +172,7 @@ export class ShareService {
     const prFields = this.toPartnerRequestFields(pr);
 
     const result = await this.shareAIService.generateWeChatCardThumbnailHtml({
-      pr: { ...prFields, rawText: pr.rawText },
+      pr: prFields,
       style: params.style,
     });
 
@@ -188,7 +188,7 @@ export class ShareService {
 
     const description = await this.shareAIService.generateWeChatCardDescription(
       {
-        pr: { ...prFields, rawText: pr.rawText },
+        pr: prFields,
       },
     );
 

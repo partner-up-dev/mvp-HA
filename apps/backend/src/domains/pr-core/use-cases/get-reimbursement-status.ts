@@ -1,4 +1,5 @@
 import { HTTPException } from "hono/http-exception";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId } from "../../../entities/partner-request";
@@ -7,6 +8,7 @@ import { refreshTemporalStatus } from "../temporal-refresh";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const anchorPRRepo = new AnchorPRRepository();
 
 type ReimbursementReason =
   | "MODEL_NOT_REIMBURSEMENT"
@@ -32,8 +34,19 @@ export async function getReimbursementStatus(
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
+  if (refreshedRequest.prKind !== "ANCHOR") {
+    throw new HTTPException(400, {
+      message: "Reimbursement is only available for anchor PR",
+    });
+  }
+  const anchor = await anchorPRRepo.findByPrId(id);
+  if (!anchor) {
+    throw new HTTPException(500, {
+      message: "Anchor PR subtype row missing",
+    });
+  }
 
-  if (refreshedRequest.paymentModelApplied !== "A") {
+  if (anchor.paymentModelApplied !== "A") {
     return {
       eligible: false,
       canRequest: false,

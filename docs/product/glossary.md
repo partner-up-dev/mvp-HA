@@ -2,21 +2,25 @@
 
 - H-A MVP：协作效率产品假设的最小验证版本，目标是验证协作是否会发生。
 - 协作触发器：嵌入对话/行为中的触发方式，把自然语言冻结为 PartnerRequest。
-- PartnerRequest（搭子请求）：一次性协作单元，可被加入并自然结束的协作状态。
+- PartnerRequest（搭子请求）：一次性协作单元，可被加入并自然结束的协作状态；当前按场景拆分为 Community PR 与 Anchor PR。
+- Community PR：社区场景搭子请求，使用 `/cpr/:id` 页面，支持创建、发布、加入、退出与分享。
+- Anchor PR：活动锚点场景搭子请求，使用 `/apr/:id` 页面，并可扩展到 `/apr/:id/economy` 经济信息页。
 - PartnerRequestPreset：行为模板，只提供默认参数、文案与 UI 表现。
 - PartnerRequestStatus：PartnerRequest 状态流转（DRAFT / OPEN / READY / FULL / LOCKED_TO_START / ACTIVE / CLOSED / EXPIRED）。
 - Time Window：PartnerRequest 的时间窗口（start_at / end_at）
 - Capacity：PartnerRequest 的人数阈值（min / max）。
 - Current Partners：PartnerRequest 当前人数（`partners.length`），`partners` 为该 PR 下活跃槽位（JOINED / CONFIRMED / ATTENDED）的 `partnerId[]` 动态聚合结果。
+- Partner：Community PR 与 Anchor PR 共用的参与槽位机制。
 - SlotStatus（Partner.status）：单个参与槽位状态（JOINED / CONFIRMED / RELEASED / ATTENDED）。
 - User PIN：用户级 4 位数字 PIN（存储为 `users.pin_hash`），用于匿名创建者编辑内容/状态时完成所有权校验；校验成功后会升级为 authenticated token。
-- PR PIN（废弃语义）：旧版本绑定在 PR 级别的 PIN，不再用于业务鉴权流程。
 - PaymentModel（L1）：支付模型（A=用户先付后报销，C=平台补贴）。
 - ReimbursementStatus：报销状态（NONE / PENDING / APPROVED / REJECTED / PAID）。
-- Confirmation Window：确认时序窗口（T-1h 自动释放未确认槽位；T-1h~T-30min 加入即确认；T-30min 后禁止加入）。
-- Check-in Signal：签到回流信号（didAttend / wouldJoinAgain），用于近似到场率与复参与意愿。
-- User（最小模型）：用户主体（可本地创建并后续绑定微信 `openid`），含 `nickname`、`sex`、`avatar`、`pin_hash` 与 `status`（ACTIVE / DISABLED）。
-- 分享链接：指向 PartnerRequest 页面、可复制传播的链接。
+- Confirmation Window：Anchor PR 专属确认时序窗口（T-1h 自动释放未确认槽位；T-1h~T-30min 加入即确认；T-30min 后禁止加入）。
+- Check-in Signal：Anchor PR 专属签到回流信号（didAttend / wouldJoinAgain），用于近似到场率与复参与意愿。
+- User（最小模型）：核心用户主体，`users.id` 使用 UUID；表内仅维护身份与资料字段（`openid`、`nickname`、`sex`、`avatar`、`pin_hash`、`status`）。
+- UserReliability：用户可靠性统计表（`user_reliability`），维护 join / confirm / attend / release 计数与派生比率。
+- UserNotificationOpts：用户通知偏好表（`user_notification_opts`），维护公众号提醒等可扩展通知开关。
+- 分享链接：指向 `/cpr/:id` 或 `/apr/:id` 页面、可复制传播的链接。
 - 小红书文案：用于发布到小红书的分享文本。
 - 分享海报：用于社交平台传播的图片。
 - 微信分享卡片：在微信内分享时生成的标题/摘要/缩略图卡片。

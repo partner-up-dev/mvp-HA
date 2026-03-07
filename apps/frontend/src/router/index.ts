@@ -5,11 +5,11 @@ import {
 } from "vue-router";
 import { trackEvent } from "@/shared/analytics/track";
 import HomePage from "@/pages/HomePage.vue";
-import PRPage from "@/pages/PRPage.vue";
-import PRCreatePage from "@/pages/PRCreatePage.vue";
-import PRFormCreatePage from "@/pages/PRFormCreatePage.vue";
 import MyPRsPage from "@/pages/MyPRsPage.vue";
-import PREconomyPage from "@/pages/PREconomyPage.vue";
+import CommunityPRPage from "@/pages/CommunityPRPage.vue";
+import CommunityPRCreatePage from "@/pages/CommunityPRCreatePage.vue";
+import AnchorPRPage from "@/pages/AnchorPRPage.vue";
+import AnchorPREconomyPage from "@/pages/AnchorPREconomyPage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
@@ -33,33 +33,33 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/pr/:id",
-    name: "pr",
-    component: PRPage,
+    path: "/cpr/:id",
+    name: "community-pr",
+    component: CommunityPRPage,
     meta: {
       wechatSharePolicy: "skip",
     },
   },
   {
-    path: "/pr/:id/economy",
-    name: "pr-economy",
-    component: PREconomyPage,
+    path: "/apr/:id",
+    name: "anchor-pr",
+    component: AnchorPRPage,
     meta: {
       wechatSharePolicy: "skip",
     },
   },
   {
-    path: "/pr/new",
-    name: "pr-new",
-    component: PRCreatePage,
+    path: "/apr/:id/economy",
+    name: "anchor-pr-economy",
+    component: AnchorPREconomyPage,
     meta: {
-      wechatSharePolicy: "route",
+      wechatSharePolicy: "skip",
     },
   },
   {
-    path: "/pr/new/form",
-    name: "pr-form-new",
-    component: PRFormCreatePage,
+    path: "/cpr/new",
+    name: "community-pr-create",
+    component: CommunityPRCreatePage,
     meta: {
       wechatSharePolicy: "route",
     },

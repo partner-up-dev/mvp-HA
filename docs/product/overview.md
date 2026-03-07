@@ -6,21 +6,27 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 
 ## 核心形态
 
-- 一次性 PartnerRequest 页面（H5 / 小程序渲染）。
-- PartnerRequest 具备时间窗口与人数阈值，用于触发协作状态变化
+- 一次性 PartnerRequest 页面拆分为两类：
+  - Community PR：`/cpr/:id`
+  - Anchor PR：`/apr/:id`
+- Community PR 与 Anchor PR 共享 Partner 参与机制、时间窗口与人数阈值，但页面、字段与业务规则分开演进。
+- Anchor PR 额外提供经济信息页：`/apr/:id/economy`
 
 ## 合法使用路径
 
 - 打开别人发来的 PartnerRequest 链接。
 - 在首页浏览活动亮点或进入活动广场，获得灵感后决定是否发起 PartnerRequest。
 - 点击首页价值点「从一句话开始」可展开内联自然语言创建表单（两行：NL 输入 + 发送），直接创建 PartnerRequest。
-- 也可通过首页次级 CTA 进入 `/pr/new`，在同一页面使用自然语言或结构化表单创建 PartnerRequest（统一先创建草稿，再发布）。
+- 也可通过首页次级 CTA 进入 `/cpr/new`，创建 Community PR（统一先创建草稿，再发布）。
 - 进入 `/pr/mine` 可查看“我创建的 / 我加入的”搭子请求列表（前端对重复项做去重展示）。
+- 进入 `/events` 与 `/events/:eventId` 可浏览 Anchor Event，并从中进入 Anchor PR 页面。
+- 当前版本不提供手动创建 Anchor PR 的独立页面；Anchor PR 由 Anchor Event 侧流程生成。
 - 发布 `DRAFT` 时会为创建者绑定用户身份并生成/确保用户 PIN；后续匿名编辑内容/状态时使用用户 PIN 验证。
 - 进入网页时会通过 `localStorage` 中的 `user-id/user-pin` 自动恢复会话；若不存在本地凭据则保持匿名，会在第一次发布搭子请求时创建本地账户并登录。
 - 点击首页或页面底部“联系作者”，进入 `/contact-support`；在该页可选择“联系客服”（报销/投诉）或跳转 `/contact-author` 反馈功能建议与 Bug。
 - 从历史 PartnerRequest 再发一个。
 - 在微信内打开页面时，系统会自动尝试完成微信登录（无独立登录页）。
-- 在 PR 详情页执行“加入/退出”时，系统会强制校验微信登录态（用于绑定 OpenID 与 slot 参与者）；新用户首次微信登录会补录昵称、性别、头像。
-- PR 详情页支持“确认参与”与可选签到（到场/未到场）反馈，用于可靠性与信任回流。
-- PR 详情页支持“公众号提醒”开关；开启后会按 `T-24h` 与 `T-2h` 触发服务号订阅通知提醒（模板消息通道保留为兼容兜底），关闭后会清理未执行提醒任务。
+- 在 Community PR / Anchor PR 详情页执行“加入/退出”时，系统会强制校验微信登录态（用于绑定 OpenID 与 slot 参与者）；新用户首次微信登录会补录昵称、性别、头像。
+- Community PR 详情页仅提供 `join/exit`。
+- Anchor PR 详情页提供 `join/exit`、确认参与与可选签到（到场/未到场）反馈，用于可靠性与信任回流。
+- Community PR 与 Anchor PR 详情页都支持“公众号提醒”开关；开启后会按 `T-24h` 与 `T-2h` 触发服务号订阅通知提醒（模板消息通道保留为兼容兜底），关闭后会清理未执行提醒任务。

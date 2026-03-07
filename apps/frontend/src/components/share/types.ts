@@ -1,4 +1,5 @@
-import type { PartnerRequestFields, PRId } from "@partner-up-dev/backend";
+import type { PRId } from "@partner-up-dev/backend";
+import type { PRFormFields } from "@/entities/pr/types";
 
 export type XhsPosterSnapshot = {
   caption: string;
@@ -13,8 +14,8 @@ export type WechatThumbnailSnapshot = {
   createdAt: string;
 };
 
-export type PRShareData = PartnerRequestFields & {
-  rawText: string;
+export type PRShareData = PRFormFields & {
+  rawText?: string | null;
   xiaohongshuPoster?: XhsPosterSnapshot | null;
   wechatThumbnail?: WechatThumbnailSnapshot | null;
 };

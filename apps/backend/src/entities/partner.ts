@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -47,7 +48,7 @@ export const partners = pgTable("partners", {
     .notNull()
     .references(() => partnerRequests.id, { onDelete: "cascade" }),
   status: text("status").$type<PartnerStatus>().notNull().default("RELEASED"),
-  userId: text("user_id")
+  userId: uuid("user_id")
     .$type<UserId | null>()
     .references(() => users.id, { onDelete: "set null" }),
   confirmedAt: timestamp("confirmed_at"),

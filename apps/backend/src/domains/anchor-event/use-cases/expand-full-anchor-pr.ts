@@ -1,8 +1,8 @@
-import bcrypt from "bcryptjs";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
 import { resolveAnchorEconomicPolicy } from "../../pr-core/services/economic-policy.service";
@@ -14,6 +14,7 @@ import { normalizeLocationPool } from "../../../entities/anchor-event";
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
+const anchorPRRepo = new AnchorPRRepository();
 const partnerRepo = new PartnerRepository();
 
 const isOccupiedStatus = (status: string): boolean =>
@@ -29,43 +30,42 @@ const findNextAvailableLocation = (
   return null;
 };
 
-const generateSystemPin = (): string => {
-  const value = Math.floor(1000 + Math.random() * 9000);
-  return String(value);
-};
-
 /**
  * Phase 2: when an Anchor PR becomes FULL, auto-create a new Anchor PR under
  * the same batch (same time window), using a different location in the same
  * Anchor Event location pool.
  */
 export async function expandFullAnchorPR(prId: PRId): Promise<void> {
-  const fullPR = await prRepo.findById(prId);
-  if (!fullPR) {
+  const request = await prRepo.findById(prId);
+  if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
-
-  if (
-    fullPR.prKind !== "ANCHOR" ||
-    fullPR.status !== "FULL" ||
-    fullPR.anchorEventId === null ||
-    fullPR.batchId === null
-  ) {
+  if (request.prKind !== "ANCHOR" || request.status !== "FULL") {
     return;
   }
 
-  const event = await anchorEventRepo.findById(fullPR.anchorEventId);
+  const fullPR = await anchorPRRepo.findRecordByPrId(prId);
+  if (!fullPR) {
+    throw new HTTPException(500, {
+      message: "Anchor PR subtype row missing",
+    });
+  }
+
+  const event = await anchorEventRepo.findById(fullPR.anchor.anchorEventId);
   if (!event || event.status !== "ACTIVE") {
     return;
   }
-  const batch = await batchRepo.findById(fullPR.batchId);
+  const batch = await batchRepo.findById(fullPR.anchor.batchId);
   if (!batch) return;
 
-  const batchPRs = await prRepo.findByBatchId(fullPR.batchId);
-  const occupiedLocations = new Set(
+  const batchPRs = await anchorPRRepo.findVisibleByBatchId(fullPR.anchor.batchId);
+  const occupiedLocations = new Set<string>(
     batchPRs
-      .filter((pr) => isOccupiedStatus(pr.status) && !!pr.location)
-      .map((pr) => pr.location as string),
+      .filter(
+        (record) =>
+          isOccupiedStatus(record.root.status) && !!record.root.location,
+      )
+      .map((record) => record.root.location as string),
   );
 
   const locationPool = normalizeLocationPool(event.locationPool);
@@ -79,34 +79,37 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
 
   // Best-effort idempotency: if a visible PR already exists at target location,
   // do not create a duplicate.
-  const existingAtTarget = await prRepo.findByBatchIdAndLocation(
-    fullPR.batchId,
+  const existingAtTarget = await anchorPRRepo.findVisibleByBatchIdAndLocation(
+    fullPR.anchor.batchId,
     targetLocation,
   );
-  if (existingAtTarget.some((pr) => isOccupiedStatus(pr.status))) {
+  if (existingAtTarget.some((record) => isOccupiedStatus(record.root.status))) {
     return;
   }
 
-  const pinHash = await bcrypt.hash(generateSystemPin(), 10);
-  const resolvedPolicy = resolveAnchorEconomicPolicy(event, batch, fullPR.time);
-  const created = await prRepo.create({
-    rawText: fullPR.rawText,
-    title: fullPR.title,
-    type: fullPR.type,
-    time: fullPR.time,
+  const resolvedPolicy = resolveAnchorEconomicPolicy(
+    event,
+    batch,
+    fullPR.root.time,
+  );
+  const createdRoot = await prRepo.create({
+    title: fullPR.root.title,
+    type: fullPR.root.type,
+    time: fullPR.root.time,
     location: targetLocation,
     status: "OPEN",
-    pinHash,
-    minPartners: fullPR.minPartners,
-    maxPartners: fullPR.maxPartners,
-    budget: fullPR.budget,
-    preferences: fullPR.preferences,
-    notes: fullPR.notes,
+    minPartners: fullPR.root.minPartners,
+    maxPartners: fullPR.root.maxPartners,
+    preferences: fullPR.root.preferences,
+    notes: fullPR.root.notes,
     prKind: "ANCHOR",
-    anchorEventId: fullPR.anchorEventId,
-    batchId: fullPR.batchId,
+  });
+  const createdAnchor = await anchorPRRepo.create({
+    prId: createdRoot.id,
+    anchorEventId: fullPR.anchor.anchorEventId,
+    batchId: fullPR.anchor.batchId,
     visibilityStatus: "VISIBLE",
-    autoHideAt: fullPR.autoHideAt,
+    autoHideAt: fullPR.anchor.autoHideAt,
     resourceBookingDeadlineAt: resolvedPolicy.resourceBookingDeadlineAt,
     paymentModelApplied: resolvedPolicy.paymentModelApplied,
     discountRateApplied: resolvedPolicy.discountRateApplied,
@@ -117,24 +120,25 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   });
 
   await initializeSlotsForPR(
-    created.id,
-    created.minPartners,
-    created.maxPartners,
+    createdRoot.id,
+    "ANCHOR",
+    createdRoot.minPartners,
+    createdRoot.maxPartners,
     null,
-    created.time,
+    createdRoot.time,
   );
 
   const activeCount = await partnerRepo.countActiveByPrId(prId);
   const eventRecord = await eventBus.publish(
     "anchor.pr.auto_created",
     "partner_request",
-    String(created.id),
+    String(createdRoot.id),
     {
       sourcePrId: prId,
-      createdPrId: created.id,
-      anchorEventId: created.anchorEventId,
-      batchId: created.batchId,
-      location: created.location,
+      createdPrId: createdRoot.id,
+      anchorEventId: createdAnchor.anchorEventId,
+      batchId: createdAnchor.batchId,
+      location: createdRoot.location,
       activeCountAtSource: activeCount,
     },
   );
@@ -144,11 +148,11 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     actorId: null,
     action: "anchor.pr.auto_create",
     aggregateType: "partner_request",
-    aggregateId: String(created.id),
+    aggregateId: String(createdRoot.id),
     detail: {
       sourcePrId: prId,
-      batchId: created.batchId,
-      location: created.location,
+      batchId: createdAnchor.batchId,
+      location: createdRoot.location,
     },
   });
 }

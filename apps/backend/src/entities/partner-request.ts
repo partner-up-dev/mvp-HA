@@ -1,21 +1,15 @@
 import {
   pgTable,
   bigserial,
-  bigint,
   text,
   jsonb,
   timestamp,
   integer,
-  doublePrecision,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import { anchorEvents, type AnchorEventId } from "./anchor-event";
-import {
-  anchorEventBatches,
-  type AnchorEventBatchId,
-} from "./anchor-event-batch";
 import { users, type UserId } from "./user";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -84,8 +78,6 @@ export type CreatePRStructuredStatus = z.infer<
   typeof createPRStructuredStatusSchema
 >;
 
-export const pinSchema = z.string().regex(/^\d{4}$/, "PIN must be 4 digits");
-
 export const createStructuredPRSchema = partnerRequestFieldsSchema;
 
 export const createNaturalLanguagePRSchema = z.object({
@@ -96,6 +88,8 @@ export const createNaturalLanguagePRSchema = z.object({
 
 export const partnerRequestSummarySchema = z.object({
   id: z.number().int().positive(),
+  prKind: prKindSchema,
+  canonicalPath: z.string(),
   status: prStatusSchema,
   minPartners: z.number().int().nonnegative().nullable(),
   maxPartners: z.number().int().nonnegative().nullable(),
@@ -127,7 +121,6 @@ export type WechatThumbnailCache = z.infer<typeof wechatThumbnailSchema>;
 // Drizzle table definition
 export const partnerRequests = pgTable("partner_requests", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
-  rawText: text("raw_text").notNull(),
   title: text("title"),
   type: text("type").notNull(),
   time: text("time_window")
@@ -137,17 +130,15 @@ export const partnerRequests = pgTable("partner_requests", {
     .default(sql`ARRAY[NULL, NULL]::text[]`),
   location: text("location"),
   status: text("status").$type<PRStatus>().notNull().default("OPEN"),
-  pinHash: text("pin_hash").notNull(),
   minPartners: integer("min_partners"),
   maxPartners: integer("max_partners"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  budget: text("budget"),
   preferences: text("preferences")
     .array()
     .notNull()
     .default(sql`ARRAY[]::text[]`),
   notes: text("notes"),
-  createdBy: text("created_by")
+  createdBy: uuid("created_by")
     .$type<UserId | null>()
     .references(() => users.id, { onDelete: "set null" }),
   xiaohongshuPoster: jsonb("xiaohongshu_poster")
@@ -156,28 +147,7 @@ export const partnerRequests = pgTable("partner_requests", {
   wechatThumbnail: jsonb("wechat_thumbnail")
     .$type<WechatThumbnailCache | null>()
     .default(null),
-  // --- GAPC-01: Anchor Event integration ---
   prKind: text("pr_kind").$type<PRKind>().notNull().default("COMMUNITY"),
-  anchorEventId: bigint("anchor_event_id", { mode: "number" })
-    .$type<AnchorEventId | null>()
-    .references(() => anchorEvents.id, { onDelete: "set null" }),
-  batchId: bigint("batch_id", { mode: "number" })
-    .$type<AnchorEventBatchId | null>()
-    .references(() => anchorEventBatches.id, { onDelete: "set null" }),
-  visibilityStatus: text("visibility_status")
-    .$type<VisibilityStatus>()
-    .notNull()
-    .default("VISIBLE"),
-  autoHideAt: timestamp("auto_hide_at"),
-  resourceBookingDeadlineAt: timestamp("resource_booking_deadline_at"),
-  paymentModelApplied: text("payment_model_applied").$type<PaymentModel | null>(),
-  discountRateApplied: doublePrecision("discount_rate_applied"),
-  subsidyCapApplied: integer("subsidy_cap_applied"),
-  cancellationPolicyApplied: text("cancellation_policy_applied"),
-  economicPolicyScopeApplied: text("economic_policy_scope_applied").$type<
-    EconomicPolicyScope | null
-  >(),
-  economicPolicyVersionApplied: integer("economic_policy_version_applied"),
 });
 
 // Zod schemas for validation
@@ -186,8 +156,6 @@ export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
-  paymentModelApplied: paymentModelSchema.nullable(),
-  economicPolicyScopeApplied: economicPolicyScopeSchema.nullable(),
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
@@ -195,8 +163,6 @@ export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
-  paymentModelApplied: paymentModelSchema.nullable(),
-  economicPolicyScopeApplied: economicPolicyScopeSchema.nullable(),
 });
 
 // Type inference

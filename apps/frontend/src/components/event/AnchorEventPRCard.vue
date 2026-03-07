@@ -1,8 +1,5 @@
 <template>
-  <RouterLink
-    :to="{ name: 'pr', params: { id: pr.id } }"
-    class="anchor-pr-card"
-  >
+  <RouterLink :to="anchorPRDetailPath(pr.id)" class="anchor-pr-card">
     <div
       v-if="coverImage"
       class="anchor-pr-card__cover"
@@ -37,6 +34,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import type { AnchorEventDetailResponse } from "@/queries/useAnchorEventDetail";
+import { anchorPRDetailPath } from "@/entities/pr/routes";
 
 interface AnchorEventPRCardProps {
   pr: AnchorEventDetailResponse["batches"][number]["prs"][number];

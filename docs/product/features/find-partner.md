@@ -3,8 +3,9 @@
 ## 用户故事
 
 - 作为用户，我希望进入首页后先快速理解产品，并从“活动亮点/活动广场”中获得灵感，再决定是否发起搭子。
-- 作为用户，我希望进入创建页后可在“自然语言”与“结构化表单”间切换，并按需补充细节。
+- 作为用户，我希望进入 Community PR 创建页后可在“自然语言”与“结构化表单”间切换，并按需补充细节。
 - 作为创建者，我希望编辑时和创建时使用同一套结构化表单，减少学习成本。
+- 作为参与者，我希望 Community PR 与 Anchor PR 的页面语义清晰，不把加入、确认、签到、经济信息混在同一个页面里。
 
 ## 流程
 
@@ -15,24 +16,41 @@
   - Event Plaza Entry 进入 `/events`。
   - 次级动作区提供“去创建页”“我的搭子请求”入口。
 - 首页不默认展开自然语言输入表单与结构化表单，仅在用户点击 item1 时按需展开轻量 NL 表单。
-- 创建页（`/pr/new`）融合两种创建方式：
-  - 自然语言模式提交到 `/api/pr/natural_language`。
-  - 结构化模式使用统一表单组件。
+- Community PR 创建页为 `/cpr/new`，融合两种创建方式：
+  - 自然语言模式提交到 `/api/cpr/natural_language`。
+  - 结构化模式提交到 `/api/cpr`，使用统一表单组件。
 - 结构化模式页脚提供：
   - “保存” -> 创建 `DRAFT` 状态请求。
   - “创建” -> 先创建 `DRAFT`，再调用发布接口进入 `OPEN`。
 - 自然语言创建同样采用“先建草稿、再发布”的前端自动化流程。
+- Community PR 发布接口为 `POST /api/cpr/:id/publish`。
+- 当前版本不提供手动创建 Anchor PR 的页面；Anchor PR 由 Anchor Event / batch 流程生成，并通过 `/apr/:id` 进入详情页。
 - 发布 `DRAFT` 时，系统会为创建者绑定用户身份并生成/确保用户 PIN（4 位数字）；`user-id` 与 `user-pin` 缓存在前端 localStorage。
 - 会话初始化：进入网页时自动调用 `/api/auth/session`。若已有本地 `user-id/user-pin`，则静默登录；若无凭据则保持匿名，第一次发布搭子请求时自动创建本地账户并登录。
 - 创建成功时系统会按 `min/max` 预创建 `partners` 槽位；对已发布请求会保证“创建者占用一个槽位”。
-- 草稿详情页支持“发布”动作（`POST /api/pr/:id/publish`），发布时完成认领并进入 `OPEN`。
-- 详情页加入/退出时需走微信登录态校验：未登录会跳转 `/api/wechat/oauth/login`。
-- 加入成功时对应 `Partner.status` 置为 `JOINED`；在 `T-1h~T-30min` 窗口加入时会立即置为 `CONFIRMED`。
-- `T-1h` 时刻会自动释放仍为 `JOINED` 的槽位（变为 `RELEASED` 并从 PR 当前参与列表移除）。
-- `T-30min` 后禁止加入（event locked）。
-- 详情页提供“确认参与”动作，调用 `/api/pr/:id/confirm` 使槽位进入 `CONFIRMED`（若尚未确认）。
-- 详情页提供可选签到反馈（我已到场 / 我未到场），调用 `/api/pr/:id/check-in`；`didAttend=true` 时槽位进入 `ATTENDED`。
-- 详情页提供“公众号提醒”开关，查询/更新接口为：
+- `/pr/mine` 聚合展示“我创建的 / 我加入的”列表，列表项按 canonicalPath 跳转到 `/cpr/:id` 或 `/apr/:id`。
+- Community PR 详情页（`/cpr/:id`）支持：
+  - 草稿发布
+  - `join/exit`
+  - 分享
+  - 提醒订阅
+  - 创建者内容/状态编辑
+- Anchor PR 详情页（`/apr/:id`）支持：
+  - `join/exit`
+  - `confirm`
+  - `check-in`
+  - 分享
+  - 提醒订阅
+  - 满员时查看同批次替代推荐
+  - 跳转 `/apr/:id/economy` 查看经济信息
+- Community PR 加入成功时对应 `Partner.status` 置为 `JOINED`。
+- Anchor PR 在 `T-1h~T-30min` 窗口加入时会立即置为 `CONFIRMED`。
+- 仅 Anchor PR 存在以下确认窗口规则：
+  - `T-1h` 时刻会自动释放仍为 `JOINED` 的槽位（变为 `RELEASED` 并从 PR 当前参与列表移除）。
+  - `T-30min` 后禁止加入（event locked）。
+- Anchor PR 详情页提供“确认参与”动作，调用 `POST /api/apr/:id/confirm` 使槽位进入 `CONFIRMED`（若尚未确认）。
+- Anchor PR 详情页提供可选签到反馈（我已到场 / 我未到场），调用 `POST /api/apr/:id/check-in`；`didAttend=true` 时槽位进入 `ATTENDED`。
+- Community PR 与 Anchor PR 详情页都提供“公众号提醒”开关，查询/更新接口为：
   - `GET /api/wechat/reminders/subscription`
   - `POST /api/wechat/reminders/subscription`（`enabled: boolean`）
 - 开启提醒后，系统会为已加入槽位调度 `T-24h` 与 `T-2h` 提醒任务。
@@ -47,19 +65,19 @@
 - 首页存在 Event Highlights 与 Event Plaza Entry，且可分别跳转 `/events/:eventId` 与 `/events`。
 - 首页中段可触发“收藏网站 / 复制首页链接”提示（具备节流，避免重复打扰）。
 - 首页次级动作与底部导航包含“我的搭子请求”入口（`/pr/mine`）。
-- `/pr/new` 页面存在头部、创建方式切换区；结构化模式下提供表单主体与页脚双动作按钮（保存/创建）。
-- 结构化创建请求命中 `POST /api/pr`（请求体为 `PartnerRequestFields`），始终创建 `DRAFT`。
-- 自然语言创建请求命中 `POST /api/pr/natural_language`，始终创建 `DRAFT`。
-- `POST /api/pr/:id/publish` 仅允许发布 `DRAFT`，发布成功后返回创建者鉴权上下文（含 token，必要时含新生成 PIN）。
+- `/cpr/new` 页面存在头部、创建方式切换区；结构化模式下提供表单主体与页脚双动作按钮（保存/创建）。
+- 结构化创建请求命中 `POST /api/cpr`（请求体为 `PartnerRequestFields`），始终创建 `DRAFT`。
+- 自然语言创建请求命中 `POST /api/cpr/natural_language`，始终创建 `DRAFT`。
+- `POST /api/cpr/:id/publish` 仅允许发布 `DRAFT`，发布成功后返回创建者鉴权上下文（含 token，必要时含新生成 PIN）。
+- Anchor PR 不暴露手动创建页面；详情页主入口为 `/apr/:id`，经济信息页为 `/apr/:id/economy`。
 - 新创建请求会按 `min/max` 创建槽位；当前参与人数由 `partners.pr_id` 下处于活跃状态的槽位动态聚合。
-- `POST /api/pr/:id/join` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
-- `POST /api/pr/:id/exit` 与 join 一致校验微信会话，确保只能退出当前登录用户绑定的槽位。
-- `POST /api/pr/:id/confirm` 与 `POST /api/pr/:id/check-in` 同样强制微信登录态。
+- `POST /api/cpr/:id/join`、`POST /api/cpr/:id/exit`、`POST /api/apr/:id/join`、`POST /api/apr/:id/exit` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
+- `POST /api/apr/:id/confirm` 与 `POST /api/apr/:id/check-in` 同样强制微信登录态。
 - `POST /api/wechat/reminders/subscription` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - 开启提醒后会创建具备 dedupe 的延迟任务；关闭提醒后会删除对应未执行任务并返回删除数量。
 - 提醒任务执行后会写入 `notification_deliveries`（包含 `result/errorCode/jobId`）。
-- 已到 `T-30min` 之后，join 请求会被拒绝（400）。
-- 到达 `T-1h` 且槽位未确认时，系统会在读取/操作时懒触发自动释放，保证结构状态收敛。
+- 仅 Anchor PR 在 `T-30min` 之后拒绝 join 请求（400）。
+- 仅 Anchor PR 在到达 `T-1h` 且槽位未确认时，会在读取/操作时懒触发自动释放，保证结构状态收敛。
 - 编辑弹窗与结构化创建页使用同一表单组件与同一校验逻辑。
 
 ## 涉及端

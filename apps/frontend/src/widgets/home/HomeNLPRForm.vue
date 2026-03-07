@@ -57,8 +57,11 @@ import { useI18n } from "vue-i18n";
 import ErrorToast from "@/components/common/ErrorToast.vue";
 import { useUserSessionStore } from "@/stores/userSessionStore";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
-import { useCreatePRFromNaturalLanguage } from "@/queries/useCreatePR";
-import { usePublishPR } from "@/queries/usePublishPR";
+import {
+  useCreateCommunityPRFromNaturalLanguage,
+  usePublishCommunityPR,
+} from "@/queries/useCommunityPR";
+import { communityPRDetailPath } from "@/entities/pr/routes";
 import { useHomeRotatingTopic } from "@/composables/useHomeRotatingTopic";
 import { ensureAuthSessionBootstrapped } from "@/composables/useAuthSessionBootstrap";
 
@@ -71,8 +74,8 @@ const getLocalWeekdayLabel = (date: Date): string => {
 const router = useRouter();
 const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
-const createMutation = useCreatePRFromNaturalLanguage();
-const publishMutation = usePublishPR();
+const createMutation = useCreateCommunityPRFromNaturalLanguage();
+const publishMutation = usePublishCommunityPR();
 const { rotatingTopicExample } = useHomeRotatingTopic();
 const placeholderText = computed(() =>
   t("prInput.placeholder", { example: rotatingTopicExample.value }),
@@ -109,7 +112,7 @@ const onSubmit = handleSubmit(async (values) => {
     userSessionStore.applyAuthSession(publishResult.auth);
   }
 
-  await router.push(`/pr/${draft.id}?entry=create`);
+  await router.push(`${communityPRDetailPath(draft.id)}?entry=create`);
 });
 </script>
 

@@ -1,47 +1,65 @@
-import type { PRStatus } from "@partner-up-dev/backend";
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
+import type { InferResponseType } from "hono";
+import { client } from "@/lib/rpc";
 
-export type XhsPosterSnapshot = {
-  caption: string;
-  posterStylePrompt: string;
-  posterUrl: string;
-  createdAt: string;
+export type CommunityPRDetailView = InferResponseType<
+  (typeof client.api.cpr)[":id"]["$get"]
+>;
+
+export type AnchorPRDetailView = InferResponseType<
+  (typeof client.api.apr)[":id"]["$get"]
+>;
+
+export type AnchorPREconomyView = InferResponseType<
+  (typeof client.api.apr)[":id"]["economy"]["$get"]
+>;
+
+export type PRDetailView = CommunityPRDetailView | AnchorPRDetailView;
+
+export type PRFormFields = Omit<PartnerRequestFields, "budget"> & {
+  budget?: PartnerRequestFields["budget"];
 };
 
-export type WechatThumbnailSnapshot = {
-  style: number;
-  posterUrl: string;
-  createdAt: string;
-};
+export type CommunityPRFormFields = PartnerRequestFields;
+export type AnchorPRFormFields = Omit<PRFormFields, "budget">;
 
-export type PRDetailView = {
-  id: number;
-  rawText: string;
-  type: string;
-  time: [string | null, string | null];
-  location: string | null;
-  status: PRStatus;
-  minPartners: number | null;
-  maxPartners: number | null;
-  createdAt: string;
-  budget: string | null;
-  preferences: string[];
-  notes: string | null;
-  createdBy?: string | null;
-  prKind?: "ANCHOR" | "COMMUNITY";
-  anchorEventId?: number | null;
-  batchId?: number | null;
-  visibilityStatus?: "VISIBLE" | "HIDDEN";
-  autoHideAt?: string | null;
-  resourceBookingDeadlineAt?: string | null;
-  paymentModelApplied?: "A" | "C" | null;
-  discountRateApplied?: number | null;
-  subsidyCapApplied?: number | null;
-  cancellationPolicyApplied?: string | null;
-  economicPolicyScopeApplied?: "EVENT_DEFAULT" | "BATCH_OVERRIDE" | null;
-  economicPolicyVersionApplied?: number | null;
-  partners: number[];
-  myPartnerId: number | null;
-  title?: string;
-  xiaohongshuPoster?: XhsPosterSnapshot | null;
-  wechatThumbnail?: WechatThumbnailSnapshot | null;
-};
+const cloneTimeWindow = (
+  time: PartnerRequestFields["time"],
+): PartnerRequestFields["time"] => [time[0], time[1]];
+
+export const toCommunityPRFields = (
+  fields: PRFormFields,
+): CommunityPRFormFields => ({
+  title: fields.title,
+  type: fields.type,
+  time: cloneTimeWindow(fields.time),
+  location: fields.location,
+  minPartners: fields.minPartners,
+  maxPartners: fields.maxPartners,
+  partners: [...fields.partners],
+  budget: fields.budget ?? null,
+  preferences: [...fields.preferences],
+  notes: fields.notes,
+});
+
+export const toAnchorPRFields = (
+  fields: PRFormFields,
+): AnchorPRFormFields => ({
+  title: fields.title,
+  type: fields.type,
+  time: cloneTimeWindow(fields.time),
+  location: fields.location,
+  minPartners: fields.minPartners,
+  maxPartners: fields.maxPartners,
+  partners: [...fields.partners],
+  preferences: [...fields.preferences],
+  notes: fields.notes,
+});
+
+export const isCommunityPRDetail = (
+  value: PRDetailView,
+): value is CommunityPRDetailView => value.prKind === "COMMUNITY";
+
+export const isAnchorPRDetail = (
+  value: PRDetailView,
+): value is AnchorPRDetailView => value.prKind === "ANCHOR";

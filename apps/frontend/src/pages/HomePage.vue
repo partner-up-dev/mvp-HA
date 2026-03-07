@@ -23,7 +23,10 @@
             <p>{{ t("home.landing.secondaryActionsHint") }}</p>
           </header>
           <section class="creator-actions">
-            <RouterLink class="creator-entry" :to="{ name: 'pr-new' }">
+            <RouterLink
+              class="creator-entry"
+              :to="{ name: 'community-pr-create' }"
+            >
               <div class="creator-copy">
                 <h3>{{ t("home.landing.secondaryCreateTitle") }}</h3>
                 <p>{{ t("home.landing.secondaryCreateDescription") }}</p>

@@ -72,7 +72,7 @@
           />
         </div>
 
-        <div class="form-field">
+        <div v-if="showBudgetField" class="form-field">
           <label>{{ t("partnerRequestForm.budget") }}</label>
           <input
             v-model="budgetInput"
@@ -125,16 +125,22 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import { useForm } from "vee-validate";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { partnerRequestFormValidationSchema } from "@/lib/validation";
 import DateTimeRangePicker from "@/components/pr/DateTimeRangePicker.vue";
+import type { PRFormFields } from "@/entities/pr/types";
 import { clonePRFields, parseNullableNumber } from "./pr-form";
 
-const props = defineProps<{
-  initialFields: PartnerRequestFields;
-}>();
+const props = withDefaults(
+  defineProps<{
+    initialFields: PRFormFields;
+    showBudgetField?: boolean;
+  }>(),
+  {
+    showBudgetField: true,
+  },
+);
 const { t } = useI18n();
 
 const emit = defineEmits<{

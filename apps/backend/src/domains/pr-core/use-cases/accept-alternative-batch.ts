@@ -1,8 +1,9 @@
-import bcrypt from "bcryptjs";
 import { HTTPException } from "hono/http-exception";
+import { and, eq } from "drizzle-orm";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { resolveDesiredSlotCount } from "../services/slot-management.service";
 import { resolveAnchorEconomicPolicy } from "../services/economic-policy.service";
 import type { PRId } from "../../../entities/partner-request";
@@ -10,13 +11,14 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { db } from "../../../lib/db";
 import { anchorEventBatches } from "../../../entities/anchor-event-batch";
+import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partnerRequests } from "../../../entities/partner-request";
 import { partners } from "../../../entities/partner";
-import { and, eq } from "drizzle-orm";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
+const anchorPRRepo = new AnchorPRRepository();
 
 const windowsEqual = (
   a: [string | null, string | null],
@@ -25,11 +27,6 @@ const windowsEqual = (
 
 const hasJoinableStatus = (status: string): boolean =>
   status === "OPEN" || status === "READY";
-
-const generateSystemPin = (): string => {
-  const value = Math.floor(1000 + Math.random() * 9000);
-  return String(value);
-};
 
 export interface AcceptAlternativeBatchResult {
   batchId: number;
@@ -42,27 +39,35 @@ export async function acceptAlternativeBatch(
   sourcePrId: PRId,
   targetTimeWindow: [string | null, string | null],
 ): Promise<AcceptAlternativeBatchResult> {
-  const source = await prRepo.findById(sourcePrId);
-  if (!source) {
+  const sourceRequest = await prRepo.findById(sourcePrId);
+  if (!sourceRequest) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
-  if (
-    source.prKind !== "ANCHOR" ||
-    source.anchorEventId === null ||
-    source.batchId === null
-  ) {
+  if (sourceRequest.prKind !== "ANCHOR") {
     throw new HTTPException(400, {
       message: "Alternative batch accept is only available for anchor PR",
     });
   }
+
+  const sourceRecord = await anchorPRRepo.findRecordByPrId(sourcePrId);
+  if (!sourceRecord) {
+    throw new HTTPException(500, {
+      message: "Anchor PR subtype row missing",
+    });
+  }
+
+  const source = sourceRecord.root;
+  const sourceAnchor = sourceRecord.anchor;
   if (!source.location) {
     throw new HTTPException(400, {
       message: "Current anchor PR has no location",
     });
   }
   const sourceLocation = source.location;
+  const sourceAnchorEventId = sourceAnchor.anchorEventId;
+  const sourceBatchId = sourceAnchor.batchId;
 
-  const sourceBatch = await batchRepo.findById(source.batchId);
+  const sourceBatch = await batchRepo.findById(sourceBatchId);
   if (!sourceBatch) {
     throw new HTTPException(404, { message: "Source batch not found" });
   }
@@ -72,7 +77,7 @@ export async function acceptAlternativeBatch(
     });
   }
 
-  const event = await anchorEventRepo.findById(source.anchorEventId);
+  const event = await anchorEventRepo.findById(sourceAnchorEventId);
   if (!event || event.status !== "ACTIVE") {
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
@@ -90,7 +95,7 @@ export async function acceptAlternativeBatch(
     const batchRows = await tx
       .select()
       .from(anchorEventBatches)
-      .where(eq(anchorEventBatches.anchorEventId, source.anchorEventId!));
+      .where(eq(anchorEventBatches.anchorEventId, sourceAnchorEventId));
     let targetBatch = batchRows.find((batch) =>
       windowsEqual(batch.timeWindow, targetTimeWindow),
     );
@@ -100,7 +105,7 @@ export async function acceptAlternativeBatch(
       const insertedBatch = await tx
         .insert(anchorEventBatches)
         .values({
-          anchorEventId: source.anchorEventId!,
+          anchorEventId: sourceAnchorEventId,
           timeWindow: targetTimeWindow,
           status: "OPEN",
         })
@@ -110,45 +115,56 @@ export async function acceptAlternativeBatch(
     }
 
     const existingPRs = await tx
-      .select()
-      .from(partnerRequests)
+      .select({
+        root: partnerRequests,
+        anchor: anchorPartnerRequests,
+      })
+      .from(anchorPartnerRequests)
+      .innerJoin(
+        partnerRequests,
+        eq(partnerRequests.id, anchorPartnerRequests.prId),
+      )
       .where(
         and(
-          eq(partnerRequests.batchId, targetBatch.id),
+          eq(anchorPartnerRequests.batchId, targetBatch.id),
           eq(partnerRequests.location, sourceLocation),
-          eq(partnerRequests.visibilityStatus, "VISIBLE"),
+          eq(anchorPartnerRequests.visibilityStatus, "VISIBLE"),
         ),
       );
-    let targetPR = existingPRs.find((pr) => hasJoinableStatus(pr.status));
+    let targetPRRecord = existingPRs.find((record) =>
+      hasJoinableStatus(record.root.status),
+    );
 
     let createdPr = false;
-    if (!targetPR) {
-      const pinHash = await bcrypt.hash(generateSystemPin(), 10);
+    if (!targetPRRecord) {
       const resolvedPolicy = resolveAnchorEconomicPolicy(
         event,
         targetBatch,
         targetTimeWindow,
       );
-      const insertedPR = await tx
+      const insertedRoot = await tx
         .insert(partnerRequests)
         .values({
-          rawText: source.rawText,
           title: source.title,
           type: source.type,
           time: targetTimeWindow,
           location: sourceLocation,
           status: "OPEN",
-          pinHash,
           minPartners: source.minPartners,
           maxPartners: source.maxPartners,
-          budget: source.budget,
           preferences: source.preferences,
           notes: source.notes,
           prKind: "ANCHOR",
-          anchorEventId: source.anchorEventId,
+        })
+        .returning();
+      const insertedAnchor = await tx
+        .insert(anchorPartnerRequests)
+        .values({
+          prId: insertedRoot[0].id,
+          anchorEventId: sourceAnchorEventId,
           batchId: targetBatch.id,
           visibilityStatus: "VISIBLE",
-          autoHideAt: source.autoHideAt,
+          autoHideAt: sourceAnchor.autoHideAt,
           resourceBookingDeadlineAt: resolvedPolicy.resourceBookingDeadlineAt,
           paymentModelApplied: resolvedPolicy.paymentModelApplied,
           discountRateApplied: resolvedPolicy.discountRateApplied,
@@ -159,18 +175,22 @@ export async function acceptAlternativeBatch(
             resolvedPolicy.economicPolicyVersionApplied,
         })
         .returning();
-      targetPR = insertedPR[0];
+      targetPRRecord = {
+        root: insertedRoot[0],
+        anchor: insertedAnchor[0],
+      };
+      const targetRoot = insertedRoot[0];
 
       const slotCount = resolveDesiredSlotCount(
-        targetPR.minPartners,
-        targetPR.maxPartners,
+        targetRoot.minPartners,
+        targetRoot.maxPartners,
       );
       if (slotCount > 0) {
         const now = new Date();
         const rows: Array<typeof partners.$inferInsert> = Array.from(
           { length: slotCount },
           () => ({
-            prId: targetPR!.id,
+            prId: targetRoot.id,
             userId: null,
             status: "RELEASED",
             releasedAt: now,
@@ -181,10 +201,16 @@ export async function acceptAlternativeBatch(
 
       createdPr = true;
     }
+    if (!targetPRRecord) {
+      throw new HTTPException(500, {
+        message: "Failed to resolve target anchor PR",
+      });
+    }
 
     return {
       targetBatch,
-      targetPR,
+      targetPR: targetPRRecord.root,
+      targetAnchor: targetPRRecord.anchor,
       createdBatch,
       createdPr,
     };
@@ -197,8 +223,8 @@ export async function acceptAlternativeBatch(
     {
       sourcePrId,
       createdPrId: txResult.targetPR.id,
-      anchorEventId: txResult.targetPR.anchorEventId,
-      batchId: txResult.targetPR.batchId,
+      anchorEventId: txResult.targetAnchor.anchorEventId,
+      batchId: txResult.targetAnchor.batchId,
       location: txResult.targetPR.location,
       activeCountAtSource: 0,
     },

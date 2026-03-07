@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { CreateSubmissionMode } from "@/features/pr-create/usePRCreateFlow";
+import type { CreateSubmissionMode } from "@/features/pr-create/useCommunityPRCreateFlow";
 
 defineProps<{
   pending: boolean;

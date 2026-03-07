@@ -29,7 +29,7 @@
       </RouterLink>
       <RouterLink
         class="hero-action hero-action--secondary"
-        :to="{ name: 'pr-new' }"
+        :to="{ name: 'community-pr-create' }"
       >
         {{ t("home.landing.heroSecondaryAction") }}
         <span class="i-mdi-arrow-right" />

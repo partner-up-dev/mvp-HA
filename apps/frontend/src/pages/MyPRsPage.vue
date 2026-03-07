@@ -1,13 +1,11 @@
 <template>
   <PageScaffoldFlow class="my-prs-page">
     <template #header>
-      <header class="page-header">
-        <button class="back-btn" type="button" @click="goHome">
-          {{ t("common.backToHome") }}
-        </button>
-        <h1>{{ t("myPrsPage.title") }}</h1>
-        <p>{{ t("myPrsPage.description") }}</p>
-      </header>
+      <PageHeader
+        :title="t('myPrsPage.title')"
+        :subtitle="t('myPrsPage.description')"
+        @back="goHome"
+      />
     </template>
 
     <div class="page-main">
@@ -33,11 +31,13 @@
         </p>
         <ul v-else class="list">
           <li v-for="item in createdItems" :key="`created-${item.id}`">
-            <button class="list-item" type="button" @click="goToPR(item.id)">
+            <button class="list-item" type="button" @click="goToPR(item)">
               <div class="item-top">
                 <div class="item-text">
                   <div class="item-name">{{ item.title || item.type }}</div>
-                  <time class="item-time">{{ formatDate(item.createdAt) }}</time>
+                  <time class="item-time">{{
+                    formatDate(item.createdAt)
+                  }}</time>
                 </div>
                 <PRStatusBadge :status="item.status" />
               </div>
@@ -64,11 +64,13 @@
         </p>
         <ul v-else class="list">
           <li v-for="item in joinedDisplayItems" :key="`joined-${item.id}`">
-            <button class="list-item" type="button" @click="goToPR(item.id)">
+            <button class="list-item" type="button" @click="goToPR(item)">
               <div class="item-top">
                 <div class="item-text">
                   <div class="item-name">{{ item.title || item.type }}</div>
-                  <time class="item-time">{{ formatDate(item.createdAt) }}</time>
+                  <time class="item-time">{{
+                    formatDate(item.createdAt)
+                  }}</time>
                 </div>
                 <PRStatusBadge :status="item.status" />
               </div>
@@ -88,14 +90,16 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import type { PRId } from "@partner-up-dev/backend";
+import type { PartnerRequestSummary } from "@partner-up-dev/backend";
 import Footer from "@/components/common/Footer.vue";
 import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
+import PageHeader from "@/components/common/PageHeader.vue";
 import PRStatusBadge from "@/components/pr/PRStatusBadge.vue";
 import PageScaffoldFlow from "@/widgets/common/PageScaffoldFlow.vue";
 import { useMyCreatedPRs } from "@/queries/useMyCreatedPRs";
 import { useMyJoinedPRs } from "@/queries/useMyJoinedPRs";
 import { useUserSessionStore } from "@/stores/userSessionStore";
+import { resolvePRSummaryPath } from "@/entities/pr/routes";
 
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -105,7 +109,9 @@ const joinedQuery = useMyJoinedPRs();
 
 const createdItems = computed(() => createdQuery.data.value ?? []);
 const joinedItems = computed(() => joinedQuery.data.value ?? []);
-const createdIds = computed(() => new Set(createdItems.value.map((item) => item.id)));
+const createdIds = computed(
+  () => new Set(createdItems.value.map((item) => item.id)),
+);
 
 const joinedDisplayItems = computed(() =>
   joinedItems.value.filter((item) => !createdIds.value.has(item.id)),
@@ -125,8 +131,8 @@ const goHome = () => {
   router.push("/");
 };
 
-const goToPR = (id: PRId) => {
-  router.push(`/pr/${id}`);
+const goToPR = (item: PartnerRequestSummary) => {
+  router.push(resolvePRSummaryPath(item));
 };
 
 const formatDate = (dateStr: string) => {
@@ -145,34 +151,6 @@ const formatDate = (dateStr: string) => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-lg);
-}
-
-.page-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-
-  h1 {
-    @include mx.pu-font(headline-small);
-    margin: 0;
-    color: var(--sys-color-on-surface);
-  }
-
-  p {
-    @include mx.pu-font(body-medium);
-    margin: 0;
-    color: var(--sys-color-on-surface-variant);
-  }
-}
-
-.back-btn {
-  @include mx.pu-font(label-large);
-  width: fit-content;
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  background: transparent;
-  padding: 0.4rem 0.7rem;
-  cursor: pointer;
 }
 
 .auth-hint,

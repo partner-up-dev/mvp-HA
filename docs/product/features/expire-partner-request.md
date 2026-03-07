@@ -19,8 +19,9 @@
 
 ## 触发点
 
-- `GET /api/pr/:id`：读取时进行过期判断。
-- 其他读取场景（如分享生成、批量读取）依赖该接口或同一服务逻辑。
+- `GET /api/cpr/:id`：读取 Community PR 详情时进行过期判断。
+- `GET /api/apr/:id`：读取 Anchor PR 详情时进行过期判断。
+- 其他读取场景（如 `/api/pr/mine/created`、`/api/pr/mine/joined`、批量摘要读取、分享生成）依赖同一懒刷新逻辑。
 
 ## 例子
 

@@ -15,6 +15,34 @@
       "when": 1772700113983,
       "tag": "0001_regular_talkback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772795408756,
+      "tag": "0002_tough_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772875447480,
+      "tag": "0003_fancy_cyclops",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772877135468,
+      "tag": "0004_brainy_caretaker",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772880161946,
+      "tag": "0005_productive_rage",
+      "breakpoints": true
     }
   ]
 }

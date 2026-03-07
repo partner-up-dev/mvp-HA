@@ -2,6 +2,7 @@ import { computed, ref } from "vue";
 import { copyToClipboard } from "@/lib/clipboard";
 import { normalizeUrl } from "@/shared/url/normalizeUrl";
 import { trackEvent } from "@/shared/analytics/track";
+import { parsePRIdFromPathname } from "@/entities/pr/routes";
 
 export type ShareState = "idle" | "sharing" | "shared" | "copied" | "error";
 
@@ -30,11 +31,7 @@ const isShareAbortError = (error: unknown): boolean => {
 const resolvePRIdFromShareUrl = (url: string): number | undefined => {
   try {
     const parsed = new URL(url);
-    const matched = parsed.pathname.match(/^\/pr\/(\d+)(?:\/|$)/);
-    if (!matched) return undefined;
-    const id = Number.parseInt(matched[1], 10);
-    if (!Number.isFinite(id) || id <= 0) return undefined;
-    return id;
+    return parsePRIdFromPathname(parsed.pathname) ?? undefined;
   } catch {
     return undefined;
   }

@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { UserRepository } from "../../../repositories/UserRepository";
+import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { PartnerStatus } from "../../../entities/partner";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
@@ -20,7 +20,7 @@ import { scheduleWeChatReminderJobsForParticipant } from "../../../infra/notific
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const userRepo = new UserRepository();
+const userReliabilityRepo = new UserReliabilityRepository();
 
 export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -29,7 +29,10 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
-  if (isJoinLockedByTime(refreshedRequest.time)) {
+  if (
+    refreshedRequest.prKind === "ANCHOR" &&
+    isJoinLockedByTime(refreshedRequest.time)
+  ) {
     throw new HTTPException(400, {
       message: "Cannot join - event is locked after T-30min",
     });
@@ -47,13 +50,13 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
   }
 
   const existing = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
+  const shouldAutoConfirm =
+    refreshedRequest.prKind === "ANCHOR" &&
+    shouldAutoConfirmImmediately(refreshedRequest.time);
   if (existing) {
-    if (
-      existing.status === "JOINED" &&
-      shouldAutoConfirmImmediately(refreshedRequest.time)
-    ) {
+    if (existing.status === "JOINED" && shouldAutoConfirm) {
       await partnerRepo.markConfirmed(existing.id);
-      await userRepo.applyReliabilityDelta(user.id, { confirmed: 1 });
+      await userReliabilityRepo.applyDelta(user.id, { confirmed: 1 });
     }
     const latest = await prRepo.findById(id);
     if (!latest) {
@@ -75,11 +78,7 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
     });
   }
 
-  const targetStatus: PartnerStatus = shouldAutoConfirmImmediately(
-    refreshedRequest.time,
-  )
-    ? "CONFIRMED"
-    : "JOINED";
+  const targetStatus: PartnerStatus = shouldAutoConfirm ? "CONFIRMED" : "JOINED";
 
   let assignedPartnerId: number;
   const released = await partnerRepo.findFirstReleasedSlot(id);
@@ -99,7 +98,7 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
     });
   }
 
-  await userRepo.applyReliabilityDelta(user.id, {
+  await userReliabilityRepo.applyDelta(user.id, {
     joined: 1,
     confirmed: targetStatus === "CONFIRMED" ? 1 : 0,
   });

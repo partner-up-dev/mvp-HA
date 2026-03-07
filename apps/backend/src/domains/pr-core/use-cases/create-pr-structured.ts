@@ -1,5 +1,5 @@
-import bcrypt from "bcryptjs";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
+import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import type {
   PartnerRequestFields,
 } from "../../../entities/partner-request";
@@ -8,7 +8,6 @@ import {
   assertPartnerBoundsValid,
   initializeSlotsForPR,
 } from "../services/slot-management.service";
-import { resolveCommunityEconomicPolicy } from "../services/economic-policy.service";
 import {
   resolveDraftCreator,
   type CreatorIdentityInput,
@@ -17,6 +16,7 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
+const communityPRRepo = new CommunityPRRepository();
 
 function buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
   const parts: string[] = [];
@@ -27,9 +27,6 @@ function buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
   if (start || end) parts.push(`时间:${start ?? "待定"}-${end ?? "待定"}`);
   return parts.join(" | ");
 }
-
-const generateLegacyPin = (): string =>
-  String(Math.floor(Math.random() * 10_000)).padStart(4, "0");
 
 export type CreatePRResult = {
   id: number;
@@ -45,33 +42,30 @@ export async function createPRFromStructured(
   const creator = await resolveDraftCreator(creatorIdentity);
   const createdBy = creator?.id ?? null;
 
-  const pinHash = await bcrypt.hash(generateLegacyPin(), 10);
-  const economicPolicy = resolveCommunityEconomicPolicy();
+  const rawText = buildStructuredFallbackRawText(fields);
   const request = await prRepo.create({
-    rawText: buildStructuredFallbackRawText(fields),
     title: fields.title,
     type: fields.type,
     time: fields.time,
     location: fields.location,
     minPartners: fields.minPartners,
     maxPartners: fields.maxPartners,
-    pinHash,
-    budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
     status: "DRAFT",
     createdBy,
-    resourceBookingDeadlineAt: economicPolicy.resourceBookingDeadlineAt,
-    paymentModelApplied: economicPolicy.paymentModelApplied,
-    discountRateApplied: economicPolicy.discountRateApplied,
-    subsidyCapApplied: economicPolicy.subsidyCapApplied,
-    cancellationPolicyApplied: economicPolicy.cancellationPolicyApplied,
-    economicPolicyScopeApplied: economicPolicy.economicPolicyScopeApplied,
-    economicPolicyVersionApplied: economicPolicy.economicPolicyVersionApplied,
+    prKind: "COMMUNITY",
+  });
+  await communityPRRepo.create({
+    prId: request.id,
+    rawText,
+    budget: fields.budget,
+    creationSource: "STRUCTURED",
   });
 
   await initializeSlotsForPR(
     request.id,
+    "COMMUNITY",
     fields.minPartners,
     fields.maxPartners,
     null,

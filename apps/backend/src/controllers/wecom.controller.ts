@@ -300,7 +300,7 @@ export const wecomRoute = app
         throw new Error("Missing env: FRONTEND_URL");
       }
 
-      const shareUrl = `${normalizeFrontendUrl(frontendUrl)}/pr/${id}`;
+      const shareUrl = `${normalizeFrontendUrl(frontendUrl)}/cpr/${id}`;
       const reply = `搭子请求草稿已创建：${shareUrl}\n打开链接发布后会生成你的用户 PIN。`;
 
       await wecomService.sendTextMessage({

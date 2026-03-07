@@ -1,7 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { UserRepository } from "../../../repositories/UserRepository";
+import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
@@ -11,7 +11,7 @@ import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const userRepo = new UserRepository();
+const userReliabilityRepo = new UserReliabilityRepository();
 
 export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -19,6 +19,11 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
+  if (refreshedRequest.prKind !== "ANCHOR") {
+    throw new HTTPException(400, {
+      message: "Slot confirmation is only available for anchor PR",
+    });
+  }
 
   const user = await resolveUserByOpenId(openId);
   const slot = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
@@ -30,7 +35,7 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
 
   if (slot.status === "JOINED") {
     await partnerRepo.markConfirmed(slot.id);
-    await userRepo.applyReliabilityDelta(user.id, { confirmed: 1 });
+    await userReliabilityRepo.applyDelta(user.id, { confirmed: 1 });
 
     // Emit domain event
     const event = await eventBus.publish(

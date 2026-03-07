@@ -5,8 +5,7 @@ import { UserRepository } from "../../../repositories/UserRepository";
 
 const userRepo = new UserRepository();
 
-const generateLocalUserId = (): UserId =>
-  `u_${randomUUID().replace(/-/g, "")}` as UserId;
+const generateLocalUserId = (): UserId => randomUUID() as UserId;
 
 const generateUserPin = (): string =>
   String(randomInt(0, 10_000)).padStart(4, "0");
