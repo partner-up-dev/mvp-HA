@@ -11,10 +11,15 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsup",
+    "build:db-migrate-fc": "tsup --config tsup.fc-db-migrate.config.ts",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:lint": "tsx src/scripts/db/lint.ts",
+    "db:migrate": "tsx src/scripts/db/migrate.ts",
+    "db:reset": "tsx src/scripts/db/reset.ts",
+    "db:seed": "tsx src/scripts/db/seed.ts",
+    "db:next-migration": "tsx src/scripts/db/next-migration.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

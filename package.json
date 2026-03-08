@@ -9,7 +9,11 @@
     "build:backend": "pnpm --filter @partner-up-dev/backend build",
     "build": "pnpm --filter @partner-up-dev/backend build && pnpm --filter @partner-up-dev/frontend build",
     "db:generate": "pnpm --filter @partner-up-dev/backend db:generate",
+    "db:lint": "pnpm --filter @partner-up-dev/backend db:lint",
     "db:migrate": "pnpm --filter @partner-up-dev/backend db:migrate",
+    "db:reset": "pnpm --filter @partner-up-dev/backend db:reset",
+    "db:seed": "pnpm --filter @partner-up-dev/backend db:seed",
+    "db:next-migration": "pnpm --filter @partner-up-dev/backend db:next-migration",
     "db:studio": "pnpm --filter @partner-up-dev/backend db:studio"
   },
   "devDependencies": {

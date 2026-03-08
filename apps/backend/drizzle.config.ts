@@ -1,10 +1,14 @@
-import { defineConfig } from 'drizzle-kit';
+import { defineConfig } from "drizzle-kit";
+
+const databaseUrl =
+  process.env.DATABASE_URL ??
+  "postgresql://postgres:postgres@localhost:5432/partnerup";
 
 export default defineConfig({
-  schema: './src/entities/*.ts',
-  out: './drizzle',
-  dialect: 'postgresql',
+  schema: "./src/entities/*.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: databaseUrl,
   },
 });

@@ -56,6 +56,20 @@ src/
 - Infra Layer (src/infra/): event bus, job runner, analytics ingest, operation log — cross-cutting concerns.
 - Better not use interval, background jobs, the backend is being deployed in a scale-to-0 serverless.
 
+## Database Workflow
+
+- Drizzle remains the schema source of truth. Generated schema SQL lives in `drizzle/`.
+- Hand-authored forward-only data migrations live in `data-migrations/`.
+- `pnpm db:migrate` runs the custom migration runner and records applied schema/data migrations in `app_migrations`.
+- CI/CD deploys and invokes a dedicated FC migration function inside the VPC, but it still calls the same migration runner as `pnpm db:migrate`.
+- `pnpm db:lint` validates migration/seed file naming and transaction-mode rules before deploy.
+- `pnpm db:next-migration <drizzle|data-migrations>` prints the next global numeric prefix shared by both migration folders.
+- `pnpm db:reset` is local-only. It drops and recreates the local database, applies all migrations, then runs seeds.
+- `pnpm db:seed` reruns all files in `seeds/`, so every seed file must be idempotent.
+- If a migration file contains `CONCURRENTLY`, it must include `-- migration: no-transaction`.
+- Staging and production are forward-only. Do not add reset logic or env-specific migration folders.
+- Production schema changes should follow expand/backfill/contract discipline.
+
 ## Best Practice Checklist
 
 1. Strict Typing: Any `c.req.param()` / `c.req.json()` must be validated via `zValidator`.

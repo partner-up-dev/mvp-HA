@@ -69,6 +69,28 @@ CREATE TABLE IF NOT EXISTS "anchor_events" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "anchor_partner_requests" (
+	"pr_id" bigint PRIMARY KEY NOT NULL,
+	"anchor_event_id" bigint NOT NULL,
+	"batch_id" bigint NOT NULL,
+	"visibility_status" text DEFAULT 'VISIBLE' NOT NULL,
+	"auto_hide_at" timestamp,
+	"resource_booking_deadline_at" timestamp,
+	"payment_model_applied" text,
+	"discount_rate_applied" double precision,
+	"subsidy_cap_applied" integer,
+	"cancellation_policy_applied" text,
+	"economic_policy_scope_applied" text,
+	"economic_policy_version_applied" integer
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "community_partner_requests" (
+	"pr_id" bigint PRIMARY KEY NOT NULL,
+	"raw_text" text NOT NULL,
+	"budget" text,
+	"creation_source" text NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "config" (
 	"key" text PRIMARY KEY NOT NULL,
 	"value" text NOT NULL
@@ -86,40 +108,27 @@ CREATE TABLE IF NOT EXISTS "domain_events" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "partner_requests" (
 	"id" bigserial PRIMARY KEY NOT NULL,
-	"raw_text" text NOT NULL,
 	"title" text,
 	"type" text NOT NULL,
 	"time_window" text[] DEFAULT ARRAY[NULL, NULL]::text[] NOT NULL,
 	"location" text,
 	"status" text DEFAULT 'OPEN' NOT NULL,
-	"pin_hash" text NOT NULL,
 	"min_partners" integer,
 	"max_partners" integer,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"budget" text,
 	"preferences" text[] DEFAULT ARRAY[]::text[] NOT NULL,
 	"notes" text,
+	"created_by" uuid,
 	"xiaohongshu_poster" jsonb DEFAULT 'null'::jsonb,
 	"wechat_thumbnail" jsonb DEFAULT 'null'::jsonb,
-	"pr_kind" text DEFAULT 'COMMUNITY' NOT NULL,
-	"anchor_event_id" bigint,
-	"batch_id" bigint,
-	"visibility_status" text DEFAULT 'VISIBLE' NOT NULL,
-	"auto_hide_at" timestamp,
-	"resource_booking_deadline_at" timestamp,
-	"payment_model_applied" text,
-	"discount_rate_applied" double precision,
-	"subsidy_cap_applied" integer,
-	"cancellation_policy_applied" text,
-	"economic_policy_scope_applied" text,
-	"economic_policy_version_applied" integer
+	"pr_kind" text DEFAULT 'COMMUNITY' NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "partners" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"pr_id" bigint NOT NULL,
 	"status" text DEFAULT 'RELEASED' NOT NULL,
-	"user_id" text,
+	"user_id" uuid,
 	"confirmed_at" timestamp,
 	"released_at" timestamp,
 	"attended_at" timestamp,
@@ -137,12 +146,20 @@ CREATE TABLE IF NOT EXISTS "partners" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
-	"id" text PRIMARY KEY NOT NULL,
-	"open_id" text NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
+	"open_id" text,
+	"pin_hash" text,
 	"nickname" text,
 	"sex" integer,
 	"avatar" text,
 	"status" text DEFAULT 'ACTIVE' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "users_open_id_unique" UNIQUE("open_id")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "user_reliability" (
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"reliability_join_count" integer DEFAULT 0 NOT NULL,
 	"reliability_confirm_count" integer DEFAULT 0 NOT NULL,
 	"reliability_attend_count" integer DEFAULT 0 NOT NULL,
@@ -150,11 +167,16 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"join_to_confirm_ratio" double precision DEFAULT 0 NOT NULL,
 	"confirm_to_attend_ratio" double precision DEFAULT 0 NOT NULL,
 	"release_frequency" double precision DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "user_notification_opts" (
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"wechat_reminder_opt_in" boolean DEFAULT false NOT NULL,
 	"wechat_reminder_opt_in_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "users_open_id_unique" UNIQUE("open_id")
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "outbox_events" (
@@ -203,7 +225,7 @@ CREATE TABLE IF NOT EXISTS "notification_deliveries" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"job_id" bigint,
 	"pr_id" bigint NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
 	"reminder_type" text NOT NULL,
 	"scheduled_at" timestamp NOT NULL,
 	"sent_at" timestamp,
@@ -241,13 +263,31 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "partner_requests" ADD CONSTRAINT "partner_requests_anchor_event_id_anchor_events_id_fk" FOREIGN KEY ("anchor_event_id") REFERENCES "public"."anchor_events"("id") ON DELETE set null ON UPDATE no action;
+ ALTER TABLE "anchor_partner_requests" ADD CONSTRAINT "anchor_partner_requests_pr_id_partner_requests_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."partner_requests"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "partner_requests" ADD CONSTRAINT "partner_requests_batch_id_anchor_event_batches_id_fk" FOREIGN KEY ("batch_id") REFERENCES "public"."anchor_event_batches"("id") ON DELETE set null ON UPDATE no action;
+ ALTER TABLE "anchor_partner_requests" ADD CONSTRAINT "anchor_partner_requests_anchor_event_id_anchor_events_id_fk" FOREIGN KEY ("anchor_event_id") REFERENCES "public"."anchor_events"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "anchor_partner_requests" ADD CONSTRAINT "anchor_partner_requests_batch_id_anchor_event_batches_id_fk" FOREIGN KEY ("batch_id") REFERENCES "public"."anchor_event_batches"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "community_partner_requests" ADD CONSTRAINT "community_partner_requests_pr_id_partner_requests_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."partner_requests"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "partner_requests" ADD CONSTRAINT "partner_requests_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -260,6 +300,18 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "partners" ADD CONSTRAINT "partners_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "user_reliability" ADD CONSTRAINT "user_reliability_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "user_notification_opts" ADD CONSTRAINT "user_notification_opts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

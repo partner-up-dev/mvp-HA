@@ -1,1 +1,0 @@
-ALTER TABLE "partner_requests" DROP COLUMN IF EXISTS "pin_hash";

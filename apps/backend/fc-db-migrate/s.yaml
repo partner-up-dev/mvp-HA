@@ -1,0 +1,45 @@
+edition: 3.0.0
+name: partnerup-backend-db-migrate
+access: default
+
+vars:
+  region: ${env('ALIYUN_FC_REGION')}
+  functionName: ${env('ALIYUN_FC_DB_MIGRATION_FUNCTION_NAME')}
+  roleArn: ${env('ALIYUN_FC_ROLE_ARN')}
+  resourceGroupId: ${env('ALIYUN_FC_RESOURCE_GROUP_ID')}
+  vpcId: ${env('ALIYUN_FC_VPC_ID')}
+  securityGroupId: ${env('ALIYUN_FC_SECURITY_GROUP_ID')}
+  vSwitchIdPrimary: ${env('ALIYUN_FC_VSWITCH_ID_PRIMARY')}
+  vSwitchIdSecondary: ${env('ALIYUN_FC_VSWITCH_ID_SECONDARY')}
+
+resources:
+  db_migrate:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: ${vars.functionName}
+      handler: db-migrate-handler.handler
+      role: ${vars.roleArn}
+      disableOndemand: false
+      description: "Run backend database migrations inside FC VPC"
+      timeout: 600
+      diskSize: 512
+      memorySize: 256
+      cpu: 0.15
+      runtime: nodejs20
+      resourceGroupId: ${vars.resourceGroupId}
+      instanceIsolationMode: SHARE
+      instanceConcurrency: 1
+      sessionAffinity: NONE
+      tags:
+        - Key: project
+          Value: mvp-HA
+      code: ./.fc-package
+      environmentVariables:
+        DATABASE_URL: ${env('DATABASE_URL')}
+      vpcConfig:
+        vpcId: ${vars.vpcId}
+        securityGroupId: ${vars.securityGroupId}
+        vSwitchIds:
+          - ${vars.vSwitchIdPrimary}
+          - ${vars.vSwitchIdSecondary}

@@ -1,0 +1,40 @@
+name: Validate Backend DB Artifacts
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend-db-validate.yml"
+
+jobs:
+  validate-db-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint migration and seed files
+        run: pnpm --filter @partner-up-dev/backend db:lint
+
+      - name: Regenerate Drizzle SQL artifacts
+        run: pnpm --filter @partner-up-dev/backend db:generate
+
+      - name: Fail on uncommitted Drizzle artifact drift
+        run: git diff --exit-code -- apps/backend/drizzle apps/backend/drizzle/meta
