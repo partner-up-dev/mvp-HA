@@ -3,7 +3,7 @@
 ## Deployment
 
 - [ ] CICD 还有可以优化的（不需要检查层依赖、层清理、包清理）
-- [ ] 数据库迁移（开发/部署）工作流
+- [x] 数据库迁移（开发/部署）工作流改进
 - [ ] 【HIGH】后端冷启动及其缓慢，RuntimeInitialization消耗6s；函数 Invocation 消耗 6 秒（仅仅是 js-sdk signature req哦）
 - [ ] 在移动端的加载速度还有待优化
 - [x] 多环境支持：后端通过httpTrigger+函数别名 (`https://test.api-app.partner-up.cn`)；前端创建另一个Page (`https://test.app.partner-up.cn`)
@@ -28,17 +28,17 @@
   - [x] 创建PR时自动创建用户并生成 PIN （即密码）
   - [x] PIN 和 userid 缓存在 localStorage 中
   - [x] 新创建的 PR Page 中单开一个卡片进一步讲解 PIN 的作用以及如何修改
-- [ ] Anchor PR / Community PR 分开不同的页面和不同的表（但仍然会有可复用的组件）
-  - [ ] raw_text 对于 Anchor PR 来说是可选的
-  - [ ] 还有更多的外键约束
+- [x] Anchor PR / Community PR 分开不同的页面和不同的表（但仍然会有可复用的组件）
+  - [x] raw_text 对于 Anchor PR 来说是可选的
+  - [x] 还有更多的外键约束
 - [x] 我的搭子请求列表
 - [ ] min-partners 必须大于1 （记得告诉 NL parsing LLM）
 
 ### Detail Page
 
-- [ ] PR Page "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
 - [ ] partner section
-- [ ] PR state UX 优化
+  - [ ] "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
+- [ ] PR status UX 优化
   - [ ] diagram （特别EXPIRE 路线）
   - [ ] incoming state
 - [ ] 在活动页面中可以允许用户主动创建该batch下pr；在活动页面引导用户创建 community pr（这两个应该是一个入口？）
@@ -46,7 +46,7 @@
 ### Create/Edit
 
 - [x] 添加一个 hybird 页面合并 form create 和 NL create
-- [ ] POST /api/pr body becomes { ...fields, ~status~ }.
+- [x] POST /api/pr body becomes { ...fields, ~status~ }.
 - [ ] NL Input Placeholder 可以直接创建，不用“如”，可以让用户快速尝试
 - [ ] NL input cache
 - [ ] NL Input 再微信内支持语音输入
@@ -68,6 +68,7 @@
   - 我们可以帮用户预订，但是支付由用户自行完成，后续平台报销（补贴比例+补贴上限）；但也存在预订需要预付的情况，此时需要用户先支付给平台（直接抵消补贴）；所以其实只有平台预付和平台后付的区别。
 - [ ] 预订情况也需要一个表
 - [ ] 费用和资源合并在一个页面中
+- [ ] 用户可以请求更多活动
 
 ### POIs
 
