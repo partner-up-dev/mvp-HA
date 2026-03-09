@@ -1,5 +1,5 @@
 export { getAnchorPRDetail } from "./get-anchor-pr";
-export { getAnchorPREconomy } from "./get-anchor-pr-economy";
+export { getAnchorPRBookingSupport } from "../../pr-booking-support";
 export { confirmSlot } from "../../pr-core/use-cases/confirm-slot";
 export { checkIn } from "../../pr-core/use-cases/check-in";
 export { recommendAlternativeBatches } from "../../pr-core/use-cases/recommend-alternative-batches";

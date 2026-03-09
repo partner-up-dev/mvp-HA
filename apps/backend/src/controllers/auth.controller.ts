@@ -2,7 +2,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { HTTPException } from "hono/http-exception";
-import { authMiddleware, readLocalCredentialHeaders } from "../auth/middleware";
+import {
+  authMiddleware,
+  issueAuthForUser,
+  readLocalCredentialHeaders,
+} from "../auth/middleware";
 import type { AuthEnv } from "../auth/middleware";
 import { readOAuthSession } from "../auth/wechat-session";
 import { UserRepository } from "../repositories/UserRepository";
@@ -11,7 +15,6 @@ import {
   ensureUserHasPin,
   verifyUserPin,
 } from "../domains/pr-core/services/user-pin-auth.service";
-import { issueAuthenticatedForUser } from "../auth/middleware";
 
 const app = new Hono<AuthEnv>();
 const userRepo = new UserRepository();
@@ -21,13 +24,38 @@ const authSessionSchema = z.object({
   userPin: z.string().regex(/^\d{4}$/).optional().nullable(),
 });
 
+const adminLoginSchema = z.object({
+  userId: z.string().uuid(),
+  password: z.string().min(1),
+});
+
 export const authRoute = app
   .use("*", authMiddleware)
+  .post("/admin/login", zValidator("json", adminLoginSchema), async (c) => {
+    const { userId, password } = c.req.valid("json");
+    const user = await userRepo.findById(userId);
+    if (
+      !user ||
+      user.role !== "service" ||
+      !(await verifyUserPin(user, password))
+    ) {
+      throw new HTTPException(401, { message: "Invalid admin credentials" });
+    }
+
+    const authenticated = issueAuthForUser(user);
+    c.set("auth", authenticated);
+    return c.json({
+      role: authenticated.role,
+      userId: user.id,
+      userPin: null,
+      accessToken: authenticated.token,
+    });
+  })
   .post("/session", zValidator("json", authSessionSchema), async (c) => {
     const auth = c.get("auth");
-    if (auth.role === "authenticated" && auth.userId) {
+    if (auth.role !== "anonymous" && auth.userId) {
       return c.json({
-        role: "authenticated" as const,
+        role: auth.role,
         userId: auth.userId,
         userPin: null,
         accessToken: auth.token,
@@ -48,12 +76,12 @@ export const authRoute = app
         });
       }
 
-      const authenticated = issueAuthenticatedForUser(localUser.id);
+      const authenticated = issueAuthForUser(localUser);
       c.set("auth", authenticated);
       return c.json({
-        role: "authenticated" as const,
+        role: authenticated.role,
         userId: localUser.id,
-        userPin: candidateUserPin,
+        userPin: localUser.role === "service" ? null : candidateUserPin,
         accessToken: authenticated.token,
       });
     }
@@ -62,11 +90,11 @@ export const authRoute = app
     if (oauthSession) {
       const oauthUser = await resolveUserByOpenId(oauthSession.openId);
       const ensured = await ensureUserHasPin(oauthUser);
-      const authenticated = issueAuthenticatedForUser(ensured.user.id);
+      const authenticated = issueAuthForUser(ensured.user);
       c.set("auth", authenticated);
 
       return c.json({
-        role: "authenticated" as const,
+        role: authenticated.role,
         userId: ensured.user.id,
         userPin: ensured.userPin,
         accessToken: authenticated.token,

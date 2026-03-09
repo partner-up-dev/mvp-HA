@@ -8,7 +8,14 @@
 - [ ] 在移动端的加载速度还有待优化
 - [x] 多环境支持：后端通过httpTrigger+函数别名 (`https://test.api-app.partner-up.cn`)；前端创建另一个Page (`https://test.app.partner-up.cn`)
 
-## Home
+## Quality Of Life
+
+- [ ] `@media` 直接从 token 级别作用
+- [ ] 基于 `calc`, `color` 等变换 token 的方式是禁止的
+- [ ] 添加 ListScaffold，支持关键词搜索、筛选器，配置一个ItemFetcher和ItemRenderer即可
+- [ ] 间距是属于父组件控制的，或者说容器组件
+
+## Marketing
 
 - [ ] 重构首页：没有想找搭子的人，点进来，也不要有太高的流失率
   - [ ] 强调无登录、无隐私收集
@@ -20,6 +27,11 @@
 - [x] Event Highlights Section
 - [x] 收藏弹窗的弹出位置有问题
 - [x] hero section NL create PR
+- [ ] Static Incremental Regeneration and Open graph
+
+## User
+
+- [ ] 添加“我的”页面：可以绑定微信；开关服务通知；修改头像和昵称
 
 ## PR
 
@@ -36,12 +48,17 @@
 
 ### Detail Page
 
-- [ ] partner section
-  - [ ] "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
-- [ ] PR status UX 优化
-  - [ ] diagram （特别EXPIRE 路线）
-  - [ ] incoming state
+- [ ] 重构 PR Detail Page
+  - [ ] 重新设计/添加 partner section
+    - [ ] 加入/退出按钮
+    - [ ] 其它搭子
+    - [ ] min/max partners
+    - [ ] "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
+  - [ ] PR status UX 优化
+    - [ ] diagram （特别EXPIRE 路线）
+    - [ ] incoming state
 - [ ] 在活动页面中可以允许用户主动创建该batch下pr；在活动页面引导用户创建 community pr（这两个应该是一个入口？）
+- [ ] PageHeader Sitcky
 
 ### Create/Edit
 
@@ -51,6 +68,10 @@
 - [ ] NL input cache
 - [ ] NL Input 再微信内支持语音输入
 - [ ] datetime picker 的编辑体验有待优化
+
+### Anchor PR
+
+- [ ] 加入 Anchor PR 需要微信登录，如果不在微信内呢？
 
 ### Share
 
@@ -63,12 +84,20 @@
 ## Event
 
 - [x] Event Plaza Page, Event Page (batch as tab)
-- [ ] 取消 Model C?
-  - 预订和购买是分开的；
-  - 我们可以帮用户预订，但是支付由用户自行完成，后续平台报销（补贴比例+补贴上限）；但也存在预订需要预付的情况，此时需要用户先支付给平台（直接抵消补贴）；所以其实只有平台预付和平台后付的区别。
-- [ ] 预订情况也需要一个表
-- [ ] 费用和资源合并在一个页面中
-- [ ] 用户可以请求更多活动
+- [x] 重构补贴和资源
+  - [x] 预订和购买是两件事情
+  - [x] 在用户不需要支付任何费用的情况下，平台会提供金钱以外的资助，如羽毛球活动提供能量饮料、羽毛球；学习冲刺场景提供桌面时钟
+  - [x] 合并 Model A 和 Model C：平台可以代预订，但是费用由用户自行支付，后续平台报销（补贴比例+补贴上限）；对于预订需要预付的情况，需要用户先支付给平台（直接抵消补贴）；所以其实补贴其实只分为平台预付和平台后付（而不是分为部分补贴和全额补贴）
+  - [x] 资源和预订需要一个表
+  - [x] 重新设计经济页面（至少得重命名为预订和补贴）
+- [ ] 用户可以请求组织更多类型的活动、批次；其它人也可以看到，然后投票
+- [ ] batch tabBar 排序为按开始时间升序
+
+### Booking & Support
+
+- [ ] 资源配以图片
+
+## Base/Common
 
 ### POIs
 
@@ -76,9 +105,11 @@
 - [x] show in event card, PR page
 - [ ] nickname (shorter friendly name)
 
+### Support
+
+- [x] 接入客服 <https://work.weixin.qq.com/nl/act/p/3f8820e724cb44c5>, <https://work.weixin.qq.com/nl/act/p/4030a5b69149404d> ，删除联系主创
+- [ ] 联系作者总是显示未配置
+
 ## Others
 
-- [ ] Static Incremental Regeneration and Open graph
-- [x] 接入客服 <https://work.weixin.qq.com/nl/act/p/3f8820e724cb44c5>, <https://work.weixin.qq.com/nl/act/p/4030a5b69149404d> ，删除联系主创
 - [x] 当WebHistory为空时，显示 home 而不是 back
-- [ ] `@media` 直接从 token 级别作用

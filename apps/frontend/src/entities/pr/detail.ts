@@ -11,6 +11,6 @@ export type AnchorPRDetail = InferResponseType<
 
 export type ScenarioPRDetail = CommunityPRDetail | AnchorPRDetail;
 
-export type AnchorPREconomyDetail = InferResponseType<
-  (typeof client.api.apr)[":id"]["economy"]["$get"]
+export type AnchorPRBookingSupportDetail = InferResponseType<
+  (typeof client.api.apr)[":id"]["booking-support"]["$get"]
 >;

@@ -117,5 +117,5 @@ src/
 
 ### Immediate Next Focus
 
-- 在各 GAPC 中接入事件消费者（提醒、评分、经济模型、举报处理）。
+- 在各 GAPC 中接入事件消费者（提醒、评分、预订与资助、举报处理）。
 - 完善 outbox handler 注册机制和监控告警。

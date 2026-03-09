@@ -119,7 +119,7 @@ export const communityPRRoute = app
         ...result,
         auth: creatorAuth.upgradedAuth
           ? {
-              role: "authenticated" as const,
+              role: creatorAuth.upgradedAuth.role,
               userId: creatorAuth.upgradedAuth.userId,
               userPin: pin ?? null,
               accessToken: creatorAuth.upgradedAuth.token,
@@ -148,7 +148,7 @@ export const communityPRRoute = app
         ...result,
         auth: creatorAuth.upgradedAuth
           ? {
-              role: "authenticated" as const,
+              role: creatorAuth.upgradedAuth.role,
               userId: creatorAuth.upgradedAuth.userId,
               userPin: pin ?? null,
               accessToken: creatorAuth.upgradedAuth.token,

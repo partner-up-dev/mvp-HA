@@ -27,6 +27,7 @@ export class WeChatLoginService {
     const createdUser = await userRepo.createIfNotExists({
       id: this.generateUserId(),
       openId,
+      role: "authenticated",
       status: "ACTIVE",
       nickname: profile.nickname,
       sex: profile.sex,

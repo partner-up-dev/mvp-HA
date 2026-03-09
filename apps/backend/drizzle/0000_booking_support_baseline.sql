@@ -40,15 +40,59 @@ CREATE TABLE IF NOT EXISTS "analytics_daily_community" (
 	"computed_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "anchor_event_batch_support_overrides" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"batch_id" bigint NOT NULL,
+	"event_support_resource_id" bigint NOT NULL,
+	"disabled" boolean DEFAULT false NOT NULL,
+	"title_override" text,
+	"resource_kind_override" text,
+	"booking_required_override" boolean,
+	"booking_handled_by_override" text,
+	"booking_deadline_rule_override" text,
+	"booking_locks_participant_override" boolean,
+	"cancellation_policy_override" text,
+	"settlement_mode_override" text,
+	"subsidy_rate_override" double precision,
+	"subsidy_cap_override" integer,
+	"requires_user_transfer_to_platform_override" boolean,
+	"summary_text_override" text,
+	"detail_rules_override" text[] DEFAULT ARRAY[]::text[] NOT NULL,
+	"display_order_override" integer,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "anchor_event_batch_support_overrides_batch_resource_uq" UNIQUE("batch_id","event_support_resource_id")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "anchor_event_batches" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"anchor_event_id" bigint NOT NULL,
 	"time_window" text[] DEFAULT ARRAY[NULL, NULL]::text[] NOT NULL,
 	"status" text DEFAULT 'OPEN' NOT NULL,
-	"discount_rate_override" double precision,
-	"subsidy_cap_override" bigint,
-	"economic_policy_version" integer DEFAULT 1 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "anchor_event_support_resources" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"anchor_event_id" bigint NOT NULL,
+	"code" text NOT NULL,
+	"title" text NOT NULL,
+	"resource_kind" text NOT NULL,
+	"applies_to_all_locations" boolean DEFAULT true NOT NULL,
+	"location_ids" text[] DEFAULT ARRAY[]::text[] NOT NULL,
+	"booking_required" boolean DEFAULT false NOT NULL,
+	"booking_handled_by" text,
+	"booking_deadline_rule" text,
+	"booking_locks_participant" boolean DEFAULT false NOT NULL,
+	"cancellation_policy" text,
+	"settlement_mode" text DEFAULT 'NONE' NOT NULL,
+	"subsidy_rate" double precision,
+	"subsidy_cap" integer,
+	"requires_user_transfer_to_platform" boolean DEFAULT false NOT NULL,
+	"summary_text" text NOT NULL,
+	"detail_rules" text[] DEFAULT ARRAY[]::text[] NOT NULL,
+	"display_order" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "anchor_event_support_resources_event_code_uq" UNIQUE("anchor_event_id","code")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "anchor_events" (
@@ -60,11 +104,6 @@ CREATE TABLE IF NOT EXISTS "anchor_events" (
 	"time_window_pool" jsonb NOT NULL,
 	"cover_image" text,
 	"status" text DEFAULT 'ACTIVE' NOT NULL,
-	"payment_model" text DEFAULT 'C' NOT NULL,
-	"discount_rate_default" double precision,
-	"subsidy_cap_default" bigint,
-	"resource_booking_deadline_rule" text,
-	"cancellation_policy" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -74,14 +113,29 @@ CREATE TABLE IF NOT EXISTS "anchor_partner_requests" (
 	"anchor_event_id" bigint NOT NULL,
 	"batch_id" bigint NOT NULL,
 	"visibility_status" text DEFAULT 'VISIBLE' NOT NULL,
-	"auto_hide_at" timestamp,
-	"resource_booking_deadline_at" timestamp,
-	"payment_model_applied" text,
-	"discount_rate_applied" double precision,
-	"subsidy_cap_applied" integer,
-	"cancellation_policy_applied" text,
-	"economic_policy_scope_applied" text,
-	"economic_policy_version_applied" integer
+	"auto_hide_at" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "anchor_pr_support_resources" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"pr_id" bigint NOT NULL,
+	"source_event_support_resource_id" bigint,
+	"source_batch_support_override_id" bigint,
+	"title" text NOT NULL,
+	"resource_kind" text NOT NULL,
+	"booking_required" boolean DEFAULT false NOT NULL,
+	"booking_handled_by" text,
+	"booking_deadline_at" timestamp,
+	"booking_locks_participant" boolean DEFAULT false NOT NULL,
+	"cancellation_policy" text,
+	"settlement_mode" text DEFAULT 'NONE' NOT NULL,
+	"subsidy_rate" double precision,
+	"subsidy_cap" integer,
+	"requires_user_transfer_to_platform" boolean DEFAULT false NOT NULL,
+	"summary_text" text NOT NULL,
+	"detail_rules" text[] DEFAULT ARRAY[]::text[] NOT NULL,
+	"display_order" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "community_partner_requests" (
@@ -149,6 +203,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"open_id" text,
 	"pin_hash" text,
+	"role" text DEFAULT 'authenticated' NOT NULL,
 	"nickname" text,
 	"sex" integer,
 	"avatar" text,
@@ -257,7 +312,25 @@ CREATE TABLE IF NOT EXISTS "pois" (
 );
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "anchor_event_batch_support_overrides" ADD CONSTRAINT "anchor_event_batch_support_overrides_batch_id_anchor_event_batches_id_fk" FOREIGN KEY ("batch_id") REFERENCES "public"."anchor_event_batches"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "anchor_event_batch_support_overrides" ADD CONSTRAINT "anchor_event_batch_support_overrides_event_support_resource_id_anchor_event_support_resources_id_fk" FOREIGN KEY ("event_support_resource_id") REFERENCES "public"."anchor_event_support_resources"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "anchor_event_batches" ADD CONSTRAINT "anchor_event_batches_anchor_event_id_anchor_events_id_fk" FOREIGN KEY ("anchor_event_id") REFERENCES "public"."anchor_events"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "anchor_event_support_resources" ADD CONSTRAINT "anchor_event_support_resources_anchor_event_id_anchor_events_id_fk" FOREIGN KEY ("anchor_event_id") REFERENCES "public"."anchor_events"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -276,6 +349,24 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "anchor_partner_requests" ADD CONSTRAINT "anchor_partner_requests_batch_id_anchor_event_batches_id_fk" FOREIGN KEY ("batch_id") REFERENCES "public"."anchor_event_batches"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "anchor_pr_support_resources" ADD CONSTRAINT "anchor_pr_support_resources_pr_id_partner_requests_id_fk" FOREIGN KEY ("pr_id") REFERENCES "public"."partner_requests"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "anchor_pr_support_resources" ADD CONSTRAINT "anchor_pr_support_resources_source_event_support_resource_id_anchor_event_support_resources_id_fk" FOREIGN KEY ("source_event_support_resource_id") REFERENCES "public"."anchor_event_support_resources"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "anchor_pr_support_resources" ADD CONSTRAINT "anchor_pr_support_resources_source_batch_support_override_id_anchor_event_batch_support_overrides_id_fk" FOREIGN KEY ("source_batch_support_override_id") REFERENCES "public"."anchor_event_batch_support_overrides"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -340,6 +431,7 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "anchor_pr_support_resources_pr_order_idx" ON "anchor_pr_support_resources" USING btree ("pr_id","display_order","id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "jobs_status_run_at_idx" ON "jobs" USING btree ("status","run_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "jobs_lease_until_idx" ON "jobs" USING btree ("lease_until");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "jobs_job_type_status_idx" ON "jobs" USING btree ("job_type","status");--> statement-breakpoint

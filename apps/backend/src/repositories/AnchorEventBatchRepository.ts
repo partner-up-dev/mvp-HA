@@ -1,3 +1,4 @@
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   anchorEventBatches,
@@ -7,7 +8,6 @@ import {
   type AnchorEventBatchStatus,
 } from "../entities/anchor-event-batch";
 import type { AnchorEventId } from "../entities/anchor-event";
-import { eq, and, desc } from "drizzle-orm";
 
 export class AnchorEventBatchRepository {
   async create(data: NewAnchorEventBatch): Promise<AnchorEventBatch> {
@@ -69,6 +69,18 @@ export class AnchorEventBatchRepository {
     const result = await db
       .update(anchorEventBatches)
       .set({ status })
+      .where(eq(anchorEventBatches.id, id))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async update(
+    id: AnchorEventBatchId,
+    data: Partial<Pick<AnchorEventBatch, "timeWindow" | "status">>,
+  ): Promise<AnchorEventBatch | null> {
+    const result = await db
+      .update(anchorEventBatches)
+      .set(data)
       .where(eq(anchorEventBatches.id, id))
       .returning();
     return result[0] ?? null;

@@ -5,7 +5,7 @@
 - 作为用户，我希望进入首页后先快速理解产品，并从“活动亮点/活动广场”中获得灵感，再决定是否发起搭子。
 - 作为用户，我希望进入 Community PR 创建页后可在“自然语言”与“结构化表单”间切换，并按需补充细节。
 - 作为创建者，我希望编辑时和创建时使用同一套结构化表单，减少学习成本。
-- 作为参与者，我希望 Community PR 与 Anchor PR 的页面语义清晰，不把加入、确认、签到、经济信息混在同一个页面里。
+- 作为参与者，我希望 Community PR 与 Anchor PR 的页面语义清晰，不把加入、确认、签到、预订与资助信息混在同一个页面里。
 
 ## 流程
 
@@ -42,7 +42,7 @@
   - 分享
   - 提醒订阅
   - 满员时查看同批次替代推荐
-  - 跳转 `/apr/:id/economy` 查看经济信息
+  - 跳转 `/apr/:id/booking-support` 查看预订与资助说明
 - Community PR 加入成功时对应 `Partner.status` 置为 `JOINED`。
 - Anchor PR 在 `T-1h~T-30min` 窗口加入时会立即置为 `CONFIRMED`。
 - 仅 Anchor PR 存在以下确认窗口规则：
@@ -56,7 +56,7 @@
 - 开启提醒后，系统会为已加入槽位调度 `T-24h` 与 `T-2h` 提醒任务。
 - 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
-- 创建者编辑规则：JWT `authenticated` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
+- 创建者编辑规则：JWT `authenticated/service` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
 
 ## 验收标准
 
@@ -69,7 +69,7 @@
 - 结构化创建请求命中 `POST /api/cpr`（请求体为 `PartnerRequestFields`），始终创建 `DRAFT`。
 - 自然语言创建请求命中 `POST /api/cpr/natural_language`，始终创建 `DRAFT`。
 - `POST /api/cpr/:id/publish` 仅允许发布 `DRAFT`，发布成功后返回创建者鉴权上下文（含 token，必要时含新生成 PIN）。
-- Anchor PR 不暴露手动创建页面；详情页主入口为 `/apr/:id`，经济信息页为 `/apr/:id/economy`。
+- Anchor PR 不暴露手动创建页面；详情页主入口为 `/apr/:id`，预订与资助页为 `/apr/:id/booking-support`。
 - 新创建请求会按 `min/max` 创建槽位；当前参与人数由 `partners.pr_id` 下处于活跃状态的槽位动态聚合。
 - `POST /api/cpr/:id/join`、`POST /api/cpr/:id/exit`、`POST /api/apr/:id/join`、`POST /api/apr/:id/exit` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - `POST /api/apr/:id/confirm` 与 `POST /api/apr/:id/check-in` 同样强制微信登录态。

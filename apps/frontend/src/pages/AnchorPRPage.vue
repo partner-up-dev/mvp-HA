@@ -36,17 +36,24 @@
       <section class="section-card">
         <router-link
           v-if="id !== null"
-          :to="anchorPREconomyPath(id)"
-          class="economy-entry-card"
+          :to="anchorPRBookingSupportPath(id)"
+          class="booking-support-entry-card"
         >
-          <div class="economy-entry-card__header">
-            <h2 class="section-title">{{ t("prPage.economyEntry.title") }}</h2>
-            <span class="economy-entry-card__action">{{
-              t("prPage.economyEntry.viewAction")
+          <div class="booking-support-entry-card__header">
+            <h2 class="section-title">{{ t("prPage.bookingSupportEntry.title") }}</h2>
+            <span class="booking-support-entry-card__action">{{
+              t("prPage.bookingSupportEntry.viewAction")
             }}</span>
           </div>
-          <p class="section-description">{{ economySummaryModel }}</p>
-          <p class="section-description">{{ economySummaryDeadline }}</p>
+          <p class="section-description">{{ bookingSupportSummaryHeadline }}</p>
+          <p class="section-description">{{ bookingSupportSummaryDeadline }}</p>
+          <p
+            v-for="highlight in bookingSupportHighlights"
+            :key="highlight"
+            class="section-description"
+          >
+            {{ highlight }}
+          </p>
         </router-link>
       </section>
 
@@ -248,13 +255,18 @@ import { requireWeChatActionAuth } from "@/composables/requireWeChatActionAuth";
 import { redirectToWeChatOAuthLogin } from "@/composables/useAutoWeChatLogin";
 import {
   anchorPRDetailPath,
-  anchorPREconomyPath,
+  anchorPRBookingSupportPath,
 } from "@/entities/pr/routes";
 import type { AnchorPRFormFields } from "@/entities/pr/types";
+import {
+  formatLocalDateTimeValue,
+  formatLocalDateTimeWindow,
+  formatLocalDateTimeWindowLabel,
+} from "@/lib/datetime";
 
 const route = useRoute();
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const id = computed<PRId | null>(() => {
   const rawId = Array.isArray(route.params.id)
     ? route.params.id[0]
@@ -452,82 +464,35 @@ const handleGoWechatLogin = () => {
 const { shareUrl, prShareData } = usePRShareContext({ id, pr: prDetail });
 
 const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString(locale.value, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-const normalizeTimeValue = (value: string | null): string | null => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.toLowerCase() === "null") return null;
-  return trimmed;
-};
-const ISO_DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const parseIsoDateOnlyAsLocalDate = (value: string): Date | null => {
-  const [yearRaw, monthRaw, dayRaw] = value.split("-");
-  const year = Number(yearRaw);
-  const month = Number(monthRaw);
-  const day = Number(dayRaw);
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day)
-  ) {
-    return null;
-  }
-  const date = new Date(year, month - 1, day);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-const formatDateTime = (value: string | null): string | null => {
-  const normalized = normalizeTimeValue(value);
-  if (!normalized) return null;
-  if (ISO_DATE_ONLY_PATTERN.test(normalized)) {
-    const dateOnly = parseIsoDateOnlyAsLocalDate(normalized);
-    if (!dateOnly) return value;
-    return dateOnly.toLocaleDateString(locale.value, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-  const date = new Date(normalized);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(locale.value, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-const localizedTime = computed<[string | null, string | null]>(() => [
-  formatDateTime(prDetail.value?.core.time[0] ?? null),
-  formatDateTime(prDetail.value?.core.time[1] ?? null),
-]);
+  formatLocalDateTimeValue(dateStr) ?? dateStr;
+const localizedTime = computed<[string | null, string | null]>(() =>
+  formatLocalDateTimeWindow(prDetail.value?.core.time ?? [null, null]),
+);
 const formatBatchWindowLabel = (timeWindow: [string | null, string | null]) => {
-  const [start, end] = timeWindow;
-  const startText =
-    formatDateTime(start) ?? t("prPage.alternativeBatch.unknownTime");
-  const endText = formatDateTime(end);
-  return endText ? `${startText} - ${endText}` : startText;
+  return formatLocalDateTimeWindowLabel(
+    timeWindow,
+    {},
+    t("prPage.alternativeBatch.unknownTime"),
+  );
 };
-const economySummaryModel = computed(() => {
-  const model = prDetail.value?.anchor.economyPreview.paymentModelApplied;
-  if (model === "A") return t("prPage.economyEntry.modelA");
-  if (model === "C") return t("prPage.economyEntry.modelC");
-  return t("prPage.economyEntry.modelUnknown");
+const bookingSupportSummaryHeadline = computed(() => {
+  return (
+    prDetail.value?.anchor.bookingSupportPreview.headline ??
+    t("prPage.bookingSupportEntry.headlineFallback")
+  );
 });
-const economySummaryDeadline = computed(() => {
+const bookingSupportHighlights = computed(() =>
+  prDetail.value?.anchor.bookingSupportPreview.highlights.slice(1, 3) ?? [],
+);
+const bookingSupportSummaryDeadline = computed(() => {
   const deadline =
-    prDetail.value?.anchor.economyPreview.resourceBookingDeadlineAt ?? null;
-  if (!deadline) return t("prPage.economyEntry.deadlineUnset");
-  return t("prPage.economyEntry.deadlineWithValue", {
+    prDetail.value?.anchor.bookingSupportPreview.effectiveBookingDeadlineAt ??
+    null;
+  if (!deadline) return t("prPage.bookingSupportEntry.deadlineUnset");
+  return t("prPage.bookingSupportEntry.deadlineWithValue", {
     deadline:
-      formatDateTime(deadline) ?? t("prPage.economyEntry.deadlineUnset"),
+      formatLocalDateTimeValue(deadline) ??
+      t("prPage.bookingSupportEntry.deadlineUnset"),
   });
 });
 
@@ -593,20 +558,20 @@ useHead({
   color: var(--sys-color-on-surface-variant);
 }
 
-.economy-entry-card {
+.booking-support-entry-card {
   display: block;
   text-decoration: none;
   color: inherit;
 }
 
-.economy-entry-card__header {
+.booking-support-entry-card__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--sys-spacing-sm);
 }
 
-.economy-entry-card__action,
+.booking-support-entry-card__action,
 .same-batch-item__status {
   font-size: 0.75rem;
   color: var(--sys-color-primary);

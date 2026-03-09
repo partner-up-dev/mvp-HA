@@ -26,6 +26,7 @@ export async function createLocalUserWithGeneratedPin(): Promise<{
     id: generateLocalUserId(),
     openId: null,
     pinHash,
+    role: "authenticated",
     status: "ACTIVE",
   });
 

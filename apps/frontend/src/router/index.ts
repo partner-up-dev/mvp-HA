@@ -9,11 +9,15 @@ import MyPRsPage from "@/pages/MyPRsPage.vue";
 import CommunityPRPage from "@/pages/CommunityPRPage.vue";
 import CommunityPRCreatePage from "@/pages/CommunityPRCreatePage.vue";
 import AnchorPRPage from "@/pages/AnchorPRPage.vue";
-import AnchorPREconomyPage from "@/pages/AnchorPREconomyPage.vue";
+import AnchorPRBookingSupportPage from "@/pages/AnchorPRBookingSupportPage.vue";
+import AdminLoginPage from "@/pages/AdminLoginPage.vue";
+import AdminAnchorPRPage from "@/pages/AdminAnchorPRPage.vue";
+import AdminBookingSupportPage from "@/pages/AdminBookingSupportPage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
 import AnchorEventPage from "@/pages/AnchorEventPage.vue";
+import { getStoredSessionRole } from "@/shared/auth/session-storage";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -49,11 +53,37 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/apr/:id/economy",
-    name: "anchor-pr-economy",
-    component: AnchorPREconomyPage,
+    path: "/apr/:id/booking-support",
+    name: "anchor-pr-booking-support",
+    component: AnchorPRBookingSupportPage,
     meta: {
       wechatSharePolicy: "skip",
+    },
+  },
+  {
+    path: "/admin/login",
+    name: "admin-login",
+    component: AdminLoginPage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/admin/anchor-pr",
+    name: "admin-anchor-pr",
+    component: AdminAnchorPRPage,
+    meta: {
+      wechatSharePolicy: "route",
+      requiresAdminAuth: true,
+    },
+  },
+  {
+    path: "/admin/booking-support",
+    name: "admin-booking-support",
+    component: AdminBookingSupportPage,
+    meta: {
+      wechatSharePolicy: "route",
+      requiresAdminAuth: true,
     },
   },
   {
@@ -114,6 +144,23 @@ export const router = createRouter({
 
     return { left: 0, top: 0 };
   },
+});
+
+router.beforeEach((to) => {
+  if (!to.meta.requiresAdminAuth) {
+    return true;
+  }
+
+  if (getStoredSessionRole() === "service") {
+    return true;
+  }
+
+  return {
+    name: "admin-login",
+    query: {
+      redirect: to.fullPath,
+    },
+  };
 });
 
 const parsePositiveInt = (value: unknown): number | undefined => {

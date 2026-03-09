@@ -2,7 +2,6 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { isExitAllowedStatus } from "../services/status-rules";
@@ -13,11 +12,11 @@ import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { cancelWeChatReminderJobsForParticipant } from "../../../infra/notifications";
+import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
-const anchorPRRepo = new AnchorPRRepository();
 
 export async function exitPR(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -44,8 +43,8 @@ export async function exitPR(id: PRId, openId: string): Promise<PublicPR> {
     refreshedRequest.prKind === "ANCHOR" &&
     (activeSlot.status === "CONFIRMED" || activeSlot.status === "ATTENDED")
   ) {
-    const anchor = await anchorPRRepo.findByPrId(id);
-    if (isBookingDeadlineReached(anchor?.resourceBookingDeadlineAt ?? null)) {
+    const effectiveBookingDeadlineAt = await getEffectiveBookingDeadline(id);
+    if (isBookingDeadlineReached(effectiveBookingDeadlineAt)) {
       throw new HTTPException(400, {
         message: "Cannot exit - slot is locked after booking deadline",
       });

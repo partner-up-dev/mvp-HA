@@ -6,7 +6,8 @@ export const communityPRDetailPath = (id: PRId): string => `/cpr/${id}`;
 
 export const anchorPRDetailPath = (id: PRId): string => `/apr/${id}`;
 
-export const anchorPREconomyPath = (id: PRId): string => `/apr/${id}/economy`;
+export const anchorPRBookingSupportPath = (id: PRId): string =>
+  `/apr/${id}/booking-support`;
 
 export const resolvePRDetailPath = (input: {
   id: PRId;

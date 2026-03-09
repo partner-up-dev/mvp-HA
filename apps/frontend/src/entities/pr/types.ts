@@ -10,8 +10,8 @@ export type AnchorPRDetailView = InferResponseType<
   (typeof client.api.apr)[":id"]["$get"]
 >;
 
-export type AnchorPREconomyView = InferResponseType<
-  (typeof client.api.apr)[":id"]["economy"]["$get"]
+export type AnchorPRBookingSupportView = InferResponseType<
+  (typeof client.api.apr)[":id"]["booking-support"]["$get"]
 >;
 
 export type PRDetailView = CommunityPRDetailView | AnchorPRDetailView;

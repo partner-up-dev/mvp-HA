@@ -7,9 +7,12 @@ import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import { refreshTemporalStatus } from "../../pr-core/temporal-refresh";
 import { recommendAlternativeBatches } from "../../pr-core/use-cases/recommend-alternative-batches";
 import type { AlternativeBatchRecommendation } from "../../pr-core/use-cases/recommend-alternative-batches";
+import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { buildBookingSupportPreview } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
+const prSupportRepo = new AnchorPRSupportResourceRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -60,14 +63,10 @@ export type AnchorPRDetail = {
       supportsConfirm: true;
       supportsCheckIn: true;
     };
-    economyPreview: {
-      resourceBookingDeadlineAt: string | null;
-      paymentModelApplied: "A" | "C" | null;
-      discountRateApplied: number | null;
-      subsidyCapApplied: number | null;
-      cancellationPolicyApplied: string | null;
-      economicPolicyScopeApplied: "EVENT_DEFAULT" | "BATCH_OVERRIDE" | null;
-      economicPolicyVersionApplied: number | null;
+    bookingSupportPreview: {
+      headline: string | null;
+      highlights: string[];
+      effectiveBookingDeadlineAt: string | null;
     };
     related: {
       sameBatchAlternatives: SameBatchAlternative[];
@@ -122,6 +121,8 @@ export async function getAnchorPRDetail(
     publicPR.status === "FULL"
       ? (await recommendAlternativeBatches(id)).recommendations
       : [];
+  const supportRows = await prSupportRepo.findByPrId(id);
+  const bookingSupportPreview = buildBookingSupportPreview(supportRows);
 
   return {
     id: publicPR.id,
@@ -164,14 +165,11 @@ export async function getAnchorPRDetail(
         supportsConfirm: true,
         supportsCheckIn: true,
       },
-      economyPreview: {
-        resourceBookingDeadlineAt: toIsoString(anchor.resourceBookingDeadlineAt),
-        paymentModelApplied: anchor.paymentModelApplied,
-        discountRateApplied: anchor.discountRateApplied,
-        subsidyCapApplied: anchor.subsidyCapApplied,
-        cancellationPolicyApplied: anchor.cancellationPolicyApplied,
-        economicPolicyScopeApplied: anchor.economicPolicyScopeApplied,
-        economicPolicyVersionApplied: anchor.economicPolicyVersionApplied,
+      bookingSupportPreview: {
+        headline: bookingSupportPreview.headline,
+        highlights: bookingSupportPreview.highlights,
+        effectiveBookingDeadlineAt:
+          bookingSupportPreview.effectiveBookingDeadlineAt,
       },
       related: {
         sameBatchAlternatives,

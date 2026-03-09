@@ -67,6 +67,18 @@ export class AnchorPRRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async findByBatchId(batchId: AnchorEventBatchId): Promise<AnchorPRRecord[]> {
+    return await db
+      .select({
+        root: partnerRequests,
+        anchor: anchorPartnerRequests,
+      })
+      .from(anchorPartnerRequests)
+      .innerJoin(partnerRequests, eq(partnerRequests.id, anchorPartnerRequests.prId))
+      .where(eq(anchorPartnerRequests.batchId, batchId))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async findVisibleByBatchIdAndLocation(
     batchId: AnchorEventBatchId,
     location: string,
@@ -107,6 +119,20 @@ export class AnchorPRRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async findByAnchorEventId(
+    anchorEventId: AnchorEventId,
+  ): Promise<AnchorPRRecord[]> {
+    return await db
+      .select({
+        root: partnerRequests,
+        anchor: anchorPartnerRequests,
+      })
+      .from(anchorPartnerRequests)
+      .innerJoin(partnerRequests, eq(partnerRequests.id, anchorPartnerRequests.prId))
+      .where(eq(anchorPartnerRequests.anchorEventId, anchorEventId))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async updateVisibilityStatus(
     prId: PRId,
     visibilityStatus: VisibilityStatus,
@@ -117,4 +143,3 @@ export class AnchorPRRepository {
       .where(eq(anchorPartnerRequests.prId, prId));
   }
 }
-

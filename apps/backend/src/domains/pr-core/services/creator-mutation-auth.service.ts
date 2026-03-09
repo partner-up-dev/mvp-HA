@@ -4,7 +4,7 @@ import type { UserId } from "../../../entities/user";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import type { RequestAuth } from "../../../auth/types";
-import { issueAuthenticatedForUser } from "../../../auth/middleware";
+import { issueAuthForUser } from "../../../auth/middleware";
 import { verifyUserPin } from "./user-pin-auth.service";
 
 const prRepo = new PartnerRequestRepository();
@@ -43,7 +43,7 @@ export async function authorizeCreatorMutation(
     });
   }
 
-  if (auth.role === "authenticated") {
+  if (auth.role !== "anonymous") {
     if (auth.userId !== request.createdBy) {
       throw new HTTPException(403, {
         message: "Only the creator can modify this partner request",
@@ -68,7 +68,7 @@ export async function authorizeCreatorMutation(
     throw new HTTPException(403, { message: "Invalid PIN" });
   }
 
-  const upgradedAuth = issueAuthenticatedForUser(creator.id);
+  const upgradedAuth = issueAuthForUser(creator);
   return {
     request,
     actorUserId: creator.id,

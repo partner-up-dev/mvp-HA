@@ -9,7 +9,7 @@ import {
 } from "../entities/partner-request";
 import type { UserId } from "../entities/user";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
-import { issueAuthenticatedForUser } from "../auth/middleware";
+import { issueUserAuth } from "../auth/middleware";
 import { readOAuthSession } from "../auth/wechat-session";
 import type { AuthEnv } from "../auth/middleware";
 
@@ -65,7 +65,7 @@ export const tryReadAuthenticatedOpenId = async (
 
 export const getAuthenticatedUserId = (c: Context<AuthEnv>): UserId | null => {
   const auth = c.get("auth");
-  if (auth.role !== "authenticated" || !auth.userId) {
+  if (auth.role === "anonymous" || !auth.userId) {
     return null;
   }
 
@@ -95,11 +95,11 @@ export const issueAuthPayload = (
   userId: UserId,
   userPin: string | null,
 ) => {
-  const auth = issueAuthenticatedForUser(userId);
+  const auth = issueUserAuth(userId);
   c.set("auth", auth);
 
   return {
-    role: "authenticated" as const,
+    role: auth.role,
     userId,
     userPin,
     accessToken: auth.token,

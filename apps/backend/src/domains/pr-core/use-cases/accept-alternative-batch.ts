@@ -5,7 +5,6 @@ import { AnchorEventRepository } from "../../../repositories/AnchorEventReposito
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { resolveDesiredSlotCount } from "../services/slot-management.service";
-import { resolveAnchorEconomicPolicy } from "../services/economic-policy.service";
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
@@ -14,6 +13,7 @@ import { anchorEventBatches } from "../../../entities/anchor-event-batch";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partnerRequests } from "../../../entities/partner-request";
 import { partners } from "../../../entities/partner";
+import { materializePRSupportResources } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -137,11 +137,6 @@ export async function acceptAlternativeBatch(
 
     let createdPr = false;
     if (!targetPRRecord) {
-      const resolvedPolicy = resolveAnchorEconomicPolicy(
-        event,
-        targetBatch,
-        targetTimeWindow,
-      );
       const insertedRoot = await tx
         .insert(partnerRequests)
         .values({
@@ -165,14 +160,6 @@ export async function acceptAlternativeBatch(
           batchId: targetBatch.id,
           visibilityStatus: "VISIBLE",
           autoHideAt: sourceAnchor.autoHideAt,
-          resourceBookingDeadlineAt: resolvedPolicy.resourceBookingDeadlineAt,
-          paymentModelApplied: resolvedPolicy.paymentModelApplied,
-          discountRateApplied: resolvedPolicy.discountRateApplied,
-          subsidyCapApplied: resolvedPolicy.subsidyCapApplied,
-          cancellationPolicyApplied: resolvedPolicy.cancellationPolicyApplied,
-          economicPolicyScopeApplied: resolvedPolicy.economicPolicyScopeApplied,
-          economicPolicyVersionApplied:
-            resolvedPolicy.economicPolicyVersionApplied,
         })
         .returning();
       targetPRRecord = {
@@ -243,6 +230,14 @@ export async function acceptAlternativeBatch(
       createdBatch: txResult.createdBatch,
       createdPr: txResult.createdPr,
     },
+  });
+
+  await materializePRSupportResources({
+    prId: txResult.targetPR.id,
+    anchorEventId: txResult.targetAnchor.anchorEventId,
+    batchId: txResult.targetAnchor.batchId,
+    location: txResult.targetPR.location,
+    timeWindow: txResult.targetPR.time,
   });
 
   return {

@@ -1,15 +1,16 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import type { SessionRole } from "@/shared/auth/session-storage";
 import {
   getStoredAccessToken,
   getStoredSessionRole,
   getStoredUserId,
   getStoredUserPin,
+  isAuthenticatedSessionRole,
   setStoredAccessToken,
   setStoredSessionRole,
   setStoredUserId,
   setStoredUserPin,
+  type SessionRole,
 } from "@/shared/auth/session-storage";
 
 export type AuthSessionPayload = {
@@ -26,7 +27,14 @@ export const useUserSessionStore = defineStore("userSession", () => {
   const accessToken = ref<string | null>(getStoredAccessToken());
 
   const isAuthenticated = computed(
-    () => role.value === "authenticated" && Boolean(userId.value),
+    () => isAuthenticatedSessionRole(role.value) && Boolean(userId.value),
+  );
+
+  const hasAdminAccess = computed(
+    () =>
+      role.value === "service" &&
+      Boolean(userId.value) &&
+      Boolean(accessToken.value),
   );
 
   const syncStorage = () => {
@@ -37,10 +45,20 @@ export const useUserSessionStore = defineStore("userSession", () => {
   };
 
   const applyAuthSession = (payload: AuthSessionPayload) => {
+    const previousUserId = userId.value;
+    const previousRole = role.value;
+
     role.value = payload.role;
     userId.value = payload.userId;
 
-    if (payload.userPin !== null) {
+    const shouldReplaceUserPin =
+      payload.userPin !== null ||
+      payload.role === "anonymous" ||
+      payload.role === "service" ||
+      previousUserId !== payload.userId ||
+      previousRole !== payload.role;
+
+    if (shouldReplaceUserPin) {
       userPin.value = payload.userPin;
     }
 
@@ -78,6 +96,7 @@ export const useUserSessionStore = defineStore("userSession", () => {
     userPin,
     accessToken,
     isAuthenticated,
+    hasAdminAccess,
     applyAuthSession,
     setAccessToken,
     setRole,

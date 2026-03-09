@@ -6,8 +6,8 @@ import {
   checkIn,
   confirmSlot,
   getReimbursementStatus,
+  getAnchorPRBookingSupport,
   getAnchorPRDetail,
-  getAnchorPREconomy,
   recommendAlternativeBatches,
 } from "../domains/pr-anchor";
 import {
@@ -54,9 +54,9 @@ export const anchorPRRoute = app
     const result = await getAnchorPRDetail(id, openId);
     return c.json(result);
   })
-  .get("/:id/economy", zValidator("param", prIdParamSchema), async (c) => {
+  .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    const result = await getAnchorPREconomy(id);
+    const result = await getAnchorPRBookingSupport(id);
     return c.json(result);
   })
   .get(
@@ -106,7 +106,7 @@ export const anchorPRRoute = app
         ...result,
         auth: creatorAuth.upgradedAuth
           ? {
-              role: "authenticated" as const,
+              role: creatorAuth.upgradedAuth.role,
               userId: creatorAuth.upgradedAuth.userId,
               userPin: pin ?? null,
               accessToken: creatorAuth.upgradedAuth.token,
@@ -135,7 +135,7 @@ export const anchorPRRoute = app
         ...result,
         auth: creatorAuth.upgradedAuth
           ? {
-              role: "authenticated" as const,
+              role: creatorAuth.upgradedAuth.role,
               userId: creatorAuth.upgradedAuth.userId,
               userPin: pin ?? null,
               accessToken: creatorAuth.upgradedAuth.token,

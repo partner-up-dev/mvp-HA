@@ -6,7 +6,6 @@
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../repositories/UserReliabilityRepository";
-import { AnchorPRRepository } from "../../repositories/AnchorPRRepository";
 import type { PartnerRequest } from "../../entities/partner-request";
 import {
   getTimeWindowStart,
@@ -21,11 +20,11 @@ import {
 import { recalculatePRStatus } from "./services/slot-management.service";
 import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
 import { operationLogService } from "../../infra/operation-log";
+import { getEffectiveBookingDeadline } from "../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
-const anchorPRRepo = new AnchorPRRepository();
 
 /**
  * Refresh a PR's temporal state: release unconfirmed slots, activate if
@@ -34,19 +33,18 @@ const anchorPRRepo = new AnchorPRRepository();
 export async function refreshTemporalStatus(
   request: PartnerRequest,
 ): Promise<PartnerRequest> {
-  const resourceBookingDeadlineAt =
+  const effectiveBookingDeadlineAt =
     request.prKind === "ANCHOR"
-      ? (await anchorPRRepo.findByPrId(request.id))?.resourceBookingDeadlineAt ??
-        null
+      ? await getEffectiveBookingDeadline(request.id)
       : null;
 
-  await lockToStartIfNeeded(request, resourceBookingDeadlineAt);
+  await lockToStartIfNeeded(request, effectiveBookingDeadlineAt);
   const afterLock = await prRepo.findById(request.id);
   const lockNormalized = afterLock ?? request;
 
   await releaseUnconfirmedSlotsIfNeeded(
     lockNormalized,
-    resourceBookingDeadlineAt,
+    effectiveBookingDeadlineAt,
   );
   const afterRelease = await prRepo.findById(request.id);
   const normalized = afterRelease ?? lockNormalized;

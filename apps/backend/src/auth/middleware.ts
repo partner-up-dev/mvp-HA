@@ -1,6 +1,10 @@
 import type { Context, MiddlewareHandler } from "hono";
-import type { UserId } from "../entities/user";
-import type { RequestAuth } from "./types";
+import type { User, UserId, UserRole } from "../entities/user";
+import {
+  isAuthenticatedAuthRole,
+  type AuthenticatedAuthRole,
+  type RequestAuth,
+} from "./types";
 import {
   issueAccessToken,
   shouldRenewAccessToken,
@@ -23,6 +27,9 @@ const readBearerToken = (c: Context): string | null => {
   return token.length > 0 ? token : null;
 };
 
+const mapUserRoleToAuthRole = (role: UserRole): AuthenticatedAuthRole =>
+  role === "service" ? "service" : "authenticated";
+
 const buildAnonymousAuth = (): RequestAuth => {
   const token = issueAccessToken("anonymous", null);
   const claims = verifyAccessToken(token);
@@ -37,14 +44,17 @@ const buildAnonymousAuth = (): RequestAuth => {
   };
 };
 
-const issueAuthenticatedAuth = (userId: UserId): RequestAuth => {
-  const token = issueAccessToken("authenticated", userId);
+const issueRoleAuth = (
+  userId: UserId,
+  role: AuthenticatedAuthRole,
+): RequestAuth => {
+  const token = issueAccessToken(role, userId);
   const claims = verifyAccessToken(token);
   if (!claims) {
-    throw new Error("Failed to issue authenticated access token");
+    throw new Error(`Failed to issue ${role} access token`);
   }
   return {
-    role: "authenticated",
+    role,
     userId,
     token,
     claims,
@@ -62,13 +72,13 @@ export const resolveRequestAuth = (c: Context): RequestAuth => {
     return buildAnonymousAuth();
   }
 
-  if (claims.role === "authenticated" && claims.sub) {
+  if (isAuthenticatedAuthRole(claims.role) && claims.sub) {
     if (shouldRenewAccessToken(claims)) {
-      return issueAuthenticatedAuth(claims.sub as UserId);
+      return issueRoleAuth(claims.sub as UserId, claims.role);
     }
 
     return {
-      role: "authenticated",
+      role: claims.role,
       userId: claims.sub as UserId,
       token: bearer,
       claims,
@@ -103,8 +113,11 @@ export const attachAuthTokenHeader = (c: Context, token: string): void => {
 
 export const issueAnonymousAuth = (): RequestAuth => buildAnonymousAuth();
 
-export const issueAuthenticatedForUser = (userId: UserId): RequestAuth =>
-  issueAuthenticatedAuth(userId);
+export const issueUserAuth = (userId: UserId): RequestAuth =>
+  issueRoleAuth(userId, "authenticated");
+
+export const issueAuthForUser = (user: Pick<User, "id" | "role">): RequestAuth =>
+  issueRoleAuth(user.id, mapUserRoleToAuthRole(user.role));
 
 export const readLocalCredentialHeaders = (c: Context): {
   userId: string | null;

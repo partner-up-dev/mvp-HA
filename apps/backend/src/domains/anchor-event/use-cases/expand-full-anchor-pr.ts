@@ -5,11 +5,11 @@ import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBat
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
-import { resolveAnchorEconomicPolicy } from "../../pr-core/services/economic-policy.service";
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { normalizeLocationPool } from "../../../entities/anchor-event";
+import { materializePRSupportResources } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -87,11 +87,6 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     return;
   }
 
-  const resolvedPolicy = resolveAnchorEconomicPolicy(
-    event,
-    batch,
-    fullPR.root.time,
-  );
   const createdRoot = await prRepo.create({
     title: fullPR.root.title,
     type: fullPR.root.type,
@@ -110,13 +105,6 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     batchId: fullPR.anchor.batchId,
     visibilityStatus: "VISIBLE",
     autoHideAt: fullPR.anchor.autoHideAt,
-    resourceBookingDeadlineAt: resolvedPolicy.resourceBookingDeadlineAt,
-    paymentModelApplied: resolvedPolicy.paymentModelApplied,
-    discountRateApplied: resolvedPolicy.discountRateApplied,
-    subsidyCapApplied: resolvedPolicy.subsidyCapApplied,
-    cancellationPolicyApplied: resolvedPolicy.cancellationPolicyApplied,
-    economicPolicyScopeApplied: resolvedPolicy.economicPolicyScopeApplied,
-    economicPolicyVersionApplied: resolvedPolicy.economicPolicyVersionApplied,
   });
 
   await initializeSlotsForPR(
@@ -127,6 +115,13 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     null,
     createdRoot.time,
   );
+  await materializePRSupportResources({
+    prId: createdRoot.id,
+    anchorEventId: fullPR.anchor.anchorEventId,
+    batchId: fullPR.anchor.batchId,
+    location: createdRoot.location,
+    timeWindow: createdRoot.time,
+  });
 
   const activeCount = await partnerRepo.countActiveByPrId(prId);
   const eventRecord = await eventBus.publish(

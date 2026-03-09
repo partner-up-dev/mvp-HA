@@ -1,6 +1,10 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { env } from "../lib/env";
-import type { AuthClaims, AuthRole } from "./types";
+import {
+  isAuthenticatedAuthRole,
+  type AuthClaims,
+  type AuthRole,
+} from "./types";
 
 const TOKEN_VERSION = "v1";
 
@@ -25,7 +29,13 @@ const parsePayload = (segment: string): AuthClaims | null => {
     const role = claims.role;
     const exp = Number(claims.exp);
     const iat = Number(claims.iat);
-    if (role !== "anonymous" && role !== "authenticated") return null;
+    if (
+      role !== "anonymous" &&
+      role !== "authenticated" &&
+      role !== "service"
+    ) {
+      return null;
+    }
     if (claims.sub !== null && typeof claims.sub !== "string") return null;
     if (!Number.isInteger(exp) || !Number.isInteger(iat)) {
       return null;
@@ -49,7 +59,7 @@ export const issueAccessToken = (
   const nowSec = Math.floor(nowMs / 1000);
   const claims: AuthClaims = {
     role,
-    sub: role === "authenticated" ? userId : null,
+    sub: isAuthenticatedAuthRole(role) ? userId : null,
     iat: nowSec,
     exp: nowSec + env.AUTH_JWT_EXPIRES_SECONDS,
   };
@@ -84,7 +94,7 @@ export const verifyAccessToken = (
   if (!claims) return null;
   if (claims.exp <= Math.floor(nowMs / 1000)) return null;
 
-  if (claims.role === "authenticated" && !claims.sub) {
+  if (isAuthenticatedAuthRole(claims.role) && !claims.sub) {
     return null;
   }
 

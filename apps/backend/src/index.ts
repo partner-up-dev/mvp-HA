@@ -21,6 +21,8 @@ import { analyticsRoute } from "./controllers/analytics.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { poiRoute } from "./controllers/poi.controller";
+import { adminAnchorManagementRoute } from "./controllers/admin-anchor-management.controller";
+import { adminBookingSupportRoute } from "./controllers/admin-booking-support.controller";
 import { jobRunner } from "./infra/jobs";
 import {
   bootstrapAnalyticsAggregationJobs,
@@ -130,6 +132,8 @@ const routes = app
   .route("/api/config", configRoute)
   .route("/api/analytics", analyticsRoute)
   .route("/api/pois", poiRoute)
+  .route("/api/admin", adminAnchorManagementRoute)
+  .route("/api/admin", adminBookingSupportRoute)
   .route("/internal/jobs", internalJobsRoute);
 
 // Health check
@@ -156,7 +160,7 @@ export type {
   PartnerPaymentStatus,
   ReimbursementStatus,
 } from "./entities/partner";
-export type { UserId, UserStatus, UserSex } from "./entities/user";
+export type { UserId, UserRole, UserStatus, UserSex } from "./entities/user";
 export type {
   AnchorEventId,
   AnchorEventStatus,
@@ -181,7 +185,12 @@ export {
   createPRStructuredStatusSchema,
 } from "./entities/partner-request";
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
-export { userIdSchema, userStatusSchema, userSexSchema } from "./entities/user";
+export {
+  userIdSchema,
+  userRoleSchema,
+  userStatusSchema,
+  userSexSchema,
+} from "./entities/user";
 
 // Start server
 serve({

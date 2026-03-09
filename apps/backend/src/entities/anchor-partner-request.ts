@@ -1,7 +1,5 @@
 import {
   bigint,
-  doublePrecision,
-  integer,
   pgTable,
   text,
   timestamp,
@@ -16,11 +14,7 @@ import {
   type AnchorEventBatchId,
 } from "./anchor-event-batch";
 import {
-  economicPolicyScopeSchema,
   partnerRequests,
-  paymentModelSchema,
-  type EconomicPolicyScope,
-  type PaymentModel,
   type PRId,
   visibilityStatusSchema,
   type VisibilityStatus,
@@ -44,23 +38,12 @@ export const anchorPartnerRequests = pgTable("anchor_partner_requests", {
     .notNull()
     .default("VISIBLE"),
   autoHideAt: timestamp("auto_hide_at"),
-  resourceBookingDeadlineAt: timestamp("resource_booking_deadline_at"),
-  paymentModelApplied: text("payment_model_applied").$type<PaymentModel | null>(),
-  discountRateApplied: doublePrecision("discount_rate_applied"),
-  subsidyCapApplied: integer("subsidy_cap_applied"),
-  cancellationPolicyApplied: text("cancellation_policy_applied"),
-  economicPolicyScopeApplied: text("economic_policy_scope_applied").$type<
-    EconomicPolicyScope | null
-  >(),
-  economicPolicyVersionApplied: integer("economic_policy_version_applied"),
 });
 
 export const insertAnchorPartnerRequestSchema = createInsertSchema(
   anchorPartnerRequests,
   {
     visibilityStatus: visibilityStatusSchema,
-    paymentModelApplied: paymentModelSchema.nullable(),
-    economicPolicyScopeApplied: economicPolicyScopeSchema.nullable(),
   },
 );
 
@@ -68,11 +51,8 @@ export const selectAnchorPartnerRequestSchema = createSelectSchema(
   anchorPartnerRequests,
   {
     visibilityStatus: visibilityStatusSchema,
-    paymentModelApplied: paymentModelSchema.nullable(),
-    economicPolicyScopeApplied: economicPolicyScopeSchema.nullable(),
   },
 );
 
 export type AnchorPartnerRequest = typeof anchorPartnerRequests.$inferSelect;
 export type NewAnchorPartnerRequest = typeof anchorPartnerRequests.$inferInsert;
-

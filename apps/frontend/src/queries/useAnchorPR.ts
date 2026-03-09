@@ -35,8 +35,8 @@ export type AnchorPRDetailResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["$get"]
 >;
 
-export type AnchorPREconomyResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["economy"]["$get"]
+export type AnchorPRBookingSupportResponse = InferResponseType<
+  (typeof client.api.apr)[":id"]["booking-support"]["$get"]
 >;
 
 export type AnchorAlternativeBatchesResponse = InferResponseType<
@@ -91,10 +91,10 @@ export const useAnchorPR = (id: Ref<PRId | null>) => {
   });
 };
 
-export const useAnchorPREconomy = (id: Ref<PRId | null>) => {
-  const queryKey = computed(() => queryKeys.anchorPR.economy(id.value));
+export const useAnchorPRBookingSupport = (id: Ref<PRId | null>) => {
+  const queryKey = computed(() => queryKeys.anchorPR.bookingSupport(id.value));
 
-  return useQuery<AnchorPREconomyResponse>({
+  return useQuery<AnchorPRBookingSupportResponse>({
     queryKey,
     queryFn: async () => {
       const prId = id.value;
@@ -102,7 +102,7 @@ export const useAnchorPREconomy = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.missingPartnerRequestId"));
       }
 
-      const res = await client.api.apr[":id"].economy.$get({
+      const res = await client.api.apr[":id"]["booking-support"].$get({
         param: { id: prId.toString() },
       });
 

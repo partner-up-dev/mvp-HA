@@ -1,4 +1,4 @@
-export type SessionRole = "anonymous" | "authenticated";
+export type SessionRole = "anonymous" | "authenticated" | "service";
 
 const STORAGE_USER_ID_KEY = "partner_up_user_id";
 const STORAGE_USER_PIN_KEY = "partner_up_user_pin";
@@ -75,7 +75,13 @@ export const setStoredAccessToken = (accessToken: string | null): void => {
 };
 
 const isSessionRole = (value: string | null): value is SessionRole =>
-  value === "anonymous" || value === "authenticated";
+  value === "anonymous" ||
+  value === "authenticated" ||
+  value === "service";
+
+export const isAuthenticatedSessionRole = (
+  role: SessionRole,
+): role is Exclude<SessionRole, "anonymous"> => role !== "anonymous";
 
 export const getStoredSessionRole = (): SessionRole => {
   if (typeof window === "undefined") {
@@ -89,4 +95,16 @@ export const getStoredSessionRole = (): SessionRole => {
 export const setStoredSessionRole = (role: SessionRole): void => {
   memoryRole = role;
   writeStorage(STORAGE_SESSION_ROLE_KEY, role);
+};
+
+export const clearStoredSession = (): void => {
+  memoryUserId = null;
+  memoryUserPin = null;
+  memoryAccessToken = null;
+  memoryRole = "anonymous";
+
+  writeStorage(STORAGE_USER_ID_KEY, null);
+  writeStorage(STORAGE_USER_PIN_KEY, null);
+  writeStorage(STORAGE_ACCESS_TOKEN_KEY, null);
+  writeStorage(STORAGE_SESSION_ROLE_KEY, null);
 };

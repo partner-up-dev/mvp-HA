@@ -100,9 +100,10 @@ import { useMyCreatedPRs } from "@/queries/useMyCreatedPRs";
 import { useMyJoinedPRs } from "@/queries/useMyJoinedPRs";
 import { useUserSessionStore } from "@/stores/userSessionStore";
 import { resolvePRSummaryPath } from "@/entities/pr/routes";
+import { formatLocalDateTimeValue } from "@/lib/datetime";
 
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
 const createdQuery = useMyCreatedPRs();
 const joinedQuery = useMyJoinedPRs();
@@ -136,13 +137,7 @@ const goToPR = (item: PartnerRequestSummary) => {
 };
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString(locale.value, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatLocalDateTimeValue(dateStr) ?? dateStr;
 };
 </script>
 

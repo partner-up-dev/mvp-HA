@@ -177,10 +177,14 @@ import { isWeChatBrowser } from "@/lib/browser-detection";
 import { requireWeChatActionAuth } from "@/composables/requireWeChatActionAuth";
 import { redirectToWeChatOAuthLogin } from "@/composables/useAutoWeChatLogin";
 import type { CommunityPRFormFields } from "@/entities/pr/types";
+import {
+  formatLocalDateTimeValue,
+  formatLocalDateTimeWindow,
+} from "@/lib/datetime";
 
 const route = useRoute();
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const id = computed<PRId | null>(() => {
   const rawId = Array.isArray(route.params.id)
     ? route.params.id[0]
@@ -387,62 +391,10 @@ const handlePublishDraft = async () => {
 const { shareUrl, prShareData } = usePRShareContext({ id, pr: prDetail });
 
 const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString(locale.value, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-const normalizeTimeValue = (value: string | null): string | null => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.toLowerCase() === "null") return null;
-  return trimmed;
-};
-const ISO_DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const parseIsoDateOnlyAsLocalDate = (value: string): Date | null => {
-  const [yearRaw, monthRaw, dayRaw] = value.split("-");
-  const year = Number(yearRaw);
-  const month = Number(monthRaw);
-  const day = Number(dayRaw);
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day)
-  ) {
-    return null;
-  }
-  const date = new Date(year, month - 1, day);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-const formatDateTime = (value: string | null): string | null => {
-  const normalized = normalizeTimeValue(value);
-  if (!normalized) return null;
-  if (ISO_DATE_ONLY_PATTERN.test(normalized)) {
-    const dateOnly = parseIsoDateOnlyAsLocalDate(normalized);
-    if (!dateOnly) return value;
-    return dateOnly.toLocaleDateString(locale.value, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-  const date = new Date(normalized);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(locale.value, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-const localizedTime = computed<[string | null, string | null]>(() => [
-  formatDateTime(prDetail.value?.core.time[0] ?? null),
-  formatDateTime(prDetail.value?.core.time[1] ?? null),
-]);
+  formatLocalDateTimeValue(dateStr) ?? dateStr;
+const localizedTime = computed<[string | null, string | null]>(() =>
+  formatLocalDateTimeWindow(prDetail.value?.core.time ?? [null, null]),
+);
 
 const handleEditSuccess = () => {
   showEditModal.value = false;

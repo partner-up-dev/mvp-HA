@@ -4,7 +4,7 @@
 - 协作触发器：嵌入对话/行为中的触发方式，把自然语言冻结为 PartnerRequest。
 - PartnerRequest（搭子请求）：一次性协作单元，可被加入并自然结束的协作状态；当前按场景拆分为 Community PR 与 Anchor PR。
 - Community PR：社区场景搭子请求，使用 `/cpr/:id` 页面，支持创建、发布、加入、退出与分享。
-- Anchor PR：活动锚点场景搭子请求，使用 `/apr/:id` 页面，并可扩展到 `/apr/:id/economy` 经济信息页。
+- Anchor PR：活动锚点场景搭子请求，使用 `/apr/:id` 页面，并可扩展到 `/apr/:id/booking-support` 预订与资助页。
 - PartnerRequestPreset：行为模板，只提供默认参数、文案与 UI 表现。
 - PartnerRequestStatus：PartnerRequest 状态流转（DRAFT / OPEN / READY / FULL / LOCKED_TO_START / ACTIVE / CLOSED / EXPIRED）。
 - Time Window：PartnerRequest 的时间窗口（start_at / end_at）
@@ -12,12 +12,15 @@
 - Current Partners：PartnerRequest 当前人数（`partners.length`），`partners` 为该 PR 下活跃槽位（JOINED / CONFIRMED / ATTENDED）的 `partnerId[]` 动态聚合结果。
 - Partner：Community PR 与 Anchor PR 共用的参与槽位机制。
 - SlotStatus（Partner.status）：单个参与槽位状态（JOINED / CONFIRMED / RELEASED / ATTENDED）。
-- User PIN：用户级 4 位数字 PIN（存储为 `users.pin_hash`），用于匿名创建者编辑内容/状态时完成所有权校验；校验成功后会升级为 authenticated token。
-- PaymentModel（L1）：支付模型（A=用户先付后报销，C=平台补贴）。
+- User PIN：用户级 4 位数字 PIN（存储为 `users.pin_hash`），用于匿名创建者编辑内容/状态时完成所有权校验；校验成功后会升级为 `authenticated` token。
+- Booking Support：Anchor PR 的预订与资助领域，统一描述资源、预订责任方、资助方式与附带支持。
+- Admin Workspace：内部管理端桌面工作台，用于维护 Anchor Event / Batch / Anchor PR 以及 Booking Support 配置。
+- Support Resource：Anchor Event / Batch / PR 上的支持资源单元；场地、物资、服务都视为资源，预订能力是资源的一个属性。
+- SettlementMode：资助结算时机（NONE / PLATFORM_PREPAID / PLATFORM_POSTPAID）。
 - ReimbursementStatus：报销状态（NONE / PENDING / APPROVED / REJECTED / PAID）。
 - Confirmation Window：Anchor PR 专属确认时序窗口（T-1h 自动释放未确认槽位；T-1h~T-30min 加入即确认；T-30min 后禁止加入）。
 - Check-in Signal：Anchor PR 专属签到回流信号（didAttend / wouldJoinAgain），用于近似到场率与复参与意愿。
-- User（最小模型）：核心用户主体，`users.id` 使用 UUID；表内仅维护身份与资料字段（`openid`、`nickname`、`sex`、`avatar`、`pin_hash`、`status`）。
+- User（最小模型）：核心用户主体，`users.id` 使用 UUID；表内维护身份、角色与资料字段（`openid`、`role=anonymous/authenticated/service`、`nickname`、`sex`、`avatar`、`pin_hash`、`status`）。
 - UserReliability：用户可靠性统计表（`user_reliability`），维护 join / confirm / attend / release 计数与派生比率。
 - UserNotificationOpts：用户通知偏好表（`user_notification_opts`），维护公众号提醒等可扩展通知开关。
 - 分享链接：指向 `/cpr/:id` 或 `/apr/:id` 页面、可复制传播的链接。

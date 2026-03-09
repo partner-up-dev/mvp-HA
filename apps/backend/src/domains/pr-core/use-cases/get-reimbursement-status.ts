@@ -1,17 +1,17 @@
 import { HTTPException } from "hono/http-exception";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
+import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const anchorPRRepo = new AnchorPRRepository();
+const prSupportRepo = new AnchorPRSupportResourceRepository();
 
 type ReimbursementReason =
-  | "MODEL_NOT_REIMBURSEMENT"
+  | "NO_POSTPAID_SUPPORT"
   | "PR_NOT_CLOSED"
   | "SLOT_NOT_ELIGIBLE"
   | "ALREADY_REQUESTED";
@@ -39,21 +39,18 @@ export async function getReimbursementStatus(
       message: "Reimbursement is only available for anchor PR",
     });
   }
-  const anchor = await anchorPRRepo.findByPrId(id);
-  if (!anchor) {
-    throw new HTTPException(500, {
-      message: "Anchor PR subtype row missing",
-    });
-  }
-
-  if (anchor.paymentModelApplied !== "A") {
+  const supportRows = await prSupportRepo.findByPrId(id);
+  const supportsPostpaidSettlement = supportRows.some(
+    (row) => row.settlementMode === "PLATFORM_POSTPAID",
+  );
+  if (!supportsPostpaidSettlement) {
     return {
       eligible: false,
       canRequest: false,
       requested: false,
       reimbursementStatus: "NONE",
       reimbursementAmount: null,
-      reason: "MODEL_NOT_REIMBURSEMENT",
+      reason: "NO_POSTPAID_SUPPORT",
     };
   }
 
