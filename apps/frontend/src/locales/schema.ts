@@ -203,11 +203,18 @@ export interface MessageSchema {
     title: string;
     description: string;
     guideTitle: string;
+    actionsTitle: string;
+    employeeTitle: string;
+    employeeDescription: string;
+    employeeAction: string;
+    employeeLinkMissing: string;
+    supportTitle: string;
+    supportDescription: string;
     supportAction: string;
     authorEntry: string;
     useCases: {
+      employee: string;
       support: string;
-      author: string;
     };
   };
   createPage: {

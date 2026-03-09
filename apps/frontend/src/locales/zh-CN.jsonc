@@ -26,7 +26,7 @@
     "lockedToStart": "待开始锁定",
     "active": "进行中",
     "closed": "已结束",
-    "expired": "已过期",
+    "expired": "已过期"
   },
   "home": {
     "title": "搭一把",
@@ -203,13 +203,20 @@
   },
   "contactSupportPage": {
     "title": "联系客服",
-    "description": "点击下方按钮，系统将根据当前环境自动跳转到企业微信客服。",
+    "description": "报销找企业微信员工，其它问题找企业微信客服。",
     "guideTitle": "遇到问题，怎么选？",
-    "supportAction": "联系客服",
+    "actionsTitle": "联系渠道",
+    "employeeTitle": "联系员工",
+    "employeeDescription": "由于转账问题，报销需要添加企业微信员工处理",
+    "employeeAction": "点击添加员工企业微信",
+    "employeeLinkMissing": "暂未配置企业微信员工链接",
+    "supportTitle": "联系客服",
+    "supportDescription": "其它问题如投诉、功能建议，请联系企业微信客服",
+    "supportAction": "点击联系客服",
     "authorEntry": "功能建议或缺陷反馈？去联系作者",
     "useCases": {
-      "support": "需要报销、投诉用户时，请联系客服处理。",
-      "author": "需要功能建议、缺陷反馈时，请联系团队（作者）。"
+      "employee": "报销相关问题，请联系企业微信员工。",
+      "support": "其它问题，请联系企业微信客服。"
     }
   },
   "createPage": {
@@ -535,7 +542,7 @@
       "defaultShareTitle": "搭一把 - 轻松安全找搭子",
       "pageDescriptionHome": "一键把群聊里的搭子需求变成可加入的页面，马上发起一次真实协作。",
       "pageDescriptionCreate": "把你的搭子需求整理成清晰卡片，发布后可直接在微信里分享给朋友。",
-      "pageDescriptionContactSupport": "需要报销或投诉用户？联系客服快速处理。",
+      "pageDescriptionContactSupport": "报销找企业微信员工，其它问题找企业微信客服。",
       "pageDescriptionContactAuthor": "有功能建议或发现问题？来这里直接联系作者，反馈会被优先看到。",
       "fallbackKeyText": "搭",
       "thumbAlt": "微信分享缩略图",

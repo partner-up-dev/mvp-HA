@@ -14,6 +14,7 @@
 - [ ] 基于 `calc`, `color` 等变换 token 的方式是禁止的
 - [ ] 添加 ListScaffold，支持关键词搜索、筛选器，配置一个ItemFetcher和ItemRenderer即可
 - [ ] 间距是属于父组件控制的，或者说容器组件
+- [ ] 添加 dropdown, input, button, card 这样的原子组件
 
 ## Marketing
 
@@ -66,8 +67,12 @@
 - [x] POST /api/pr body becomes { ...fields, ~status~ }.
 - [ ] NL Input Placeholder 可以直接创建，不用“如”，可以让用户快速尝试
 - [ ] NL input cache
-- [ ] NL Input 再微信内支持语音输入
+- [ ] NL Input 微信内支持语音输入
 - [ ] datetime picker 的编辑体验有待优化
+
+### Community PR
+
+- [ ] 加入时自动创建用户（加入成果也显示 PIN Help Section，告诉用户未来退出时会需要）
 
 ### Anchor PR
 
@@ -96,6 +101,7 @@
 ### Booking & Support
 
 - [ ] 资源配以图片
+- [ ] 报销不需要
 
 ## Base/Common
 
@@ -108,7 +114,8 @@
 ### Support
 
 - [x] 接入客服 <https://work.weixin.qq.com/nl/act/p/3f8820e724cb44c5>, <https://work.weixin.qq.com/nl/act/p/4030a5b69149404d> ，删除联系主创
-- [ ] 联系作者总是显示未配置
+- [x] 客服分流：报销找企业微信员工；其它找企业微信客服
+- [ ] 联系作者总是显示未配置（本地也是这样欸...先配置默认值缓缓吧总之）
 
 ## Others
 
