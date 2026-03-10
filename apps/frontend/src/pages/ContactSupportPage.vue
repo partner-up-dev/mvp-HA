@@ -5,24 +5,16 @@
     </template>
 
     <section
-      class="guidance-list"
-      :aria-label="t('contactSupportPage.guideTitle')"
-    >
-      <h2>{{ t("contactSupportPage.guideTitle") }}</h2>
-      <ul>
-        <li>{{ t("contactSupportPage.useCases.employee") }}</li>
-        <li>{{ t("contactSupportPage.useCases.support") }}</li>
-      </ul>
-    </section>
-
-    <section
       class="contact-actions"
       :aria-label="t('contactSupportPage.actionsTitle')"
     >
-      <div class="contact-card">
+      <div class="contact-card contact-card--staff">
+        <span class="contact-badge contact-badge--staff">
+          {{ t("contactSupportPage.staffBadge") }}
+        </span>
         <div class="contact-copy">
-          <h2>{{ t("contactSupportPage.employeeTitle") }}</h2>
-          <p>{{ t("contactSupportPage.employeeDescription") }}</p>
+          <h2>{{ t("contactSupportPage.staffTitle") }}</h2>
+          <p>{{ t("contactSupportPage.staffDescription") }}</p>
         </div>
 
         <a
@@ -31,18 +23,21 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          {{ t("contactSupportPage.employeeAction") }}
+          {{ t("contactSupportPage.staffAction") }}
         </a>
       </div>
 
       <div class="contact-card contact-card--support">
+        <span class="contact-badge contact-badge--support">
+          {{ t("contactSupportPage.supportBadge") }}
+        </span>
         <div class="contact-copy">
           <h2>{{ t("contactSupportPage.supportTitle") }}</h2>
           <p>{{ t("contactSupportPage.supportDescription") }}</p>
         </div>
 
         <a
-          class="contact-action"
+          class="contact-action contact-action--support"
           :href="supportLink"
           target="_blank"
           rel="noopener noreferrer"
@@ -154,29 +149,54 @@ const goHome = () => {
 </script>
 
 <style lang="scss" scoped>
-.guidance-list {
-  width: min(100%, 33rem);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-  border-radius: var(--sys-radius-md);
-  background: var(--sys-color-surface-container);
+.guidance-item {
+  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--sys-color-outline-variant);
+  background: var(--sys-color-surface);
+}
 
-  h2 {
-    @include mx.pu-font(title-small);
-    margin: 0 0 var(--sys-spacing-xs);
-    color: var(--sys-color-on-surface);
-  }
+.guidance-item--staff {
+  border-color: color-mix(
+    in srgb,
+    var(--sys-color-primary) 28%,
+    var(--sys-color-outline-variant)
+  );
+}
 
-  ul {
-    margin: 0;
-    padding-left: 1.25rem;
-    display: grid;
-    gap: var(--sys-spacing-xs);
-  }
+.guidance-item--support {
+  border-color: color-mix(
+    in srgb,
+    var(--sys-color-secondary) 28%,
+    var(--sys-color-outline-variant)
+  );
+}
 
-  li {
-    @include mx.pu-font(body-medium);
-    color: var(--sys-color-on-surface-variant);
-  }
+.guide-badge,
+.contact-badge {
+  @include mx.pu-font(label-medium);
+  width: fit-content;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.guide-badge--staff,
+.contact-badge--staff {
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+}
+
+.guide-badge--support,
+.contact-badge--support {
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+}
+
+.guidance-item span:last-child {
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface);
 }
 
 .contact-actions {
@@ -192,18 +212,21 @@ const goHome = () => {
   border-radius: var(--sys-radius-md);
   display: grid;
   gap: var(--sys-spacing-sm);
-  justify-items: center;
   background: var(--sys-color-surface);
+}
+
+.contact-card--staff {
+  border-color: var(--sys-color-primary);
 }
 
 .contact-card--support {
   align-content: space-between;
+  border-color: var(--sys-color-secondary);
 }
 
 .contact-copy {
   display: grid;
   gap: var(--sys-spacing-xs);
-  text-align: center;
 
   h2 {
     @include mx.pu-font(title-small);
@@ -220,7 +243,6 @@ const goHome = () => {
 
 .contact-action {
   @include mx.pu-font(label-large);
-  min-width: 10rem;
   min-height: 2.75rem;
   padding: 0.65rem 1.2rem;
   display: inline-flex;
@@ -243,6 +265,11 @@ const goHome = () => {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: 2px;
   }
+}
+
+.contact-action--support {
+  background: var(--sys-color-secondary);
+  color: var(--sys-color-on-secondary);
 }
 
 .author-link {
@@ -280,10 +307,6 @@ const goHome = () => {
 
   .contact-card {
     justify-items: stretch;
-  }
-
-  .contact-copy {
-    text-align: left;
   }
 }
 </style>

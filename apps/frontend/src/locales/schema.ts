@@ -204,10 +204,12 @@ export interface MessageSchema {
     description: string;
     guideTitle: string;
     actionsTitle: string;
+    employeeBadge: string;
     employeeTitle: string;
     employeeDescription: string;
     employeeAction: string;
     employeeLinkMissing: string;
+    supportBadge: string;
     supportTitle: string;
     supportDescription: string;
     supportAction: string;

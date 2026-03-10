@@ -101,7 +101,7 @@
 ### Booking & Support
 
 - [ ] 资源配以图片
-- [ ] 报销不需要
+- [ ] 报销跳转到 contact-support 但是仅保留联系员工，避免用户疑惑
 
 ## Base/Common
 
@@ -115,6 +115,7 @@
 
 - [x] 接入客服 <https://work.weixin.qq.com/nl/act/p/3f8820e724cb44c5>, <https://work.weixin.qq.com/nl/act/p/4030a5b69149404d> ，删除联系主创
 - [x] 客服分流：报销找企业微信员工；其它找企业微信客服
+- [x] 联系客服 / 联系员工还需要在 UI ，文案上进一步区分，避免迷惑
 - [ ] 联系作者总是显示未配置（本地也是这样欸...先配置默认值缓缓吧总之）
 
 ## Others

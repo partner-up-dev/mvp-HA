@@ -202,21 +202,23 @@
     "qrMissing": "暂未配置作者微信二维码"
   },
   "contactSupportPage": {
-    "title": "联系客服",
-    "description": "报销找企业微信员工，其它问题找企业微信客服。",
-    "guideTitle": "遇到问题，怎么选？",
-    "actionsTitle": "联系渠道",
-    "employeeTitle": "联系员工",
-    "employeeDescription": "由于转账问题，报销需要添加企业微信员工处理",
-    "employeeAction": "点击添加员工企业微信",
-    "employeeLinkMissing": "暂未配置企业微信员工链接",
-    "supportTitle": "联系客服",
-    "supportDescription": "其它问题如投诉、功能建议，请联系企业微信客服",
-    "supportAction": "点击联系客服",
-    "authorEntry": "功能建议或缺陷反馈？去联系作者",
+    "title": "联系帮助",
+    "description": "先选择问题类型，再进入对应联系渠道。",
+    "guideTitle": "按问题类型选择",
+    "actionsTitle": "可用渠道",
+    "staffBadge": "报销专用",
+    "staffTitle": "联系员工报销",
+    "staffDescription": "仅处理转账、报销、打款相关问题。",
+    "staffAction": "联系员工报销",
+    "staffLinkMissing": "暂未配置企业微信员工链接",
+    "supportBadge": "综合问题",
+    "supportTitle": "联系平台客服",
+    "supportDescription": "投诉、使用问题、功能建议等。",
+    "supportAction": "联系平台客服",
+    "authorEntry": "产品建议或 Bug 反馈？联系作者",
     "useCases": {
-      "employee": "报销相关问题，请联系企业微信员工。",
-      "support": "其它问题，请联系企业微信客服。"
+      "staff": "报销 / 转账问题 -> 联系企业微信员工",
+      "support": "投诉 / 使用问题 / 功能建议 -> 联系企业微信客服"
     }
   },
   "createPage": {
