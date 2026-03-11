@@ -368,27 +368,25 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 <style lang="scss" scoped>
 .card {
   margin-top: var(--sys-spacing-med);
-  padding: var(--sys-spacing-med);
-  border-radius: 12px;
-  background: var(--sys-color-surface-container);
+  @include mx.pu-surface-card(section);
 }
 
 .card-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  @include mx.pu-font(title-medium);
 }
 
 .headline,
 .summary-text {
-  margin: 0.5rem 0 0;
+  margin: var(--sys-spacing-xs) 0 0;
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface);
 }
 
 .hint {
-  margin: 0.5rem 0 0;
+  margin: var(--sys-spacing-xs) 0 0;
+  @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
-  font-size: 0.875rem;
 }
 
 .tag-list {
@@ -399,10 +397,10 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 }
 
 .tag {
-  padding: 0.25rem 0.5rem;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
   border-radius: 999px;
   background: var(--sys-color-surface-container-high);
-  font-size: 0.75rem;
+  @include mx.pu-font(body-small);
 }
 
 .resource-header {
@@ -413,31 +411,31 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 }
 
 .kind-badge {
-  font-size: 0.75rem;
+  @include mx.pu-font(label-medium);
   color: var(--sys-color-primary);
 }
 
 .rows {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--sys-spacing-xs);
   margin-top: var(--sys-spacing-sm);
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--sys-spacing-med);
 }
 
 .row-label {
+  @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
-  font-size: 0.8125rem;
 }
 
 .row-value {
   text-align: right;
-  font-size: 0.875rem;
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface);
 }
 
@@ -448,35 +446,28 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 
 .rule-item {
   color: var(--sys-color-on-surface-variant);
-  font-size: 0.875rem;
+  @include mx.pu-font(body-medium);
 }
 
 .request-btn {
   margin-top: var(--sys-spacing-sm);
-  border: none;
-  border-radius: 999px;
-  padding: 0.5rem 1rem;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
+  @include mx.pu-pill-action(solid-primary, small);
   cursor: pointer;
 }
 
 .reimburse-prompt-card {
   margin-top: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm);
-  border-radius: 10px;
-  background: var(--sys-color-surface-container-high);
+  @include mx.pu-surface-card(inset-high);
 }
 
 .reimburse-prompt-title {
   margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
+  @include mx.pu-font(title-small);
 }
 
 .reimburse-prompt-desc {
-  margin: 0.25rem 0 0;
-  font-size: 0.8125rem;
+  margin: var(--sys-spacing-xs) 0 0;
+  @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
 }
 
@@ -489,6 +480,6 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
   width: min(100%, 280px);
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: var(--sys-radius-sm);
 }
 </style>

@@ -20,7 +20,20 @@ The current codebase has plenty of structural composition, but it also contains 
 
 ## 2. First-Principles Model
 
-This plan follows two rules.
+This plan follows three rules.
+
+### Rule 0: Prefer Direct `sys` Consumption First
+
+If a consumer can use an existing system token directly without a severe visual change, use the `sys` token directly.
+
+Do not introduce a `dcs` token or a recipe just to wrap:
+
+- one spacing token
+- one radius token
+- one size token
+- a trivial combination of existing `sys` tokens that does not represent a governed design rule
+
+`dcs` and recipes exist to centralize real design decisions, not to hide basic token usage behind extra indirection.
 
 ### Rule A: Prefer Tokens for Governed Outputs
 
@@ -34,9 +47,12 @@ Examples:
 - compact card padding
 - hero section vertical rhythm
 
-### Rule B: Prefer Recipes for Governed Logic
+### Rule B: Prefer Recipes for Governed Logic or Stable Shared Treatments
 
-Use SCSS mixins/functions/recipes when the main asset is the logic, not a single output value.
+Use SCSS mixins/functions/recipes only when the main asset is:
+
+- governed logic, or
+- a stable shared treatment that cannot be cleanly expressed by direct `sys` consumption alone
 
 Examples:
 
@@ -45,6 +61,11 @@ Examples:
 - theme/state-aware surface treatment
 - focus ring construction
 - interaction state styling
+
+Non-examples:
+
+- a mixin that only sets `gap: var(--sys-spacing-med)`
+- a mixin that only sets a standard button padding/min-height already readable inline
 
 This avoids over-tokenizing every repeated CSS expression while still centralizing the actual design rules.
 
@@ -270,11 +291,9 @@ Examples:
 
 Examples:
 
-- `@include mx.pu-page-padding(default)`
 - `@include mx.pu-safe-top-padding(hero)`
 - `@include mx.pu-fluid-gap(section, roomy)`
 - `@include mx.pu-surface(accent, subtle)`
-- `@include mx.pu-cta(default)`
 - `@include mx.pu-focus-ring(primary)`
 - `@include mx.pu-interaction-state(button, primary)`
 

@@ -44,10 +44,10 @@ const handleSelect = (item: TabBarItem) => {
 <style lang="scss" scoped>
 .tab-bar {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--sys-spacing-sm);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.5rem;
+  padding-bottom: var(--sys-spacing-sm);
   scrollbar-width: none;
 }
 
@@ -57,12 +57,8 @@ const handleSelect = (item: TabBarItem) => {
 
 .tab-bar__tab {
   @include mx.pu-font(label-medium);
+  @include mx.pu-pill-action(outline-transparent, small);
   flex-shrink: 0;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: transparent;
-  color: var(--sys-color-on-surface);
   cursor: pointer;
   transition:
     background-color 150ms ease,

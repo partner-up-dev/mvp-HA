@@ -118,17 +118,17 @@ watchEffect(() => {
 }
 
 .admin-login-page__header {
-  gap: var(--sys-spacing-xs, 0.5rem);
+  gap: var(--sys-spacing-sm);
   align-items: center;
   text-align: center;
 }
 
 .admin-login-page__eyebrow {
+  @include mx.pu-font(label-medium);
   margin: 0;
   color: var(--sys-color-primary);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: 0.78rem;
 }
 
 .admin-login-page__title,
@@ -139,8 +139,9 @@ watchEffect(() => {
 }
 
 .admin-login-page__title {
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
+  font-size: var(--dcs-typography-page-hero-size);
+  font-weight: var(--dcs-typography-page-hero-weight);
+  line-height: var(--dcs-typography-page-hero-line-height);
 }
 
 .admin-login-page__subtitle,
@@ -151,14 +152,8 @@ watchEffect(() => {
 
 .admin-login-card {
   position: relative;
-  width: min(100%, 30rem);
-  overflow: hidden;
-  border-radius: 28px;
-  border: 1px solid color-mix(in srgb, var(--sys-color-primary) 24%, var(--sys-color-outline-variant));
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--sys-color-primary) 18%, transparent), transparent 42%),
-    linear-gradient(180deg, color-mix(in srgb, var(--sys-color-surface) 82%, var(--sys-color-surface-container-high)), var(--sys-color-surface-container));
-  @include mx.pu-elevation(2);
+  width: min(100%, var(--dcs-layout-panel-max-width));
+  @include mx.pu-surface-panel(admin-login);
 }
 
 .admin-login-card__glow {
@@ -174,32 +169,25 @@ watchEffect(() => {
 .admin-login-card__content {
   position: relative;
   gap: var(--sys-spacing-med);
-  padding: clamp(1.4rem, 4vw, 2rem);
+  padding: var(--dcs-space-admin-panel-padding);
 }
 
 .field {
-  gap: 0.45rem;
+  gap: var(--sys-spacing-sm);
 }
 
 .field__label {
-  font-size: 0.82rem;
+  @include mx.pu-font(label-large);
 }
 
 .field__input {
-  width: 100%;
-  padding: 0.85rem 0.95rem;
-  border-radius: 14px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: color-mix(in srgb, var(--sys-color-surface) 88%, white);
-  color: var(--sys-color-on-surface);
+  @include mx.pu-field-shell;
 }
 
 .admin-login-card__submit {
+  @include mx.pu-font(label-large);
+  @include mx.pu-pill-action(solid-primary, large);
   border: none;
-  border-radius: 999px;
-  padding: 0.85rem 1rem;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
   cursor: pointer;
   font-weight: 600;
 }

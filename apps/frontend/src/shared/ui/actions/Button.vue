@@ -45,8 +45,10 @@ defineEmits<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--dcs-space-control-gap-inline);
-  @include mx.pu-cta;
+  gap: var(--sys-spacing-sm);
+  min-height: var(--sys-size-large);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border-radius: var(--sys-radius-xs);
   border: none;
   cursor: pointer;
   transition:

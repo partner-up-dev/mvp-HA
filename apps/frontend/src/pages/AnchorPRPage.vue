@@ -541,20 +541,20 @@ useHead({
 <style lang="scss" scoped>
 .section-card {
   margin-top: var(--sys-spacing-lg);
-  padding: var(--sys-spacing-med);
-  border-radius: 12px;
-  background: var(--sys-color-surface-container);
+  @include mx.pu-surface-card(section);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
 }
 
 .section-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  @include mx.pu-font(title-medium);
 }
 
 .section-description {
-  margin: 0.35rem 0 0;
-  font-size: 0.875rem;
+  margin: 0;
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
@@ -573,7 +573,7 @@ useHead({
 
 .booking-support-entry-card__action,
 .same-batch-item__status {
-  font-size: 0.75rem;
+  @include mx.pu-font(label-medium);
   color: var(--sys-color-primary);
 }
 
@@ -581,7 +581,7 @@ useHead({
 .alternative-batch-list {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: var(--sys-spacing-sm);
 }
 
 .same-batch-item,
@@ -590,9 +590,7 @@ useHead({
   justify-content: space-between;
   align-items: center;
   gap: var(--sys-spacing-sm);
-  padding: 0.625rem 0.75rem;
-  border-radius: 10px;
-  background: var(--sys-color-surface-container-high);
+  @include mx.pu-surface-card(inset-high);
 }
 
 .same-batch-item {
@@ -603,36 +601,31 @@ useHead({
 .alternative-batch-item__meta {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--sys-spacing-xs);
 }
 
 .alternative-batch-item__time {
-  font-size: 0.8125rem;
+  @include mx.pu-font(label-medium);
 }
 
 .alternative-batch-item__location {
-  font-size: 0.75rem;
+  @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
 }
 
 .primary-btn,
 .secondary-btn {
-  border-radius: 999px;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.8rem;
+  @include mx.pu-font(label-medium);
   cursor: pointer;
 }
 
 .primary-btn {
+  @include mx.pu-pill-action(solid-primary, small);
   border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
 }
 
 .secondary-btn {
-  border: 1px solid var(--sys-color-outline);
-  background: transparent;
-  color: var(--sys-color-on-surface);
+  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 .location-gallery-link {

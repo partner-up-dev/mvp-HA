@@ -7,7 +7,7 @@
 .preview-title {
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
-  margin: 0 0 var(--sys-spacing-xs) 0;
+  margin: 0 0 var(--sys-spacing-xs);
 }
 
 .poster-preview {
@@ -37,17 +37,13 @@
 .primary-btn,
 .outline-btn {
   @include mx.pu-font(label-large);
-  min-height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
 }
 
 .outline-btn {
-  background: transparent;
-  border: 1px solid var(--sys-color-outline);
-  color: var(--sys-color-on-surface);
+  @include mx.pu-rect-action(outline, default);
 
   &:hover:not(:disabled) {
     background: var(--sys-color-surface-container-highest);
@@ -88,7 +84,7 @@
 .spinner {
   width: 24px;
   height: 24px;
-  margin: 0 auto var(--sys-spacing-sm) auto;
+  margin: 0 auto var(--sys-spacing-sm);
   border-radius: 999px;
   border: 3px solid var(--sys-color-outline-variant);
   border-top-color: var(--sys-color-primary);

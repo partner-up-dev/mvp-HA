@@ -136,9 +136,7 @@ const shouldShowPartners = computed(() => {
 
 <style lang="scss" scoped>
 .pr-facts-card {
-  background: var(--sys-color-surface-container);
-  border-radius: var(--sys-radius-lg);
-  padding: var(--sys-spacing-med);
+  @include mx.pu-surface-card(section);
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-med);

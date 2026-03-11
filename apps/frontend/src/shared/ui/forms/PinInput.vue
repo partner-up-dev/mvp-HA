@@ -119,35 +119,25 @@ onMounted(() => {
 
 .pin-field {
   flex: 1;
+  @include mx.pu-form-control(plain);
   padding: 0 var(--sys-spacing-sm);
   height: var(--sys-size-large);
   box-sizing: border-box;
-  background: transparent;
-  color: var(--sys-color-on-surface);
-  border: 1px solid var(--sys-color-outline);
   border-radius: var(--sys-radius-sm);
   text-align: center;
   transition: border-color 0.2s;
   letter-spacing: 0.5rem;
   @include mx.pu-font(body-large, true);
-
-  &:focus {
-    outline: none;
-    border-color: var(--sys-color-primary);
-  }
 }
 
 .regenerate-btn {
+  @include mx.pu-rect-action(outline);
   height: var(--sys-size-large);
   width: var(--sys-size-large);
-  border: 1px solid var(--sys-color-outline);
   border-radius: var(--sys-radius-sm);
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  color: var(--sys-color-on-surface);
 
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);

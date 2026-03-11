@@ -202,10 +202,7 @@ const formatDate = (dateStr: string) => {
 .list-item {
   width: 100%;
   text-align: left;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-xs);
-  background: var(--sys-color-surface-container-low);
-  padding: var(--sys-spacing-med);
+  @include mx.pu-selection-card(default, low);
   cursor: pointer;
 
   &:hover {

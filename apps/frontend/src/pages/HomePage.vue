@@ -159,8 +159,8 @@ onUnmounted(() => {
   scroll-snap-align: start;
   scroll-snap-stop: normal;
   justify-content: center;
-  gap: clamp(1rem, 4vw, 1.9rem);
-  padding-block: clamp(1.25rem, 5vw, 3rem);
+  gap: var(--dcs-space-landing-section-gap);
+  padding-block: var(--dcs-space-landing-section-padding-block);
   padding-left: calc(var(--sys-spacing-med) + var(--pu-safe-left));
   padding-right: calc(var(--sys-spacing-med) + var(--pu-safe-right));
   opacity: 0;
@@ -171,7 +171,9 @@ onUnmounted(() => {
 .home-section--hero {
   min-height: var(--pu-vh);
   justify-content: space-between;
-  padding-top: calc(clamp(1.25rem, 5vw, 3rem) + var(--pu-safe-top));
+  padding-top: calc(
+    var(--dcs-space-landing-section-padding-block) + var(--pu-safe-top)
+  );
   animation-delay: 60ms;
 }
 
@@ -206,8 +208,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(1rem, 4vw, 1.9rem);
-  padding: clamp(1rem, 3.6vw, 1.4rem);
+  gap: var(--dcs-space-landing-panel-gap);
+  padding: var(--dcs-space-landing-panel-padding);
   @include mx.pu-elevation(1);
 }
 
@@ -252,7 +254,7 @@ onUnmounted(() => {
 
 .creator-entry {
   text-decoration: none;
-  padding: clamp(0.95rem, 3.8vw, 1.45rem);
+  padding: var(--dcs-space-landing-entry-padding);
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -330,13 +332,19 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .home-section {
-    gap: clamp(1.35rem, 5vw, 2.3rem);
-    padding-left: calc(clamp(1rem, 4.8vw, 1.3rem) + var(--pu-safe-left));
-    padding-right: calc(clamp(1rem, 4.8vw, 1.3rem) + var(--pu-safe-right));
+    gap: var(--dcs-space-landing-section-gap-compact);
+    padding-left: calc(
+      var(--dcs-space-landing-section-padding-inline-compact) +
+        var(--pu-safe-left)
+    );
+    padding-right: calc(
+      var(--dcs-space-landing-section-padding-inline-compact) +
+        var(--pu-safe-right)
+    );
   }
 
   .section-paper {
-    padding: clamp(1.12rem, 4.8vw, 1.58rem);
+    padding: var(--dcs-space-landing-panel-padding-compact);
   }
 
   .section-header h2 {
@@ -349,7 +357,7 @@ onUnmounted(() => {
 
   .creator-entry {
     min-height: 3.7rem;
-    padding: clamp(1.1rem, 4.8vw, 1.52rem);
+    padding: var(--dcs-space-landing-entry-padding-compact);
   }
 
   .creator-copy h3 {

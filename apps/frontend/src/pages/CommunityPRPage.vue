@@ -429,28 +429,27 @@ useHead({
 
 <style lang="scss" scoped>
 .surface-card {
-  margin: var(--sys-spacing-lg) 0;
-  padding: var(--sys-spacing-med);
-  border-radius: 12px;
-  background: var(--sys-color-surface-container);
+  margin: var(--sys-spacing-lg) 0 0;
+  @include mx.pu-surface-card(section);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
 }
 
 .card-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  @include mx.pu-font(title-medium);
 }
 
 .card-copy {
-  margin: 0.35rem 0 0.75rem;
-  font-size: 0.875rem;
+  margin: 0;
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
 .pin-text {
   margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
+  @include mx.pu-font(label-large);
   color: var(--sys-color-primary);
 }
 
@@ -463,20 +462,16 @@ useHead({
 
 .primary-button,
 .secondary-button {
-  padding: 0.45rem 0.85rem;
-  font-size: 0.8rem;
+  @include mx.pu-font(label-medium);
 }
 
 .primary-button {
+  @include mx.pu-pill-action(solid-primary, small);
   border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
 }
 
 .secondary-button {
-  border: 1px solid var(--sys-color-outline);
-  background: transparent;
-  color: var(--sys-color-on-surface);
+  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 .link-button {
@@ -487,6 +482,7 @@ useHead({
   color: var(--sys-color-primary);
   background: transparent;
   width: fit-content;
+  cursor: pointer;
   text-decoration: underline;
 }
 </style>

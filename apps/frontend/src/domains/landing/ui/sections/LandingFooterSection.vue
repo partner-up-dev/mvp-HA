@@ -69,8 +69,10 @@ const footerNavLinks = computed(() => [
 <style lang="scss" scoped>
 .home-section--footer {
   justify-content: flex-start;
-  gap: clamp(1.3rem, 4.8vw, 2rem);
-  padding-bottom: calc(clamp(1.25rem, 5vw, 3rem) + var(--pu-safe-bottom));
+  gap: var(--dcs-space-footer-gap);
+  padding-bottom: calc(
+    var(--dcs-space-landing-section-padding-block) + var(--pu-safe-bottom)
+  );
   animation-delay: 260ms;
   background-color: var(--sys-color-surface-container);
 }
@@ -104,7 +106,7 @@ const footerNavLinks = computed(() => [
 .footer-brand p {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
-  max-width: 34ch;
+  max-width: var(--dcs-layout-landing-footer-copy-measure);
   margin: 0;
 }
 
@@ -171,7 +173,6 @@ const footerNavLinks = computed(() => [
   display: flex;
   flex-wrap: wrap;
   gap: var(--sys-spacing-xs);
-  font-size: 0.75rem;
   color: var(--sys-color-on-surface-variant);
 }
 
@@ -221,7 +222,6 @@ const footerNavLinks = computed(() => [
 
   .footer-legal {
     gap: var(--sys-spacing-xs);
-    font-size: 0.7rem;
   }
 
   .footer-copyright,

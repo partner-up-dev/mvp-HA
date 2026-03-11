@@ -90,28 +90,20 @@ const { t } = useI18n();
 .secondary-btn {
   @include mx.pu-font(label-large);
   flex: 1;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-  min-height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
+  min-width: 0;
   cursor: pointer;
 }
 
 .join-btn {
-  border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
+  @include mx.pu-rect-action(primary, default);
 }
 
 .exit-btn {
-  border: 1px solid var(--sys-color-error);
-  background: transparent;
-  color: var(--sys-color-error);
+  @include mx.pu-rect-action(danger, default);
 }
 
 .secondary-btn {
-  border: 1px solid var(--sys-color-outline);
-  background: var(--sys-color-surface-container);
-  color: var(--sys-color-on-surface);
+  @include mx.pu-rect-action(surface, default);
 }
 
 @include mx.breakpoint(md) {

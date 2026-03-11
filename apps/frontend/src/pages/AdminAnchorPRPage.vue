@@ -366,35 +366,33 @@ const handleSavePR = async () => {
 }
 
 .header {
-  gap: var(--sys-spacing-xs, 0.5rem);
+  gap: var(--sys-spacing-xs);
 }
 
 .title {
   margin: 0;
-  font-size: 1.6rem;
-  font-weight: 700;
+  @include mx.pu-font(headline-small);
 }
 
 .subtitle {
   margin: 0;
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
 .panel {
   padding: var(--sys-spacing-lg);
-  border-radius: 20px;
-  background: var(--sys-color-surface-container);
-  border: 1px solid var(--sys-color-outline-variant);
+  @include mx.pu-surface-panel(admin-workspace);
 }
 
 .card-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  @include mx.pu-font(title-medium);
 }
 
 .hint {
   margin: 0;
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
@@ -407,29 +405,12 @@ const handleSavePR = async () => {
 }
 
 .selection-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  padding: 0.8rem 0.9rem;
-  border-radius: 12px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-color-surface);
-  color: var(--sys-color-on-surface);
+  @include mx.pu-selection-card(default);
   cursor: pointer;
 }
 
 .selection-btn--active {
-  border-color: color-mix(
-    in srgb,
-    var(--sys-color-primary) 45%,
-    var(--sys-color-outline-variant)
-  );
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary) 12%,
-    var(--sys-color-surface)
-  );
+  @include mx.pu-selection-card(active);
 }
 
 .selection-list--grid {
@@ -441,21 +422,16 @@ const handleSavePR = async () => {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--sys-spacing-xs);
 }
 
 .field-label {
-  font-size: 0.8125rem;
+  @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
 .field-input {
-  width: 100%;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: 10px;
-  background: var(--sys-color-surface);
-  color: var(--sys-color-on-surface);
-  padding: 0.65rem 0.8rem;
+  @include mx.pu-field-shell(compact-surface);
 }
 
 .field-textarea {
@@ -470,32 +446,22 @@ const handleSavePR = async () => {
 
 .inset {
   padding: var(--sys-spacing-med);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: 16px;
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface) 72%,
-    var(--sys-color-surface-container)
-  );
+  @include mx.pu-surface-panel(subtle-inset);
 }
 
 .primary-btn,
 .secondary-btn {
-  border-radius: 999px;
-  padding: 0.55rem 0.95rem;
+  @include mx.pu-font(label-medium);
   cursor: pointer;
 }
 
 .primary-btn {
+  @include mx.pu-pill-action(solid-primary, small);
   border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
 }
 
 .secondary-btn {
-  border: 1px solid var(--sys-color-outline);
-  background: transparent;
-  color: var(--sys-color-on-surface);
+  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 @media (min-width: 880px) {

@@ -113,14 +113,12 @@ const {
 }
 
 .nav-btn {
+  @include mx.pu-pill-action(outline-transparent, small);
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: var(--sys-size-large);
   min-height: var(--sys-size-large);
-  background: transparent;
-  border: none;
-  border-radius: 999px;
   color: var(--sys-color-on-surface);
   cursor: pointer;
   transition: background 0.2s;
@@ -140,7 +138,7 @@ const {
   }
 
   div {
-    font-size: 24px;
+    @include mx.pu-font(title-large);
   }
 }
 

@@ -4,31 +4,288 @@
  * layer unless that is an intentional design-system decision.
  */
 
+@use "./functions" as fn;
+
 @mixin pu-page-shell {
   max-width: var(--dcs-layout-page-max-width);
   margin: 0 auto;
   min-height: var(--pu-vh);
-  padding-top: calc(var(--dcs-space-page-padding-block) + var(--pu-safe-top));
-  padding-right: calc(var(--dcs-space-page-padding-inline) + var(--pu-safe-right));
-  padding-bottom: calc(var(--dcs-space-page-padding-block) + var(--pu-safe-bottom));
-  padding-left: calc(var(--dcs-space-page-padding-inline) + var(--pu-safe-left));
+  padding-top: calc(var(--sys-spacing-med) + var(--pu-safe-top));
+  padding-right: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+  padding-bottom: calc(var(--sys-spacing-med) + var(--pu-safe-bottom));
+  padding-left: calc(var(--sys-spacing-med) + var(--pu-safe-left));
 }
 
-@mixin pu-stack-gap($profile: default) {
-  @if $profile == default {
-    gap: var(--dcs-space-flow-gap-default);
+@mixin pu-pill-badge($profile: primary) {
+  width: fit-content;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  border-radius: 999px;
+
+  @if $profile == primary {
+    background: fn.sys-var(color, primary-container);
+    color: fn.sys-var(color, on-primary-container);
+  } @else if $profile == secondary {
+    background: fn.sys-var(color, secondary-container);
+    color: fn.sys-var(color, on-secondary-container);
   } @else {
-    @error "Unknown stack gap profile `#{$profile}`.";
+    @error "Unknown badge profile `#{$profile}`.";
   }
 }
 
-@mixin pu-cta($profile: default) {
-  @if $profile == default {
-    min-height: var(--dcs-interaction-cta-min-height);
-    padding: var(--dcs-interaction-cta-padding-block)
-      var(--dcs-interaction-cta-padding-inline);
-    border-radius: var(--dcs-interaction-cta-radius);
+@mixin pu-pill-action($profile: solid-primary, $size: default) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-spacing-xs);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+
+  @if $size == default {
+    min-height: var(--sys-size-large);
+    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  } @else if $size == small {
+    padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  } @else if $size == compact {
+    min-height: var(--sys-size-large);
+    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  } @else if $size == large {
+    min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
+    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
   } @else {
-    @error "Unknown CTA profile `#{$profile}`.";
+    @error "Unknown pill action size `#{$size}`.";
+  }
+
+  @if $profile == soft-primary {
+    color: fn.sys-var(color, primary);
+    border-color: color-mix(in srgb, fn.sys-var(color, primary) 45%, transparent);
+    background: color-mix(in srgb, fn.sys-var(color, primary) 12%, transparent);
+  } @else if $profile == soft-neutral {
+    color: fn.sys-var(color, on-surface-variant);
+    border-color: color-mix(in srgb, fn.sys-var(color, outline) 50%, transparent);
+    background: color-mix(
+      in srgb,
+      fn.sys-var(color, surface-container-low) 60%,
+      transparent
+    );
+  } @else if $profile == solid-primary {
+    background: fn.sys-var(color, primary);
+    color: fn.sys-var(color, on-primary);
+  } @else if $profile == solid-secondary {
+    background: fn.sys-var(color, secondary);
+    color: fn.sys-var(color, on-secondary);
+  } @else if $profile == outline-neutral {
+    background: fn.sys-var(color, surface-container-low);
+    border-color: fn.sys-var(color, outline-variant);
+    color: fn.sys-var(color, on-surface);
+  } @else if $profile == outline-transparent {
+    background: transparent;
+    border-color: fn.sys-var(color, outline);
+    color: fn.sys-var(color, on-surface);
+  } @else if $profile == outline-danger {
+    background: transparent;
+    border-color: fn.sys-var(color, error);
+    color: fn.sys-var(color, error);
+  } @else {
+    @error "Unknown pill action profile `#{$profile}`.";
+  }
+}
+
+@mixin pu-field-shell($profile: default) {
+  @if $profile == default {
+    width: 100%;
+    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+    border-radius: var(--sys-radius-med);
+    border: 1px solid fn.sys-var(color, outline-variant);
+    color: fn.sys-var(color, on-surface);
+    background: color-mix(in srgb, fn.sys-var(color, surface) 88%, white);
+  } @else if $profile == compact-surface {
+    width: 100%;
+    padding: var(--sys-spacing-sm);
+    border-radius: var(--sys-radius-med);
+    border: 1px solid fn.sys-var(color, outline-variant);
+    background: fn.sys-var(color, surface);
+    color: fn.sys-var(color, on-surface);
+  } @else {
+    @error "Unknown field profile `#{$profile}`.";
+  }
+}
+
+@mixin pu-surface-panel($profile: subtle) {
+  @if $profile == admin-login {
+    overflow: hidden;
+    border-radius: var(--dcs-surface-panel-radius-large);
+    border: 1px solid
+      color-mix(
+        in srgb,
+        fn.sys-var(color, primary) 24%,
+        fn.sys-var(color, outline-variant)
+      );
+    background:
+      radial-gradient(
+        circle at top left,
+        color-mix(in srgb, fn.sys-var(color, primary) 18%, transparent),
+        transparent 42%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(
+          in srgb,
+          fn.sys-var(color, surface) 82%,
+          fn.sys-var(color, surface-container-high)
+        ),
+        fn.sys-var(color, surface-container)
+      );
+    box-shadow: var(--sys-shadow-2);
+  } @else if $profile == admin-workspace {
+    border-radius: var(--sys-radius-lg);
+    background: fn.sys-var(color, surface-container);
+    border: 1px solid fn.sys-var(color, outline-variant);
+  } @else if $profile == subtle-inset {
+    border-radius: var(--sys-radius-lg);
+    border: 1px solid fn.sys-var(color, outline-variant);
+    background: color-mix(
+      in srgb,
+      fn.sys-var(color, surface) 72%,
+      fn.sys-var(color, surface-container)
+    );
+  } @else {
+    @error "Unknown surface panel profile `#{$profile}`.";
+  }
+}
+
+@mixin pu-surface-card($profile: section) {
+  @if $profile == section {
+    padding: var(--sys-spacing-med);
+    border-radius: var(--sys-radius-lg);
+    background: fn.sys-var(color, surface-container);
+  } @else if $profile == inset-high {
+    padding: var(--sys-spacing-sm);
+    border-radius: var(--sys-radius-med);
+    background: fn.sys-var(color, surface-container-high);
+  } @else {
+    @error "Unknown surface card profile `#{$profile}`.";
+  }
+}
+
+@mixin pu-selection-card($state: default, $tone: default) {
+  $surface-bg: fn.sys-var(color, surface);
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sys-spacing-xs);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border-radius: var(--sys-radius-med);
+  border: 1px solid fn.sys-var(color, outline-variant);
+  color: fn.sys-var(color, on-surface);
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+
+  @if $tone == default {
+    $surface-bg: fn.sys-var(color, surface);
+  } @else if $tone == low {
+    $surface-bg: fn.sys-var(color, surface-container-low);
+  } @else {
+    @error "Unknown selection card tone `#{$tone}`.";
+  }
+
+  background: $surface-bg;
+
+  @if $state == default {
+  } @else if $state == active {
+    border-color: color-mix(
+      in srgb,
+      fn.sys-var(color, primary) 45%,
+      fn.sys-var(color, outline-variant)
+    );
+    background: color-mix(
+      in srgb,
+      fn.sys-var(color, primary) 12%,
+      $surface-bg
+    );
+  } @else {
+    @error "Unknown selection card state `#{$state}`.";
+  }
+}
+
+@mixin pu-form-control($profile: container) {
+  width: 100%;
+  border: 1px solid fn.sys-var(color, outline);
+  border-radius: var(--sys-radius-sm);
+  color: fn.sys-var(color, on-surface);
+
+  @if $profile == container {
+    padding: var(--sys-spacing-sm);
+    background: fn.sys-var(color, surface-container);
+  } @else if $profile == plain {
+    background: transparent;
+  } @else {
+    @error "Unknown form control profile `#{$profile}`.";
+  }
+
+  &::placeholder {
+    color: fn.sys-var(color, on-surface-variant);
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: 2px solid fn.sys-var(color, primary);
+    outline-offset: -1px;
+  }
+}
+
+@mixin pu-rect-action($profile: outline, $size: compact) {
+  border-radius: var(--sys-radius-sm);
+  cursor: pointer;
+
+  @if $size == default {
+    min-height: var(--sys-size-large);
+    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  } @else if $size == compact {
+    padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  } @else {
+    @error "Unknown rect action size `#{$size}`.";
+  }
+
+  @if $profile == primary {
+    border: none;
+    background: fn.sys-var(color, primary);
+    color: fn.sys-var(color, on-primary);
+  } @else if $profile == tertiary {
+    border: none;
+    background: fn.sys-var(color, tertiary);
+    color: fn.sys-var(color, on-tertiary);
+  } @else if $profile == outline {
+    border: 1px solid fn.sys-var(color, outline);
+    background: transparent;
+    color: fn.sys-var(color, on-surface);
+  } @else if $profile == outline-primary {
+    border: 1px solid fn.sys-var(color, primary);
+    background: transparent;
+    color: fn.sys-var(color, primary);
+  } @else if $profile == surface {
+    border: 1px solid fn.sys-var(color, outline);
+    background: fn.sys-var(color, surface-container);
+    color: fn.sys-var(color, on-surface);
+  } @else if $profile == dashed {
+    border: 1px dashed fn.sys-var(color, outline);
+    background: transparent;
+    color: fn.sys-var(color, on-surface);
+  } @else if $profile == danger {
+    border: 1px solid fn.sys-var(color, error);
+    background: transparent;
+    color: fn.sys-var(color, error);
+  } @else {
+    @error "Unknown rect action profile `#{$profile}`.";
   }
 }

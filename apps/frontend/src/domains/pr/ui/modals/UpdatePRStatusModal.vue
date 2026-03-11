@@ -138,18 +138,14 @@ const resetUpdateMutation = () => {
 
 .status-option {
   @include mx.pu-font(label-large);
+  @include mx.pu-selection-card(default);
   flex: 1;
-  padding: var(--sys-spacing-sm);
-  min-height: var(--sys-size-large);
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container);
+  justify-content: center;
+  min-width: 0;
   cursor: pointer;
 
   &.active {
-    background: var(--sys-color-primary-container);
-    border-color: var(--sys-color-primary);
-    color: var(--sys-color-on-primary-container);
+    @include mx.pu-selection-card(active);
   }
 }
 
@@ -176,13 +172,9 @@ const resetUpdateMutation = () => {
 
 .cancel-btn {
   @include mx.pu-font(label-large);
+  @include mx.pu-rect-action(outline, default);
   flex: 1;
-  padding: var(--sys-spacing-sm);
   min-width: 66px;
-  min-height: var(--sys-size-large);
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  background: transparent;
   cursor: pointer;
 }
 </style>

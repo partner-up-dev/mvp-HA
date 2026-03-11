@@ -120,11 +120,7 @@ watch(
 
 .nav-btn {
   @include mx.pu-font(label-large);
-  border: none;
-  border-radius: 999px;
-  padding: 0.45rem 0.8rem;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
+  @include mx.pu-pill-action(solid-primary, small);
 
   &:disabled {
     opacity: 0.5;

@@ -99,29 +99,21 @@ const { t } = useI18n();
 .checkin-missed-btn {
   @include mx.pu-font(label-large);
   flex: 1;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-  min-height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
+  min-width: 0;
   cursor: pointer;
   font-weight: 600;
 }
 
 .confirm-slot-btn {
-  border: 1px solid var(--sys-color-primary);
-  background: transparent;
-  color: var(--sys-color-primary);
+  @include mx.pu-rect-action(outline-primary, default);
 }
 
 .checkin-attended-btn {
-  border: none;
-  background: var(--sys-color-tertiary);
-  color: var(--sys-color-on-tertiary);
+  @include mx.pu-rect-action(tertiary, default);
 }
 
 .checkin-missed-btn {
-  border: 1px solid var(--sys-color-outline);
-  background: transparent;
-  color: var(--sys-color-on-surface);
+  @include mx.pu-rect-action(outline, default);
 }
 
 .checkin-followup {
@@ -148,18 +140,12 @@ const { t } = useI18n();
 
 .checkin-followup-btn {
   @include mx.pu-font(label-large);
-  min-height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
+  @include mx.pu-rect-action(outline, default);
   cursor: pointer;
-  border: 1px solid var(--sys-color-outline);
-  background: var(--sys-color-surface);
-  color: var(--sys-color-on-surface);
 }
 
 .checkin-followup-btn.confirm {
-  border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
+  @include mx.pu-rect-action(primary, default);
 }
 
 .checkin-followup-btn.cancel {

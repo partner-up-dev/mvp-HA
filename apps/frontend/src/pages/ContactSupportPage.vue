@@ -149,58 +149,12 @@ const goHome = () => {
 </script>
 
 <style lang="scss" scoped>
-.guidance-item {
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
-  display: grid;
-  gap: 0.45rem;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-color-surface);
-}
-
-.guidance-item--staff {
-  border-color: color-mix(
-    in srgb,
-    var(--sys-color-primary) 28%,
-    var(--sys-color-outline-variant)
-  );
-}
-
-.guidance-item--support {
-  border-color: color-mix(
-    in srgb,
-    var(--sys-color-secondary) 28%,
-    var(--sys-color-outline-variant)
-  );
-}
-
-.guide-badge,
 .contact-badge {
   @include mx.pu-font(label-medium);
-  width: fit-content;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-}
-
-.guide-badge--staff,
-.contact-badge--staff {
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-}
-
-.guide-badge--support,
-.contact-badge--support {
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-}
-
-.guidance-item span:last-child {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface);
 }
 
 .contact-actions {
-  width: min(100%, 33rem);
+  width: min(100%, var(--dcs-layout-support-actions-max-width));
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-spacing-med);
@@ -224,6 +178,14 @@ const goHome = () => {
   border-color: var(--sys-color-secondary);
 }
 
+.contact-badge--staff {
+  @include mx.pu-pill-badge(primary);
+}
+
+.contact-badge--support {
+  @include mx.pu-pill-badge(secondary);
+}
+
 .contact-copy {
   display: grid;
   gap: var(--sys-spacing-xs);
@@ -243,18 +205,7 @@ const goHome = () => {
 
 .contact-action {
   @include mx.pu-font(label-large);
-  min-height: 2.75rem;
-  padding: 0.65rem 1.2rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  text-decoration: none;
-  transition:
-    transform 180ms ease,
-    opacity 180ms ease;
+  @include mx.pu-pill-action(solid-primary);
 
   &:hover {
     opacity: 0.92;
@@ -268,8 +219,7 @@ const goHome = () => {
 }
 
 .contact-action--support {
-  background: var(--sys-color-secondary);
-  color: var(--sys-color-on-secondary);
+  @include mx.pu-pill-action(solid-secondary);
 }
 
 .author-link {

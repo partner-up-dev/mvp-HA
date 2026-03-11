@@ -7,7 +7,7 @@
 .preview-title {
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
-  margin: 0 0 var(--sys-spacing-xs) 0;
+  margin: 0 0 var(--sys-spacing-xs);
 }
 
 .preview-content {
@@ -32,14 +32,9 @@
 }
 
 .action-btn {
+  @include mx.pu-rect-action(primary, default);
   @include mx.pu-font(label-large);
   flex: 1;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-  min-height: var(--sys-size-large);
-  border: none;
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
@@ -68,4 +63,3 @@
     outline-offset: 2px;
   }
 }
-

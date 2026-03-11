@@ -143,8 +143,7 @@ h2.is-visible {
 
 .value-item {
   padding: 0;
-  border-bottom: 1px dashed
-    color-mix(in srgb, var(--sys-color-outline) 45%, transparent);
+  border-bottom: 1px dashed var(--sys-color-outline-variant);
   opacity: 0;
   transform: translate3d(0, 0.72rem, 0);
   transition:
@@ -251,14 +250,14 @@ h2.is-visible {
 
 .value-panel-expand-enter-to,
 .value-panel-expand-leave-from {
-  max-height: 26rem;
+  max-height: var(--dcs-layout-expandable-panel-max-height);
   opacity: 1;
   transform: translateY(0);
 }
 
 @media (max-width: 768px) {
   .value-props {
-    gap: clamp(1rem, 4.2vw, 1.5rem);
+    gap: var(--dcs-space-landing-hero-gap-compact);
   }
 
   h2 {

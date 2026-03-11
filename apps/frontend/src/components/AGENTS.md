@@ -52,7 +52,14 @@ Use the architecture rules in `src/ARCHITECTURE.md`.
 
 ### Styling
 
-All components MUST use the design token system via CSS variables and mixins.
+All components MUST follow `src/styles/TOKEN-GOVERNANCE.md`.
+
+Default rule:
+
+- use direct `sys` tokens first
+- do not add `dcs` or a recipe if existing `sys` already solves the need without a severe visual regression
+
+Components may use existing shared recipes when the treatment is already centralized, but should not add a new recipe just to hide ordinary `sys` usage.
 
 - Mixins are auto-injected by Vite config for all components, use them directly:
   - `@include mx.pu-font($key)` - Typography (e.g., `body-large`, `label-small`)
@@ -64,11 +71,12 @@ All components MUST use the design token system via CSS variables and mixins.
   - Spacing: `--sys-spacing-xs`, `--sys-spacing-md`, etc.
   - Radius: `--sys-radius-sm`, `--sys-radius-lg`, etc.
 
-Learn available tokens in `src/styles/_sys.scss` and mixins in `src/styles/_mixins.scss`.
+Learn available tokens in `src/styles/_sys.scss`, governance rules in `src/styles/TOKEN-GOVERNANCE.md`, and shared recipes in `src/styles/_mixins.scss`.
 
 Prohibited:
 
 - ❌ Hardcoded colors, sizes, or font properties
+- ❌ Adding a new recipe or `dcs` token when direct `sys` is already enough
 - ❌ Direct imports of token files (`_sys.scss`, `_ref.scss`)
 
 ## Components

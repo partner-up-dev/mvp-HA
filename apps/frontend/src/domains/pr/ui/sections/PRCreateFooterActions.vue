@@ -54,20 +54,15 @@ const { t } = useI18n();
 .create-btn {
   @include mx.pu-font(label-large);
   flex: 1;
-  min-height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
+  min-width: 0;
   cursor: pointer;
 }
 
 .save-btn {
-  border: 1px solid var(--sys-color-outline);
-  background: transparent;
-  color: var(--sys-color-on-surface);
+  @include mx.pu-rect-action(outline, default);
 }
 
 .create-btn {
-  border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
+  @include mx.pu-rect-action(primary, default);
 }
 </style>

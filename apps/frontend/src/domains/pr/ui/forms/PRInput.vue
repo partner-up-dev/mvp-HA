@@ -41,22 +41,11 @@ defineEmits<{
 
   textarea {
     @include mx.pu-font(body-large);
+    @include mx.pu-form-control(plain);
     padding: var(--sys-spacing-med);
-    border: 1px solid var(--sys-color-outline);
     border-radius: var(--sys-radius-xs);
-    background: transparent;
-    color: var(--sys-color-on-surface);
     resize: vertical;
     min-height: 120px;
-
-    &::placeholder {
-      color: var(--sys-color-on-surface-variant);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--sys-color-primary);
-    }
 
     &:disabled {
       opacity: var(--sys-opacity-disabled);

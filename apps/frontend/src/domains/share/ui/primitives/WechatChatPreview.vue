@@ -53,16 +53,16 @@ defineEmits<{
 
 .chat-row {
   display: flex;
-  gap: 8px;
+  gap: var(--sys-spacing-xs);
   justify-content: center;
   align-items: flex-end;
 }
 
 .chat-bubble {
   max-width: 82%;
-  background: #fff;
-  border-radius: 6px;
-  padding: 20px 16px;
+  background: var(--sys-color-surface-container-lowest);
+  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-lg) var(--sys-spacing-med);
   position: relative;
 
   &.bubble-loading {
@@ -73,24 +73,24 @@ defineEmits<{
 .share-card {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 16px;
+  gap: var(--sys-spacing-med);
 }
 
 .share-card-text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sys-spacing-xs);
 }
 
 .share-card-title {
-  font-size: 18px;
-  color: #161616;
+  @include mx.pu-font(title-medium);
+  color: var(--sys-color-on-surface);
   margin: 0;
 }
 
 .share-card-desc {
-  font-size: 16px;
-  color: #9e9e9e;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface-variant);
   margin: 0;
 }
 
@@ -103,7 +103,7 @@ defineEmits<{
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: var(--sys-color-surface-container-highest);
 
   img {
     width: 100%;
@@ -113,8 +113,8 @@ defineEmits<{
 }
 
 .thumb-placeholder {
-  font-size: 16px;
-  color: #9e9e9e;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .thumb-empty {
@@ -128,11 +128,11 @@ defineEmits<{
 .avatar-circle {
   width: 40px;
   height: 40px;
-  border-radius: 4px;
+  border-radius: var(--sys-radius-xs);
   background: var(--sys-color-surface-container);
   color: var(--sys-color-on-surface);
   display: grid;
   place-items: center;
-  font-size: 14px;
+  @include mx.pu-font(body-small);
 }
 </style>

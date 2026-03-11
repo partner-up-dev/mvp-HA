@@ -223,33 +223,13 @@ const clearEndTime = () => {
 
 input {
   @include mx.pu-font(body-large);
-  width: 100%;
-  padding: var(--sys-spacing-sm);
+  @include mx.pu-form-control(container);
   min-height: var(--sys-size-large);
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container);
-  color: var(--sys-color-on-surface);
-
-  &::placeholder {
-    color: var(--sys-color-on-surface-variant);
-    opacity: 0.6;
-  }
-
-  &:focus {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: -1px;
-  }
 }
 
 .clear-time {
   @include mx.pu-font(label-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-xs);
-  background: transparent;
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
+  @include mx.pu-rect-action(outline);
   min-width: 64px;
 
   &:hover:not(:disabled) {

@@ -14,14 +14,22 @@
 - Always use Hono RPC Client (`client`) for API requests instead of manual `fetch`.
 - UnoCSS Icon Preset configured, use icons by `class="i-mdi-icon-name"`.
 - Page layout reuse: Prefer `src/shared/ui/layout/PageScaffold.vue`, `PageScaffoldFlow.vue`, `PageScaffoldCentered.vue`, and `DesktopPageScaffold.vue` for route pages; do not duplicate root safe-area container styles in page files.
+- Styling governance: use direct `sys` tokens first; add `dcs` only for real governed outputs; add recipes only for governed logic or stable shared treatments.
 
 ## Documents
 
 Read following documents when needed and keep them current:
 
 - Architecture: `src/ARCHITECTURE.md`
+- Styling governance: `src/styles/TOKEN-GOVERNANCE.md`
+- Styling agent rules: `src/styles/AGENTS.md`
 - Data Fetching: See `src/queries/AGENTS.md`.
 - Components: See `src/components/AGENTS.md`.
+
+Useful commands:
+
+- `pnpm --filter @partner-up-dev/frontend lint:tokens`
+- `pnpm --filter @partner-up-dev/frontend lint:tokens:strict`
 
 ## File Structure
 

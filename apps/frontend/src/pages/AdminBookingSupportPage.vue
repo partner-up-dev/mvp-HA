@@ -372,17 +372,11 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 .editor-block {
   gap: var(--sys-spacing-med);
   padding: var(--sys-spacing-med);
-  border-radius: 16px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface) 70%,
-    var(--sys-color-surface-container)
-  );
+  @include mx.pu-surface-panel(subtle-inset);
 }
 
 .header {
-  gap: var(--sys-spacing-xs, 0.5rem);
+  gap: var(--sys-spacing-xs);
 }
 
 .title,
@@ -392,25 +386,21 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 }
 
 .title {
-  font-size: 1.75rem;
-  font-weight: 700;
+  @include mx.pu-font(headline-small);
 }
 
-.subtitle,
-.field-label {
+.subtitle {
+  @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
 .panel {
   padding: var(--sys-spacing-lg);
-  border-radius: 20px;
-  background: var(--sys-color-surface-container);
-  border: 1px solid var(--sys-color-outline-variant);
+  @include mx.pu-surface-panel(admin-workspace);
 }
 
 .card-title {
-  font-size: 1rem;
-  font-weight: 600;
+  @include mx.pu-font(title-medium);
 }
 
 .section-header,
@@ -432,14 +422,14 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 .checkbox-field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--sys-spacing-xs);
 }
 
 .checkbox-field {
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
-  min-height: 44px;
+  min-height: var(--sys-size-large);
 }
 
 .field--full {
@@ -451,16 +441,12 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 }
 
 .field-label {
-  font-size: 0.8125rem;
+  @include mx.pu-font(label-medium);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .field-input {
-  width: 100%;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: 10px;
-  background: var(--sys-color-surface);
-  color: var(--sys-color-on-surface);
-  padding: 0.65rem 0.8rem;
+  @include mx.pu-field-shell(compact-surface);
 }
 
 .field-textarea {
@@ -471,26 +457,20 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 .primary-btn,
 .secondary-btn,
 .danger-btn {
-  border-radius: 999px;
-  padding: 0.5rem 0.9rem;
+  @include mx.pu-font(label-medium);
   cursor: pointer;
 }
 
 .primary-btn {
+  @include mx.pu-pill-action(solid-primary, small);
   border: none;
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
 }
 
 .secondary-btn {
-  border: 1px solid var(--sys-color-outline);
-  background: transparent;
-  color: var(--sys-color-on-surface);
+  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 .danger-btn {
-  border: 1px solid var(--sys-color-error);
-  background: transparent;
-  color: var(--sys-color-error);
+  @include mx.pu-rect-action(danger);
 }
 </style>
