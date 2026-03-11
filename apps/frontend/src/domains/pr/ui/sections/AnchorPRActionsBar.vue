@@ -1,0 +1,63 @@
+<template>
+  <SharedPRActionsBar
+    :can-join="canJoin"
+    :has-joined="hasJoined"
+    :is-creator="isCreator"
+    :show-edit-content-action="showEditContentAction"
+    :show-modify-status-action="showModifyStatusAction"
+    :slot-state-text="slotStateText"
+    :join-pending="joinPending"
+    :exit-pending="exitPending"
+    @join="emit('join')"
+    @exit="emit('exit')"
+    @edit-content="emit('edit-content')"
+    @modify-status="emit('modify-status')"
+  />
+
+  <AnchorAttendancePanel
+    :has-joined="hasJoined"
+    :can-confirm="canConfirm"
+    :has-started="hasStarted"
+    :show-check-in-followup="showCheckInFollowup"
+    :check-in-followup-status-label="checkInFollowupStatusLabel"
+    :confirm-pending="confirmPending"
+    :check-in-pending="checkInPending"
+    @confirm-slot="emit('confirm-slot')"
+    @prepare-check-in="emit('prepare-check-in', $event)"
+    @submit-check-in="emit('submit-check-in', $event)"
+    @cancel-check-in="emit('cancel-check-in')"
+  />
+</template>
+
+<script setup lang="ts">
+import AnchorAttendancePanel from "@/domains/pr/ui/sections/AnchorAttendancePanel.vue";
+import SharedPRActionsBar from "@/domains/pr/ui/sections/SharedPRActionsBar.vue";
+
+defineProps<{
+  canJoin: boolean;
+  hasJoined: boolean;
+  isCreator: boolean;
+  canConfirm: boolean;
+  hasStarted: boolean;
+  showEditContentAction: boolean;
+  showModifyStatusAction: boolean;
+  showCheckInFollowup: boolean;
+  checkInFollowupStatusLabel: string;
+  slotStateText: string;
+  joinPending: boolean;
+  exitPending: boolean;
+  confirmPending: boolean;
+  checkInPending: boolean;
+}>();
+
+const emit = defineEmits<{
+  join: [];
+  exit: [];
+  "confirm-slot": [];
+  "prepare-check-in": [didAttend: boolean];
+  "submit-check-in": [wouldJoinAgain: boolean];
+  "cancel-check-in": [];
+  "edit-content": [];
+  "modify-status": [];
+}>();
+</script>

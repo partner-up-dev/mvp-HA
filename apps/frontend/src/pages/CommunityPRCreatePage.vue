@@ -47,7 +47,7 @@
     </template>
 
     <template #footer>
-      <Footer />
+      <ContactSupportFooter />
     </template>
 
     <ErrorToast
@@ -72,15 +72,15 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
-import PRForm from "@/components/pr/PRForm.vue";
-import NLPRForm from "@/components/pr/NLPRForm.vue";
-import ErrorToast from "@/components/common/ErrorToast.vue";
-import Footer from "@/components/common/Footer.vue";
-import TabBar from "@/components/common/TabBar.vue";
-import PageScaffoldFlow from "@/widgets/common/PageScaffoldFlow.vue";
-import PRCreateHeader from "@/widgets/pr-create/PRCreateHeader.vue";
-import PRCreateFooterActions from "@/widgets/pr-create/PRCreateFooterActions.vue";
-import { useCommunityPRCreateFlow } from "@/features/pr-create/useCommunityPRCreateFlow";
+import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
+import NLPRForm from "@/domains/pr/ui/forms/NLPRForm.vue";
+import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import TabBar from "@/shared/ui/navigation/TabBar.vue";
+import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
+import PRCreateHeader from "@/domains/pr/ui/sections/PRCreateHeader.vue";
+import PRCreateFooterActions from "@/domains/pr/ui/sections/PRCreateFooterActions.vue";
+import { useCommunityPRCreateFlow } from "@/domains/pr/use-cases/useCommunityPRCreateFlow";
 
 const resolveQueryMode = (value: unknown): "nl" | "form" | null => {
   if (value === "nl" || value === "form") return value;

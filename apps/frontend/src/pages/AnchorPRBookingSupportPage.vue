@@ -193,17 +193,17 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
-import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
-import ErrorToast from "@/components/common/ErrorToast.vue";
-import Modal from "@/components/common/Modal.vue";
-import PageHeader from "@/components/common/PageHeader.vue";
-import PageScaffold from "@/widgets/common/PageScaffold.vue";
+import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import Modal from "@/shared/ui/overlay/Modal.vue";
+import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
+import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import {
   useAnchorPRBookingSupport,
   useAnchorReimbursementStatus,
-} from "@/queries/useAnchorPR";
-import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
-import { anchorPRDetailPath } from "@/entities/pr/routes";
+} from "@/domains/pr/queries/useAnchorPR";
+import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
+import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/lib/datetime";
 
 const route = useRoute();

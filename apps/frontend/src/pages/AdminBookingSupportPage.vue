@@ -149,14 +149,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import AdminNavigationCard from "@/components/admin/AdminNavigationCard.vue";
-import ErrorToast from "@/components/common/ErrorToast.vue";
-import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
-import { useAdminAccess } from "@/composables/useAdminAccess";
+import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCard.vue";
+import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   type AdminAnchorWorkspaceResponse,
   useAdminAnchorWorkspace,
-} from "@/queries/useAdminAnchorManagement";
+} from "@/domains/admin/queries/useAdminAnchorManagement";
 import {
   type AdminBookingSupportConfigResponse,
   type BatchSupportOverrideInput,
@@ -164,8 +164,8 @@ import {
   useAdminBookingSupportConfig,
   useReplaceBatchBookingSupportOverrides,
   useReplaceEventBookingSupportResources,
-} from "@/queries/useAdminBookingSupport";
-import DesktopPageScaffold from "@/widgets/common/DesktopPageScaffold.vue";
+} from "@/domains/admin/queries/useAdminBookingSupport";
+import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import { formatLocalDateTimeWindowLabel } from "@/lib/datetime";
 
 type EditableEventResource = EventSupportResourceInput & { locationIdsText: string; detailRulesText: string };

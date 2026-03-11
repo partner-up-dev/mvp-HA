@@ -94,7 +94,9 @@ export default defineConfig(({ mode }) => {
               file.includes("src/components/") ||
               file.includes("src/pages/") ||
               file.includes("src/widgets/") ||
-              file.includes("src/features/")
+              file.includes("src/features/") ||
+              file.includes("src/shared/ui/") ||
+              file.includes("src/domains/")
             ) {
               return `@use "@/styles/functions" as fn; @use "@/styles/mixins" as mx;${source}`;
             }

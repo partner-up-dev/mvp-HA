@@ -81,7 +81,7 @@
     </div>
 
     <template #footer>
-      <Footer />
+      <ContactSupportFooter />
     </template>
   </PageScaffoldFlow>
 </template>
@@ -91,15 +91,15 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PartnerRequestSummary } from "@partner-up-dev/backend";
-import Footer from "@/components/common/Footer.vue";
-import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
-import PageHeader from "@/components/common/PageHeader.vue";
-import PRStatusBadge from "@/components/pr/PRStatusBadge.vue";
-import PageScaffoldFlow from "@/widgets/common/PageScaffoldFlow.vue";
-import { useMyCreatedPRs } from "@/queries/useMyCreatedPRs";
-import { useMyJoinedPRs } from "@/queries/useMyJoinedPRs";
+import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
+import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
+import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
+import { useMyCreatedPRs } from "@/domains/pr/queries/useMyCreatedPRs";
+import { useMyJoinedPRs } from "@/domains/pr/queries/useMyJoinedPRs";
 import { useUserSessionStore } from "@/stores/userSessionStore";
-import { resolvePRSummaryPath } from "@/entities/pr/routes";
+import { resolvePRSummaryPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/lib/datetime";
 
 const router = useRouter();

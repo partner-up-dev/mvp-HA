@@ -57,10 +57,10 @@
 import { computed } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import PageHeader from "@/components/common/PageHeader.vue";
-import PageScaffoldCentered from "@/widgets/common/PageScaffoldCentered.vue";
+import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
+import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 import { isWeChatBrowser } from "@/lib/browser-detection";
-import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
+import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
 const DEFAULT_SUPPORT_LINK_WECHAT_IN =
   "https://work.weixin.qq.com/nl/act/p/3f8820e724cb44c5";

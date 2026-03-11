@@ -27,10 +27,10 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import PageHeader from "@/components/common/PageHeader.vue";
-import EventCard from "@/components/event/EventCard.vue";
-import PageScaffold from "@/widgets/common/PageScaffold.vue";
-import { useAnchorEvents } from "@/queries/useAnchorEvents";
+import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
+import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
+import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
 
 const { t } = useI18n();
 const router = useRouter();

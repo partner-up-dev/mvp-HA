@@ -66,12 +66,12 @@
 import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import PageHeader from "@/components/common/PageHeader.vue";
-import TabBar from "@/components/common/TabBar.vue";
-import AnchorEventPRCard from "@/components/event/AnchorEventPRCard.vue";
-import PageScaffold from "@/widgets/common/PageScaffold.vue";
-import { useAnchorEventDetail } from "@/queries/useAnchorEventDetail";
-import { usePoisByIds } from "@/queries/usePoisByIds";
+import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
+import TabBar from "@/shared/ui/navigation/TabBar.vue";
+import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
+import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
+import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 
 const route = useRoute();
 const { t } = useI18n();

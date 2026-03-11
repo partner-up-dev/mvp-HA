@@ -1,0 +1,25 @@
+/*
+ * Decision tokens (dcs)
+ * Governed outputs that should be named, shared, and centrally owned.
+ */
+
+@use "./ref" as ref;
+@use "./functions" as fn;
+
+$all: (
+  layout: (
+    page-max-width: 480px,
+  ),
+  space: (
+    page-padding-inline: fn.map-deep-get(ref.$spacing, med),
+    page-padding-block: fn.map-deep-get(ref.$spacing, med),
+    flow-gap-default: fn.map-deep-get(ref.$spacing, med),
+    control-gap-inline: fn.map-deep-get(ref.$spacing, sm),
+  ),
+  interaction: (
+    cta-min-height: fn.map-deep-get(ref.$size, large),
+    cta-padding-inline: fn.map-deep-get(ref.$spacing, med),
+    cta-padding-block: fn.map-deep-get(ref.$spacing, med),
+    cta-radius: fn.map-deep-get(ref.$radius, xs),
+  ),
+);

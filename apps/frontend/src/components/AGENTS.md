@@ -33,7 +33,7 @@ In components, destructure Vue Query returns (`data`, `isLoading`, `error`).
 </template>
 
 <script setup lang="ts">
-import { useUser } from '@/queries/useUser';
+import { useUser } from '@/domains/example/queries/useUser';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
@@ -41,6 +41,14 @@ const route = useRoute();
 const { data: user, isLoading, error } = useUser(Number(route.params.id));
 </script>
 ```
+
+### Ownership
+
+Use the architecture rules in `src/ARCHITECTURE.md`.
+
+- True cross-domain UI primitives live under `src/shared/ui/*`.
+- Domain-owned UI should move toward `src/domains/<domain>/ui/*`.
+- Do not add new usage-specific components back into `components/common`.
 
 ### Styling
 
@@ -58,8 +66,6 @@ All components MUST use the design token system via CSS variables and mixins.
 
 Learn available tokens in `src/styles/_sys.scss` and mixins in `src/styles/_mixins.scss`.
 
-Example: See `components/__examples__/CanonicalComponentExample.vue`
-
 Prohibited:
 
 - ❌ Hardcoded colors, sizes, or font properties
@@ -67,16 +73,14 @@ Prohibited:
 
 ## Components
 
-- components/common/Modal.vue: For displaying modal dialogs. Note: add scroll locking with `useBodyScrollLock(computed(() => showModal.value))` in the parent component to prevent background scrolling.
-- components/pr/DateTimeRangePicker.vue: Standalone time window picker for start/end date/time. Uses `v-model` to emit `[start, end]` values in `YYYY-MM-DD` or `YYYY-MM-DDTHH:mm` format.
-- components/pr/PRForm.vue: Structured PR creation/edit form. Uses `vee-validate` schemas from `src/lib/validation`.
-- components/share/PRShareCarousel.vue: Carousel host for share methods. Renders per-method components:
-  - components/share/as-link/ShareAsLink.vue
-  - components/share/xhs/ShareToXiaohongshu.vue
-  - components/share/wechat/ShareToWechatChat.vue
-  Each method component owns its options, preview, and actions and uses shared types from `components/share/types.ts`.
-  Carousel auto-rotates every 3 seconds and permanently stops for the current mount after user nav click or share-method content interaction.
+- `shared/ui/overlay/Modal.vue`: Generic modal primitive. Add scroll locking with `useBodyScrollLock(computed(() => open.value))` in the parent when needed.
+- `domains/pr/ui/forms/DateTimeRangePicker.vue`: Standalone time-window picker for start/end date-time.
+- `domains/pr/ui/forms/PRForm.vue`: Structured PR create/edit form using `src/lib/validation`.
+- `domains/share/ui/composites/PRShareCarousel.vue`: Share-method carousel host.
+- `domains/share/ui/methods/as-link/ShareAsLink.vue`: Link-sharing method UI.
+- `domains/share/ui/methods/xhs/ShareToXiaohongshu.vue`: Xiaohongshu sharing method UI.
+- `domains/share/ui/methods/wechat/ShareToWechatChat.vue`: WeChat sharing method UI.
 
 ## Composables
 
-- `useCloudStorage()`: Handles file uploads to the backend and returns download URLs.
+- `shared/upload/useCloudStorage.ts`: Handles file uploads to the backend and returns download URLs.

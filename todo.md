@@ -15,6 +15,8 @@
 - [ ] 添加 ListScaffold，支持关键词搜索、筛选器，配置一个ItemFetcher和ItemRenderer即可
 - [ ] 间距是属于父组件控制的，或者说容器组件
 - [ ] 添加 dropdown, input, button, card 这样的原子组件
+- [ ] 总结视觉风格
+- [ ] 重构文档系统
 
 ## Marketing
 

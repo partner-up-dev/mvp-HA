@@ -40,11 +40,11 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
-import ErrorToast from "@/components/common/ErrorToast.vue";
-import PageHeader from "@/components/common/PageHeader.vue";
-import PageScaffoldCentered from "@/widgets/common/PageScaffoldCentered.vue";
-import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/queries/usePublicConfig";
+import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
+import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
+import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
 const router = useRouter();
 const { t } = useI18n();

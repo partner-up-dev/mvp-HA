@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { toTypedSchema } from "@vee-validate/zod";
 import { i18n } from "@/locales/i18n";
-import type { PRFormFields } from "@/entities/pr/types";
+import type { PRFormFields } from "@/domains/pr/model/types";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();

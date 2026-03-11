@@ -60,10 +60,10 @@
 import { reactive, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import ErrorToast from "@/components/common/ErrorToast.vue";
-import { useAdminLogin } from "@/queries/useAdminAuth";
+import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import { useAdminLogin } from "@/domains/admin/queries/useAdminLogin";
 import { useUserSessionStore } from "@/stores/userSessionStore";
-import PageScaffoldCentered from "@/widgets/common/PageScaffoldCentered.vue";
+import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 
 const route = useRoute();
 const router = useRouter();

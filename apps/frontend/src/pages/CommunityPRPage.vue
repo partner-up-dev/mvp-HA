@@ -138,7 +138,7 @@
       />
     </template>
 
-    <Footer />
+    <ContactSupportFooter />
   </PageScaffold>
 </template>
 
@@ -148,35 +148,35 @@ import { useRoute, useRouter } from "vue-router";
 import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
-import LoadingIndicator from "@/components/common/LoadingIndicator.vue";
-import ErrorToast from "@/components/common/ErrorToast.vue";
-import PRFactsCard from "@/components/pr/PRFactsCard.vue";
-import PRLocationGalleryModal from "@/components/pr/PRLocationGalleryModal.vue";
-import EditPRContentModal from "@/components/pr/EditPRContentModal.vue";
-import UpdatePRStatusModal from "@/components/pr/UpdatePRStatusModal.vue";
-import Footer from "@/components/common/Footer.vue";
-import PageScaffold from "@/widgets/common/PageScaffold.vue";
-import PRHeroHeader from "@/widgets/pr/PRHeroHeader.vue";
-import PRShareSection from "@/widgets/pr/PRShareSection.vue";
-import CommunityPRActionsBar from "@/widgets/pr/CommunityPRActionsBar.vue";
+import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
+import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModal.vue";
+import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
+import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
+import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import PRHeroHeader from "@/domains/pr/ui/composites/PRHeroHeader.vue";
+import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
+import CommunityPRActionsBar from "@/domains/pr/ui/sections/CommunityPRActionsBar.vue";
 import {
   useCommunityPR,
   usePublishCommunityPR,
-} from "@/queries/useCommunityPR";
-import { useWeChatReminderSubscription } from "@/queries/useWeChatReminderSubscription";
-import { useUpdateWeChatReminderSubscription } from "@/queries/useUpdateWeChatReminderSubscription";
-import { usePoisByIds } from "@/queries/usePoisByIds";
+} from "@/domains/pr/queries/useCommunityPR";
+import { useWeChatReminderSubscription } from "@/shared/wechat/queries/useWeChatReminderSubscription";
+import { useUpdateWeChatReminderSubscription } from "@/shared/wechat/queries/useUpdateWeChatReminderSubscription";
+import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 import {
   useUserSessionStore,
   type AuthSessionPayload,
 } from "@/stores/userSessionStore";
 import { useBodyScrollLock } from "@/lib/body-scroll-lock";
-import { useSharedPRActions } from "@/features/pr-actions/useSharedPRActions";
-import { usePRShareContext } from "@/features/share/usePRShareContext";
+import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
+import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
 import { isWeChatBrowser } from "@/lib/browser-detection";
-import { requireWeChatActionAuth } from "@/composables/requireWeChatActionAuth";
-import { redirectToWeChatOAuthLogin } from "@/composables/useAutoWeChatLogin";
-import type { CommunityPRFormFields } from "@/entities/pr/types";
+import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
+import { redirectToWeChatOAuthLogin } from "@/processes/wechat/useAutoWeChatLogin";
+import type { CommunityPRFormFields } from "@/domains/pr/model/types";
 import {
   formatLocalDateTimeValue,
   formatLocalDateTimeWindow,

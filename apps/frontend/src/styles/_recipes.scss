@@ -1,0 +1,34 @@
+/*
+ * Recipes encode governed styling logic.
+ * Recipes may depend on tokens, but should not become a parallel variable-emission
+ * layer unless that is an intentional design-system decision.
+ */
+
+@mixin pu-page-shell {
+  max-width: var(--dcs-layout-page-max-width);
+  margin: 0 auto;
+  min-height: var(--pu-vh);
+  padding-top: calc(var(--dcs-space-page-padding-block) + var(--pu-safe-top));
+  padding-right: calc(var(--dcs-space-page-padding-inline) + var(--pu-safe-right));
+  padding-bottom: calc(var(--dcs-space-page-padding-block) + var(--pu-safe-bottom));
+  padding-left: calc(var(--dcs-space-page-padding-inline) + var(--pu-safe-left));
+}
+
+@mixin pu-stack-gap($profile: default) {
+  @if $profile == default {
+    gap: var(--dcs-space-flow-gap-default);
+  } @else {
+    @error "Unknown stack gap profile `#{$profile}`.";
+  }
+}
+
+@mixin pu-cta($profile: default) {
+  @if $profile == default {
+    min-height: var(--dcs-interaction-cta-min-height);
+    padding: var(--dcs-interaction-cta-padding-block)
+      var(--dcs-interaction-cta-padding-inline);
+    border-radius: var(--dcs-interaction-cta-radius);
+  } @else {
+    @error "Unknown CTA profile `#{$profile}`.";
+  }
+}

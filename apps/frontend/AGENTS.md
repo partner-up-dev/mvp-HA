@@ -13,51 +13,42 @@
 - Request Params: If backend uses `zValidator`, mismatched param types will cause type errors — do not bypass with `as any`.
 - Always use Hono RPC Client (`client`) for API requests instead of manual `fetch`.
 - UnoCSS Icon Preset configured, use icons by `class="i-mdi-icon-name"`.
-- Page layout reuse: Prefer `src/widgets/common/PageScaffold.vue`, `PageScaffoldFlow.vue`, and `PageScaffoldCentered.vue` for route pages; do not duplicate root safe-area container styles in page files.
+- Page layout reuse: Prefer `src/shared/ui/layout/PageScaffold.vue`, `PageScaffoldFlow.vue`, `PageScaffoldCentered.vue`, and `DesktopPageScaffold.vue` for route pages; do not duplicate root safe-area container styles in page files.
 
 ## Documents
 
 Read following documents when needed and keep them current:
 
+- Architecture: `src/ARCHITECTURE.md`
 - Data Fetching: See `src/queries/AGENTS.md`.
 - Components: See `src/components/AGENTS.md`.
 
 ## File Structure
 
-```
+Use `src/ARCHITECTURE.md` as the source of truth.
+
+The active structure is:
+
+```text
 src/
-├── pages/                  # Page components (4 main routes)
-├── components/             # Reusable UI components
-│   ├── common/             # Shared components (Modal, Footer, etc.)
-│   ├── home/               # Home page components
-│   ├── pr/                 # PR-related components
-│   └── share/              # Sharing components
-├── features/               # Feature modules (business logic)
-│   ├── pr-actions/         # PR actions (join/exit/confirm/check-in)
-│   ├── pr-create/          # PR creation flow
-│   └── share/              # Share functionality
-├── queries/                # TanStack Vue Query hooks (data fetching)
-├── composables/            # Vue composition functions (reusable logic)
-├── stores/                 # Pinia state management
-├── widgets/                # Complex UI components (page-specific)
-│   ├── home/
-│   ├── pr/
-│   └── pr-create/
-├── processes/              # Background processes
-│   └── wechat-auth/        # WeChat OAuth flow
-├── shared/                 # Cross-app shared utilities
-│   ├── api/                # API-related utilities
-│   ├── analytics/          # Analytics tracking
-│   └── url/                # URL handling
-├── lib/                    # Utility functions (rpc, validation, etc.)
-├── entities/               # Data models
-├── locales/                # i18n translations (zh-CN only, currently)
-├── router/                 # Vue Router configuration
-├── types/                  # TypeScript type definitions
-├── styles/                 # Global SCSS styles
-├── App.vue                 # Root component
-└── main.ts                 # Application entry point
+├── app/                    # Application wiring
+├── domains/                # Domain-owned code by business area
+├── shared/                 # Cross-domain infrastructure and UI primitives
+├── pages/                  # Route entrypoints only
+├── composables/            # Transitional generic hooks; prefer shared/domain homes for new code
+├── stores/
+├── lib/
+├── locales/
+├── router/
+├── styles/
+└── ...
 ```
+
+Rules:
+
+- New domain-owned modules belong under `src/domains/<domain>/*`.
+- New cross-domain primitives or infrastructure belong under `src/shared/*`.
+- Do not add new files under legacy buckets such as top-level `queries`, `features`, `entities`, or `widgets` unless explicitly maintaining a temporary compatibility seam.
 
 ## Product Reference
 
@@ -90,4 +81,4 @@ src/
 
 ### Immediate Next Focus
 
-- 目标：完善分享体验细节（小红书/微信的交互与样式一致性），并补齐过期状态的展示与提示文案。
+- 目标：在 Phase 6 中继续收缩遗留顶层分类，优先处理仍留在 `composables` 和 `widgets/home` 的 ownership seam，并在稳定结构上继续推进 token-system migration。

@@ -2,8 +2,8 @@
   <div class="home-page">
     <main class="home-flow">
       <section class="home-section home-section--hero">
-        <HomeHero @reveal-values="handleHeroValuesReveal" />
-        <HomeValueProps
+        <LandingHeroSection @reveal-values="handleHeroValuesReveal" />
+        <LandingValuePropsSection
           class="hero-values"
           :start-reveal="shouldRevealHeroValues"
         />
@@ -11,8 +11,8 @@
 
       <section class="home-section home-section--event">
         <div class="section-paper section-paper--event">
-          <HomeEventHighlights class="event-canvas event-canvas--breakout" />
-          <HomeEventPlazaEntry />
+          <EventHighlightsSection class="event-canvas event-canvas--breakout" />
+          <EventPlazaEntry />
         </div>
       </section>
 
@@ -57,9 +57,9 @@
       </section>
     </main>
 
-    <HomeFooter />
+    <LandingFooterSection />
 
-    <HomeBookmarkNudge />
+    <LandingBookmarkNudge />
   </div>
 </template>
 
@@ -67,18 +67,16 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
-import HomeHero from "@/widgets/home/HomeHero.vue";
-import HomeValueProps from "@/widgets/home/HomeValueProps.vue";
-import HomeEventHighlights from "@/widgets/home/HomeEventHighlights.vue";
-import HomeEventPlazaEntry from "@/widgets/home/HomeEventPlazaEntry.vue";
-import HomeBookmarkNudge from "@/widgets/home/HomeBookmarkNudge.vue";
-import HomeFooter from "@/widgets/home/HomeFooter.vue";
+import LandingHeroSection from "@/domains/landing/ui/sections/LandingHeroSection.vue";
+import LandingValuePropsSection from "@/domains/landing/ui/sections/LandingValuePropsSection.vue";
+import EventHighlightsSection from "@/domains/event/ui/sections/landing/EventHighlightsSection.vue";
+import EventPlazaEntry from "@/domains/event/ui/sections/landing/EventPlazaEntry.vue";
+import LandingBookmarkNudge from "@/domains/landing/ui/sections/LandingBookmarkNudge.vue";
+import LandingFooterSection from "@/domains/landing/ui/sections/LandingFooterSection.vue";
 
 const HOME_SCROLL_SNAP_CLASS = "home-scroll-snap";
 
 const { t } = useI18n();
-
-// footer moved to HomeFooter component
 
 const shouldRevealHeroValues = ref(false);
 
