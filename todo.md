@@ -10,9 +10,8 @@
 
 ## Quality Of Life
 
-- [ ] Fix token bypassing
-  - [ ] `@media` 直接从 token 级别作用
-  - [ ] 基于 `calc`, `color` 等变换 token 的方式是禁止的
+- [x] Fix token bypassing （基于 `calc`, `color` 等变换 token 的方式是禁止的）
+- [ ] `@media` 直接从 token 级别作用
 - [ ] 未来还要再进一步优化 dcs/recipe token 层 （主要是重新实现组件、页面，不用那么多花里胡哨的东西，Landing Page 算作例外）
 - [ ] 间距是属于父组件控制的，或者说容器组件
 - [ ] 添加 ListScaffold，支持关键词搜索、筛选器，配置一个ItemFetcher和ItemRenderer即可

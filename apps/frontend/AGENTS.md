@@ -21,10 +21,10 @@
 Read following documents when needed and keep them current:
 
 - Architecture: `src/ARCHITECTURE.md`
+- Vue Component Guideline: See `src/AGENTS.components.md`.
 - Styling governance: `src/styles/TOKEN-GOVERNANCE.md`
 - Styling agent rules: `src/styles/AGENTS.md`
 - Data Fetching: See `src/queries/AGENTS.md`.
-- Components: See `src/components/AGENTS.md`.
 
 Useful commands:
 
