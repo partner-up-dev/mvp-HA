@@ -563,6 +563,7 @@ export interface MessageSchema {
     subtitle: string;
     navAnchorPR: string;
     navBookingSupport: string;
+    navPois: string;
     logoutAction: string;
   };
   adminLogin: {
@@ -621,6 +622,31 @@ export interface MessageSchema {
     addOverrideAction: string;
     saveBatchOverrides: string;
   };
+  adminPois: {
+    title: string;
+    subtitle: string;
+    poiListTitle: string;
+    poiCount: string;
+    emptyPois: string;
+    galleryTitle: string;
+    galleryCount: string;
+    poiLabel: string;
+    poiPlaceholder: string;
+    newPoiLabel: string;
+    newPoiPlaceholder: string;
+    createPoiAction: string;
+    creatingPoi: string;
+    galleryHint: string;
+    uploadImageAction: string;
+    uploadingImage: string;
+    manualUrlPlaceholder: string;
+    addUrlAction: string;
+    saveGalleryAction: string;
+    savingGallery: string;
+    emptyGallery: string;
+    removeImageAction: string;
+    imageAlt: string;
+  };
   adminAnchorPR: {
     title: string;
     subtitle: string;
@@ -637,6 +663,7 @@ export interface MessageSchema {
     eventDescriptionLabel: string;
     eventCoverImageLabel: string;
     eventStatusLabel: string;
+    eventPoiHint: string;
     eventLocationPoolLabel: string;
     eventTimeWindowHint: string;
     saveEventAction: string;

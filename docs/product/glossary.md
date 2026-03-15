@@ -14,7 +14,8 @@
 - SlotStatus（Partner.status）：单个参与槽位状态（JOINED / CONFIRMED / RELEASED / ATTENDED）。
 - User PIN：用户级 4 位数字 PIN（存储为 `users.pin_hash`），用于匿名创建者编辑内容/状态时完成所有权校验；校验成功后会升级为 `authenticated` token。
 - Booking Support：Anchor PR 的预订与资助领域，统一描述资源、预订责任方、资助方式与附带支持。
-- Admin Workspace：内部管理端桌面工作台，用于维护 Anchor Event / Batch / Anchor PR 以及 Booking Support 配置。
+- POI（Point of Interest）：全局场地点位配置，包含 `id` 与 `gallery: string[]` 图片列表；Anchor Event 通过 `locationPool: POI.id[]` 引用 POI 集合，用于 Anchor PR 与活动卡片图库映射。
+- Admin Workspace：内部管理端桌面工作台，用于维护 Anchor Event / Batch / Anchor PR、POI 配置以及 Booking Support 配置。
 - Support Resource：Anchor Event / Batch / PR 上的支持资源单元；场地、物资、服务都视为资源，预订能力是资源的一个属性。
 - SettlementMode：资助结算时机（NONE / PLATFORM_PREPAID / PLATFORM_POSTPAID）。
 - ReimbursementStatus：报销状态（NONE / PENDING / APPROVED / REJECTED / PAID）。

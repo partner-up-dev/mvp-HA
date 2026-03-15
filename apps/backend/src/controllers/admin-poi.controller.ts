@@ -1,0 +1,72 @@
+import { Hono } from "hono";
+import { z } from "zod";
+import { zValidator } from "@hono/zod-validator";
+import {
+  adminAuthMiddleware,
+  type AdminAuthEnv,
+} from "../auth/admin-middleware";
+import { PoiRepository } from "../repositories/PoiRepository";
+
+const app = new Hono<AdminAuthEnv>();
+const poiRepo = new PoiRepository();
+
+const byIdsQuerySchema = z.object({
+  ids: z.string().min(1),
+});
+
+const poiIdParamSchema = z.object({
+  poiId: z.string().trim().min(1),
+});
+
+const upsertPoiSchema = z.object({
+  gallery: z.array(z.string().trim().min(1)),
+});
+
+const normalizeCsvIds = (csv: string): string[] => {
+  const set = new Set<string>();
+  for (const raw of csv.split(",")) {
+    const id = raw.trim();
+    if (!id) continue;
+    set.add(id);
+  }
+  return Array.from(set);
+};
+
+export const adminPoiRoute = app
+  .use("*", adminAuthMiddleware)
+  .get("/pois", async (c) => {
+    const pois = await poiRepo.listAll();
+    return c.json(
+      pois.map((poi) => ({
+        id: poi.id,
+        gallery: poi.gallery,
+      })),
+    );
+  })
+  .get("/pois/by-ids", zValidator("query", byIdsQuerySchema), async (c) => {
+    const { ids } = c.req.valid("query");
+    const normalizedIds = normalizeCsvIds(ids);
+    const pois = await poiRepo.findByIds(normalizedIds);
+
+    return c.json(
+      pois.map((poi) => ({
+        id: poi.id,
+        gallery: poi.gallery,
+      })),
+    );
+  })
+  .put(
+    "/pois/:poiId",
+    zValidator("param", poiIdParamSchema),
+    zValidator("json", upsertPoiSchema),
+    async (c) => {
+      const { poiId } = c.req.valid("param");
+      const { gallery } = c.req.valid("json");
+
+      const poi = await poiRepo.upsertById(poiId, gallery);
+      return c.json({
+        id: poi.id,
+        gallery: poi.gallery,
+      });
+    },
+  );

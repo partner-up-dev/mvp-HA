@@ -20,6 +20,12 @@
       >
         {{ t("adminCommon.navBookingSupport") }}
       </RouterLink>
+      <RouterLink
+        :to="{ name: 'admin-pois' }"
+        class="admin-navigation-card__link"
+      >
+        {{ t("adminCommon.navPois") }}
+      </RouterLink>
     </nav>
 
     <button

@@ -4,7 +4,7 @@
 
 - [ ] CICD 还有可以优化的（不需要检查层依赖、层清理、包清理）
 - [x] 数据库迁移（开发/部署）工作流改进
-- [ ] 【HIGH】后端冷启动及其缓慢，RuntimeInitialization消耗6s；函数 Invocation 消耗 6 秒（仅仅是 js-sdk signature req哦）
+- [ ] 【MUST】后端冷启动及其缓慢，RuntimeInitialization消耗6s；函数 Invocation 消耗 6 秒（仅仅是 js-sdk signature req哦）
 - [ ] 在移动端的加载速度还有待优化
 - [x] 多环境支持：后端通过httpTrigger+函数别名 (`https://test.api-app.partner-up.cn`)；前端创建另一个Page (`https://test.app.partner-up.cn`)
 
@@ -15,7 +15,7 @@
 - [ ] 未来还要再进一步优化 dcs/recipe token 层 （主要是重新实现组件、页面，不用那么多花里胡哨的东西，Landing Page 算作例外）
 - [ ] 间距是属于父组件控制的，或者说容器组件
 - [ ] 添加 ListScaffold，支持关键词搜索、筛选器，配置一个ItemFetcher和ItemRenderer即可
-- [ ] 添加 dropdown, input, button, card 这样的原子组件
+- [ ] 添加 dropdown, input, button, card, **picker** 这样的原子组件
 - [ ] 总结视觉风格
 - [ ] 重构文档系统
 
@@ -103,11 +103,13 @@
   - [x] 重新设计经济页面（至少得重命名为预订和补贴）
 - [ ] 用户可以请求组织更多类型的活动、批次；其它人也可以看到，然后投票
 - [ ] batch tabBar 排序为按开始时间升序
+- [ ] 【MUST】在活动页，可以创建某批次下某个地点的 PR（不会有预约、经济上的支持），会展示在相应的批次 Anchor PR 列表里
 
 ### Booking & Support
 
 - [ ] 资源配以图片
 - [ ] 报销跳转到 contact-support 但是仅保留联系员工，避免用户疑惑
+- [ ] booking deadline 其实不用要求 confirm end，不然的话很多活动都很难预订又或者确认机制变得无效了；只要把 confirm end 配置为平台取消预订会产生损失之前的 30min 就好
 
 ## Base/Common
 

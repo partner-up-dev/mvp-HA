@@ -58,6 +58,7 @@
                 </select>
               </label>
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventLocationPoolLabel") }}</span><textarea v-model="eventForm.locationPoolText" class="field-input field-textarea"></textarea></label>
+              <p class="hint">{{ t("adminAnchorPR.eventPoiHint") }}</p>
               <p class="hint">{{ t("adminAnchorPR.eventTimeWindowHint") }}</p>
               <button class="primary-btn" type="button" :disabled="createEventMutation.isPending.value || updateEventMutation.isPending.value" @click="handleSaveEvent">
                 {{ (createEventMutation.isPending.value || updateEventMutation.isPending.value) ? t("adminAnchorPR.saving") : (isCreatingEvent ? t("adminAnchorPR.createEventAction") : t("adminAnchorPR.saveEventAction")) }}
@@ -356,7 +357,14 @@ const prepareNewPR = () => { if (!selectedEvent.value || selectedBatchId.value =
 const selectPR = (prId: number) => { isCreatingPR.value = false; selectedPRIdRaw.value = String(prId); };
 
 const handleSaveEvent = async () => {
-  const input = { title: eventForm.value.title.trim(), type: eventForm.value.type.trim(), description: eventForm.value.description.trim() || null, locationPool: normalizeLines(eventForm.value.locationPoolText), coverImage: eventForm.value.coverImage.trim() || null, status: eventForm.value.status };
+  const input = {
+    title: eventForm.value.title.trim(),
+    type: eventForm.value.type.trim(),
+    description: eventForm.value.description.trim() || null,
+    locationPool: normalizeLines(eventForm.value.locationPoolText),
+    coverImage: eventForm.value.coverImage.trim() || null,
+    status: eventForm.value.status,
+  };
   const result = isCreatingEvent.value || selectedEventId.value === null
     ? await createEventMutation.mutateAsync(input)
     : await updateEventMutation.mutateAsync({ eventId: selectedEventId.value, input });

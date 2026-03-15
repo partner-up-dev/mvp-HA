@@ -24,6 +24,7 @@ import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { poiRoute } from "./controllers/poi.controller";
 import { adminAnchorManagementRoute } from "./controllers/admin-anchor-management.controller";
 import { adminBookingSupportRoute } from "./controllers/admin-booking-support.controller";
+import { adminPoiRoute } from "./controllers/admin-poi.controller";
 import { jobRunner } from "./infra/jobs";
 import {
   bootstrapAnalyticsAggregationJobs,
@@ -136,6 +137,7 @@ const routes = app
   .route("/api/pois", poiRoute)
   .route("/api/admin", adminAnchorManagementRoute)
   .route("/api/admin", adminBookingSupportRoute)
+  .route("/api/admin", adminPoiRoute)
   .route("/internal/jobs", internalJobsRoute);
 
 // Health check

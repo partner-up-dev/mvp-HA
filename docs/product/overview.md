@@ -15,6 +15,7 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
   - `/admin/login` 用于 admin 使用 UUID + PIN 登录
   - `/admin/anchor-pr` 用于维护 Anchor Event / Batch / Anchor PR
   - `/admin/booking-support` 用于维护预订与资助资源模板与批次覆盖
+  - `/admin/pois` 用于维护全局 POI 库与 POI Gallery
 
 ## 合法使用路径
 
@@ -25,7 +26,7 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 - 进入 `/pr/mine` 可查看“我创建的 / 我加入的”搭子请求列表（前端对重复项做去重展示）。
 - 进入 `/events` 与 `/events/:eventId` 可浏览 Anchor Event，并从中进入 Anchor PR 页面。
 - 当前版本不提供手动创建 Anchor PR 的独立页面；Anchor PR 由 Anchor Event 侧流程生成。
-- 运营与配置人员可通过内部管理端桌面页面维护 Anchor Event / Batch / Anchor PR 与预订资助配置。
+- 运营与配置人员可通过内部管理端桌面页面维护 Anchor Event / Batch / Anchor PR、全局 POI 库与 Gallery、预订资助配置。
 - 发布 `DRAFT` 时会为创建者绑定用户身份并生成/确保用户 PIN；后续匿名编辑内容/状态时使用用户 PIN 验证。
 - 进入网页时会通过 `localStorage` 中的 `user-id/user-pin` 自动恢复会话；若不存在本地凭据则保持匿名，会在第一次发布搭子请求时创建本地账户并登录。
 - 点击首页或页面底部“联系作者”，进入 `/contact-support`；在该页可选择“联系客服”（报销/投诉）或跳转 `/contact-author` 反馈功能建议与 Bug。
