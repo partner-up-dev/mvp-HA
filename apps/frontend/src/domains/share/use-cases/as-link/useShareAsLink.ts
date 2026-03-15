@@ -1,13 +1,18 @@
 import { computed, ref } from "vue";
 import { copyToClipboard } from "@/lib/clipboard";
-import { normalizeUrl } from "@/shared/url/normalizeUrl";
 import { trackEvent } from "@/shared/analytics/track";
 import { parsePRIdFromPathname } from "@/domains/pr/routing/routes";
+import {
+  buildProductShareUrl,
+  resolveSpmFromUrl,
+  type ShareSpmRouteKey,
+} from "@/shared/url/spm";
 
 export type ShareState = "idle" | "sharing" | "shared" | "copied" | "error";
 
 type UseShareAsLinkOptions = {
   shareUrl: () => string;
+  spmRouteKey: ShareSpmRouteKey;
   getShareFailedText: () => string;
   getLoadingText: () => string;
   getSharedText: () => string;
@@ -39,6 +44,7 @@ const resolvePRIdFromShareUrl = (url: string): number | undefined => {
 
 export const useShareAsLink = ({
   shareUrl,
+  spmRouteKey,
   getShareFailedText,
   getLoadingText,
   getSharedText,
@@ -53,7 +59,15 @@ export const useShareAsLink = ({
   });
 
   const normalizedUrl = computed(() =>
-    normalizeUrl(shareUrl(), baseHref.value),
+    buildProductShareUrl({
+      rawUrl: shareUrl(),
+      baseHref: baseHref.value,
+      routeKey: spmRouteKey,
+      methodKey: "web_share",
+    }),
+  );
+  const shareSpm = computed(
+    () => resolveSpmFromUrl(normalizedUrl.value, baseHref.value) ?? undefined,
   );
 
   const buttonLabel = computed(() => {
@@ -102,6 +116,7 @@ export const useShareAsLink = ({
       if (didShare) {
         trackEvent("share_link_native_success", {
           url: normalizedUrl.value,
+          spm: shareSpm.value,
           ...analyticsContext,
         });
         flashState("shared");
@@ -115,6 +130,7 @@ export const useShareAsLink = ({
       trackEvent("share_link_failed", {
         url: normalizedUrl.value,
         stage: "native",
+        spm: shareSpm.value,
         ...analyticsContext,
       });
       console.error("Native share failed, fallback to copy:", error);
@@ -124,6 +140,7 @@ export const useShareAsLink = ({
       await copyToClipboard(normalizedUrl.value);
       trackEvent("share_link_copy_success", {
         url: normalizedUrl.value,
+        spm: shareSpm.value,
         ...analyticsContext,
       });
       flashState("copied");
@@ -131,6 +148,7 @@ export const useShareAsLink = ({
       trackEvent("share_link_failed", {
         url: normalizedUrl.value,
         stage: "copy",
+        spm: shareSpm.value,
         ...analyticsContext,
       });
       console.error("Failed to share/copy:", error);

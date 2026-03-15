@@ -39,7 +39,7 @@
                 ></span>
               </span>
             </RouterLink>
-            <RouterLink class="creator-entry" :to="{ name: 'pr-mine' }">
+            <RouterLink class="creator-entry" :to="{ name: 'me' }">
               <div class="creator-copy">
                 <h3>{{ t("home.landing.secondaryMineTitle") }}</h3>
                 <p>{{ t("home.landing.secondaryMineDescription") }}</p>

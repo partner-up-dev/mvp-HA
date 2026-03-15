@@ -31,6 +31,7 @@
           v-show="currentMethod.id === 'WEB_SHARE'"
           class="method-pane"
           :share-url="shareUrl"
+          :spm-route-key="spmRouteKey"
         />
       </Transition>
 
@@ -39,6 +40,7 @@
           v-show="currentMethod.id === 'WECHAT_CHAT'"
           class="method-pane"
           :share-url="shareUrl"
+          :spm-route-key="spmRouteKey"
           :pr-id="prId!"
           :pr-data="shareData"
         />
@@ -49,6 +51,7 @@
           v-show="currentMethod.id === 'XIAOHONGSHU'"
           class="method-pane"
           :share-url="shareUrl"
+          :spm-route-key="spmRouteKey"
           :pr-id="prId!"
           :pr-data="shareData"
         />
@@ -113,7 +116,7 @@ const {
 }
 
 .nav-btn {
-  @include mx.pu-pill-action(outline-transparent, small);
+  @include mx.pu-pill-action(transparent, small);
   display: flex;
   align-items: center;
   justify-content: center;

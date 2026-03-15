@@ -1,6 +1,7 @@
 <template>
   <SharedPRActionsBar
     :can-join="canJoin"
+    :can-exit="canExit"
     :has-joined="hasJoined"
     :is-creator="isCreator"
     :show-edit-content-action="showEditContentAction"
@@ -20,6 +21,7 @@ import SharedPRActionsBar from "@/domains/pr/ui/sections/SharedPRActionsBar.vue"
 
 defineProps<{
   canJoin: boolean;
+  canExit: boolean;
   hasJoined: boolean;
   isCreator: boolean;
   showEditContentAction: boolean;

@@ -7,20 +7,23 @@ import {
   publishPR,
   updatePRStatus,
   updatePRContent,
-  joinPR,
-  exitPR,
 } from "../domains/pr-core";
-import { getCommunityPRDetail } from "../domains/pr-community";
+import {
+  exitCommunityPR,
+  getCommunityPRDetail,
+  joinCommunityPR,
+} from "../domains/pr-community";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mutation-auth.service";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 import {
   buildCreatorIdentity,
   createStructuredPRSchema,
+  getAuthenticatedUserId,
   issueAuthPayload,
   nlWordCountSchema,
   prIdParamSchema,
-  requireAuthenticatedOpenId,
+  requireAuthenticatedUserId,
   tryReadAuthenticatedOpenId,
   updateContentSchema,
   updateStatusSchema,
@@ -75,7 +78,8 @@ export const communityPRRoute = app
   .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     const openId = await tryReadAuthenticatedOpenId(c);
-    const result = await getCommunityPRDetail(id, openId);
+    const userId = getAuthenticatedUserId(c);
+    const result = await getCommunityPRDetail(id, { userId, openId });
     return c.json(result);
   })
   .post("/:id/publish", zValidator("param", prIdParamSchema), async (c) => {
@@ -160,14 +164,18 @@ export const communityPRRoute = app
   .post("/:id/join", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await ensureCommunityPR(id);
-    const openId = await requireAuthenticatedOpenId(c);
-    const result = await joinPR(id, openId);
-    return c.json(result);
+    const participantIdentity = await buildCreatorIdentity(c);
+    const result = await joinCommunityPR(id, participantIdentity);
+    const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);
+    return c.json({
+      ...result.pr,
+      auth,
+    });
   })
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await ensureCommunityPR(id);
-    const openId = await requireAuthenticatedOpenId(c);
-    const result = await exitPR(id, openId);
+    const userId = requireAuthenticatedUserId(c);
+    const result = await exitCommunityPR(id, userId);
     return c.json(result);
   });

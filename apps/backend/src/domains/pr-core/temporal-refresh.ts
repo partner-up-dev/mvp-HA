@@ -5,14 +5,18 @@
 
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
+import { AnchorPRRepository } from "../../repositories/AnchorPRRepository";
 import { UserReliabilityRepository } from "../../repositories/UserReliabilityRepository";
 import type { PartnerRequest } from "../../entities/partner-request";
 import {
   getTimeWindowStart,
   getTimeWindowClose,
-  getConfirmDeadline,
   isBookingDeadlineReached,
 } from "./services/time-window.service";
+import {
+  hasConfirmationWindowEnded,
+  resolveAnchorParticipationPolicy,
+} from "./services/anchor-participation-policy.service";
 import {
   isActivatableStatus,
   isExpirableStatus,
@@ -21,9 +25,11 @@ import { recalculatePRStatus } from "./services/slot-management.service";
 import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
 import { operationLogService } from "../../infra/operation-log";
 import { getEffectiveBookingDeadline } from "../pr-booking-support";
+import { syncAnchorBookingTriggeredState } from "./services/anchor-booking-trigger.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 
 /**
@@ -38,17 +44,29 @@ export async function refreshTemporalStatus(
       ? await getEffectiveBookingDeadline(request.id)
       : null;
 
-  await lockToStartIfNeeded(request, effectiveBookingDeadlineAt);
-  const afterLock = await prRepo.findById(request.id);
-  const lockNormalized = afterLock ?? request;
-
   await releaseUnconfirmedSlotsIfNeeded(
-    lockNormalized,
+    request,
     effectiveBookingDeadlineAt,
   );
   const afterRelease = await prRepo.findById(request.id);
-  const normalized = afterRelease ?? lockNormalized;
-  const activated = await activateIfNeeded(normalized);
+  const normalized = afterRelease ?? request;
+
+  await syncAnchorBookingTriggeredState(request.id);
+  const afterSync = await prRepo.findById(request.id);
+  const syncNormalized = afterSync ?? normalized;
+
+  await expireIfUnderMinAfterBookingDeadline(
+    syncNormalized,
+    effectiveBookingDeadlineAt,
+  );
+  const afterDeadlineExpire = await prRepo.findById(request.id);
+  const deadlineNormalized = afterDeadlineExpire ?? syncNormalized;
+
+  await lockToStartIfNeeded(deadlineNormalized, effectiveBookingDeadlineAt);
+  const afterLock = await prRepo.findById(request.id);
+  const lockNormalized = afterLock ?? deadlineNormalized;
+
+  const activated = await activateIfNeeded(lockNormalized);
   return expireIfNeeded(activated);
 }
 
@@ -126,10 +144,41 @@ async function lockToStartIfNeeded(
   });
 }
 
-function resolveReleaseTrigger(
+async function expireIfUnderMinAfterBookingDeadline(
   request: PartnerRequest,
   resourceBookingDeadlineAt: Date | null,
-): "booking_deadline" | "t_minus_1h" | null {
+): Promise<void> {
+  if (request.prKind !== "ANCHOR") return;
+  if (!isBookingDeadlineReached(resourceBookingDeadlineAt)) return;
+
+  const slots = await partnerRepo.findByPrId(request.id);
+  const confirmedCount = slots.filter(
+    (slot) => slot.status === "CONFIRMED" || slot.status === "ATTENDED",
+  ).length;
+  const minPartners = request.minPartners ?? 1;
+  if (confirmedCount >= minPartners) return;
+
+  const updated = await prRepo.updateStatus(request.id, "EXPIRED");
+  if (!updated || updated.status !== "EXPIRED") return;
+
+  operationLogService.log({
+    actorId: null,
+    action: "pr.status.expired_under_min_confirmed",
+    aggregateType: "partner_request",
+    aggregateId: String(request.id),
+    detail: {
+      confirmedCount,
+      minPartners,
+      resourceBookingDeadlineAt: resourceBookingDeadlineAt?.toISOString() ?? null,
+      trigger: "booking_deadline",
+    },
+  });
+}
+
+async function resolveReleaseTrigger(
+  request: PartnerRequest,
+  resourceBookingDeadlineAt: Date | null,
+): Promise<"booking_deadline" | "confirmation_end" | null> {
   if (request.prKind !== "ANCHOR") {
     return null;
   }
@@ -137,17 +186,18 @@ function resolveReleaseTrigger(
     return "booking_deadline";
   }
 
-  const confirmDeadline = getConfirmDeadline(request.time);
-  if (!confirmDeadline) return null;
-  if (Date.now() < confirmDeadline.getTime()) return null;
-  return "t_minus_1h";
+  const anchor = await anchorPRRepo.findByPrId(request.id);
+  if (!anchor) return null;
+  const policy = resolveAnchorParticipationPolicy(anchor, request.time);
+  if (!hasConfirmationWindowEnded(policy)) return null;
+  return "confirmation_end";
 }
 
 async function releaseUnconfirmedSlotsIfNeeded(
   request: PartnerRequest,
   resourceBookingDeadlineAt: Date | null,
 ): Promise<void> {
-  const trigger = resolveReleaseTrigger(request, resourceBookingDeadlineAt);
+  const trigger = await resolveReleaseTrigger(request, resourceBookingDeadlineAt);
   if (!trigger) return;
 
   const slots = await partnerRepo.findByPrId(request.id);

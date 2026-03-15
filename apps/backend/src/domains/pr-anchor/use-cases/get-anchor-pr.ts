@@ -1,18 +1,29 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
+import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId, PRStatus } from "../../../entities/partner-request";
+import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
 import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import { refreshTemporalStatus } from "../../pr-core/temporal-refresh";
 import { recommendAlternativeBatches } from "../../pr-core/use-cases/recommend-alternative-batches";
 import type { AlternativeBatchRecommendation } from "../../pr-core/use-cases/recommend-alternative-batches";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
-import { buildBookingSupportPreview } from "../../pr-booking-support";
+import {
+  buildBookingSupportPreview,
+  getEffectiveBookingDeadline,
+} from "../../pr-booking-support";
+import {
+  buildAnchorPartnerSection,
+  type PartnerSectionView,
+} from "../../pr-core/services/partner-section-view.service";
+import { resolveAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
+const partnerRepo = new PartnerRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -73,6 +84,7 @@ export type AnchorPRDetail = {
       alternativeBatches: AlternativeBatchRecommendation[];
     };
   };
+  partnerSection: PartnerSectionView;
 };
 
 const hasVisibleSameBatchStatus = (status: PRStatus): boolean =>
@@ -80,7 +92,10 @@ const hasVisibleSameBatchStatus = (status: PRStatus): boolean =>
 
 export async function getAnchorPRDetail(
   id: PRId,
-  viewerOpenId?: string | null,
+  viewerIdentity?: {
+    userId?: UserId | null;
+    openId?: string | null;
+  },
 ): Promise<AnchorPRDetail> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -91,9 +106,11 @@ export async function getAnchorPRDetail(
   }
 
   const refreshed = await refreshTemporalStatus(request);
-  const viewerUserId = viewerOpenId
-    ? (await resolveUserByOpenId(viewerOpenId)).id
-    : null;
+  const viewerUserId =
+    viewerIdentity?.userId ??
+    (viewerIdentity?.openId
+      ? (await resolveUserByOpenId(viewerIdentity.openId)).id
+      : null);
   const publicPR = await toPublicPR(refreshed, viewerUserId);
   const anchor = await anchorPRRepo.findByPrId(id);
   if (!anchor) {
@@ -123,6 +140,11 @@ export async function getAnchorPRDetail(
       : [];
   const supportRows = await prSupportRepo.findByPrId(id);
   const bookingSupportPreview = buildBookingSupportPreview(supportRows);
+  const bookingDeadlineAt = await getEffectiveBookingDeadline(id);
+  const policy = resolveAnchorParticipationPolicy(anchor, refreshed.time);
+  const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
+    id,
+  );
 
   return {
     id: publicPR.id,
@@ -176,5 +198,14 @@ export async function getAnchorPRDetail(
         alternativeBatches,
       },
     },
+    partnerSection: buildAnchorPartnerSection({
+      publicPR,
+      activeParticipants,
+      viewerUserId,
+      policy,
+      bookingDeadlineAt,
+      sameBatchAlternatives,
+      alternativeBatches,
+    }),
   };
 }

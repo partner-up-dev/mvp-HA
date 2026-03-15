@@ -290,11 +290,25 @@ onUnmounted(() => {
 }
 
 .hero-action--primary {
-  @include mx.pu-pill-action(soft-primary, compact);
+  @include mx.pu-pill-action(transparent);
+  color: var(--sys-color-on-primary-container);
+  border-color: var(--sys-color-primary);
+  background: var(--sys-color-primary-container);
+  min-height: auto;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
 }
 
 .hero-action--secondary {
-  @include mx.pu-pill-action(soft-neutral, compact);
+  @include mx.pu-pill-action(transparent);
+  color: var(--sys-color-on-surface-variant);
+  border-color: color-mix(in srgb, var(--sys-color-outline) 50%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-surface-container-low) 60%,
+    transparent
+  );
+  min-height: auto;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
 }
 
 .hero-action:hover {
@@ -380,12 +394,10 @@ onUnmounted(() => {
     @include mx.pu-font(body-large);
   }
 
-  .hero-action--primary {
-    @include mx.pu-pill-action(soft-primary, large);
-  }
-
+  .hero-action--primary,
   .hero-action--secondary {
-    @include mx.pu-pill-action(soft-neutral, large);
+    min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
+    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
   }
 
   .hero-art-ring {

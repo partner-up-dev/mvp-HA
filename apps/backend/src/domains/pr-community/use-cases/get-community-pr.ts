@@ -1,13 +1,17 @@
 import { HTTPException } from "hono/http-exception";
 import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
+import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId, PRStatus } from "../../../entities/partner-request";
+import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
 import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import { refreshTemporalStatus } from "../../pr-core/temporal-refresh";
+import { buildCommunityPartnerSection, type PartnerSectionView } from "../../pr-core/services/partner-section-view.service";
 
 const prRepo = new PartnerRequestRepository();
 const communityPRRepo = new CommunityPRRepository();
+const partnerRepo = new PartnerRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -50,11 +54,15 @@ export type CommunityPRDetail = {
     supportsConfirm: false;
     supportsCheckIn: false;
   };
+  partnerSection: PartnerSectionView;
 };
 
 export async function getCommunityPRDetail(
   id: PRId,
-  viewerOpenId?: string | null,
+  viewerIdentity?: {
+    userId?: UserId | null;
+    openId?: string | null;
+  },
 ): Promise<CommunityPRDetail> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -65,9 +73,11 @@ export async function getCommunityPRDetail(
   }
 
   const refreshed = await refreshTemporalStatus(request);
-  const viewerUserId = viewerOpenId
-    ? (await resolveUserByOpenId(viewerOpenId)).id
-    : null;
+  const viewerUserId =
+    viewerIdentity?.userId ??
+    (viewerIdentity?.openId
+      ? (await resolveUserByOpenId(viewerIdentity.openId)).id
+      : null);
   const publicPR = await toPublicPR(refreshed, viewerUserId);
   const community = await communityPRRepo.findByPrId(id);
   if (!community) {
@@ -75,6 +85,9 @@ export async function getCommunityPRDetail(
       message: "Community PR subtype row missing",
     });
   }
+  const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
+    id,
+  );
 
   return {
     id: publicPR.id,
@@ -115,5 +128,10 @@ export async function getCommunityPRDetail(
       supportsConfirm: false,
       supportsCheckIn: false,
     },
+    partnerSection: buildCommunityPartnerSection(
+      publicPR,
+      activeParticipants,
+      viewerUserId,
+    ),
   };
 }

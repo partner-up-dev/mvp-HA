@@ -1,5 +1,5 @@
 <template>
-  <section class="actions">
+  <section v-if="(hasJoined && canConfirm) || (hasJoined && canCheckIn)" class="actions">
     <button
       v-if="hasJoined && canConfirm"
       class="confirm-slot-btn"
@@ -10,7 +10,7 @@
     </button>
 
     <button
-      v-if="hasJoined && hasStarted"
+      v-if="hasJoined && canCheckIn"
       class="checkin-attended-btn"
       @click="emit('prepare-check-in', true)"
       :disabled="checkInPending"
@@ -19,7 +19,7 @@
     </button>
 
     <button
-      v-if="hasJoined && hasStarted"
+      v-if="hasJoined && canCheckIn"
       class="checkin-missed-btn"
       @click="emit('prepare-check-in', false)"
       :disabled="checkInPending"
@@ -64,7 +64,7 @@ import { useI18n } from "vue-i18n";
 defineProps<{
   hasJoined: boolean;
   canConfirm: boolean;
-  hasStarted: boolean;
+  canCheckIn: boolean;
   showCheckInFollowup: boolean;
   checkInFollowupStatusLabel: string;
   confirmPending: boolean;

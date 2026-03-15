@@ -32,10 +32,11 @@
 - [x] 收藏弹窗的弹出位置有问题
 - [x] hero section NL create PR
 - [ ] Static Incremental Regeneration and Open graph
+- [x] 添加 SPM 追踪
 
 ## User
 
-- [ ] 添加“我的”页面：可以绑定微信；开关服务通知；修改头像和昵称
+- [x] 添加“我的”页面：可以绑定微信；开关服务通知；修改头像和昵称
 
 ## PR
 
@@ -55,14 +56,14 @@
 ### Detail Page
 
 - [ ] 重构 PR Detail Page
-  - [ ] 重新设计/添加 partner section
-    - [ ] 加入/退出按钮
-    - [ ] 其它搭子
-    - [ ] min/max partners
-    - [ ] "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
-  - [ ] PR status UX 优化
-    - [ ] diagram （特别EXPIRE 路线）
-    - [ ] incoming state
+- [x] 重新设计/添加 partner section
+  - [x] 加入/退出按钮
+  - [x] 其它搭子（搭子花名册）
+  - [x] min/max partners
+  - [x] "你的槽位" 是什么鬼？而且我创建的怎么我还没加入呢？
+- [ ] PR status UX 优化
+  - [ ] diagram （特别EXPIRE 路线）
+  - [ ] incoming state
 - [ ] 在活动页面中可以允许用户主动创建该batch下pr；在活动页面引导用户创建 community pr（这两个应该是一个入口？）
 - [ ] PageHeader Sitcky
 

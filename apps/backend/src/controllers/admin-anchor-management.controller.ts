@@ -62,6 +62,9 @@ const adminCreateAnchorPRInputSchema = z.object({
   maxPartners: z.number().int().nonnegative().nullable(),
   preferences: z.array(z.string().trim()),
   notes: z.string().trim().nullable(),
+  confirmationStartOffsetMinutes: z.number().int().nonnegative(),
+  confirmationEndOffsetMinutes: z.number().int().nonnegative(),
+  joinLockOffsetMinutes: z.number().int().nonnegative(),
 });
 
 const adminUpdateAnchorPRContentSchema = z.object({
@@ -72,6 +75,9 @@ const adminUpdateAnchorPRContentSchema = z.object({
   maxPartners: z.number().int().nonnegative().nullable(),
   preferences: z.array(z.string().trim()),
   notes: z.string().trim().nullable(),
+  confirmationStartOffsetMinutes: z.number().int().nonnegative(),
+  confirmationEndOffsetMinutes: z.number().int().nonnegative(),
+  joinLockOffsetMinutes: z.number().int().nonnegative(),
 });
 
 const adminUpdateAnchorPRStatusSchema = z.object({

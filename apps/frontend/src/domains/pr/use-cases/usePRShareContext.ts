@@ -2,6 +2,10 @@ import { computed, type ComputedRef } from "vue";
 import type { PRId } from "@partner-up-dev/backend";
 import { isCommunityPRDetail, type PRDetailView } from "@/domains/pr/model/types";
 import type { PRShareData } from "@/domains/share/model/types";
+import {
+  normalizePublicUrl,
+  type ShareSpmRouteKey,
+} from "@/shared/url/spm";
 
 type UsePRShareContextOptions = {
   id: ComputedRef<PRId | null>;
@@ -9,7 +13,18 @@ type UsePRShareContextOptions = {
 };
 
 export const usePRShareContext = ({ id, pr }: UsePRShareContextOptions) => {
-  const shareUrl = computed(() => window.location.href);
+  const shareUrl = computed(() => {
+    if (typeof window === "undefined") return "";
+    return normalizePublicUrl({
+      rawUrl: window.location.href,
+      baseHref: window.location.href,
+    });
+  });
+
+  const spmRouteKey = computed<ShareSpmRouteKey | null>(() => {
+    if (!pr.value) return null;
+    return isCommunityPRDetail(pr.value) ? "community_pr" : "anchor_pr";
+  });
 
   const prShareData = computed<PRShareData | null>(() => {
     if (!pr.value) return null;
@@ -45,6 +60,7 @@ export const usePRShareContext = ({ id, pr }: UsePRShareContextOptions) => {
 
   return {
     shareUrl,
+    spmRouteKey,
     prShareData,
     canRenderShare,
   };

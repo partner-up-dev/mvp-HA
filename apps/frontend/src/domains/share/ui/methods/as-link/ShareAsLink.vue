@@ -28,9 +28,11 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { useShareAsLink } from "@/domains/share/use-cases/as-link/useShareAsLink";
+import type { ShareSpmRouteKey } from "@/shared/url/spm";
 
 interface Props {
   shareUrl: string;
+  spmRouteKey: ShareSpmRouteKey;
 }
 
 const props = defineProps<Props>();
@@ -43,6 +45,7 @@ const {
   handleShare,
 } = useShareAsLink({
   shareUrl: () => props.shareUrl,
+  spmRouteKey: props.spmRouteKey,
   getLoadingText: () => t("common.loading"),
   getSharedText: () => t("share.asLink.shared"),
   getCopiedText: () => t("common.copied"),

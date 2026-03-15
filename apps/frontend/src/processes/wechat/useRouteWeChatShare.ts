@@ -2,10 +2,15 @@ import { watch } from "vue";
 import { useRoute } from "vue-router";
 import { useWeChatShareCard } from "@/shared/wechat/useWeChatShareCard";
 import { i18n } from "@/locales/i18n";
+import {
+  buildProductShareUrl,
+  type ShareSpmRouteKey,
+} from "@/shared/url/spm";
 
 type RouteShareCardText = {
   title: string;
   desc: string;
+  spmRouteKey: ShareSpmRouteKey;
 };
 
 const normalizeText = (raw: string): string => raw.replace(/\s+/g, " ").trim();
@@ -18,21 +23,25 @@ const resolveRouteShareCardText = (
       return {
         title: i18n.global.t("app.siteName"),
         desc: i18n.global.t("share.wechat.pageDescriptionHome"),
+        spmRouteKey: "home",
       };
     case "community-pr-create":
       return {
         title: `${i18n.global.t("createPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionCreate"),
+        spmRouteKey: "community_pr_create",
       };
     case "contact-support":
       return {
         title: `${i18n.global.t("contactSupportPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionContactSupport"),
+        spmRouteKey: "contact_support",
       };
     case "contact-author":
       return {
         title: `${i18n.global.t("contactAuthorPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionContactAuthor"),
+        spmRouteKey: "contact_author",
       };
     default:
       return null;
@@ -59,7 +68,12 @@ export const useRouteWeChatShare = () => {
       await updateWeChatShareCard({
         title: normalizeText(shareCardText.title),
         desc: normalizeText(shareCardText.desc),
-        link: window.location.href,
+        link: buildProductShareUrl({
+          rawUrl: window.location.href,
+          baseHref: window.location.href,
+          routeKey: shareCardText.spmRouteKey,
+          methodKey: "wechat_share",
+        }),
         imgUrl: resolveRouteShareLogoUrl(),
       });
     } catch (error) {

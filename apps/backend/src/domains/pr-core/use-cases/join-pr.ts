@@ -1,14 +1,17 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { PartnerStatus } from "../../../entities/partner";
+import type { User } from "../../../entities/user";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import {
-  isJoinLockedByTime,
-  shouldAutoConfirmImmediately,
-} from "../services/time-window.service";
+  isJoinLockedByPolicy,
+  isWithinConfirmationWindow,
+  resolveAnchorParticipationPolicy,
+} from "../services/anchor-participation-policy.service";
 import { isJoinableStatus } from "../services/status-rules";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
@@ -17,25 +20,42 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { expandFullAnchorPR } from "../../anchor-event";
 import { scheduleWeChatReminderJobsForParticipant } from "../../../infra/notifications";
+import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 
-export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
+export async function joinPRAsUser(
+  id: PRId,
+  user: Pick<User, "id" | "status">,
+): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
-  if (
-    refreshedRequest.prKind === "ANCHOR" &&
-    isJoinLockedByTime(refreshedRequest.time)
-  ) {
-    throw new HTTPException(400, {
-      message: "Cannot join - event is locked after T-30min",
-    });
+  let targetStatus: PartnerStatus = "JOINED";
+
+  if (refreshedRequest.prKind === "ANCHOR") {
+    const anchor = await anchorPRRepo.findByPrId(id);
+    if (!anchor) {
+      throw new HTTPException(500, {
+        message: "Anchor PR subtype row missing",
+      });
+    }
+    const policy = resolveAnchorParticipationPolicy(anchor, refreshedRequest.time);
+    if (isJoinLockedByPolicy(policy)) {
+      throw new HTTPException(400, {
+        message: "Cannot join - event is locked after join lock",
+      });
+    }
+
+    if (isWithinConfirmationWindow(policy)) {
+      targetStatus = "CONFIRMED";
+    }
   }
 
   if (!isJoinableStatus(refreshedRequest.status as string)) {
@@ -44,27 +64,21 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
     });
   }
 
-  const user = await resolveUserByOpenId(openId);
   if (user.status !== "ACTIVE") {
     throw new HTTPException(403, { message: "Current user is not active" });
   }
 
   const existing = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
-  const shouldAutoConfirm =
-    refreshedRequest.prKind === "ANCHOR" &&
-    shouldAutoConfirmImmediately(refreshedRequest.time);
   if (existing) {
-    if (existing.status === "JOINED" && shouldAutoConfirm) {
-      await partnerRepo.markConfirmed(existing.id);
-      await userReliabilityRepo.applyDelta(user.id, { confirmed: 1 });
-    }
     const latest = await prRepo.findById(id);
     if (!latest) {
       throw new HTTPException(500, {
         message: "Failed to reload partner request",
       });
     }
-    await scheduleWeChatReminderJobsForParticipant(latest, user.id);
+    if (latest.prKind === "ANCHOR") {
+      await scheduleWeChatReminderJobsForParticipant(latest, user.id);
+    }
     return toPublicPR(latest, user.id);
   }
 
@@ -77,8 +91,6 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
       message: "Cannot join - partner request is full",
     });
   }
-
-  const targetStatus: PartnerStatus = shouldAutoConfirm ? "CONFIRMED" : "JOINED";
 
   let assignedPartnerId: number;
   const released = await partnerRepo.findFirstReleasedSlot(id);
@@ -104,6 +116,7 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
   });
 
   await recalculatePRStatus(id);
+  await syncAnchorBookingTriggeredState(id);
 
   const afterRecalculate = await prRepo.findById(id);
   if (
@@ -142,6 +155,13 @@ export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
       message: "Failed to reload partner request",
     });
   }
-  await scheduleWeChatReminderJobsForParticipant(latest, user.id);
+  if (latest.prKind === "ANCHOR") {
+    await scheduleWeChatReminderJobsForParticipant(latest, user.id);
+  }
   return toPublicPR(latest, user.id);
+}
+
+export async function joinPR(id: PRId, openId: string): Promise<PublicPR> {
+  const user = await resolveUserByOpenId(openId);
+  return joinPRAsUser(id, user);
 }

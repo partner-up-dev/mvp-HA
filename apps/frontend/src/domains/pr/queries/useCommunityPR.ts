@@ -47,6 +47,10 @@ export type PublishCommunityPRResponse = InferResponseType<
   (typeof client.api.cpr)[":id"]["publish"]["$post"]
 >;
 
+export type JoinCommunityPRResponse = InferResponseType<
+  (typeof client.api.cpr)[":id"]["join"]["$post"]
+>;
+
 const readErrorMessage = async (
   response: Response,
   fallback: string,
@@ -174,7 +178,7 @@ export const usePublishCommunityPR = () => {
 export const useJoinCommunityPR = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<JoinCommunityPRResponse, Error, CommunityPRActionInput>({
     mutationFn: async ({ id }: CommunityPRActionInput) => {
       const res = await client.api.cpr[":id"].join.$post(
         {

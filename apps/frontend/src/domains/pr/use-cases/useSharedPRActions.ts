@@ -37,7 +37,9 @@ export const useSharedPRActions = ({
   const getExitMutation = () =>
     scenario === "ANCHOR" ? anchorExitMutation : communityExitMutation;
 
-  const hasJoined = computed(() => pr.value?.core.myPartnerId !== null);
+  const hasJoined = computed(
+    () => pr.value?.partnerSection.viewer.isParticipant ?? false,
+  );
   const analyticsPRContext = computed(() => ({
     prKind: pr.value?.prKind,
     scenarioType: pr.value?.core.type,
@@ -49,21 +51,8 @@ export const useSharedPRActions = ({
     return String(idValue);
   });
 
-  const canJoin = computed(() => {
-    if (!pr.value) return false;
-    if (isCreator.value || hasJoined.value) return false;
-    if (pr.value.status !== "OPEN" && pr.value.status !== "READY") return false;
-
-    const currentCount = pr.value.core.partners.length;
-    if (
-      pr.value.core.maxPartners !== null &&
-      currentCount >= pr.value.core.maxPartners
-    ) {
-      return false;
-    }
-
-    return true;
-  });
+  const canJoin = computed(() => pr.value?.partnerSection.viewer.canJoin ?? false);
+  const canExit = computed(() => pr.value?.partnerSection.viewer.canExit ?? false);
 
   const showEditContentAction = computed(() => {
     const status = pr.value?.status;
@@ -75,9 +64,7 @@ export const useSharedPRActions = ({
   const showModifyStatusAction = computed(() => Boolean(isCreator.value));
 
   const slotStateText = computed(() =>
-    hasJoined.value
-      ? t("prPage.slotJoined", { partnerId: shortPartnerId.value })
-      : t("prPage.slotNotJoined"),
+    resolveSlotStateText(pr.value?.partnerSection.viewer.slotState),
   );
 
   const joinPending = computed(() => getJoinMutation().isPending.value);
@@ -89,30 +76,33 @@ export const useSharedPRActions = ({
 
   const handleJoin = async () => {
     if (id.value === null) return;
-    if (!(await ensureActionAuthenticated())) return;
+    if (scenario === "ANCHOR" && !(await ensureActionAuthenticated())) return;
 
-    await getJoinMutation().mutateAsync({ id: id.value });
+    const result = await getJoinMutation().mutateAsync({ id: id.value });
     trackEvent("pr_join_success", {
       prId: id.value,
       ...analyticsPRContext.value,
     });
     onActionSuccess?.();
+    return result;
   };
 
   const handleExit = async () => {
     if (id.value === null) return;
-    if (!(await ensureActionAuthenticated())) return;
+    if (scenario === "ANCHOR" && !(await ensureActionAuthenticated())) return;
 
-    await getExitMutation().mutateAsync({ id: id.value });
+    const result = await getExitMutation().mutateAsync({ id: id.value });
     trackEvent("pr_exit_success", {
       prId: id.value,
       ...analyticsPRContext.value,
     });
     onActionSuccess?.();
+    return result;
   };
 
   return {
     canJoin,
+    canExit,
     hasJoined,
     shortPartnerId,
     slotStateText,
@@ -123,4 +113,19 @@ export const useSharedPRActions = ({
     handleJoin,
     handleExit,
   };
+
+  function resolveSlotStateText(
+    slotState: PRDetailView["partnerSection"]["viewer"]["slotState"] | undefined,
+  ): string {
+    switch (slotState) {
+      case "JOINED":
+        return t("prPage.slotJoined", { partnerId: shortPartnerId.value });
+      case "CONFIRMED":
+        return t("prPage.slotConfirmed", { partnerId: shortPartnerId.value });
+      case "ATTENDED":
+        return t("prPage.slotAttended", { partnerId: shortPartnerId.value });
+      default:
+        return t("prPage.slotNotJoined");
+    }
+  }
 };

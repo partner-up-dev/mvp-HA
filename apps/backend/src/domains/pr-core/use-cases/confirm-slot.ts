@@ -1,16 +1,23 @@
 import { HTTPException } from "hono/http-exception";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
+import {
+  isWithinConfirmationWindow,
+  resolveAnchorParticipationPolicy,
+} from "../services/anchor-participation-policy.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 
 export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
@@ -22,6 +29,18 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
   if (refreshedRequest.prKind !== "ANCHOR") {
     throw new HTTPException(400, {
       message: "Slot confirmation is only available for anchor PR",
+    });
+  }
+  const anchor = await anchorPRRepo.findByPrId(id);
+  if (!anchor) {
+    throw new HTTPException(500, {
+      message: "Anchor PR subtype row missing",
+    });
+  }
+  const policy = resolveAnchorParticipationPolicy(anchor, refreshedRequest.time);
+  if (!isWithinConfirmationWindow(policy)) {
+    throw new HTTPException(400, {
+      message: "Cannot confirm - outside confirmation window",
     });
   }
 
@@ -36,6 +55,7 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
   if (slot.status === "JOINED") {
     await partnerRepo.markConfirmed(slot.id);
     await userReliabilityRepo.applyDelta(user.id, { confirmed: 1 });
+    await syncAnchorBookingTriggeredState(id);
 
     // Emit domain event
     const event = await eventBus.publish(

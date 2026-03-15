@@ -18,6 +18,7 @@
         :min-partners="prDetail.core.minPartners"
         :max-partners="prDetail.core.maxPartners"
         :partners="prDetail.core.partners"
+        :show-partners="false"
         :preferences="prDetail.core.preferences"
         :notes="prDetail.core.notes"
       >
@@ -57,136 +58,62 @@
         </router-link>
       </section>
 
-      <AnchorPRActionsBar
-        :can-join="sharedActions.canJoin.value"
-        :has-joined="sharedActions.hasJoined.value"
-        :is-creator="isCreator"
-        :can-confirm="attendanceActions.canConfirm.value"
-        :has-started="attendanceActions.hasStarted.value"
-        :show-edit-content-action="sharedActions.showEditContentAction.value"
-        :show-modify-status-action="sharedActions.showModifyStatusAction.value"
-        :show-check-in-followup="
-          attendanceActions.showCheckInFollowup.value
-        "
-        :check-in-followup-status-label="
-          attendanceActions.checkInFollowupStatusLabel.value
-        "
+      <PRPartnerSection
+        :section="prDetail.partnerSection"
         :slot-state-text="sharedActions.slotStateText.value"
         :join-pending="sharedActions.joinPending.value"
         :exit-pending="sharedActions.exitPending.value"
         :confirm-pending="attendanceActions.confirmPending.value"
         :check-in-pending="attendanceActions.checkInPending.value"
+        :show-check-in-followup="attendanceActions.showCheckInFollowup.value"
+        :check-in-followup-status-label="
+          attendanceActions.checkInFollowupStatusLabel.value
+        "
+        :can-toggle-reminder="canToggleReminder"
+        :reminder-enabled="reminderEnabled"
+        :reminder-toggle-pending="reminderTogglePending"
+        :reminder-authenticated="reminderAuthenticated"
+        :reminder-configured="reminderConfigured"
+        :reminder-hint-text="reminderHintText"
+        :is-we-chat-env="isWeChatEnv"
+        :accept-alternative-batch-pending="
+          acceptAlternativeBatchMutation.isPending.value
+        "
         @join="sharedActions.handleJoin"
         @exit="sharedActions.handleExit"
         @confirm-slot="attendanceActions.handleConfirmSlot"
         @prepare-check-in="attendanceActions.prepareCheckIn"
         @submit-check-in="attendanceActions.submitCheckIn"
         @cancel-check-in="attendanceActions.cancelPendingCheckIn"
+        @toggle-reminder="handleToggleWechatReminder"
+        @go-wechat-login="handleGoWechatLogin"
+        @accept-alternative-batch="handleAcceptAlternativeBatch"
+      />
+
+      <AnchorPRActionsBar
+        :can-join="false"
+        :can-exit="false"
+        :has-joined="false"
+        :is-creator="isCreator"
+        :can-confirm="false"
+        :can-check-in="false"
+        :show-edit-content-action="sharedActions.showEditContentAction.value"
+        :show-modify-status-action="sharedActions.showModifyStatusAction.value"
+        :show-check-in-followup="false"
+        check-in-followup-status-label=""
+        slot-state-text=""
+        :join-pending="false"
+        :exit-pending="false"
+        :confirm-pending="false"
+        :check-in-pending="false"
         @edit-content="showEditModal = true"
         @modify-status="showModifyModal = true"
       />
 
-      <section
-        v-if="sharedActions.hasJoined.value"
-        class="section-card wechat-reminder-section"
-      >
-        <h2 class="section-title">{{ t("prPage.wechatReminder.title") }}</h2>
-        <p class="section-description">
-          {{ reminderHintText }}
-        </p>
-
-        <button
-          v-if="canToggleReminder"
-          class="primary-btn"
-          :disabled="reminderTogglePending"
-          @click="handleToggleWechatReminder"
-        >
-          {{
-            reminderTogglePending
-              ? t("prPage.wechatReminder.updating")
-              : reminderEnabled
-                ? t("prPage.wechatReminder.disableAction")
-                : t("prPage.wechatReminder.enableAction")
-          }}
-        </button>
-
-        <button
-          v-else-if="
-            isWeChatEnv && reminderConfigured && !reminderAuthenticated
-          "
-          class="secondary-btn"
-          @click="handleGoWechatLogin"
-        >
-          {{ t("prPage.wechatReminder.loginAction") }}
-        </button>
-      </section>
-
-      <section
-        v-if="sameBatchAlternatives.length > 0"
-        class="section-card same-batch-section"
-      >
-        <h2 class="section-title">{{ t("prPage.sameBatch.title") }}</h2>
-        <p class="section-description">
-          {{ t("prPage.sameBatch.subtitle") }}
-        </p>
-        <div class="same-batch-list">
-          <router-link
-            v-for="item in sameBatchAlternatives"
-            :key="item.id"
-            :to="anchorPRDetailPath(item.id as PRId)"
-            class="same-batch-item"
-          >
-            <span class="same-batch-item__location">📍 {{ item.location }}</span>
-            <span class="same-batch-item__status">{{
-              t(`prStatus.${item.status}`)
-            }}</span>
-          </router-link>
-        </div>
-      </section>
-
-      <section v-if="showAlternativeBatches" class="section-card">
-        <h2 class="section-title">{{ t("prPage.alternativeBatch.title") }}</h2>
-        <p class="section-description">
-          {{ t("prPage.alternativeBatch.subtitle") }}
-        </p>
-
-        <div v-if="isAlternativeLoading" class="section-description">
-          {{ t("common.loading") }}
-        </div>
-        <div
-          v-else-if="alternativeBatchRecommendations.length === 0"
-          class="section-description"
-        >
-          {{ t("prPage.alternativeBatch.empty") }}
-        </div>
-        <div v-else class="alternative-batch-list">
-          <div
-            v-for="item in alternativeBatchRecommendations"
-            :key="`${item.timeWindow[0]}-${item.timeWindow[1]}`"
-            class="alternative-batch-item"
-          >
-            <div class="alternative-batch-item__meta">
-              <span class="alternative-batch-item__time">
-                {{ formatBatchWindowLabel(item.timeWindow) }}
-              </span>
-              <span class="alternative-batch-item__location">
-                📍 {{ item.location }}
-              </span>
-            </div>
-            <button
-              class="primary-btn"
-              :disabled="acceptAlternativeBatchMutation.isPending.value"
-              @click="handleAcceptAlternativeBatch(item.timeWindow)"
-            >
-              {{ t("prPage.alternativeBatch.accept") }}
-            </button>
-          </div>
-        </div>
-      </section>
-
       <PRShareSection
         :pr-id="id"
         :share-url="shareUrl"
+        :spm-route-key="spmRouteKey"
         :pr-data="prShareData"
       />
 
@@ -235,9 +162,9 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PRHeroHeader from "@/domains/pr/ui/composites/PRHeroHeader.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
 import AnchorPRActionsBar from "@/domains/pr/ui/sections/AnchorPRActionsBar.vue";
+import PRPartnerSection from "@/domains/pr/ui/sections/PRPartnerSection.vue";
 import {
   useAcceptAnchorAlternativeBatch,
-  useAnchorAlternativeBatches,
   useAnchorPR,
   useJoinAnchorPR,
 } from "@/domains/pr/queries/useAnchorPR";
@@ -259,7 +186,6 @@ import type { AnchorPRFormFields } from "@/domains/pr/model/types";
 import {
   formatLocalDateTimeValue,
   formatLocalDateTimeWindow,
-  formatLocalDateTimeWindowLabel,
 } from "@/shared/datetime/formatLocalDateTime";
 
 const router = useRouter();
@@ -286,18 +212,6 @@ const editableFields = computed<AnchorPRFormFields>(() => ({
   preferences: prDetail.value?.core.preferences ?? [],
   notes: prDetail.value?.core.notes ?? null,
 }));
-
-const showAlternativeBatches = computed(
-  () => prDetail.value?.status === "FULL" && id.value !== null,
-);
-const { data: alternativeBatchData, isLoading: isAlternativeLoading } =
-  useAnchorAlternativeBatches(id, showAlternativeBatches);
-const alternativeBatchRecommendations = computed(
-  () => alternativeBatchData.value?.recommendations ?? [],
-);
-const sameBatchAlternatives = computed(
-  () => prDetail.value?.anchor.related.sameBatchAlternatives ?? [],
-);
 
 const { locationId, locationGallery } = usePRLocationGallery(
   computed(() => prDetail.value?.core.location ?? null),
@@ -352,7 +266,10 @@ const {
   reminderTogglePending,
 } = usePRReminderSubscription(id);
 
-const { shareUrl, prShareData } = usePRShareContext({ id, pr: prDetail });
+const { shareUrl, spmRouteKey, prShareData } = usePRShareContext({
+  id,
+  pr: prDetail,
+});
 usePRDetailHead({ pr: prDetail, shareUrl });
 
 const formatDate = (dateStr: string) =>
@@ -360,13 +277,6 @@ const formatDate = (dateStr: string) =>
 const localizedTime = computed<[string | null, string | null]>(() =>
   formatLocalDateTimeWindow(prDetail.value?.core.time ?? [null, null]),
 );
-const formatBatchWindowLabel = (timeWindow: [string | null, string | null]) => {
-  return formatLocalDateTimeWindowLabel(
-    timeWindow,
-    {},
-    t("prPage.alternativeBatch.unknownTime"),
-  );
-};
 const bookingSupportSummaryHeadline = computed(() => {
   return (
     prDetail.value?.anchor.bookingSupportPreview.headline ??
@@ -440,61 +350,9 @@ const goHome = () => {
   gap: var(--sys-spacing-sm);
 }
 
-.booking-support-entry-card__action,
-.same-batch-item__status {
+.booking-support-entry-card__action {
   @include mx.pu-font(label-medium);
   color: var(--sys-color-primary);
-}
-
-.same-batch-list,
-.alternative-batch-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.same-batch-item,
-.alternative-batch-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
-  @include mx.pu-surface-card(inset-high);
-}
-
-.same-batch-item {
-  text-decoration: none;
-  color: inherit;
-}
-
-.alternative-batch-item__meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-}
-
-.alternative-batch-item__time {
-  @include mx.pu-font(label-medium);
-}
-
-.alternative-batch-item__location {
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.primary-btn,
-.secondary-btn {
-  @include mx.pu-font(label-medium);
-  cursor: pointer;
-}
-
-.primary-btn {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-}
-
-.secondary-btn {
-  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 .location-gallery-link {

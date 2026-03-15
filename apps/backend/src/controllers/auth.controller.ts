@@ -15,6 +15,7 @@ import {
   ensureUserHasPin,
   verifyUserPin,
 } from "../domains/pr-core/services/user-pin-auth.service";
+import { registerLocalUser } from "../domains/user/use-cases/register-local-user";
 
 const app = new Hono<AuthEnv>();
 const userRepo = new UserRepository();
@@ -50,6 +51,20 @@ export const authRoute = app
       userPin: null,
       accessToken: authenticated.token,
     });
+  })
+  .post("/register/local", async (c) => {
+    const auth = c.get("auth");
+    if (auth.role !== "anonymous" || auth.userId) {
+      return c.json({
+        role: auth.role,
+        userId: auth.userId,
+        userPin: null,
+        accessToken: auth.token,
+      });
+    }
+
+    const registered = await registerLocalUser();
+    return c.json(registered);
   })
   .post("/session", zValidator("json", authSessionSchema), async (c) => {
     const auth = c.get("auth");

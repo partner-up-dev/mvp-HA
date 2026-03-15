@@ -11,10 +11,6 @@ import {
 } from "../services/creator-identity.service";
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { ensureUserHasPin } from "../services/user-pin-auth.service";
-import {
-  shouldAutoConfirmImmediately,
-  isJoinLockedByTime,
-} from "../services/time-window.service";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
@@ -29,19 +25,6 @@ export type PublishPRResult = {
   generatedUserPin: string | null;
 };
 
-const resolvePublishedStatus = (
-  prKind: "ANCHOR" | "COMMUNITY",
-  timeWindow: [string | null, string | null],
-): "JOINED" | "CONFIRMED" => {
-  if (prKind !== "ANCHOR") {
-    return "JOINED";
-  }
-  if (shouldAutoConfirmImmediately(timeWindow) || isJoinLockedByTime(timeWindow)) {
-    return "CONFIRMED";
-  }
-  return "JOINED";
-};
-
 const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
   const request = await prRepo.findById(prId);
   if (!request) {
@@ -53,7 +36,7 @@ const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
     return;
   }
 
-  const targetStatus = resolvePublishedStatus(request.prKind, request.time);
+  const targetStatus = "JOINED";
   const released = await partnerRepo.findFirstReleasedSlot(prId);
   if (released) {
     await partnerRepo.assignSlot(released.id, creatorUserId, targetStatus);

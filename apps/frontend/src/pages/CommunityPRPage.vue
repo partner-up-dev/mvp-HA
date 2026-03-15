@@ -44,6 +44,7 @@
         :min-partners="prDetail.core.minPartners"
         :max-partners="prDetail.core.maxPartners"
         :partners="prDetail.core.partners"
+        :show-partners="false"
         :budget="prDetail.core.budget"
         :preferences="prDetail.core.preferences"
         :notes="prDetail.core.notes"
@@ -61,55 +62,34 @@
         </template>
       </PRFactsCard>
 
-      <CommunityPRActionsBar
-        :can-join="sharedActions.canJoin.value"
-        :has-joined="sharedActions.hasJoined.value"
-        :is-creator="isCreator"
-        :show-edit-content-action="sharedActions.showEditContentAction.value"
-        :show-modify-status-action="sharedActions.showModifyStatusAction.value"
+      <PRPartnerSection
+        :section="prDetail.partnerSection"
         :slot-state-text="sharedActions.slotStateText.value"
         :join-pending="sharedActions.joinPending.value"
         :exit-pending="sharedActions.exitPending.value"
-        @join="sharedActions.handleJoin"
+        @join="handleJoin"
         @exit="sharedActions.handleExit"
+      />
+
+      <CommunityPRActionsBar
+        :can-join="false"
+        :can-exit="false"
+        :has-joined="false"
+        :is-creator="isCreator"
+        :show-edit-content-action="sharedActions.showEditContentAction.value"
+        :show-modify-status-action="sharedActions.showModifyStatusAction.value"
+        slot-state-text=""
+        :join-pending="false"
+        :exit-pending="false"
         @edit-content="showEditModal = true"
         @modify-status="showModifyModal = true"
       />
-
-      <section v-if="sharedActions.hasJoined.value" class="surface-card">
-        <h2 class="card-title">{{ t("prPage.wechatReminder.title") }}</h2>
-        <p class="card-copy">{{ reminderHintText }}</p>
-
-        <button
-          v-if="canToggleReminder"
-          class="primary-button"
-          :disabled="reminderTogglePending"
-          @click="handleToggleWechatReminder"
-        >
-          {{
-            reminderTogglePending
-              ? t("prPage.wechatReminder.updating")
-              : reminderEnabled
-                ? t("prPage.wechatReminder.disableAction")
-                : t("prPage.wechatReminder.enableAction")
-          }}
-        </button>
-
-        <button
-          v-else-if="
-            isWeChatEnv && reminderConfigured && !reminderAuthenticated
-          "
-          class="secondary-button"
-          @click="handleGoWechatLogin"
-        >
-          {{ t("prPage.wechatReminder.loginAction") }}
-        </button>
-      </section>
 
       <PRShareSection
         v-if="prShareData && id !== null"
         :pr-id="id"
         :share-url="shareUrl"
+        :spm-route-key="spmRouteKey"
         :pr-data="prShareData"
       />
 
@@ -157,6 +137,7 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PRHeroHeader from "@/domains/pr/ui/composites/PRHeroHeader.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
 import CommunityPRActionsBar from "@/domains/pr/ui/sections/CommunityPRActionsBar.vue";
+import PRPartnerSection from "@/domains/pr/ui/sections/PRPartnerSection.vue";
 import {
   useCommunityPR,
   usePublishCommunityPR,
@@ -169,11 +150,12 @@ import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import { usePRDetailHead } from "@/domains/pr/use-cases/usePRDetailHead";
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
-import { usePRReminderSubscription } from "@/domains/pr/use-cases/usePRReminderSubscription";
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
 import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
+import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import type { CommunityPRFormFields } from "@/domains/pr/model/types";
+import type { JoinCommunityPRResponse } from "@/domains/pr/queries/useCommunityPR";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import {
   formatLocalDateTimeValue,
@@ -242,18 +224,6 @@ const sharedActions = useSharedPRActions({
   onActionSuccess: resetLivePolling,
 });
 
-const {
-  canToggleReminder,
-  handleGoWechatLogin,
-  handleToggleWechatReminder,
-  isWeChatEnv,
-  reminderAuthenticated,
-  reminderConfigured,
-  reminderEnabled,
-  reminderHintText,
-  reminderTogglePending,
-} = usePRReminderSubscription(id);
-
 const creationEntry = computed(() => {
   const raw = route.query.entry;
   if (typeof raw === "string") return raw;
@@ -261,9 +231,15 @@ const creationEntry = computed(() => {
   return null;
 });
 const showPinHelpCard = computed(() => {
+  if (creationEntry.value === "join") {
+    return Boolean(userSessionStore.userPin);
+  }
   if (!isCreator.value) return false;
   return creationEntry.value === "create" || creationEntry.value === "publish";
 });
+const isWeChatEnv = computed(() =>
+  typeof navigator === "undefined" ? false : isWeChatBrowser(),
+);
 
 const handlePublishDraft = async () => {
   if (id.value === null) return;
@@ -279,7 +255,21 @@ const handlePublishDraft = async () => {
   await refetch();
 };
 
-const { shareUrl, prShareData } = usePRShareContext({ id, pr: prDetail });
+const handleJoin = async () => {
+  const result = await sharedActions.handleJoin();
+  const authPayload = (result as JoinCommunityPRResponse | undefined)?.auth;
+  if (!authPayload) return;
+
+  userSessionStore.applyAuthSession(authPayload);
+  if (authPayload.userPin) {
+    await router.replace({ query: { ...route.query, entry: "join" } });
+  }
+};
+
+const { shareUrl, spmRouteKey, prShareData } = usePRShareContext({
+  id,
+  pr: prDetail,
+});
 usePRDetailHead({ pr: prDetail, shareUrl });
 
 const formatDate = (dateStr: string) =>
@@ -298,7 +288,7 @@ const goHome = () => {
 
 <style lang="scss" scoped>
 .surface-card {
-  margin: var(--sys-spacing-lg) 0 0;
+  margin: var(--sys-spacing-lg) 0;
   @include mx.pu-surface-card(section);
   display: flex;
   flex-direction: column;

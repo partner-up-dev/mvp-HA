@@ -56,7 +56,32 @@
                   <label class="checkbox-field"><input v-model="resource.bookingRequired" type="checkbox" /><span>{{ t("adminBookingSupport.bookingRequired") }}</span></label>
                   <label class="checkbox-field"><input v-model="resource.bookingLocksParticipant" type="checkbox" /><span>{{ t("adminBookingSupport.bookingLocksParticipant") }}</span></label>
                   <label class="checkbox-field"><input v-model="resource.requiresUserTransferToPlatform" type="checkbox" /><span>{{ t("adminBookingSupport.requiresTransfer") }}</span></label>
-                  <label class="field"><span class="field-label">{{ t("adminBookingSupport.locationIds") }}</span><input v-model="resource.locationIdsText" class="field-input" /></label>
+                  <label class="field field--full">
+                    <span class="field-label">{{ t("adminBookingSupport.locationIds") }}</span>
+                    <select
+                      v-model="resource.locationIds"
+                      class="field-input field-input--multiselect"
+                      :disabled="resource.appliesToAllLocations"
+                      multiple
+                    >
+                      <option
+                        v-for="location in availableLocationOptions"
+                        :key="location"
+                        :value="location"
+                      >
+                        {{ location }}
+                      </option>
+                    </select>
+                    <span v-if="!resource.appliesToAllLocations" class="hint">
+                      {{ t("adminBookingSupport.locationSelectorHint") }}
+                    </span>
+                    <span
+                      v-if="hasResourceLocationValidationError(index)"
+                      class="field-error"
+                    >
+                      {{ t("adminBookingSupport.locationRequiredValidation") }}
+                    </span>
+                  </label>
                   <label class="field">
                     <span class="field-label">{{ t("adminBookingSupport.bookingHandledBy") }}</span>
                     <select v-model="resource.bookingHandledBy" class="field-input"><option :value="null">{{ t("adminBookingSupport.noneOption") }}</option><option value="PLATFORM">PLATFORM</option><option value="USER">USER</option></select>
@@ -75,7 +100,12 @@
               </article>
             </div>
 
-            <button class="primary-btn" type="button" :disabled="replaceEventResourcesMutation.isPending.value || selectedEventId === null" @click="handleSaveEventResources">
+            <button
+              class="primary-btn"
+              type="button"
+              :disabled="replaceEventResourcesMutation.isPending.value || selectedEventId === null || hasEventResourceLocationValidationError"
+              @click="handleSaveEventResources"
+            >
               {{ replaceEventResourcesMutation.isPending.value ? t("adminBookingSupport.saving") : t("adminBookingSupport.saveEventResources") }}
             </button>
           </div>
@@ -168,7 +198,7 @@ import {
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 
-type EditableEventResource = EventSupportResourceInput & { locationIdsText: string; detailRulesText: string };
+type EditableEventResource = EventSupportResourceInput & { detailRulesText: string };
 type EditableBatchOverride = BatchSupportOverrideInput & {
   detailRulesOverrideText: string;
   bookingRequiredOverrideEnabled: boolean;
@@ -202,9 +232,16 @@ const selectedBatchId = computed<number | null>(() => {
 const anchorEvents = computed<AdminAnchorEventRecord[]>(
   () => workspaceQuery.data.value?.events ?? [],
 );
+const selectedEvent = computed<AdminAnchorEventRecord | null>(
+  () =>
+    anchorEvents.value.find((event) => event.id === selectedEventId.value) ?? null,
+);
 const configQuery = useAdminBookingSupportConfig(selectedEventId);
 const config = computed(() => configQuery.data.value ?? null);
 const pageError = computed(() => workspaceQuery.error.value ?? configQuery.error.value ?? null);
+const availableLocationOptions = computed<string[]>(
+  () => selectedEvent.value?.locationPool ?? [],
+);
 
 const toEventResource = (resource: AdminEventResource): EditableEventResource => ({
   code: resource.code,
@@ -212,7 +249,6 @@ const toEventResource = (resource: AdminEventResource): EditableEventResource =>
   resourceKind: resource.resourceKind,
   appliesToAllLocations: resource.appliesToAllLocations,
   locationIds: [...resource.locationIds],
-  locationIdsText: resource.locationIds.join(", "),
   bookingRequired: resource.bookingRequired,
   bookingHandledBy: resource.bookingHandledBy,
   bookingDeadlineRule: resource.bookingDeadlineRule ?? null,
@@ -277,11 +313,30 @@ watch([config, selectedBatchId], ([nextConfig, batchId]) => {
   editableOverrides.value = batch?.overrides.map(toBatchOverride) ?? [];
 }, { immediate: true });
 
-const splitComma = (value: string): string[] => value.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
 const splitLines = (value: string): string[] => value.split("\n").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+const resolveSelectedLocations = (locationIds: string[]): string[] => {
+  const options = new Set(availableLocationOptions.value);
+  return locationIds.filter((location) => options.has(location));
+};
+const invalidResourceLocationIndexes = computed<number[]>(() =>
+  editableResources.value.flatMap((resource, index) => {
+    if (resource.appliesToAllLocations) return [];
+    return resolveSelectedLocations(resource.locationIds).length > 0 ? [] : [index];
+  }),
+);
+const hasEventResourceLocationValidationError = computed(
+  () => invalidResourceLocationIndexes.value.length > 0,
+);
+const hasResourceLocationValidationError = (index: number): boolean =>
+  invalidResourceLocationIndexes.value.includes(index);
 
 const handleSaveEventResources = async () => {
-  if (selectedEventId.value === null) return;
+  if (
+    selectedEventId.value === null ||
+    hasEventResourceLocationValidationError.value
+  ) {
+    return;
+  }
   await replaceEventResourcesMutation.mutateAsync({
     eventId: selectedEventId.value,
     resources: editableResources.value.map((resource) => ({
@@ -289,7 +344,9 @@ const handleSaveEventResources = async () => {
       title: resource.title.trim(),
       resourceKind: resource.resourceKind,
       appliesToAllLocations: resource.appliesToAllLocations,
-      locationIds: resource.appliesToAllLocations ? [] : splitComma(resource.locationIdsText),
+      locationIds: resource.appliesToAllLocations
+        ? []
+        : resolveSelectedLocations(resource.locationIds),
       bookingRequired: resource.bookingRequired,
       bookingHandledBy: resource.bookingRequired ? resource.bookingHandledBy : null,
       bookingDeadlineRule: resource.bookingRequired ? (resource.bookingDeadlineRule?.trim() || null) : null,
@@ -333,7 +390,7 @@ const handleSaveBatchOverrides = async () => {
 };
 
 const addEventResource = () => editableResources.value.push({
-  code: "", title: "", resourceKind: "ITEM", appliesToAllLocations: true, locationIds: [], locationIdsText: "",
+  code: "", title: "", resourceKind: "ITEM", appliesToAllLocations: true, locationIds: [],
   bookingRequired: false, bookingHandledBy: null, bookingDeadlineRule: null, bookingLocksParticipant: false,
   cancellationPolicy: null, settlementMode: "NONE", subsidyRate: null, subsidyCap: null,
   requiresUserTransferToPlatform: false, summaryText: "", detailRules: [], detailRulesText: "", displayOrder: editableResources.value.length,
@@ -452,6 +509,20 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 .field-textarea {
   min-height: 100px;
   resize: vertical;
+}
+
+.field-input--multiselect {
+  min-height: 128px;
+}
+
+.hint {
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-on-surface-variant);
+}
+
+.field-error {
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-error);
 }
 
 .primary-btn,

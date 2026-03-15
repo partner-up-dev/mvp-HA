@@ -1,6 +1,7 @@
 <template>
   <SharedPRActionsBar
     :can-join="canJoin"
+    :can-exit="canExit"
     :has-joined="hasJoined"
     :is-creator="isCreator"
     :show-edit-content-action="showEditContentAction"
@@ -17,7 +18,7 @@
   <AnchorAttendancePanel
     :has-joined="hasJoined"
     :can-confirm="canConfirm"
-    :has-started="hasStarted"
+    :can-check-in="canCheckIn"
     :show-check-in-followup="showCheckInFollowup"
     :check-in-followup-status-label="checkInFollowupStatusLabel"
     :confirm-pending="confirmPending"
@@ -35,10 +36,11 @@ import SharedPRActionsBar from "@/domains/pr/ui/sections/SharedPRActionsBar.vue"
 
 defineProps<{
   canJoin: boolean;
+  canExit: boolean;
   hasJoined: boolean;
   isCreator: boolean;
   canConfirm: boolean;
-  hasStarted: boolean;
+  canCheckIn: boolean;
   showEditContentAction: boolean;
   showModifyStatusAction: boolean;
   showCheckInFollowup: boolean;

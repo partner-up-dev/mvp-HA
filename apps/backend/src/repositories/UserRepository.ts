@@ -68,4 +68,40 @@ export class UserRepository {
       .returning();
     return result[0] ?? null;
   }
+
+  async updateNickname(userId: UserId, nickname: string | null) {
+    const result = await db
+      .update(users)
+      .set({
+        nickname,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async updateAvatar(userId: UserId, avatar: string | null) {
+    const result = await db
+      .update(users)
+      .set({
+        avatar,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async bindOpenId(userId: UserId, openId: string) {
+    const result = await db
+      .update(users)
+      .set({
+        openId,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0] ?? null;
+  }
 }

@@ -64,6 +64,7 @@ const {
 } = useShareToWechatChat({
   prId: props.prId,
   shareUrl: props.shareUrl,
+  spmRouteKey: props.spmRouteKey,
   prData: props.prData,
   t,
 });

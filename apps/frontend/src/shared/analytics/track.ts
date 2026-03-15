@@ -5,6 +5,8 @@ import type {
   LegacyAnalyticsEventName,
 } from "@/shared/analytics/events";
 import { LEGACY_ANALYTICS_EVENT_NAME_MAP } from "@/shared/analytics/events";
+import { resolveCurrentSpmAttribution } from "@/shared/analytics/spm-attribution";
+import { sanitizeSpmValue } from "@/shared/url/spm";
 import { client } from "@/lib/rpc";
 
 type AnalyticsEventRecord<
@@ -46,6 +48,36 @@ const asRecord = (value: unknown): Record<string, unknown> => {
     return value as Record<string, unknown>;
   }
   return {};
+};
+
+const shouldAttachCurrentSpm = (path: string): boolean => {
+  return !path.startsWith("/admin");
+};
+
+const withCurrentSpm = (
+  payload: Record<string, unknown>,
+  path: string,
+): Record<string, unknown> => {
+  const explicitSpm =
+    typeof payload.spm === "string" ? sanitizeSpmValue(payload.spm) : null;
+  if (explicitSpm) {
+    return {
+      ...payload,
+      spm: explicitSpm,
+    };
+  }
+
+  if (!shouldAttachCurrentSpm(path)) {
+    return payload;
+  }
+
+  const currentSpm = resolveCurrentSpmAttribution();
+  if (!currentSpm) return payload;
+
+  return {
+    ...payload,
+    spm: currentSpm,
+  };
 };
 
 const isLegacyEventName = (
@@ -190,12 +222,13 @@ export const trackEvent = <TEvent extends AnalyticsEventName>(
 ): void => {
   const canonicalEvent = toCanonicalEventName(event);
   const occurredAt = new Date().toISOString();
-  const payloadRecord = asRecord(payload);
+  const currentPath = getCurrentPath();
+  const payloadRecord = withCurrentSpm(asRecord(payload), currentPath);
   const record: AnalyticsEventRecord<CanonicalAnalyticsEventName> = {
     event: canonicalEvent,
     payload: payloadRecord,
     at: occurredAt,
-    path: getCurrentPath(),
+    path: currentPath,
   };
 
   setupTransportLifecycleHooks();

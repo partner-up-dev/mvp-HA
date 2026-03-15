@@ -162,11 +162,17 @@ const handleDismiss = () => {
 }
 
 .nudge-action--ghost {
-  @include mx.pu-pill-action(outline-neutral, compact);
+  @include mx.pu-pill-action(outline-transparent);
+  border-color: var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container-low);
+  min-height: auto;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
 }
 
 .nudge-action--primary {
-  @include mx.pu-pill-action(solid-primary, compact);
+  @include mx.pu-pill-action(solid-primary);
+  min-height: auto;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
 }
 
 .nudge-fade-enter-active,

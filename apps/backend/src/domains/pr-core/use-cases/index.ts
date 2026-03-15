@@ -7,5 +7,5 @@ export { getMyCreatedPRs } from "./get-my-created-prs";
 export { getMyJoinedPRs } from "./get-my-joined-prs";
 export { updatePRStatus } from "./update-pr-status";
 export { updatePRContent } from "./update-pr-content";
-export { joinPR } from "./join-pr";
-export { exitPR } from "./exit-pr";
+export { joinPR, joinPRAsUser } from "./join-pr";
+export { exitPR, exitPRByUserId } from "./exit-pr";

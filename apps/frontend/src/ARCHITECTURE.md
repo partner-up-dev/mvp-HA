@@ -146,6 +146,16 @@ Examples:
 - PR creation flow
 - share flow
 
+### Server-Derived Stateful View Model
+
+If UI state depends on temporal rules, policy windows, or backend-owned domain transitions, prefer a server-derived view model over recomputing the rules in page code.
+
+Examples:
+
+- partner participation availability
+- deadline-driven CTA states
+- status explanations that depend on booking / confirmation policy
+
 ### Model
 
 A model module owns meaning transformation.

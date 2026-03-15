@@ -18,8 +18,11 @@
 
 @mixin pu-pill-badge($profile: primary) {
   width: fit-content;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xs) var(--sys-spacing-med);
   border-radius: 999px;
+  font-size: var(--sys-typo-label-large-size);
+  font-weight: var(--sys-typo-label-large-weight);
+  line-height: var(--sys-typo-label-large-line-height);
 
   @if $profile == primary {
     background: fn.sys-var(color, primary-container);
@@ -50,11 +53,14 @@
   @if $size == default {
     min-height: var(--sys-size-large);
     padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+    font-size: var(--sys-typo-label-large-size);
+    font-weight: var(--sys-typo-label-large-weight);
+    line-height: var(--sys-typo-label-large-line-height);
   } @else if $size == small {
     padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  } @else if $size == compact {
-    min-height: var(--sys-size-large);
-    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+    font-size: var(--sys-typo-label-medium-size);
+    font-weight: var(--sys-typo-label-medium-weight);
+    line-height: var(--sys-typo-label-medium-line-height);
   } @else if $size == large {
     min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
     padding: var(--sys-spacing-sm) var(--sys-spacing-med);
@@ -62,36 +68,19 @@
     @error "Unknown pill action size `#{$size}`.";
   }
 
-  @if $profile == soft-primary {
-    color: fn.sys-var(color, primary);
-    border-color: color-mix(in srgb, fn.sys-var(color, primary) 45%, transparent);
-    background: color-mix(in srgb, fn.sys-var(color, primary) 12%, transparent);
-  } @else if $profile == soft-neutral {
-    color: fn.sys-var(color, on-surface-variant);
-    border-color: color-mix(in srgb, fn.sys-var(color, outline) 50%, transparent);
-    background: color-mix(
-      in srgb,
-      fn.sys-var(color, surface-container-low) 60%,
-      transparent
-    );
-  } @else if $profile == solid-primary {
+  @if $profile == solid-primary {
     background: fn.sys-var(color, primary);
     color: fn.sys-var(color, on-primary);
   } @else if $profile == solid-secondary {
     background: fn.sys-var(color, secondary);
     color: fn.sys-var(color, on-secondary);
-  } @else if $profile == outline-neutral {
-    background: fn.sys-var(color, surface-container-low);
-    border-color: fn.sys-var(color, outline-variant);
-    color: fn.sys-var(color, on-surface);
   } @else if $profile == outline-transparent {
     background: transparent;
     border-color: fn.sys-var(color, outline);
     color: fn.sys-var(color, on-surface);
-  } @else if $profile == outline-danger {
+  } @else if $profile == transparent {
     background: transparent;
-    border-color: fn.sys-var(color, error);
-    color: fn.sys-var(color, error);
+    color: fn.sys-var(color, on-surface);
   } @else {
     @error "Unknown pill action profile `#{$profile}`.";
   }
@@ -104,7 +93,7 @@
     border-radius: var(--sys-radius-med);
     border: 1px solid fn.sys-var(color, outline-variant);
     color: fn.sys-var(color, on-surface);
-    background: color-mix(in srgb, fn.sys-var(color, surface) 88%, white);
+    background: fn.sys-var(color, surface);
   } @else if $profile == compact-surface {
     width: 100%;
     padding: var(--sys-spacing-sm);
@@ -121,25 +110,16 @@
   @if $profile == admin-login {
     overflow: hidden;
     border-radius: var(--dcs-surface-panel-radius-large);
-    border: 1px solid
-      color-mix(
-        in srgb,
-        fn.sys-var(color, primary) 24%,
-        fn.sys-var(color, outline-variant)
-      );
+    border: 1px solid fn.sys-var(color, outline-variant);
     background:
       radial-gradient(
         circle at top left,
-        color-mix(in srgb, fn.sys-var(color, primary) 18%, transparent),
+        fn.sys-var(color, primary-container),
         transparent 42%
       ),
       linear-gradient(
         180deg,
-        color-mix(
-          in srgb,
-          fn.sys-var(color, surface) 82%,
-          fn.sys-var(color, surface-container-high)
-        ),
+        fn.sys-var(color, surface),
         fn.sys-var(color, surface-container)
       );
     box-shadow: var(--sys-shadow-2);
@@ -150,11 +130,7 @@
   } @else if $profile == subtle-inset {
     border-radius: var(--sys-radius-lg);
     border: 1px solid fn.sys-var(color, outline-variant);
-    background: color-mix(
-      in srgb,
-      fn.sys-var(color, surface) 72%,
-      fn.sys-var(color, surface-container)
-    );
+    background: fn.sys-var(color, surface);
   } @else {
     @error "Unknown surface panel profile `#{$profile}`.";
   }
@@ -163,12 +139,17 @@
 @mixin pu-surface-card($profile: section) {
   @if $profile == section {
     padding: var(--sys-spacing-med);
-    border-radius: var(--sys-radius-lg);
+    border-radius: var(--sys-radius-med);
     background: fn.sys-var(color, surface-container);
   } @else if $profile == inset-high {
     padding: var(--sys-spacing-sm);
-    border-radius: var(--sys-radius-med);
+    border-radius: var(--sys-radius-sm);
     background: fn.sys-var(color, surface-container-high);
+  } @else if $profile == outline {
+    padding: var(--sys-spacing-sm);
+    border-radius: var(--sys-radius-sm);
+    background: transparent;
+    border: 1px solid fn.sys-var(color, outline);
   } @else {
     @error "Unknown surface card profile `#{$profile}`.";
   }
@@ -203,16 +184,8 @@
 
   @if $state == default {
   } @else if $state == active {
-    border-color: color-mix(
-      in srgb,
-      fn.sys-var(color, primary) 45%,
-      fn.sys-var(color, outline-variant)
-    );
-    background: color-mix(
-      in srgb,
-      fn.sys-var(color, primary) 12%,
-      $surface-bg
-    );
+    border-color: fn.sys-var(color, primary);
+    background: $surface-bg;
   } @else {
     @error "Unknown selection card state `#{$state}`.";
   }

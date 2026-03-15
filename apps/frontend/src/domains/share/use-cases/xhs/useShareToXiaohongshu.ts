@@ -8,6 +8,10 @@ import { useGeneratePoster } from "@/domains/share/use-cases/poster/useGenerateP
 import { renderPosterHtmlToBlob } from "@/domains/share/use-cases/poster/renderHtmlPoster";
 import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
+import {
+  buildProductShareUrl,
+  type ShareSpmRouteKey,
+} from "@/shared/url/spm";
 import { client } from "@/lib/rpc";
 import { copyToClipboard } from "@/lib/clipboard";
 import {
@@ -23,6 +27,7 @@ type Translate = (key: string) => string;
 type UseShareToXiaohongshuOptions = {
   prId: PRId;
   shareUrl: string;
+  spmRouteKey: ShareSpmRouteKey;
   prData: PRShareData;
   t: Translate;
 };
@@ -39,6 +44,7 @@ const isRemoteUrl = (url: string): boolean =>
 export const useShareToXiaohongshu = ({
   prId,
   shareUrl,
+  spmRouteKey,
   prData,
   t,
 }: UseShareToXiaohongshuOptions) => {
@@ -61,6 +67,15 @@ export const useShareToXiaohongshu = ({
   const { openXiaohongshu } = useAppScheme();
 
   const inWeChatBrowser = computed(() => isWeChatBrowser());
+  const taggedShareUrl = computed(() =>
+    buildProductShareUrl({
+      rawUrl: shareUrl,
+      baseHref:
+        typeof window === "undefined" ? "http://localhost/" : window.location.href,
+      routeKey: spmRouteKey,
+      methodKey: "xiaohongshu",
+    }),
+  );
 
   const copyButtonLabel = computed(() => {
     if (copyState.value === "copied") return t("common.copied");
@@ -275,7 +290,10 @@ export const useShareToXiaohongshu = ({
 
   const handleCopyCaptionWithUrl = async (): Promise<void> => {
     try {
-      const content = formatCaptionWithUrl(caption.value?.caption || "", shareUrl);
+      const content = formatCaptionWithUrl(
+        caption.value?.caption || "",
+        taggedShareUrl.value,
+      );
       await copyToClipboard(content);
       flashState("copied");
     } catch (error) {

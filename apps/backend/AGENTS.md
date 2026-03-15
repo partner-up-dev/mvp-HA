@@ -92,16 +92,16 @@ src/
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
 - 参与与流转: 支持加入/退出；达到最小人数自动转为 `READY`，达到最大人数自动转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。
 - 参与数据模型: 已迁移为 `minPartners` / `maxPartners` + `partners: partnerId[]`，并新增 `Partner`（含 `status`: `JOINED/CONFIRMED/RELEASED/ATTENDED`）用于 slot 级参与者标识。
-- 用户最小模型: 新增 `users` 表（`openid` 唯一绑定，含 `nickname/sex/avatar` + `ACTIVE/DISABLED`）；新用户首次微信登录会拉取并保存资料，join/exit 时会校验微信会话并绑定到 `partner.userId`。
+- 用户最小模型: 新增 `users` 表（`openid` 唯一绑定，含 `nickname/sex/avatar` + `ACTIVE/DISABLED`）；Community PR 加入可复用本地用户 / PIN 账户并在首次加入时自动创建本地用户，Anchor PR join/exit/confirm/check-in 仍依赖微信会话并绑定到 `partner.userId`。
 - 确认机制（5.2）: 新增 `/api/pr/:id/confirm`；`T-1h` 自动释放未确认 `JOINED` 槽位，`T-1h~T-30min` 加入即自动确认，`T-30min` 后禁止 join。
-- 公众号提醒（5.2）: 新增 `GET/POST /api/wechat/reminders/subscription`；开启后为已加入槽位调度 `T-24h/T-2h` 任务（优先服务号订阅通知 `message/subscribe/bizsend`，模板消息通道保留兜底），退出/释放/关闭提醒会删除待执行任务，发送结果落库 `notification_deliveries`。
+- 公众号提醒（5.2）: 新增 `GET/POST /api/wechat/reminders/subscription`；当前仅 Anchor PR 参与会调度 `T-24h/T-2h` 任务（优先服务号订阅通知 `message/subscribe/bizsend`，模板消息通道保留兜底），退出/释放/关闭提醒会删除待执行任务，发送结果落库 `notification_deliveries`。
 - 签到回流（5.3）: 新增 `/api/pr/:id/check-in`，记录 `didAttend` / `wouldJoinAgain`，到场时槽位置为 `ATTENDED`。
 - 分享能力: 提供小红书文案/海报与微信缩略图生成能力，并支持缓存到后端。
 - 公共配置能力: 提供 `/api/config/public/:key` 只读配置查询（当前支持 `author_wechat_qr_code`、`wecom_staff_link`、`wecom_service_qr_code`、`wecom_support_link_wechat_in`、`wecom_support_link_wechat_out`）。
 - 领域拆分与用例化 (INFRA-01): `PartnerRequestService` 已拆分为独立 use-case 函数（`createPRFromNaturalLanguage`、`createPRFromStructured`、`joinPR`、`exitPR`、`confirmSlot`、`checkIn`、`updatePRStatus`、`updatePRContent` 等），业务规则归位到 `domains/pr-core/services/`（time-window、status-rules、slot-management）。原 `PartnerRequestService` 保留为薄 facade 以兼容存量调用方。
 - Outbox 事件骨架: 新增 `domain_events` 与 `outbox_events`（含 `operation_logs`）表；所有关键动作（create/join/exit/confirm/check-in/status-change/content-update）写出领域事件到 outbox。Outbox 消费支持请求尾批处理，并采用行锁 claim 防重复领取。
 - 任务执行框架 : `JobRunner` 已升级为 DB-backed 执行器（支持延迟/一次性任务、tolerance 窗口、租约与重试）；提供 `/internal/jobs/tick` 供外部定时触发，并支持请求尾 best-effort 补偿执行。
-- 统一埋点 SDK 后端接入: `POST /api/analytics/events` 批量接收埋点并落库到 `domain_events`，支持旧事件名迁移映射（join/confirm/check-in/share）与衍生指标事件丢弃（`share_converted`/`repeat_join_14d`）。
+- 统一埋点 SDK 后端接入: `POST /api/analytics/events` 批量接收埋点并落库到 `domain_events`，支持旧事件名迁移映射（join/confirm/check-in/share）与衍生指标事件丢弃（`share_converted`/`repeat_join_14d`）；原始 payload 保留前端传入的 `spm` 分享归因字段供后续分析。
 - Analytics 聚合任务: 新增 `analytics.aggregate.daily` JobRunner 任务，按 `UTC+8`（`Asia/Shanghai`）生成 `analytics_daily_anchor`、`analytics_daily_community`、`scenario_type_metrics`。
 - 运营日志基础能力: 新增 `operation_logs` 表与 `operationLogService.log()` 通用写入接口；每个领域动作自动附带操作日志。
 

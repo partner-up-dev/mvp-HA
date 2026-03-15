@@ -13,6 +13,7 @@ import {
   type PRId,
   type VisibilityStatus,
 } from "../entities/partner-request";
+import type { AnchorPartnerRequest as AnchorPR } from "../entities/anchor-partner-request";
 
 export type AnchorPRRecord = {
   root: PartnerRequest;
@@ -141,5 +142,38 @@ export class AnchorPRRepository {
       .update(anchorPartnerRequests)
       .set({ visibilityStatus })
       .where(eq(anchorPartnerRequests.prId, prId));
+  }
+
+  async updateParticipationPolicy(
+    prId: PRId,
+    data: Pick<
+      AnchorPR,
+      | "confirmationStartOffsetMinutes"
+      | "confirmationEndOffsetMinutes"
+      | "joinLockOffsetMinutes"
+    >,
+  ): Promise<AnchorPartnerRequest | null> {
+    const result = await db
+      .update(anchorPartnerRequests)
+      .set({
+        confirmationStartOffsetMinutes: data.confirmationStartOffsetMinutes,
+        confirmationEndOffsetMinutes: data.confirmationEndOffsetMinutes,
+        joinLockOffsetMinutes: data.joinLockOffsetMinutes,
+      })
+      .where(eq(anchorPartnerRequests.prId, prId))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async updateBookingTriggeredAt(
+    prId: PRId,
+    bookingTriggeredAt: Date | null,
+  ): Promise<AnchorPartnerRequest | null> {
+    const result = await db
+      .update(anchorPartnerRequests)
+      .set({ bookingTriggeredAt })
+      .where(eq(anchorPartnerRequests.prId, prId))
+      .returning();
+    return result[0] ?? null;
   }
 }

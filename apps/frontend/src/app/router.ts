@@ -4,7 +4,9 @@ import {
   type RouteRecordRaw,
 } from "vue-router";
 import { trackEvent } from "@/shared/analytics/track";
+import { captureSpmAttributionFromUrl } from "@/shared/analytics/spm-attribution";
 import HomePage from "@/pages/HomePage.vue";
+import MePage from "@/pages/MePage.vue";
 import MyPRsPage from "@/pages/MyPRsPage.vue";
 import CommunityPRPage from "@/pages/CommunityPRPage.vue";
 import CommunityPRCreatePage from "@/pages/CommunityPRCreatePage.vue";
@@ -24,6 +26,14 @@ const routes: RouteRecordRaw[] = [
     path: "/",
     name: "home",
     component: HomePage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/me",
+    name: "me",
+    component: MePage,
     meta: {
       wechatSharePolicy: "route",
     },
@@ -171,6 +181,10 @@ const parsePositiveInt = (value: unknown): number | undefined => {
 };
 
 router.afterEach((to) => {
+  if (typeof window !== "undefined") {
+    captureSpmAttributionFromUrl(window.location.href);
+  }
+
   trackEvent("page_view", {
     page: to.fullPath,
     routeName: typeof to.name === "string" ? to.name : undefined,

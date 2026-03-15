@@ -6,6 +6,10 @@ import { renderPosterHtmlToBlob } from "@/domains/share/use-cases/poster/renderH
 import { useGenerateWechatThumbPoster } from "@/domains/share/use-cases/poster/useGenerateWechatThumbPoster";
 import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 import { useWeChatShareCard } from "@/shared/wechat/useWeChatShareCard";
+import {
+  buildProductShareUrl,
+  type ShareSpmRouteKey,
+} from "@/shared/url/spm";
 import { client } from "@/lib/rpc";
 
 type Translate = (key: string) => string;
@@ -13,6 +17,7 @@ type Translate = (key: string) => string;
 type UseShareToWechatChatOptions = {
   prId: PRId;
   shareUrl: string;
+  spmRouteKey: ShareSpmRouteKey;
   prData: PRShareData;
   t: Translate;
 };
@@ -52,6 +57,7 @@ const toShareDescriptionFallback = (
 export const useShareToWechatChat = ({
   prId,
   shareUrl,
+  spmRouteKey,
   prData,
   t,
 }: UseShareToWechatChatOptions) => {
@@ -105,6 +111,15 @@ export const useShareToWechatChat = ({
   };
 
   const shareTitle = computed(() => buildShareTitle());
+  const taggedShareUrl = computed(() =>
+    buildProductShareUrl({
+      rawUrl: shareUrl,
+      baseHref:
+        typeof window === "undefined" ? "http://localhost/" : window.location.href,
+      routeKey: spmRouteKey,
+      methodKey: "wechat_share",
+    }),
+  );
   const shareDescPreview = computed(() => {
     if (!shareDesc.value) return t("share.wechat.generating");
     const text = shareDesc.value.replace(/\s+/g, " ").trim();
@@ -173,7 +188,7 @@ export const useShareToWechatChat = ({
       await updateWeChatShareCard({
         title: shareTitle.value,
         desc: shareDesc.value || t("home.subtitle"),
-        link: shareUrl,
+        link: taggedShareUrl.value,
         imgUrl: thumbnailUrl,
       });
 
@@ -227,7 +242,7 @@ export const useShareToWechatChat = ({
         await updateWeChatShareCard({
           title: shareTitle.value,
           desc: shareDesc.value || t("home.subtitle"),
-          link: shareUrl,
+          link: taggedShareUrl.value,
           imgUrl: cached.posterUrl,
         });
         return;

@@ -14,10 +14,6 @@ import type {
 } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import {
-  shouldAutoConfirmImmediately,
-  isJoinLockedByTime,
-} from "./time-window.service";
-import {
   deriveStatusFromPartnerCount,
   shouldRecalculateCapacityStatus,
 } from "./status-rules";
@@ -74,17 +70,12 @@ export async function initializeSlotsForPR(
   minPartners: number | null,
   maxPartners: number | null,
   creatorUserId: UserId | null,
-  timeWindow: PartnerRequestFields["time"],
+  _timeWindow: PartnerRequestFields["time"],
 ): Promise<void> {
   const desired = resolveDesiredSlotCount(minPartners, maxPartners);
 
   if (creatorUserId) {
-    const creatorStatus: PartnerStatus =
-      prKind === "ANCHOR" &&
-      (shouldAutoConfirmImmediately(timeWindow) ||
-        isJoinLockedByTime(timeWindow))
-        ? "CONFIRMED"
-        : "JOINED";
+    const creatorStatus: PartnerStatus = "JOINED";
     await partnerRepo.createSlot({
       prId,
       userId: creatorUserId,

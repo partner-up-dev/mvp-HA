@@ -36,4 +36,7 @@ export const queryKeys = {
   wechat: {
     reminderSubscription: () => ["wechat", "reminder-subscription"] as const,
   },
+  user: {
+    me: () => ["user", "me"] as const,
+  },
 } as const;

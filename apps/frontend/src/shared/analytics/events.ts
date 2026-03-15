@@ -46,6 +46,7 @@ type PRContextPayload = {
   prKind?: PRKind;
   scenarioType?: string;
   actorId?: string;
+  spm?: string;
 };
 
 type CanonicalAnalyticsPayloadMap = {

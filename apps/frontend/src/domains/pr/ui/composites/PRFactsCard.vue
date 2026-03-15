@@ -16,7 +16,7 @@
       <slot name="location-extra" />
     </div>
 
-    <div class="field" v-if="shouldShowPartners">
+    <div class="field" v-if="showPartners && shouldShowPartners">
       <span class="label">{{ t("prCard.partners") }}</span>
       <span class="value">{{ formattedPartners }}</span>
     </div>
@@ -63,6 +63,7 @@ const props = defineProps<{
   preferences: string[];
   notes: string | null;
   rawText?: string | null;
+  showPartners?: boolean;
 }>();
 
 const { t } = useI18n();

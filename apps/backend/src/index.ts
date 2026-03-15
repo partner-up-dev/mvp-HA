@@ -11,6 +11,7 @@ import { partnerRequestRoute } from "./controllers/partner-request.controller";
 import { communityPRRoute } from "./controllers/community-pr.controller";
 import { anchorPRRoute } from "./controllers/anchor-pr.controller";
 import { authRoute } from "./controllers/auth.controller";
+import { userRoute } from "./controllers/user.controller";
 import { llmRoute } from "./controllers/llm.controller";
 import { uploadRoute } from "./controllers/upload.controller";
 import { wechatRoute } from "./controllers/wechat.controller";
@@ -120,6 +121,7 @@ app.onError((err, c) => {
 // Mount routes
 const routes = app
   .route("/api/auth", authRoute)
+  .route("/api/users", userRoute)
   .route("/api/pr", partnerRequestRoute)
   .route("/api/cpr", communityPRRoute)
   .route("/api/apr", anchorPRRoute)

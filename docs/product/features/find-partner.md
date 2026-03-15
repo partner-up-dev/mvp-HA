@@ -14,7 +14,7 @@
   - Hero 价值点 item1「从一句话开始」点击后展开内联自然语言创建表单（两行：NL 输入 + 发送）。
   - Event Highlights 卡片进入 `/events/:eventId`（活动详情）。
   - Event Plaza Entry 进入 `/events`。
-  - 次级动作区提供“去创建页”“我的搭子请求”入口。
+  - 次级动作区提供“去创建页”“我的”入口。
 - 首页不默认展开自然语言输入表单与结构化表单，仅在用户点击 item1 时按需展开轻量 NL 表单。
 - Community PR 创建页为 `/cpr/new`，融合两种创建方式：
   - 自然语言模式提交到 `/api/cpr/natural_language`。
@@ -28,12 +28,12 @@
 - 发布 `DRAFT` 时，系统会为创建者绑定用户身份并生成/确保用户 PIN（4 位数字）；`user-id` 与 `user-pin` 缓存在前端 localStorage。
 - 会话初始化：进入网页时自动调用 `/api/auth/session`。若已有本地 `user-id/user-pin`，则静默登录；若无凭据则保持匿名，第一次发布搭子请求时自动创建本地账户并登录。
 - 创建成功时系统会按 `min/max` 预创建 `partners` 槽位；对已发布请求会保证“创建者占用一个槽位”。
+- `/me` 作为个人中心：展示当前资料、微信绑定、公众号服务通知开关、本地 `user-id/user-pin`，并提供进入历史列表的入口。
 - `/pr/mine` 聚合展示“我创建的 / 我加入的”列表，列表项按 canonicalPath 跳转到 `/cpr/:id` 或 `/apr/:id`。
 - Community PR 详情页（`/cpr/:id`）支持：
   - 草稿发布
   - `join/exit`
   - 分享
-  - 提醒订阅
   - 创建者内容/状态编辑
 - Anchor PR 详情页（`/apr/:id`）支持：
   - `join/exit`
@@ -50,11 +50,11 @@
   - `T-30min` 后禁止加入（event locked）。
 - Anchor PR 详情页提供“确认参与”动作，调用 `POST /api/apr/:id/confirm` 使槽位进入 `CONFIRMED`（若尚未确认）。
 - Anchor PR 详情页提供可选签到反馈（我已到场 / 我未到场），调用 `POST /api/apr/:id/check-in`；`didAttend=true` 时槽位进入 `ATTENDED`。
-- Community PR 与 Anchor PR 详情页都提供“公众号提醒”开关，查询/更新接口为：
+- 仅 Anchor PR 详情页提供“公众号提醒”开关，查询/更新接口为：
   - `GET /api/wechat/reminders/subscription`
   - `POST /api/wechat/reminders/subscription`（`enabled: boolean`）
-- 开启提醒后，系统会为已加入槽位调度 `T-24h` 与 `T-2h` 提醒任务。
-- 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
+- 开启提醒后，系统会为已加入的 Anchor PR 槽位调度 `T-24h` 与 `T-2h` 提醒任务。
+- Anchor PR 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 - 创建者编辑规则：JWT `authenticated/service` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
 
@@ -64,15 +64,16 @@
 - 首页价值点 item1 点击后可展开轻量两行 NL 表单（第一行输入，第二行发送按钮）。
 - 首页存在 Event Highlights 与 Event Plaza Entry，且可分别跳转 `/events/:eventId` 与 `/events`。
 - 首页中段可触发“收藏网站 / 复制首页链接”提示（具备节流，避免重复打扰）。
-- 首页次级动作与底部导航包含“我的搭子请求”入口（`/pr/mine`）。
+- 首页次级动作与底部导航包含“我的”入口（`/me`）；`/me` 内再进入 `/pr/mine` 查看历史列表。
 - `/cpr/new` 页面存在头部、创建方式切换区；结构化模式下提供表单主体与页脚双动作按钮（保存/创建）。
 - 结构化创建请求命中 `POST /api/cpr`（请求体为 `PartnerRequestFields`），始终创建 `DRAFT`。
 - 自然语言创建请求命中 `POST /api/cpr/natural_language`，始终创建 `DRAFT`。
 - `POST /api/cpr/:id/publish` 仅允许发布 `DRAFT`，发布成功后返回创建者鉴权上下文（含 token，必要时含新生成 PIN）。
 - Anchor PR 不暴露手动创建页面；详情页主入口为 `/apr/:id`，预订与资助页为 `/apr/:id/booking-support`。
 - 新创建请求会按 `min/max` 创建槽位；当前参与人数由 `partners.pr_id` 下处于活跃状态的槽位动态聚合。
-- `POST /api/cpr/:id/join`、`POST /api/cpr/:id/exit`、`POST /api/apr/:id/join`、`POST /api/apr/:id/exit` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
-- `POST /api/apr/:id/confirm` 与 `POST /api/apr/:id/check-in` 同样强制微信登录态。
+- `POST /api/cpr/:id/join` 在当前无本地账户时会自动创建本地用户并返回鉴权上下文（含必要时新生成 PIN）。
+- `POST /api/cpr/:id/exit` 依赖本地账户鉴权上下文，不要求微信登录态。
+- `POST /api/apr/:id/join`、`POST /api/apr/:id/exit`、`POST /api/apr/:id/confirm`、`POST /api/apr/:id/check-in` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - `POST /api/wechat/reminders/subscription` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - 开启提醒后会创建具备 dedupe 的延迟任务；关闭提醒后会删除对应未执行任务并返回删除数量。
 - 提醒任务执行后会写入 `notification_deliveries`（包含 `result/errorCode/jobId`）。

@@ -68,7 +68,7 @@ Components may use existing shared recipes when the treatment is already central
 
 - CSS Variables prefixed with `--sys-`:
   - Colors: `--sys-color-primary`, `--sys-color-surface-container`, etc.
-  - Spacing: `--sys-spacing-xs`, `--sys-spacing-md`, etc.
+  - Spacing: `--sys-spacing-xs`, `--sys-spacing-med`, etc.
   - Radius: `--sys-radius-sm`, `--sys-radius-lg`, etc.
 
 Learn available tokens in `src/styles/_sys.scss`, governance rules in `src/styles/TOKEN-GOVERNANCE.md`, and shared recipes in `src/styles/_mixins.scss`.

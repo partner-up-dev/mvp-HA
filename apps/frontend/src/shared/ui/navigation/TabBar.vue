@@ -57,7 +57,7 @@ const handleSelect = (item: TabBarItem) => {
 
 .tab-bar__tab {
   @include mx.pu-font(label-medium);
-  @include mx.pu-pill-action(outline-transparent, small);
+  @include mx.pu-pill-action(outline-transparent, default);
   flex-shrink: 0;
   cursor: pointer;
   transition:

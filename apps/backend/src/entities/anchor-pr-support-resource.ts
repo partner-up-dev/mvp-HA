@@ -57,7 +57,9 @@ export const anchorPRSupportResources = pgTable(
       .notNull(),
     bookingRequired: boolean("booking_required").notNull().default(false),
     bookingHandledBy: text("booking_handled_by").$type<BookingHandledBy | null>(),
-    bookingDeadlineAt: timestamp("booking_deadline_at"),
+    bookingDeadlineAt: timestamp("booking_deadline_at", {
+      withTimezone: true,
+    }),
     bookingLocksParticipant: boolean("booking_locks_participant")
       .notNull()
       .default(false),

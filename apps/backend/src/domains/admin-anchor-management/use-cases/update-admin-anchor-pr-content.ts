@@ -5,6 +5,7 @@ import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBat
 import { updatePRContent } from "../../pr-core";
 import { normalizeLocationPool } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
+import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
 import type { PRId } from "../../../entities";
 
 const anchorPRRepo = new AnchorPRRepository();
@@ -19,6 +20,9 @@ export interface UpdateAdminAnchorPRContentInput {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  confirmationStartOffsetMinutes: number;
+  confirmationEndOffsetMinutes: number;
+  joinLockOffsetMinutes: number;
 }
 
 export async function updateAdminAnchorPRContent(
@@ -48,6 +52,11 @@ export async function updateAdminAnchorPRContent(
       });
     }
   }
+  validateAnchorParticipationPolicyOffsets({
+    confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: input.joinLockOffsetMinutes,
+  });
 
   const updated = await updatePRContent(
     prId,
@@ -65,6 +74,12 @@ export async function updateAdminAnchorPRContent(
     },
     null,
   );
+
+  await anchorPRRepo.updateParticipationPolicy(prId, {
+    confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: input.joinLockOffsetMinutes,
+  });
 
   await materializePRSupportResources({
     prId,

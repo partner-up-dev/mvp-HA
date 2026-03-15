@@ -25,26 +25,12 @@ export const useAnchorAttendanceActions = ({
   const checkInSlotMutation = useCheckInAnchorPRSlot();
   const pendingCheckInDidAttend = ref<boolean | null>(null);
 
-  const hasJoined = computed(() => pr.value?.core.myPartnerId !== null);
+  const hasJoined = computed(
+    () => pr.value?.partnerSection.viewer.isParticipant ?? false,
+  );
 
-  const hasStarted = computed(() => {
-    const startRaw = pr.value?.core.time[0];
-    if (!startRaw) return false;
-
-    const parsed = new Date(startRaw);
-    if (Number.isNaN(parsed.getTime())) return false;
-
-    return Date.now() >= parsed.getTime();
-  });
-
-  const canConfirm = computed(() => {
-    if (!pr.value || !pr.value.anchor.attendance.supportsConfirm) return false;
-    if (!hasJoined.value) return false;
-    if (pr.value.status === "EXPIRED" || pr.value.status === "CLOSED") {
-      return false;
-    }
-    return true;
-  });
+  const canConfirm = computed(() => pr.value?.partnerSection.viewer.canConfirm ?? false);
+  const canCheckIn = computed(() => pr.value?.partnerSection.viewer.canCheckIn ?? false);
 
   const checkInFollowupStatusLabel = computed(() => {
     if (pendingCheckInDidAttend.value === true) {
@@ -54,10 +40,7 @@ export const useAnchorAttendanceActions = ({
   });
 
   const showCheckInFollowup = computed(
-    () =>
-      hasJoined.value &&
-      hasStarted.value &&
-      pendingCheckInDidAttend.value !== null,
+    () => hasJoined.value && pendingCheckInDidAttend.value !== null,
   );
 
   const confirmPending = computed(() => confirmSlotMutation.isPending.value);
@@ -113,7 +96,7 @@ export const useAnchorAttendanceActions = ({
 
   return {
     canConfirm,
-    hasStarted,
+    canCheckIn,
     showCheckInFollowup,
     checkInFollowupStatusLabel,
     confirmPending,

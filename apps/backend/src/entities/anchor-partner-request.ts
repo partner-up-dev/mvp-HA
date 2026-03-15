@@ -1,5 +1,6 @@
 import {
   bigint,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -37,6 +38,16 @@ export const anchorPartnerRequests = pgTable("anchor_partner_requests", {
     .$type<VisibilityStatus>()
     .notNull()
     .default("VISIBLE"),
+  confirmationStartOffsetMinutes: integer("confirmation_start_offset_minutes")
+    .notNull()
+    .default(120),
+  confirmationEndOffsetMinutes: integer("confirmation_end_offset_minutes")
+    .notNull()
+    .default(30),
+  joinLockOffsetMinutes: integer("join_lock_offset_minutes")
+    .notNull()
+    .default(30),
+  bookingTriggeredAt: timestamp("booking_triggered_at"),
   autoHideAt: timestamp("auto_hide_at"),
 });
 

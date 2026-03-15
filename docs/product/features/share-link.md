@@ -8,6 +8,7 @@
 
 - 用户创建 Community PR 或打开自己的 Community PR / Anchor PR 页面。
 - 页面展示可分享的链接与“立即分享”操作。
+- 系统生成规范化公开链接，并附加 `spm=<route>.<method>` 归因参数（如 `community_pr.web_share`、`anchor_pr.web_share`）。
 - 优先调用 Web Share API 打开系统分享面板。
 - 若环境不支持或调用失败，回退为复制链接到剪贴板。
 
@@ -16,6 +17,7 @@
 - 支持 Web Share API 的环境可拉起系统分享面板。
 - 不支持或调用失败时可自动回退为复制链接。
 - 被分享者打开链接可进入对应的 `/cpr/:id` 或 `/apr/:id` 页面。
+- 若链接包含合法 `spm` 参数，前端会在当前会话内保留该归因并随后的埋点事件继续带出。
 
 ## 涉及端
 

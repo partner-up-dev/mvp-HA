@@ -4,6 +4,7 @@
 
 - 作为在微信内访问页面的用户，我希望系统自动尝试完成微信登录，而不是先进入登录页。
 - 作为产品方，我希望后端具备可复用的微信 OAuth 会话基础设施，为后续用户能力扩展打底。
+- 作为已拥有本地账户的用户，我希望能在“我的”页把当前账户绑定到微信，而不是切换成另一个账号。
 
 ## 流程
 
@@ -13,6 +14,10 @@
 - 若已配置且当前未登录，前端重定向到 `GET /api/wechat/oauth/login`，并携带当前页面地址作为 `returnTo`。
 - 后端生成并校验 OAuth state（签名 cookie），跳转微信授权地址（`snsapi_userinfo`）。
 - 微信回调 `GET /api/wechat/oauth/callback`，后端用 `code` 换取 `openid` + OAuth access token；若为新用户（`users.open_id` 不存在）会调用 `sns/userinfo` 拉取 `nickname/sex/avatar` 并落库，再签发 HttpOnly 会话 cookie，最后跳回 `returnTo` 页面。
+- “我的”页在微信内可调用 `GET /api/wechat/oauth/bind?returnTo=...` 发起绑定模式：
+  - 前端先用当前 Bearer token 请求该接口，后端把 `bindUserId + returnTo + mode=bind` 写入签名 state cookie，并返回微信授权地址。
+  - 回调 `GET /api/wechat/oauth/callback` 在 `mode=bind` 时不会切换账户，只会把回调得到的 `openid` 绑定到当前本地账户。
+  - 若该 `openid` 已绑定其他用户，则绑定失败，回跳 `returnTo` 并附带 `wechatBind=conflict`；系统不做自动合并。
 - 需要清理会话时，前端可调用 `POST /api/wechat/oauth/logout`。
 - 参与相关接口会强制校验该会话 cookie，未登录不可执行：
   - Community PR：`/api/cpr/:id/join`、`/api/cpr/:id/exit`
@@ -23,9 +28,12 @@
 - 无需新增登录页/注册页/用户页。
 - 微信内访问页面时，应用会自动尝试登录。
 - 后端提供会话查询、登录跳转、回调换取、登出清理四个接口。
+- 后端额外提供绑定入口 `GET /api/wechat/oauth/bind`，并复用同一个 `/api/wechat/oauth/callback` 处理 bind 模式。
 - 后端在 join/exit 场景必须校验会话有效期并读取 `openid` 绑定用户；Anchor PR 的 confirm/check-in 也同样强制校验。
 - 新用户首次微信登录时，后端会一次性保存用户资料字段：`nickname`、`sex`、`avatar`。
 - 已存在用户重复登录时，不重复拉取并覆盖用户资料。
+- 绑定模式不会覆盖当前用户已手动修改的昵称与头像。
+- 绑定模式若命中已被占用的 `openid`，必须失败返回，且两个账户都不发生变更。
 - OAuth state 与会话 token 均为签名数据，不允许明文可篡改。
 - 已登录用户重复进入页面时不会再次触发授权跳转。
 - 未配置微信 OAuth 所需环境变量时，系统不会进入重定向死循环。

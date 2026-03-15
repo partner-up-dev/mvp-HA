@@ -21,6 +21,7 @@ import { PartnerRequestRepository } from "../repositories/PartnerRequestReposito
 import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mutation-auth.service";
 import { HTTPException } from "hono/http-exception";
 import {
+  getAuthenticatedUserId,
   prIdParamSchema,
   requireAuthenticatedOpenId,
   tryReadAuthenticatedOpenId,
@@ -51,7 +52,8 @@ export const anchorPRRoute = app
   .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     const openId = await tryReadAuthenticatedOpenId(c);
-    const result = await getAnchorPRDetail(id, openId);
+    const userId = getAuthenticatedUserId(c);
+    const result = await getAnchorPRDetail(id, { userId, openId });
     return c.json(result);
   })
   .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {

@@ -6,7 +6,24 @@ import {
 } from "../entities/partner";
 import type { PRId } from "../entities/partner-request";
 import type { UserId } from "../entities/user";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { users } from "../entities/user";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  sql,
+} from "drizzle-orm";
+
+export type ActiveParticipantSummary = {
+  partnerId: PartnerId;
+  status: Extract<PartnerStatus, "JOINED" | "CONFIRMED" | "ATTENDED">;
+  userId: UserId | null;
+  nickname: string | null;
+  avatar: string | null;
+};
 
 export class PartnerRepository {
   async findById(id: PartnerId) {
@@ -71,6 +88,36 @@ export class PartnerRepository {
       )
       .orderBy(asc(partners.id));
     return rows.map((row) => row.id);
+  }
+
+  async listActiveParticipantSummariesByPrId(
+    prId: PRId,
+  ): Promise<ActiveParticipantSummary[]> {
+    const rows = await db
+      .select({
+        partnerId: partners.id,
+        status: partners.status,
+        userId: partners.userId,
+        nickname: users.nickname,
+        avatar: users.avatar,
+      })
+      .from(partners)
+      .leftJoin(users, eq(users.id, partners.userId))
+      .where(
+        and(
+          eq(partners.prId, prId),
+          inArray(partners.status, ["JOINED", "CONFIRMED", "ATTENDED"]),
+        ),
+      )
+      .orderBy(asc(partners.id));
+
+    return rows.map((row) => ({
+      partnerId: row.partnerId,
+      status: row.status as Extract<PartnerStatus, "JOINED" | "CONFIRMED" | "ATTENDED">,
+      userId: row.userId,
+      nickname: row.nickname,
+      avatar: row.avatar,
+    }));
   }
 
   async countActiveByPrId(prId: PRId): Promise<number> {

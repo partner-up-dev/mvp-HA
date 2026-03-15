@@ -6,6 +6,7 @@ import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { normalizeLocationPool } from "../../../entities/anchor-event";
+import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
 import type {
   AnchorPartnerRequest,
   AnchorEventBatchId,
@@ -25,6 +26,9 @@ export interface CreateAdminAnchorPRInput {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  confirmationStartOffsetMinutes: number;
+  confirmationEndOffsetMinutes: number;
+  joinLockOffsetMinutes: number;
 }
 
 export interface CreateAdminAnchorPROutput {
@@ -52,6 +56,11 @@ export async function createAdminAnchorPR(
       message: "Anchor PR location must belong to the anchor event location pool",
     });
   }
+  validateAnchorParticipationPolicyOffsets({
+    confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: input.joinLockOffsetMinutes,
+  });
 
   const createdRoot = await prRepo.create({
     title: input.title,
@@ -71,6 +80,10 @@ export async function createAdminAnchorPR(
     anchorEventId: event.id,
     batchId: batch.id,
     visibilityStatus: "VISIBLE",
+    confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: input.joinLockOffsetMinutes,
+    bookingTriggeredAt: null,
     autoHideAt: null,
   });
 

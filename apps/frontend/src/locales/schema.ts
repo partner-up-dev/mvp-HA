@@ -13,6 +13,7 @@ export interface MessageSchema {
     close: string;
     backToHome: string;
     submit: string;
+    copy: string;
     copied: string;
     copyFailed: string;
     operationFailed: string;
@@ -248,6 +249,8 @@ export interface MessageSchema {
     wouldJoinAgainYes: string;
     wouldJoinAgainNo: string;
     slotJoined: string;
+    slotConfirmed: string;
+    slotAttended: string;
     slotNotJoined: string;
     editContent: string;
     modifyStatus: string;
@@ -288,6 +291,48 @@ export interface MessageSchema {
       enabledHint: string;
       disabledHint: string;
     };
+    partnerSection: {
+      title: string;
+      subtitleAnchor: string;
+      subtitleCommunity: string;
+      summaryCurrent: string;
+      summaryMin: string;
+      summaryMax: string;
+      summaryState: string;
+      readinessReady: string;
+      readinessFull: string;
+      readinessActive: string;
+      readinessUnavailable: string;
+      readinessNeedsMore: string;
+      unlimited: string;
+      notSet: string;
+      openHint: string;
+      joinedHint: string;
+      creatorHint: string;
+      blockedFull: string;
+      blockedJoinLocked: string;
+      blockedEventStarted: string;
+      blockedBookingLocked: string;
+      blockedConfirmWindow: string;
+      blockedAlreadyConfirmed: string;
+      blockedNotJoined: string;
+      blockedStatus: string;
+      blockedCheckIn: string;
+      rosterTitle: string;
+      rosterCount: string;
+      rosterEmpty: string;
+      rosterSelf: string;
+      rosterCreator: string;
+      rosterJoined: string;
+      rosterConfirmed: string;
+      rosterAttended: string;
+      timelineTitle: string;
+      timelineEventStart: string;
+      timelineConfirmationWindow: string;
+      timelineJoinLock: string;
+      timelineBookingDeadline: string;
+      timelineBookingTriggered: string;
+    };
   };
   createdPRList: {
     title: string;
@@ -306,6 +351,66 @@ export interface MessageSchema {
     joinedEmpty: string;
     loadFailed: string;
   };
+  mePage: {
+    title: string;
+    description: string;
+    loading: string;
+    authHint: string;
+    register: {
+      title: string;
+      action: string;
+      pending: string;
+    };
+    profile: {
+      title: string;
+      description: string;
+      wechatBound: string;
+      wechatUnbound: string;
+      avatarAlt: string;
+      avatarFallback: string;
+      nicknameLabel: string;
+      nicknamePlaceholder: string;
+      saveNickname: string;
+      savingNickname: string;
+      changeAvatar: string;
+      uploadingAvatar: string;
+    };
+    wechat: {
+      title: string;
+      authHint: string;
+      boundHint: string;
+      nonWechatHint: string;
+      unboundHint: string;
+      bindAction: string;
+      bindingAction: string;
+      boundAction: string;
+      bindSuccess: string;
+      bindConflict: string;
+      bindFailed: string;
+    };
+    reminder: {
+      title: string;
+      authHint: string;
+      authAction: string;
+      wechatOnlyAction: string;
+      unavailableAction: string;
+    };
+    credentials: {
+      title: string;
+      description: string;
+      userIdLabel: string;
+      userPinLabel: string;
+      missingUserId: string;
+      missingUserPin: string;
+      showPin: string;
+      hidePin: string;
+    };
+    history: {
+      title: string;
+      description: string;
+      action: string;
+    };
+  };
   dateTimeRangePicker: {
     defaultLabel: string;
     defaultHint: string;
@@ -315,6 +420,21 @@ export interface MessageSchema {
     endTimePlaceholder: string;
     clearTime: string;
     clear: string;
+  };
+  timelinePolicyPicker: {
+    title: string;
+    description: string;
+    confirmationStart: string;
+    confirmationEnd: string;
+    joinLock: string;
+    bookingDeadline: string;
+    confirmationStartMarker: string;
+    confirmationEndMarker: string;
+    joinLockMarker: string;
+    eventStart: string;
+    offsetMinutes: string;
+    offsetHours: string;
+    offsetHoursMinutes: string;
   };
   modifyStatusModal: {
     title: string;
@@ -478,6 +598,8 @@ export interface MessageSchema {
     bookingLocksParticipant: string;
     requiresTransfer: string;
     locationIds: string;
+    locationSelectorHint: string;
+    locationRequiredValidation: string;
     bookingHandledBy: string;
     noneOption: string;
     bookingDeadlineRule: string;
@@ -545,6 +667,11 @@ export interface MessageSchema {
     anchorPRLocationHint: string;
     anchorPRTimeHint: string;
     anchorPRContentLockedHint: string;
+    participationPolicyTitle: string;
+    participationPolicyDescription: string;
+    bookingTriggeredAtLabel: string;
+    policyValidationStartBeforeEnd: string;
+    policyValidationDeadlineAfterConfirmationEnd: string;
     saveAnchorPRAction: string;
     createAnchorPRAction: string;
     prListTitle: string;
@@ -600,6 +727,11 @@ export interface MessageSchema {
     fetchPublicConfigFailed: string;
     fetchWechatReminderSubscriptionFailed: string;
     updateWechatReminderSubscriptionFailed: string;
+    fetchCurrentUserProfileFailed: string;
+    updateCurrentUserProfileFailed: string;
+    updateCurrentUserAvatarFailed: string;
+    startWechatBindFailed: string;
+    registerLocalAccountFailed: string;
   };
   posterStyles: {
     fresh: string;

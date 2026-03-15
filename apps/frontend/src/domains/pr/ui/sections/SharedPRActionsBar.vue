@@ -1,9 +1,12 @@
 <template>
-  <section class="slot-state">
+  <section v-if="slotStateText" class="slot-state">
     <p class="slot-state-text">{{ slotStateText }}</p>
   </section>
 
-  <section class="actions">
+  <section
+    v-if="canJoin || canExit || showEditContentAction || showModifyStatusAction"
+    class="actions"
+  >
     <button
       v-if="canJoin"
       class="join-btn"
@@ -14,7 +17,7 @@
     </button>
 
     <button
-      v-if="hasJoined && !isCreator"
+      v-if="canExit"
       class="exit-btn"
       :disabled="exitPending"
       @click="emit('exit')"
@@ -45,11 +48,12 @@ import { useI18n } from "vue-i18n";
 
 defineProps<{
   canJoin: boolean;
+  canExit: boolean;
   hasJoined: boolean;
   isCreator: boolean;
   showEditContentAction: boolean;
   showModifyStatusAction: boolean;
-  slotStateText: string;
+  slotStateText?: string;
   joinPending: boolean;
   exitPending: boolean;
 }>();

@@ -79,6 +79,9 @@ export type AdminCreateAnchorPRInput = {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  confirmationStartOffsetMinutes: number;
+  confirmationEndOffsetMinutes: number;
+  joinLockOffsetMinutes: number;
 };
 
 export type AdminUpdateAnchorPRContentInput = {
@@ -89,6 +92,9 @@ export type AdminUpdateAnchorPRContentInput = {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  confirmationStartOffsetMinutes: number;
+  confirmationEndOffsetMinutes: number;
+  joinLockOffsetMinutes: number;
 };
 
 export type AdminUpdateAnchorPRStatusInput = {

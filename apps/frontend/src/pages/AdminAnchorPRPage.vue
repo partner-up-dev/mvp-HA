@@ -145,6 +145,15 @@
                 <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMinPartnersLabel") }}</span><input v-model.number="prForm.minPartners" class="field-input" type="number" :disabled="!canEditPRContent" /></label>
                 <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMaxPartnersLabel") }}</span><input v-model.number="prForm.maxPartners" class="field-input" type="number" :disabled="!canEditPRContent" /></label>
               </div>
+              <TimelinePolicyPicker
+                v-model="prPolicyValue"
+                :title="t('adminAnchorPR.participationPolicyTitle')"
+                :description="t('adminAnchorPR.participationPolicyDescription')"
+                :event-start-at="selectedBatch.timeWindow[0]"
+                :booking-deadline-at="selectedPR?.effectiveBookingDeadlineAt ?? null"
+                :disabled="!canEditPRContent"
+                :validation-message="policyValidationMessage"
+              />
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRPreferencesLabel") }}</span><input v-model="prForm.preferencesText" class="field-input" :disabled="!canEditPRContent" /></label>
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRNotesLabel") }}</span><textarea v-model="prForm.notes" class="field-input field-textarea" :disabled="!canEditPRContent"></textarea></label>
               <label class="field">
@@ -165,8 +174,11 @@
               </label>
               <p v-if="!hasLocationOptions" class="hint">{{ t("adminAnchorPR.anchorPRLocationHint") }}</p>
               <p class="hint">{{ t("adminAnchorPR.anchorPRTimeHint") }}</p>
+              <p v-if="selectedPR?.bookingTriggeredAt" class="hint">
+                {{ t("adminAnchorPR.bookingTriggeredAtLabel", { dateTime: formatDateTime(selectedPR.bookingTriggeredAt) }) }}
+              </p>
               <p v-if="!canEditPRContent" class="hint">{{ t("adminAnchorPR.anchorPRContentLockedHint") }}</p>
-              <button class="primary-btn" type="button" :disabled="isSavingPR || (isCreatingPR && !hasLocationOptions)" @click="handleSavePR">
+              <button class="primary-btn" type="button" :disabled="isSavingPR || (isCreatingPR && !hasLocationOptions) || Boolean(policyValidationMessage)" @click="handleSavePR">
                 {{ isSavingPR ? t("adminAnchorPR.saving") : (isCreatingPR ? t("adminAnchorPR.createAnchorPRAction") : t("adminAnchorPR.saveAnchorPRAction")) }}
               </button>
             </div>
@@ -197,7 +209,11 @@ import {
   type AdminAnchorWorkspaceResponse,
 } from "@/domains/admin/queries/useAdminAnchorManagement";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
-import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
+import {
+  formatLocalDateTimeValue,
+  formatLocalDateTimeWindowLabel,
+} from "@/shared/datetime/formatLocalDateTime";
+import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
 
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
@@ -205,11 +221,11 @@ type BatchRecord = EventRecord["batches"][number];
 type PRRecord = BatchRecord["prs"][number];
 type EventForm = { title: string; type: string; description: string; coverImage: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; locationPoolText: string };
 type BatchForm = { start: string; end: string; status: "OPEN" | "FULL" | "EXPIRED" };
-type PRForm = { title: string; type: string; location: string; minPartners: number | null; maxPartners: number | null; preferencesText: string; notes: string; status: "OPEN" | "READY" | "ACTIVE" | "CLOSED"; visibilityStatus: "VISIBLE" | "HIDDEN" };
+type PRForm = { title: string; type: string; location: string; minPartners: number | null; maxPartners: number | null; confirmationStartOffsetMinutes: number; confirmationEndOffsetMinutes: number; joinLockOffsetMinutes: number; preferencesText: string; notes: string; status: "OPEN" | "READY" | "ACTIVE" | "CLOSED"; visibilityStatus: "VISIBLE" | "HIDDEN" };
 
 const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", status: "ACTIVE", locationPoolText: "" });
 const emptyBatchForm = (): BatchForm => ({ start: "", end: "", status: "OPEN" });
-const emptyPRForm = (location = "", type = ""): PRForm => ({ title: "", type, location, minPartners: null, maxPartners: null, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
+const emptyPRForm = (location = "", type = ""): PRForm => ({ title: "", type, location, minPartners: null, maxPartners: null, confirmationStartOffsetMinutes: 120, confirmationEndOffsetMinutes: 30, joinLockOffsetMinutes: 30, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
 const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", status: event.status as EventForm["status"], locationPoolText: event.locationPool.join("\n") });
 const toBatchForm = (batch: BatchRecord): BatchForm => ({ start: batch.timeWindow[0] ?? "", end: batch.timeWindow[1] ?? "", status: batch.status as BatchForm["status"] });
 const toPRForm = (pr: PRRecord): PRForm => ({
@@ -218,6 +234,9 @@ const toPRForm = (pr: PRRecord): PRForm => ({
   location: pr.location ?? "",
   minPartners: pr.minPartners,
   maxPartners: pr.maxPartners,
+  confirmationStartOffsetMinutes: pr.confirmationStartOffsetMinutes,
+  confirmationEndOffsetMinutes: pr.confirmationEndOffsetMinutes,
+  joinLockOffsetMinutes: pr.joinLockOffsetMinutes,
   preferencesText: pr.preferences.join(", "),
   notes: pr.notes ?? "",
   status: pr.status as PRForm["status"],
@@ -259,6 +278,53 @@ const normalizeLines = (value: string): string[] => value.split("\n").map((entry
 const normalizeComma = (value: string): string[] => value.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
 const formatWindow = (windowValue: [string | null, string | null]) =>
   formatLocalDateTimeWindowLabel(windowValue, {}, "?");
+const formatDateTime = (value: string | null) =>
+  formatLocalDateTimeValue(value) ?? "-";
+
+const prPolicyValue = computed({
+  get: () => ({
+    confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
+  }),
+  set: (value) => {
+    prForm.value = {
+      ...prForm.value,
+      confirmationStartOffsetMinutes: value.confirmationStartOffsetMinutes,
+      confirmationEndOffsetMinutes: value.confirmationEndOffsetMinutes,
+      joinLockOffsetMinutes: value.joinLockOffsetMinutes,
+    };
+  },
+});
+
+const policyValidationMessage = computed(() => {
+  if (
+    prForm.value.confirmationStartOffsetMinutes <=
+    prForm.value.confirmationEndOffsetMinutes
+  ) {
+    return t("adminAnchorPR.policyValidationStartBeforeEnd");
+  }
+
+  const batchStartRaw = selectedBatch.value?.timeWindow[0] ?? null;
+  const batchStart = batchStartRaw ? new Date(batchStartRaw) : null;
+  const bookingDeadlineRaw = selectedPR.value?.effectiveBookingDeadlineAt ?? null;
+  const bookingDeadline = bookingDeadlineRaw ? new Date(bookingDeadlineRaw) : null;
+  if (
+    batchStart &&
+    !Number.isNaN(batchStart.getTime()) &&
+    bookingDeadline &&
+    !Number.isNaN(bookingDeadline.getTime())
+  ) {
+    const confirmationEndAt = new Date(
+      batchStart.getTime() - prForm.value.confirmationEndOffsetMinutes * 60 * 1000,
+    );
+    if (bookingDeadline.getTime() <= confirmationEndAt.getTime()) {
+      return t("adminAnchorPR.policyValidationDeadlineAfterConfirmationEnd");
+    }
+  }
+
+  return null;
+});
 
 watch([events, isAdmin, isCreatingEvent], ([nextEvents, adminReady, creating]) => {
   if (!adminReady || creating || nextEvents.length === 0) { if (!adminReady || nextEvents.length === 0) selectedEventIdRaw.value = ""; return; }
@@ -317,6 +383,9 @@ const handleSavePR = async () => {
         location: prForm.value.location,
         minPartners: prForm.value.minPartners,
         maxPartners: prForm.value.maxPartners,
+        confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
+        confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
+        joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
         preferences: normalizeComma(prForm.value.preferencesText),
         notes: prForm.value.notes.trim() || null,
       },
@@ -334,6 +403,9 @@ const handleSavePR = async () => {
         location: prForm.value.location,
         minPartners: prForm.value.minPartners,
         maxPartners: prForm.value.maxPartners,
+        confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
+        confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
+        joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
         preferences: normalizeComma(prForm.value.preferencesText),
         notes: prForm.value.notes.trim() || null,
       },

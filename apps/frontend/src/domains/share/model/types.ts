@@ -1,5 +1,6 @@
 import type { PRId } from "@partner-up-dev/backend";
 import type { PRFormFields } from "@/domains/pr/model/types";
+import type { ShareSpmRouteKey } from "@/shared/url/spm";
 
 export type XhsPosterSnapshot = {
   caption: string;
@@ -22,6 +23,7 @@ export type PRShareData = PRFormFields & {
 
 export type PRShareProps = {
   shareUrl: string;
+  spmRouteKey: ShareSpmRouteKey;
   prId: PRId;
   prData: PRShareData;
 };

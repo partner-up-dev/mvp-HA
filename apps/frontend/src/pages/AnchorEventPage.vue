@@ -92,9 +92,25 @@ const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
 
 const selectedBatchIndex = ref(0);
 
-const batchTabs = computed(() => {
+const sortedBatches = computed(() => {
   const batches = detail.value?.batches ?? [];
-  return batches.map((batch, index) => ({
+  return [...batches].sort((a, b) => {
+    const [aStart] = a.timeWindow;
+    const [bStart] = b.timeWindow;
+    const aTime = aStart
+      ? new Date(aStart).getTime()
+      : Number.POSITIVE_INFINITY;
+    const bTime = bStart
+      ? new Date(bStart).getTime()
+      : Number.POSITIVE_INFINITY;
+    const safeATime = Number.isFinite(aTime) ? aTime : Number.POSITIVE_INFINITY;
+    const safeBTime = Number.isFinite(bTime) ? bTime : Number.POSITIVE_INFINITY;
+    return safeATime - safeBTime;
+  });
+});
+
+const batchTabs = computed(() => {
+  return sortedBatches.value.map((batch, index) => ({
     key: index,
     label: formatBatchLabel(batch.timeWindow, index),
   }));
@@ -106,8 +122,7 @@ const handleBatchTabChange = (value: string | number) => {
 };
 
 const selectedBatch = computed(() => {
-  if (!detail.value?.batches) return null;
-  return detail.value.batches[selectedBatchIndex.value] ?? null;
+  return sortedBatches.value[selectedBatchIndex.value] ?? null;
 });
 
 const selectedBatchPoiIdsCsv = computed(() => {

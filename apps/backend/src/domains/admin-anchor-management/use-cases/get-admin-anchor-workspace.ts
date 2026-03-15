@@ -5,6 +5,7 @@ import {
   type AnchorPRRecord,
 } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
@@ -24,6 +25,11 @@ type AdminAnchorPRSummary = {
   preferences: string[];
   notes: string | null;
   partnerCount: number;
+  confirmationStartOffsetMinutes: number;
+  confirmationEndOffsetMinutes: number;
+  joinLockOffsetMinutes: number;
+  bookingTriggeredAt: string | null;
+  effectiveBookingDeadlineAt: string | null;
   createdAt: string;
 };
 
@@ -67,6 +73,12 @@ const toAdminAnchorPRSummary = async (
   preferences: [...record.root.preferences],
   notes: record.root.notes,
   partnerCount: await partnerRepo.countActiveByPrId(record.root.id),
+  confirmationStartOffsetMinutes: record.anchor.confirmationStartOffsetMinutes,
+  confirmationEndOffsetMinutes: record.anchor.confirmationEndOffsetMinutes,
+  joinLockOffsetMinutes: record.anchor.joinLockOffsetMinutes,
+  bookingTriggeredAt: record.anchor.bookingTriggeredAt?.toISOString() ?? null,
+  effectiveBookingDeadlineAt:
+    (await getEffectiveBookingDeadline(record.root.id))?.toISOString() ?? null,
   createdAt: record.root.createdAt.toISOString(),
 });
 

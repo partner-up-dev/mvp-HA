@@ -43,6 +43,7 @@ const envSchema = z.object({
 
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),
+  AVATARS_DIR: z.string().min(1).optional(),
 
   // Internal endpoint auth token for external job tick trigger.
   JOB_RUNNER_INTERNAL_TOKEN: z.string().min(1).optional(),
