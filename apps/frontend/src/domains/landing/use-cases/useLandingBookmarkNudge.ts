@@ -1,5 +1,5 @@
 import { onMounted, onUnmounted, ref } from "vue";
-import { isWeChatBrowser } from "@/lib/browser-detection";
+import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 
 const STORAGE_KEY = "__partner_up_home_bookmark_nudge_seen_date__";
 const TIME_TRIGGER_MS = 5_000;

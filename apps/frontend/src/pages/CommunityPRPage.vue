@@ -143,11 +143,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useHead } from "@unhead/vue";
 import { useI18n } from "vue-i18n";
-import type { PRId } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
@@ -163,42 +161,33 @@ import {
   useCommunityPR,
   usePublishCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
-import { useWeChatReminderSubscription } from "@/shared/wechat/queries/useWeChatReminderSubscription";
-import { useUpdateWeChatReminderSubscription } from "@/shared/wechat/queries/useUpdateWeChatReminderSubscription";
-import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 import {
   useUserSessionStore,
   type AuthSessionPayload,
-} from "@/stores/userSessionStore";
-import { useBodyScrollLock } from "@/lib/body-scroll-lock";
+} from "@/shared/auth/useUserSessionStore";
+import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
+import { usePRDetailHead } from "@/domains/pr/use-cases/usePRDetailHead";
+import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
+import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
+import { usePRReminderSubscription } from "@/domains/pr/use-cases/usePRReminderSubscription";
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
-import { isWeChatBrowser } from "@/lib/browser-detection";
 import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/useAutoWeChatLogin";
 import type { CommunityPRFormFields } from "@/domains/pr/model/types";
+import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import {
   formatLocalDateTimeValue,
   formatLocalDateTimeWindow,
-} from "@/lib/datetime";
+} from "@/shared/datetime/formatLocalDateTime";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
-const id = computed<PRId | null>(() => {
-  const rawId = Array.isArray(route.params.id)
-    ? route.params.id[0]
-    : route.params.id;
-  const parsed = Number(rawId);
-  return Number.isFinite(parsed) && parsed > 0 ? (parsed as PRId) : null;
-});
+const id = usePRRouteId();
 
 const { data, isLoading, error, refetch } = useCommunityPR(id);
 const prDetail = computed(() => data.value);
 const publishMutation = usePublishCommunityPR();
-const wechatReminderSubscriptionQuery = useWeChatReminderSubscription();
-const updateWechatReminderSubscriptionMutation =
-  useUpdateWeChatReminderSubscription();
 const userSessionStore = useUserSessionStore();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
@@ -217,25 +206,9 @@ const editableFields = computed<CommunityPRFormFields>(() => ({
   notes: prDetail.value?.core.notes ?? null,
 }));
 
-const locationId = computed(() => {
-  const location = prDetail.value?.core.location;
-  if (!location) return null;
-  const normalized = location.trim();
-  return normalized.length > 0 ? normalized : null;
-});
-const poiIdsCsv = computed(() => (locationId.value ? locationId.value : null));
-const { data: poisByIdsData } = usePoisByIds(poiIdsCsv);
-const locationGallery = computed(() => {
-  const targetLocationId = locationId.value;
-  if (!targetLocationId) return [];
-  const matchedPoi = (poisByIdsData.value ?? []).find(
-    (poi) => poi.id === targetLocationId,
-  );
-  if (!matchedPoi) return [];
-  return matchedPoi.gallery
-    .map((url) => url.trim())
-    .filter((url) => url.length > 0);
-});
+const { locationId, locationGallery } = usePRLocationGallery(
+  computed(() => prDetail.value?.core.location ?? null),
+);
 
 watch(locationId, () => {
   showLocationGalleryModal.value = false;
@@ -256,57 +229,10 @@ const isCreator = computed(() => {
   return userSessionStore.userId === createdBy;
 });
 
-const LIVE_POLL_INTERVAL_MS = 2_000;
-const LIVE_POLL_MAX_ATTEMPTS = 10;
-const livePollAttemptCount = ref(0);
-const livePollTimerId = ref<number | null>(null);
-const livePollInFlight = ref(false);
-const stopLivePolling = () => {
-  if (livePollTimerId.value !== null) {
-    window.clearInterval(livePollTimerId.value);
-    livePollTimerId.value = null;
-  }
-};
-const tickLivePolling = async () => {
-  if (id.value === null) return stopLivePolling();
-  if (livePollAttemptCount.value >= LIVE_POLL_MAX_ATTEMPTS) {
-    return stopLivePolling();
-  }
-  if (livePollInFlight.value) return;
-  livePollAttemptCount.value += 1;
-  livePollInFlight.value = true;
-  try {
-    await refetch();
-  } finally {
-    livePollInFlight.value = false;
-    if (livePollAttemptCount.value >= LIVE_POLL_MAX_ATTEMPTS) {
-      stopLivePolling();
-    }
-  }
-};
-const startLivePolling = () => {
-  if (id.value === null || livePollTimerId.value !== null) return;
-  livePollTimerId.value = window.setInterval(() => {
-    void tickLivePolling();
-  }, LIVE_POLL_INTERVAL_MS);
-};
-const resetLivePolling = () => {
-  livePollAttemptCount.value = 0;
-  if (id.value === null) return stopLivePolling();
-  if (livePollTimerId.value === null) startLivePolling();
-};
-
-watch(
+const { resetLivePolling } = usePRLivePolling({
   id,
-  (nextId) => {
-    stopLivePolling();
-    livePollAttemptCount.value = 0;
-    livePollInFlight.value = false;
-    if (nextId !== null) startLivePolling();
-  },
-  { immediate: true },
-);
-onBeforeUnmount(stopLivePolling);
+  refetch,
+});
 
 const sharedActions = useSharedPRActions({
   id,
@@ -316,52 +242,17 @@ const sharedActions = useSharedPRActions({
   onActionSuccess: resetLivePolling,
 });
 
-const isWeChatEnv = computed(() =>
-  typeof navigator === "undefined" ? false : isWeChatBrowser(),
-);
-const reminderConfigured = computed(
-  () => wechatReminderSubscriptionQuery.data.value?.configured ?? false,
-);
-const reminderAuthenticated = computed(
-  () => wechatReminderSubscriptionQuery.data.value?.authenticated ?? false,
-);
-const reminderEnabled = computed(
-  () => wechatReminderSubscriptionQuery.data.value?.enabled ?? false,
-);
-const reminderTogglePending = computed(
-  () => updateWechatReminderSubscriptionMutation.isPending.value,
-);
-const canToggleReminder = computed(
-  () =>
-    isWeChatEnv.value &&
-    reminderConfigured.value &&
-    reminderAuthenticated.value &&
-    !wechatReminderSubscriptionQuery.isLoading.value,
-);
-const reminderHintText = computed(() => {
-  if (!isWeChatEnv.value) return t("prPage.wechatReminder.nonWechatHint");
-  if (!reminderConfigured.value) {
-    return t("prPage.wechatReminder.unconfiguredHint");
-  }
-  if (!reminderAuthenticated.value) return t("prPage.wechatReminder.loginHint");
-  return reminderEnabled.value
-    ? t("prPage.wechatReminder.enabledHint")
-    : t("prPage.wechatReminder.disabledHint");
-});
-
-const handleToggleWechatReminder = async () => {
-  if (id.value === null || !isWeChatEnv.value) return;
-  if (!(await requireWeChatActionAuth(window.location.href))) return;
-
-  await updateWechatReminderSubscriptionMutation.mutateAsync({
-    enabled: !reminderEnabled.value,
-  });
-};
-
-const handleGoWechatLogin = () => {
-  if (typeof window === "undefined") return;
-  redirectToWeChatOAuthLogin(window.location.href);
-};
+const {
+  canToggleReminder,
+  handleGoWechatLogin,
+  handleToggleWechatReminder,
+  isWeChatEnv,
+  reminderAuthenticated,
+  reminderConfigured,
+  reminderEnabled,
+  reminderHintText,
+  reminderTogglePending,
+} = usePRReminderSubscription(id);
 
 const creationEntry = computed(() => {
   const raw = route.query.entry;
@@ -389,6 +280,7 @@ const handlePublishDraft = async () => {
 };
 
 const { shareUrl, prShareData } = usePRShareContext({ id, pr: prDetail });
+usePRDetailHead({ pr: prDetail, shareUrl });
 
 const formatDate = (dateStr: string) =>
   formatLocalDateTimeValue(dateStr) ?? dateStr;
@@ -402,29 +294,6 @@ const handleEditSuccess = () => {
 const goHome = () => {
   router.push("/");
 };
-
-const title = computed(() =>
-  prDetail.value?.title
-    ? t("prPage.metaTitleWithName", { title: prDetail.value.title })
-    : t("prPage.metaFallbackTitle"),
-);
-const description = computed(
-  () => prDetail.value?.core.type || t("prPage.metaFallbackDescription"),
-);
-useHead({
-  title,
-  meta: [
-    { name: "description", content: description },
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
-    { property: "og:type", content: "website" },
-    { property: "og:url", content: shareUrl },
-    { property: "og:site_name", content: t("app.siteName") },
-    { name: "twitter:card", content: "summary" },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
-  ],
-});
 </script>
 
 <style lang="scss" scoped>

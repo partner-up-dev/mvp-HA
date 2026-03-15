@@ -197,7 +197,7 @@ import {
   type AdminAnchorWorkspaceResponse,
 } from "@/domains/admin/queries/useAdminAnchorManagement";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
-import { formatLocalDateTimeWindowLabel } from "@/lib/datetime";
+import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];

@@ -3,7 +3,7 @@ import type { PartnerRequestSummary } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 import { i18n } from "@/locales/i18n";
-import { useUserSessionStore } from "@/stores/userSessionStore";
+import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 
 export const useMyCreatedPRs = () => {
   const userSessionStore = useUserSessionStore();

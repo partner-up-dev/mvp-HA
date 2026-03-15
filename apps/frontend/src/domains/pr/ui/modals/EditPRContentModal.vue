@@ -56,7 +56,7 @@ import { useUpdateCommunityPRContent } from "@/domains/pr/queries/useCommunityPR
 import {
   useUserSessionStore,
   type AuthSessionPayload,
-} from "@/stores/userSessionStore";
+} from "@/shared/auth/useUserSessionStore";
 import Modal from "@/shared/ui/overlay/Modal.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import PRForm from "@/domains/pr/ui/forms/PRForm.vue";

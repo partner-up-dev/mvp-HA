@@ -1,5 +1,5 @@
 import { onMounted } from "vue";
-import { isWeChatBrowser } from "@/lib/browser-detection";
+import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { client } from "@/lib/rpc";
 
 const OAUTH_SESSION_TIMEOUT_MS = 8000;

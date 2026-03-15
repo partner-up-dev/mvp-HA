@@ -55,7 +55,7 @@ import { Field, useForm } from "vee-validate";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
-import { useUserSessionStore } from "@/stores/userSessionStore";
+import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
 import {
   useCreateCommunityPRFromNaturalLanguage,

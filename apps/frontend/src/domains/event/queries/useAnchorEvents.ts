@@ -1,11 +1,7 @@
 import { useQuery } from "@tanstack/vue-query";
-import type { InferResponseType } from "hono";
 import { client } from "@/lib/rpc";
+import type { AnchorEventListResponse } from "@/domains/event/model/types";
 import { queryKeys } from "@/shared/api/query-keys";
-
-export type AnchorEventListResponse = InferResponseType<
-  (typeof client.api.events)["$get"]
->;
 
 export const useAnchorEvents = () => {
   return useQuery<AnchorEventListResponse>({

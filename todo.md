@@ -49,6 +49,8 @@
   - [x] 还有更多的外键约束
 - [x] 我的搭子请求列表
 - [ ] min-partners 必须大于1 （记得告诉 NL parsing LLM）
+- [ ] Community PR 允许提供一张图，空间会大很多（但是注意内容审查）
+- [ ] 时间冲突，不可加入
 
 ### Detail Page
 

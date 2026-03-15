@@ -98,9 +98,9 @@ import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
 import { useMyCreatedPRs } from "@/domains/pr/queries/useMyCreatedPRs";
 import { useMyJoinedPRs } from "@/domains/pr/queries/useMyJoinedPRs";
-import { useUserSessionStore } from "@/stores/userSessionStore";
+import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { resolvePRSummaryPath } from "@/domains/pr/routing/routes";
-import { formatLocalDateTimeValue } from "@/lib/datetime";
+import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 const router = useRouter();
 const { t } = useI18n();

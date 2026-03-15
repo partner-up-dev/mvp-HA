@@ -61,7 +61,7 @@ import type { PRId, PRKind, PRStatusManual } from "@partner-up-dev/backend";
 import {
   useUserSessionStore,
   type AuthSessionPayload,
-} from "@/stores/userSessionStore";
+} from "@/shared/auth/useUserSessionStore";
 
 interface StatusOption {
   value: PRStatusManual;

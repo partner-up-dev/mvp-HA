@@ -62,7 +62,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { useAdminLogin } from "@/domains/admin/queries/useAdminLogin";
-import { useUserSessionStore } from "@/stores/userSessionStore";
+import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 
 const route = useRoute();

@@ -43,11 +43,10 @@ src/
 ├── domains/                # Domain-owned code by business area
 ├── shared/                 # Cross-domain infrastructure and UI primitives
 ├── pages/                  # Route entrypoints only
-├── composables/            # Transitional generic hooks; prefer shared/domain homes for new code
-├── stores/
-├── lib/
+├── stores/                 # Legacy compatibility seams only
+├── lib/                    # Legacy compatibility seams only
 ├── locales/
-├── router/
+├── router/                 # Legacy compatibility seams only
 ├── styles/
 └── ...
 ```
@@ -56,6 +55,7 @@ Rules:
 
 - New domain-owned modules belong under `src/domains/<domain>/*`.
 - New cross-domain primitives or infrastructure belong under `src/shared/*`.
+- App bootstrap, providers, and router wiring belong under `src/app/*`.
 - Do not add new files under legacy buckets such as top-level `queries`, `features`, `entities`, or `widgets` unless explicitly maintaining a temporary compatibility seam.
 
 ## Product Reference

@@ -1,5 +1,5 @@
 import { computed, ref } from "vue";
-import { isWeChatBrowser } from "@/lib/browser-detection";
+import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 

@@ -1,6 +1,6 @@
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
-import { useUserSessionStore } from "@/stores/userSessionStore";
+import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 
 export const useAdminAccess = () => {
   const router = useRouter();

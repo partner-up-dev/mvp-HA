@@ -41,10 +41,10 @@
 import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
-import type { AnchorEventListResponse } from "@/domains/event/queries/useAnchorEvents";
+import type { AnchorEventListItem } from "@/domains/event/model/types";
 
 interface EventCardProps {
-  event: AnchorEventListResponse[number];
+  event: AnchorEventListItem;
 }
 
 const props = defineProps<EventCardProps>();

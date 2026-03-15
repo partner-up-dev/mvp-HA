@@ -204,7 +204,7 @@ import {
 } from "@/domains/pr/queries/useAnchorPR";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
-import { formatLocalDateTimeValue } from "@/lib/datetime";
+import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 const route = useRoute();
 const router = useRouter();

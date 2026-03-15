@@ -7,7 +7,7 @@ import { useGenerateXhsPosterHtml } from "@/domains/share/queries/useGenerateXhs
 import { useGeneratePoster } from "@/domains/share/use-cases/poster/useGeneratePoster";
 import { renderPosterHtmlToBlob } from "@/domains/share/use-cases/poster/renderHtmlPoster";
 import { useCloudStorage } from "@/shared/upload/useCloudStorage";
-import { isWeChatBrowser } from "@/lib/browser-detection";
+import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { client } from "@/lib/rpc";
 import { copyToClipboard } from "@/lib/clipboard";
 import {

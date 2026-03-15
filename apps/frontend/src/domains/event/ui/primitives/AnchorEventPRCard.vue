@@ -33,11 +33,11 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
-import type { AnchorEventDetailResponse } from "@/domains/event/queries/useAnchorEventDetail";
+import type { AnchorEventBatchPR } from "@/domains/event/model/types";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 
 interface AnchorEventPRCardProps {
-  pr: AnchorEventDetailResponse["batches"][number]["prs"][number];
+  pr: AnchorEventBatchPR;
   coverImage?: string | null;
 }
 

@@ -166,7 +166,7 @@ import {
   useReplaceEventBookingSupportResources,
 } from "@/domains/admin/queries/useAdminBookingSupport";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
-import { formatLocalDateTimeWindowLabel } from "@/lib/datetime";
+import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 
 type EditableEventResource = EventSupportResourceInput & { locationIdsText: string; detailRulesText: string };
 type EditableBatchOverride = BatchSupportOverrideInput & {

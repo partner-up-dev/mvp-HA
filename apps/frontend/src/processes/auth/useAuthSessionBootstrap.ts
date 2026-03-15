@@ -1,6 +1,9 @@
 import { onMounted } from "vue";
 import { client } from "@/lib/rpc";
-import { useUserSessionStore, type AuthSessionPayload } from "@/stores/userSessionStore";
+import {
+  useUserSessionStore,
+  type AuthSessionPayload,
+} from "@/shared/auth/useUserSessionStore";
 import { getStoredAccessToken } from "@/shared/auth/session-storage";
 
 let hasBootstrappedAuthSession = false;
