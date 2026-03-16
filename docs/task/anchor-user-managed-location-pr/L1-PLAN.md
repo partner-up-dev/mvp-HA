@@ -95,7 +95,7 @@ Important:
 Add:
 - `POST /api/events/:eventId/batches/:batchId/anchor-prs`
   - request: `{ locationId: string }`
-  - auth: requires valid WeChat OAuth session (same guard as anchor join)
+  - auth: same WeChat session requirement as anchor join
 
 Behavior:
 - Validate event/batch relation.
@@ -106,6 +106,7 @@ Behavior:
 
 Response:
 - created PR id and canonical path data needed for frontend redirect.
+- if user is not WeChat-authenticated, return `401` with machine-readable details (e.g. `code=WECHAT_LOGIN_REQUIRED`).
 
 ## 5) Quota Enforcement Strategy
 
@@ -132,12 +133,18 @@ Result:
 
 In `AnchorEventPage` selected batch section:
 - Keep existing PR list.
-- Append one creation card at list end.
+- Append one creation card component at list end.
+- Creation card should be reusable and default to collapsed.
 - Card contains:
   - location selector from `selectedBatch.locationOptions`
   - locations at cap shown disabled with reason text: `max reached`
   - explicit pre-submit notice: booking/resource rules follow current location/resource configuration
-  - create action triggers WeChat auth check then calls POST endpoint
+  - create action calls POST endpoint directly (no pre-auth check step)
+  - when POST returns `401` with `WECHAT_LOGIN_REQUIRED`, creation mutation handler triggers WeChat OAuth redirect
+
+Frontend client behavior boundary:
+- No global API-client-level `401 => WeChat redirect` interceptor.
+- WeChat redirect is handled in this specific creation use-case mutation layer based on server error code/details.
 
 No explicit system/user pool labels shown to users.
 
