@@ -4,7 +4,8 @@ import type {
   AnchorEvent,
   AnchorEventId,
   AnchorEventStatus,
-  LocationEntry,
+  SystemLocationEntry,
+  UserLocationEntry,
 } from "../../../entities";
 
 const anchorEventRepo = new AnchorEventRepository();
@@ -13,7 +14,8 @@ export interface UpdateAdminAnchorEventInput {
   title: string;
   type: string;
   description: string | null;
-  locationPool: LocationEntry[];
+  systemLocationPool: SystemLocationEntry[];
+  userLocationPool: UserLocationEntry[];
   coverImage: string | null;
   status: AnchorEventStatus;
 }
@@ -26,7 +28,8 @@ export async function updateAdminAnchorEvent(
     title: input.title,
     type: input.type,
     description: input.description,
-    locationPool: input.locationPool,
+    systemLocationPool: input.systemLocationPool,
+    userLocationPool: input.userLocationPool,
     coverImage: input.coverImage,
     status: input.status,
   });

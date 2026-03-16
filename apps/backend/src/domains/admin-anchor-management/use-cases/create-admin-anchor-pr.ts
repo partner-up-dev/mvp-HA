@@ -5,7 +5,10 @@ import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBat
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
-import { normalizeLocationPool } from "../../../entities/anchor-event";
+import {
+  normalizeSystemLocationPool,
+  normalizeUserLocationPool,
+} from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
 import type {
   AnchorPartnerRequest,
@@ -50,11 +53,30 @@ export async function createAdminAnchorPR(
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
 
-  const normalizedLocationPool = normalizeLocationPool(event.locationPool);
-  if (!normalizedLocationPool.includes(input.location)) {
+  const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
+  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
+  const matchedUserLocation = userLocationPool.find(
+    (entry) => entry.id === input.location,
+  );
+  const inSystemPool = systemLocationPool.includes(input.location);
+  if (!matchedUserLocation && !inSystemPool) {
     throw new HTTPException(400, {
       message: "Anchor PR location must belong to the anchor event location pool",
     });
+  }
+  const locationSource = matchedUserLocation ? "USER" : "SYSTEM";
+  if (matchedUserLocation) {
+    const activeCount =
+      await anchorPRRepo.countActiveVisibleByBatchAndLocationSource(
+        batch.id,
+        input.location,
+        "USER",
+      );
+    if (activeCount >= matchedUserLocation.perBatchCap) {
+      throw new HTTPException(409, {
+        message: "Selected location has reached per-batch cap",
+      });
+    }
   }
   validateAnchorParticipationPolicyOffsets({
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
@@ -79,6 +101,7 @@ export async function createAdminAnchorPR(
     prId: createdRoot.id,
     anchorEventId: event.id,
     batchId: batch.id,
+    locationSource,
     visibilityStatus: "VISIBLE",
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,

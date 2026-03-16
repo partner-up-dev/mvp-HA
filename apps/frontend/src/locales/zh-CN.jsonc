@@ -857,7 +857,18 @@
     "batchLabel": "场次",
     "exhausted": "该活动所有场次已满",
     "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
-    "discoverOthers": "发现其他活动"
+    "discoverOthers": "发现其他活动",
+    "createCard": {
+      "title": "其它地点？",
+      "subtitle": "在另外的地点找搭子",
+      "locationLabel": "地点",
+      "locationPlaceholder": "请选择地点",
+      "bookingHint": "资源预订规则以管理员配置为准，创建后可在活动详情里查看。",
+      "createAction": "创建搭子请求",
+      "creatingAction": "创建中...",
+      "optionMaxReached": "{locationId}（已达上限）",
+      "optionRemaining": "{locationId}（剩余 {count}）"
+    }
   },
   "prStatus": {
     "DRAFT": "草稿",

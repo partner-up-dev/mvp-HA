@@ -15,8 +15,12 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
   AnchorEventId,
   TimeWindowEntry,
+  UserLocationEntry,
 } from "../../../entities/anchor-event";
-import { normalizeLocationPool } from "../../../entities/anchor-event";
+import {
+  normalizeSystemLocationPool,
+  normalizeUserLocationPool,
+} from "../../../entities/anchor-event";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
 import type { PartnerRequest } from "../../../entities/partner-request";
 
@@ -47,6 +51,14 @@ export interface BatchDetail {
   timeWindow: [string | null, string | null];
   status: string;
   prs: AnchorPRSummary[];
+  locationOptions: LocationOption[];
+}
+
+export interface LocationOption {
+  locationId: string;
+  remainingQuota: number;
+  disabled: boolean;
+  disabledReason: "NONE" | "MAX_REACHED";
 }
 
 export interface AnchorEventDetail {
@@ -54,7 +66,8 @@ export interface AnchorEventDetail {
   title: string;
   type: string;
   description: string | null;
-  locationPool: string[];
+  systemLocationPool: string[];
+  userLocationPool: UserLocationEntry[];
   timeWindowPool: TimeWindowEntry[];
   coverImage: string | null;
   status: string;
@@ -87,12 +100,14 @@ function toPRSummary(record: AnchorPRRecord): AnchorPRSummary {
 function toBatchDetail(
   batch: AnchorEventBatch,
   prs: AnchorPRRecord[],
+  locationOptions: LocationOption[],
 ): BatchDetail {
   return {
     id: batch.id,
     timeWindow: batch.timeWindow,
     status: batch.status,
     prs: prs.map(toPRSummary),
+    locationOptions,
   };
 }
 
@@ -109,12 +124,34 @@ export async function getAnchorEventDetail(
   }
 
   const batches = await batchRepo.findByAnchorEventId(eventId);
+  const systemLocationPool = normalizeSystemLocationPool(
+    event.systemLocationPool,
+  );
+  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
 
   // Fetch PRs for each batch
   const batchDetails: BatchDetail[] = [];
   for (const batch of batches) {
     const prs = await anchorPRRepo.findVisibleByBatchId(batch.id);
-    const detail = toBatchDetail(batch, prs);
+    const locationOptions: LocationOption[] = [];
+    for (const userLocation of userLocationPool) {
+      const activeCount =
+        await anchorPRRepo.countActiveVisibleByBatchAndLocationSource(
+          batch.id,
+          userLocation.id,
+          "USER",
+        );
+      const remainingQuota = Math.max(userLocation.perBatchCap - activeCount, 0);
+      const disabled = remainingQuota === 0;
+      locationOptions.push({
+        locationId: userLocation.id,
+        remainingQuota,
+        disabled,
+        disabledReason: disabled ? "MAX_REACHED" : "NONE",
+      });
+    }
+
+    const detail = toBatchDetail(batch, prs, locationOptions);
     for (const pr of detail.prs) {
       pr.partnerCount = await partnerRepo.countActiveByPrId(pr.id);
     }
@@ -122,8 +159,7 @@ export async function getAnchorEventDetail(
   }
 
   // Check exhaustion: all location × timeWindow combos are occupied (have a non-expired PR)
-  const locationPool = normalizeLocationPool(event.locationPool);
-  const totalLocations = locationPool.length;
+  const totalLocations = systemLocationPool.length;
   const totalBatches = batches.length;
   const totalSlots = totalLocations * totalBatches;
 
@@ -133,17 +169,24 @@ export async function getAnchorEventDetail(
     const activePRs = bd.prs.filter(
       (pr) => pr.status !== "EXPIRED" && pr.status !== "CLOSED",
     );
-    occupiedSlots += activePRs.length;
+    occupiedSlots += activePRs.filter((pr) =>
+      systemLocationPool.includes(pr.location ?? ""),
+    ).length;
   }
 
-  const exhausted = totalSlots > 0 && occupiedSlots >= totalSlots;
+  const systemExhausted = totalSlots > 0 && occupiedSlots >= totalSlots;
+  const hasUserManagedCapacity = batchDetails.some((batchDetail) =>
+    batchDetail.locationOptions.some((option) => option.remainingQuota > 0),
+  );
+  const exhausted = systemExhausted && !hasUserManagedCapacity;
 
   return {
     id: event.id,
     title: event.title,
     type: event.type,
     description: event.description,
-    locationPool: locationPool,
+    systemLocationPool,
+    userLocationPool,
     timeWindowPool: Array.isArray(event.timeWindowPool)
       ? event.timeWindowPool
       : [],

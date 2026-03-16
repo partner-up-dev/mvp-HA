@@ -1,7 +1,8 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, notInArray, count } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   anchorPartnerRequests,
+  type AnchorLocationSource,
   type AnchorPartnerRequest,
   type NewAnchorPartnerRequest,
 } from "../entities/anchor-partner-request";
@@ -101,6 +102,27 @@ export class AnchorPRRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async countActiveVisibleByBatchAndLocationSource(
+    batchId: AnchorEventBatchId,
+    location: string,
+    locationSource: "SYSTEM" | "USER",
+  ): Promise<number> {
+    const rows = await db
+      .select({ value: count() })
+      .from(anchorPartnerRequests)
+      .innerJoin(partnerRequests, eq(partnerRequests.id, anchorPartnerRequests.prId))
+      .where(
+        and(
+          eq(anchorPartnerRequests.batchId, batchId),
+          eq(anchorPartnerRequests.locationSource, locationSource),
+          eq(anchorPartnerRequests.visibilityStatus, "VISIBLE"),
+          eq(partnerRequests.location, location),
+          notInArray(partnerRequests.status, ["CLOSED", "EXPIRED"]),
+        ),
+      );
+    return rows[0]?.value ?? 0;
+  }
+
   async findVisibleByAnchorEventId(
     anchorEventId: AnchorEventId,
   ): Promise<AnchorPRRecord[]> {
@@ -160,6 +182,18 @@ export class AnchorPRRepository {
         confirmationEndOffsetMinutes: data.confirmationEndOffsetMinutes,
         joinLockOffsetMinutes: data.joinLockOffsetMinutes,
       })
+      .where(eq(anchorPartnerRequests.prId, prId))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async updateLocationSource(
+    prId: PRId,
+    locationSource: AnchorLocationSource,
+  ): Promise<AnchorPartnerRequest | null> {
+    const result = await db
+      .update(anchorPartnerRequests)
+      .set({ locationSource })
       .where(eq(anchorPartnerRequests.prId, prId))
       .returning();
     return result[0] ?? null;

@@ -1,6 +1,7 @@
 export { listAnchorEvents } from "./list-events";
 export { getAnchorEventDetail } from "./get-event-detail";
 export { expandFullAnchorPR } from "./expand-full-anchor-pr";
+export { createUserAnchorPR, LocationCapReachedError } from "./create-user-anchor-pr";
 export type { AnchorEventSummary } from "./list-events";
 export type {
   AnchorEventDetail,

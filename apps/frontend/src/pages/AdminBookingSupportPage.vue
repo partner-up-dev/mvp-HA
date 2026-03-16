@@ -239,9 +239,19 @@ const selectedEvent = computed<AdminAnchorEventRecord | null>(
 const configQuery = useAdminBookingSupportConfig(selectedEventId);
 const config = computed(() => configQuery.data.value ?? null);
 const pageError = computed(() => workspaceQuery.error.value ?? configQuery.error.value ?? null);
-const availableLocationOptions = computed<string[]>(
-  () => selectedEvent.value?.locationPool ?? [],
-);
+const availableLocationOptions = computed<string[]>(() => {
+  const event = selectedEvent.value;
+  if (!event) return [];
+
+  const allLocationIds = [
+    ...event.systemLocationPool,
+    ...event.userLocationPool.map((entry) => entry.id),
+  ]
+    .map((locationId) => locationId.trim())
+    .filter((locationId) => locationId.length > 0);
+
+  return Array.from(new Set(allLocationIds));
+});
 
 const toEventResource = (resource: AdminEventResource): EditableEventResource => ({
   code: resource.code,

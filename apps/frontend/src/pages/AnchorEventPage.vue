@@ -35,12 +35,18 @@
           <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
             {{ t("anchorEvent.noPRsInBatch") }}
           </div>
-          <div v-else class="pr-list">
+          <div class="pr-list">
             <AnchorEventPRCard
               v-for="pr in selectedBatch.prs"
               :key="pr.id"
               :pr="pr"
               :cover-image="resolveCoverImage(pr.location)"
+            />
+            <AnchorPRCreateCard
+              :location-options="selectedBatch.locationOptions"
+              :pending="createUserAnchorPRMutation.isPending.value"
+              :error-message="createUserAnchorPRMutation.error.value?.message ?? null"
+              @create="handleCreateAnchorPR"
             />
           </div>
         </div>
@@ -69,8 +75,10 @@ import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
+import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
+import { useCreateUserAnchorPR } from "@/domains/event/queries/useCreateUserAnchorPR";
 import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 
 const route = useRoute();
@@ -89,6 +97,7 @@ const eventId = computed(() => {
 });
 
 const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
+const createUserAnchorPRMutation = useCreateUserAnchorPR();
 
 const selectedBatchIndex = ref(0);
 
@@ -157,6 +166,18 @@ const resolveCoverImage = (location: string | null): string | null => {
   const locationId = location.trim();
   if (!locationId) return null;
   return poiCoverById.value.get(locationId) ?? null;
+};
+
+const handleCreateAnchorPR = async (locationId: string) => {
+  const event = detail.value;
+  const batch = selectedBatch.value;
+  if (!event || !batch) return;
+  const created = await createUserAnchorPRMutation.mutateAsync({
+    eventId: event.id,
+    batchId: batch.id,
+    locationId,
+  });
+  await router.push(created.canonicalPath);
 };
 
 function formatBatchLabel(

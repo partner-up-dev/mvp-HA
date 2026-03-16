@@ -3,7 +3,10 @@ import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { updatePRContent } from "../../pr-core";
-import { normalizeLocationPool } from "../../../entities/anchor-event";
+import {
+  normalizeSystemLocationPool,
+  normalizeUserLocationPool,
+} from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
 import type { PRId } from "../../../entities";
@@ -44,12 +47,42 @@ export async function updateAdminAnchorPRContent(
     throw new HTTPException(500, { message: "Anchor event missing" });
   }
 
+  let nextLocationSource = anchorRecord.anchor.locationSource;
   if (input.location) {
-    const normalizedLocationPool = normalizeLocationPool(event.locationPool);
-    if (!normalizedLocationPool.includes(input.location)) {
+    const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
+    const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
+    const matchedUserLocation = userLocationPool.find(
+      (entry) => entry.id === input.location,
+    );
+    const inSystemPool = systemLocationPool.includes(input.location);
+    if (!matchedUserLocation && !inSystemPool) {
       throw new HTTPException(400, {
         message: "Anchor PR location must belong to the anchor event location pool",
       });
+    }
+
+    nextLocationSource = matchedUserLocation ? "USER" : "SYSTEM";
+    if (matchedUserLocation) {
+      const activeCount =
+        await anchorPRRepo.countActiveVisibleByBatchAndLocationSource(
+          batch.id,
+          input.location,
+          "USER",
+        );
+      const isCurrentPRCounted =
+        anchorRecord.anchor.locationSource === "USER" &&
+        anchorRecord.anchor.visibilityStatus === "VISIBLE" &&
+        anchorRecord.root.location === input.location &&
+        anchorRecord.root.status !== "CLOSED" &&
+        anchorRecord.root.status !== "EXPIRED";
+      const effectiveActiveCount = isCurrentPRCounted
+        ? Math.max(activeCount - 1, 0)
+        : activeCount;
+      if (effectiveActiveCount >= matchedUserLocation.perBatchCap) {
+        throw new HTTPException(409, {
+          message: "Selected location has reached per-batch cap",
+        });
+      }
     }
   }
   validateAnchorParticipationPolicyOffsets({
@@ -80,6 +113,9 @@ export async function updateAdminAnchorPRContent(
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
+  if (input.location) {
+    await anchorPRRepo.updateLocationSource(prId, nextLocationSource);
+  }
 
   await materializePRSupportResources({
     prId,

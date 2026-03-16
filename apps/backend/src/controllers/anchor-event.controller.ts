@@ -1,18 +1,51 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   listAnchorEvents,
   getAnchorEventDetail,
+  createUserAnchorPR,
+  LocationCapReachedError,
 } from "../domains/anchor-event";
+import { authMiddleware, type AuthEnv } from "../auth/middleware";
+import { requireAuthenticatedOpenId } from "./pr-controller.shared";
 
-const app = new Hono();
+const app = new Hono<AuthEnv>();
 
 const eventIdParamSchema = z.object({
   eventId: z.coerce.number().int().positive(),
 });
 
+const eventBatchParamSchema = z.object({
+  eventId: z.coerce.number().int().positive(),
+  batchId: z.coerce.number().int().positive(),
+});
+
+const userCreateAnchorPRInputSchema = z.object({
+  locationId: z.string().trim().min(1),
+});
+
+type ProblemDetails = {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance: string;
+  code: string;
+  [key: string]: unknown;
+};
+
+const problem = (payload: ProblemDetails): Response =>
+  new Response(JSON.stringify(payload), {
+    status: payload.status,
+    headers: {
+      "Content-Type": "application/problem+json",
+    },
+  });
+
 export const anchorEventRoute = app
+  .use("*", authMiddleware)
   // GET /api/events - List all active anchor events (Event Plaza)
   .get("/", async (c) => {
     const events = await listAnchorEvents();
@@ -23,4 +56,54 @@ export const anchorEventRoute = app
     const { eventId } = c.req.valid("param");
     const detail = await getAnchorEventDetail(eventId);
     return c.json(detail);
-  });
+  })
+  // POST /api/events/:eventId/batches/:batchId/anchor-prs - Create user-managed anchor PR
+  .post(
+    "/:eventId/batches/:batchId/anchor-prs",
+    zValidator("param", eventBatchParamSchema),
+    zValidator("json", userCreateAnchorPRInputSchema),
+    async (c) => {
+      const { eventId, batchId } = c.req.valid("param");
+      const { locationId } = c.req.valid("json");
+
+      let openId: string;
+      try {
+        openId = await requireAuthenticatedOpenId(c);
+      } catch (error) {
+        if (error instanceof HTTPException && error.status === 401) {
+          return problem({
+            type: "https://partnerup.sh/problems/wechat-auth-required",
+            title: "WeChat authentication required",
+            status: 401,
+            detail: "Please complete WeChat login before creating Anchor PR.",
+            instance: c.req.path,
+            code: "WECHAT_AUTH_REQUIRED",
+          });
+        }
+        throw error;
+      }
+
+      try {
+        const result = await createUserAnchorPR({
+          eventId,
+          batchId,
+          locationId,
+          openId,
+        });
+        return c.json(result, 201);
+      } catch (error) {
+        if (error instanceof LocationCapReachedError) {
+          return problem({
+            type: "https://partnerup.sh/problems/anchor-location-cap-reached",
+            title: "Location creation quota reached",
+            status: 409,
+            detail: "The selected location has reached the per-batch PR limit.",
+            instance: c.req.path,
+            code: "LOCATION_CAP_REACHED",
+            locationId: error.locationId,
+          });
+        }
+        throw error;
+      }
+    },
+  );

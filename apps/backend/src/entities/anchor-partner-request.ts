@@ -6,6 +6,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { z } from "zod";
 import {
   anchorEvents,
   type AnchorEventId,
@@ -21,6 +22,9 @@ import {
   type VisibilityStatus,
 } from "./partner-request";
 
+export const anchorLocationSourceSchema = z.enum(["SYSTEM", "USER"]);
+export type AnchorLocationSource = z.infer<typeof anchorLocationSourceSchema>;
+
 export const anchorPartnerRequests = pgTable("anchor_partner_requests", {
   prId: bigint("pr_id", { mode: "number" })
     .$type<PRId>()
@@ -34,6 +38,10 @@ export const anchorPartnerRequests = pgTable("anchor_partner_requests", {
     .$type<AnchorEventBatchId>()
     .notNull()
     .references(() => anchorEventBatches.id, { onDelete: "cascade" }),
+  locationSource: text("location_source")
+    .$type<AnchorLocationSource>()
+    .notNull()
+    .default("SYSTEM"),
   visibilityStatus: text("visibility_status")
     .$type<VisibilityStatus>()
     .notNull()
@@ -54,6 +62,7 @@ export const anchorPartnerRequests = pgTable("anchor_partner_requests", {
 export const insertAnchorPartnerRequestSchema = createInsertSchema(
   anchorPartnerRequests,
   {
+    locationSource: anchorLocationSourceSchema,
     visibilityStatus: visibilityStatusSchema,
   },
 );
@@ -61,6 +70,7 @@ export const insertAnchorPartnerRequestSchema = createInsertSchema(
 export const selectAnchorPartnerRequestSchema = createSelectSchema(
   anchorPartnerRequests,
   {
+    locationSource: anchorLocationSourceSchema,
     visibilityStatus: visibilityStatusSchema,
   },
 );

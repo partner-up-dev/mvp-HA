@@ -158,6 +158,7 @@ export async function acceptAlternativeBatch(
           prId: insertedRoot[0].id,
           anchorEventId: sourceAnchorEventId,
           batchId: targetBatch.id,
+          locationSource: "SYSTEM",
           visibilityStatus: "VISIBLE",
           autoHideAt: sourceAnchor.autoHideAt,
         })

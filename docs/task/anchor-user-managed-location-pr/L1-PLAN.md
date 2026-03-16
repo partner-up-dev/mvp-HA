@@ -106,7 +106,7 @@ Behavior:
 
 Response:
 - created PR id and canonical path data needed for frontend redirect.
-- if user is not WeChat-authenticated, return `401` with machine-readable details (e.g. `code=WECHAT_LOGIN_REQUIRED`).
+- if user is not WeChat-authenticated, return RFC 7807 `application/problem+json` with machine-readable extension fields (e.g. `code=WECHAT_LOGIN_REQUIRED`).
 
 ## 5) Quota Enforcement Strategy
 

@@ -61,7 +61,11 @@ export type AdminAnchorEventInput = {
   title: string;
   type: string;
   description: string | null;
-  locationPool: string[];
+  systemLocationPool: string[];
+  userLocationPool: Array<{
+    id: string;
+    perBatchCap: number;
+  }>;
   coverImage: string | null;
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };

@@ -8,7 +8,7 @@ import { initializeSlotsForPR } from "../../pr-core/services/slot-management.ser
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
-import { normalizeLocationPool } from "../../../entities/anchor-event";
+import { normalizeSystemLocationPool } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
@@ -68,7 +68,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
       .map((record) => record.root.location as string),
   );
 
-  const locationPool = normalizeLocationPool(event.locationPool);
+  const locationPool = normalizeSystemLocationPool(event.systemLocationPool);
   const targetLocation = findNextAvailableLocation(
     locationPool,
     occupiedLocations,
@@ -103,6 +103,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     prId: createdRoot.id,
     anchorEventId: fullPR.anchor.anchorEventId,
     batchId: fullPR.anchor.batchId,
+    locationSource: "SYSTEM",
     visibilityStatus: "VISIBLE",
     autoHideAt: fullPR.anchor.autoHideAt,
   });

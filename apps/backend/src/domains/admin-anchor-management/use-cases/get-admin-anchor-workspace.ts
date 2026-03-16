@@ -45,7 +45,11 @@ export type AdminAnchorEventSummary = {
   title: string;
   type: string;
   description: string | null;
-  locationPool: string[];
+  systemLocationPool: string[];
+  userLocationPool: Array<{
+    id: string;
+    perBatchCap: number;
+  }>;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   status: string;
@@ -115,7 +119,15 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
         title: event.title,
         type: event.type,
         description: event.description,
-        locationPool: Array.isArray(event.locationPool) ? [...event.locationPool] : [],
+        systemLocationPool: Array.isArray(event.systemLocationPool)
+          ? [...event.systemLocationPool]
+          : [],
+        userLocationPool: Array.isArray(event.userLocationPool)
+          ? event.userLocationPool.map((entry) => ({
+              id: entry.id,
+              perBatchCap: entry.perBatchCap,
+            }))
+          : [],
         timeWindowPool: Array.isArray(event.timeWindowPool)
           ? event.timeWindowPool.map(
               (entry): [string | null, string | null] => [entry[0], entry[1]],
