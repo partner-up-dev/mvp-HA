@@ -6,9 +6,10 @@ From your confirmation, L1 is based on:
 
 1. Cap counts active PRs (not lifetime historical count).
 2. Creation requires WeChat authentication (same auth gate as Anchor join).
-3. Resource templates can target both system and user location sets.
+3. `08b6fb0` review feedback overrides pool strategy to **A1 explicit split**.
 4. User-facing copy should not expose "system-managed vs user-managed" internals.
 5. Cap rule update: **cap is per (batch, location)**; different locations can have different cap values.
+6. No source-based booking/resource enforcement; admin config remains the single source of truth for booking rules.
 
 ## 1) Architectural Intent
 
@@ -41,10 +42,10 @@ Backend
 
   domains/pr-booking-support/services/
     └─ materialize-pr-support-resources.ts
-         (supports booking-disabled materialization for user-origin PR)
+         (existing materialization, no source-specific booking override)
 
   entities + migration
-    ├─ anchor_events: add user_location_pool
+    ├─ anchor_events: split to system_location_pool + user_location_pool
     └─ anchor_partner_requests: add location_source
 ```
 
@@ -52,13 +53,15 @@ Backend
 
 ### 3.1 Anchor Event data model
 
-Keep existing `locationPool` as system-side pool (backward compatible), and add:
+Use explicit split (A1):
 
+- `systemLocationPool: string[]`
 - `userLocationPool: Array<{ id: string; perBatchCap: number }>`
 
 Rationale:
-- Minimal blast radius.
+- Strong domain clarity (no naming ambiguity).
 - Supports location-specific cap values directly.
+- Acceptable migration scope because product is pre-launch.
 
 ### 3.2 Anchor PR subtype metadata
 
@@ -68,7 +71,7 @@ Add `locationSource` on `anchor_partner_requests`:
 
 Rationale:
 - Stable semantics even if event pools are edited later.
-- Enables durable "no booking support" policy for user-origin PRs.
+- Supports origin-aware quota/audit/analytics without changing booking rule engine semantics.
 
 ## 4) API Strategy
 
@@ -99,7 +102,7 @@ Behavior:
 - Validate location is allowed in creation options.
 - Enforce location-specific cap for the given batch.
 - Create Anchor PR with `locationSource=USER`.
-- Materialize support resources with booking fields disabled.
+- Materialize support resources using existing admin-configured rules.
 
 Response:
 - created PR id and canonical path data needed for frontend redirect.
@@ -118,15 +121,12 @@ Consistency:
 ## 6) Booking/Resource Policy Strategy
 
 For `locationSource=USER` PR creation:
-- Resource rows can still materialize (summary/detail/support fields retained).
-- Force booking-related fields off during materialization:
-  - `bookingRequired = false`
-  - `bookingHandledBy = null`
-  - `bookingDeadlineAt = null`
-  - `bookingLocksParticipant = false`
+- Do not apply source-based booking overrides.
+- Keep current booking/resource materialization semantics unchanged.
+- Booking requirements, booking deadlines, and resource support are fully controlled by admin-configured event templates + batch overrides.
 
 Result:
-- Requirement "no booking support, may have resource support" is satisfied.
+- Avoids dual-rule complexity by keeping one booking rule system (admin rules) for all Anchor PR origins.
 
 ## 7) Frontend UX Strategy (Neutral Terminology)
 
@@ -136,7 +136,7 @@ In `AnchorEventPage` selected batch section:
 - Card contains:
   - location selector from `selectedBatch.locationOptions`
   - locations at cap shown disabled with reason text: `max reached`
-  - explicit pre-submit notice: no booking support, resource support may apply
+  - explicit pre-submit notice: booking/resource rules follow current location/resource configuration
   - create action triggers WeChat auth check then calls POST endpoint
 
 No explicit system/user pool labels shown to users.
@@ -145,11 +145,11 @@ No explicit system/user pool labels shown to users.
 
 Admin Anchor Event editor:
 - Split event-level inputs into two editable sets:
-  - existing system pool (legacy `locationPool`)
+  - `systemLocationPool`
   - user creation location pool with per-location cap
 
 Admin Booking Support page:
-- location selectors use union of both location sets (ID-level union), so resources may target any configured location.
+- location selectors use union of system + user location sets, and booking behavior is configured manually by admin rules.
 
 ## 9) Risk Review and Doubt Notes (Point 4)
 
