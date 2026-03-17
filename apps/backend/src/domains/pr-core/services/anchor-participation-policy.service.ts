@@ -47,6 +47,13 @@ export function validateAnchorParticipationPolicyOffsets(
         "Confirmation start must be earlier than confirmation end for anchor participation policy",
     });
   }
+
+  if (joinLockOffsetMinutes < confirmationEndOffsetMinutes) {
+    throw new HTTPException(400, {
+      message:
+        "Join lock must not be later than confirmation end for anchor participation policy",
+    });
+  }
 }
 
 export function resolveAnchorParticipationPolicy(

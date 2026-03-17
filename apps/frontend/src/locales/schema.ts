@@ -698,6 +698,7 @@ export interface MessageSchema {
     participationPolicyDescription: string;
     bookingTriggeredAtLabel: string;
     policyValidationStartBeforeEnd: string;
+    policyValidationJoinLockAfterConfirmationEnd: string;
     policyValidationDeadlineAfterConfirmationEnd: string;
     saveAnchorPRAction: string;
     createAnchorPRAction: string;

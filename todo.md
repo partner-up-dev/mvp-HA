@@ -64,7 +64,6 @@
 - [ ] PR status UX 优化
   - [ ] diagram （特别EXPIRE 路线）
   - [ ] incoming state
-- [ ] 在活动页面中可以允许用户主动创建该batch下pr；在活动页面引导用户创建 community pr（这两个应该是一个入口？）
 - [ ] PageHeader Sitcky
 
 ### Create/Edit
@@ -78,7 +77,7 @@
 
 ### Community PR
 
-- [ ] 加入时自动创建用户（加入成果也显示 PIN Help Section，告诉用户未来退出时会需要）
+- [x] 加入时自动创建用户（加入成果也显示 PIN Help Section，告诉用户未来退出时会需要）
 
 ### Anchor PR
 
@@ -108,12 +107,14 @@
   - 并在活动页的 Anchor PR 列表末尾提供一个卡片，使得用户可以在选中批次下创建用户管理地点的 Anchor PR
   - 用户管理地点在同一批次内创建的 PR 数量有上限（上限不随批次的不同而变化）
   - 基于用户管理地点的 Anchor PR 没有预订支持，可能有资源支持；这一点可以在用户创建之前呈现清楚
+- [ ] 允许用户主动创建该batch 下 Anchor PR（不同地点）；引导用户创建 community pr（这两个应该是一个入口？）
 
 ### Booking & Support
 
 - [ ] 资源配以图片
 - [ ] 报销跳转到 contact-support 但是仅保留联系员工，避免用户疑惑
 - [ ] 【MUST】booking deadline 其实不用要求 confirm end，不然的话很多活动都很难预订又或者确认机制变得无效了；只要把 confirm end 配置为平台取消预订会产生损失之前的 30min 就好
+- [ ] 【MUST】许多的预订都需要用户手机号
 
 ## Base/Common
 

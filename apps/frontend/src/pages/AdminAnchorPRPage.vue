@@ -179,6 +179,9 @@
               </label>
               <p v-if="!hasLocationOptions" class="hint">{{ t("adminAnchorPR.anchorPRLocationHint") }}</p>
               <p class="hint">{{ t("adminAnchorPR.anchorPRTimeHint") }}</p>
+              <p v-if="policyRecommendationMessage" class="hint">
+                {{ policyRecommendationMessage }}
+              </p>
               <p v-if="selectedPR?.bookingTriggeredAt" class="hint">
                 {{ t("adminAnchorPR.bookingTriggeredAtLabel", { dateTime: formatDateTime(selectedPR.bookingTriggeredAt) }) }}
               </p>
@@ -342,6 +345,17 @@ const policyValidationMessage = computed(() => {
     return t("adminAnchorPR.policyValidationStartBeforeEnd");
   }
 
+  if (
+    prForm.value.joinLockOffsetMinutes <
+    prForm.value.confirmationEndOffsetMinutes
+  ) {
+    return t("adminAnchorPR.policyValidationJoinLockAfterConfirmationEnd");
+  }
+
+  return null;
+});
+
+const policyRecommendationMessage = computed(() => {
   const batchStartRaw = selectedBatch.value?.timeWindow[0] ?? null;
   const batchStart = batchStartRaw ? new Date(batchStartRaw) : null;
   const bookingDeadlineRaw = selectedPR.value?.effectiveBookingDeadlineAt ?? null;
@@ -355,7 +369,10 @@ const policyValidationMessage = computed(() => {
     const confirmationEndAt = new Date(
       batchStart.getTime() - prForm.value.confirmationEndOffsetMinutes * 60 * 1000,
     );
-    if (bookingDeadline.getTime() <= confirmationEndAt.getTime()) {
+    const recommendedConfirmationEndLatestAt = new Date(
+      bookingDeadline.getTime() - 30 * 60 * 1000,
+    );
+    if (confirmationEndAt.getTime() > recommendedConfirmationEndLatestAt.getTime()) {
       return t("adminAnchorPR.policyValidationDeadlineAfterConfirmationEnd");
     }
   }
