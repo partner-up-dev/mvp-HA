@@ -18,6 +18,11 @@ export const canonicalAnalyticsEventTypes = [
   "home_event_plaza_entry_click",
   "home_bookmark_nudge_shown",
   "home_bookmark_action_click",
+  "anchor_pr_primary_cta_impression",
+  "anchor_pr_primary_cta_click",
+  "anchor_pr_lane_expand",
+  "anchor_pr_recovery_accept",
+  "anchor_pr_secondary_action_click",
 ] as const;
 
 export type CanonicalAnalyticsEventType =

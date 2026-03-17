@@ -322,7 +322,7 @@
       "blockedJoinLocked": "已到停止加入时间，暂时不能再加入。",
       "blockedEventStarted": "活动已经开始，当前不能再变更参与状态。",
       "blockedBookingLocked": "预订已锁定，当前不能退出。",
-      "blockedConfirmWindow": "当前不在确认窗口内，请按时间线操作。",
+      "blockedConfirmWindow": "您需要在 {confirmStart} 到 {confirmEnd} 之间完成确认，否则您将会被移除当前搭子请求",
       "blockedAlreadyConfirmed": "你的名额已经确认，无需重复操作。",
       "blockedNotJoined": "你还没有加入当前搭子请求。",
       "blockedStatus": "当前状态下不支持这个操作。",

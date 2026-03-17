@@ -27,6 +27,13 @@ const resolveCurrentPRId = (): number | undefined => {
   return parsePRIdFromPathname(window.location.pathname) ?? undefined;
 };
 
+const resolveCurrentPRKind = (): "ANCHOR" | "COMMUNITY" | undefined => {
+  if (typeof window === "undefined") return undefined;
+  if (window.location.pathname.startsWith("/apr/")) return "ANCHOR";
+  if (window.location.pathname.startsWith("/cpr/")) return "COMMUNITY";
+  return undefined;
+};
+
 export const useShareCarousel = ({
   allMethods,
   defaultMethodId = "XIAOHONGSHU",
@@ -89,20 +96,40 @@ export const useShareCarousel = ({
     markUserInteraction();
     moveMethod(-1);
     const prId = resolveCurrentPRId();
+    const prKind = resolveCurrentPRKind();
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
       prId,
+      prKind,
     });
+    if (prKind === "ANCHOR" && prId !== undefined) {
+      trackEvent("anchor_pr_secondary_action_click", {
+        prId,
+        prKind,
+        actionType: "SHARE_METHOD_SWITCH",
+        methodId: currentMethodId.value,
+      });
+    }
   };
 
   const goToNextMethod = (): void => {
     markUserInteraction();
     moveMethod(1);
     const prId = resolveCurrentPRId();
+    const prKind = resolveCurrentPRKind();
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
       prId,
+      prKind,
     });
+    if (prKind === "ANCHOR" && prId !== undefined) {
+      trackEvent("anchor_pr_secondary_action_click", {
+        prId,
+        prKind,
+        actionType: "SHARE_METHOD_SWITCH",
+        methodId: currentMethodId.value,
+      });
+    }
   };
 
   const handleShareMethodInteraction = (): void => {

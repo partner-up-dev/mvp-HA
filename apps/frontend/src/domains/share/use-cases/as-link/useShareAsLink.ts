@@ -42,6 +42,19 @@ const resolvePRIdFromShareUrl = (url: string): number | undefined => {
   }
 };
 
+const resolvePRKindFromShareUrl = (
+  url: string,
+): "ANCHOR" | "COMMUNITY" | undefined => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.startsWith("/apr/")) return "ANCHOR";
+    if (parsed.pathname.startsWith("/cpr/")) return "COMMUNITY";
+    return undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export const useShareAsLink = ({
   shareUrl,
   spmRouteKey,
@@ -109,7 +122,16 @@ export const useShareAsLink = ({
 
     shareState.value = "sharing";
     const prId = resolvePRIdFromShareUrl(normalizedUrl.value);
+    const prKind = resolvePRKindFromShareUrl(normalizedUrl.value);
     const analyticsContext = prId ? { prId } : {};
+
+    if (prKind === "ANCHOR" && prId !== undefined) {
+      trackEvent("anchor_pr_secondary_action_click", {
+        prId,
+        prKind,
+        actionType: "SHARE_LINK_TRIGGER",
+      });
+    }
 
     try {
       const didShare = await tryNativeShare();

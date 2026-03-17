@@ -474,6 +474,21 @@ const formatWindow = (start: string | null, end: string | null): string => {
   return startLabel ?? endLabel ?? t("prPage.partnerSection.notSet");
 };
 
+const confirmWindowText = computed(() => {
+  const notSet = t("prPage.partnerSection.notSet");
+  if (props.section.scenario !== "ANCHOR" || !props.section.timeline) {
+    return { confirmStart: notSet, confirmEnd: notSet };
+  }
+  return {
+    confirmStart:
+      formatLocalDateTimeValue(props.section.timeline.confirmationStartAt) ??
+      notSet,
+    confirmEnd:
+      formatLocalDateTimeValue(props.section.timeline.confirmationEndAt) ??
+      notSet,
+  };
+});
+
 const rosterStateText = (
   state: PartnerSectionView["roster"][number]["state"],
 ): string => {
@@ -500,7 +515,10 @@ function blockedReasonText(
     case "BOOKING_LOCKED":
       return t("prPage.partnerSection.blockedBookingLocked");
     case "OUTSIDE_CONFIRM_WINDOW":
-      return t("prPage.partnerSection.blockedConfirmWindow");
+      return t(
+        "prPage.partnerSection.blockedConfirmWindow",
+        confirmWindowText.value,
+      );
     case "ALREADY_CONFIRMED":
       return t("prPage.partnerSection.blockedAlreadyConfirmed");
     case "ALREADY_JOINED":

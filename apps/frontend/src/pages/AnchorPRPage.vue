@@ -34,6 +34,41 @@
         </template>
       </PRFactsCard>
 
+      <AnchorPRPrimaryActionLane
+        :pr-id="id"
+        :section="prDetail.partnerSection"
+        :slot-state-text="sharedActions.slotStateText.value"
+        :join-pending="sharedActions.joinPending.value"
+        :exit-pending="sharedActions.exitPending.value"
+        :confirm-pending="attendanceActions.confirmPending.value"
+        :check-in-pending="attendanceActions.checkInPending.value"
+        @go-recovery="scrollToRecoveryLane"
+        @join="sharedActions.handleJoin"
+        @exit="sharedActions.handleExit"
+        @confirm-slot="attendanceActions.handleConfirmSlot"
+        @prepare-check-in="attendanceActions.prepareCheckIn"
+      />
+
+      <AnchorPRNextStepLane
+        :section="prDetail.partnerSection"
+        :show-check-in-followup="attendanceActions.showCheckInFollowup.value"
+        :check-in-followup-status-label="
+          attendanceActions.checkInFollowupStatusLabel.value
+        "
+        :check-in-pending="attendanceActions.checkInPending.value"
+        :can-toggle-reminder="reminder.canToggleReminder.value"
+        :reminder-enabled="reminder.reminderEnabled.value"
+        :reminder-toggle-pending="reminder.reminderTogglePending.value"
+        :reminder-authenticated="reminder.reminderAuthenticated.value"
+        :reminder-configured="reminder.reminderConfigured.value"
+        :reminder-hint-text="reminder.reminderHintText.value"
+        :is-we-chat-env="isWeChatEnv"
+        @submit-check-in="attendanceActions.submitCheckIn"
+        @cancel-check-in="attendanceActions.cancelPendingCheckIn"
+        @toggle-reminder="reminder.handleToggleWechatReminder"
+        @go-wechat-login="reminder.handleGoWechatLogin"
+      />
+
       <section class="section-card">
         <router-link
           v-if="id !== null"
@@ -58,39 +93,23 @@
         </router-link>
       </section>
 
-      <PRPartnerSection
+      <AnchorPRAwarenessLane :section="prDetail.partnerSection" />
+
+      <AnchorPRRecoveryLane
+        ref="recoveryLaneRef"
+        :pr-id="id"
         :section="prDetail.partnerSection"
-        :slot-state-text="sharedActions.slotStateText.value"
-        :join-pending="sharedActions.joinPending.value"
-        :exit-pending="sharedActions.exitPending.value"
-        :confirm-pending="attendanceActions.confirmPending.value"
-        :check-in-pending="attendanceActions.checkInPending.value"
-        :show-check-in-followup="attendanceActions.showCheckInFollowup.value"
-        :check-in-followup-status-label="
-          attendanceActions.checkInFollowupStatusLabel.value
-        "
-        :can-toggle-reminder="canToggleReminder"
-        :reminder-enabled="reminderEnabled"
-        :reminder-toggle-pending="reminderTogglePending"
-        :reminder-authenticated="reminderAuthenticated"
-        :reminder-configured="reminderConfigured"
-        :reminder-hint-text="reminderHintText"
-        :is-we-chat-env="isWeChatEnv"
         :accept-alternative-batch-pending="
           acceptAlternativeBatchMutation.isPending.value
         "
-        @join="sharedActions.handleJoin"
-        @exit="sharedActions.handleExit"
-        @confirm-slot="attendanceActions.handleConfirmSlot"
-        @prepare-check-in="attendanceActions.prepareCheckIn"
-        @submit-check-in="attendanceActions.submitCheckIn"
-        @cancel-check-in="attendanceActions.cancelPendingCheckIn"
-        @toggle-reminder="handleToggleWechatReminder"
-        @go-wechat-login="handleGoWechatLogin"
         @accept-alternative-batch="handleAcceptAlternativeBatch"
       />
 
       <AnchorPRActionsBar
+        v-if="
+          sharedActions.showEditContentAction.value ||
+          sharedActions.showModifyStatusAction.value
+        "
         :can-join="false"
         :can-exit="false"
         :has-joined="false"
@@ -106,8 +125,8 @@
         :exit-pending="false"
         :confirm-pending="false"
         :check-in-pending="false"
-        @edit-content="showEditModal = true"
-        @modify-status="showModifyModal = true"
+        @edit-content="handleOpenCreatorEdit"
+        @modify-status="handleOpenCreatorModifyStatus"
       />
 
       <PRShareSection
@@ -162,7 +181,10 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PRHeroHeader from "@/domains/pr/ui/composites/PRHeroHeader.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
 import AnchorPRActionsBar from "@/domains/pr/ui/sections/AnchorPRActionsBar.vue";
-import PRPartnerSection from "@/domains/pr/ui/sections/PRPartnerSection.vue";
+import AnchorPRPrimaryActionLane from "@/domains/pr/ui/sections/AnchorPRPrimaryActionLane.vue";
+import AnchorPRNextStepLane from "@/domains/pr/ui/sections/AnchorPRNextStepLane.vue";
+import AnchorPRAwarenessLane from "@/domains/pr/ui/sections/AnchorPRAwarenessLane.vue";
+import AnchorPRRecoveryLane from "@/domains/pr/ui/sections/AnchorPRRecoveryLane.vue";
 import {
   useAcceptAnchorAlternativeBatch,
   useAnchorPR,
@@ -187,6 +209,7 @@ import {
   formatLocalDateTimeValue,
   formatLocalDateTimeWindow,
 } from "@/shared/datetime/formatLocalDateTime";
+import { trackEvent } from "@/shared/analytics/track";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -200,6 +223,7 @@ const userSessionStore = useUserSessionStore();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
+const recoveryLaneRef = ref<{ scrollIntoView: () => void } | null>(null);
 
 const editableFields = computed<AnchorPRFormFields>(() => ({
   title: prDetail.value?.title,
@@ -255,15 +279,8 @@ const attendanceActions = useAnchorAttendanceActions({
 });
 
 const {
-  canToggleReminder,
-  handleGoWechatLogin,
-  handleToggleWechatReminder,
   isWeChatEnv,
-  reminderAuthenticated,
-  reminderConfigured,
-  reminderEnabled,
-  reminderHintText,
-  reminderTogglePending,
+  ...reminder
 } = usePRReminderSubscription(id);
 
 const { shareUrl, spmRouteKey, prShareData } = usePRShareContext({
@@ -311,6 +328,29 @@ const handleAcceptAlternativeBatch = async (
 };
 const handleEditSuccess = () => {
   showEditModal.value = false;
+};
+const handleOpenCreatorEdit = () => {
+  if (id.value !== null) {
+    trackEvent("anchor_pr_secondary_action_click", {
+      prId: id.value,
+      prKind: "ANCHOR",
+      actionType: "CREATOR_EDIT_CONTENT",
+    });
+  }
+  showEditModal.value = true;
+};
+const handleOpenCreatorModifyStatus = () => {
+  if (id.value !== null) {
+    trackEvent("anchor_pr_secondary_action_click", {
+      prId: id.value,
+      prKind: "ANCHOR",
+      actionType: "CREATOR_MODIFY_STATUS",
+    });
+  }
+  showModifyModal.value = true;
+};
+const scrollToRecoveryLane = () => {
+  recoveryLaneRef.value?.scrollIntoView();
 };
 const goHome = () => {
   router.push("/");

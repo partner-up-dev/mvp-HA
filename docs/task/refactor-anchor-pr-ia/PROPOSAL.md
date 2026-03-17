@@ -77,6 +77,52 @@ The new IA must:
 | Secondary Lane | "Do I want to share or give feedback?" | share methods + contact links | `Share this PR` | Visually demoted below primary/supporting lanes |
 | Creator Tools Lane | "As creator, what can I edit?" | edit content/status actions | `Open creator tools` | Only for creator; never competes with participant primary CTA |
 
+### 6.3 Target IA (ASCII-ART)
+
+```text
++----------------------------------------------------------------------------------+
+|                                  Anchor PR Page                                 |
+|                                    /apr/:id                                     |
++----------------------------------------------------------------------------------+
+| L1. Decision Snapshot                                                           |
+|     - Hero + Facts (title/type/time/location/status/capacity-compact)          |
+|     - Anchor CTA: [Go to Primary Action]                                        |
++----------------------------------------------------------------------------------+
+| L2. Primary Action Lane                                                         |
+|     - One dominant CTA resolved by state machine                                |
+|       CHECK_IN > CONFIRM_SLOT > JOIN > EXIT_OR_STAY > VIEW_ALTERNATIVES > ...  |
+|     - Anchor CTA: [Primary CTA]                                                 |
++----------------------------------------------------------------------------------+
+| L3. Next-Step Lane (State-Driven)                                               |
+|     - "What should I do next?" + nearest deadline + short instruction           |
+|     - Anchor CTA: [Confirm now / Submit check-in / Set reminder]                |
++==================================================================================+
+|                           Supporting / Context Lanes                            |
++----------------------------------------------------------------------------------+
+| L4. Logistics Lane                                                              |
+|     - Booking-support preview + effective deadline                              |
+|     - Anchor CTA: [View booking & support details]                              |
++----------------------------------------------------------------------------------+
+| L5. Awareness Lane                                                              |
+|     - Roster preview + timeline summary                                         |
+|     - Anchor CTA: [View full roster] (expand)                                   |
++----------------------------------------------------------------------------------+
+| L6. Recovery Lane (Conditional)                                                 |
+|     - Same-batch alternatives + alternative batches                             |
+|     - Anchor CTA: [Switch to recommended slot]                                  |
++==================================================================================+
+|                               Secondary Tasks                                   |
++----------------------------------------------------------------------------------+
+| L7. Secondary Lane                                                              |
+|     - Share carousel + feedback/contact entry                                   |
+|     - Anchor CTA: [Share this PR]                                               |
++----------------------------------------------------------------------------------+
+| L8. Creator Tools Lane (Conditional: isCreator)                                 |
+|     - Edit content / modify status                                               |
+|     - Anchor CTA: [Open creator tools]                                          |
++----------------------------------------------------------------------------------+
+```
+
 ## 7. Primary Action Resolver (State Machine)
 
 Create a single resolver in frontend (use-case layer) to avoid scattered CTA logic.
