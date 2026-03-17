@@ -185,7 +185,7 @@ export function buildCommunityPartnerSection(
 
   let canJoin = true;
   let joinBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (base.viewer.isCreator || base.viewer.isParticipant) {
+  if (base.viewer.isParticipant) {
     canJoin = false;
     joinBlockedReason = "ALREADY_JOINED";
   } else if (!isJoinableStatus(publicPR.status)) {
@@ -198,7 +198,10 @@ export function buildCommunityPartnerSection(
 
   let canExit = true;
   let exitBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!base.viewer.isParticipant) {
+  if (base.viewer.isCreator) {
+    canExit = false;
+    exitBlockedReason = "NOT_JOINABLE_STATUS";
+  } else if (!base.viewer.isParticipant) {
     canExit = false;
     exitBlockedReason = "NOT_JOINED";
   } else if (!isExitAllowedStatus(publicPR.status)) {
@@ -269,7 +272,7 @@ export function buildAnchorPartnerSection(params: {
 
   let canJoin = true;
   let joinBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (base.viewer.isCreator || base.viewer.isParticipant) {
+  if (base.viewer.isParticipant) {
     canJoin = false;
     joinBlockedReason = "ALREADY_JOINED";
   } else if (!isJoinableStatus(publicPR.status)) {
@@ -285,7 +288,10 @@ export function buildAnchorPartnerSection(params: {
 
   let canExit = true;
   let exitBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!base.viewer.isParticipant) {
+  if (base.viewer.isCreator) {
+    canExit = false;
+    exitBlockedReason = "NOT_JOINABLE_STATUS";
+  } else if (!base.viewer.isParticipant) {
     canExit = false;
     exitBlockedReason = "NOT_JOINED";
   } else if (!isExitAllowedStatus(publicPR.status)) {

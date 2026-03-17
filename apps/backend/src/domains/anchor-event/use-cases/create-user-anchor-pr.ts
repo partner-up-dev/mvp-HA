@@ -117,10 +117,28 @@ export const createUserAnchorPR = async ({
     });
 
     const slotCount = resolveDesiredSlotCount(root.minPartners, root.maxPartners);
-    if (slotCount > 0) {
-      const now = new Date();
+    const now = new Date();
+    await tx.insert(partners).values({
+      prId: root.id,
+      userId: user.id,
+      status: "JOINED",
+      releasedAt: null,
+      confirmedAt: null,
+      attendedAt: null,
+      checkInAt: null,
+      didAttend: null,
+      wouldJoinAgain: null,
+      paymentStatus: "NONE",
+      reimbursementRequested: false,
+      reimbursementStatus: "NONE",
+      reimbursementAmount: null,
+      reimbursementRequestedAt: null,
+      reimbursementReviewedAt: null,
+      reimbursementPaidAt: null,
+    });
+    if (slotCount > 1) {
       await tx.insert(partners).values(
-        Array.from({ length: slotCount }, () => ({
+        Array.from({ length: slotCount - 1 }, () => ({
           prId: root.id,
           userId: null,
           status: "RELEASED" as const,

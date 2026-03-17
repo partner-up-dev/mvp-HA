@@ -18,8 +18,9 @@ I agree with your direction. Recommended product decisions:
 - Introduce Tinder-like swipe cards as a first-class browsing mode.
 - Make cards represent a demand combination, not a single Anchor PR.
 - Keep both Card mode and List mode; provide a switch in `PageHeader` top action slot.
+- Do not show batch tab bar in Card mode; cards rotate across all batches of the event.
 - Show the same creation card capability when cards are exhausted.
-- When a specific `spm` is detected (for printed QR continuity), default to Card mode.
+- Default to List mode, with special `spm` override to Card mode.
 
 ## 3. Product Goals
 
@@ -38,23 +39,25 @@ I agree with your direction. Recommended product decisions:
 
 ### 5.1 Definition
 
-A card is a normalized user demand combination:
+A card is a normalized user demand combination in one batch:
 
+- `batchId`
 - `displayLocationName` (user-facing location label, e.g. `广外羽毛球馆`)
-- `timeWindow` (same batch time window)
 - `preferenceFingerprint` (optional grouped preference signal, such as `羽毛球养生局`)
 
-Card and Anchor PR are many-to-many over time; in one batch, one card usually maps to multiple candidate PRs.
+`timeWindow` is inherited from `batchId`, so it is not part of the identity key.
 
 ### 5.2 Grouping Key
 
 Use a deterministic key for rendering and analytics:
 
-`cardKey = eventId + batchId + displayLocationName + timeSlotKey + preferenceFingerprint`
+`cardKey = batchId + displayLocationName + preferenceFingerprint`
+
+`eventId` and `timeSlotKey` are not included because route + `batchId` already lock the event and time window.
 
 ### 5.3 Why this model
 
-It matches user intent first ("I want this kind of game at this place/time") and hides operational-level duplication (court-level or PR-level fragmentation).
+It matches user intent first ("I want this kind of game at this place/time") and hides operational-level duplication.
 
 ## 6. Joining Semantics (Critical)
 
@@ -62,20 +65,31 @@ It matches user intent first ("I want this kind of game at this place/time") and
 
 If user accepts a card, system should join **any** joinable Anchor PR that belongs to that card group.
 
-### 6.2 Recommended ownership
+### 6.2 Backend ownership and concurrency
 
-Selection should be backend-owned, not frontend-owned, to avoid race conditions and duplicate logic.
+Selection should be backend-owned to avoid split frontend logic.
 
-Add a card-join use case (name can be finalized during implementation), for example:
+Important: backend ownership alone does not remove race conditions in serverless multi-instance deployment. Race safety must come from DB-level concurrency control (transaction, lock/constraint, idempotent retry), not from single-instance assumptions.
 
-- `POST /api/events/:eventId/batches/:batchId/demand-cards/:cardKey/join`
+### 6.3 API shape
+
+Recommended endpoint:
+
+- `POST /api/events/:eventId/demand-cards/:cardKey/join`
+
+Request body carries explicit demand fields so backend can validate and select a candidate PR:
+
+- `batchId`
+- `displayLocationName`
+- `timeWindow`
+- `preferenceFingerprint`
 
 Response:
 
 - success: returns joined PR id + canonical path
 - no candidate: returns domain error (`NO_JOINABLE_CANDIDATE`) so frontend can move to next card or creation card
 
-### 6.3 Candidate selection strategy
+### 6.4 Candidate selection strategy
 
 When multiple PRs satisfy one card:
 
@@ -83,18 +97,19 @@ When multiple PRs satisfy one card:
 2. prefer highest occupancy ratio to reduce fragmentation
 3. tie-break by earliest creation time for deterministic behavior
 
-This directly improves fill efficiency and reduces long-tail empty PRs.
-
 ## 7. UI/UX Specification
 
-### 7.1 Mode switch
+### 7.1 Mode switch and default
 
 - Add `Card | List` switch in `PageHeader` `top-actions` slot.
-- Persist last chosen mode in local storage per route (`anchor-event-view-mode`).
+- Initial mode is always `List`.
+- If current session has specific campaign `spm`, override initial mode to `Card`.
 
 ### 7.2 Card mode
 
-- Vertical stack with one active card.
+- Do not render batch tab bar in Card mode.
+- Card deck scope = all demand cards across all batches in the current event.
+- Each card must show clear time context (batch time label) to avoid ambiguity.
 - Gesture actions:
   - swipe right = accept and join
   - swipe left = skip
@@ -105,44 +120,44 @@ This directly improves fill efficiency and reduces long-tail empty PRs.
   - time label
   - preference summary
   - lightweight social proof (`x candidates`, `y joined`)
+  - location gallery hero image/banner (fallback to event cover)
+
+### 7.2.1 Cross-batch rotation rule (explicit)
+
+- Build one event-wide card queue from all batches.
+- Sort cards by:
+  1. batch start time ascending
+  2. `cardKey` lexicographically ascending (stable tie-break)
+- The active card is always the queue head.
+- On `accept` or `skip`, remove the head and move to next head.
+- On data refresh, rebuild with the same sort rule; cards already processed in current session remain filtered out.
 
 ### 7.3 List mode
 
 - Keep current batch tabs + PR list + creation card flow.
-- Can reuse existing `AnchorEventPRCard` and `AnchorPRCreateCard` components.
+- Reuse existing `AnchorEventPRCard` and `AnchorPRCreateCard` components.
 
 ### 7.4 Exhaustion behavior
 
-In Card mode, when all cards are consumed (joined or skipped for current session), show creation card block with the same behavior as list mode.
+In Card mode, when all cards across the event are consumed (joined or skipped), show creation card block with the same behavior as List mode.
 
-## 8. Location Normalization Requirement
+## 8. Location and Media Data Requirements
 
-The proposal depends on user-facing location normalization:
-
-- Different physical sub-venues that are functionally equivalent must map to one display label.
-- Example: multiple badminton courts map to `广外羽毛球馆` for display and card grouping.
-
-Recommended data direction:
-
-- keep internal location id for operational precision
-- add display-level normalization mapping (e.g., location alias/group)
-- expose normalized `displayLocationName` in event detail/card payload
+- Location pool/resource should expose already user-facing location labels; no sub-venue-level listing is needed for this feature.
+- Each location should provide gallery images; Card mode uses them as hero/banner visuals.
 
 ## 9. SPM-based Default Mode
 
 ### 9.1 Rule
 
-If current session has matching `spm` from printed QR campaign, default to Card mode.
-
 Suggested precedence:
 
-1. valid campaign `spm` match -> `Card`
-2. user explicit stored preference -> stored mode
-3. fallback -> `List`
+1. session `spm` matches `CARD_MODE_SPM_ALLOWLIST` -> initial `Card`
+2. otherwise -> initial `List`
 
 ### 9.2 Compatibility
 
-Existing `sessionStorage` attribution capture already exists (`resolveCurrentSpmAttribution`), so this can be layered without changing current analytics persistence behavior.
+Existing `sessionStorage` attribution capture (`resolveCurrentSpmAttribution`) can be reused directly.
 
 ## 10. Analytics
 
@@ -150,10 +165,10 @@ Add/extend events to compare mode performance:
 
 - `anchor_event_mode_shown` (`mode`, `source`, `spm`)
 - `anchor_event_mode_switch` (`from`, `to`)
-- `anchor_event_card_impression` (`cardKey`, `batchId`)
+- `anchor_event_card_impression` (`cardKey`, `eventId`, `batchId`)
 - `anchor_event_card_accept` (`cardKey`, `selectedPrId`)
 - `anchor_event_card_skip` (`cardKey`)
-- `anchor_event_card_exhausted` (`batchId`)
+- `anchor_event_card_exhausted` (`eventId`, `batchId`)
 
 Primary KPI deltas:
 
@@ -166,44 +181,48 @@ Primary KPI deltas:
 
 ### Phase 1: Frontend dual-mode shell
 
-- Add mode switch and local preference persistence.
-- Keep current list as stable fallback.
+- Add mode switch.
+- Keep existing batch tab bar in List mode only.
+- Keep current List mode as stable baseline.
 
-### Phase 2: Demand-card read model
+### Phase 2: Demand-card read model and visuals
 
 - Build grouped card view model from event detail payload.
-- Introduce card stack UI and accept/skip actions (button first, swipe second).
+- Implement deterministic event-wide cross-batch rotation (`batchStartAt asc`, then `cardKey asc`).
+- Add card stack and accept/skip interactions.
+- Add location gallery hero/banner rendering.
 
-### Phase 3: Backend atomic join-by-card
+### Phase 3: Backend join-by-card endpoint
 
-- Add backend join-by-card use case and endpoint.
-- Frontend accept action migrates from client-side PR selection to backend selection.
+- Add `POST /api/events/:eventId/demand-cards/:cardKey/join`.
+- Backend validates demand payload and selects one joinable PR atomically.
+- Frontend accept action uses this endpoint only.
 
-### Phase 4: SPM defaulting + analytics
+### Phase 4: SPM override + analytics
 
-- Add campaign `spm` matcher and mode default rule.
-- Add event tracking and experiment dashboard slices.
+- Add `CARD_MODE_SPM_ALLOWLIST` matcher.
+- Add mode/card analytics and funnel dashboard slices.
 
 ### Phase 5: Stabilization
 
 - Validate no regression for List mode.
-- tune grouping and selection rules using observed data.
+- Tune grouping and selection rules with real data.
 
 ## 12. Trade-offs and Mitigations
 
 - Trade-off: two modes increase UI complexity.
-  - Mitigation: single shared data source + isolated presentation components.
+  - Mitigation: shared data model with clearly separated mode behaviors.
 - Trade-off: card abstraction hides PR-level transparency.
-  - Mitigation: keep List mode one tap away; show brief candidate count/context on cards.
-- Trade-off: wrong normalization can over-merge distinct options.
-  - Mitigation: explicit location normalization config and auditable mapping.
+  - Mitigation: keep List mode one tap away and keep detail entry in card UI.
+- Trade-off: join race remains possible under high concurrency.
+  - Mitigation: DB-atomic selection + idempotent retry + explicit no-candidate fallback.
 
 ## 13. Open Decisions
 
 - Should skipped cards reset daily, per session, or manually via "reshuffle"?
-- For accept failure due race, should we auto-retry within the same card group before surfacing failure?
-- Do we allow an optional "peek details" action in card mode, or enforce pure quick-decision flow?
+- For accept failure due race, should frontend auto-retry once before surfacing failure?
+- Should Card mode include an explicit "peek PR detail" action before join?
 
 ## 14. Recommendation
 
-Proceed with this proposal. The direction is strategically correct and directly targets the overload root cause. The key engineering constraint is to make backend own card-to-PR join selection; otherwise maintainability and consistency will degrade quickly.
+Proceed with this proposal. The direction is strategically correct and directly targets overload. The implementation should keep event-wide cross-batch card rotation, List-first default behavior, and DB-atomic backend join selection.

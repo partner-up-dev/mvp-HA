@@ -106,11 +106,11 @@ export async function getAnchorPRDetail(
   }
 
   const refreshed = await refreshTemporalStatus(request);
+  const viewerOpenId = viewerIdentity?.openId?.trim() ?? null;
   const viewerUserId =
-    viewerIdentity?.userId ??
-    (viewerIdentity?.openId
-      ? (await resolveUserByOpenId(viewerIdentity.openId)).id
-      : null);
+    viewerOpenId && viewerOpenId.length > 0
+      ? (await resolveUserByOpenId(viewerOpenId)).id
+      : viewerIdentity?.userId ?? null;
   const publicPR = await toPublicPR(refreshed, viewerUserId);
   const anchor = await anchorPRRepo.findByPrId(id);
   if (!anchor) {

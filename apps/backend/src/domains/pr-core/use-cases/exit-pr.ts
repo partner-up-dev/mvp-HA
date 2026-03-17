@@ -33,6 +33,12 @@ export async function exitPRByUserId(
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
+  if (refreshedRequest.createdBy === userId) {
+    throw new HTTPException(400, {
+      message: "Cannot exit - creator cannot exit own partner request",
+    });
+  }
+
   if (!isExitAllowedStatus(refreshedRequest.status as string)) {
     throw new HTTPException(400, {
       message: "Cannot exit - partner request is not open",
