@@ -4,8 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useWeChatReminderSubscription } from "@/shared/wechat/queries/useWeChatReminderSubscription";
 import { useUpdateWeChatReminderSubscription } from "@/shared/wechat/queries/useUpdateWeChatReminderSubscription";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
-import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/useAutoWeChatLogin";
+import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
 
 export const usePRReminderSubscription = (id: Ref<PRId | null>) => {
   const { t } = useI18n();
@@ -50,7 +49,6 @@ export const usePRReminderSubscription = (id: Ref<PRId | null>) => {
 
   const handleToggleWechatReminder = async () => {
     if (id.value === null || !isWeChatEnv.value) return;
-    if (!(await requireWeChatActionAuth(window.location.href))) return;
 
     await updateWechatReminderSubscriptionMutation.mutateAsync({
       enabled: !reminderEnabled.value,

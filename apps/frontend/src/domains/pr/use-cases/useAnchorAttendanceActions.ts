@@ -2,7 +2,6 @@ import { computed, ref, type ComputedRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { AnchorPRDetailView } from "@/domains/pr/model/types";
-import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
 import { trackEvent } from "@/shared/analytics/track";
 import {
   useCheckInAnchorPRSlot,
@@ -46,13 +45,8 @@ export const useAnchorAttendanceActions = ({
   const confirmPending = computed(() => confirmSlotMutation.isPending.value);
   const checkInPending = computed(() => checkInSlotMutation.isPending.value);
 
-  const ensureActionAuthenticated = async (): Promise<boolean> => {
-    return requireWeChatActionAuth(window.location.href);
-  };
-
   const handleConfirmSlot = async () => {
     if (id.value === null) return;
-    if (!(await ensureActionAuthenticated())) return;
 
     await confirmSlotMutation.mutateAsync({ id: id.value });
     trackEvent("pr_confirm_success", {
@@ -74,7 +68,6 @@ export const useAnchorAttendanceActions = ({
   const submitCheckIn = async (wouldJoinAgain: boolean) => {
     if (id.value === null) return;
     if (pendingCheckInDidAttend.value === null) return;
-    if (!(await ensureActionAuthenticated())) return;
 
     await checkInSlotMutation.mutateAsync({
       id: id.value,

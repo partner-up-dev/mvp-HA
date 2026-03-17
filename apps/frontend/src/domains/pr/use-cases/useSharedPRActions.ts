@@ -2,7 +2,6 @@ import { computed, type ComputedRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
-import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
 import { trackEvent } from "@/shared/analytics/track";
 import { useExitAnchorPR, useJoinAnchorPR } from "@/domains/pr/queries/useAnchorPR";
 import {
@@ -70,13 +69,8 @@ export const useSharedPRActions = ({
   const joinPending = computed(() => getJoinMutation().isPending.value);
   const exitPending = computed(() => getExitMutation().isPending.value);
 
-  const ensureActionAuthenticated = async (): Promise<boolean> => {
-    return requireWeChatActionAuth(window.location.href);
-  };
-
   const handleJoin = async () => {
     if (id.value === null) return;
-    if (scenario === "ANCHOR" && !(await ensureActionAuthenticated())) return;
 
     const result = await getJoinMutation().mutateAsync({ id: id.value });
     trackEvent("pr_join_success", {
@@ -89,7 +83,6 @@ export const useSharedPRActions = ({
 
   const handleExit = async () => {
     if (id.value === null) return;
-    if (scenario === "ANCHOR" && !(await ensureActionAuthenticated())) return;
 
     const result = await getExitMutation().mutateAsync({ id: id.value });
     trackEvent("pr_exit_success", {

@@ -6,6 +6,11 @@ import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 import { queryKeys } from "@/shared/api/query-keys";
 import type { AnchorPRFormFields } from "@/domains/pr/model/types";
+import {
+  readApiErrorPayload,
+  resolveApiErrorMessage,
+} from "@/shared/api/error";
+import { handleWeChatAuthRequiredError } from "@/processes/wechat/auth-error";
 
 type AnchorPRActionInput = {
   id: PRId;
@@ -55,8 +60,16 @@ const readErrorMessage = async (
   response: Response,
   fallback: string,
 ): Promise<string> => {
-  const payload = (await response.json()) as { error?: string };
-  return payload.error || fallback;
+  const payload = await readApiErrorPayload(response);
+
+  if (
+    typeof window !== "undefined" &&
+    handleWeChatAuthRequiredError(response.status, payload, window.location.href)
+  ) {
+    return resolveApiErrorMessage(payload, i18n.global.t("prPage.wechatReminder.loginHint"));
+  }
+
+  return resolveApiErrorMessage(payload, fallback);
 };
 
 export const useAnchorPR = (id: Ref<PRId | null>) => {

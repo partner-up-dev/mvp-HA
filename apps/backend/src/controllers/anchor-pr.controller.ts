@@ -24,7 +24,7 @@ import {
   getAuthenticatedUserId,
   prIdParamSchema,
   requireAuthenticatedOpenId,
-  tryReadAuthenticatedOpenId,
+  tryReadAuthenticatedOpenIdForAnchor,
   updateContentSchema,
   updateStatusSchema,
 } from "./pr-controller.shared";
@@ -51,7 +51,7 @@ export const anchorPRRoute = app
   .use("*", authMiddleware)
   .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    const openId = await tryReadAuthenticatedOpenId(c);
+    const openId = await tryReadAuthenticatedOpenIdForAnchor(c);
     const userId = getAuthenticatedUserId(c);
     const result = await getAnchorPRDetail(id, { userId, openId });
     return c.json(result);

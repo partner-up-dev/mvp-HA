@@ -113,7 +113,15 @@ app.use("*", async (c, next) => {
 // Global error handler
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
-    return c.json({ error: err.message }, err.status);
+    const codedError = err as HTTPException & { code?: string };
+    const payload: { error: string; code?: string } = {
+      error: err.message,
+    };
+    if (typeof codedError.code === "string" && codedError.code.length > 0) {
+      payload.code = codedError.code;
+    }
+
+    return c.json(payload, err.status);
   }
   console.error(err);
   return c.json({ error: "Internal Server Error" }, 500);

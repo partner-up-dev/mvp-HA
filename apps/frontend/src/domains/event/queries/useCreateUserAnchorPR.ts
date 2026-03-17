@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
 import { queryKeys } from "@/shared/api/query-keys";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/useAutoWeChatLogin";
+import {
+  readApiErrorPayload,
+  resolveApiErrorMessage,
+} from "@/shared/api/error";
+import { handleWeChatAuthRequiredError } from "@/processes/wechat/auth-error";
 
 type CreateUserAnchorPRInput = {
   eventId: number;
@@ -9,21 +13,10 @@ type CreateUserAnchorPRInput = {
   locationId: string;
 };
 
-type ProblemDetails = {
-  status?: number;
-  detail?: string;
-  code?: string;
-};
-
 export type CreateUserAnchorPRResponse = {
   id: number;
   canonicalPath: string;
 };
-
-const isWeChatAuthProblem = (
-  status: number,
-  payload: ProblemDetails | null,
-): boolean => status === 401 && payload?.code === "WECHAT_AUTH_REQUIRED";
 
 export const useCreateUserAnchorPR = () => {
   const queryClient = useQueryClient();
@@ -52,21 +45,20 @@ export const useCreateUserAnchorPR = () => {
       );
 
       if (!response.ok) {
-        let payload: ProblemDetails | null = null;
-        try {
-          payload = (await response.json()) as ProblemDetails;
-        } catch {
-          payload = null;
+        const payload = await readApiErrorPayload(response);
+
+        if (
+          typeof window !== "undefined" &&
+          handleWeChatAuthRequiredError(
+            response.status,
+            payload,
+            window.location.href,
+          )
+        ) {
+          throw new Error(resolveApiErrorMessage(payload, "需要先完成微信登录"));
         }
 
-        if (isWeChatAuthProblem(response.status, payload)) {
-          if (typeof window !== "undefined") {
-            redirectToWeChatOAuthLogin(window.location.href);
-          }
-          throw new Error("需要先完成微信登录");
-        }
-
-        throw new Error(payload?.detail ?? "创建活动搭子请求失败");
+        throw new Error(resolveApiErrorMessage(payload, "创建活动搭子请求失败"));
       }
 
       return (await response.json()) as CreateUserAnchorPRResponse;

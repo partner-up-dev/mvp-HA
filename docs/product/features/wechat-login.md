@@ -1,17 +1,17 @@
-# 功能：微信登录（自动尝试）
+# 功能：微信登录（后端鉴权驱动）
 
 ## 用户故事
 
-- 作为在微信内访问页面的用户，我希望系统自动尝试完成微信登录，而不是先进入登录页。
+- 作为在微信内访问页面的用户，我希望需要微信身份的动作由后端统一判定，并在未登录时引导我完成登录。
 - 作为产品方，我希望后端具备可复用的微信 OAuth 会话基础设施，为后续用户能力扩展打底。
 - 作为已拥有本地账户的用户，我希望能在“我的”页把当前账户绑定到微信，而不是切换成另一个账号。
 
 ## 流程
 
 - 用户在微信 WebView 打开任意页面（首页、`/cpr/new`、`/cpr/:id`、`/apr/:id` 等）。
-- 前端应用启动后调用 `GET /api/wechat/oauth/session` 检查当前登录态。
-- 若微信 OAuth 基础设施未配置，或当前已登录，则保持当前页面，不跳转。
-- 若已配置且当前未登录，前端重定向到 `GET /api/wechat/oauth/login`，并携带当前页面地址作为 `returnTo`。
+- 前端不再在页面启动阶段做微信登录前置判断；需要微信身份的动作先直连业务 API。
+- 后端在动作接口上统一判定微信会话；若未登录则返回 `401 + code=WECHAT_AUTH_REQUIRED`（或 OAuth 未配置返回 `503 + code=WECHAT_OAUTH_NOT_CONFIGURED`）。
+- 前端根据接口返回的 `status + error code` 决定是否重定向到 `GET /api/wechat/oauth/login`，并携带当前页面地址作为 `returnTo`。
 - 后端生成并校验 OAuth state（签名 cookie），跳转微信授权地址（`snsapi_userinfo`）。
 - 微信回调 `GET /api/wechat/oauth/callback`，后端用 `code` 换取 `openid` + OAuth access token；若为新用户（`users.open_id` 不存在）会调用 `sns/userinfo` 拉取 `nickname/sex/avatar` 并落库，再签发 HttpOnly 会话 cookie，最后跳回 `returnTo` 页面。
 - “我的”页在微信内可调用 `GET /api/wechat/oauth/bind?returnTo=...` 发起绑定模式：
@@ -26,7 +26,7 @@
 ## 验收标准
 
 - 无需新增登录页/注册页/用户页。
-- 微信内访问页面时，应用会自动尝试登录。
+- 微信登录判断以后端接口响应为准，前端不做动作前置鉴权短路。
 - 后端提供会话查询、登录跳转、回调换取、登出清理四个接口。
 - 后端额外提供绑定入口 `GET /api/wechat/oauth/bind`，并复用同一个 `/api/wechat/oauth/callback` 处理 bind 模式。
 - 后端在 join/exit 场景必须校验会话有效期并读取 `openid` 绑定用户；Anchor PR 的 confirm/check-in 也同样强制校验。
@@ -37,10 +37,16 @@
 - OAuth state 与会话 token 均为签名数据，不允许明文可篡改。
 - 已登录用户重复进入页面时不会再次触发授权跳转。
 - 未配置微信 OAuth 所需环境变量时，系统不会进入重定向死循环。
-- 自动尝试逻辑仅在微信内置 WebView 触发，非微信浏览器不触发跳转。
+- 未登录重定向逻辑由业务接口错误码触发，非微信环境不会在页面启动阶段主动跳转。
 - 基础环境变量为 `WECHAT_OFFICIAL_ACCOUNT_APP_ID`、`WECHAT_OFFICIAL_ACCOUNT_APP_SECRET`、`WECHAT_AUTH_SESSION_SECRET`。
 
 ## 涉及端
 
 - H5 前端
 - 后端
+
+## 开发调试约定（非生产）
+
+- 本地开发可开启后端环境变量 `WECHAT_DEV_MOCK_ENABLED=true`，并可通过 `WECHAT_DEV_MOCK_OPEN_ID` 指定固定 mock openid。
+- 开启后，Anchor PR 相关需要微信登录的动作（join/exit/confirm/check-in 等）会使用该 mock openid 通过鉴权，避免本地开发被真实 OAuth 阻塞。
+- 该能力仅用于非生产调试；生产环境必须保持关闭。

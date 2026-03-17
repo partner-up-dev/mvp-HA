@@ -287,7 +287,6 @@ import { useRegisterLocalAccount } from "@/domains/user/queries/useRegisterLocal
 import { useWeChatReminderSubscription } from "@/shared/wechat/queries/useWeChatReminderSubscription";
 import { useUpdateWeChatReminderSubscription } from "@/shared/wechat/queries/useUpdateWeChatReminderSubscription";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
-import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
 import { copyToClipboard } from "@/lib/clipboard";
 
 const router = useRouter();
@@ -499,12 +498,6 @@ const handleReminderAction = async () => {
   if (!userSessionStore.isAuthenticated || typeof window === "undefined")
     return;
   if (!isWeChatEnv.value || !reminderConfigured.value) return;
-  if (!reminderAuthenticated.value) {
-    await requireWeChatActionAuth(window.location.href);
-    return;
-  }
-
-  if (!(await requireWeChatActionAuth(window.location.href))) return;
   await updateReminderMutation.mutateAsync({
     enabled: !reminderEnabled.value,
   });

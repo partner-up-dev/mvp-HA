@@ -152,8 +152,6 @@ import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
-import { requireWeChatActionAuth } from "@/processes/wechat/requireWeChatActionAuth";
-import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import type { CommunityPRFormFields } from "@/domains/pr/model/types";
 import type { JoinCommunityPRResponse } from "@/domains/pr/queries/useCommunityPR";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
@@ -237,15 +235,9 @@ const showPinHelpCard = computed(() => {
   if (!isCreator.value) return false;
   return creationEntry.value === "create" || creationEntry.value === "publish";
 });
-const isWeChatEnv = computed(() =>
-  typeof navigator === "undefined" ? false : isWeChatBrowser(),
-);
 
 const handlePublishDraft = async () => {
   if (id.value === null) return;
-  if (isWeChatEnv.value && typeof window !== "undefined") {
-    void requireWeChatActionAuth(window.location.href);
-  }
   const result = await publishMutation.mutateAsync({ id: id.value });
   const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
   if (authPayload) {
