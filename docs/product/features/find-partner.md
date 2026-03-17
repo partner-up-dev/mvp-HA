@@ -57,6 +57,12 @@
 - Anchor PR 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 - 创建者编辑规则：JWT `authenticated/service` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
+- 活动详情页（`/events/:eventId`）支持 `Card/List` 双模式切换：
+  - `List`：保留批次 tab + PR 列表 + 创建卡片。
+  - `Card`：不显示批次 tab，按“跨批次”卡片队列浏览需求组合（地点 + 时间批次 + 偏好指纹）。
+- `Card` 模式支持直接加入：接受卡片时调用 `POST /api/events/:eventId/demand-cards/:cardKey/join`，后端按需求组合原子选择一个可加入 Anchor PR。
+- `Card` 队列轮转规则为确定性排序：先按 `batchStartAt` 升序，再按 `cardKey` 字典序升序；用户在当前会话已处理（join/skip）的卡片会被过滤。
+- `Card` 模式默认行为：初始默认 `List`；若当前会话 `spm` 命中卡片模式白名单，则初始切换为 `Card`。
 
 ## 验收标准
 
@@ -65,6 +71,10 @@
 - 首页存在 Event Highlights 与 Event Plaza Entry，且可分别跳转 `/events/:eventId` 与 `/events`。
 - 首页中段可触发“收藏网站 / 复制首页链接”提示（具备节流，避免重复打扰）。
 - 首页次级动作与底部导航包含“我的”入口（`/me`）；`/me` 内再进入 `/pr/mine` 查看历史列表。
+- `/events/:eventId` 页面提供 `Card/List` 切换按钮。
+- `Card` 模式下不显示批次 tab，卡片队列跨全部批次轮转，且每张卡片展示清晰时间标签。
+- `Card` 模式接受卡片可直接加入（无需先进入 PR 详情页）。
+- `POST /api/events/:eventId/demand-cards/:cardKey/join` 在无可加入候选时返回 `NO_JOINABLE_CANDIDATE`。
 - `/cpr/new` 页面存在头部、创建方式切换区；结构化模式下提供表单主体与页脚双动作按钮（保存/创建）。
 - 结构化创建请求命中 `POST /api/cpr`（请求体为 `PartnerRequestFields`），始终创建 `DRAFT`。
 - 自然语言创建请求命中 `POST /api/cpr/natural_language`，始终创建 `DRAFT`。

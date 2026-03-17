@@ -7,6 +7,8 @@ import {
   getAnchorEventDetail,
   createUserAnchorPR,
   LocationCapReachedError,
+  joinDemandCard,
+  demandCardJoinErrorCode,
 } from "../domains/anchor-event";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import { requireAuthenticatedOpenId } from "./pr-controller.shared";
@@ -22,8 +24,20 @@ const eventBatchParamSchema = z.object({
   batchId: z.coerce.number().int().positive(),
 });
 
+const demandCardJoinParamSchema = z.object({
+  eventId: z.coerce.number().int().positive(),
+  cardKey: z.string().trim().min(1).max(256),
+});
+
 const userCreateAnchorPRInputSchema = z.object({
   locationId: z.string().trim().min(1),
+});
+
+const demandCardJoinBodySchema = z.object({
+  batchId: z.coerce.number().int().positive(),
+  displayLocationName: z.string().trim().min(1),
+  timeWindow: z.tuple([z.string().nullable(), z.string().nullable()]),
+  preferenceFingerprint: z.string().trim().min(1).nullable().optional(),
 });
 
 type ProblemDetails = {
@@ -57,6 +71,69 @@ export const anchorEventRoute = app
     const detail = await getAnchorEventDetail(eventId);
     return c.json(detail);
   })
+  .post(
+    "/:eventId/demand-cards/:cardKey/join",
+    zValidator("param", demandCardJoinParamSchema),
+    zValidator("json", demandCardJoinBodySchema),
+    async (c) => {
+      const { eventId, cardKey } = c.req.valid("param");
+      const {
+        batchId,
+        displayLocationName,
+        timeWindow,
+        preferenceFingerprint,
+      } = c.req.valid("json");
+
+      let openId: string;
+      try {
+        openId = await requireAuthenticatedOpenId(c);
+      } catch (error) {
+        if (error instanceof HTTPException && error.status === 401) {
+          return problem({
+            type: "https://partnerup.sh/problems/wechat-auth-required",
+            title: "WeChat authentication required",
+            status: 401,
+            detail: "Please complete WeChat login before joining this demand card.",
+            instance: c.req.path,
+            code: "WECHAT_AUTH_REQUIRED",
+          });
+        }
+        throw error;
+      }
+
+      try {
+        const result = await joinDemandCard({
+          eventId,
+          cardKey,
+          batchId,
+          displayLocationName,
+          timeWindow,
+          preferenceFingerprint: preferenceFingerprint ?? null,
+          openId,
+        });
+        return c.json(result);
+      } catch (error) {
+        if (
+          error instanceof HTTPException &&
+          typeof (error as { code?: string }).code === "string" &&
+          (error as { code?: string }).code ===
+            demandCardJoinErrorCode.NO_JOINABLE_CANDIDATE
+        ) {
+          return problem({
+            type: "https://partnerup.sh/problems/no-joinable-anchor-candidate",
+            title: "No joinable Anchor PR candidate",
+            status: 409,
+            detail:
+              "No joinable Anchor PR currently matches this demand card.",
+            instance: c.req.path,
+            code: demandCardJoinErrorCode.NO_JOINABLE_CANDIDATE,
+            cardKey,
+          });
+        }
+        throw error;
+      }
+    },
+  )
   // POST /api/events/:eventId/batches/:batchId/anchor-prs - Create user-managed anchor PR
   .post(
     "/:eventId/batches/:batchId/anchor-prs",

@@ -49,6 +49,14 @@ page {
   }
 }
 
+/* Mobile token overrides for spacing/typography/radius/size */
+@media (max-width: 48rem) {
+  :root,
+  page {
+    @include fn.emit-css-variables(sys.$mobile, "sys");
+  }
+}
+
 /* Dark mode using media query */
 @media (prefers-color-scheme: dark) {
   :root,

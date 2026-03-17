@@ -856,6 +856,22 @@
     "noBatches": "暂无可用场次",
     "noPRsInBatch": "该时段暂无可用场地",
     "batchLabel": "场次",
+    "viewMode": {
+      "ariaLabel": "活动浏览模式",
+      "card": "卡片",
+      "list": "列表"
+    },
+    "card": {
+      "batchLabel": "时间批次",
+      "stampLike": "详情",
+      "stampNope": "跳过",
+      "preferenceTitle": "偏好",
+      "preferenceEmpty": "暂无额外偏好要求",
+      "skipButton": "跳过",
+      "detailButton": "查看详情",
+      "emptyTitle": "卡片已看完",
+      "emptySubtitle": "还没有合适的局？可以直接创建一个。"
+    },
     "exhausted": "该活动所有场次已满",
     "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
     "discoverOthers": "发现其他活动",

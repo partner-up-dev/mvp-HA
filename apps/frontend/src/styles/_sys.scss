@@ -121,3 +121,55 @@ $base: (
   font: ref.$font,
   opacity: ref.$opacity,
 );
+
+/* Mobile token overrides (responsive semantics) */
+$mobile: (
+  spacing: (
+    xs: 6px,
+    sm: 10px,
+    med: 18px,
+    lg: 32px,
+  ),
+  radius: (
+    med: 10px,
+    lg: 18px,
+  ),
+  size: (
+    small: 28px,
+    medium: 36px,
+    large: 48px,
+    xLarge: 64px,
+  ),
+  typo: (
+    title-large: (
+      size: 24px,
+      weight: 500,
+      line-height: 34px,
+    ),
+    title-medium: (
+      size: 20px,
+      weight: 500,
+      line-height: 28px,
+    ),
+    body-large: (
+      size: 17px,
+      weight: 400,
+      line-height: 26px,
+    ),
+    label-large: (
+      size: 15px,
+      weight: 500,
+      line-height: 22px,
+    ),
+    label-medium: (
+      size: 13px,
+      weight: 500,
+      line-height: 19px,
+    ),
+    label-small: (
+      size: 12px,
+      weight: 500,
+      line-height: 18px,
+    ),
+  ),
+);
