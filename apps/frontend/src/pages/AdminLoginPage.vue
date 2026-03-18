@@ -62,13 +62,13 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { useAdminLogin } from "@/domains/admin/queries/useAdminLogin";
-import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
+import { useAdminSessionStore } from "@/domains/admin/use-cases/useAdminSessionStore";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
-const userSessionStore = useUserSessionStore();
+const adminSessionStore = useAdminSessionStore();
 const loginMutation = useAdminLogin();
 const form = reactive({
   userId: "",
@@ -90,13 +90,17 @@ const handleSubmit = async () => {
     password: form.password,
   });
 
-  userSessionStore.applyAuthSession(payload);
+  adminSessionStore.applyAuthSession({
+    role: payload.role,
+    userId: payload.userId,
+    accessToken: payload.accessToken,
+  });
   form.password = "";
   await router.replace(resolveRedirectTarget());
 };
 
 watchEffect(() => {
-  if (!userSessionStore.hasAdminAccess) {
+  if (!adminSessionStore.hasAdminAccess) {
     return;
   }
 

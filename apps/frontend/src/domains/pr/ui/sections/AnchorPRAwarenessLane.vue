@@ -16,13 +16,25 @@
     </p>
 
     <div v-else class="roster-list">
-      <article
+      <router-link
         v-for="item in section.roster"
         :key="item.partnerId"
-        class="roster-item"
+        :to="partnerProfilePath(item.partnerId)"
+        class="roster-item roster-link"
       >
         <div class="roster-main">
-          <span class="roster-name">{{ item.displayName }}</span>
+          <div class="roster-identity">
+            <img
+              v-if="item.avatarUrl"
+              :src="item.avatarUrl"
+              :alt="rosterAvatarAlt(item.displayName)"
+              class="roster-avatar"
+            />
+            <div v-else class="roster-avatar roster-avatar--fallback" aria-hidden="true">
+              <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+            </div>
+            <span class="roster-name">{{ item.displayName }}</span>
+          </div>
           <div class="roster-tags">
             <span v-if="item.isSelf" class="roster-tag">
               {{ t("prPage.partnerSection.rosterSelf") }}
@@ -33,7 +45,7 @@
           </div>
         </div>
         <span class="roster-state">{{ rosterStateText(item.state) }}</span>
-      </article>
+      </router-link>
     </div>
   </section>
 </template>
@@ -41,10 +53,12 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
+import { anchorPRPartnerProfilePath } from "@/domains/pr/routing/routes";
 
 type AnchorPartnerSection = AnchorPRDetailResponse["partnerSection"];
 
-defineProps<{
+const props = defineProps<{
+  prId: number;
   section: AnchorPartnerSection;
 }>();
 
@@ -61,6 +75,18 @@ const rosterStateText = (
     default:
       return t("prPage.partnerSection.rosterJoined");
   }
+};
+
+const partnerProfilePath = (partnerId: number): string =>
+  anchorPRPartnerProfilePath(props.prId, partnerId);
+
+const rosterAvatarAlt = (name: string): string =>
+  t("prPage.partnerSection.rosterAvatarAlt", { name });
+
+const rosterAvatarFallback = (displayName: string): string => {
+  const normalized = displayName.trim();
+  if (normalized.length > 0) return normalized.slice(0, 1).toUpperCase();
+  return t("prPage.partnerSection.rosterAvatarFallback");
 };
 </script>
 
@@ -113,9 +139,61 @@ const rosterStateText = (
   min-width: 0;
 }
 
+.roster-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--sys-spacing-sm);
+  min-width: 0;
+}
+
 .roster-name {
   @include mx.pu-font(body-large);
   overflow-wrap: anywhere;
+}
+
+.roster-link {
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--sys-color-primary) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--sys-color-primary) 6%,
+      var(--sys-color-surface-container-lowest)
+    );
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.roster-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.roster-avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sys-color-outline-variant);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+
+  span {
+    @include mx.pu-font(label-large);
+  }
 }
 
 .roster-tags {

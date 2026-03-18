@@ -7,10 +7,15 @@ import { i18n } from "@/locales/i18n";
 import { queryKeys } from "@/shared/api/query-keys";
 import type { AnchorPRFormFields } from "@/domains/pr/model/types";
 import {
+  type ApiErrorPayload,
   readApiErrorPayload,
   resolveApiErrorMessage,
 } from "@/shared/api/error";
 import { handleWeChatAuthRequiredError } from "@/processes/wechat/auth-error";
+import {
+  useUserSessionStore,
+  type AuthSessionPayload,
+} from "@/shared/auth/useUserSessionStore";
 
 type AnchorPRActionInput = {
   id: PRId;
@@ -35,6 +40,8 @@ type AnchorPRUpdateStatusInput = {
 };
 
 type TimeWindow = [string | null, string | null];
+const ANCHOR_USER_AUTH_REQUIRED_CODE = "ANCHOR_USER_AUTH_REQUIRED";
+const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 
 export type AnchorPRDetailResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["$get"]
@@ -56,12 +63,11 @@ export type AnchorReimbursementStatusResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["reimbursement"]["status"]["$get"]
 >;
 
-const readErrorMessage = async (
+const resolveErrorMessage = (
   response: Response,
+  payload: ApiErrorPayload | null,
   fallback: string,
-): Promise<string> => {
-  const payload = await readApiErrorPayload(response);
-
+): string => {
   if (
     typeof window !== "undefined" &&
     handleWeChatAuthRequiredError(response.status, payload, window.location.href)
@@ -71,6 +77,25 @@ const readErrorMessage = async (
 
   return resolveApiErrorMessage(payload, fallback);
 };
+
+const isAnchorUserAuthRequiredError = (
+  response: Response,
+  payload: ApiErrorPayload | null,
+): boolean =>
+  response.status === 401 && payload?.code === ANCHOR_USER_AUTH_REQUIRED_CODE;
+
+const isWeChatBindRequiredError = (
+  response: Response,
+  payload: ApiErrorPayload | null,
+): boolean => response.status === 401 && payload?.code === WECHAT_BIND_REQUIRED_CODE;
+
+const resolveRegisterLocalAccountError = (
+  payload: ApiErrorPayload | null,
+): string =>
+  resolveApiErrorMessage(
+    payload,
+    i18n.global.t("errors.registerLocalAccountFailed"),
+  );
 
 export const useAnchorPR = (id: Ref<PRId | null>) => {
   const queryKey = computed(() => queryKeys.anchorPR.detail(id.value));
@@ -131,23 +156,79 @@ export const useAnchorPRBookingSupport = (id: Ref<PRId | null>) => {
 
 export const useJoinAnchorPR = () => {
   const queryClient = useQueryClient();
+  const userSessionStore = useUserSessionStore();
 
   return useMutation({
     mutationFn: async ({ id }: AnchorPRActionInput) => {
-      const res = await client.api.apr[":id"].join.$post(
-        {
-          param: { id: id.toString() },
-        },
-        {
-          init: {
-            credentials: "include",
+      const requestJoin = async () =>
+        client.api.apr[":id"].join.$post(
+          {
+            param: { id: id.toString() },
           },
-        },
-      );
+          {
+            init: {
+              credentials: "include",
+            },
+          },
+        );
+
+      let res = await requestJoin();
+      let payload = res.ok ? null : await readApiErrorPayload(res);
+
+      if (isAnchorUserAuthRequiredError(res, payload)) {
+        const registerRes = await client.api.auth.register.local.$post();
+        const registerPayload = registerRes.ok
+          ? ((await registerRes.json()) as AuthSessionPayload)
+          : null;
+
+        if (!registerRes.ok || !registerPayload) {
+          const registerErrorPayload = registerRes.ok
+            ? null
+            : await readApiErrorPayload(registerRes);
+          throw new Error(resolveRegisterLocalAccountError(registerErrorPayload));
+        }
+
+        userSessionStore.applyAuthSession(registerPayload);
+        res = await requestJoin();
+        payload = res.ok ? null : await readApiErrorPayload(res);
+      }
+
+      if (isWeChatBindRequiredError(res, payload)) {
+        const rehydrateRes = await client.api.auth.session.$post(
+          {
+            json: {
+              userId: null,
+              userPin: null,
+            },
+          },
+          {
+            init: {
+              credentials: "include",
+              headers: {
+                Authorization: "",
+              },
+            },
+          },
+        );
+
+        if (rehydrateRes.ok) {
+          const rehydratedSession = (await rehydrateRes.json()) as AuthSessionPayload;
+          userSessionStore.applyAuthSession(rehydratedSession);
+
+          if (rehydratedSession.userId) {
+            res = await requestJoin();
+            payload = res.ok ? null : await readApiErrorPayload(res);
+          }
+        }
+      }
 
       if (!res.ok) {
         throw new Error(
-          await readErrorMessage(res, i18n.global.t("errors.joinRequestFailed")),
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.joinRequestFailed"),
+          ),
         );
       }
 
@@ -181,8 +262,13 @@ export const useExitAnchorPR = () => {
       );
 
       if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
         throw new Error(
-          await readErrorMessage(res, i18n.global.t("errors.exitRequestFailed")),
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.exitRequestFailed"),
+          ),
         );
       }
 
@@ -216,9 +302,11 @@ export const useConfirmAnchorPRSlot = () => {
       );
 
       if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
         throw new Error(
-          await readErrorMessage(
+          resolveErrorMessage(
             res,
+            payload,
             i18n.global.t("errors.confirmSlotFailed"),
           ),
         );
@@ -259,9 +347,11 @@ export const useCheckInAnchorPRSlot = () => {
       );
 
       if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
         throw new Error(
-          await readErrorMessage(
+          resolveErrorMessage(
             res,
+            payload,
             i18n.global.t("errors.checkInSlotFailed"),
           ),
         );
@@ -320,7 +410,8 @@ export const useAcceptAnchorAlternativeBatch = () => {
       });
 
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "接受其它时段推荐失败"));
+        const payload = await readApiErrorPayload(res);
+        throw new Error(resolveErrorMessage(res, payload, "接受其它时段推荐失败"));
       }
 
       return await res.json();
@@ -359,9 +450,11 @@ export const useAnchorReimbursementStatus = (id: Ref<PRId | null>) => {
       );
 
       if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
         throw new Error(
-          await readErrorMessage(
+          resolveErrorMessage(
             res,
+            payload,
             i18n.global.t("errors.fetchReimbursementStatusFailed"),
           ),
         );
@@ -399,9 +492,11 @@ export const useUpdateAnchorPRContent = () => {
       });
 
       if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
         throw new Error(
-          await readErrorMessage(
+          resolveErrorMessage(
             res,
+            payload,
             i18n.global.t("errors.updateContentFailed"),
           ),
         );
@@ -428,9 +523,11 @@ export const useUpdateAnchorPRStatus = () => {
       });
 
       if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
         throw new Error(
-          await readErrorMessage(
+          resolveErrorMessage(
             res,
+            payload,
             i18n.global.t("errors.updateStatusFailed"),
           ),
         );

@@ -63,6 +63,7 @@
       </PRFactsCard>
 
       <PRPartnerSection
+        :pr-id="prDetail.id"
         :section="prDetail.partnerSection"
         :slot-state-text="sharedActions.slotStateText.value"
         :join-pending="sharedActions.joinPending.value"

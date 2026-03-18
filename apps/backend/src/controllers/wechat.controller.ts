@@ -29,6 +29,7 @@ const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
 const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
 const OAUTH_STATE_TTL_SECONDS = 10 * 60;
 const OAUTH_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+const OAUTH_MOCK_CODE = "mock-oauth-code";
 
 const signatureQuerySchema = z.object({
   url: z.string().min(1),
@@ -36,6 +37,10 @@ const signatureQuerySchema = z.object({
 
 const oauthLoginQuerySchema = z.object({
   returnTo: z.string().optional(),
+});
+
+const oauthMockAuthorizeQuerySchema = z.object({
+  state: z.string().min(1),
 });
 
 const oauthCallbackQuerySchema = z.object({
@@ -65,6 +70,31 @@ type OAuthSessionCookiePayload = z.infer<typeof oauthSessionCookiePayloadSchema>
 type OAuthStateMode = OAuthStateCookiePayload["mode"];
 
 const nowMs = (): number => Date.now();
+const isProduction = process.env.NODE_ENV === "production";
+
+const isWeChatDevMockEnabled = (): boolean =>
+  !isProduction && env.WECHAT_DEV_MOCK_ENABLED === "true";
+
+const resolveWeChatDevMockOpenId = (): string | null => {
+  if (!isWeChatDevMockEnabled()) {
+    return null;
+  }
+  const openId = env.WECHAT_DEV_MOCK_OPEN_ID.trim();
+  return openId.length > 0 ? openId : null;
+};
+
+const isOAuthRuntimeAvailable = (): boolean =>
+  oauthService.isConfigured() || isWeChatDevMockEnabled();
+
+const resolveOAuthSessionSecret = (): string | null => {
+  if (oauthService.isConfigured()) {
+    return oauthService.getSessionSecret();
+  }
+  if (isWeChatDevMockEnabled()) {
+    return env.AUTH_JWT_SECRET;
+  }
+  return null;
+};
 
 const isHttpProtocol = (protocol: string): boolean =>
   protocol === "http:" || protocol === "https:";
@@ -226,6 +256,31 @@ const resolveOAuthCallbackUrl = (c: Context): string => {
   return callbackUrl.toString();
 };
 
+const resolveMockOAuthAuthorizeUrl = (c: Context, state: string): string => {
+  const authorizeUrl = new URL(c.req.url);
+  authorizeUrl.pathname = authorizeUrl.pathname.replace(
+    /\/oauth\/(?:login|bind)$/,
+    "/oauth/mock/authorize",
+  );
+  authorizeUrl.search = "";
+  authorizeUrl.searchParams.set("state", state);
+  authorizeUrl.hash = "";
+  return authorizeUrl.toString();
+};
+
+const resolveMockOAuthCallbackUrl = (c: Context, state: string): string => {
+  const callbackUrl = new URL(c.req.url);
+  callbackUrl.pathname = callbackUrl.pathname.replace(
+    /\/oauth\/mock\/authorize$/,
+    "/oauth/callback",
+  );
+  callbackUrl.search = "";
+  callbackUrl.searchParams.set("state", state);
+  callbackUrl.searchParams.set("code", OAUTH_MOCK_CODE);
+  callbackUrl.hash = "";
+  return callbackUrl.toString();
+};
+
 const appendBindResultToReturnTo = (
   returnTo: string,
   result: "success" | "conflict" | "failed",
@@ -239,7 +294,10 @@ const setOAuthStateCookie = async (
   c: Context,
   payload: OAuthStateCookiePayload,
 ): Promise<void> => {
-  const sessionSecret = oauthService.getSessionSecret();
+  const sessionSecret = resolveOAuthSessionSecret();
+  if (!sessionSecret) {
+    throw new Error("WeChat OAuth state secret is not configured");
+  }
   await setSignedCookie(
     c,
     OAUTH_STATE_COOKIE_NAME,
@@ -256,7 +314,10 @@ const setOAuthSessionCookie = async (
   c: Context,
   openId: string,
 ): Promise<void> => {
-  const sessionSecret = oauthService.getSessionSecret();
+  const sessionSecret = resolveOAuthSessionSecret();
+  if (!sessionSecret) {
+    throw new Error("WeChat OAuth session secret is not configured");
+  }
   const issuedAtMs = nowMs();
   const sessionPayload: OAuthSessionCookiePayload = {
     openId,
@@ -318,7 +379,7 @@ export const wechatRoute = app
     }
   })
   .get("/oauth/session", async (c) => {
-    if (!oauthService.isConfigured()) {
+    if (!isOAuthRuntimeAvailable()) {
       clearOAuthSessionCookie(c);
       clearOAuthStateCookie(c);
       return c.json({
@@ -328,7 +389,14 @@ export const wechatRoute = app
       });
     }
 
-    const sessionSecret = oauthService.getSessionSecret();
+    const sessionSecret = resolveOAuthSessionSecret();
+    if (!sessionSecret) {
+      return c.json({
+        configured: false,
+        authenticated: false,
+        openId: null,
+      });
+    }
     const sessionPayload = await readSignedCookiePayload(
       c,
       OAUTH_SESSION_COOKIE_NAME,
@@ -352,7 +420,7 @@ export const wechatRoute = app
     });
   })
   .get("/reminders/subscription", async (c) => {
-    if (!oauthService.isConfigured()) {
+    if (!isOAuthRuntimeAvailable()) {
       return c.json({
         configured: false,
         authenticated: false,
@@ -361,7 +429,15 @@ export const wechatRoute = app
       });
     }
 
-    const sessionSecret = oauthService.getSessionSecret();
+    const sessionSecret = resolveOAuthSessionSecret();
+    if (!sessionSecret) {
+      return c.json({
+        configured: false,
+        authenticated: false,
+        enabled: false,
+        optInAt: null,
+      });
+    }
     const sessionPayload = await readSignedCookiePayload(
       c,
       OAUTH_SESSION_COOKIE_NAME,
@@ -403,11 +479,14 @@ export const wechatRoute = app
     "/reminders/subscription",
     zValidator("json", reminderSubscriptionUpdateSchema),
     async (c) => {
-      if (!oauthService.isConfigured()) {
+      if (!isOAuthRuntimeAvailable()) {
         return c.json({ error: "WeChat OAuth is not configured" }, 503);
       }
 
-      const sessionSecret = oauthService.getSessionSecret();
+      const sessionSecret = resolveOAuthSessionSecret();
+      if (!sessionSecret) {
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
       const sessionPayload = await readSignedCookiePayload(
         c,
         OAUTH_SESSION_COOKIE_NAME,
@@ -453,11 +532,23 @@ export const wechatRoute = app
     },
   )
   .use("/oauth/bind", authMiddleware)
-  .get("/oauth/login", zValidator("query", oauthLoginQuerySchema), async (c) => {
-    if (!oauthService.isConfigured()) {
-      return c.json({ error: "WeChat OAuth is not configured" }, 503);
-    }
+  .get(
+    "/oauth/mock/authorize",
+    zValidator("query", oauthMockAuthorizeQuerySchema),
+    async (c) => {
+      if (!isWeChatDevMockEnabled()) {
+        return c.json({ error: "Mock OAuth is not enabled" }, 404);
+      }
 
+      if (!resolveWeChatDevMockOpenId()) {
+        return c.json({ error: "Mock WeChat openid is not configured" }, 503);
+      }
+
+      const { state } = c.req.valid("query");
+      return c.redirect(resolveMockOAuthCallbackUrl(c, state), 302);
+    },
+  )
+  .get("/oauth/login", zValidator("query", oauthLoginQuerySchema), async (c) => {
     const { returnTo: rawReturnTo } = c.req.valid("query");
 
     let returnTo: string;
@@ -467,6 +558,25 @@ export const wechatRoute = app
       const message =
         error instanceof Error ? error.message : "Invalid returnTo";
       return c.json({ error: message }, 400);
+    }
+
+    if (isWeChatDevMockEnabled()) {
+      const mockOpenId = resolveWeChatDevMockOpenId();
+      if (!mockOpenId) {
+        return c.json({ error: "Mock WeChat openid is not configured" }, 503);
+      }
+
+      const statePayload = buildOAuthStatePayload(returnTo, "login");
+      await setOAuthStateCookie(c, statePayload);
+      const mockAuthorizeUrl = resolveMockOAuthAuthorizeUrl(
+        c,
+        statePayload.nonce,
+      );
+      return c.redirect(mockAuthorizeUrl, 302);
+    }
+
+    if (!oauthService.isConfigured()) {
+      return c.json({ error: "WeChat OAuth is not configured" }, 503);
     }
 
     const statePayload = buildOAuthStatePayload(returnTo, "login");
@@ -481,7 +591,7 @@ export const wechatRoute = app
     return c.redirect(authorizeUrl, 302);
   })
   .get("/oauth/bind", zValidator("query", oauthLoginQuerySchema), async (c) => {
-    if (!oauthService.isConfigured()) {
+    if (!isOAuthRuntimeAvailable()) {
       return c.json({ error: "WeChat OAuth is not configured" }, 503);
     }
 
@@ -514,11 +624,17 @@ export const wechatRoute = app
     const statePayload = buildOAuthStatePayload(returnTo, "bind", currentUserId);
     await setOAuthStateCookie(c, statePayload);
 
-    const callbackUrl = resolveOAuthCallbackUrl(c);
-    const authorizeUrl = oauthService.createAuthorizeUrl(
-      callbackUrl,
-      statePayload.nonce,
-    );
+    const authorizeUrl = isWeChatDevMockEnabled()
+      ? resolveMockOAuthAuthorizeUrl(c, statePayload.nonce)
+      : oauthService.isConfigured()
+      ? oauthService.createAuthorizeUrl(
+          resolveOAuthCallbackUrl(c),
+          statePayload.nonce,
+        )
+      : null;
+    if (!authorizeUrl) {
+      return c.json({ error: "WeChat OAuth is not configured" }, 503);
+    }
 
     return c.json({ authorizeUrl });
   })
@@ -526,17 +642,24 @@ export const wechatRoute = app
     "/oauth/callback",
     zValidator("query", oauthCallbackQuerySchema),
     async (c) => {
-      if (!oauthService.isConfigured()) {
-        return c.json({ error: "WeChat OAuth is not configured" }, 503);
-      }
-
       const { code, state } = c.req.valid("query");
       if (!code || !state) {
         clearOAuthStateCookie(c);
         return c.json({ error: "Missing code or state" }, 400);
       }
 
-      const sessionSecret = oauthService.getSessionSecret();
+      const useMockOAuthFlow =
+        isWeChatDevMockEnabled() && code === OAUTH_MOCK_CODE;
+      if (!useMockOAuthFlow && !oauthService.isConfigured()) {
+        clearOAuthStateCookie(c);
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
+
+      const sessionSecret = resolveOAuthSessionSecret();
+      if (!sessionSecret) {
+        clearOAuthStateCookie(c);
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
       const statePayload = await readSignedCookiePayload(
         c,
         OAUTH_STATE_COOKIE_NAME,
@@ -561,9 +684,15 @@ export const wechatRoute = app
 
       try {
         if (statePayload.mode === "bind" && statePayload.bindUserId) {
-          const session = await oauthService.exchangeCodeForSession(code);
-          await bindWeChatToCurrentUser(statePayload.bindUserId, session.openId);
-          await setOAuthSessionCookie(c, session.openId);
+          const bindOpenId = useMockOAuthFlow
+            ? resolveWeChatDevMockOpenId()
+            : (await oauthService.exchangeCodeForSession(code)).openId;
+          if (!bindOpenId) {
+            throw new Error("Mock WeChat openid is not configured");
+          }
+
+          await bindWeChatToCurrentUser(statePayload.bindUserId, bindOpenId);
+          await setOAuthSessionCookie(c, bindOpenId);
           clearOAuthStateCookie(c);
 
           return c.redirect(
@@ -572,8 +701,13 @@ export const wechatRoute = app
           );
         }
 
-        const { openId } = await loginService.exchangeCodeAndEnsureUser(code);
-        await setOAuthSessionCookie(c, openId);
+        const loginOpenId = useMockOAuthFlow
+          ? resolveWeChatDevMockOpenId()
+          : (await loginService.exchangeCodeAndEnsureUser(code)).openId;
+        if (!loginOpenId) {
+          throw new Error("Mock WeChat openid is not configured");
+        }
+        await setOAuthSessionCookie(c, loginOpenId);
 
         clearOAuthStateCookie(c);
         return c.redirect(statePayload.returnTo, 302);

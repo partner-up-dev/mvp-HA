@@ -93,7 +93,10 @@
         </router-link>
       </section>
 
-      <AnchorPRAwarenessLane :section="prDetail.partnerSection" />
+      <AnchorPRAwarenessLane
+        :pr-id="prDetail.id"
+        :section="prDetail.partnerSection"
+      />
 
       <AnchorPRRecoveryLane
         ref="recoveryLaneRef"

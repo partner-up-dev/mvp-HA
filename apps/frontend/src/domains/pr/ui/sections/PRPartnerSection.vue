@@ -156,15 +156,31 @@
       </p>
 
       <div v-else class="partner-section__roster">
-        <article
+        <router-link
           v-for="item in section.roster"
           :key="item.partnerId"
-          class="partner-section__roster-item"
+          :to="partnerProfilePath(item.partnerId)"
+          class="partner-section__roster-item partner-section__roster-link"
         >
           <div class="partner-section__roster-main">
-            <span class="partner-section__roster-name">{{
-              item.displayName
-            }}</span>
+            <div class="partner-section__roster-identity">
+              <img
+                v-if="item.avatarUrl"
+                :src="item.avatarUrl"
+                :alt="rosterAvatarAlt(item.displayName)"
+                class="partner-section__roster-avatar"
+              />
+              <div
+                v-else
+                class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
+                aria-hidden="true"
+              >
+                <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+              </div>
+              <span class="partner-section__roster-name">{{
+                item.displayName
+              }}</span>
+            </div>
             <div class="partner-section__roster-tags">
               <span v-if="item.isSelf" class="partner-section__tag">
                 {{ t("prPage.partnerSection.rosterSelf") }}
@@ -177,7 +193,7 @@
           <span class="partner-section__state-badge">
             {{ rosterStateText(item.state) }}
           </span>
-        </article>
+        </router-link>
       </div>
     </section>
 
@@ -351,7 +367,11 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
 import type { CommunityPRDetailResponse } from "@/domains/pr/queries/useCommunityPR";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import {
+  anchorPRDetailPath,
+  anchorPRPartnerProfilePath,
+  communityPRPartnerProfilePath,
+} from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type PartnerSectionView =
@@ -362,6 +382,7 @@ type TimeWindow = [string | null, string | null];
 
 const props = withDefaults(
   defineProps<{
+    prId: number;
     section: PartnerSectionView;
     slotStateText: string;
     joinPending?: boolean;
@@ -474,6 +495,13 @@ const formatWindow = (start: string | null, end: string | null): string => {
   return startLabel ?? endLabel ?? t("prPage.partnerSection.notSet");
 };
 
+const partnerProfilePath = (partnerId: number): string => {
+  if (props.section.scenario === "ANCHOR") {
+    return anchorPRPartnerProfilePath(props.prId, partnerId);
+  }
+  return communityPRPartnerProfilePath(props.prId, partnerId);
+};
+
 const confirmWindowText = computed(() => {
   const notSet = t("prPage.partnerSection.notSet");
   if (props.section.scenario !== "ANCHOR" || !props.section.timeline) {
@@ -500,6 +528,15 @@ const rosterStateText = (
     default:
       return t("prPage.partnerSection.rosterJoined");
   }
+};
+
+const rosterAvatarAlt = (name: string): string =>
+  t("prPage.partnerSection.rosterAvatarAlt", { name });
+
+const rosterAvatarFallback = (displayName: string): string => {
+  const normalized = displayName.trim();
+  if (normalized.length > 0) return normalized.slice(0, 1).toUpperCase();
+  return t("prPage.partnerSection.rosterAvatarFallback");
 };
 
 function blockedReasonText(
@@ -689,6 +726,13 @@ function blockedReasonText(
   gap: var(--sys-spacing-xs);
 }
 
+.partner-section__roster-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--sys-spacing-sm);
+  min-width: 0;
+}
+
 .partner-section__roster {
   margin-top: var(--sys-spacing-xs);
 }
@@ -710,6 +754,58 @@ function blockedReasonText(
 .partner-section__roster-item {
   align-items: flex-start;
   padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+}
+
+.partner-section__roster-link {
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--sys-color-primary) 40%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--sys-color-primary) 6%,
+      var(--sys-color-surface-container-lowest)
+    );
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.partner-section__roster-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.partner-section__roster-avatar {
+  object-fit: cover;
+}
+
+.partner-section__roster-avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sys-color-outline-variant);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+
+  span {
+    @include mx.pu-font(label-large);
+  }
+}
+
+.partner-section__roster-name {
+  overflow-wrap: anywhere;
 }
 
 .partner-section__roster-tags {

@@ -12,6 +12,7 @@ import {
 } from "../domains/pr-anchor";
 import {
   exitPR,
+  getPRPartnerProfile,
   joinPR,
   updatePRContent,
   updatePRStatus,
@@ -21,10 +22,12 @@ import { PartnerRequestRepository } from "../repositories/PartnerRequestReposito
 import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mutation-auth.service";
 import { HTTPException } from "hono/http-exception";
 import {
-  getAuthenticatedUserId,
   prIdParamSchema,
-  requireAuthenticatedOpenId,
-  tryReadAuthenticatedOpenIdForAnchor,
+  prPartnerProfileParamSchema,
+  requireAnchorAuthenticatedIdentity,
+  resolveAvatarUrl,
+  tryReadAnchorAuthenticatedIdentity,
+  getAuthenticatedUserId,
   updateContentSchema,
   updateStatusSchema,
 } from "./pr-controller.shared";
@@ -51,11 +54,29 @@ export const anchorPRRoute = app
   .use("*", authMiddleware)
   .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    const openId = await tryReadAuthenticatedOpenIdForAnchor(c);
-    const userId = getAuthenticatedUserId(c);
-    const result = await getAnchorPRDetail(id, { userId, openId });
+    const identity = await tryReadAnchorAuthenticatedIdentity(c);
+    const result = await getAnchorPRDetail(id, identity ?? undefined);
     return c.json(result);
   })
+  .get(
+    "/:id/partners/:partnerId/profile",
+    zValidator("param", prPartnerProfileParamSchema),
+    async (c) => {
+      const { id, partnerId } = c.req.valid("param");
+      const viewerUserId = getAuthenticatedUserId(c);
+      const profile = await getPRPartnerProfile({
+        prId: id,
+        partnerId,
+        prKind: "ANCHOR",
+        viewerUserId,
+      });
+
+      return c.json({
+        ...profile,
+        avatarUrl: resolveAvatarUrl(c.req.url, profile.avatarUrl),
+      });
+    },
+  )
   .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     const result = await getAnchorPRBookingSupport(id);
@@ -149,21 +170,21 @@ export const anchorPRRoute = app
   .post("/:id/join", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await ensureAnchorPR(id);
-    const openId = await requireAuthenticatedOpenId(c);
+    const { openId } = await requireAnchorAuthenticatedIdentity(c);
     const result = await joinPR(id, openId);
     return c.json(result);
   })
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await ensureAnchorPR(id);
-    const openId = await requireAuthenticatedOpenId(c);
+    const { openId } = await requireAnchorAuthenticatedIdentity(c);
     const result = await exitPR(id, openId);
     return c.json(result);
   })
   .post("/:id/confirm", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await ensureAnchorPR(id);
-    const openId = await requireAuthenticatedOpenId(c);
+    const { openId } = await requireAnchorAuthenticatedIdentity(c);
     const result = await confirmSlot(id, openId);
     return c.json(result);
   })
@@ -174,7 +195,7 @@ export const anchorPRRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       await ensureAnchorPR(id);
-      const openId = await requireAuthenticatedOpenId(c);
+      const { openId } = await requireAnchorAuthenticatedIdentity(c);
       const { didAttend, wouldJoinAgain } = c.req.valid("json");
       const result = await checkIn(id, openId, {
         didAttend,
@@ -188,7 +209,7 @@ export const anchorPRRoute = app
     zValidator("param", prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      const openId = await requireAuthenticatedOpenId(c);
+      const { openId } = await requireAnchorAuthenticatedIdentity(c);
       const result = await getReimbursementStatus(id, openId);
       return c.json(result);
     },

@@ -13,11 +13,15 @@ import { issueUserAuth } from "../auth/middleware";
 import { readOAuthSession } from "../auth/wechat-session";
 import type { AuthEnv } from "../auth/middleware";
 import { env } from "../lib/env";
+import { UserRepository } from "../repositories/UserRepository";
 
 const oauthService = new WeChatOAuthService();
+const userRepo = new UserRepository();
 const isProduction = process.env.NODE_ENV === "production";
+const ANCHOR_USER_AUTH_REQUIRED_CODE = "ANCHOR_USER_AUTH_REQUIRED";
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_OAUTH_NOT_CONFIGURED_CODE = "WECHAT_OAUTH_NOT_CONFIGURED";
+const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 
 type CodedHttpException = HTTPException & {
   code?: string;
@@ -73,6 +77,24 @@ export const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+export const prPartnerProfileParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  partnerId: z.coerce.number().int().positive(),
+});
+
+export const resolveAvatarUrl = (
+  requestUrl: string,
+  avatarUrl: string | null,
+): string | null => {
+  if (!avatarUrl) return null;
+
+  try {
+    return new URL(avatarUrl).toString();
+  } catch {
+    return new URL(avatarUrl, requestUrl).toString();
+  }
+};
+
 export const requireAuthenticatedOpenId = async (
   c: Context<AuthEnv>,
 ): Promise<string> => {
@@ -107,15 +129,110 @@ export const tryReadAuthenticatedOpenId = async (
   return readSessionOpenId(c);
 };
 
-export const tryReadAuthenticatedOpenIdForAnchor = async (
+type AnchorAuthenticatedIdentity = {
+  userId: UserId;
+  openId: string;
+};
+
+export const tryReadAnchorAuthenticatedIdentity = async (
   c: Context<AuthEnv>,
-): Promise<string | null> => {
-  const sessionOpenId = await readSessionOpenId(c);
-  if (sessionOpenId) {
-    return sessionOpenId;
+): Promise<AnchorAuthenticatedIdentity | null> => {
+  const userId = getAuthenticatedUserId(c);
+  if (!userId) {
+    return null;
   }
 
-  return resolveWeChatDevMockOpenId();
+  const openId = await readSessionOpenId(c);
+  if (!openId) {
+    return null;
+  }
+
+  const user = await userRepo.findById(userId);
+  if (!user || user.status !== "ACTIVE") {
+    return null;
+  }
+
+  if (user.openId !== openId) {
+    return null;
+  }
+
+  return {
+    userId,
+    openId,
+  };
+};
+
+export const requireAnchorAuthenticatedIdentity = async (
+  c: Context<AuthEnv>,
+): Promise<AnchorAuthenticatedIdentity> => {
+  const userId = getAuthenticatedUserId(c);
+  if (!userId) {
+    return throwCodedHttpException(
+      401,
+      "Authenticated user required for anchor actions",
+      ANCHOR_USER_AUTH_REQUIRED_CODE,
+    );
+  }
+
+  const sessionOpenId = await readSessionOpenId(c);
+  if (!sessionOpenId) {
+    if (!oauthService.isConfigured() && !isWeChatDevMockEnabled()) {
+      return throwCodedHttpException(
+        503,
+        "WeChat OAuth is not configured",
+        WECHAT_OAUTH_NOT_CONFIGURED_CODE,
+      );
+    }
+
+    return throwCodedHttpException(
+      401,
+      "WeChat login required for anchor actions",
+      WECHAT_AUTH_REQUIRED_CODE,
+    );
+  }
+
+  const user = await userRepo.findById(userId);
+  if (!user || user.status !== "ACTIVE") {
+    return throwCodedHttpException(
+      401,
+      "Invalid authenticated user",
+      ANCHOR_USER_AUTH_REQUIRED_CODE,
+    );
+  }
+
+  if (!user.openId) {
+    const occupied = await userRepo.findByOpenId(sessionOpenId);
+    if (occupied && occupied.id !== user.id) {
+      return throwCodedHttpException(
+        401,
+        "Current account is not bound to this WeChat session",
+        WECHAT_BIND_REQUIRED_CODE,
+      );
+    }
+
+    const bound = await userRepo.bindOpenId(user.id, sessionOpenId);
+    if (!bound) {
+      throw new HTTPException(500, { message: "Failed to bind WeChat account" });
+    }
+
+    return {
+      userId: bound.id,
+      openId: sessionOpenId,
+    };
+  }
+
+  if (user.openId !== sessionOpenId) {
+    return throwCodedHttpException(
+      401,
+      "Current account is not bound to this WeChat session",
+      WECHAT_BIND_REQUIRED_CODE,
+    );
+  }
+
+  return {
+    userId: user.id,
+    openId: sessionOpenId,
+  };
 };
 
 export const getAuthenticatedUserId = (c: Context<AuthEnv>): UserId | null => {

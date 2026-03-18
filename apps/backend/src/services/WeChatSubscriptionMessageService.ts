@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { env } from "../lib/env";
 import { proxyFetch } from "../lib/proxy-fetch";
+import { ConfigService } from "./ConfigService";
 
 type OfficialAccountConfig = {
   appId: string;
@@ -28,6 +29,9 @@ const subscribeSendResponseSchema = z.object({
   msgid: z.union([z.number().int(), z.string()]).optional(),
 });
 
+const CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID =
+  "wechat.submsg_confirmation_reminder_template_id";
+
 export class WeChatSubscriptionMessageError extends Error {
   constructor(
     message: string,
@@ -52,18 +56,43 @@ const clipText = (value: string, max: number): string =>
   value.trim().slice(0, max);
 
 export class WeChatSubscriptionMessageService {
-  isConfirmationReminderConfigured(): boolean {
+  private configService: ConfigService;
+
+  constructor() {
+    this.configService = new ConfigService();
+  }
+
+  async isConfirmationReminderConfigured(): Promise<boolean> {
+    const templateId = await this.resolveTemplateId();
+
     return Boolean(
       env.WECHAT_OFFICIAL_ACCOUNT_APP_ID &&
         env.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET &&
-        env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID,
+        templateId,
     );
   }
 
-  private getOfficialAccountConfig(): OfficialAccountConfig {
+  private async resolveTemplateId(): Promise<string | null> {
+    const configuredTemplateId = await this.configService.getValue(
+      CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID,
+    );
+    if (configuredTemplateId) {
+      return configuredTemplateId;
+    }
+
+    const fallbackTemplateId =
+      env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID?.trim();
+    if (fallbackTemplateId && fallbackTemplateId.length > 0) {
+      return fallbackTemplateId;
+    }
+
+    return null;
+  }
+
+  private async getOfficialAccountConfig(): Promise<OfficialAccountConfig> {
     const appId = env.WECHAT_OFFICIAL_ACCOUNT_APP_ID;
     const appSecret = env.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET;
-    const templateId = env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID;
+    const templateId = await this.resolveTemplateId();
     if (!appId) {
       throw new Error("Missing env: WECHAT_OFFICIAL_ACCOUNT_APP_ID");
     }
@@ -72,7 +101,7 @@ export class WeChatSubscriptionMessageService {
     }
     if (!templateId) {
       throw new Error(
-        "Missing env: WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID",
+        "Missing config/env: wechat.submsg_confirmation_reminder_template_id or WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID",
       );
     }
     return { appId, appSecret, templateId };
@@ -86,7 +115,7 @@ export class WeChatSubscriptionMessageService {
       return accessTokenCache.token;
     }
 
-    const { appId, appSecret } = this.getOfficialAccountConfig();
+    const { appId, appSecret } = await this.getOfficialAccountConfig();
     const url = new URL("https://api.weixin.qq.com/cgi-bin/token");
     url.searchParams.set("grant_type", "client_credential");
     url.searchParams.set("appid", appId);
@@ -117,7 +146,7 @@ export class WeChatSubscriptionMessageService {
   async sendConfirmationReminder(
     params: SendConfirmationReminderParams,
   ): Promise<string | number | null> {
-    const { templateId } = this.getOfficialAccountConfig();
+    const { templateId } = await this.getOfficialAccountConfig();
     const accessToken = await this.getAccessToken();
 
     const url = new URL(
@@ -159,4 +188,3 @@ export class WeChatSubscriptionMessageService {
     return payload.msgid ?? null;
   }
 }
-

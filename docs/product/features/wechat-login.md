@@ -19,9 +19,11 @@
   - 回调 `GET /api/wechat/oauth/callback` 在 `mode=bind` 时不会切换账户，只会把回调得到的 `openid` 绑定到当前本地账户。
   - 若该 `openid` 已绑定其他用户，则绑定失败，回跳 `returnTo` 并附带 `wechatBind=conflict`；系统不做自动合并。
 - 需要清理会话时，前端可调用 `POST /api/wechat/oauth/logout`。
-- 参与相关接口会强制校验该会话 cookie，未登录不可执行：
-  - Community PR：`/api/cpr/:id/join`、`/api/cpr/:id/exit`
-  - Anchor PR：`/api/apr/:id/join`、`/api/apr/:id/exit`、`/api/apr/:id/confirm`、`/api/apr/:id/check-in`
+- Anchor PR 参与相关接口会同时校验「本地 authenticated 会话 + 微信 OAuth 会话」：
+  - 若缺少本地 authenticated 会话，返回 `401 + code=ANCHOR_USER_AUTH_REQUIRED`
+  - 若缺少微信 OAuth 会话，返回 `401 + code=WECHAT_AUTH_REQUIRED`（未配置且非 mock 时返回 `503 + code=WECHAT_OAUTH_NOT_CONFIGURED`）
+  - 若两者均存在但账户与 openid 不一致，返回 `401 + code=WECHAT_BIND_REQUIRED`
+  - 相关接口：`/api/apr/:id/join`、`/api/apr/:id/exit`、`/api/apr/:id/confirm`、`/api/apr/:id/check-in`
 
 ## 验收标准
 
@@ -29,7 +31,7 @@
 - 微信登录判断以后端接口响应为准，前端不做动作前置鉴权短路。
 - 后端提供会话查询、登录跳转、回调换取、登出清理四个接口。
 - 后端额外提供绑定入口 `GET /api/wechat/oauth/bind`，并复用同一个 `/api/wechat/oauth/callback` 处理 bind 模式。
-- 后端在 join/exit 场景必须校验会话有效期并读取 `openid` 绑定用户；Anchor PR 的 confirm/check-in 也同样强制校验。
+- Anchor PR 的 join/exit/confirm/check-in 必须同时满足本地 authenticated 会话与微信 OAuth 会话；若当前 authenticated 用户尚未绑定 openid，可在 OAuth 会话存在时完成绑定后继续。
 - 新用户首次微信登录时，后端会一次性保存用户资料字段：`nickname`、`sex`、`avatar`。
 - 已存在用户重复登录时，不重复拉取并覆盖用户资料。
 - 绑定模式不会覆盖当前用户已手动修改的昵称与头像。
@@ -48,5 +50,5 @@
 ## 开发调试约定（非生产）
 
 - 本地开发可开启后端环境变量 `WECHAT_DEV_MOCK_ENABLED=true`，并可通过 `WECHAT_DEV_MOCK_OPEN_ID` 指定固定 mock openid。
-- 开启后，Anchor PR 相关需要微信登录的动作（join/exit/confirm/check-in 等）会使用该 mock openid 通过鉴权，避免本地开发被真实 OAuth 阻塞。
+- 开启后，`GET /api/wechat/oauth/login` 会先重定向到后端 mock 授权地址 `GET /api/wechat/oauth/mock/authorize`，再回到 `GET /api/wechat/oauth/callback` 完成 session cookie 签发（openid 取 `WECHAT_DEV_MOCK_OPEN_ID`）。
 - 该能力仅用于非生产调试；生产环境必须保持关闭。

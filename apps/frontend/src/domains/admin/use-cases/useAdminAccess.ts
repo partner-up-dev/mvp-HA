@@ -1,14 +1,14 @@
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
-import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
+import { useAdminSessionStore } from "@/domains/admin/use-cases/useAdminSessionStore";
 
 export const useAdminAccess = () => {
   const router = useRouter();
-  const userSessionStore = useUserSessionStore();
-  const { hasAdminAccess } = storeToRefs(userSessionStore);
+  const adminSessionStore = useAdminSessionStore();
+  const { hasAdminAccess } = storeToRefs(adminSessionStore);
 
   const logout = async () => {
-    userSessionStore.clearSession();
+    adminSessionStore.clearSession();
     await router.replace({ name: "admin-login" });
   };
 

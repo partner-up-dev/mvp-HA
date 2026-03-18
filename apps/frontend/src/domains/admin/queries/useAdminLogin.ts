@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/vue-query";
 import type { InferResponseType } from "hono";
-import { client } from "@/lib/rpc";
+import { adminClient } from "@/lib/admin-rpc";
 
 const readErrorMessage = async (
   response: Response,
@@ -11,13 +11,13 @@ const readErrorMessage = async (
 };
 
 export type AdminLoginResponse = InferResponseType<
-  (typeof client.api.auth.admin.login)["$post"]
+  (typeof adminClient.api.auth.admin.login)["$post"]
 >;
 
 export const useAdminLogin = () =>
   useMutation<AdminLoginResponse, Error, { userId: string; password: string }>({
     mutationFn: async ({ userId, password }) => {
-      const res = await client.api.auth.admin.login.$post({
+      const res = await adminClient.api.auth.admin.login.$post({
         json: { userId, password },
       });
       if (!res.ok) {

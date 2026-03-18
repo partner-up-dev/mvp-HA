@@ -120,6 +120,42 @@ export class PartnerRepository {
     }));
   }
 
+  async findActiveParticipantSummaryByPrIdAndPartnerId(
+    prId: PRId,
+    partnerId: PartnerId,
+  ): Promise<ActiveParticipantSummary | null> {
+    const rows = await db
+      .select({
+        partnerId: partners.id,
+        status: partners.status,
+        userId: partners.userId,
+        nickname: users.nickname,
+        avatar: users.avatar,
+      })
+      .from(partners)
+      .leftJoin(users, eq(users.id, partners.userId))
+      .where(
+        and(
+          eq(partners.prId, prId),
+          eq(partners.id, partnerId),
+          inArray(partners.status, ["JOINED", "CONFIRMED", "ATTENDED"]),
+        ),
+      );
+
+    const row = rows[0] ?? null;
+    if (!row) {
+      return null;
+    }
+
+    return {
+      partnerId: row.partnerId,
+      status: row.status as Extract<PartnerStatus, "JOINED" | "CONFIRMED" | "ATTENDED">,
+      userId: row.userId,
+      nickname: row.nickname,
+      avatar: row.avatar,
+    };
+  }
+
   async countActiveByPrId(prId: PRId): Promise<number> {
     const result = await db
       .select({

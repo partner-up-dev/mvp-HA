@@ -244,7 +244,7 @@ async function handleReminderJob(
   }
 
   const submsgConfigured =
-    subscriptionMessageService.isConfirmationReminderConfigured();
+    await subscriptionMessageService.isConfirmationReminderConfigured();
   const templateConfigured = templateService.isReminderConfigured();
   if (!submsgConfigured && !templateConfigured) {
     await recordDelivery({

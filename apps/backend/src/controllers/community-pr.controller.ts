@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import {
   createPRFromStructured,
   createPRFromNaturalLanguage,
+  getPRPartnerProfile,
   publishPR,
   updatePRStatus,
   updatePRContent,
@@ -23,7 +24,9 @@ import {
   issueAuthPayload,
   nlWordCountSchema,
   prIdParamSchema,
+  prPartnerProfileParamSchema,
   requireAuthenticatedUserId,
+  resolveAvatarUrl,
   tryReadAuthenticatedOpenId,
   updateContentSchema,
   updateStatusSchema,
@@ -82,6 +85,25 @@ export const communityPRRoute = app
     const result = await getCommunityPRDetail(id, { userId, openId });
     return c.json(result);
   })
+  .get(
+    "/:id/partners/:partnerId/profile",
+    zValidator("param", prPartnerProfileParamSchema),
+    async (c) => {
+      const { id, partnerId } = c.req.valid("param");
+      const viewerUserId = getAuthenticatedUserId(c);
+      const profile = await getPRPartnerProfile({
+        prId: id,
+        partnerId,
+        prKind: "COMMUNITY",
+        viewerUserId,
+      });
+
+      return c.json({
+        ...profile,
+        avatarUrl: resolveAvatarUrl(c.req.url, profile.avatarUrl),
+      });
+    },
+  )
   .post("/:id/publish", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await ensureCommunityPR(id);

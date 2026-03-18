@@ -323,6 +323,8 @@ export interface MessageSchema {
       rosterEmpty: string;
       rosterSelf: string;
       rosterCreator: string;
+      rosterAvatarAlt: string;
+      rosterAvatarFallback: string;
       rosterJoined: string;
       rosterConfirmed: string;
       rosterAttended: string;
@@ -410,6 +412,19 @@ export interface MessageSchema {
       description: string;
       action: string;
     };
+  };
+  userProfilePage: {
+    title: string;
+    subtitleCommunity: string;
+    subtitleAnchor: string;
+    loading: string;
+    editProfileLink: string;
+    nicknameLabel: string;
+    nicknameFallback: string;
+    avatarAlt: string;
+    avatarFallback: string;
+    notFoundTitle: string;
+    notFoundDescription: string;
   };
   dateTimeRangePicker: {
     defaultLabel: string;

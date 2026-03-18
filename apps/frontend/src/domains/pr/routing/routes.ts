@@ -13,6 +13,16 @@ export const anchorPRDetailPath = (id: PRId): string => `/apr/${id}`;
 export const anchorPRBookingSupportPath = (id: PRId): string =>
   `/apr/${id}/booking-support`;
 
+export const communityPRPartnerProfilePath = (
+  id: PRId,
+  partnerId: number,
+): string => `/cpr/${id}/partners/${partnerId}`;
+
+export const anchorPRPartnerProfilePath = (
+  id: PRId,
+  partnerId: number,
+): string => `/apr/${id}/partners/${partnerId}`;
+
 export const resolvePRDetailPath = (input: {
   id: PRId;
   prKind: PRKind;

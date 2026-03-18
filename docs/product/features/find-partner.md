@@ -35,6 +35,7 @@
   - `join/exit`
   - 分享
   - 创建者内容/状态编辑
+  - 参与名单（头像 + 昵称）点击后进入参与者资料页 `/cpr/:id/partners/:partnerId`
 - Anchor PR 详情页（`/apr/:id`）支持：
   - `join/exit`
   - `confirm`
@@ -43,6 +44,8 @@
   - 提醒订阅
   - 满员时查看同批次替代推荐
   - 跳转 `/apr/:id/booking-support` 查看预订与资助说明
+  - 参与名单（头像 + 昵称）点击后进入参与者资料页 `/apr/:id/partners/:partnerId`
+- 参与者资料页为只读页面，仅展示头像与昵称；当对应 slot 不再活跃时返回不可用提示。
 - Community PR 加入成功时对应 `Partner.status` 置为 `JOINED`。
 - Anchor PR 在 `T-1h~T-30min` 窗口加入时会立即置为 `CONFIRMED`。
 - 仅 Anchor PR 存在以下确认窗口规则：
@@ -54,6 +57,7 @@
   - `GET /api/wechat/reminders/subscription`
   - `POST /api/wechat/reminders/subscription`（`enabled: boolean`）
 - 开启提醒后，系统会为已加入的 Anchor PR 槽位调度 `T-24h` 与 `T-2h` 提醒任务。
+- 订阅通知模板 ID 通过后端配置表 key `wechat.submsg_confirmation_reminder_template_id` 读取；若为空则回退环境变量 `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`。
 - Anchor PR 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 - 创建者编辑规则：JWT `authenticated/service` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
@@ -84,6 +88,7 @@
 - `POST /api/cpr/:id/join` 在当前无本地账户时会自动创建本地用户并返回鉴权上下文（含必要时新生成 PIN）。
 - `POST /api/cpr/:id/exit` 依赖本地账户鉴权上下文，不要求微信登录态。
 - `POST /api/apr/:id/join`、`POST /api/apr/:id/exit`、`POST /api/apr/:id/confirm`、`POST /api/apr/:id/check-in` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
+- `GET /api/cpr/:id/partners/:partnerId/profile` 与 `GET /api/apr/:id/partners/:partnerId/profile` 仅在目标 slot 属于当前 PR 且为活跃参与状态时返回资料；否则返回 404。
 - `POST /api/wechat/reminders/subscription` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - 开启提醒后会创建具备 dedupe 的延迟任务；关闭提醒后会删除对应未执行任务并返回删除数量。
 - 提醒任务执行后会写入 `notification_deliveries`（包含 `result/errorCode/jobId`）。

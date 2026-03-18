@@ -8,6 +8,7 @@ import {
   useExitCommunityPR,
   useJoinCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
+import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 
 type UseSharedPRActionsOptions = {
   id: ComputedRef<PRId | null>;
@@ -72,6 +73,7 @@ export const useSharedPRActions = ({
   const handleJoin = async () => {
     if (id.value === null) return;
 
+    await ensureAuthSessionBootstrapped();
     const result = await getJoinMutation().mutateAsync({ id: id.value });
     trackEvent("pr_join_success", {
       prId: id.value,

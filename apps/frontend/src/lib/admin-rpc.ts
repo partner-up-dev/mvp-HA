@@ -1,10 +1,10 @@
 import { hc } from "hono/client";
 import type { AppType } from "@partner-up-dev/backend";
 import {
-  clearStoredSession,
-  getStoredAccessToken,
-  setStoredAccessToken,
-} from "@/shared/auth/session-storage";
+  clearStoredAdminSession,
+  getStoredAdminAccessToken,
+  setStoredAdminAccessToken,
+} from "@/domains/admin/model/admin-session-storage";
 import { API_URL } from "@/lib/rpc";
 
 const ACCESS_TOKEN_HEADER = "x-access-token";
@@ -27,7 +27,7 @@ const redirectToAdminLogin = (): void => {
 
 const adminFetch: typeof fetch = async (input, init) => {
   const headers = new Headers(init?.headers);
-  const token = getStoredAccessToken();
+  const token = getStoredAdminAccessToken();
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
@@ -39,11 +39,11 @@ const adminFetch: typeof fetch = async (input, init) => {
 
   const rotatedToken = response.headers.get(ACCESS_TOKEN_HEADER);
   if (rotatedToken) {
-    setStoredAccessToken(rotatedToken);
+    setStoredAdminAccessToken(rotatedToken);
   }
 
   if (response.status === 401) {
-    clearStoredSession();
+    clearStoredAdminSession();
     redirectToAdminLogin();
   }
 

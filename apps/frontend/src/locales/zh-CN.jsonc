@@ -332,6 +332,8 @@
       "rosterEmpty": "还没有其它搭子，加入后你将成为该搭子请求的所有者。",
       "rosterSelf": "我",
       "rosterCreator": "发起者",
+      "rosterAvatarAlt": "{name} 的头像",
+      "rosterAvatarFallback": "搭",
       "rosterJoined": "已加入",
       "rosterConfirmed": "已确认",
       "rosterAttended": "已到场",
@@ -639,6 +641,19 @@
       "description": "查看我创建过和加入过的活动记录。",
       "action": "打开列表"
     }
+  },
+  "userProfilePage": {
+    "title": "用户资料",
+    "subtitleCommunity": "查看这位搭子的头像和昵称。",
+    "subtitleAnchor": "查看这位参与者的头像和昵称。",
+    "loading": "正在加载用户资料...",
+    "editProfileLink": "编辑资料",
+    "nicknameLabel": "昵称",
+    "nicknameFallback": "未设置昵称",
+    "avatarAlt": "{name} 的头像",
+    "avatarFallback": "搭",
+    "notFoundTitle": "未找到该用户资料",
+    "notFoundDescription": "该搭子可能已退出当前请求，或资料暂不可用。"
   },
   "dateTimeRangePicker": {
     "defaultLabel": "时间 (开始/结束)",

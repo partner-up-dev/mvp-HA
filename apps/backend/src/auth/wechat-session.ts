@@ -2,8 +2,10 @@ import { getSignedCookie } from "hono/cookie";
 import { z } from "zod";
 import type { Context } from "hono";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
+import { env } from "../lib/env";
 
 const oauthService = new WeChatOAuthService();
+const isProduction = process.env.NODE_ENV === "production";
 const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
 
 const oauthSessionCookiePayloadSchema = z.object({
@@ -15,6 +17,21 @@ const oauthSessionCookiePayloadSchema = z.object({
 export type OAuthSessionCookiePayload = z.infer<
   typeof oauthSessionCookiePayloadSchema
 >;
+
+const isWeChatDevMockEnabled = (): boolean =>
+  !isProduction && env.WECHAT_DEV_MOCK_ENABLED === "true";
+
+const resolveOAuthSessionSecret = (): string | null => {
+  if (oauthService.isConfigured()) {
+    return oauthService.getSessionSecret();
+  }
+
+  if (isWeChatDevMockEnabled()) {
+    return env.AUTH_JWT_SECRET;
+  }
+
+  return null;
+};
 
 const decodeSignedPayload = <T>(
   rawValue: string,
@@ -34,11 +51,11 @@ const decodeSignedPayload = <T>(
 export const readOAuthSession = async (
   c: Context,
 ): Promise<OAuthSessionCookiePayload | null> => {
-  if (!oauthService.isConfigured()) {
+  const sessionSecret = resolveOAuthSessionSecret();
+  if (!sessionSecret) {
     return null;
   }
 
-  const sessionSecret = oauthService.getSessionSecret();
   const cookieValue = await getSignedCookie(
     c,
     sessionSecret,

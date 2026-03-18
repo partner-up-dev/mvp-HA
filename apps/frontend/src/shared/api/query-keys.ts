@@ -4,6 +4,12 @@ export const queryKeys = {
   pr: {
     mineCreated: () => ["partner-request", "mine", "created"] as const,
     mineJoined: () => ["partner-request", "mine", "joined"] as const,
+    partnerProfile: (
+      scenario: "COMMUNITY" | "ANCHOR",
+      prId: PRId | null,
+      partnerId: number | null,
+    ) =>
+      ["partner-request", "partner-profile", scenario, prId, partnerId] as const,
   },
   communityPR: {
     detail: (id: PRId | null) => ["community-pr", "detail", id] as const,

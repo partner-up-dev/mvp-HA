@@ -11,6 +11,7 @@ import MyPRsPage from "@/pages/MyPRsPage.vue";
 import CommunityPRPage from "@/pages/CommunityPRPage.vue";
 import CommunityPRCreatePage from "@/pages/CommunityPRCreatePage.vue";
 import AnchorPRPage from "@/pages/AnchorPRPage.vue";
+import UserProfilePage from "@/pages/UserProfilePage.vue";
 import AnchorPRBookingSupportPage from "@/pages/AnchorPRBookingSupportPage.vue";
 import AdminLoginPage from "@/pages/AdminLoginPage.vue";
 import AdminAnchorPRPage from "@/pages/AdminAnchorPRPage.vue";
@@ -20,7 +21,7 @@ import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
 import AnchorEventPage from "@/pages/AnchorEventPage.vue";
-import { getStoredSessionRole } from "@/shared/auth/session-storage";
+import { getStoredAdminHasAccess } from "@/domains/admin/model/admin-session-storage";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -56,9 +57,25 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/cpr/:id/partners/:partnerId",
+    name: "community-partner-profile",
+    component: UserProfilePage,
+    meta: {
+      wechatSharePolicy: "skip",
+    },
+  },
+  {
     path: "/apr/:id",
     name: "anchor-pr",
     component: AnchorPRPage,
+    meta: {
+      wechatSharePolicy: "skip",
+    },
+  },
+  {
+    path: "/apr/:id/partners/:partnerId",
+    name: "anchor-partner-profile",
+    component: UserProfilePage,
     meta: {
       wechatSharePolicy: "skip",
     },
@@ -171,7 +188,7 @@ router.beforeEach((to) => {
     return true;
   }
 
-  if (getStoredSessionRole() === "service") {
+  if (getStoredAdminHasAccess()) {
     return true;
   }
 
