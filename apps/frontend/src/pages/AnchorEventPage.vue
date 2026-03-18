@@ -104,11 +104,11 @@
             {{ t("anchorEvent.card.emptySubtitle") }}
           </p>
 
-          <div
-            v-if="cardCreateBatchOptions.length > 0"
-            class="card-empty__create"
-          >
-            <label class="card-empty__field">
+          <div class="card-empty__create">
+            <label
+              v-if="cardCreateBatchOptions.length > 0"
+              class="card-empty__field"
+            >
               <span class="card-empty__label">{{
                 t("anchorEvent.card.batchLabel")
               }}</span>
@@ -126,7 +126,10 @@
               </select>
             </label>
 
-            <label class="card-empty__field">
+            <label
+              v-if="cardCreateBatchOptions.length > 0"
+              class="card-empty__field"
+            >
               <span class="card-empty__label">{{
                 t("anchorEvent.createCard.locationLabel")
               }}</span>
@@ -143,24 +146,20 @@
             </label>
 
             <p
-              v-if="createUserAnchorPRMutation.error.value?.message"
+              v-if="createActionErrorMessage"
               class="card-empty__error"
             >
-              {{ createUserAnchorPRMutation.error.value.message }}
+              {{ createActionErrorMessage }}
             </p>
 
             <button
               type="button"
               class="card-empty__action"
-              :disabled="
-                createUserAnchorPRMutation.isPending.value ||
-                cardCreateBatchId === null ||
-                cardCreateLocationId.length === 0
-              "
+              :disabled="isCreatePending"
               @click="handleCreateFromCardEmpty"
             >
               {{
-                createUserAnchorPRMutation.isPending.value
+                isCreatePending
                   ? t("anchorEvent.createCard.creatingAction")
                   : t("anchorEvent.createCard.createAction")
               }}
@@ -191,10 +190,8 @@
               />
               <AnchorPRCreateCard
                 :location-options="selectedBatch.locationOptions"
-                :pending="createUserAnchorPRMutation.isPending.value"
-                :error-message="
-                  createUserAnchorPRMutation.error.value?.message ?? null
-                "
+                :pending="isCreatePending"
+                :error-message="createActionErrorMessage"
                 @create="handleCreateInList"
               />
             </div>
@@ -228,9 +225,20 @@ import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
-import { useCreateUserAnchorPR } from "@/domains/event/queries/useCreateUserAnchorPR";
+import {
+  useCreateUserAnchorPR,
+  type CreateUserAnchorPRError,
+} from "@/domains/event/queries/useCreateUserAnchorPR";
+import {
+  useCreateCommunityPRFromStructured,
+  usePublishCommunityPR,
+} from "@/domains/pr/queries/useCommunityPR";
 import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import {
+  anchorPRDetailPath,
+  communityPRDetailPath,
+} from "@/domains/pr/routing/routes";
+import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { resolveCurrentSpmAttribution } from "@/shared/analytics/spm-attribution";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 
@@ -309,6 +317,24 @@ const eventId = computed(() => {
 
 const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
 const createUserAnchorPRMutation = useCreateUserAnchorPR();
+const createCommunityPRMutation = useCreateCommunityPRFromStructured();
+const publishCommunityPRMutation = usePublishCommunityPR();
+const userSessionStore = useUserSessionStore();
+
+const isCreatePending = computed(
+  () =>
+    createUserAnchorPRMutation.isPending.value ||
+    createCommunityPRMutation.isPending.value ||
+    publishCommunityPRMutation.isPending.value,
+);
+
+const createActionErrorMessage = computed(
+  () =>
+    createUserAnchorPRMutation.error.value?.message ??
+    createCommunityPRMutation.error.value?.message ??
+    publishCommunityPRMutation.error.value?.message ??
+    null,
+);
 
 const goBackToPlaza = () => {
   router.push({ name: "event-plaza" });
@@ -643,31 +669,136 @@ const handleViewActiveCardDetail = async () => {
   }
 };
 
-const createAnchorPRForBatch = async (
-  targetBatchId: number,
-  locationId: string,
-) => {
+const APR_FALLBACK_STATUSES = new Set([400, 401, 404, 409, 503]);
+const APR_FALLBACK_CODES = new Set([
+  "LOCATION_CAP_REACHED",
+  "INVALID_LOCATION",
+  "ANCHOR_EVENT_NOT_FOUND",
+  "ANCHOR_EVENT_BATCH_NOT_FOUND",
+  "WECHAT_AUTH_REQUIRED",
+  "WECHAT_OAUTH_NOT_CONFIGURED",
+]);
+
+const shouldFallbackToCommunity = (
+  error: unknown,
+): error is CreateUserAnchorPRError => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const apiError = error as CreateUserAnchorPRError;
+  if (typeof apiError.status !== "number") {
+    return false;
+  }
+  if (!APR_FALLBACK_STATUSES.has(apiError.status)) {
+    return false;
+  }
+  if (typeof apiError.code === "string") {
+    return APR_FALLBACK_CODES.has(apiError.code);
+  }
+
+  return true;
+};
+
+const createCommunityPRFallback = async ({
+  targetBatchId,
+  locationId,
+}: {
+  targetBatchId: number | null;
+  locationId: string | null;
+}): Promise<string> => {
+  const event = detail.value;
+  if (!event) {
+    throw new Error(t("common.operationFailed"));
+  }
+
+  const targetBatch =
+    targetBatchId === null
+      ? null
+      : sortedBatches.value.find((batch) => batch.id === targetBatchId) ?? null;
+
+  const normalizedLocation = locationId?.trim() ?? "";
+
+  const draft = await createCommunityPRMutation.mutateAsync({
+    fields: {
+      title: undefined,
+      type: event.type,
+      time: targetBatch?.timeWindow ?? [null, null],
+      location: normalizedLocation.length > 0 ? normalizedLocation : null,
+      minPartners: null,
+      maxPartners: null,
+      partners: [],
+      budget: null,
+      preferences: [],
+      notes: "Created from Anchor Event fallback",
+    },
+  });
+
+  const publishResult = await publishCommunityPRMutation.mutateAsync({
+    id: draft.id,
+  });
+
+  if (publishResult.auth) {
+    userSessionStore.applyAuthSession(publishResult.auth);
+  }
+
+  return communityPRDetailPath(draft.id);
+};
+
+const createPRWithFallback = async ({
+  targetBatchId,
+  locationId,
+}: {
+  targetBatchId: number | null;
+  locationId: string | null;
+}) => {
+  createUserAnchorPRMutation.reset();
+  createCommunityPRMutation.reset();
+  publishCommunityPRMutation.reset();
+
   const event = detail.value;
   if (!event) {
     return;
   }
 
-  const created = await createUserAnchorPRMutation.mutateAsync({
-    eventId: event.id,
-    batchId: targetBatchId,
-    locationId,
-  });
-
-  await router.push(created.canonicalPath);
-};
-
-const handleCreateInList = async (locationId: string) => {
-  const batch = selectedBatch.value;
-  if (!batch) {
+  const normalizedLocation = locationId?.trim() ?? "";
+  if (targetBatchId === null || normalizedLocation.length === 0) {
+    const fallbackPath = await createCommunityPRFallback({
+      targetBatchId,
+      locationId: normalizedLocation.length > 0 ? normalizedLocation : null,
+    });
+    createUserAnchorPRMutation.reset();
+    await router.push(fallbackPath);
     return;
   }
 
-  await createAnchorPRForBatch(batch.id, locationId);
+  try {
+    const created = await createUserAnchorPRMutation.mutateAsync({
+      eventId: event.id,
+      batchId: targetBatchId,
+      locationId: normalizedLocation,
+    });
+    await router.push(created.canonicalPath);
+  } catch (error) {
+    if (!shouldFallbackToCommunity(error)) {
+      throw error;
+    }
+
+    const fallbackPath = await createCommunityPRFallback({
+      targetBatchId,
+      locationId: normalizedLocation,
+    });
+    createUserAnchorPRMutation.reset();
+    await router.push(fallbackPath);
+  }
+};
+
+const handleCreateInList = async (locationId: string | null) => {
+  const batch = selectedBatch.value;
+  await createPRWithFallback({
+    targetBatchId: batch?.id ?? null,
+    locationId,
+  });
 };
 
 const cardCreateBatchOptions = computed<CardBatchOption[]>(() =>
@@ -740,14 +871,10 @@ watch(
 );
 
 const handleCreateFromCardEmpty = async () => {
-  if (cardCreateBatchId.value === null || !cardCreateLocationId.value) {
-    return;
-  }
-
-  await createAnchorPRForBatch(
-    cardCreateBatchId.value,
-    cardCreateLocationId.value,
-  );
+  await createPRWithFallback({
+    targetBatchId: cardCreateBatchId.value,
+    locationId: cardCreateLocationId.value || null,
+  });
 };
 
 const formatLocationOptionLabel = (option: LocationOption): string => {

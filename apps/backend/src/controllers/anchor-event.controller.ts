@@ -6,6 +6,10 @@ import {
   listAnchorEvents,
   getAnchorEventDetail,
   createUserAnchorPR,
+  checkUserAnchorPRAvailability,
+  AnchorEventNotFoundError,
+  AnchorEventBatchNotFoundError,
+  UserCreationLocationUnavailableError,
   LocationCapReachedError,
   joinDemandCard,
   demandCardJoinErrorCode,
@@ -57,6 +61,61 @@ const problem = (payload: ProblemDetails): Response =>
       "Content-Type": "application/problem+json",
     },
   });
+
+const mapCreateAPRAvailabilityProblem = (
+  error: unknown,
+  instance: string,
+): Response | null => {
+  if (error instanceof AnchorEventNotFoundError) {
+    return problem({
+      type: "https://partnerup.sh/problems/anchor-event-not-found",
+      title: "Anchor event not found",
+      status: 404,
+      detail: "Anchor event not found.",
+      instance,
+      code: "ANCHOR_EVENT_NOT_FOUND",
+      eventId: error.eventId,
+    });
+  }
+
+  if (error instanceof AnchorEventBatchNotFoundError) {
+    return problem({
+      type: "https://partnerup.sh/problems/anchor-event-batch-not-found",
+      title: "Anchor event batch not found",
+      status: 404,
+      detail: "Anchor event batch not found.",
+      instance,
+      code: "ANCHOR_EVENT_BATCH_NOT_FOUND",
+      batchId: error.batchId,
+    });
+  }
+
+  if (error instanceof UserCreationLocationUnavailableError) {
+    return problem({
+      type: "https://partnerup.sh/problems/anchor-location-not-available",
+      title: "Selected location unavailable",
+      status: 400,
+      detail: "Selected location is not available for user creation.",
+      instance,
+      code: "INVALID_LOCATION",
+      locationId: error.locationId,
+    });
+  }
+
+  if (error instanceof LocationCapReachedError) {
+    return problem({
+      type: "https://partnerup.sh/problems/anchor-location-cap-reached",
+      title: "Location creation quota reached",
+      status: 409,
+      detail: "The selected location has reached the per-batch PR limit.",
+      instance,
+      code: "LOCATION_CAP_REACHED",
+      locationId: error.locationId,
+    });
+  }
+
+  return null;
+};
 
 export const anchorEventRoute = app
   .use("*", authMiddleware)
@@ -143,18 +202,53 @@ export const anchorEventRoute = app
       const { eventId, batchId } = c.req.valid("param");
       const { locationId } = c.req.valid("json");
 
+      const availabilityProblem = await (async (): Promise<Response | null> => {
+        try {
+          await checkUserAnchorPRAvailability({
+            eventId,
+            batchId,
+            locationId,
+          });
+          return null;
+        } catch (error) {
+          return mapCreateAPRAvailabilityProblem(error, c.req.path);
+        }
+      })();
+      if (availabilityProblem) {
+        return availabilityProblem;
+      }
+
       let openId: string;
       try {
         openId = await requireAuthenticatedOpenId(c);
       } catch (error) {
-        if (error instanceof HTTPException && error.status === 401) {
+        if (
+          error instanceof HTTPException &&
+          (error.status === 401 || error.status === 503)
+        ) {
+          const code =
+            typeof (error as { code?: string }).code === "string"
+              ? (error as { code?: string }).code!
+              : error.status === 401
+                ? "WECHAT_AUTH_REQUIRED"
+                : "WECHAT_OAUTH_NOT_CONFIGURED";
+
           return problem({
-            type: "https://partnerup.sh/problems/wechat-auth-required",
-            title: "WeChat authentication required",
-            status: 401,
-            detail: "Please complete WeChat login before creating Anchor PR.",
+            type:
+              error.status === 401
+                ? "https://partnerup.sh/problems/wechat-auth-required"
+                : "https://partnerup.sh/problems/wechat-oauth-not-configured",
+            title:
+              error.status === 401
+                ? "WeChat authentication required"
+                : "WeChat OAuth not configured",
+            status: error.status,
+            detail:
+              error.status === 401
+                ? "Please complete WeChat login before creating Anchor PR."
+                : "Current environment does not have WeChat OAuth configured.",
             instance: c.req.path,
-            code: "WECHAT_AUTH_REQUIRED",
+            code,
           });
         }
         throw error;
@@ -169,16 +263,9 @@ export const anchorEventRoute = app
         });
         return c.json(result, 201);
       } catch (error) {
-        if (error instanceof LocationCapReachedError) {
-          return problem({
-            type: "https://partnerup.sh/problems/anchor-location-cap-reached",
-            title: "Location creation quota reached",
-            status: 409,
-            detail: "The selected location has reached the per-batch PR limit.",
-            instance: c.req.path,
-            code: "LOCATION_CAP_REACHED",
-            locationId: error.locationId,
-          });
+        const mapped = mapCreateAPRAvailabilityProblem(error, c.req.path);
+        if (mapped) {
+          return mapped;
         }
         throw error;
       }

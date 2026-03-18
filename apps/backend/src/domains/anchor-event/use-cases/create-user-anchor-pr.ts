@@ -1,8 +1,8 @@
-import { HTTPException } from "hono/http-exception";
 import { and, count, eq, notInArray, sql } from "drizzle-orm";
 import { db } from "../../../lib/db";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
+import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
 import { partnerRequests } from "../../../entities/partner-request";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
@@ -10,19 +10,47 @@ import { partners } from "../../../entities/partner";
 import { resolveDesiredSlotCount } from "../../pr-core/services/slot-management.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { normalizeUserLocationPool } from "../../../entities/anchor-event";
-import type { AnchorEventId } from "../../../entities/anchor-event";
+import { resolveAnchorPartnerBoundsFromEvent } from "../services/anchor-partner-bounds";
+import type { AnchorEvent, AnchorEventId } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
+import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
+import type { UserLocationEntry } from "../../../entities/anchor-event";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
+const anchorPRRepo = new AnchorPRRepository();
 
 const ANCHOR_USER_CREATE_LOCK_NAMESPACE = 31_017;
+
+export class AnchorEventNotFoundError extends Error {
+  constructor(readonly eventId: AnchorEventId) {
+    super("Anchor event not found");
+  }
+}
+
+export class AnchorEventBatchNotFoundError extends Error {
+  constructor(readonly batchId: AnchorEventBatchId) {
+    super("Anchor event batch not found");
+  }
+}
+
+export class UserCreationLocationUnavailableError extends Error {
+  constructor(readonly locationId: string) {
+    super("Selected location is not available for user creation");
+  }
+}
 
 export class LocationCapReachedError extends Error {
   constructor(readonly locationId: string) {
     super("Location cap reached");
   }
 }
+
+type UserAnchorPRCreationContext = {
+  event: AnchorEvent;
+  batch: AnchorEventBatch;
+  userLocation: UserLocationEntry;
+};
 
 type CreateUserAnchorPRInput = {
   eventId: AnchorEventId;
@@ -31,32 +59,89 @@ type CreateUserAnchorPRInput = {
   openId: string;
 };
 
+const resolveUserAnchorPRCreationContext = async ({
+  eventId,
+  batchId,
+  locationId,
+}: {
+  eventId: AnchorEventId;
+  batchId: AnchorEventBatchId;
+  locationId: string;
+}): Promise<UserAnchorPRCreationContext> => {
+  const [event, batch] = await Promise.all([
+    anchorEventRepo.findById(eventId),
+    batchRepo.findById(batchId),
+  ]);
+
+  if (!event) {
+    throw new AnchorEventNotFoundError(eventId);
+  }
+  if (!batch || batch.anchorEventId !== event.id) {
+    throw new AnchorEventBatchNotFoundError(batchId);
+  }
+
+  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
+  const userLocation = userLocationPool.find((entry) => entry.id === locationId);
+  if (!userLocation) {
+    throw new UserCreationLocationUnavailableError(locationId);
+  }
+
+  return {
+    event,
+    batch,
+    userLocation,
+  };
+};
+
+export const checkUserAnchorPRAvailability = async ({
+  eventId,
+  batchId,
+  locationId,
+}: {
+  eventId: AnchorEventId;
+  batchId: AnchorEventBatchId;
+  locationId: string;
+}): Promise<UserAnchorPRCreationContext> => {
+  const context = await resolveUserAnchorPRCreationContext({
+    eventId,
+    batchId,
+    locationId,
+  });
+
+  const activeCount = await anchorPRRepo.countActiveVisibleByBatchAndLocationSource(
+    context.batch.id,
+    locationId,
+    "USER",
+  );
+  if (activeCount >= context.userLocation.perBatchCap) {
+    throw new LocationCapReachedError(locationId);
+  }
+
+  return context;
+};
+
 export const createUserAnchorPR = async ({
   eventId,
   batchId,
   locationId,
   openId,
 }: CreateUserAnchorPRInput): Promise<{ id: number; canonicalPath: string }> => {
-  const [event, batch, user] = await Promise.all([
-    anchorEventRepo.findById(eventId),
-    batchRepo.findById(batchId),
+  const [context, user] = await Promise.all([
+    resolveUserAnchorPRCreationContext({
+      eventId,
+      batchId,
+      locationId,
+    }),
     resolveUserByOpenId(openId),
   ]);
+  const { event, batch, userLocation } = context;
 
-  if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
-  }
-  if (!batch || batch.anchorEventId !== event.id) {
-    throw new HTTPException(404, { message: "Anchor event batch not found" });
-  }
-
-  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
-  const matchedLocation = userLocationPool.find((entry) => entry.id === locationId);
-  if (!matchedLocation) {
-    throw new HTTPException(400, {
-      message: "Selected location is not available for user creation",
-    });
-  }
+  const bounds = resolveAnchorPartnerBoundsFromEvent({
+    defaults: {
+      defaultMinPartners: event.defaultMinPartners ?? null,
+      defaultMaxPartners: event.defaultMaxPartners ?? null,
+    },
+  });
 
   const createdRoot = await db.transaction(async (tx) => {
     await tx.execute(
@@ -81,7 +166,7 @@ export const createUserAnchorPR = async ({
       );
 
     const activeCount = quotaRows[0]?.value ?? 0;
-    if (activeCount >= matchedLocation.perBatchCap) {
+    if (activeCount >= userLocation.perBatchCap) {
       throw new LocationCapReachedError(locationId);
     }
 
@@ -93,8 +178,8 @@ export const createUserAnchorPR = async ({
         time: batch.timeWindow,
         location: locationId,
         status: "OPEN",
-        minPartners: null,
-        maxPartners: null,
+        minPartners: bounds.minPartners,
+        maxPartners: bounds.maxPartners,
         preferences: [],
         notes: null,
         createdBy: user.id,

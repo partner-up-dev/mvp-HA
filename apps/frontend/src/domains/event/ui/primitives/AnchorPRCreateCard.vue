@@ -30,7 +30,7 @@
       <button
         type="button"
         class="create-card__action"
-        :disabled="pending || selectedLocationId.length === 0"
+        :disabled="pending"
         @click="emitCreate"
       >
         {{
@@ -68,7 +68,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  create: [locationId: string];
+  create: [locationId: string | null];
 }>();
 
 const { t } = useI18n();
@@ -110,8 +110,8 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 };
 
 const emitCreate = () => {
-  if (!selectedLocationId.value) return;
-  emit("create", selectedLocationId.value);
+  const normalized = selectedLocationId.value.trim();
+  emit("create", normalized.length > 0 ? normalized : null);
 };
 </script>
 

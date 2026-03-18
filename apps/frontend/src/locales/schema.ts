@@ -678,6 +678,8 @@ export interface MessageSchema {
     eventDescriptionLabel: string;
     eventCoverImageLabel: string;
     eventStatusLabel: string;
+    eventDefaultMinPartnersLabel: string;
+    eventDefaultMaxPartnersLabel: string;
     eventPoiHint: string;
     eventLocationPoolLabel: string;
     eventTimeWindowHint: string;

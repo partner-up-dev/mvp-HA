@@ -10,6 +10,7 @@ import {
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
+import { resolveAnchorPartnerBoundsFromEvent } from "../../anchor-event/services/anchor-partner-bounds";
 import type {
   AnchorPartnerRequest,
   AnchorEventBatchId,
@@ -84,14 +85,25 @@ export async function createAdminAnchorPR(
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
 
+  const partnerBounds = resolveAnchorPartnerBoundsFromEvent({
+    defaults: {
+      defaultMinPartners: event.defaultMinPartners ?? null,
+      defaultMaxPartners: event.defaultMaxPartners ?? null,
+    },
+    override: {
+      minPartners: input.minPartners,
+      maxPartners: input.maxPartners,
+    },
+  });
+
   const createdRoot = await prRepo.create({
     title: input.title,
     type: input.type?.trim() || event.type,
     time: batch.timeWindow,
     location: input.location,
     status: "OPEN",
-    minPartners: input.minPartners,
-    maxPartners: input.maxPartners,
+    minPartners: partnerBounds.minPartners,
+    maxPartners: partnerBounds.maxPartners,
     preferences: input.preferences,
     notes: input.notes,
     prKind: "ANCHOR",

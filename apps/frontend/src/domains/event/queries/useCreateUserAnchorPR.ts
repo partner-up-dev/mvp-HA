@@ -2,10 +2,11 @@ import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 import {
+  buildApiError,
   readApiErrorPayload,
   resolveApiErrorMessage,
+  type ApiError,
 } from "@/shared/api/error";
-import { handleWeChatAuthRequiredError } from "@/processes/wechat/auth-error";
 
 type CreateUserAnchorPRInput = {
   eventId: number;
@@ -18,12 +19,16 @@ export type CreateUserAnchorPRResponse = {
   canonicalPath: string;
 };
 
+export type CreateUserAnchorPRError = ApiError & {
+  status?: number;
+};
+
 export const useCreateUserAnchorPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
     CreateUserAnchorPRResponse,
-    Error,
+    CreateUserAnchorPRError,
     CreateUserAnchorPRInput
   >({
     mutationFn: async ({ eventId, batchId, locationId }) => {
@@ -46,19 +51,12 @@ export const useCreateUserAnchorPR = () => {
 
       if (!response.ok) {
         const payload = await readApiErrorPayload(response);
-
-        if (
-          typeof window !== "undefined" &&
-          handleWeChatAuthRequiredError(
-            response.status,
-            payload,
-            window.location.href,
-          )
-        ) {
-          throw new Error(resolveApiErrorMessage(payload, "需要先完成微信登录"));
-        }
-
-        throw new Error(resolveApiErrorMessage(payload, "创建活动搭子请求失败"));
+        const error = buildApiError(
+          resolveApiErrorMessage(payload, "创建活动搭子请求失败"),
+          payload,
+        ) as CreateUserAnchorPRError;
+        error.status = response.status;
+        throw error;
       }
 
       return (await response.json()) as CreateUserAnchorPRResponse;

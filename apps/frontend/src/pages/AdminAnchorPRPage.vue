@@ -57,6 +57,30 @@
                   <option value="ARCHIVED">{{ t("adminAnchorPR.statusArchived") }}</option>
                 </select>
               </label>
+              <div class="grid-2">
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorPR.eventDefaultMinPartnersLabel")
+                  }}</span>
+                  <input
+                    v-model.number="eventForm.defaultMinPartners"
+                    class="field-input"
+                    type="number"
+                    min="0"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorPR.eventDefaultMaxPartnersLabel")
+                  }}</span>
+                  <input
+                    v-model.number="eventForm.defaultMaxPartners"
+                    class="field-input"
+                    type="number"
+                    min="0"
+                  />
+                </label>
+              </div>
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventLocationPoolLabel") }}</span><textarea v-model="eventForm.systemLocationPoolText" class="field-input field-textarea"></textarea></label>
               <label class="field">
                 <span class="field-label">用户可创建地点池（每行: 地点ID,上限）</span>
@@ -227,14 +251,14 @@ type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
 type BatchRecord = EventRecord["batches"][number];
 type PRRecord = BatchRecord["prs"][number];
-type EventForm = { title: string; type: string; description: string; coverImage: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; systemLocationPoolText: string; userLocationPoolText: string };
+type EventForm = { title: string; type: string; description: string; coverImage: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; defaultMinPartners: number | null; defaultMaxPartners: number | null; systemLocationPoolText: string; userLocationPoolText: string };
 type BatchForm = { start: string; end: string; status: "OPEN" | "FULL" | "EXPIRED" };
 type PRForm = { title: string; type: string; location: string; minPartners: number | null; maxPartners: number | null; confirmationStartOffsetMinutes: number; confirmationEndOffsetMinutes: number; joinLockOffsetMinutes: number; preferencesText: string; notes: string; status: "OPEN" | "READY" | "ACTIVE" | "CLOSED"; visibilityStatus: "VISIBLE" | "HIDDEN" };
 
-const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", status: "ACTIVE", systemLocationPoolText: "", userLocationPoolText: "" });
+const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", status: "ACTIVE", defaultMinPartners: null, defaultMaxPartners: null, systemLocationPoolText: "", userLocationPoolText: "" });
 const emptyBatchForm = (): BatchForm => ({ start: "", end: "", status: "OPEN" });
 const emptyPRForm = (location = "", type = ""): PRForm => ({ title: "", type, location, minPartners: null, maxPartners: null, confirmationStartOffsetMinutes: 120, confirmationEndOffsetMinutes: 30, joinLockOffsetMinutes: 30, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
-const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", status: event.status as EventForm["status"], systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
+const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", status: event.status as EventForm["status"], defaultMinPartners: event.defaultMinPartners ?? null, defaultMaxPartners: event.defaultMaxPartners ?? null, systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
 const toBatchForm = (batch: BatchRecord): BatchForm => ({ start: batch.timeWindow[0] ?? "", end: batch.timeWindow[1] ?? "", status: batch.status as BatchForm["status"] });
 const toPRForm = (pr: PRRecord): PRForm => ({
   title: pr.title ?? "",
@@ -316,6 +340,22 @@ const normalizeUserLocationLines = (value: string): Array<{ id: string; perBatch
     })
     .filter((entry) => entry.id.length > 0);
 const normalizeComma = (value: string): string[] => value.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    if (Number.isInteger(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+  return null;
+};
 const formatWindow = (windowValue: [string | null, string | null]) =>
   formatLocalDateTimeWindowLabel(windowValue, {}, "?");
 const formatDateTime = (value: string | null) =>
@@ -416,6 +456,12 @@ const handleSaveEvent = async () => {
     description: eventForm.value.description.trim() || null,
     systemLocationPool: normalizeLines(eventForm.value.systemLocationPoolText),
     userLocationPool: normalizeUserLocationLines(eventForm.value.userLocationPoolText),
+    defaultMinPartners: normalizeNullableNonNegativeInteger(
+      eventForm.value.defaultMinPartners,
+    ),
+    defaultMaxPartners: normalizeNullableNonNegativeInteger(
+      eventForm.value.defaultMaxPartners,
+    ),
     coverImage: eventForm.value.coverImage.trim() || null,
     status: eventForm.value.status,
   };

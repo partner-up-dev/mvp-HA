@@ -62,6 +62,8 @@ export class AnchorEventRepository {
         | "systemLocationPool"
         | "userLocationPool"
         | "timeWindowPool"
+        | "defaultMinPartners"
+        | "defaultMaxPartners"
         | "coverImage"
         | "status"
       >

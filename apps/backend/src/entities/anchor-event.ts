@@ -4,6 +4,7 @@ import {
   text,
   jsonb,
   timestamp,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -164,6 +165,8 @@ export const anchorEvents = pgTable("anchor_events", {
   timeWindowPool: jsonb("time_window_pool")
     .$type<TimeWindowEntry[]>()
     .notNull(),
+  defaultMinPartners: integer("default_min_partners"),
+  defaultMaxPartners: integer("default_max_partners"),
   coverImage: text("cover_image"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

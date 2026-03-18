@@ -66,6 +66,8 @@ export type AdminAnchorEventInput = {
     id: string;
     perBatchCap: number;
   }>;
+  defaultMinPartners: number | null;
+  defaultMaxPartners: number | null;
   coverImage: string | null;
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };

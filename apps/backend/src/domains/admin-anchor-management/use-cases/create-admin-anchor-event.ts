@@ -14,6 +14,8 @@ export interface CreateAdminAnchorEventInput {
   description: string | null;
   systemLocationPool: SystemLocationEntry[];
   userLocationPool: UserLocationEntry[];
+  defaultMinPartners: number | null;
+  defaultMaxPartners: number | null;
   coverImage: string | null;
   status: AnchorEventStatus;
 }
@@ -28,6 +30,8 @@ export async function createAdminAnchorEvent(
     systemLocationPool: input.systemLocationPool,
     userLocationPool: input.userLocationPool,
     timeWindowPool: [],
+    defaultMinPartners: input.defaultMinPartners,
+    defaultMaxPartners: input.defaultMaxPartners,
     coverImage: input.coverImage,
     status: input.status,
   });

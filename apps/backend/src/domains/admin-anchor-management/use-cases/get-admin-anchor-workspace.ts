@@ -50,6 +50,8 @@ export type AdminAnchorEventSummary = {
     id: string;
     perBatchCap: number;
   }>;
+  defaultMinPartners: number | null;
+  defaultMaxPartners: number | null;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   status: string;
@@ -128,6 +130,8 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
               perBatchCap: entry.perBatchCap,
             }))
           : [],
+        defaultMinPartners: event.defaultMinPartners ?? null,
+        defaultMaxPartners: event.defaultMaxPartners ?? null,
         timeWindowPool: Array.isArray(event.timeWindowPool)
           ? event.timeWindowPool.map(
               (entry): [string | null, string | null] => [entry[0], entry[1]],
