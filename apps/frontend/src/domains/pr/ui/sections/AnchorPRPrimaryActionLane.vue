@@ -81,6 +81,10 @@
         {{ t("prPage.alternativeBatch.title") }}
       </button>
     </div>
+
+    <p v-if="joinErrorMessage" class="lane-error-note">
+      {{ joinErrorMessage }}
+    </p>
   </section>
 </template>
 
@@ -110,12 +114,14 @@ const props = withDefaults(
     exitPending?: boolean;
     confirmPending?: boolean;
     checkInPending?: boolean;
+    joinErrorMessage?: string | null;
   }>(),
   {
     joinPending: false,
     exitPending: false,
     confirmPending: false,
     checkInPending: false,
+    joinErrorMessage: null,
   },
 );
 
@@ -367,6 +373,12 @@ function blockedReasonText(reason: BlockedReason): string {
   margin: 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.lane-error-note {
+  margin: 0;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-error);
 }
 
 .lane-slot-state {

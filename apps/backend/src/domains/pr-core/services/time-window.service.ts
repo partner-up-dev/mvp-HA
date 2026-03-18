@@ -9,6 +9,10 @@
 import type { PartnerRequestFields } from "../../../entities/partner-request";
 
 export type TimeWindow = PartnerRequestFields["time"];
+export type ComparableTimeWindowRange = {
+  start: Date;
+  end: Date;
+};
 
 // ---------------------------------------------------------------------------
 // Parsing helpers
@@ -43,6 +47,36 @@ export function getTimeWindowClose(timeWindow: TimeWindow): Date | null {
 
   // Default close: 12 hours after start
   return new Date(start.getTime() + 12 * 60 * 60 * 1000);
+}
+
+export function resolveComparableTimeWindowRange(
+  timeWindow: TimeWindow,
+): ComparableTimeWindowRange | null {
+  const start = getTimeWindowStart(timeWindow);
+  const end = getTimeWindowClose(timeWindow);
+  if (!start || !end) return null;
+  if (end.getTime() <= start.getTime()) return null;
+  return { start, end };
+}
+
+export function doTimeWindowRangesOverlap(
+  left: ComparableTimeWindowRange,
+  right: ComparableTimeWindowRange,
+): boolean {
+  return (
+    left.start.getTime() < right.end.getTime() &&
+    right.start.getTime() < left.end.getTime()
+  );
+}
+
+export function doTimeWindowsOverlap(
+  left: TimeWindow,
+  right: TimeWindow,
+): boolean {
+  const leftRange = resolveComparableTimeWindowRange(left);
+  const rightRange = resolveComparableTimeWindowRange(right);
+  if (!leftRange || !rightRange) return false;
+  return doTimeWindowRangesOverlap(leftRange, rightRange);
 }
 
 // ---------------------------------------------------------------------------

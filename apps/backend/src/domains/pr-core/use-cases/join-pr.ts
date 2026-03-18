@@ -15,6 +15,7 @@ import {
 import { isJoinableStatus } from "../services/status-rules";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
+import { doTimeWindowsOverlap, type TimeWindow } from "../services/time-window.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
@@ -26,6 +27,47 @@ const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
+const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
+
+type CodedHttpException = HTTPException & {
+  code?: string;
+};
+
+const isTimeConflictRelevantStatus = (status: string): boolean =>
+  status === "OPEN" ||
+  status === "READY" ||
+  status === "FULL" ||
+  status === "LOCKED_TO_START" ||
+  status === "ACTIVE";
+
+async function assertNoJoinedTimeWindowOverlap(params: {
+  targetPrId: PRId;
+  targetTimeWindow: TimeWindow;
+  userId: User["id"];
+}): Promise<void> {
+  const slots = await partnerRepo.findActiveByUserId(params.userId);
+  const joinedPrIds = Array.from(
+    new Set(slots.map((slot) => slot.prId)),
+  ).filter((prId) => prId !== params.targetPrId);
+
+  if (joinedPrIds.length === 0) return;
+
+  const joinedRequests = await prRepo.findByIds(joinedPrIds);
+  const conflicted = joinedRequests.find((joinedRequest) => {
+    if (!isTimeConflictRelevantStatus(joinedRequest.status)) {
+      return false;
+    }
+    return doTimeWindowsOverlap(params.targetTimeWindow, joinedRequest.time);
+  });
+  if (!conflicted) return;
+
+  const error = new HTTPException(409, {
+    message:
+      "Cannot join - time window conflicts with another joined partner request",
+  }) as CodedHttpException;
+  error.code = JOIN_TIME_WINDOW_CONFLICT_CODE;
+  throw error;
+}
 
 export async function joinPRAsUser(
   id: PRId,
@@ -81,6 +123,12 @@ export async function joinPRAsUser(
     }
     return toPublicPR(latest, user.id);
   }
+
+  await assertNoJoinedTimeWindowOverlap({
+    targetPrId: id,
+    targetTimeWindow: refreshedRequest.time,
+    userId: user.id,
+  });
 
   const activeCount = await partnerRepo.countActiveByPrId(id);
   if (

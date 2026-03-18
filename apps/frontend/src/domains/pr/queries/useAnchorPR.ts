@@ -7,6 +7,7 @@ import { i18n } from "@/locales/i18n";
 import { queryKeys } from "@/shared/api/query-keys";
 import type { AnchorPRFormFields } from "@/domains/pr/model/types";
 import {
+  buildApiError,
   type ApiErrorPayload,
   readApiErrorPayload,
   resolveApiErrorMessage,
@@ -185,7 +186,10 @@ export const useJoinAnchorPR = () => {
           const registerErrorPayload = registerRes.ok
             ? null
             : await readApiErrorPayload(registerRes);
-          throw new Error(resolveRegisterLocalAccountError(registerErrorPayload));
+          throw buildApiError(
+            resolveRegisterLocalAccountError(registerErrorPayload),
+            registerErrorPayload,
+          );
         }
 
         userSessionStore.applyAuthSession(registerPayload);
@@ -223,12 +227,13 @@ export const useJoinAnchorPR = () => {
       }
 
       if (!res.ok) {
-        throw new Error(
+        throw buildApiError(
           resolveErrorMessage(
             res,
             payload,
             i18n.global.t("errors.joinRequestFailed"),
           ),
+          payload,
         );
       }
 

@@ -326,6 +326,7 @@
       "blockedAlreadyConfirmed": "你的名额已经确认，无需重复操作。",
       "blockedNotJoined": "你还没有加入当前搭子请求。",
       "blockedStatus": "当前状态下不支持这个操作。",
+      "blockedTimeWindowConflict": "你无法加入，因为你有另一个搭子请求与此时间冲突",
       "blockedCheckIn": "活动开始后才能反馈到场情况。",
       "rosterTitle": "当前搭子",
       "rosterCount": "{count} 人",

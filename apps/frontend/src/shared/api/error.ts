@@ -4,6 +4,10 @@ export type ApiErrorPayload = {
   code?: string;
 };
 
+export type ApiError = Error & {
+  code?: string;
+};
+
 export const readApiErrorPayload = async (
   response: Response,
 ): Promise<ApiErrorPayload | null> => {
@@ -19,4 +23,15 @@ export const resolveApiErrorMessage = (
   fallback: string,
 ): string => {
   return payload?.detail ?? payload?.error ?? fallback;
+};
+
+export const buildApiError = (
+  message: string,
+  payload: ApiErrorPayload | null,
+): ApiError => {
+  const error = new Error(message) as ApiError;
+  if (payload?.code) {
+    error.code = payload.code;
+  }
+  return error;
 };

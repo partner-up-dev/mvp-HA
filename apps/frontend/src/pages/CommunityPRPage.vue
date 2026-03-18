@@ -68,6 +68,7 @@
         :slot-state-text="sharedActions.slotStateText.value"
         :join-pending="sharedActions.joinPending.value"
         :exit-pending="sharedActions.exitPending.value"
+        :join-error-message="sharedActions.joinErrorMessage.value"
         @join="handleJoin"
         @exit="sharedActions.handleExit"
       />

@@ -100,6 +100,10 @@
       </button>
     </div>
 
+    <p v-if="joinErrorMessage" class="partner-section__error-note">
+      {{ joinErrorMessage }}
+    </p>
+
     <p v-if="availabilityNote" class="partner-section__availability-note">
       {{ availabilityNote }}
     </p>
@@ -389,6 +393,7 @@ const props = withDefaults(
     exitPending?: boolean;
     confirmPending?: boolean;
     checkInPending?: boolean;
+    joinErrorMessage?: string | null;
     showCheckInFollowup?: boolean;
     checkInFollowupStatusLabel?: string;
     canToggleReminder?: boolean;
@@ -405,6 +410,7 @@ const props = withDefaults(
     exitPending: false,
     confirmPending: false,
     checkInPending: false,
+    joinErrorMessage: null,
     showCheckInFollowup: false,
     checkInFollowupStatusLabel: "",
     canToggleReminder: false,
@@ -632,6 +638,12 @@ function blockedReasonText(
   margin: 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.partner-section__error-note {
+  margin: 0;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-error);
 }
 
 .partner-section__slot-state {

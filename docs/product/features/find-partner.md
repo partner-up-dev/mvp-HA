@@ -48,6 +48,8 @@
 - 参与者资料页为只读页面，仅展示头像与昵称；当对应 slot 不再活跃时返回不可用提示。
 - Community PR 加入成功时对应 `Partner.status` 置为 `JOINED`。
 - Anchor PR 在 `T-1h~T-30min` 窗口加入时会立即置为 `CONFIRMED`。
+- `POST /api/cpr/:id/join` 与 `POST /api/apr/:id/join` 会在加入前校验“用户已加入且仍为非终态（非 `CLOSED/EXPIRED`）”的 PR 时间窗口是否与目标 PR 重叠；若重叠则拒绝加入（`409`，`code=JOIN_TIME_WINDOW_CONFLICT`）。
+- 时间窗口重叠判定使用半开区间（`a.start < b.end && b.start < a.end`），边界相接（`end == start`）不算重叠；任一窗口不可比较（缺失/无法解析/`end <= start`）则跳过该对比。
 - 仅 Anchor PR 存在以下确认窗口规则：
   - `T-1h` 时刻会自动释放仍为 `JOINED` 的槽位（变为 `RELEASED` 并从 PR 当前参与列表移除）。
   - `T-30min` 后禁止加入（event locked）。
@@ -86,6 +88,7 @@
 - Anchor PR 不暴露手动创建页面；详情页主入口为 `/apr/:id`，预订与资助页为 `/apr/:id/booking-support`。
 - 新创建请求会按 `min/max` 创建槽位；当前参与人数由 `partners.pr_id` 下处于活跃状态的槽位动态聚合。
 - `POST /api/cpr/:id/join` 在当前无本地账户时会自动创建本地用户并返回鉴权上下文（含必要时新生成 PIN）。
+- `POST /api/cpr/:id/join` 与 `POST /api/apr/:id/join` 在用户已加入其它非终态且时间重叠的 PR 时返回 `409`，错误码 `JOIN_TIME_WINDOW_CONFLICT`。
 - `POST /api/cpr/:id/exit` 依赖本地账户鉴权上下文，不要求微信登录态。
 - `POST /api/apr/:id/join`、`POST /api/apr/:id/exit`、`POST /api/apr/:id/confirm`、`POST /api/apr/:id/check-in` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - `GET /api/cpr/:id/partners/:partnerId/profile` 与 `GET /api/apr/:id/partners/:partnerId/profile` 仅在目标 slot 属于当前 PR 且为活跃参与状态时返回资料；否则返回 404。

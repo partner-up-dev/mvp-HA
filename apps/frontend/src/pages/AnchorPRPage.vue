@@ -39,6 +39,7 @@
         :section="prDetail.partnerSection"
         :slot-state-text="sharedActions.slotStateText.value"
         :join-pending="sharedActions.joinPending.value"
+        :join-error-message="sharedActions.joinErrorMessage.value"
         :exit-pending="sharedActions.exitPending.value"
         :confirm-pending="attendanceActions.confirmPending.value"
         :check-in-pending="attendanceActions.checkInPending.value"

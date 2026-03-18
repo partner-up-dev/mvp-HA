@@ -51,8 +51,8 @@
 - [x] 我的搭子请求列表
 - [ ] min-partners 必须大于1 （记得告诉 NL parsing LLM）
 - [ ] Community PR 允许提供一张图，空间会大很多（但是注意内容审查）
-- [ ] 时间冲突，不可加入
-- [ ] Partner roster item 把 ID 号打出来也太那啥了，至少用用户头像+昵称吧
+- [x] 时间冲突，不可加入
+- [x] Partner roster item 把 ID 号打出来也太那啥了，至少用用户头像+昵称吧
 - [ ] Partner Section IA 还得重构一下，太紧凑而复杂了
 
 ### Detail Page

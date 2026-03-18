@@ -9,6 +9,9 @@ import {
   useJoinCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
+import type { ApiError } from "@/shared/api/error";
+
+const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
 
 type UseSharedPRActionsOptions = {
   id: ComputedRef<PRId | null>;
@@ -69,18 +72,30 @@ export const useSharedPRActions = ({
 
   const joinPending = computed(() => getJoinMutation().isPending.value);
   const exitPending = computed(() => getExitMutation().isPending.value);
+  const joinErrorMessage = computed(() => {
+    const error = getJoinMutation().error.value as ApiError | null;
+    if (!error) return null;
+    if (error.code === JOIN_TIME_WINDOW_CONFLICT_CODE) {
+      return t("prPage.partnerSection.blockedTimeWindowConflict");
+    }
+    return null;
+  });
 
   const handleJoin = async () => {
     if (id.value === null) return;
 
-    await ensureAuthSessionBootstrapped();
-    const result = await getJoinMutation().mutateAsync({ id: id.value });
-    trackEvent("pr_join_success", {
-      prId: id.value,
-      ...analyticsPRContext.value,
-    });
-    onActionSuccess?.();
-    return result;
+    try {
+      await ensureAuthSessionBootstrapped();
+      const result = await getJoinMutation().mutateAsync({ id: id.value });
+      trackEvent("pr_join_success", {
+        prId: id.value,
+        ...analyticsPRContext.value,
+      });
+      onActionSuccess?.();
+      return result;
+    } catch {
+      return null;
+    }
   };
 
   const handleExit = async () => {
@@ -105,6 +120,7 @@ export const useSharedPRActions = ({
     showModifyStatusAction,
     joinPending,
     exitPending,
+    joinErrorMessage,
     handleJoin,
     handleExit,
   };

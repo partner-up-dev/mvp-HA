@@ -10,6 +10,11 @@ import type {
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 import { queryKeys } from "@/shared/api/query-keys";
+import {
+  buildApiError,
+  readApiErrorPayload,
+  resolveApiErrorMessage,
+} from "@/shared/api/error";
 
 type CreateDraftResult = { id: PRId };
 
@@ -192,8 +197,13 @@ export const useJoinCommunityPR = () => {
       );
 
       if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, i18n.global.t("errors.joinRequestFailed")),
+        const payload = await readApiErrorPayload(res);
+        throw buildApiError(
+          resolveApiErrorMessage(
+            payload,
+            i18n.global.t("errors.joinRequestFailed"),
+          ),
+          payload,
         );
       }
 
