@@ -10,6 +10,7 @@ import {
   getAnchorPRDetail,
   recommendAlternativeBatches,
 } from "../domains/pr-anchor";
+import { verifyAnchorPRBookingContact } from "../domains/pr-booking-support";
 import {
   exitPR,
   getPRPartnerProfile,
@@ -40,6 +41,12 @@ const slotCheckInSchema = z.object({
 });
 const acceptAlternativeBatchSchema = z.object({
   targetTimeWindow: z.tuple([z.string().nullable(), z.string().nullable()]),
+});
+const anchorJoinSchema = z.object({
+  wechatPhoneCredential: z.string().trim().min(1).optional(),
+}).default({});
+const verifyBookingContactSchema = z.object({
+  wechatPhoneCredential: z.string().trim().min(1),
 });
 
 const ensureAnchorPR = async (id: number) => {
@@ -79,7 +86,8 @@ export const anchorPRRoute = app
   )
   .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    const result = await getAnchorPRBookingSupport(id);
+    const identity = await tryReadAnchorAuthenticatedIdentity(c);
+    const result = await getAnchorPRBookingSupport(id, identity?.userId ?? null);
     return c.json(result);
   })
   .get(
@@ -167,13 +175,21 @@ export const anchorPRRoute = app
       });
     },
   )
-  .post("/:id/join", zValidator("param", prIdParamSchema), async (c) => {
-    const { id } = c.req.valid("param");
-    await ensureAnchorPR(id);
-    const { openId } = await requireAnchorAuthenticatedIdentity(c);
-    const result = await joinPR(id, openId);
-    return c.json(result);
-  })
+  .post(
+    "/:id/join",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", anchorJoinSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { wechatPhoneCredential } = c.req.valid("json");
+      await ensureAnchorPR(id);
+      const { openId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await joinPR(id, openId, {
+        wechatPhoneCredential: wechatPhoneCredential ?? null,
+      });
+      return c.json(result);
+    },
+  )
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await ensureAnchorPR(id);
@@ -188,6 +204,23 @@ export const anchorPRRoute = app
     const result = await confirmSlot(id, openId);
     return c.json(result);
   })
+  .post(
+    "/:id/booking-contact/verify",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", verifyBookingContactSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { wechatPhoneCredential } = c.req.valid("json");
+      await ensureAnchorPR(id);
+      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await verifyAnchorPRBookingContact({
+        prId: id,
+        userId,
+        wechatPhoneCredential,
+      });
+      return c.json(result);
+    },
+  )
   .post(
     "/:id/check-in",
     zValidator("param", prIdParamSchema),

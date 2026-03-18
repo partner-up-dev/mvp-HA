@@ -18,8 +18,9 @@ const envSchema = z.object({
   WECHAT_OFFICIAL_ACCOUNT_APP_ID: z.string().min(1).optional(),
   WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: z.string().min(1).optional(),
   WECHAT_AUTH_SESSION_SECRET: z.string().min(1).optional(),
-  WECHAT_DEV_MOCK_ENABLED: z.enum(["true", "false"]).default("false"),
-  WECHAT_DEV_MOCK_OPEN_ID: z.string().min(1).default("dev-mock-openid"),
+  // Unified WeChat ability mocking switch (OAuth + phone resolve) for non-production debugging.
+  WECHAT_ABILITY_MOCKING_ENABLED: z.enum(["true", "false"]).optional(),
+  WECHAT_ABILITY_MOCK_OPEN_ID: z.string().min(1).optional(),
   WECHAT_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),
   // Fallback only when config key `wechat.submsg_confirmation_reminder_template_id` is empty.
   WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),

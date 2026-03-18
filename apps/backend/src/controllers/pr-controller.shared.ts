@@ -12,12 +12,14 @@ import { WeChatOAuthService } from "../services/WeChatOAuthService";
 import { issueUserAuth } from "../auth/middleware";
 import { readOAuthSession } from "../auth/wechat-session";
 import type { AuthEnv } from "../auth/middleware";
-import { env } from "../lib/env";
 import { UserRepository } from "../repositories/UserRepository";
+import {
+  isWeChatAbilityMockingEnabled,
+  resolveWeChatAbilityMockOpenId,
+} from "../lib/wechat-ability-mocking";
 
 const oauthService = new WeChatOAuthService();
 const userRepo = new UserRepository();
-const isProduction = process.env.NODE_ENV === "production";
 const ANCHOR_USER_AUTH_REQUIRED_CODE = "ANCHOR_USER_AUTH_REQUIRED";
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_OAUTH_NOT_CONFIGURED_CODE = "WECHAT_OAUTH_NOT_CONFIGURED";
@@ -25,18 +27,6 @@ const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 
 type CodedHttpException = HTTPException & {
   code?: string;
-};
-
-const isWeChatDevMockEnabled = (): boolean =>
-  !isProduction && env.WECHAT_DEV_MOCK_ENABLED === "true";
-
-const resolveWeChatDevMockOpenId = (): string | null => {
-  if (!isWeChatDevMockEnabled()) {
-    return null;
-  }
-
-  const openId = env.WECHAT_DEV_MOCK_OPEN_ID.trim();
-  return openId.length > 0 ? openId : null;
 };
 
 const readSessionOpenId = async (c: Context<AuthEnv>): Promise<string | null> => {
@@ -103,7 +93,7 @@ export const requireAuthenticatedOpenId = async (
     return sessionOpenId;
   }
 
-  const mockOpenId = resolveWeChatDevMockOpenId();
+  const mockOpenId = resolveWeChatAbilityMockOpenId();
   if (mockOpenId) {
     return mockOpenId;
   }
@@ -176,7 +166,7 @@ export const requireAnchorAuthenticatedIdentity = async (
 
   const sessionOpenId = await readSessionOpenId(c);
   if (!sessionOpenId) {
-    if (!oauthService.isConfigured() && !isWeChatDevMockEnabled()) {
+    if (!oauthService.isConfigured() && !isWeChatAbilityMockingEnabled()) {
       return throwCodedHttpException(
         503,
         "WeChat OAuth is not configured",

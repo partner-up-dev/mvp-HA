@@ -41,6 +41,46 @@
       </section>
 
       <section
+        v-if="bookingSupportDetail.bookingSupport.bookingContact.required"
+        class="card"
+      >
+        <h2 class="card-title">{{ t("prBookingSupport.bookingContact.title") }}</h2>
+        <p class="headline">{{ bookingContactHeadline }}</p>
+        <p class="hint">{{ bookingContactHint }}</p>
+        <p v-if="bookingContactDeadlineText" class="hint">
+          {{
+            t("prBookingSupport.bookingContact.deadlineWithValue", {
+              deadline: bookingContactDeadlineText,
+            })
+          }}
+        </p>
+
+        <button
+          v-if="canVerifyBookingContact"
+          class="request-btn"
+          :disabled="verifyBookingContactMutation.isPending.value"
+          @click="handleVerifyBookingContact"
+        >
+          {{
+            verifyBookingContactMutation.isPending.value
+              ? t("prBookingSupport.bookingContact.verifying")
+              : t("prBookingSupport.bookingContact.verifyAction")
+          }}
+        </button>
+        <button
+          v-else-if="showGoWechatLoginAction"
+          class="request-btn"
+          @click="handleGoWechatLogin"
+        >
+          {{ t("prBookingSupport.bookingContact.goWechatLogin") }}
+        </button>
+
+        <p v-if="bookingContactVerifyErrorMessage" class="error-text">
+          {{ bookingContactVerifyErrorMessage }}
+        </p>
+      </section>
+
+      <section
         v-for="resource in bookingSupportDetail.bookingSupport.resources"
         :key="resource.id"
         class="card"
@@ -201,10 +241,13 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import {
   useAnchorPRBookingSupport,
   useAnchorReimbursementStatus,
+  useVerifyAnchorPRBookingContact,
 } from "@/domains/pr/queries/useAnchorPR";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
+import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
+import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
 
 const route = useRoute();
 const router = useRouter();
@@ -231,11 +274,36 @@ const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const wecomQrCodeQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.wecomServiceQrCode);
 const wecomQrCodeUrl = computed(() => wecomQrCodeQuery.data.value?.value ?? null);
 const showWecomQrModal = ref(false);
+const verifyBookingContactMutation = useVerifyAnchorPRBookingContact();
+const { isWeChatEnv, requestPhoneCredential } = useWeChatPhoneCredential();
+const bookingContactVerifyErrorMessage = ref<string | null>(null);
 
 const showReimbursementSection = computed(() =>
   bookingSupportDetail.value?.bookingSupport.resources.some(
     (resource) => resource.support.settlementMode === "PLATFORM_POSTPAID",
   ) ?? false,
+);
+const bookingContact = computed(
+  () => bookingSupportDetail.value?.bookingSupport.bookingContact ?? null,
+);
+const canVerifyBookingContact = computed(
+  () =>
+    Boolean(
+      id.value !== null &&
+        bookingContact.value?.required &&
+        bookingContact.value.ownerIsCurrentViewer &&
+        bookingContact.value.state !== "VERIFIED" &&
+        isWeChatEnv.value,
+    ),
+);
+const showGoWechatLoginAction = computed(
+  () =>
+    Boolean(
+      bookingContact.value?.required &&
+        bookingContact.value.ownerIsCurrentViewer &&
+        bookingContact.value.state !== "VERIFIED" &&
+        !isWeChatEnv.value,
+    ),
 );
 
 const formatDateTime = (value: string | null | undefined): string => {
@@ -258,6 +326,37 @@ const effectiveBookingDeadlineText = computed(() => {
     bookingSupportDetail.value?.bookingSupport.overview.effectiveBookingDeadlineAt ??
     null;
   return deadline ? formatDateTime(deadline) : null;
+});
+const bookingContactDeadlineText = computed(() => {
+  const deadline = bookingContact.value?.deadlineAt ?? null;
+  return deadline ? formatDateTime(deadline) : null;
+});
+const bookingContactHeadline = computed(() => {
+  const current = bookingContact.value;
+  if (!current?.required) return "";
+  if (current.state === "VERIFIED" && current.maskedPhone) {
+    return t("prBookingSupport.bookingContact.stateVerifiedWithPhone", {
+      phone: current.maskedPhone,
+    });
+  }
+  if (current.state === "VERIFIED") {
+    return t("prBookingSupport.bookingContact.stateVerified");
+  }
+  if (current.ownerIsCurrentViewer) {
+    return t("prBookingSupport.bookingContact.stateMissingOwnerSelf");
+  }
+  return t("prBookingSupport.bookingContact.stateMissingOwnerOther");
+});
+const bookingContactHint = computed(() => {
+  const current = bookingContact.value;
+  if (!current?.required) return "";
+  if (current.state === "VERIFIED") {
+    return t("prBookingSupport.bookingContact.verifiedHint");
+  }
+  if (current.ownerIsCurrentViewer) {
+    return t("prBookingSupport.bookingContact.ownerSelfHint");
+  }
+  return t("prBookingSupport.bookingContact.ownerOtherHint");
 });
 
 const resourceKindText = (
@@ -320,6 +419,41 @@ const reimbursementReasonText = (
     return t("prBookingSupport.reimbursement.reasonSlotNotEligible");
   }
   return t("prBookingSupport.reimbursement.reasonAlreadyRequested");
+};
+
+const handleGoWechatLogin = () => {
+  if (typeof window === "undefined") return;
+  redirectToWeChatOAuthLogin(window.location.href);
+};
+
+const handleVerifyBookingContact = async () => {
+  if (id.value === null || !canVerifyBookingContact.value) return;
+
+  bookingContactVerifyErrorMessage.value = null;
+  let wechatPhoneCredential: string;
+
+  try {
+    wechatPhoneCredential = await requestPhoneCredential();
+  } catch (error) {
+    bookingContactVerifyErrorMessage.value =
+      error instanceof Error
+        ? error.message
+        : t("prBookingSupport.bookingContact.verifyFailed");
+    return;
+  }
+
+  try {
+    await verifyBookingContactMutation.mutateAsync({
+      id: id.value,
+      wechatPhoneCredential,
+    });
+    bookingContactVerifyErrorMessage.value = null;
+  } catch (error) {
+    bookingContactVerifyErrorMessage.value =
+      error instanceof Error
+        ? error.message
+        : t("prBookingSupport.bookingContact.verifyFailed");
+  }
 };
 
 type BookingSupportResource =
@@ -387,6 +521,12 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
   margin: var(--sys-spacing-xs) 0 0;
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
+}
+
+.error-text {
+  margin: var(--sys-spacing-xs) 0 0;
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-error);
 }
 
 .tag-list {

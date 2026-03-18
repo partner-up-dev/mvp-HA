@@ -1,10 +1,12 @@
 # TODOs of PartnerUp MVP-HA
 
+- [ ] 【MUST】协议
+
 ## Deployment
 
 - [ ] CICD 还有可以优化的（不需要检查层依赖、层清理、包清理）
 - [x] 数据库迁移（开发/部署）工作流改进
-- [ ] 【MUST】后端冷启动及其缓慢，RuntimeInitialization消耗6s；函数 Invocation 消耗 6 秒（仅仅是 js-sdk signature req哦）
+- [ ] ~【MUST】后端冷启动及其缓慢，RuntimeInitialization消耗6s；函数 Invocation 消耗 6 秒（仅仅是 js-sdk signature req哦）~ （未能进一步确认，在最近的一个月里面只发生了一次，似乎和数据库冷启动有关）
 - [ ] 在移动端的加载速度还有待优化
 - [x] 多环境支持：后端通过httpTrigger+函数别名 (`https://test.api-app.partner-up.cn`)；前端创建另一个Page (`https://test.app.partner-up.cn`)
 
@@ -34,6 +36,12 @@
 - [ ] Static Incremental Regeneration and Open graph
 - [x] 添加 SPM 追踪
 
+## Admin
+
+- [ ] 场地预订处理
+  - [ ] 显示搭子请求、代理手机号、要预订的场地
+  - [ ] 预订成功/失败通过公众号发送通知给用户
+
 ## User
 
 - [x] 添加“我的”页面：可以绑定微信；开关服务通知；修改头像和昵称
@@ -51,13 +59,13 @@
 - [x] 我的搭子请求列表
 - [ ] min-partners 必须大于1 （记得告诉 NL parsing LLM）
 - [ ] Community PR 允许提供一张图，空间会大很多（但是注意内容审查）
-- [x] 时间冲突，不可加入
-- [x] Partner roster item 把 ID 号打出来也太那啥了，至少用用户头像+昵称吧
-- [ ] Partner Section IA 还得重构一下，太紧凑而复杂了
+- [x] 【MUST】时间冲突，不可加入
 
 ### Detail Page
 
-- [ ] 重构 PR Detail Page
+- [x] Partner roster item 把 ID 号打出来也太那啥了，至少用用户头像+昵称吧
+- [ ] PR Detail Page IA 还得重构一下，太紧凑而复杂了
+- [x] 重构 PR Detail Page
 - [x] 重新设计/添加 partner section
   - [x] 加入/退出按钮
   - [x] 其它搭子（搭子花名册）
@@ -109,14 +117,14 @@
   - 并在活动页的 Anchor PR 列表末尾提供一个卡片，使得用户可以在选中批次下创建用户管理地点的 Anchor PR
   - 用户管理地点在同一批次内创建的 PR 数量有上限（上限不随批次的不同而变化）
   - 基于用户管理地点的 Anchor PR 没有预订支持，可能有资源支持；这一点可以在用户创建之前呈现清楚
-- [ ] 允许用户主动创建该batch 下 Anchor PR（不同地点）；引导用户创建 community pr（这两个应该是一个入口？）
-- [ ] 在活动级别设置 min, max partner
+- [ ] 【MUST】允许用户主动创建该 batch 下 Anchor PR（不同地点）（对于卡片模式来说，还可以选择时间），如果仍然不可以用，自动创建 CPR
+- [ ] 【MUST】在活动级别设置 min, max partner
 
 ### Booking & Support
 
 - [ ] 资源配以图片
 - [ ] 报销跳转到 contact-support 但是仅保留联系员工，避免用户疑惑
-- [ ] 【MUST】booking deadline 其实不用要求 confirm end，不然的话很多活动都很难预订又或者确认机制变得无效了；只要把 confirm end 配置为平台取消预订会产生损失之前的 30min 就好
+- [x] 【MUST】booking deadline 其实不用要求 confirm end，不然的话很多活动都很难预订又或者确认机制变得无效了；只要把 confirm end 配置为平台取消预订会产生损失之前的 30min 就好
 - [ ] 【MUST】许多的预订都需要用户手机号
 
 ## Base/Common

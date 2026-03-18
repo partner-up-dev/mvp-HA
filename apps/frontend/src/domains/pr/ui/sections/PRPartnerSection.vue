@@ -562,6 +562,8 @@ function blockedReasonText(
         "prPage.partnerSection.blockedConfirmWindow",
         confirmWindowText.value,
       );
+    case "BOOKING_CONTACT_REQUIRED":
+      return t("prPage.partnerSection.blockedBookingContactRequired");
     case "ALREADY_CONFIRMED":
       return t("prPage.partnerSection.blockedAlreadyConfirmed");
     case "ALREADY_JOINED":

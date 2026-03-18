@@ -18,6 +18,7 @@ export type PartnerSectionActionBlockedReason =
   | "JOIN_LOCKED"
   | "EVENT_STARTED"
   | "BOOKING_LOCKED"
+  | "BOOKING_CONTACT_REQUIRED"
   | "OUTSIDE_CONFIRM_WINDOW"
   | "NOT_JOINED"
   | "ALREADY_JOINED"
@@ -75,6 +76,15 @@ export type PartnerSectionView = {
     bookingDeadlineAt: string | null;
     bookingTriggeredAt: string | null;
   };
+  bookingContact: {
+    required: boolean;
+    state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
+    ownerPartnerId: number | null;
+    ownerIsCurrentViewer: boolean;
+    maskedPhone: string | null;
+    verifiedAt: string | null;
+    deadlineAt: string | null;
+  };
   fallbacks: {
     sameBatchAlternatives: Array<{
       id: PRId;
@@ -119,7 +129,10 @@ const buildBaseSection = (
   publicPR: PublicPR,
   activeParticipants: ActiveParticipantSummary[],
   viewerUserId: UserId | null,
-): Omit<PartnerSectionView, "scenario" | "reminder" | "timeline" | "fallbacks"> => {
+): Omit<
+  PartnerSectionView,
+  "scenario" | "reminder" | "timeline" | "bookingContact" | "fallbacks"
+> => {
   const current = activeParticipants.length;
   const min = publicPR.minPartners;
   const max = publicPR.maxPartners;
@@ -228,6 +241,15 @@ export function buildCommunityPartnerSection(
       visible: false,
     },
     timeline: null,
+    bookingContact: {
+      required: false,
+      state: "NOT_REQUIRED",
+      ownerPartnerId: null,
+      ownerIsCurrentViewer: false,
+      maskedPhone: null,
+      verifiedAt: null,
+      deadlineAt: null,
+    },
     fallbacks: {
       sameBatchAlternatives: [],
       alternativeBatches: [],
@@ -241,6 +263,15 @@ export function buildAnchorPartnerSection(params: {
   viewerUserId: UserId | null;
   policy: ResolvedAnchorParticipationPolicy;
   bookingDeadlineAt: Date | null;
+  bookingContact: {
+    required: boolean;
+    state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
+    ownerPartnerId: number | null;
+    ownerIsCurrentViewer: boolean;
+    maskedPhone: string | null;
+    verifiedAt: string | null;
+    deadlineAt: string | null;
+  };
   sameBatchAlternatives: Array<{
     id: PRId;
     location: string;
@@ -254,6 +285,7 @@ export function buildAnchorPartnerSection(params: {
     viewerUserId,
     policy,
     bookingDeadlineAt,
+    bookingContact,
     sameBatchAlternatives,
     alternativeBatches,
   } = params;
@@ -313,6 +345,12 @@ export function buildAnchorPartnerSection(params: {
   if (!base.viewer.isParticipant) {
     canConfirm = false;
     confirmBlockedReason = "NOT_JOINED";
+  } else if (
+    bookingContact.required &&
+    bookingContact.state !== "VERIFIED"
+  ) {
+    canConfirm = false;
+    confirmBlockedReason = "BOOKING_CONTACT_REQUIRED";
   } else if (base.viewer.slotState === "CONFIRMED" || base.viewer.slotState === "ATTENDED") {
     canConfirm = false;
     confirmBlockedReason = "ALREADY_CONFIRMED";
@@ -357,6 +395,7 @@ export function buildAnchorPartnerSection(params: {
       bookingDeadlineAt: toIsoString(bookingDeadlineAt),
       bookingTriggeredAt: toIsoString(policy.bookingTriggeredAt),
     },
+    bookingContact,
     fallbacks: {
       sameBatchAlternatives,
       alternativeBatches,

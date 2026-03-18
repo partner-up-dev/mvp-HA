@@ -14,6 +14,9 @@ type ShareCardData = Pick<
   WeChatShareToChatPayload,
   "title" | "desc" | "link" | "imgUrl"
 >;
+type InitWeChatSdkOptions = {
+  jsApiList?: ReadonlyArray<WeChatJsApiName>;
+};
 
 const stripHash = (rawUrl: string): string => {
   try {
@@ -26,11 +29,20 @@ const stripHash = (rawUrl: string): string => {
 };
 
 const WECHAT_SDK_URL = "https://res.wx.qq.com/open/js/jweixin-1.6.0.js";
+const DEFAULT_JS_API_LIST: ReadonlyArray<WeChatJsApiName> = [
+  "updateAppMessageShareData",
+  "updateTimelineShareData",
+];
 
 const isWeChatSdkAvailable = (): boolean =>
   typeof window !== "undefined" && typeof wx !== "undefined";
 
 let sdkLoadPromise: Promise<void> | null = null;
+
+const normalizeJsApiList = (
+  jsApiList: ReadonlyArray<WeChatJsApiName> | undefined,
+): WeChatJsApiName[] =>
+  Array.from(new Set([...(jsApiList ?? DEFAULT_JS_API_LIST)])).sort();
 
 const loadWeChatSdk = async (): Promise<void> => {
   if (typeof window === "undefined") return;
@@ -93,15 +105,30 @@ export const useWeChatShare = () => {
   const isReady = ref(false);
   const initError = ref<string | null>(null);
   const configuredUrl = ref<string | null>(null);
+  const configuredJsApiListKey = ref<string | null>(null);
 
   let initPromise: Promise<void> | null = null;
 
-  const initWeChatSdk = async (): Promise<void> => {
+  const initWeChatSdk = async (
+    options: InitWeChatSdkOptions = {},
+  ): Promise<void> => {
     if (!isWeChatBrowser()) return;
     const currentUrl = stripHash(window.location.href);
-    if (isReady.value && configuredUrl.value === currentUrl) return;
+    const requestedJsApiList = normalizeJsApiList(options.jsApiList);
+    const requestedJsApiListKey = requestedJsApiList.join(",");
+    if (
+      isReady.value &&
+      configuredUrl.value === currentUrl &&
+      configuredJsApiListKey.value === requestedJsApiListKey
+    ) {
+      return;
+    }
 
-    if (configuredUrl.value && configuredUrl.value !== currentUrl) {
+    if (
+      configuredUrl.value &&
+      (configuredUrl.value !== currentUrl ||
+        configuredJsApiListKey.value !== requestedJsApiListKey)
+    ) {
       isReady.value = false;
       initPromise = null;
     }
@@ -139,7 +166,7 @@ export const useWeChatShare = () => {
             timestamp: signature.timestamp,
             nonceStr: signature.nonceStr,
             signature: signature.signature,
-            jsApiList: ["updateAppMessageShareData", "updateTimelineShareData"],
+            jsApiList: requestedJsApiList,
           });
 
           const timeoutId = window.setTimeout(() => {
@@ -168,6 +195,7 @@ export const useWeChatShare = () => {
 
         isReady.value = true;
         configuredUrl.value = currentUrl;
+        configuredJsApiListKey.value = requestedJsApiListKey;
       } catch (error) {
         const message =
           error instanceof Error
@@ -176,6 +204,7 @@ export const useWeChatShare = () => {
         initError.value = message;
         isReady.value = false;
         configuredUrl.value = null;
+        configuredJsApiListKey.value = null;
         initPromise = null;
         throw new Error(message);
       } finally {

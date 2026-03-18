@@ -3,9 +3,9 @@ import { z } from "zod";
 import type { Context } from "hono";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
 import { env } from "../lib/env";
+import { isWeChatAbilityMockingEnabled } from "../lib/wechat-ability-mocking";
 
 const oauthService = new WeChatOAuthService();
-const isProduction = process.env.NODE_ENV === "production";
 const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
 
 const oauthSessionCookiePayloadSchema = z.object({
@@ -18,15 +18,12 @@ export type OAuthSessionCookiePayload = z.infer<
   typeof oauthSessionCookiePayloadSchema
 >;
 
-const isWeChatDevMockEnabled = (): boolean =>
-  !isProduction && env.WECHAT_DEV_MOCK_ENABLED === "true";
-
 const resolveOAuthSessionSecret = (): string | null => {
   if (oauthService.isConfigured()) {
     return oauthService.getSessionSecret();
   }
 
-  if (isWeChatDevMockEnabled()) {
+  if (isWeChatAbilityMockingEnabled()) {
     return env.AUTH_JWT_SECRET;
   }
 

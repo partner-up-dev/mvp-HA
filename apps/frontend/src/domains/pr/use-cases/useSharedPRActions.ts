@@ -12,6 +12,13 @@ import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBo
 import type { ApiError } from "@/shared/api/error";
 
 const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
+const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
+const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
+const WECHAT_PHONE_VERIFY_FAILED_CODE = "WECHAT_PHONE_VERIFY_FAILED";
+
+type JoinActionOptions = {
+  wechatPhoneCredential?: string | null;
+};
 
 type UseSharedPRActionsOptions = {
   id: ComputedRef<PRId | null>;
@@ -35,8 +42,6 @@ export const useSharedPRActions = ({
   const anchorJoinMutation = useJoinAnchorPR();
   const anchorExitMutation = useExitAnchorPR();
 
-  const getJoinMutation = () =>
-    scenario === "ANCHOR" ? anchorJoinMutation : communityJoinMutation;
   const getExitMutation = () =>
     scenario === "ANCHOR" ? anchorExitMutation : communityExitMutation;
 
@@ -70,23 +75,45 @@ export const useSharedPRActions = ({
     resolveSlotStateText(pr.value?.partnerSection.viewer.slotState),
   );
 
-  const joinPending = computed(() => getJoinMutation().isPending.value);
+  const joinPending = computed(() =>
+    scenario === "ANCHOR"
+      ? anchorJoinMutation.isPending.value
+      : communityJoinMutation.isPending.value,
+  );
   const exitPending = computed(() => getExitMutation().isPending.value);
   const joinErrorMessage = computed(() => {
-    const error = getJoinMutation().error.value as ApiError | null;
+    const error =
+      scenario === "ANCHOR"
+        ? (anchorJoinMutation.error.value as ApiError | null)
+        : (communityJoinMutation.error.value as ApiError | null);
     if (!error) return null;
     if (error.code === JOIN_TIME_WINDOW_CONFLICT_CODE) {
       return t("prPage.partnerSection.blockedTimeWindowConflict");
     }
+    if (error.code === BOOKING_CONTACT_OWNER_REQUIRED_CODE) {
+      return t("prPage.bookingContact.ownerVerifyBeforeJoin");
+    }
+    if (error.code === BOOKING_CONTACT_REQUIRED_CODE) {
+      return t("prPage.bookingContact.ownerBlockedHint");
+    }
+    if (error.code === WECHAT_PHONE_VERIFY_FAILED_CODE) {
+      return t("prPage.bookingContact.verifyFailed");
+    }
     return null;
   });
 
-  const handleJoin = async () => {
+  const handleJoin = async (options: JoinActionOptions = {}) => {
     if (id.value === null) return;
 
     try {
       await ensureAuthSessionBootstrapped();
-      const result = await getJoinMutation().mutateAsync({ id: id.value });
+      const result =
+        scenario === "ANCHOR"
+          ? await anchorJoinMutation.mutateAsync({
+              id: id.value,
+              wechatPhoneCredential: options.wechatPhoneCredential ?? null,
+            })
+          : await communityJoinMutation.mutateAsync({ id: id.value });
       trackEvent("pr_join_success", {
         prId: id.value,
         ...analyticsPRContext.value,

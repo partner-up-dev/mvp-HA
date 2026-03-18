@@ -3,6 +3,7 @@ export * from "./anchor-partner-request";
 export * from "./anchor-event-support-resource";
 export * from "./anchor-event-batch-support-override";
 export * from "./anchor-pr-support-resource";
+export * from "./anchor-pr-booking-contact";
 export * from "./community-partner-request";
 export * from "./config";
 export * from "./partner";

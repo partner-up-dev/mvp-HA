@@ -277,6 +277,15 @@
       "deadlineUnset": "当前没有额外的预订截止要求",
       "deadlineWithValue": "最晚需要在 {deadline} 前完成预订安排"
     },
+    "bookingContact": {
+      "ownerVerifyBeforeJoin": "你是首位参与者，需要先通过微信授权手机号后才能加入。",
+      "ownerVerifyBeforeConfirm": "你需要先通过微信授权手机号，平台才能代你完成预订。",
+      "ownerBlockedHint": "当前需要由首位搭子先完成手机号授权后，才能继续确认。",
+      "nonWechatHint": "仅支持在微信环境中完成手机号授权。",
+      "unsupportedHint": "当前微信版本暂不支持手机号授权，请升级微信后重试。",
+      "userCancelled": "你已取消手机号授权。",
+      "verifyFailed": "手机号授权失败，请稍后重试。"
+    },
     "sameBatch": {
       "title": "同一时段其它场地",
       "subtitle": "当前场次已满，可选择同批次下的其他地点"
@@ -322,6 +331,7 @@
       "blockedJoinLocked": "已到停止加入时间，暂时不能再加入。",
       "blockedEventStarted": "活动已经开始，当前不能再变更参与状态。",
       "blockedBookingLocked": "预订已锁定，当前不能退出。",
+      "blockedBookingContactRequired": "当前需要先完成预订联系人手机号授权，才能继续操作。",
       "blockedConfirmWindow": "您需要在 {confirmStart} 到 {confirmEnd} 之间完成确认，否则您将会被移除当前搭子请求",
       "blockedAlreadyConfirmed": "你的名额已经确认，无需重复操作。",
       "blockedNotJoined": "你还没有加入当前搭子请求。",
@@ -358,6 +368,21 @@
     "overview": {
       "headlineFallback": "平台会在这里说明本场活动涉及的预订、补贴和附带支持。",
       "deadlineWithValue": "涉及锁位的预订，请在 {deadline} 前完成。"
+    },
+    "bookingContact": {
+      "title": "预订联系人手机号",
+      "stateMissingOwnerSelf": "你是当前预订联系人，请先完成手机号授权。",
+      "stateMissingOwnerOther": "当前预订联系人尚未完成手机号授权。",
+      "stateVerified": "预订联系人手机号已完成授权。",
+      "stateVerifiedWithPhone": "已授权手机号：{phone}",
+      "ownerSelfHint": "完成授权后，平台可在代预订时联系你确认订单细节。",
+      "ownerOtherHint": "请等待当前预订联系人完成授权后再继续确认或锁位流程。",
+      "verifiedHint": "平台将使用该手机号在代预订时与你确认关键信息。",
+      "deadlineWithValue": "建议在 {deadline} 前完成手机号授权。",
+      "verifyAction": "微信授权手机号",
+      "verifying": "授权中...",
+      "goWechatLogin": "去微信登录",
+      "verifyFailed": "手机号授权失败，请稍后重试。"
     },
     "resource": {
       "bookingRequired": "是否需要预订",
@@ -849,7 +874,8 @@
     "updateCurrentUserAvatarFailed": "更新当前头像失败",
     "startWechatBindFailed": "发起微信绑定失败",
     "registerLocalAccountFailed": "注册本地账户失败",
-    "fetchReimbursementStatusFailed": "获取报销状态失败"
+    "fetchReimbursementStatusFailed": "获取报销状态失败",
+    "verifyBookingContactFailed": "预订联系人手机号授权失败"
   },
   "posterStyles": {
     "fresh": "清新活泼",

@@ -39,14 +39,14 @@
         :section="prDetail.partnerSection"
         :slot-state-text="sharedActions.slotStateText.value"
         :join-pending="sharedActions.joinPending.value"
-        :join-error-message="sharedActions.joinErrorMessage.value"
+        :join-error-message="primaryActionErrorMessage"
         :exit-pending="sharedActions.exitPending.value"
         :confirm-pending="attendanceActions.confirmPending.value"
         :check-in-pending="attendanceActions.checkInPending.value"
         @go-recovery="scrollToRecoveryLane"
-        @join="sharedActions.handleJoin"
+        @join="handleJoinWithBookingContact"
         @exit="sharedActions.handleExit"
-        @confirm-slot="attendanceActions.handleConfirmSlot"
+        @confirm-slot="handleConfirmWithBookingContact"
         @prepare-check-in="attendanceActions.prepareCheckIn"
       />
 
@@ -193,6 +193,7 @@ import {
   useAcceptAnchorAlternativeBatch,
   useAnchorPR,
   useJoinAnchorPR,
+  useVerifyAnchorPRBookingContact,
 } from "@/domains/pr/queries/useAnchorPR";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
@@ -214,19 +215,26 @@ import {
   formatLocalDateTimeWindow,
 } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/analytics/track";
+import type { ApiError } from "@/shared/api/error";
+import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
 
 const router = useRouter();
 const { t } = useI18n();
 const id = usePRRouteId();
+const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
+const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
 const prDetail = computed(() => data.value);
 const joinMutation = useJoinAnchorPR();
+const verifyBookingContactMutation = useVerifyAnchorPRBookingContact();
 const acceptAlternativeBatchMutation = useAcceptAnchorAlternativeBatch();
 const userSessionStore = useUserSessionStore();
+const { requestPhoneCredential } = useWeChatPhoneCredential();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
+const bookingContactActionError = ref<string | null>(null);
 const recoveryLaneRef = ref<{ scrollIntoView: () => void } | null>(null);
 
 const editableFields = computed<AnchorPRFormFields>(() => ({
@@ -281,6 +289,21 @@ const attendanceActions = useAnchorAttendanceActions({
   pr: prDetail,
   onActionSuccess: resetLivePolling,
 });
+const currentBookingContact = computed(
+  () => prDetail.value?.partnerSection.bookingContact ?? null,
+);
+const primaryActionErrorMessage = computed(
+  () => bookingContactActionError.value ?? sharedActions.joinErrorMessage.value,
+);
+
+watch(
+  () => currentBookingContact.value?.state,
+  (state) => {
+    if (state === "VERIFIED") {
+      bookingContactActionError.value = null;
+    }
+  },
+);
 
 const {
   isWeChatEnv,
@@ -319,6 +342,100 @@ const bookingSupportSummaryDeadline = computed(() => {
   });
 });
 
+const requestBookingContactCredential = async (): Promise<string | null> => {
+  try {
+    return await requestPhoneCredential();
+  } catch (error) {
+    bookingContactActionError.value =
+      error instanceof Error
+        ? error.message
+        : t("prPage.bookingContact.verifyFailed");
+    return null;
+  }
+};
+
+const handleJoinWithBookingContact = async () => {
+  if (id.value === null) return;
+
+  bookingContactActionError.value = null;
+  const bookingContact = currentBookingContact.value;
+  const requiresOwnerCredential =
+    bookingContact?.required && bookingContact.ownerPartnerId === null;
+  const wechatPhoneCredential = requiresOwnerCredential
+    ? await requestBookingContactCredential()
+    : null;
+  if (requiresOwnerCredential && !wechatPhoneCredential) {
+    return;
+  }
+
+  const result = await sharedActions.handleJoin({ wechatPhoneCredential });
+  if (result) {
+    bookingContactActionError.value = null;
+  }
+};
+
+const ensureBookingContactVerified = async (): Promise<boolean> => {
+  if (id.value === null) return false;
+
+  const bookingContact = currentBookingContact.value;
+  if (!bookingContact?.required || bookingContact.state === "VERIFIED") {
+    return true;
+  }
+  if (!bookingContact.ownerIsCurrentViewer) {
+    bookingContactActionError.value = t("prPage.bookingContact.ownerBlockedHint");
+    return false;
+  }
+
+  const wechatPhoneCredential = await requestBookingContactCredential();
+  if (!wechatPhoneCredential) {
+    return false;
+  }
+
+  try {
+    await verifyBookingContactMutation.mutateAsync({
+      id: id.value,
+      wechatPhoneCredential,
+    });
+    await refetch();
+    bookingContactActionError.value = null;
+    return true;
+  } catch (error) {
+    bookingContactActionError.value =
+      error instanceof Error
+        ? error.message
+        : t("prPage.bookingContact.verifyFailed");
+    return false;
+  }
+};
+
+const handleConfirmWithBookingContact = async () => {
+  bookingContactActionError.value = null;
+
+  try {
+    await attendanceActions.handleConfirmSlot();
+  } catch (error) {
+    const apiError = error as ApiError;
+    if (apiError.code === BOOKING_CONTACT_REQUIRED_CODE) {
+      const verified = await ensureBookingContactVerified();
+      if (!verified) {
+        return;
+      }
+      try {
+        await attendanceActions.handleConfirmSlot();
+        bookingContactActionError.value = null;
+      } catch (retryError) {
+        bookingContactActionError.value =
+          retryError instanceof Error
+            ? retryError.message
+            : t("errors.confirmSlotFailed");
+      }
+      return;
+    }
+    bookingContactActionError.value =
+      apiError.message ?? t("errors.confirmSlotFailed");
+  }
+};
+
 const handleAcceptAlternativeBatch = async (
   targetTimeWindow: [string | null, string | null],
 ) => {
@@ -327,7 +444,31 @@ const handleAcceptAlternativeBatch = async (
     id: id.value,
     targetTimeWindow,
   });
-  await joinMutation.mutateAsync({ id: result.prId as PRId });
+  try {
+    await joinMutation.mutateAsync({ id: result.prId as PRId });
+  } catch (error) {
+    const apiError = error as ApiError;
+    if (apiError.code === BOOKING_CONTACT_OWNER_REQUIRED_CODE) {
+      const wechatPhoneCredential = await requestBookingContactCredential();
+      if (wechatPhoneCredential) {
+        try {
+          await joinMutation.mutateAsync({
+            id: result.prId as PRId,
+            wechatPhoneCredential,
+          });
+          bookingContactActionError.value = null;
+        } catch (retryError) {
+          bookingContactActionError.value =
+            retryError instanceof Error
+              ? retryError.message
+              : t("errors.joinRequestFailed");
+        }
+      }
+    } else {
+      bookingContactActionError.value =
+        apiError.message ?? t("errors.joinRequestFailed");
+    }
+  }
   await router.push(anchorPRDetailPath(result.prId as PRId));
 };
 const handleEditSuccess = () => {

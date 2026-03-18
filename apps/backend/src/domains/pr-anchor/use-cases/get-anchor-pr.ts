@@ -19,6 +19,7 @@ import {
   type PartnerSectionView,
 } from "../../pr-core/services/partner-section-view.service";
 import { resolveAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
+import { resolveBookingContactState } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
@@ -78,6 +79,15 @@ export type AnchorPRDetail = {
       headline: string | null;
       highlights: string[];
       effectiveBookingDeadlineAt: string | null;
+    };
+    bookingContact: {
+      required: boolean;
+      state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
+      ownerPartnerId: number | null;
+      ownerIsCurrentViewer: boolean;
+      maskedPhone: string | null;
+      verifiedAt: string | null;
+      deadlineAt: string | null;
     };
     related: {
       sameBatchAlternatives: SameBatchAlternative[];
@@ -141,6 +151,12 @@ export async function getAnchorPRDetail(
   const supportRows = await prSupportRepo.findByPrId(id);
   const bookingSupportPreview = buildBookingSupportPreview(supportRows);
   const bookingDeadlineAt = await getEffectiveBookingDeadline(id);
+  const bookingContact = await resolveBookingContactState({
+    prId: id,
+    viewerUserId,
+    supportResources: supportRows,
+    effectiveBookingDeadlineAt: bookingDeadlineAt,
+  });
   const policy = resolveAnchorParticipationPolicy(anchor, refreshed.time);
   const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
     id,
@@ -193,6 +209,7 @@ export async function getAnchorPRDetail(
         effectiveBookingDeadlineAt:
           bookingSupportPreview.effectiveBookingDeadlineAt,
       },
+      bookingContact,
       related: {
         sameBatchAlternatives,
         alternativeBatches,
@@ -204,6 +221,7 @@ export async function getAnchorPRDetail(
       viewerUserId,
       policy,
       bookingDeadlineAt,
+      bookingContact,
       sameBatchAlternatives,
       alternativeBatches,
     }),

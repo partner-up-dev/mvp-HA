@@ -25,6 +25,7 @@ import { recalculatePRStatus } from "./services/slot-management.service";
 import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
 import { operationLogService } from "../../infra/operation-log";
 import { getEffectiveBookingDeadline } from "../pr-booking-support";
+import { resolveBookingContactState } from "../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "./services/anchor-booking-trigger.service";
 
 const prRepo = new PartnerRequestRepository();
@@ -224,4 +225,10 @@ async function releaseUnconfirmedSlotsIfNeeded(
   }
 
   await recalculatePRStatus(request.id);
+  if (request.prKind === "ANCHOR") {
+    await resolveBookingContactState({
+      prId: request.id,
+      viewerUserId: null,
+    });
+  }
 }

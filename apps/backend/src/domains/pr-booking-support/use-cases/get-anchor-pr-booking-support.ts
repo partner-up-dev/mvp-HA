@@ -10,6 +10,8 @@ import type {
   SupportResourceKind,
   SupportSettlementMode,
 } from "../../../entities";
+import type { UserId } from "../../../entities/user";
+import { resolveBookingContactState } from "../services/resolve-booking-contact-state";
 
 const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
@@ -26,6 +28,15 @@ export interface AnchorPRBookingSupportDetail {
       headline: string | null;
       highlights: string[];
       effectiveBookingDeadlineAt: string | null;
+    };
+    bookingContact: {
+      required: boolean;
+      state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
+      ownerPartnerId: number | null;
+      ownerIsCurrentViewer: boolean;
+      maskedPhone: string | null;
+      verifiedAt: string | null;
+      deadlineAt: string | null;
     };
     resources: Array<{
       id: number;
@@ -52,6 +63,7 @@ export interface AnchorPRBookingSupportDetail {
 
 export async function getAnchorPRBookingSupport(
   id: PRId,
+  viewerUserId: UserId | null = null,
 ): Promise<AnchorPRBookingSupportDetail> {
   const root = await prRepo.findById(id);
   if (!root || root.prKind !== "ANCHOR") {
@@ -67,6 +79,11 @@ export async function getAnchorPRBookingSupport(
 
   const resources = await prSupportRepo.findByPrId(id);
   const overview = buildBookingSupportPreview(resources);
+  const bookingContact = await resolveBookingContactState({
+    prId: id,
+    viewerUserId,
+    supportResources: resources,
+  });
 
   return {
     prId: id,
@@ -80,6 +97,7 @@ export async function getAnchorPRBookingSupport(
         highlights: overview.highlights,
         effectiveBookingDeadlineAt: overview.effectiveBookingDeadlineAt,
       },
+      bookingContact,
       resources: resources.map((resource) => ({
         id: resource.id,
         title: resource.title,

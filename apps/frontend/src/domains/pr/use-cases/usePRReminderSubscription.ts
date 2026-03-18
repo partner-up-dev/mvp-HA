@@ -3,8 +3,8 @@ import type { PRId } from "@partner-up-dev/backend";
 import { useI18n } from "vue-i18n";
 import { useWeChatReminderSubscription } from "@/shared/wechat/queries/useWeChatReminderSubscription";
 import { useUpdateWeChatReminderSubscription } from "@/shared/wechat/queries/useUpdateWeChatReminderSubscription";
-import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
 
 export const usePRReminderSubscription = (id: Ref<PRId | null>) => {
   const { t } = useI18n();
@@ -13,7 +13,7 @@ export const usePRReminderSubscription = (id: Ref<PRId | null>) => {
     useUpdateWeChatReminderSubscription();
 
   const isWeChatEnv = computed(() =>
-    typeof navigator === "undefined" ? false : isWeChatBrowser(),
+    typeof navigator === "undefined" ? false : isWeChatAbilityEnv(),
   );
   const reminderConfigured = computed(
     () => wechatReminderSubscriptionQuery.data.value?.configured ?? false,

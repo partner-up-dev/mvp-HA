@@ -1,203 +1,203 @@
-# Proposal: Booking-As-User Agent for Anchor PR
+# Proposal: Anchor PR Booking Contact via WeChat (Single Owner Model)
 
-## 1. Background
+## 1. Updated Decision Summary
 
-Today, for many Anchor PR cases, `booking.handledBy = PLATFORM` does not mean deep venue integration. In reality, the platform acts as a booking agent on behalf of the participant.
+This proposal adopts two constraints as first-class design choices:
 
-That creates an operational dependency: the platform needs the participant's phone number to place or adjust bookings with venue staff.
+- Phone acquisition and validation use WeChat service-account capabilities only.
+- Only one phone number is required per Anchor PR, owned by one partner (the first active partner).
 
-Current product and domain gaps:
+This replaces the previous per-user collection idea.
 
-- No explicit booking-contact requirement state in Anchor PR read models.
-- No standardized flow to collect a phone number from Anchor PR partners.
-- No clear user-facing explanation of why phone is needed and when it blocks booking.
-- No stable operational visibility of missing phone contacts before booking deadlines.
+## 2. Background
 
-## 2. Problem Statement
+For many Anchor PR cases, `booking.handledBy = PLATFORM` currently means the platform acts as a booking agent, not a deeply integrated venue partner.
 
-We need one coherent mechanism that does both:
+In that mode, venue-side booking operations need one reachable participant phone number.
 
-1. Collect phone numbers from Anchor PR partners when platform-agent booking requires it.
-2. Communicate requirement and impact clearly to users in the Anchor PR journey.
+Current gap:
 
-The mechanism must be minimal, maintainable, and aligned with existing Anchor PR lifecycle rules.
+- no explicit PR-level booking-contact owner concept,
+- no WeChat-based phone verification flow in Anchor PR booking lifecycle,
+- no clear user messaging about who must provide the phone and when it blocks actions.
 
-## 3. First-Principles Constraints
+## 3. Why This Direction Fits Current Product
 
-- Ask only for data needed to complete the concrete booking workflow.
-- Explain purpose, scope, and timing at the point of action.
-- Keep sensitive contact data in a booking-focused boundary, not in generic display surfaces.
-- Do not leak phone numbers to other participants.
-- Avoid a frontend-only rule engine; server should derive requirement states.
-- Preserve current Anchor PR participation semantics as much as possible.
+- Anchor PR participation already depends on WeChat-authenticated identity (`openid`).
+- Non-WeChat users are already outside the normal Anchor PR action path.
+- Collecting one PR-level phone is simpler operationally than collecting every participant phone.
 
-## 4. Proposed MVP Design
+## 4. Domain Model (MVP)
 
-### 4.1 New Domain Concept: Booking Contact Requirement
+Add a PR-scoped aggregate: `AnchorPRBookingContact`.
 
-Add a server-derived requirement block for Anchor PR:
+Suggested table: `anchor_pr_booking_contacts`
 
-- Requirement trigger:
-  - At least one support resource where:
-    - `booking.required = true`
-    - `booking.handledBy = PLATFORM`
-- Requirement output state (derived per viewer):
-  - `NOT_REQUIRED`
-  - `REQUIRED_MISSING`
-  - `REQUIRED_PROVIDED`
-
-Suggested read model shape:
-
-```ts
-bookingContact: {
-  required: boolean;
-  state: "NOT_REQUIRED" | "REQUIRED_MISSING" | "REQUIRED_PROVIDED";
-  reason: "BOOKING_AS_USER_AGENT" | null;
-  deadlineAt: string | null;
-  maskedPhone: string | null;
-  blocksJoin: boolean;
-  blocksConfirm: boolean;
-}
-```
-
-Expose this in:
-
-- `GET /api/apr/:id`
-- `GET /api/apr/:id/booking-support`
-
-### 4.2 Data Model
-
-Use a booking-scoped table instead of adding phone fields directly to `users`.
-
-Suggested table: `user_booking_contacts`
-
-- `user_id uuid primary key references users(id)`
+- `pr_id bigint primary key references partner_requests(id)`
+- `owner_partner_id bigint not null references partners(id)`
+- `owner_user_id uuid not null references users(id)`
 - `phone_e164 text not null`
 - `phone_masked text not null`
-- `consent_version text not null`
-- `consent_collected_at timestamptz not null`
-- `created_at timestamptz not null`
+- `verified_source text not null default 'WECHAT_SERVICE_ACCOUNT'`
+- `verified_at timestamptz not null`
 - `updated_at timestamptz not null`
 
 Notes:
 
-- Return masked phone only in read APIs.
-- Keep operation logs masked.
-- Encryption-at-rest can be introduced as a follow-up hardening step if required by compliance.
+- one row per Anchor PR,
+- no raw phone exposure in read APIs,
+- operation logs store masked value only.
 
-### 4.3 API Changes
+## 5. Owner Rule
 
-1. Extend Anchor join endpoint input:
+Define `booking contact owner` as the first active partner.
 
-- `POST /api/apr/:id/join`
-- Request body (optional fields):
+Active partner set: partner slots with `JOINED | CONFIRMED | ATTENDED`.
+
+Owner election rule:
+
+- owner candidate = active partner with smallest `partnerId`.
+
+Practical implications:
+
+- first joiner is owner candidate,
+- if owner exits/releases, owner candidate is re-elected from remaining active partners,
+- new owner candidate must provide WeChat-verified phone before confirm/booking-critical actions continue.
+
+## 6. WeChat Phone Acquisition and Validation
+
+### 6.1 Client flow
+
+In WeChat WebView, owner candidate taps `Authorize phone`.
+
+Frontend invokes service-account open capability and gets one-time credential (for example, code/encrypted payload based on final WeChat integration mode).
+
+### 6.2 Server flow
+
+Backend verifies credential with WeChat API and resolves canonical phone.
+
+The system does not trust manually typed phone as verified booking contact in this mode.
+
+If WeChat verification fails, return explicit business error and keep booking contact state as missing.
+
+## 7. API Surface
+
+### 7.1 New/updated endpoints
+
+1. Resolve verified phone from WeChat capability:
+
+- `POST /api/wechat/phone/resolve`
+
+2. Upsert PR booking contact for owner candidate:
+
+- `POST /api/apr/:id/booking-contact/verify`
+- body example:
 
 ```json
 {
-  "bookingContactPhone": "13800138000",
-  "bookingContactConsentAccepted": true
+  "wechatPhoneCredential": "..."
 }
 ```
 
-2. Add explicit update endpoint:
+3. Extend Anchor PR detail/read model:
 
-- `PUT /api/apr/:id/booking-contact`
-- Request body:
+- `GET /api/apr/:id`
+- `GET /api/apr/:id/booking-support`
 
-```json
-{
-  "phone": "13800138000",
-  "consentAccepted": true
+Add block:
+
+```ts
+bookingContact: {
+  required: boolean;
+  state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
+  ownerPartnerId: number | null;
+  ownerIsCurrentViewer: boolean;
+  maskedPhone: string | null;
+  verifiedAt: string | null;
+  deadlineAt: string | null;
 }
 ```
 
-3. Validation and errors:
+### 7.2 Trigger condition
 
-- Normalize to E.164 (`+86...`) and validate format.
-- If booking contact is required and missing, return `409` with explicit business code, e.g. `BOOKING_CONTACT_REQUIRED`.
+`bookingContact.required = true` when at least one support resource has:
 
-### 4.4 Frontend UX Flow
+- `booking.required = true`
+- `booking.handledBy = PLATFORM`
 
-#### Entry points
+## 8. Enforcement Policy
 
-- Anchor PR detail page (`/apr/:id`) partner section.
-- Anchor booking-support page (`/apr/:id/booking-support`).
-- Join action interception when requirement is missing.
+Recommended enforcement:
 
-#### User-facing behavior
+- First joiner path:
+  - if booking contact is required, first join action must complete phone verification in flow.
+- Non-owner joiners:
+  - can still join after owner is established.
+- Confirm action (`POST /api/apr/:id/confirm`):
+  - blocked for all participants if required contact is missing.
+- Auto-confirm window (`T-1h ~ T-30min`):
+  - if required contact is missing, do not auto-confirm; return explicit blocking error.
 
-- If `REQUIRED_MISSING`, show a prominent card:
-  - Why: platform books as your agent for this event.
-  - What: phone is required by venue-side booking flow.
-  - Deadline: display effective booking deadline when available.
-  - CTA: `Provide phone number`.
-- On `Join` click, if required and missing:
-  - open modal;
-  - collect phone + consent;
-  - submit and continue join.
-- If `REQUIRED_PROVIDED`:
-  - show masked phone (`138****8000`) and `Update` action.
+This keeps booking preconditions deterministic before booking locks/triggers.
 
-#### Message principles
+## 9. User Communication
 
-- Keep copy explicit and non-ambiguous:
-  - phone is for booking operations only;
-  - not shown to other partners;
-  - missing phone may block booking-related actions.
+### 9.1 Owner candidate view
 
-### 4.5 Enforcement Policy
+Show high-priority card on `/apr/:id` and `/apr/:id/booking-support`:
 
-Recommended policy for reliability:
+- you are the booking contact owner for this PR,
+- platform needs your phone to book as your agent,
+- authorize phone in WeChat now,
+- missing contact will block confirm/booking.
 
-- Hard gate `join` when booking-contact requirement is active and phone is missing.
-- Hard gate `confirm` for already-joined legacy participants if phone is still missing.
+### 9.2 Non-owner view
 
-Why this policy:
+Show informative state:
 
-- avoids auto-confirm edge cases in the `T-1h ~ T-30min` window;
-- guarantees contact completeness before booking locks;
-- keeps booking operations deterministic.
+- booking contact is being provided by the owner,
+- if missing, waiting for owner to authorize,
+- no phone is shown except masked owner phone after verification.
 
-## 5. Trade-Offs and Decision
+## 10. Trade-Offs
 
-### Option A: Add phone directly to `users`
+### Benefit
 
-- Pros: fewer tables, quicker implementation.
-- Cons: weak domain boundary, easier misuse outside booking context.
+- lower collection burden (one phone per PR),
+- stronger phone authenticity from WeChat verification,
+- aligned with current Anchor PR WeChat-first policy.
 
-### Option B (Recommended): Booking-scoped contact table
+### Cost
 
-- Pros: clearer boundary, safer evolution, explicit consent purpose.
-- Cons: one extra table and join in read/write paths.
+- strict WeChat dependency for booking-contact completion,
+- owner lifecycle/failover rules must be explicit,
+- temporary blocking risk if owner does not complete authorization.
 
-Decision: choose Option B for maintainability and domain clarity.
+Mitigation:
 
-### Option C: Collect phone only after join (soft prompt)
+- clear blocking copy,
+- visible owner state,
+- support escalation path (`/contact-support`) for operational rescue.
 
-- Pros: lower join friction.
-- Cons: booking operations can still fail due to incomplete contact data.
+## 11. Rollout Plan
 
-Decision: do not use soft-only collection as default for MVP reliability.
+1. Add `anchor_pr_booking_contacts` schema + repository + read-model block.
+2. Implement WeChat phone resolve endpoint and PR booking-contact verify endpoint.
+3. Add owner-state cards on Anchor PR detail and booking-support pages.
+4. Enable confirm/auto-confirm gate when contact is missing.
+5. Add admin visibility fields (`hasBookingContact`, `ownerPartnerId`, `verifiedAt`).
 
-## 6. Rollout Plan
+## 12. Acceptance Criteria
 
-1. Phase 1: Schema + backend APIs + read-model field (no hard gate).
-2. Phase 2: Frontend cards/modal + join interception.
-3. Phase 3: Enable hard gates for join/confirm.
-4. Phase 4: Add admin visibility (`missingBookingContactCount`, participant-level contact status).
+- System can obtain and validate booking contact only through WeChat capability.
+- For required PRs, exactly one owner phone is maintained at PR scope.
+- Owner election follows first-active-partner rule and handles owner exit.
+- Users see explicit reason, owner responsibility, and blocking impact.
+- Confirm/auto-confirm behavior respects booking-contact requirement.
+- Read APIs expose masked contact state only.
 
-## 7. Acceptance Criteria
+## 13. Non-Goals
 
-- Anchor PR returns booking-contact requirement state in detail and booking-support APIs.
-- Users can provide/update phone from Anchor PR flow without leaving the page.
-- When requirement is active, users see clear reason and deadline messaging.
-- Phone is masked in all read surfaces and logs.
-- Join/confirm enforcement works according to the chosen policy.
-- Build passes for backend and frontend workspaces.
-
-## 8. Non-Goals
-
-- No direct venue API integration in this proposal.
-- No partner-to-partner phone sharing.
-- No SMS/OTP verification flow in MVP.
-- No redesign of broader user profile system beyond booking-contact scope.
+- No per-user phone collection for all participants.
+- No SMS OTP channel in MVP.
+- No deep venue API integration in this proposal.
