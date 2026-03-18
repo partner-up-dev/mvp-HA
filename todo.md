@@ -1,6 +1,6 @@
 # TODOs of PartnerUp MVP-HA
 
-- [ ] 【MUST】协议
+- [ ] Terms of Service & Private Policy
 
 ## Deployment
 
@@ -64,7 +64,7 @@
 ### Detail Page
 
 - [x] Partner roster item 把 ID 号打出来也太那啥了，至少用用户头像+昵称吧
-- [ ] PR Detail Page IA 还得重构一下，太紧凑而复杂了
+- [ ] 【MUST】PR Detail Page IA 还得重构一下，太紧凑而复杂了
 - [x] 重构 PR Detail Page
 - [x] 重新设计/添加 partner section
   - [x] 加入/退出按钮
@@ -125,7 +125,7 @@
 - [ ] 资源配以图片
 - [ ] 报销跳转到 contact-support 但是仅保留联系员工，避免用户疑惑
 - [x] 【MUST】booking deadline 其实不用要求 confirm end，不然的话很多活动都很难预订又或者确认机制变得无效了；只要把 confirm end 配置为平台取消预订会产生损失之前的 30min 就好
-- [ ] 【MUST】许多的预订都需要用户手机号
+- [x] 【MUST】许多的预订都需要用户手机号
 
 ## Base/Common
 
