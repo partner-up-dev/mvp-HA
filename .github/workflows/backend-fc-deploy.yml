@@ -21,6 +21,10 @@ concurrency:
   group: backend-fc-deploy
   cancel-in-progress: false
 
+concurrency:
+  group: backend-fc-deploy
+  cancel-in-progress: false
+
 jobs:
   migrate:
     if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
