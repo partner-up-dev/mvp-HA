@@ -28,18 +28,18 @@ const { t } = useI18n();
 
 const statusMessage = computed(() => t("wechatOAuthCallbackPage.processing"));
 
-const buildBackendCallbackUrl = (): URL => {
-  const base = API_URL && API_URL.trim().length > 0 ? API_URL : window.location.origin;
+const buildBackendCallbackUrlWithParams = (): URL => {
+  const base = API_URL?.trim() || window.location.origin;
   const callbackUrl = new URL("/api/wechat/oauth/callback", base);
-  callbackUrl.search = window.location.search;
+  const currentSearchParams = new URLSearchParams(window.location.search);
+  currentSearchParams.forEach((value, key) => {
+    callbackUrl.searchParams.append(key, value);
+  });
   return callbackUrl;
 };
 
 onMounted(() => {
-  if (typeof window === "undefined") {
-    return;
-  }
-  window.location.replace(buildBackendCallbackUrl().toString());
+  window.location.replace(buildBackendCallbackUrlWithParams().toString());
 });
 </script>
 
