@@ -137,6 +137,7 @@ onBeforeUnmount(() => {
   background: var(--sys-color-surface);
   display: flex;
   flex-direction: column;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -161,12 +162,15 @@ onBeforeUnmount(() => {
 }
 
 .bottom-drawer-content {
+  flex: 1 1 auto;
+  min-height: 0;
   padding:
     var(--sys-spacing-xs) var(--sys-spacing-xs)
     calc(var(--sys-spacing-xs) + var(--pu-safe-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .bottom-drawer-footer {

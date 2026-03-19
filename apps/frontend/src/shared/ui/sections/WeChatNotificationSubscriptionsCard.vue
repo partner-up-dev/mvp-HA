@@ -12,7 +12,10 @@
       </div>
       <button
         v-if="item.actionLabel"
-        class="action-btn action-btn--secondary"
+        :class="[
+          'action-btn',
+          props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
+        ]"
         type="button"
         :disabled="item.actionDisabled || item.pending"
         @click="emit('action', item.key)"
@@ -26,11 +29,17 @@
 <script setup lang="ts">
 import type { NotificationSubscriptionCardItem } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 
-defineProps<{
-  title: string;
-  items: NotificationSubscriptionCardItem[];
-  updatingLabel: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    items: NotificationSubscriptionCardItem[];
+    updatingLabel: string;
+    outlineProfile?: "primary" | "surface";
+  }>(),
+  {
+    outlineProfile: "primary",
+  },
+);
 
 const emit = defineEmits<{
   action: [kind: NotificationSubscriptionCardItem["key"]];
@@ -96,7 +105,12 @@ const emit = defineEmits<{
   @include mx.pu-rect-action(outline-primary, default);
 }
 
-.action-btn--secondary:disabled {
+.action-btn--surface {
+  @include mx.pu-rect-action(outline, default);
+}
+
+.action-btn--secondary:disabled,
+.action-btn--surface:disabled {
   background: transparent;
   border-color: color-mix(in srgb, var(--sys-color-on-surface) 12%, transparent);
   color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);

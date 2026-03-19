@@ -79,6 +79,7 @@
           :class="{
             'action-btn--danger': action.tone === 'danger',
             'action-btn--secondary': action.tone === 'secondary',
+            'action-btn--surface': action.tone === 'surface',
           }"
           type="button"
           :disabled="action.disabled || action.pending"
@@ -95,12 +96,13 @@
         :title="t('prPage.notificationSubscriptions.title')"
         :items="subscriptionItems"
         :updating-label="t('prPage.wechatReminder.updating')"
+        outline-profile="surface"
         @action="handleSubscriptionAction"
       />
 
       <section class="section-card">
         <h2 class="section-title">分享邀请</h2>
-        <button class="action-btn action-btn--secondary" type="button" @click="showShareDrawer = true">
+        <button class="action-btn action-btn--surface" type="button" @click="showShareDrawer = true">
           分享 / 邀请
         </button>
       </section>
@@ -130,7 +132,7 @@
             {{ highlight }}
           </p>
           <button
-            class="action-btn action-btn--secondary"
+            class="action-btn action-btn--surface"
             type="button"
             :disabled="reimbursementButtonDisabled || reimbursementQuery.isLoading.value"
             @click="goBookingSupport"
@@ -215,7 +217,7 @@
           <p class="modal-text">确认加入当前活动？</p>
           <p class="modal-text">加入后即可按流程完成确认与签到。</p>
           <div class="modal-actions">
-            <button class="action-btn action-btn--secondary" type="button" @click="closeJoinFlowModal">
+            <button class="action-btn action-btn--surface" type="button" @click="closeJoinFlowModal">
               {{ t("common.cancel") }}
             </button>
             <button
@@ -234,7 +236,7 @@
             当前加入需要你先完成预订联系人手机号授权。
           </p>
           <div class="modal-actions">
-            <button class="action-btn action-btn--secondary" type="button" @click="closeJoinFlowModal">
+            <button class="action-btn action-btn--surface" type="button" @click="closeJoinFlowModal">
               {{ t("common.cancel") }}
             </button>
             <button
@@ -253,7 +255,7 @@
       <Modal :open="showExitConfirmModal" title="确认退出" @close="showExitConfirmModal = false">
         <p class="modal-text">退出后你的参与名额会被释放，确认继续？</p>
         <div class="modal-actions">
-          <button class="action-btn action-btn--secondary" type="button" @click="showExitConfirmModal = false">
+          <button class="action-btn action-btn--surface" type="button" @click="showExitConfirmModal = false">
             {{ t("common.cancel") }}
           </button>
           <button
@@ -290,7 +292,7 @@
             {{ t("prPage.wouldJoinAgainNo") }}
           </button>
           <button
-            class="action-btn action-btn--secondary"
+            class="action-btn action-btn--surface"
             type="button"
             :disabled="attendanceActions.checkInPending.value"
             @click="attendanceActions.cancelPendingCheckIn"
@@ -370,7 +372,7 @@ type DockActionItem = {
   key: DockActionKey;
   label: string;
   pendingLabel: string;
-  tone: "primary" | "secondary" | "danger";
+  tone: "primary" | "secondary" | "surface" | "danger";
   disabled: boolean;
   pending: boolean;
   tip: string | null;
@@ -591,7 +593,7 @@ const dockActions = computed<DockActionItem[]>(() => {
         key: "CREATOR_EDIT",
         label: t("prPage.editContent"),
         pendingLabel: t("prPage.editContent"),
-        tone: "secondary",
+        tone: "surface",
         disabled: false,
         pending: false,
         tip: null,
@@ -602,7 +604,7 @@ const dockActions = computed<DockActionItem[]>(() => {
         key: "CREATOR_STATUS",
         label: t("prPage.modifyStatus"),
         pendingLabel: t("prPage.modifyStatus"),
-        tone: "secondary",
+        tone: "surface",
         disabled: false,
         pending: false,
         tip: null,
@@ -1064,7 +1066,7 @@ const goHome = () => {
 
 .header-quick-btn {
   @include mx.pu-font(label-medium);
-  @include mx.pu-rect-action(outline-primary, default);
+  @include mx.pu-rect-action(outline, default);
   border: none;
   cursor: pointer;
   padding-inline: var(--sys-spacing-sm);
@@ -1188,11 +1190,16 @@ const goHome = () => {
   @include mx.pu-rect-action(outline-primary, default);
 }
 
+.action-btn--surface {
+  @include mx.pu-rect-action(outline, default);
+}
+
 .action-btn--danger {
   @include mx.pu-rect-action(danger, default);
 }
 
 .action-btn--secondary:disabled,
+.action-btn--surface:disabled,
 .action-btn--danger:disabled {
   background: transparent;
   border-color: color-mix(in srgb, var(--sys-color-on-surface) 12%, transparent);
