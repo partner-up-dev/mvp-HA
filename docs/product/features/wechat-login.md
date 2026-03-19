@@ -12,8 +12,8 @@
 - 前端不再在页面启动阶段做微信登录前置判断；需要微信身份的动作先直连业务 API。
 - 后端在动作接口上统一判定微信会话；若未登录则返回 `401 + code=WECHAT_AUTH_REQUIRED`（或 OAuth 未配置返回 `503 + code=WECHAT_OAUTH_NOT_CONFIGURED`）。
 - 前端根据接口返回的 `status + error code` 决定是否重定向到 `GET /api/wechat/oauth/login`，并携带当前页面地址作为 `returnTo`。
-- 后端生成并校验 OAuth state（签名 cookie），跳转微信授权地址（`snsapi_userinfo`）。
-- 微信回调 `GET /api/wechat/oauth/callback`，后端用 `code` 换取 `openid` + OAuth access token；若为新用户（`users.open_id` 不存在）会调用 `sns/userinfo` 拉取 `nickname/sex/avatar` 并落库，再签发 HttpOnly 会话 cookie，最后跳回 `returnTo` 页面。
+- 后端生成并校验 OAuth state（签名 cookie），跳转微信授权地址（`snsapi_userinfo`）；其中 `redirect_uri` 回调域名优先使用 `FRONTEND_URL`（例如 `https://app.partner-up.cn`），路径为前端专用回调页 `/wechat/oauth/callback`。
+- 微信先回调前端页面 `GET /wechat/oauth/callback?code=...&state=...`，前端再透传同样 query 到后端 `GET /api/wechat/oauth/callback`；后端用 `code` 换取 `openid` + OAuth access token。若为新用户（`users.open_id` 不存在）会调用 `sns/userinfo` 拉取 `nickname/sex/avatar` 并落库，再签发 HttpOnly 会话 cookie，最后跳回 `returnTo` 页面。
 - “我的”页在微信内可调用 `GET /api/wechat/oauth/bind?returnTo=...` 发起绑定模式：
   - 前端先用当前 Bearer token 请求该接口，后端把 `bindUserId + returnTo + mode=bind` 写入签名 state cookie，并返回微信授权地址。
   - 回调 `GET /api/wechat/oauth/callback` 在 `mode=bind` 时不会切换账户，只会把回调得到的 `openid` 绑定到当前本地账户。

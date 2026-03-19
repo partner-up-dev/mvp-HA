@@ -692,6 +692,11 @@
       "action": "打开列表"
     }
   },
+  "wechatOAuthCallbackPage": {
+    "title": "正在完成微信登录",
+    "subtitle": "请稍候，系统正在验证你的授权信息并返回原页面。",
+    "processing": "正在处理微信授权回调..."
+  },
   "userProfilePage": {
     "title": "用户资料",
     "subtitleCommunity": "查看这位搭子的头像和昵称。",
