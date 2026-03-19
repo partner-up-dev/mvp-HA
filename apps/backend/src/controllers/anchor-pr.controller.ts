@@ -26,6 +26,7 @@ import {
   prIdParamSchema,
   prPartnerProfileParamSchema,
   requireAnchorAuthenticatedIdentity,
+  requireAuthenticatedOpenId,
   resolveAvatarUrl,
   tryReadAnchorAuthenticatedIdentity,
   getAuthenticatedUserId,
@@ -42,9 +43,11 @@ const slotCheckInSchema = z.object({
 const acceptAlternativeBatchSchema = z.object({
   targetTimeWindow: z.tuple([z.string().nullable(), z.string().nullable()]),
 });
-const anchorJoinSchema = z.object({
-  wechatPhoneCredential: z.string().trim().min(1).optional(),
-}).default({});
+const anchorJoinSchema = z
+  .object({
+    wechatPhoneCredential: z.string().trim().min(1).optional(),
+  })
+  .default({});
 const verifyBookingContactSchema = z.object({
   wechatPhoneCredential: z.string().trim().min(1),
 });
@@ -84,12 +87,19 @@ export const anchorPRRoute = app
       });
     },
   )
-  .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {
-    const { id } = c.req.valid("param");
-    const identity = await tryReadAnchorAuthenticatedIdentity(c);
-    const result = await getAnchorPRBookingSupport(id, identity?.userId ?? null);
-    return c.json(result);
-  })
+  .get(
+    "/:id/booking-support",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const identity = await tryReadAnchorAuthenticatedIdentity(c);
+      const result = await getAnchorPRBookingSupport(
+        id,
+        identity?.userId ?? null,
+      );
+      return c.json(result);
+    },
+  )
   .get(
     "/:id/alternative-batches",
     zValidator("param", prIdParamSchema),
@@ -120,7 +130,12 @@ export const anchorPRRoute = app
       const { status, pin } = c.req.valid("json");
       const auth = c.get("auth");
 
-      const creatorAuth = await authorizeCreatorMutation(id, auth, "status", pin);
+      const creatorAuth = await authorizeCreatorMutation(
+        id,
+        auth,
+        "status",
+        pin,
+      );
 
       if (creatorAuth.request.status === "DRAFT") {
         throw new HTTPException(400, {
@@ -156,7 +171,12 @@ export const anchorPRRoute = app
       const { fields, pin } = c.req.valid("json");
       const auth = c.get("auth");
 
-      const creatorAuth = await authorizeCreatorMutation(id, auth, "content", pin);
+      const creatorAuth = await authorizeCreatorMutation(
+        id,
+        auth,
+        "content",
+        pin,
+      );
       if (creatorAuth.upgradedAuth) {
         c.set("auth", creatorAuth.upgradedAuth);
       }
@@ -183,7 +203,7 @@ export const anchorPRRoute = app
       const { id } = c.req.valid("param");
       const { wechatPhoneCredential } = c.req.valid("json");
       await ensureAnchorPR(id);
-      const { openId } = await requireAnchorAuthenticatedIdentity(c);
+      const openId = await requireAuthenticatedOpenId(c);
       const result = await joinPR(id, openId, {
         wechatPhoneCredential: wechatPhoneCredential ?? null,
       });
