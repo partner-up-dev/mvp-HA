@@ -1,15 +1,18 @@
 export {};
 
 declare global {
+  type WeChatJsApiName =
+    | "updateAppMessageShareData"
+    | "updateTimelineShareData"
+    | "getPhoneNumber";
+
   type WeChatConfigPayload = {
     debug?: boolean;
     appId: string;
     timestamp: number;
     nonceStr: string;
     signature: string;
-    jsApiList: ReadonlyArray<
-      "updateAppMessageShareData" | "updateTimelineShareData"
-    >;
+    jsApiList: ReadonlyArray<WeChatJsApiName>;
   };
 
   type WeChatShareToChatPayload = {
@@ -29,14 +32,24 @@ declare global {
     fail?: (error: unknown) => void;
   };
 
+  type WeChatInvokeGetPhoneNumberResponse = {
+    err_msg?: string;
+    errMsg?: string;
+    code?: string;
+  } & Record<string, unknown>;
+
   type WeChatJssdk = {
     config: (payload: WeChatConfigPayload) => void;
     ready: (cb: () => void) => void;
     error: (cb: (error: unknown) => void) => void;
     updateAppMessageShareData: (payload: WeChatShareToChatPayload) => void;
     updateTimelineShareData: (payload: WeChatShareToTimelinePayload) => void;
+    invoke?: (
+      methodName: string,
+      data: Record<string, unknown>,
+      callback: (response: WeChatInvokeGetPhoneNumberResponse) => void,
+    ) => void;
   };
 
   const wx: WeChatJssdk | undefined;
 }
-

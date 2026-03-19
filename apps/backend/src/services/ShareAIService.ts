@@ -366,7 +366,7 @@ export class ShareAIService {
   }
 
   async generateXiaohongshuPosterHtml(params: {
-    pr: PartnerRequestFields & { rawText: string };
+    pr: PartnerRequestFields;
     caption: string;
     posterStylePrompt: string;
   }): Promise<PosterHtmlResponse> {
@@ -405,7 +405,7 @@ HTML/CSS 约束：
   }
 
   async generateWeChatCardThumbnailHtml(params: {
-    pr: PartnerRequestFields & { rawText: string };
+    pr: PartnerRequestFields;
     style?: number;
   }): Promise<PosterHtmlResponse> {
     const stylePrompts = await this.getShareWeChatThumbnailHtmlStylePrompts();
@@ -425,7 +425,7 @@ HTML/CSS 约束：
   }
 
   async generateWeChatCardDescription(params: {
-    pr: PartnerRequestFields & { rawText: string };
+    pr: PartnerRequestFields;
   }): Promise<string> {
     const prompt = await this.buildWeChatCardDescriptionPrompt(params.pr);
 
@@ -478,7 +478,7 @@ HTML/CSS 约束：
   }
 
   private async buildXhsPosterHtmlPrompt(
-    pr: PartnerRequestFields & { rawText: string },
+    pr: PartnerRequestFields,
     caption: string,
   ): Promise<string> {
     const variablesJson = buildXhsPosterHtmlPromptVariablesJson(pr, caption);
@@ -487,7 +487,7 @@ HTML/CSS 约束：
   }
 
   private async buildWeChatThumbnailHtmlPrompt(
-    pr: PartnerRequestFields & { rawText: string },
+    pr: PartnerRequestFields,
   ): Promise<string> {
     const variablesJson = buildWeChatThumbnailPromptVariablesJson(pr);
 
@@ -497,7 +497,7 @@ HTML/CSS 约束：
   }
 
   private async buildWeChatCardDescriptionPrompt(
-    pr: PartnerRequestFields & { rawText: string },
+    pr: PartnerRequestFields,
   ): Promise<string> {
     const variablesJson = buildWeChatThumbnailPromptVariablesJson(pr);
 

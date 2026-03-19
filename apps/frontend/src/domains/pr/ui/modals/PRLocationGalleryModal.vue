@@ -1,0 +1,134 @@
+<template>
+  <Modal
+    :open="open"
+    :title="t('prCard.locationGallery.title')"
+    max-width="560px"
+    @close="emit('close')"
+  >
+    <div class="location-gallery-modal">
+      <p v-if="images.length === 0" class="empty-text">
+        {{ t("prCard.locationGallery.empty") }}
+      </p>
+
+      <template v-else>
+        <img
+          class="preview-image"
+          :src="images[currentIndex]"
+          :alt="
+            t('prCard.locationGallery.imageAlt', { index: currentIndex + 1 })
+          "
+        />
+
+        <div class="controls">
+          <button
+            class="nav-btn"
+            type="button"
+            :disabled="images.length <= 1"
+            @click="goPrev"
+          >
+            {{ t("prCard.locationGallery.prev") }}
+          </button>
+
+          <span class="counter">
+            {{
+              t("prCard.locationGallery.counter", {
+                current: currentIndex + 1,
+                total: images.length,
+              })
+            }}
+          </span>
+
+          <button
+            class="nav-btn"
+            type="button"
+            :disabled="images.length <= 1"
+            @click="goNext"
+          >
+            {{ t("prCard.locationGallery.next") }}
+          </button>
+        </div>
+      </template>
+    </div>
+  </Modal>
+</template>
+
+<script setup lang="ts">
+import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import Modal from "@/shared/ui/overlay/Modal.vue";
+
+interface PRLocationGalleryModalProps {
+  open: boolean;
+  images: string[];
+}
+
+const props = defineProps<PRLocationGalleryModalProps>();
+
+const emit = defineEmits<{
+  close: [];
+}>();
+
+const { t } = useI18n();
+const currentIndex = ref(0);
+
+const goPrev = () => {
+  if (props.images.length <= 1) return;
+  currentIndex.value =
+    (currentIndex.value - 1 + props.images.length) % props.images.length;
+};
+
+const goNext = () => {
+  if (props.images.length <= 1) return;
+  currentIndex.value = (currentIndex.value + 1) % props.images.length;
+};
+
+watch(
+  () => [props.open, props.images] as const,
+  () => {
+    currentIndex.value = 0;
+  },
+);
+</script>
+
+<style lang="scss" scoped>
+.location-gallery-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-med);
+}
+
+.empty-text {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.preview-image {
+  width: 100%;
+  border-radius: var(--sys-radius-md);
+  background: var(--sys-color-surface-container);
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-spacing-sm);
+}
+
+.nav-btn {
+  @include mx.pu-font(label-large);
+  @include mx.pu-pill-action(solid-primary, small);
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.counter {
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-on-surface-variant);
+}
+</style>

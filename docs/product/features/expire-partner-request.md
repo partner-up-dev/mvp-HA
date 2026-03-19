@@ -2,11 +2,11 @@
 
 ## 目标
 
-当搭子请求的时间窗口结束后，自动将状态从 `OPEN` / `ACTIVE` 变为 `EXPIRED`，避免过期请求继续被加入或传播。
+当搭子请求的时间窗口结束后，自动将状态从 `OPEN` / `READY` / `FULL` / `LOCKED_TO_START` / `ACTIVE` 变为 `EXPIRED`，避免过期请求继续被加入或传播。
 
 ## 规则
 
-- 只对 `OPEN` / `ACTIVE` 状态的请求做过期判断。
+- 只对 `OPEN` / `READY` / `FULL` / `LOCKED_TO_START` / `ACTIVE` 状态的请求做过期判断。
 - 过期时间取时间窗口的 `end_at`。
 - 若 `end_at` 为空且 `start_at` 存在，则默认 `end_at = start_at + 12h`。
 - 若 `start_at` / `end_at` 都为空，则不自动过期。
@@ -19,8 +19,9 @@
 
 ## 触发点
 
-- `GET /api/pr/:id`：读取时进行过期判断。
-- 其他读取场景（如分享生成、批量读取）依赖该接口或同一服务逻辑。
+- `GET /api/cpr/:id`：读取 Community PR 详情时进行过期判断。
+- `GET /api/apr/:id`：读取 Anchor PR 详情时进行过期判断。
+- 其他读取场景（如 `/api/pr/mine/created`、`/api/pr/mine/joined`、批量摘要读取、分享生成）依赖同一懒刷新逻辑。
 
 ## 例子
 

@@ -97,8 +97,11 @@ Thumbs.db
 *.temp
 nul
 apps/backend/posters/*
+apps/backend/avatars/*
 apps/backend/.fc-package/
 apps/backend/.layer/
+apps/backend/dist-fc-db-migrate/
+apps/backend/fc-db-migrate/.fc-package/
 
 # Python
 .pdm-python

@@ -90,10 +90,23 @@ export default defineConfig(({ mode }) => {
       preprocessorOptions: {
         scss: {
           additionalData: (source, file) => {
+            const hasStyleNamespaces =
+              source.includes(`@use "@/styles/functions" as fn`) ||
+              source.includes(`@use '@/styles/functions' as fn`) ||
+              source.includes(`@use "@/styles/mixins" as mx`) ||
+              source.includes(`@use '@/styles/mixins' as mx`);
+
             if (
               file.includes("src/components/") ||
-              file.includes("src/pages/")
+              file.includes("src/pages/") ||
+              file.includes("src/widgets/") ||
+              file.includes("src/features/") ||
+              file.includes("src/shared/") ||
+              file.includes("src/domains/")
             ) {
+              if (hasStyleNamespaces) {
+                return source;
+              }
               return `@use "@/styles/functions" as fn; @use "@/styles/mixins" as mx;${source}`;
             }
             return source;

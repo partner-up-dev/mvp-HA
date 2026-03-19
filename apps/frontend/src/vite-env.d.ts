@@ -8,6 +8,7 @@ declare module '*.vue' {
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string;
+  readonly VITE_WECHAT_ABILITY_MOCKING_ENABLED?: "true" | "false";
 }
 
 interface ImportMeta {
