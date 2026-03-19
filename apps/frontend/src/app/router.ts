@@ -21,6 +21,7 @@ import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
 import AnchorEventPage from "@/pages/AnchorEventPage.vue";
+import WeChatOAuthCallbackPage from "@/pages/WeChatOAuthCallbackPage.vue";
 import { getStoredAdminHasAccess } from "@/domains/admin/model/admin-session-storage";
 
 const routes: RouteRecordRaw[] = [
@@ -159,6 +160,14 @@ const routes: RouteRecordRaw[] = [
     path: "/events/:eventId",
     name: "anchor-event",
     component: AnchorEventPage,
+    meta: {
+      wechatSharePolicy: "skip",
+    },
+  },
+  {
+    path: "/wechat/oauth/callback",
+    name: "wechat-oauth-callback",
+    component: WeChatOAuthCallbackPage,
     meta: {
       wechatSharePolicy: "skip",
     },
