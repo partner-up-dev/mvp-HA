@@ -7,6 +7,7 @@
 @use "sass:map";
 @use "./ref" as ref;
 @use "./sys" as sys;
+@use "./dcs" as dcs;
 @use "./functions" as fn;
 
 // Forward all modules for external use
@@ -22,6 +23,7 @@ page {
   /* Emit system tokens (light mode default) */
   @include fn.emit-css-variables(sys.$light, "sys");
   @include fn.emit-css-variables(sys.$base, "sys");
+  @include fn.emit-css-variables(dcs.$all, "dcs");
 
   /* Mobile UX helpers */
   --pu-safe-top: env(safe-area-inset-top);
@@ -44,6 +46,14 @@ page {
   :root,
   page {
     --pu-vh: 100dvh;
+  }
+}
+
+/* Mobile token overrides for spacing/typography/radius/size */
+@media (max-width: 48rem) {
+  :root,
+  page {
+    @include fn.emit-css-variables(sys.$mobile, "sys");
   }
 }
 

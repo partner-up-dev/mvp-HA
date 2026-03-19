@@ -15,29 +15,34 @@ $light: (
     primary: fn.map-deep-get(ref.$color, primary, 80),
     primary-container: fn.map-deep-get(ref.$color, primary, 40),
     on-primary: fn.map-deep-get(ref.$color, primary, 100),
-    on-primary-container: fn.map-deep-get(ref.$color, primary, 30),
+    on-primary-container: fn.map-deep-get(ref.$color, primary, 90),
     // Secondary colors
     secondary: fn.map-deep-get(ref.$color, secondary, 80),
     secondary-container: fn.map-deep-get(ref.$color, secondary, 40),
     on-secondary: fn.map-deep-get(ref.$color, secondary, 100),
+    on-secondary-container: #151E0B,
     // Tertiary colors
     tertiary: fn.map-deep-get(ref.$color, tertiary, 80),
     tertiary-container: fn.map-deep-get(ref.$color, tertiary, 40),
     on-tertiary: fn.map-deep-get(ref.$color, tertiary, 100),
+    on-tertiary-container: #00201E,
     // Error colors
     error: fn.map-deep-get(ref.$color, error, 80),
     error-container: fn.map-deep-get(ref.$color, error, 40),
     on-error: fn.map-deep-get(ref.$color, error, 100),
+    on-error-container: fn.map-deep-get(ref.$color, error, 100),
     // Warning colors
     warning: fn.map-deep-get(ref.$color, warning, 40),
     on-warning: fn.map-deep-get(ref.$color, warning, 90),
     // Surface colors
     surface: fn.map-deep-get(ref.$color, surface, 30),
     surface-container: fn.map-deep-get(ref.$color, surface, 50),
+    surface-container-high: #E8E9DE,
     surface-container-low: fn.map-deep-get(ref.$color, neutral, 96),
     surface-container-lowest: fn.map-deep-get(ref.$color, neutral, 100),
     surface-container-highest: fn.map-deep-get(ref.$color, neutral, 90),
     on-surface: fn.map-deep-get(ref.$color, surface, 80),
+    on-surface-container: fn.map-deep-get(ref.$color, surface, 80),
     on-surface-variant: fn.map-deep-get(ref.$color, neutral-variant, 30),
     // Neutral colors
     neutral: fn.map-deep-get(ref.$color, neutral, 80),
@@ -61,29 +66,34 @@ $dark: (
     primary: fn.map-deep-get(ref.$color, primary, 70),
     primary-container: fn.map-deep-get(ref.$color, primary, 90),
     on-primary: fn.map-deep-get(ref.$color, primary, 20),
-    on-primary-container: fn.map-deep-get(ref.$color, primary, 10),
+    on-primary-container: fn.map-deep-get(ref.$color, primary, 30),
     // Secondary colors
     secondary: fn.map-deep-get(ref.$color, secondary, 70),
     secondary-container: fn.map-deep-get(ref.$color, secondary, 90),
     on-secondary: fn.map-deep-get(ref.$color, secondary, 20),
+    on-secondary-container: fn.map-deep-get(ref.$color, secondary, 30),
     // Tertiary colors
     tertiary: fn.map-deep-get(ref.$color, tertiary, 70),
     tertiary-container: fn.map-deep-get(ref.$color, tertiary, 90),
     on-tertiary: fn.map-deep-get(ref.$color, tertiary, 20),
+    on-tertiary-container: fn.map-deep-get(ref.$color, tertiary, 30),
     // Error colors
     error: fn.map-deep-get(ref.$color, error, 70),
     error-container: fn.map-deep-get(ref.$color, error, 90),
     on-error: fn.map-deep-get(ref.$color, error, 20),
+    on-error-container: fn.map-deep-get(ref.$color, error, 30),
     // Warning colors
     warning: fn.map-deep-get(ref.$color, warning, 50),
     on-warning: fn.map-deep-get(ref.$color, warning, 10),
     // Surface colors
     surface: fn.map-deep-get(ref.$color, surface, 80),
     surface-container: fn.map-deep-get(ref.$color, surface, 80),
+    surface-container-high: fn.map-deep-get(ref.$color, surface, 70),
     surface-container-low: fn.map-deep-get(ref.$color, surface, 90),
     surface-container-lowest: fn.map-deep-get(ref.$color, surface, 100),
     surface-container-highest: fn.map-deep-get(ref.$color, surface, 60),
     on-surface: fn.map-deep-get(ref.$color, surface, 20),
+    on-surface-container: fn.map-deep-get(ref.$color, surface, 20),
     on-surface-variant: fn.map-deep-get(ref.$color, neutral-variant, 20),
     // Neutral colors
     neutral: fn.map-deep-get(ref.$color, neutral, 60),
@@ -110,4 +120,56 @@ $base: (
   typo: ref.$typography,
   font: ref.$font,
   opacity: ref.$opacity,
+);
+
+/* Mobile token overrides (responsive semantics) */
+$mobile: (
+  spacing: (
+    xs: 6px,
+    sm: 10px,
+    med: 18px,
+    lg: 32px,
+  ),
+  radius: (
+    med: 10px,
+    lg: 18px,
+  ),
+  size: (
+    small: 28px,
+    medium: 36px,
+    large: 48px,
+    xLarge: 64px,
+  ),
+  typo: (
+    title-large: (
+      size: 24px,
+      weight: 500,
+      line-height: 34px,
+    ),
+    title-medium: (
+      size: 20px,
+      weight: 500,
+      line-height: 28px,
+    ),
+    body-large: (
+      size: 17px,
+      weight: 400,
+      line-height: 26px,
+    ),
+    label-large: (
+      size: 15px,
+      weight: 500,
+      line-height: 22px,
+    ),
+    label-medium: (
+      size: 13px,
+      weight: 500,
+      line-height: 19px,
+    ),
+    label-small: (
+      size: 12px,
+      weight: 500,
+      line-height: 18px,
+    ),
+  ),
 );

@@ -63,9 +63,9 @@ const sizes = {
 };
 
 const iconSizes = {
-  small: "20px",
-  medium: "24px",
-  large: "40px",
+  sm: "20px",
+  med: "24px",
+  lg: "40px",
 };
 
 const borderRadius = {
@@ -259,6 +259,25 @@ export default definePreset(() => ({
         }
       },
     ],
+    // Icon utilities
+    [
+      /^icon-(sm|med|lg)$/,
+      ([, size]) => {
+        const sizeValue = iconSizes[size as keyof typeof iconSizes];
+        if (sizeValue) {
+          return {
+            width: sizeValue,
+            height: sizeValue,
+            fontSize: Number(sizeValue.replace("px", "")) * 0.75 + "px",
+          };
+        }
+      },
+    ],
   ],
-  shortcuts: [],
+  shortcuts: [
+    // Icon shortcuts
+    ["icon-primary", "icon-medium icon-color-primary"],
+    ["icon-secondary", "icon-medium icon-color-secondary"],
+    ["icon-tertiary", "icon-medium icon-color-tertiary"],
+  ],
 }));

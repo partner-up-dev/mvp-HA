@@ -17,7 +17,11 @@ const envSchema = z.object({
   // WeChat Official Account (for JS-SDK signature)
   WECHAT_OFFICIAL_ACCOUNT_APP_ID: z.string().min(1).optional(),
   WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: z.string().min(1).optional(),
-  WECHAT_AUTH_SESSION_SECRET: z.string().min(16).optional(),
+  WECHAT_AUTH_SESSION_SECRET: z.string().min(1).optional(),
+  // Unified WeChat ability mocking switch (OAuth + phone resolve) for non-production debugging.
+  WECHAT_ABILITY_MOCKING_ENABLED: z.enum(["true", "false"]).optional(),
+  WECHAT_ABILITY_MOCK_OPEN_ID: z.string().min(1).optional(),
+  WECHAT_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),
   FIXED_IP_HTTP_PROXY: z.string().url().optional(),
 
   // WeCom (Enterprise WeChat) self-built app
@@ -30,8 +34,58 @@ const envSchema = z.object({
   // Frontend URL for share links
   FRONTEND_URL: z.string().min(1).optional(),
 
+  // Access token (JWT-like HMAC token) config.
+  AUTH_JWT_SECRET: z.string().min(16).default("dev-auth-secret-change-me"),
+  AUTH_JWT_EXPIRES_SECONDS: z.coerce.number().int().positive().default(86_400),
+  AUTH_JWT_RENEW_WINDOW_SECONDS: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(3_600),
+
   // Poster storage directory (used by upload controller)
   POSTERS_DIR: z.string().min(1).optional(),
+  AVATARS_DIR: z.string().min(1).optional(),
+
+  // Internal endpoint auth token for external job tick trigger.
+  JOB_RUNNER_INTERNAL_TOKEN: z.string().min(1).optional(),
+  JOB_RUNNER_CLAIM_BATCH_SIZE: z.coerce.number().int().positive().default(20),
+  JOB_RUNNER_MAX_BATCHES_PER_TICK: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3),
+  JOB_RUNNER_TICK_BUDGET_MS: z.coerce.number().int().positive().default(3_000),
+  JOB_RUNNER_LEASE_MS: z.coerce.number().int().positive().default(60_000),
+
+  // Request-tail best-effort job tick (compensates coarse external scheduler).
+  REQUEST_TAIL_JOB_TICK_BUDGET_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(80),
+  REQUEST_TAIL_JOB_TICK_MAX_BATCHES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1),
+  REQUEST_TAIL_JOB_TICK_MIN_INTERVAL_MS: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(30_000),
+
+  // Request-tail outbox drain budget.
+  OUTBOX_REQUEST_DRAIN_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(80),
+  OUTBOX_REQUEST_DRAIN_MAX_BATCHES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1),
 
   PORT: z.coerce.number().default(3000),
 });

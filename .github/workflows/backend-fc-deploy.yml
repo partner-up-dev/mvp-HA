@@ -9,15 +9,82 @@ on:
         default: false
   push:
     branches:
-      - main
       - master
+      - develop
     paths:
       - "apps/backend/**"
       - ".github/workflows/backend-fc-deploy.yml"
+      - "scripts/ci/fc/**"
+      - "scripts/fc_*.py"
+
+concurrency:
+  group: backend-fc-deploy
+  cancel-in-progress: false
 
 jobs:
+  migrate:
+    if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
+    env:
+      ALIYUN_FC_REGION: ${{ vars.ALIYUN_FC_REGION }}
+      ALIYUN_FC_DB_MIGRATION_FUNCTION_NAME: ${{ vars.ALIYUN_FC_DB_MIGRATION_FUNCTION_NAME }}
+      ALIYUN_FC_ROLE_ARN: ${{ vars.ALIYUN_FC_ROLE_ARN }}
+      ALIYUN_FC_RESOURCE_GROUP_ID: ${{ vars.ALIYUN_FC_RESOURCE_GROUP_ID }}
+      ALIYUN_FC_VPC_ID: ${{ vars.ALIYUN_FC_VPC_ID }}
+      ALIYUN_FC_SECURITY_GROUP_ID: ${{ vars.ALIYUN_FC_SECURITY_GROUP_ID }}
+      ALIYUN_FC_VSWITCH_ID_PRIMARY: ${{ vars.ALIYUN_FC_VSWITCH_ID_PRIMARY }}
+      ALIYUN_FC_VSWITCH_ID_SECONDARY: ${{ vars.ALIYUN_FC_VSWITCH_ID_SECONDARY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL_FOR_MIGRATION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies (workspace)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint migration and seed files
+        run: pnpm --filter @partner-up-dev/backend db:lint
+
+      - name: Build FC migration bundle
+        run: pnpm --filter @partner-up-dev/backend build:db-migrate-fc
+
+      - name: Install Serverless Devs CLI
+        run: npm install -g @serverless-devs/s
+
+      - name: Configure Aliyun credentials
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
+        run: bash scripts/ci/fc/configure_aliyun_credentials.sh
+
+      - name: Prepare FC migration package
+        run: bash scripts/ci/fc/prepare_fc_db_migrate_package.sh
+
+      - name: Deploy FC migration function
+        run: s deploy -y -t apps/backend/fc-db-migrate/s.yaml
+
+      - name: Apply database migrations via FC
+        run: s invoke -t apps/backend/fc-db-migrate/s.yaml -e "{}"
+
   deploy:
     runs-on: ubuntu-latest
+    needs:
+      - migrate
+    if: needs.migrate.result == 'success' || needs.migrate.result == 'skipped'
+    environment: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
     env:
       ALIYUN_FC_REGION: ${{ vars.ALIYUN_FC_REGION }}
       ALIYUN_FC_FUNCTION_NAME: ${{ vars.ALIYUN_FC_FUNCTION_NAME }}
@@ -38,15 +105,17 @@ jobs:
       FIXED_IP_HTTP_PROXY: ${{ secrets.FIXED_IP_HTTP_PROXY }}
       WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${{ secrets.WECHAT_OFFICIAL_ACCOUNT_APP_ID }}
       WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${{ secrets.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET }}
+      WECHAT_AUTH_SESSION_SECRET: ${{ secrets.WECHAT_AUTH_SESSION_SECRET }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-      LLM_DEFAULT_MODEL: ${{ secrets.LLM_DEFAULT_MODEL }}
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_DEFAULT_MODEL: ${{ vars.LLM_DEFAULT_MODEL }}
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
       WECOM_TOKEN: ${{ secrets.WECOM_TOKEN }}
       WECOM_ENCODING_AES_KEY: ${{ secrets.WECOM_ENCODING_AES_KEY }}
       WECOM_CORP_ID: ${{ secrets.WECOM_CORP_ID }}
       WECOM_APP_AGENT_ID: ${{ secrets.WECOM_APP_AGENT_ID }}
       WECOM_APP_SECRET: ${{ secrets.WECOM_APP_SECRET }}
+      JOB_RUNNER_INTERNAL_TOKEN: ${{ secrets.JOB_RUNNER_INTERNAL_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,15 +147,8 @@ jobs:
           python-version: "3.x"
 
       - name: Prepare node_modules layer
-        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
-        run: |
-          rm -rf apps/backend/.layer
-          mkdir -p apps/backend/.layer/nodejs
-          pnpm --filter @partner-up-dev/backend deploy --prod --node-linker=hoisted apps/backend/.layer/nodejs
-          if [ ! -d "apps/backend/.layer/nodejs/node_modules" ]; then
-            echo "Layer build failed: node_modules not found in apps/backend/.layer/nodejs"
-            exit 1
-          fi
+        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == true)
+        run: bash scripts/ci/fc/prepare_node_modules_layer.sh
 
       - name: Install Serverless Devs CLI
         run: npm install -g @serverless-devs/s
@@ -96,80 +158,49 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
-        run: |
-          s config add -a default -f \
-          --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
-          --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
-          --AccountID "$ALIBABA_CLOUD_ACCOUNT_ID"
+        run: bash scripts/ci/fc/configure_aliyun_credentials.sh
 
       - name: Publish node_modules layer
-        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
-        run: |
-          s cli fc3 layer publish \
-            --region "$ALIYUN_FC_REGION" \
-            --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" \
-            --code apps/backend/.layer \
-            --compatible-runtime custom.debian12 \
-            --description "PartnerUp backend production node_modules" \
-            -a default
+        if: steps.changes.outputs.layer == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == true)
+        run: bash scripts/ci/fc/publish_node_modules_layer.sh
 
       - name: Clean up old layer versions (keep 3)
-        if: steps.changes.outputs.layer == 'true' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == 'true')
+        if: steps.changes.outputs.layer == 'true' || github.event_name == 'workflow_dispatch'
         run: python3 scripts/fc_layer_prune_versions.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --keep 3 --access default
 
       - name: Resolve latest layer ARN
         id: layer_arn
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
-        run: |
-          RAW_ARN="$(python3 scripts/fc_layer_latest_arn.py --region "$ALIYUN_FC_REGION" --layer-name "$ALIYUN_FC_NODE_MODULES_LAYER_NAME" --access default)"
-          export RAW_ARN
-          NORMALIZED_ARN="$(python3 - <<'PY'
-          import os
-          import re
-          import sys
-
-          raw = os.environ["RAW_ARN"].strip()
-          account_id = os.environ.get("ALIBABA_CLOUD_ACCOUNT_ID", "").strip()
-
-          pattern = re.compile(r"^(acs:fc:[a-z0-9-]+:)([^:]+)(:layers/.+/versions/.+)$")
-          match = pattern.match(raw)
-          if not match:
-              print(f"Invalid layer ARN: {raw}", file=sys.stderr)
-              sys.exit(1)
-
-          if not account_id.isdigit():
-              print("Invalid ALIBABA_CLOUD_ACCOUNT_ID; must be digits.", file=sys.stderr)
-              sys.exit(1)
-
-          print(f"{match.group(1)}{account_id}{match.group(3)}")
-          PY
-          )"
-          echo "layer_arn=$NORMALIZED_ARN" >> "$GITHUB_OUTPUT"
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
+        run: bash scripts/ci/fc/resolve_latest_layer_arn.sh
         env:
           ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
 
       - name: Install dependencies (workspace)
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
         run: pnpm install --frozen-lockfile
 
       - name: Build backend
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
         run: pnpm --filter @partner-up-dev/backend build
 
-      - name: Ensure start script is executable
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
+      - name: Ensure FC start script is executable
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
         run: chmod +x apps/backend/fc-start.sh
 
       - name: Prepare Function Compute package
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
-        run: |
-          rm -rf apps/backend/.fc-package
-          mkdir -p apps/backend/.fc-package
-          cp -R apps/backend/dist apps/backend/.fc-package/
-          cp apps/backend/package.json apps/backend/fc-start.sh apps/backend/.fc-package/
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
+        run: bash scripts/ci/fc/prepare_fc_package.sh
 
       - name: Deploy to Aliyun FC
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != 'true'
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
         env:
           ALIYUN_FC_NODE_MODULES_LAYER_ARN: ${{ steps.layer_arn.outputs.layer_arn }}
         run: s deploy -y -t apps/backend/s.yaml
+
+      - name: Publish FC function version
+        if: (github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true) && github.ref_name == 'master'
+        run: bash scripts/ci/fc/publish_function_version.sh
+
+      - name: Publish FC alias
+        if: (github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true) && github.ref_name == 'master'
+        run: bash scripts/ci/fc/publish_production_alias.sh

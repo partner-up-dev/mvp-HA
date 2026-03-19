@@ -1,0 +1,76 @@
+import { HTTPException } from "hono/http-exception";
+import type { PartnerId } from "../../../entities/partner";
+import type { PRId, PRKind } from "../../../entities/partner-request";
+import type { UserId } from "../../../entities/user";
+import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
+
+const prRepo = new PartnerRequestRepository();
+const partnerRepo = new PartnerRepository();
+
+export type PRPartnerProfile = {
+  partnerId: PartnerId;
+  nickname: string | null;
+  displayName: string;
+  avatarUrl: string | null;
+  isCurrentLocalUser: boolean;
+};
+
+const resolveDisplayName = (
+  partnerId: PartnerId,
+  nickname: string | null,
+  isCreator: boolean,
+): string => {
+  const normalizedNickname = nickname?.trim() ?? "";
+  if (normalizedNickname.length > 0) {
+    return normalizedNickname;
+  }
+
+  if (isCreator) {
+    return "发起者";
+  }
+
+  return `搭子 #${partnerId}`;
+};
+
+const resolveNotFoundMessage = (prKind: PRKind): string =>
+  prKind === "COMMUNITY" ? "Community PR not found" : "Anchor PR not found";
+
+export async function getPRPartnerProfile(params: {
+  prId: PRId;
+  partnerId: PartnerId;
+  prKind: PRKind;
+  viewerUserId?: UserId | null;
+}): Promise<PRPartnerProfile> {
+  const { prId, partnerId, prKind, viewerUserId = null } = params;
+  const request = await prRepo.findById(prId);
+  if (!request || request.prKind !== prKind) {
+    throw new HTTPException(404, { message: resolveNotFoundMessage(prKind) });
+  }
+
+  const participant =
+    await partnerRepo.findActiveParticipantSummaryByPrIdAndPartnerId(
+      prId,
+      partnerId,
+    );
+  if (!participant) {
+    throw new HTTPException(404, { message: "Partner profile not found" });
+  }
+
+  const isCreator =
+    Boolean(request.createdBy) && request.createdBy === participant.userId;
+  const isCurrentLocalUser =
+    Boolean(viewerUserId) && viewerUserId === participant.userId;
+
+  return {
+    partnerId: participant.partnerId,
+    nickname: participant.nickname,
+    displayName: resolveDisplayName(
+      participant.partnerId,
+      participant.nickname,
+      isCreator,
+    ),
+    avatarUrl: participant.avatar,
+    isCurrentLocalUser,
+  };
+}

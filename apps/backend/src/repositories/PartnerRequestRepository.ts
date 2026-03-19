@@ -9,6 +9,7 @@ import {
   type PartnerRequest,
   type PartnerRequestFields,
 } from "../entities/partner-request";
+import type { UserId } from "../entities/user";
 import { desc, eq, inArray } from "drizzle-orm";
 
 export class PartnerRequestRepository {
@@ -34,6 +35,23 @@ export class PartnerRequestRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async findByStatuses(statuses: PRStatus[]) {
+    if (statuses.length === 0) return [];
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(inArray(partnerRequests.status, statuses))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
+  async findByCreatorId(userId: UserId) {
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(eq(partnerRequests.createdBy, userId))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async updateStatus(id: PRId, status: PRStatus) {
     const result = await db
       .update(partnerRequests)
@@ -51,8 +69,8 @@ export class PartnerRequestRepository {
         type: fields.type,
         time: fields.time,
         location: fields.location,
-        partners: fields.partners,
-        budget: fields.budget,
+        minPartners: fields.minPartners,
+        maxPartners: fields.maxPartners,
         preferences: fields.preferences,
         notes: fields.notes,
       })
@@ -61,10 +79,10 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async updatePartners(id: PRId, partners: PartnerRequestFields["partners"]) {
+  async setCreatedBy(id: PRId, userId: UserId) {
     const result = await db
       .update(partnerRequests)
-      .set({ partners })
+      .set({ createdBy: userId })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] || null;

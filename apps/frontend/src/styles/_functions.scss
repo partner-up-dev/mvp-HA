@@ -112,3 +112,13 @@
 @function comp-var($path...) {
   @return var(#{token-name("comp", $path)});
 }
+
+/// Helper to reference decision-system CSS custom properties
+/// @param {String...} $path - Path segments for the token
+/// @return {String} - CSS var() reference
+/// @example
+///   padding: dcs-var(space, page-padding-inline);
+///   // Returns: var(--dcs-space-page-padding-inline)
+@function dcs-var($path...) {
+  @return var(#{token-name("dcs", $path)});
+}

@@ -1,68 +1,22 @@
 # AGENTS.md for Frontend Queries
 
-This directory contains Vue Query hooks for data fetching and mutations.
+This top-level directory is retired.
 
-## Data Fetching Norms (Vue Query Integration)
+Do not add new query hooks here.
 
-### Core Principles
+## Placement Rules
 
-* Do not call `client.api...` directly in components for data fetching (Mutations are excepted, but hooks are recommended).
-* Must use `useQuery` or `useMutation` to wrap API calls.
-* Query Keys must be managed uniformly, following the array format `['resource', 'id', params]`.
+- Domain-owned query hooks belong under `src/domains/<domain>/queries/*`.
+- Cross-domain or platform-owned query hooks belong under a shared owner such as:
+  - `src/shared/config/queries/*`
+  - `src/shared/poi/queries/*`
+  - `src/shared/wechat/queries/*`
 
-### Query Example (Reading Data)
+## Query Norms
 
-All API requests should be encapsulated in Composables (Hooks).
+- Do not call `client.api...` directly in components for read paths.
+- Wrap backend access in `useQuery` / `useMutation`.
+- Query keys must come from `src/shared/api/query-keys`.
+- Prefer inferred Hono RPC response types over handwritten DTOs.
 
-```ts
-// src/queries/useUser.ts
-import { useQuery } from '@tanstack/vue-query';
-import { client } from '@/lib/rpc';
-
-export const useUser = (id: number) => {
-  return useQuery({
-    queryKey: ['users', id], // Reactive Key
-    queryFn: async () => {
-      // Hono RPC Call
-      const res = await client.api.users[':id'].$get({
-        param: { id: id.toString() }
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to fetch user');
-      }
-
-      // Automatic type inference
-      return await res.json();
-    },
-    enabled: !!id, // Only request when id exists
-  });
-};
-```
-
-### Mutation Example (Modifying Data)
-
-```ts
-// src/queries/useCreateUser.ts
-import { useMutation, useQueryClient } from '@tanstack/vue-query';
-import { client } from '@/lib/rpc';
-
-export const useCreateUser = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (newUser: { name: string; email: string }) => {
-      const res = await client.api.users.$post({
-        json: newUser
-      });
-
-      if (!res.ok) throw new Error('Creation failed');
-      return await res.json();
-    },
-    onSuccess: () => {
-      // Invalidate user list cache, trigger re-render
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    }
-  });
-};
-```
+If you think a new query has no clear owner, stop and decide the owner first. Do not use this folder as a fallback.

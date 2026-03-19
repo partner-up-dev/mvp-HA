@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { toTypedSchema } from "@vee-validate/zod";
-import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import { i18n } from "@/locales/i18n";
+import type { PRFormFields } from "@/domains/pr/model/types";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
@@ -11,7 +11,7 @@ export const pinSchema = z
   .string()
   .regex(/^\d{4}$/, i18n.global.t("validation.pinMustBeFourDigits"));
 
-const fieldsSchema: z.ZodType<PartnerRequestFields> = z.object({
+const fieldsSchema: z.ZodType<PRFormFields> = z.object({
   title: z.string().optional(),
   type: z.string().min(1, i18n.global.t("validation.typeRequired")),
   time: z.tuple([
@@ -19,12 +19,10 @@ const fieldsSchema: z.ZodType<PartnerRequestFields> = z.object({
     isoDateOrDateTimeSchema.nullable(),
   ]),
   location: z.string().nullable(),
-  partners: z.tuple([
-    z.number().nullable(),
-    z.number().int().nonnegative(),
-    z.number().nullable(),
-  ]),
-  budget: z.string().nullable(),
+  minPartners: z.number().int().nonnegative().nullable(),
+  maxPartners: z.number().int().nonnegative().nullable(),
+  partners: z.array(z.number().int().positive()),
+  budget: z.string().nullable().optional(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
 });
@@ -35,7 +33,6 @@ export const createNaturalLanguagePRSchema = z
       .string()
       .min(1, i18n.global.t("validation.naturalLanguageRequired"))
       .max(2000),
-    pin: pinSchema,
   })
   .refine(
     ({ rawText }) => rawText.trim().split(/\s+/).filter(Boolean).length <= 50,
@@ -48,20 +45,10 @@ export const createNaturalLanguagePRValidationSchema = toTypedSchema(
 
 export const partnerRequestFormSchema = z.object({
   fields: fieldsSchema,
-  pin: pinSchema,
-});
-
-export const partnerRequestFormOptionalPinSchema = z.object({
-  fields: fieldsSchema,
-  pin: z.string().optional(),
 });
 
 export const partnerRequestFormValidationSchema = toTypedSchema(
   partnerRequestFormSchema,
-);
-
-export const partnerRequestFormOptionalPinValidationSchema = toTypedSchema(
-  partnerRequestFormOptionalPinSchema,
 );
 
 export type CreateNaturalLanguagePRInput = z.infer<

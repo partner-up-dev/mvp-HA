@@ -7,6 +7,7 @@
 @use 'sass:map';
 @use './functions' as fn;
 @use './ref' as ref;
+@forward './recipes';
 
 /* Typography Mixin - uses CSS variables (composite token) */
 @mixin pu-font($key, $mono: false) {
@@ -80,4 +81,77 @@ $breakpoints: (
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+/* Motion enter helper for in-view reveal */
+@mixin pu-motion-enter($distance: 0.75rem, $duration: 420ms, $easing: cubic-bezier(0.2, 0.65, 0.2, 1)) {
+  opacity: 0;
+  transform: translate3d(0, $distance, 0);
+  transition:
+    opacity $duration $easing,
+    transform $duration $easing;
+  transition-delay: var(--pu-enter-delay, 0ms);
+
+  &.is-in-view {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Press feedback helper for touch-first components */
+@mixin pu-motion-pressable($scale: 0.985) {
+  transition: transform 180ms ease;
+  touch-action: manipulation;
+
+  &.is-pressed {
+    transform: scale($scale);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none !important;
+  }
+}
+
+/* Lightweight ripple baseline for clickable cards */
+@mixin pu-motion-ripple-base($color: rgba(255, 255, 255, 0.35)) {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle at center, $color 0, transparent 68%);
+    transform: scale(0.94);
+    transition:
+      opacity 220ms ease,
+      transform 220ms ease;
+  }
+
+  &.is-pressed::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      transition: none !important;
+    }
+  }
+}
+
+/* Shared motion off switch for reduced motion branches */
+@mixin pu-motion-reduced {
+  @media (prefers-reduced-motion: reduce) {
+    animation: none !important;
+    transition: none !important;
+  }
 }
