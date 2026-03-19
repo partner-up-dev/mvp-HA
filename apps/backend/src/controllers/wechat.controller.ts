@@ -360,6 +360,11 @@ const resolveReturnTo = (
 
 const resolveOAuthCallbackUrl = (c: Context): string => {
   const callbackUrl = new URL(c.req.url);
+  const frontendUrl = parseHttpUrl(env.FRONTEND_URL);
+  if (frontendUrl) {
+    callbackUrl.protocol = frontendUrl.protocol;
+    callbackUrl.host = frontendUrl.host;
+  }
   callbackUrl.pathname = callbackUrl.pathname.replace(
     /\/oauth\/(?:login|bind)$/,
     "/oauth/callback",
