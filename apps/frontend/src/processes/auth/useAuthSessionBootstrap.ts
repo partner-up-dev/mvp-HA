@@ -10,6 +10,19 @@ let hasBootstrappedAuthSession = false;
 let bootstrappingPromise: Promise<void> | null = null;
 
 const runAuthSessionBootstrap = async (): Promise<void> => {
+  if (typeof window !== "undefined") {
+    const isOAuthCallback =
+      window.location.pathname === "/wechat/oauth/callback";
+    if (isOAuthCallback) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hasOAuthParams =
+        Boolean(searchParams.get("code")) && Boolean(searchParams.get("state"));
+      if (hasOAuthParams) {
+        return;
+      }
+    }
+  }
+
   const store = useUserSessionStore();
   const existingToken = getStoredAccessToken();
 
