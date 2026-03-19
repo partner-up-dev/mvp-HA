@@ -287,6 +287,7 @@
       "userCancelled": "你已取消手机号授权。",
       "verifyFailed": "手机号授权失败，请稍后重试。"
     },
+    "wechatLoginRequired": "需要先完成微信登录，才能继续加入当前活动。",
     "sameBatch": {
       "title": "同一时段其它场地",
       "subtitle": "当前场次已满，可选择同批次下的其他地点"
@@ -695,7 +696,10 @@
   "wechatOAuthCallbackPage": {
     "title": "正在完成微信登录",
     "subtitle": "请稍候，系统正在验证你的授权信息并返回原页面。",
-    "processing": "正在处理微信授权回调..."
+    "processing": "正在处理微信授权回调...",
+    "missingParams": "未收到微信授权参数，请返回重试。",
+    "failed": "微信登录失败，请返回重试。",
+    "failedWithMessage": "微信登录失败：{message}"
   },
   "userProfilePage": {
     "title": "用户资料",

@@ -973,10 +973,19 @@ export const wechatRoute = app
     "/oauth/callback",
     zValidator("query", oauthCallbackQuerySchema),
     async (c) => {
+      const respondError = (
+        status: number,
+        error: string,
+        returnTo?: string | null,
+      ) =>
+        c.json({ ok: false, error, returnTo: returnTo ?? undefined }, status);
+      const respondSuccess = (returnTo: string) =>
+        c.json({ ok: true, returnTo });
+
       const { code, state } = c.req.valid("query");
       if (!code || !state) {
         clearOAuthStateCookie(c);
-        return c.json({ error: "Missing code or state" }, 400);
+        return respondError(400, "Missing code or state");
       }
 
       const useMockOAuthFlow =
@@ -984,14 +993,14 @@ export const wechatRoute = app
       if (!useMockOAuthFlow && !oauthService.isConfigured()) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+        return respondError(503, "WeChat OAuth is not configured");
       }
 
       const sessionSecret = resolveOAuthSessionSecret();
       if (!sessionSecret) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+        return respondError(503, "WeChat OAuth is not configured");
       }
       const statePayload =
         (await readSignedCookiePayload(
@@ -1010,19 +1019,19 @@ export const wechatRoute = app
       if (!statePayload) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return c.json({ error: "Invalid OAuth state" }, 400);
+        return respondError(400, "Invalid OAuth state");
       }
 
       if (statePayload.expiresAtMs <= nowMs()) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return c.json({ error: "OAuth state expired" }, 400);
+        return respondError(400, "OAuth state expired");
       }
 
       if (statePayload.nonce !== state) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return c.json({ error: "OAuth state mismatch" }, 400);
+        return respondError(400, "OAuth state mismatch");
       }
 
       try {
@@ -1039,9 +1048,8 @@ export const wechatRoute = app
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
 
-          return c.redirect(
+          return respondSuccess(
             appendBindResultToReturnTo(statePayload.returnTo, "success"),
-            302,
           );
         }
 
@@ -1070,7 +1078,7 @@ export const wechatRoute = app
           clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
-          return c.redirect(statePayload.returnTo, 302);
+          return respondSuccess(statePayload.returnTo);
         }
 
         if (statePayload.anonymousUserId) {
@@ -1085,7 +1093,7 @@ export const wechatRoute = app
             clearAnonymousSessionCookie(c);
             clearOAuthStateCookieByNonce(c, state);
             clearOAuthStateCookie(c);
-            return c.redirect(statePayload.returnTo, 302);
+            return respondSuccess(statePayload.returnTo);
           }
         }
 
@@ -1110,7 +1118,7 @@ export const wechatRoute = app
         clearAnonymousSessionCookie(c);
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return c.redirect(statePayload.returnTo, 302);
+        return respondSuccess(statePayload.returnTo);
       } catch (error) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
@@ -1121,9 +1129,8 @@ export const wechatRoute = app
               ? "conflict"
               : "failed";
 
-          return c.redirect(
+          return respondSuccess(
             appendBindResultToReturnTo(statePayload.returnTo, bindResult),
-            302,
           );
         }
 
@@ -1131,7 +1138,7 @@ export const wechatRoute = app
           error instanceof Error
             ? error.message
             : "WeChat OAuth callback failed";
-        return c.json({ error: message }, 500);
+        return respondError(500, message, statePayload.returnTo);
       }
     },
   )
