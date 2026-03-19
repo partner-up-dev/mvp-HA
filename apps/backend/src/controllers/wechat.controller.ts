@@ -359,19 +359,23 @@ const resolveReturnTo = (
 };
 
 const resolveOAuthCallbackUrl = (c: Context): string => {
-  const callbackUrl = new URL(c.req.url);
   const frontendUrl = parseHttpUrl(env.FRONTEND_URL);
   if (frontendUrl) {
-    callbackUrl.protocol = frontendUrl.protocol;
-    callbackUrl.host = frontendUrl.host;
+    const frontendCallbackUrl = new URL(frontendUrl);
+    frontendCallbackUrl.pathname = "/wechat/oauth/callback";
+    frontendCallbackUrl.search = "";
+    frontendCallbackUrl.hash = "";
+    return frontendCallbackUrl.toString();
   }
-  callbackUrl.pathname = callbackUrl.pathname.replace(
+
+  const backendCallbackUrl = new URL(c.req.url);
+  backendCallbackUrl.pathname = backendCallbackUrl.pathname.replace(
     /\/oauth\/(?:login|bind)$/,
     "/oauth/callback",
   );
-  callbackUrl.search = "";
-  callbackUrl.hash = "";
-  return callbackUrl.toString();
+  backendCallbackUrl.search = "";
+  backendCallbackUrl.hash = "";
+  return backendCallbackUrl.toString();
 };
 
 const resolveMockOAuthAuthorizeUrl = (c: Context, state: string): string => {
