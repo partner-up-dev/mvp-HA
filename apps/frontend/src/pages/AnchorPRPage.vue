@@ -4,7 +4,10 @@
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
     <template v-else-if="prDetail">
-      <PageHeader :title="prDetail.title ?? t('prPage.metaFallbackTitle')" @back="goHome">
+      <PageHeader
+        :title="prDetail.title ?? t('prPage.metaFallbackTitle')"
+        @back="goHome"
+      >
         <template #top-actions>
           <div v-if="isCreator" class="header-quick-actions">
             <button
@@ -36,7 +39,9 @@
         <h2 class="section-title">活动信息</h2>
         <div class="fit-row">
           <span class="fit-label">{{ t("prCard.location") }}</span>
-          <span class="fit-value">{{ prDetail.core.location ?? t("prPage.partnerSection.notSet") }}</span>
+          <span class="fit-value">{{
+            prDetail.core.location ?? t("prPage.partnerSection.notSet")
+          }}</span>
         </div>
         <button
           v-if="locationGallery.length > 0"
@@ -53,10 +58,17 @@
         <div class="fit-row fit-row--stack">
           <span class="fit-label">{{ t("prCard.preferences") }}</span>
           <div class="fit-tags">
-            <span v-for="item in prDetail.core.preferences" :key="item" class="fit-tag">
+            <span
+              v-for="item in prDetail.core.preferences"
+              :key="item"
+              class="fit-tag"
+            >
               {{ item }}
             </span>
-            <span v-if="prDetail.core.preferences.length === 0" class="fit-empty">
+            <span
+              v-if="prDetail.core.preferences.length === 0"
+              class="fit-empty"
+            >
               {{ t("prPage.partnerSection.notSet") }}
             </span>
           </div>
@@ -65,7 +77,11 @@
           <span class="fit-label">参与概览</span>
           <p class="fit-overview">{{ participantOverviewText }}</p>
           <div class="roster-chips">
-            <span v-for="item in rosterPreview" :key="item.partnerId" class="roster-chip">
+            <span
+              v-for="item in rosterPreview"
+              :key="item.partnerId"
+              class="roster-chip"
+            >
               {{ item.displayName }}
             </span>
             <span v-if="hasMoreRoster" class="roster-chip">...</span>
@@ -73,7 +89,11 @@
         </div>
       </section>
 
-      <section v-for="action in dockActions" :key="action.key" class="section-card">
+      <section
+        v-for="action in dockActions"
+        :key="action.key"
+        class="section-card"
+      >
         <button
           class="action-btn"
           :class="{
@@ -89,7 +109,12 @@
         </button>
         <p v-if="action.tip" class="action-tip">{{ action.tip }}</p>
       </section>
-      <p v-if="primaryActionErrorMessage" class="action-error page-action-error">{{ primaryActionErrorMessage }}</p>
+      <p
+        v-if="primaryActionErrorMessage"
+        class="action-error page-action-error"
+      >
+        {{ primaryActionErrorMessage }}
+      </p>
 
       <WeChatNotificationSubscriptionsCard
         v-if="showNotificationSubscriptionsCard"
@@ -102,7 +127,11 @@
 
       <section class="section-card">
         <h2 class="section-title">分享邀请</h2>
-        <button class="action-btn action-btn--surface" type="button" @click="showShareDrawer = true">
+        <button
+          class="action-btn action-btn--surface"
+          type="button"
+          @click="showShareDrawer = true"
+        >
           分享 / 邀请
         </button>
       </section>
@@ -121,7 +150,9 @@
               {{ t("prPage.bookingSupportEntry.viewAction") }}
             </router-link>
           </div>
-          <p class="section-description">{{ t("prPage.bookingSupportEntry.title") }}</p>
+          <p class="section-description">
+            {{ t("prPage.bookingSupportEntry.title") }}
+          </p>
           <p class="section-description">{{ bookingSupportSummaryHeadline }}</p>
           <p class="section-description">{{ bookingSupportSummaryDeadline }}</p>
           <p
@@ -134,12 +165,16 @@
           <button
             class="action-btn action-btn--surface"
             type="button"
-            :disabled="reimbursementButtonDisabled || reimbursementQuery.isLoading.value"
+            :disabled="
+              reimbursementButtonDisabled || reimbursementQuery.isLoading.value
+            "
             @click="goBookingSupport"
           >
             {{ reimbursementButtonLabel }}
           </button>
-          <p v-if="reimbursementDisabledTip" class="action-tip">{{ reimbursementDisabledTip }}</p>
+          <p v-if="reimbursementDisabledTip" class="action-tip">
+            {{ reimbursementDisabledTip }}
+          </p>
         </section>
 
         <AnchorPRAwarenessLane
@@ -156,12 +191,17 @@
           @accept-alternative-batch="handleAcceptAlternativeBatch"
         />
 
-        <section v-if="prDetail.partnerSection.viewer.isParticipant" class="section-card">
+        <section
+          v-if="prDetail.partnerSection.viewer.isParticipant"
+          class="section-card"
+        >
           <h2 class="section-title">退出</h2>
           <button
             class="action-btn action-btn--danger"
             type="button"
-            :disabled="!sharedActions.canExit.value || sharedActions.exitPending.value"
+            :disabled="
+              !sharedActions.canExit.value || sharedActions.exitPending.value
+            "
             @click="requestExitWithConfirm"
           >
             {{
@@ -170,14 +210,23 @@
                 : t("prPage.exit")
             }}
           </button>
-          <p v-if="!sharedActions.canExit.value && exitBlockedTip" class="action-tip">
+          <p
+            v-if="!sharedActions.canExit.value && exitBlockedTip"
+            class="action-tip"
+          >
             {{ exitBlockedTip }}
           </p>
-          <p v-if="exitActionError" class="action-error">{{ exitActionError }}</p>
+          <p v-if="exitActionError" class="action-error">
+            {{ exitActionError }}
+          </p>
         </section>
       </details>
 
-      <BottomDrawer :open="showShareDrawer" title="分享邀请" @close="showShareDrawer = false">
+      <BottomDrawer
+        :open="showShareDrawer"
+        title="分享邀请"
+        @close="showShareDrawer = false"
+      >
         <PRShareSection
           :pr-id="id"
           :share-url="shareUrl"
@@ -212,12 +261,20 @@
         @close="showLocationGalleryModal = false"
       />
 
-      <Modal :open="showJoinFlowModal" title="加入活动" @close="closeJoinFlowModal">
+      <Modal
+        :open="showJoinFlowModal"
+        title="加入活动"
+        @close="closeJoinFlowModal"
+      >
         <template v-if="joinFlowStep === 'SUMMARY'">
           <p class="modal-text">确认加入当前活动？</p>
           <p class="modal-text">加入后即可按流程完成确认与签到。</p>
           <div class="modal-actions">
-            <button class="action-btn action-btn--surface" type="button" @click="closeJoinFlowModal">
+            <button
+              class="action-btn action-btn--surface"
+              type="button"
+              @click="closeJoinFlowModal"
+            >
               {{ t("common.cancel") }}
             </button>
             <button
@@ -232,11 +289,13 @@
         </template>
 
         <template v-else>
-          <p class="modal-text">
-            当前加入需要你先完成预订联系人手机号授权。
-          </p>
+          <p class="modal-text">当前加入需要你先完成预订联系人手机号授权。</p>
           <div class="modal-actions">
-            <button class="action-btn action-btn--surface" type="button" @click="closeJoinFlowModal">
+            <button
+              class="action-btn action-btn--surface"
+              type="button"
+              @click="closeJoinFlowModal"
+            >
               {{ t("common.cancel") }}
             </button>
             <button
@@ -252,10 +311,18 @@
         <p v-if="joinFlowError" class="action-error">{{ joinFlowError }}</p>
       </Modal>
 
-      <Modal :open="showExitConfirmModal" title="确认退出" @close="showExitConfirmModal = false">
+      <Modal
+        :open="showExitConfirmModal"
+        title="确认退出"
+        @close="showExitConfirmModal = false"
+      >
         <p class="modal-text">退出后你的参与名额会被释放，确认继续？</p>
         <div class="modal-actions">
-          <button class="action-btn action-btn--surface" type="button" @click="showExitConfirmModal = false">
+          <button
+            class="action-btn action-btn--surface"
+            type="button"
+            @click="showExitConfirmModal = false"
+          >
             {{ t("common.cancel") }}
           </button>
           <button
@@ -264,14 +331,22 @@
             :disabled="sharedActions.exitPending.value"
             @click="confirmExit"
           >
-            {{ sharedActions.exitPending.value ? t("prPage.exiting") : t("common.confirm") }}
+            {{
+              sharedActions.exitPending.value
+                ? t("prPage.exiting")
+                : t("common.confirm")
+            }}
           </button>
         </div>
       </Modal>
 
       <Modal
         :open="attendanceActions.showCheckInFollowup.value"
-        :title="t('prPage.checkInFollowupQuestion', { status: attendanceActions.checkInFollowupStatusLabel.value })"
+        :title="
+          t('prPage.checkInFollowupQuestion', {
+            status: attendanceActions.checkInFollowupStatusLabel.value,
+          })
+        "
         @close="attendanceActions.cancelPendingCheckIn"
       >
         <div class="modal-actions modal-actions--stack">
@@ -308,7 +383,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
@@ -351,14 +426,15 @@ import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import type { AnchorPRFormFields } from "@/domains/pr/model/types";
 import {
   formatLocalDateTimeValue,
-  formatLocalDateTimeWindow
+  formatLocalDateTimeWindow,
 } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/analytics/track";
 import type { ApiError } from "@/shared/api/error";
 import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
 import { useWeChatNotificationSubscriptionsPanel } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 
-type BlockedReason = AnchorPRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
+type BlockedReason =
+  AnchorPRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
 
 type DockActionKey =
   | "JOIN"
@@ -389,6 +465,13 @@ const { t } = useI18n();
 const id = usePRRouteId();
 const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
 const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
+const AUTO_JOIN_STORAGE_KEY = "partner_up_anchor_pr_auto_join";
+const AUTO_JOIN_TTL_MS = 10 * 60 * 1000;
+
+type PendingAutoJoin = {
+  prId: number;
+  createdAt: number;
+};
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
 const reimbursementQuery = useAnchorReimbursementStatus(id);
@@ -515,9 +598,13 @@ const participantOverviewText = computed(() => {
   return `${current} 人已加入，最低成团人数 ${min} 人。`;
 });
 
-const rosterPreview = computed(() => prDetail.value?.partnerSection.roster.slice(0, 4) ?? []);
+const rosterPreview = computed(
+  () => prDetail.value?.partnerSection.roster.slice(0, 4) ?? [],
+);
 const hasMoreRoster = computed(
-  () => (prDetail.value?.partnerSection.roster.length ?? 0) > rosterPreview.value.length,
+  () =>
+    (prDetail.value?.partnerSection.roster.length ?? 0) >
+    rosterPreview.value.length,
 );
 
 const bookingSupportSummaryHeadline = computed(() => {
@@ -526,8 +613,9 @@ const bookingSupportSummaryHeadline = computed(() => {
     t("prPage.bookingSupportEntry.headlineFallback")
   );
 });
-const bookingSupportHighlights = computed(() =>
-  prDetail.value?.anchor.bookingSupportPreview.highlights.slice(1, 3) ?? [],
+const bookingSupportHighlights = computed(
+  () =>
+    prDetail.value?.anchor.bookingSupportPreview.highlights.slice(1, 3) ?? [],
 );
 const bookingSupportSummaryDeadline = computed(() => {
   const deadline =
@@ -570,7 +658,8 @@ const reimbursementDisabledTip = computed(() => {
   const status = reimbursement.value;
   if (!status) return t("errors.fetchReimbursementStatusFailed");
   if (status.reason) return reimbursementReasonText(status.reason);
-  if (!status.canRequest) return t("prBookingSupport.reimbursement.reasonAlreadyRequested");
+  if (!status.canRequest)
+    return t("prBookingSupport.reimbursement.reasonAlreadyRequested");
   return null;
 });
 
@@ -623,7 +712,9 @@ const dockActions = computed<DockActionItem[]>(() => {
         tone: "primary",
         disabled: !viewer.canJoin,
         pending: sharedActions.joinPending.value,
-        tip: viewer.canJoin ? null : blockedReasonText(viewer.joinBlockedReason),
+        tip: viewer.canJoin
+          ? null
+          : blockedReasonText(viewer.joinBlockedReason),
       },
     ];
   }
@@ -672,7 +763,12 @@ const dockActions = computed<DockActionItem[]>(() => {
 const primaryDockAction = computed(() => dockActions.value[0] ?? null);
 
 watch(
-  () => [id.value, primaryDockAction.value?.key ?? null, viewerState.value] as const,
+  () =>
+    [
+      id.value,
+      primaryDockAction.value?.key ?? null,
+      viewerState.value,
+    ] as const,
   ([prId, actionKey, state]) => {
     if (prId === null || actionKey === null) return;
     const ctaType = mapDockActionToTrackType(actionKey);
@@ -706,8 +802,55 @@ const exitBlockedTip = computed(() => {
 
 const joinFlowNeedsBookingContact = computed(() => {
   const bookingContact = currentBookingContact.value;
-  return Boolean(bookingContact?.required && bookingContact.ownerPartnerId === null);
+  return Boolean(
+    bookingContact?.required && bookingContact.ownerPartnerId === null,
+  );
 });
+
+const readPendingAutoJoin = (): PendingAutoJoin | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(AUTO_JOIN_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PendingAutoJoin | null;
+    if (
+      !parsed ||
+      typeof parsed.prId !== "number" ||
+      typeof parsed.createdAt !== "number"
+    ) {
+      window.localStorage.removeItem(AUTO_JOIN_STORAGE_KEY);
+      return null;
+    }
+    if (Date.now() - parsed.createdAt > AUTO_JOIN_TTL_MS) {
+      window.localStorage.removeItem(AUTO_JOIN_STORAGE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const setPendingAutoJoin = (prId: number): void => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      AUTO_JOIN_STORAGE_KEY,
+      JSON.stringify({ prId, createdAt: Date.now() } satisfies PendingAutoJoin),
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+const clearPendingAutoJoin = (): void => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(AUTO_JOIN_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+};
 
 const requestBookingContactCredential = async (): Promise<string | null> => {
   try {
@@ -736,17 +879,26 @@ const openJoinFlowModal = () => {
   showJoinFlowModal.value = true;
 };
 
-const finalizeJoinFlow = async (wechatPhoneCredential?: string | null) => {
+const finalizeJoinFlow = async (
+  wechatPhoneCredential?: string | null,
+  options: { trackAutoJoin?: boolean } = {},
+) => {
   joinFlowPending.value = true;
   joinFlowError.value = null;
   bookingContactActionError.value = null;
+  if (id.value !== null && options.trackAutoJoin !== false) {
+    setPendingAutoJoin(id.value);
+  }
   const result = await sharedActions.handleJoin({ wechatPhoneCredential });
   joinFlowPending.value = false;
   if (result) {
+    clearPendingAutoJoin();
     closeJoinFlowModal();
     return;
   }
-  joinFlowError.value = primaryActionErrorMessage.value ?? t("errors.joinRequestFailed");
+  clearPendingAutoJoin();
+  joinFlowError.value =
+    primaryActionErrorMessage.value ?? t("errors.joinRequestFailed");
 };
 
 const continueJoinFlow = async () => {
@@ -763,11 +915,44 @@ const authorizeBookingContactAndJoin = async () => {
   const wechatPhoneCredential = await requestBookingContactCredential();
   if (!wechatPhoneCredential) {
     joinFlowError.value =
-      bookingContactActionError.value ?? t("prPage.bookingContact.verifyFailed");
+      bookingContactActionError.value ??
+      t("prPage.bookingContact.verifyFailed");
     return;
   }
   await finalizeJoinFlow(wechatPhoneCredential);
 };
+
+const attemptAutoJoin = async () => {
+  if (joinFlowPending.value) return;
+  if (id.value === null || !prDetail.value) return;
+  const pending = readPendingAutoJoin();
+  if (!pending || pending.prId !== id.value) return;
+  clearPendingAutoJoin();
+  const viewer = prDetail.value.partnerSection.viewer;
+  if (viewer.isParticipant || !viewer.canJoin) return;
+  if (joinFlowNeedsBookingContact.value) {
+    openJoinFlowModal();
+    return;
+  }
+  await finalizeJoinFlow(null, { trackAutoJoin: false });
+};
+
+watch(
+  () =>
+    [
+      id.value,
+      prDetail.value?.partnerSection.viewer.isParticipant,
+      prDetail.value?.partnerSection.viewer.canJoin,
+    ] as const,
+  () => {
+    void attemptAutoJoin();
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  void attemptAutoJoin();
+});
 
 const ensureBookingContactVerified = async (): Promise<boolean> => {
   if (id.value === null) return false;
@@ -777,7 +962,9 @@ const ensureBookingContactVerified = async (): Promise<boolean> => {
     return true;
   }
   if (!bookingContact.ownerIsCurrentViewer) {
-    bookingContactActionError.value = t("prPage.bookingContact.ownerBlockedHint");
+    bookingContactActionError.value = t(
+      "prPage.bookingContact.ownerBlockedHint",
+    );
     return false;
   }
 
@@ -985,7 +1172,8 @@ function resolveCheckInTip(): string {
   const viewer = prDetail.value?.partnerSection.viewer;
   if (!viewer) return "";
   if (viewer.checkInBlockedReason === "CHECKIN_NOT_OPEN") {
-    const startAt = prDetail.value?.partnerSection.timeline?.eventStartAt ?? null;
+    const startAt =
+      prDetail.value?.partnerSection.timeline?.eventStartAt ?? null;
     if (startAt) {
       return `活动开始后可签到（${formatLocalDateTimeValue(startAt) ?? startAt}）`;
     }
@@ -1008,7 +1196,8 @@ function blockedReasonText(reason: BlockedReason): string {
       return t("prPage.partnerSection.blockedConfirmWindow", {
         confirmStart:
           formatLocalDateTimeValue(
-            prDetail.value?.partnerSection.timeline?.confirmationStartAt ?? null,
+            prDetail.value?.partnerSection.timeline?.confirmationStartAt ??
+              null,
           ) ?? notSet,
         confirmEnd:
           formatLocalDateTimeValue(
@@ -1202,7 +1391,11 @@ const goHome = () => {
 .action-btn--surface:disabled,
 .action-btn--danger:disabled {
   background: transparent;
-  border-color: color-mix(in srgb, var(--sys-color-on-surface) 12%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--sys-color-on-surface) 12%,
+    transparent
+  );
   color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
 }
 
