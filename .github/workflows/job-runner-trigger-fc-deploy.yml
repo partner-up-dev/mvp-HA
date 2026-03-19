@@ -17,6 +17,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/master' && 'production' || 'staging' }}
     env:
       ALIYUN_FC_REGION: ${{ vars.ALIYUN_FC_REGION }}
       ALIYUN_FC_FUNCTION_NAME: ${{ vars.ALIYUN_FC_JOB_RUNNER_TRIGGER_FUNCTION_NAME }}
