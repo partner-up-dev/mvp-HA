@@ -3,6 +3,7 @@ import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { randomUUID } from "crypto";
 import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { deleteCookie, getSignedCookie, setSignedCookie } from "hono/cookie";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import { env } from "../lib/env";
@@ -974,7 +975,7 @@ export const wechatRoute = app
     zValidator("query", oauthCallbackQuerySchema),
     async (c) => {
       const respondError = (
-        status: number,
+        status: ContentfulStatusCode,
         error: string,
         returnTo?: string | null,
       ) =>
