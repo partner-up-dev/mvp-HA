@@ -20,7 +20,10 @@ import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { expandFullAnchorPR } from "../../anchor-event";
-import { scheduleWeChatReminderJobsForParticipant } from "../../../infra/notifications";
+import {
+  scheduleWeChatNewPartnerNotificationsForJoin,
+  scheduleWeChatReminderJobsForParticipant,
+} from "../../../infra/notifications";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
 import { WeChatPhoneService } from "../../../services/WeChatPhoneService";
@@ -261,6 +264,12 @@ export async function joinPRAsUser(
     });
   }
   if (latest.prKind === "ANCHOR") {
+    await scheduleWeChatNewPartnerNotificationsForJoin({
+      request: latest,
+      joinedUserId: user.id,
+      joinedPartnerId: assignedPartnerId,
+      joinedAt: new Date(),
+    });
     await scheduleWeChatReminderJobsForParticipant(latest, user.id);
   }
   return toPublicPR(latest, user.id);

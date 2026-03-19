@@ -291,6 +291,27 @@ export interface MessageSchema {
       enabledHint: string;
       disabledHint: string;
     };
+    notificationSubscriptions: {
+      title: string;
+      items: {
+        REMINDER_CONFIRMATION: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+        };
+        BOOKING_RESULT: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+        };
+        NEW_PARTNER: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
+      };
+    };
     partnerSection: {
       title: string;
       subtitleAnchor: string;

@@ -70,9 +70,21 @@ import type { PRShareProps } from "@/domains/share/model/types";
 import {
   useShareCarousel,
   type ShareMethod,
+  type ShareMethodId,
 } from "@/domains/share/use-cases/useShareCarousel";
 
-const props = defineProps<PRShareProps>();
+const props = withDefaults(
+  defineProps<
+    PRShareProps & {
+      defaultMethodId?: ShareMethodId;
+      autoRotateIntervalMs?: number | null;
+    }
+  >(),
+  {
+    defaultMethodId: "XIAOHONGSHU",
+    autoRotateIntervalMs: 3000,
+  },
+);
 const { t } = useI18n();
 
 const allMethods = computed<ShareMethod[]>(() => [
@@ -103,6 +115,8 @@ const {
   handleShareMethodInteraction,
 } = useShareCarousel({
   allMethods,
+  defaultMethodId: props.defaultMethodId,
+  autoRotateIntervalMs: props.autoRotateIntervalMs,
 });
 </script>
 
@@ -156,13 +170,14 @@ const {
 .content-section {
   position: relative;
   height: 66vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .method-pane {
   width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .method-switch-next-enter-active,

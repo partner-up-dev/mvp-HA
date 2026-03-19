@@ -31,6 +31,10 @@ const subscribeSendResponseSchema = z.object({
 
 const CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID =
   "wechat.submsg_confirmation_reminder_template_id";
+const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
+  "wechat.submsg_new_partner_template_id";
+
+type SubscriptionTemplateKind = "REMINDER_CONFIRMATION" | "NEW_PARTNER";
 
 export class WeChatSubscriptionMessageError extends Error {
   constructor(
@@ -52,6 +56,14 @@ export interface SendConfirmationReminderParams {
   remark: string;
 }
 
+export interface SendNewPartnerNotificationParams {
+  openId: string;
+  applicantName: string;
+  teamName: string;
+  tip: string;
+  appliedAt: string;
+}
+
 const clipText = (value: string, max: number): string =>
   value.trim().slice(0, max);
 
@@ -63,8 +75,15 @@ export class WeChatSubscriptionMessageService {
   }
 
   async isConfirmationReminderConfigured(): Promise<boolean> {
-    const templateId = await this.resolveTemplateId();
+    return this.isConfigured("REMINDER_CONFIRMATION");
+  }
 
+  async isNewPartnerConfigured(): Promise<boolean> {
+    return this.isConfigured("NEW_PARTNER");
+  }
+
+  private async isConfigured(kind: SubscriptionTemplateKind): Promise<boolean> {
+    const templateId = await this.resolveTemplateId(kind);
     return Boolean(
       env.WECHAT_OFFICIAL_ACCOUNT_APP_ID &&
         env.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET &&
@@ -72,27 +91,28 @@ export class WeChatSubscriptionMessageService {
     );
   }
 
-  private async resolveTemplateId(): Promise<string | null> {
-    const configuredTemplateId = await this.configService.getValue(
-      CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID,
-    );
+  private async resolveTemplateId(
+    kind: SubscriptionTemplateKind,
+  ): Promise<string | null> {
+    const configKey =
+      kind === "REMINDER_CONFIRMATION"
+        ? CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
+        : CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID;
+
+    const configuredTemplateId = await this.configService.getValue(configKey);
     if (configuredTemplateId) {
       return configuredTemplateId;
-    }
-
-    const fallbackTemplateId =
-      env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID?.trim();
-    if (fallbackTemplateId && fallbackTemplateId.length > 0) {
-      return fallbackTemplateId;
     }
 
     return null;
   }
 
-  private async getOfficialAccountConfig(): Promise<OfficialAccountConfig> {
+  private async getOfficialAccountConfig(
+    kind: SubscriptionTemplateKind,
+  ): Promise<OfficialAccountConfig> {
     const appId = env.WECHAT_OFFICIAL_ACCOUNT_APP_ID;
     const appSecret = env.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET;
-    const templateId = await this.resolveTemplateId();
+    const templateId = await this.resolveTemplateId(kind);
     if (!appId) {
       throw new Error("Missing env: WECHAT_OFFICIAL_ACCOUNT_APP_ID");
     }
@@ -100,9 +120,11 @@ export class WeChatSubscriptionMessageService {
       throw new Error("Missing env: WECHAT_OFFICIAL_ACCOUNT_APP_SECRET");
     }
     if (!templateId) {
-      throw new Error(
-        "Missing config/env: wechat.submsg_confirmation_reminder_template_id or WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID",
-      );
+      const templateKey =
+        kind === "REMINDER_CONFIRMATION"
+          ? "wechat.submsg_confirmation_reminder_template_id"
+          : "wechat.submsg_new_partner_template_id";
+      throw new Error(`Missing config: ${templateKey}`);
     }
     return { appId, appSecret, templateId };
   }
@@ -115,7 +137,14 @@ export class WeChatSubscriptionMessageService {
       return accessTokenCache.token;
     }
 
-    const { appId, appSecret } = await this.getOfficialAccountConfig();
+    const appId = env.WECHAT_OFFICIAL_ACCOUNT_APP_ID;
+    const appSecret = env.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET;
+    if (!appId) {
+      throw new Error("Missing env: WECHAT_OFFICIAL_ACCOUNT_APP_ID");
+    }
+    if (!appSecret) {
+      throw new Error("Missing env: WECHAT_OFFICIAL_ACCOUNT_APP_SECRET");
+    }
     const url = new URL("https://api.weixin.qq.com/cgi-bin/token");
     url.searchParams.set("grant_type", "client_credential");
     url.searchParams.set("appid", appId);
@@ -146,7 +175,9 @@ export class WeChatSubscriptionMessageService {
   async sendConfirmationReminder(
     params: SendConfirmationReminderParams,
   ): Promise<string | number | null> {
-    const { templateId } = await this.getOfficialAccountConfig();
+    const { templateId } = await this.getOfficialAccountConfig(
+      "REMINDER_CONFIRMATION",
+    );
     const accessToken = await this.getAccessToken();
 
     const url = new URL(
@@ -167,6 +198,51 @@ export class WeChatSubscriptionMessageService {
           character_string12: { value: clipText(params.orderNo, 32) },
           date9: { value: clipText(params.appointmentAt, 32) },
           thing7: { value: clipText(params.remark, 20) },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `WeChat subscribe bizsend failed: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const payload = subscribeSendResponseSchema.parse(await response.json());
+    if (payload.errcode !== 0) {
+      throw new WeChatSubscriptionMessageError(
+        `WeChat subscribe bizsend error: ${payload.errmsg ?? "unknown"}`,
+        String(payload.errcode),
+      );
+    }
+
+    return payload.msgid ?? null;
+  }
+
+  async sendNewPartnerNotification(
+    params: SendNewPartnerNotificationParams,
+  ): Promise<string | number | null> {
+    const { templateId } = await this.getOfficialAccountConfig("NEW_PARTNER");
+    const accessToken = await this.getAccessToken();
+
+    const url = new URL(
+      "https://api.weixin.qq.com/cgi-bin/message/subscribe/bizsend",
+    );
+    url.searchParams.set("access_token", accessToken);
+
+    const response = await proxyFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        touser: params.openId,
+        template_id: templateId,
+        miniprogram_state: "formal",
+        lang: "zh_CN",
+        data: {
+          thing1: { value: clipText(params.applicantName, 20) },
+          thing4: { value: clipText(params.teamName, 20) },
+          thing5: { value: clipText(params.tip, 20) },
+          time3: { value: clipText(params.appliedAt, 32) },
         },
       }),
     });

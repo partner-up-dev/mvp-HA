@@ -31,12 +31,16 @@ import {
   registerAnalyticsAggregationJobs,
 } from "./infra/analytics";
 import { processOutboxBatch } from "./infra/events";
-import { registerWeChatReminderJobs } from "./infra/notifications";
+import {
+  registerWeChatNewPartnerJobs,
+  registerWeChatReminderJobs,
+} from "./infra/notifications";
 import { env } from "./lib/env";
 import { withTimeout } from "./lib/with-timeout";
 
 const app = new Hono();
 registerWeChatReminderJobs();
+registerWeChatNewPartnerJobs();
 registerAnalyticsAggregationJobs();
 void bootstrapAnalyticsAggregationJobs().catch((error) => {
   console.error(

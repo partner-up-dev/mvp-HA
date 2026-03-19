@@ -42,6 +42,8 @@ export const queryKeys = {
     anchorWorkspace: () => ["admin", "anchor-workspace"] as const,
   },
   wechat: {
+    notificationSubscriptions: () =>
+      ["wechat", "notification-subscriptions"] as const,
     reminderSubscription: () => ["wechat", "reminder-subscription"] as const,
   },
   user: {

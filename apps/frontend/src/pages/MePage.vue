@@ -165,23 +165,12 @@
         </button>
       </section>
 
-      <section class="surface-card">
-        <div class="section-header">
-          <div>
-            <h2>{{ t("mePage.reminder.title") }}</h2>
-            <p>{{ reminderHintText }}</p>
-          </div>
-        </div>
-
-        <button
-          class="primary-button"
-          type="button"
-          :disabled="reminderActionDisabled"
-          @click="handleReminderAction"
-        >
-          {{ reminderActionLabel }}
-        </button>
-      </section>
+      <WeChatNotificationSubscriptionsCard
+        :title="t('mePage.reminder.title')"
+        :items="notificationSubscriptionItems"
+        :updating-label="t('prPage.wechatReminder.updating')"
+        @action="handleNotificationSubscriptionAction"
+      />
 
       <section class="surface-card">
         <div class="section-header">
@@ -278,14 +267,14 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
+import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { useCurrentUserProfile } from "@/domains/user/queries/useCurrentUserProfile";
 import { useUpdateCurrentUserProfile } from "@/domains/user/queries/useUpdateCurrentUserProfile";
 import { useUpdateCurrentUserAvatar } from "@/domains/user/queries/useUpdateCurrentUserAvatar";
 import { useStartWeChatBind } from "@/domains/user/queries/useStartWeChatBind";
 import { useRegisterLocalAccount } from "@/domains/user/queries/useRegisterLocalAccount";
-import { useWeChatReminderSubscription } from "@/shared/wechat/queries/useWeChatReminderSubscription";
-import { useUpdateWeChatReminderSubscription } from "@/shared/wechat/queries/useUpdateWeChatReminderSubscription";
+import { useWeChatNotificationSubscriptionsPanel } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { copyToClipboard } from "@/lib/clipboard";
 
@@ -299,8 +288,13 @@ const updateProfileMutation = useUpdateCurrentUserProfile();
 const updateAvatarMutation = useUpdateCurrentUserAvatar();
 const startWeChatBindMutation = useStartWeChatBind();
 const registerLocalAccountMutation = useRegisterLocalAccount();
-const reminderQuery = useWeChatReminderSubscription();
-const updateReminderMutation = useUpdateWeChatReminderSubscription();
+const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
+  visibleKinds: [
+    "REMINDER_CONFIRMATION",
+    "BOOKING_RESULT",
+    "NEW_PARTNER",
+  ] as const,
+});
 
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const nicknameDraft = ref("");
@@ -381,56 +375,8 @@ const bindHintText = computed(() => {
   return t("mePage.wechat.unboundHint");
 });
 
-const reminderConfigured = computed(
-  () => reminderQuery.data.value?.configured ?? false,
-);
-const reminderAuthenticated = computed(
-  () => reminderQuery.data.value?.authenticated ?? false,
-);
-const reminderEnabled = computed(
-  () => reminderQuery.data.value?.enabled ?? false,
-);
-const reminderHintText = computed(() => {
-  if (!userSessionStore.isAuthenticated) {
-    return t("mePage.reminder.authHint");
-  }
-  if (!isWeChatEnv.value) return t("prPage.wechatReminder.nonWechatHint");
-  if (!reminderConfigured.value) {
-    return t("prPage.wechatReminder.unconfiguredHint");
-  }
-  if (!reminderAuthenticated.value) {
-    return t("prPage.wechatReminder.loginHint");
-  }
-  return reminderEnabled.value
-    ? t("prPage.wechatReminder.enabledHint")
-    : t("prPage.wechatReminder.disabledHint");
-});
-const reminderActionLabel = computed(() => {
-  if (updateReminderMutation.isPending.value) {
-    return t("prPage.wechatReminder.updating");
-  }
-  if (!userSessionStore.isAuthenticated) {
-    return t("mePage.reminder.authAction");
-  }
-  if (!isWeChatEnv.value) {
-    return t("mePage.reminder.wechatOnlyAction");
-  }
-  if (!reminderConfigured.value) {
-    return t("mePage.reminder.unavailableAction");
-  }
-  if (!reminderAuthenticated.value) {
-    return t("prPage.wechatReminder.loginAction");
-  }
-  return reminderEnabled.value
-    ? t("prPage.wechatReminder.disableAction")
-    : t("prPage.wechatReminder.enableAction");
-});
-const reminderActionDisabled = computed(
-  () =>
-    updateReminderMutation.isPending.value ||
-    !userSessionStore.isAuthenticated ||
-    !isWeChatEnv.value ||
-    !reminderConfigured.value,
+const notificationSubscriptionItems = computed(
+  () => notificationSubscriptions.items.value,
 );
 const errorMessage = computed(() => {
   const candidates = [
@@ -439,7 +385,7 @@ const errorMessage = computed(() => {
     updateAvatarMutation.error.value,
     startWeChatBindMutation.error.value,
     registerLocalAccountMutation.error.value,
-    updateReminderMutation.error.value,
+    notificationSubscriptions.mutation.error.value,
   ];
 
   const firstError = candidates.find((candidate) => candidate instanceof Error);
@@ -494,13 +440,10 @@ const handleRegisterLocalAccount = async () => {
   userSessionStore.applyAuthSession(payload);
 };
 
-const handleReminderAction = async () => {
-  if (!userSessionStore.isAuthenticated || typeof window === "undefined")
-    return;
-  if (!isWeChatEnv.value || !reminderConfigured.value) return;
-  await updateReminderMutation.mutateAsync({
-    enabled: !reminderEnabled.value,
-  });
+const handleNotificationSubscriptionAction = async (
+  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
+) => {
+  await notificationSubscriptions.handleAction(kind);
 };
 
 const handleCopyCredential = async (

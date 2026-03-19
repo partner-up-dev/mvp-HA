@@ -6,6 +6,8 @@
     :spm-route-key="spmRouteKey"
     :pr-id="prId"
     :pr-data="prData"
+    :default-method-id="defaultMethodId"
+    :auto-rotate-interval-ms="autoRotateIntervalMs"
   />
 </template>
 
@@ -13,12 +15,21 @@
 import type { PRId } from "@partner-up-dev/backend";
 import PRShareCarousel from "@/domains/share/ui/composites/PRShareCarousel.vue";
 import type { PRShareData } from "@/domains/share/model/types";
+import type { ShareMethodId } from "@/domains/share/use-cases/useShareCarousel";
 import type { ShareSpmRouteKey } from "@/shared/url/spm";
 
-defineProps<{
-  prId: PRId | null;
-  shareUrl: string;
-  spmRouteKey: ShareSpmRouteKey | null;
-  prData: PRShareData | null;
-}>();
+withDefaults(
+  defineProps<{
+    prId: PRId | null;
+    shareUrl: string;
+    spmRouteKey: ShareSpmRouteKey | null;
+    prData: PRShareData | null;
+    defaultMethodId?: ShareMethodId;
+    autoRotateIntervalMs?: number | null;
+  }>(),
+  {
+    defaultMethodId: "XIAOHONGSHU",
+    autoRotateIntervalMs: 3000,
+  },
+);
 </script>

@@ -22,8 +22,6 @@ const envSchema = z.object({
   WECHAT_ABILITY_MOCKING_ENABLED: z.enum(["true", "false"]).optional(),
   WECHAT_ABILITY_MOCK_OPEN_ID: z.string().min(1).optional(),
   WECHAT_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),
-  // Fallback only when config key `wechat.submsg_confirmation_reminder_template_id` is empty.
-  WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),
   FIXED_IP_HTTP_PROXY: z.string().url().optional(),
 
   // WeCom (Enterprise WeChat) self-built app

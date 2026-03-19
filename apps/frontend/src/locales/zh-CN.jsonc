@@ -309,6 +309,27 @@
       "enabledHint": "已开启提醒：活动前 24 小时和 2 小时会发送通知。",
       "disabledHint": "提醒已关闭，可随时开启。"
     },
+    "notificationSubscriptions": {
+      "title": "通知订阅",
+      "items": {
+        "REMINDER_CONFIRMATION": {
+          "title": "公众号提醒",
+          "enabledHint": "已开启提醒：活动前 24 小时和 2 小时会发送通知。",
+          "disabledHint": "提醒已关闭，可随时开启。"
+        },
+        "BOOKING_RESULT": {
+          "title": "场地预订结果",
+          "enabledHint": "已开启场地预订结果通知。",
+          "disabledHint": "场地预订结果通知已关闭。"
+        },
+        "NEW_PARTNER": {
+          "title": "新搭子",
+          "enabledHint": "已开启新搭子通知，有人加入当前活动会提醒你。",
+          "disabledHint": "新搭子通知已关闭。",
+          "unconfiguredHint": "当前环境未配置“新搭子”通知模板。"
+        }
+      }
+    },
     "partnerSection": {
       "title": "参与",
       "subtitleAnchor": "统一查看当前搭子、你的参与状态和关键时间点。",

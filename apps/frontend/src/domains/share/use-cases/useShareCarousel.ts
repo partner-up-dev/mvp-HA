@@ -13,7 +13,7 @@ export type ShareMethod = {
 type UseShareCarouselOptions = {
   allMethods: ComputedRef<ShareMethod[]>;
   defaultMethodId?: ShareMethodId;
-  autoRotateIntervalMs?: number;
+  autoRotateIntervalMs?: number | null;
 };
 
 const FALLBACK_METHOD: ShareMethod = {
@@ -138,6 +138,7 @@ export const useShareCarousel = ({
 
   watchEffect((onCleanup) => {
     if (typeof window === "undefined") return;
+    if (autoRotateIntervalMs === null || autoRotateIntervalMs <= 0) return;
     if (hasUserInteracted.value) return;
     if (enabledMethods.value.length <= 1) return;
 

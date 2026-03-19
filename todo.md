@@ -60,7 +60,7 @@
 - [ ] min-partners 必须大于1 （记得告诉 NL parsing LLM）
 - [ ] Community PR 允许提供一张图，空间会大很多（但是注意内容审查）
 - [x] 【MUST】时间冲突，不可加入
-  - [ ] Publish PR / Create APR 也需要检查时间冲突
+  - [x] Publish PR / Create APR 也需要检查时间冲突
 
 ### Detail Page
 
@@ -118,8 +118,8 @@
   - 并在活动页的 Anchor PR 列表末尾提供一个卡片，使得用户可以在选中批次下创建用户管理地点的 Anchor PR
   - 用户管理地点在同一批次内创建的 PR 数量有上限（上限不随批次的不同而变化）
   - 基于用户管理地点的 Anchor PR 没有预订支持，可能有资源支持；这一点可以在用户创建之前呈现清楚
-- [ ] 【MUST】允许用户主动创建该 batch 下 Anchor PR（不同地点）（对于卡片模式来说，还可以选择时间），如果仍然不可以用，自动创建 CPR
-- [ ] 【MUST】在活动级别设置 min, max partner
+- [x] 【MUST】允许用户主动创建该 batch 下 Anchor PR（不同地点）（对于卡片模式来说，还可以选择时间），如果仍然不可以用，自动创建 CPR
+- [x] 【MUST】在活动级别设置 min, max partner
 
 ### Booking & Support
 

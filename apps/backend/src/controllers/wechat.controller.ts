@@ -18,10 +18,17 @@ import { UserRepository } from "../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
 import { bindWeChatToCurrentUser } from "../domains/user/use-cases/current-user";
 import {
+  cancelWeChatNewPartnerJobsForUser,
   cancelWeChatReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
 import type { UserId } from "../entities/user";
+import {
+  wechatNotificationKindSchema,
+  type WeChatNotificationKind,
+} from "../entities/user-notification-opt";
+import { WeChatSubscriptionMessageService } from "../services/WeChatSubscriptionMessageService";
+import { WeChatTemplateMessageService } from "../services/WeChatTemplateMessageService";
 
 const app = new Hono<AuthEnv>();
 const jssdkService = new WeChatJssdkService();
@@ -30,6 +37,8 @@ const loginService = new WeChatLoginService();
 const phoneService = new WeChatPhoneService();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
+const subscriptionMessageService = new WeChatSubscriptionMessageService();
+const templateMessageService = new WeChatTemplateMessageService();
 
 const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
 const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
@@ -70,6 +79,10 @@ const oauthSessionCookiePayloadSchema = z.object({
 const reminderSubscriptionUpdateSchema = z.object({
   enabled: z.boolean(),
 });
+const notificationSubscriptionUpdateSchema = z.object({
+  kind: wechatNotificationKindSchema,
+  enabled: z.boolean(),
+});
 const resolvePhoneSchema = z.object({
   credential: z.string().trim().min(1),
 });
@@ -91,6 +104,109 @@ const resolveOAuthSessionSecret = (): string | null => {
     return env.AUTH_JWT_SECRET;
   }
   return null;
+};
+
+const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
+  const reminderConfigured =
+    (await subscriptionMessageService.isConfirmationReminderConfigured()) ||
+    templateMessageService.isReminderConfigured();
+  const newPartnerConfigured =
+    await subscriptionMessageService.isNewPartnerConfigured();
+
+  return {
+    configured,
+    authenticated: false,
+    subscriptions: {
+      REMINDER_CONFIRMATION: {
+        enabled: false,
+        optInAt: null,
+        configured: reminderConfigured,
+      },
+      BOOKING_RESULT: {
+        enabled: false,
+        optInAt: null,
+        configured: true,
+      },
+      NEW_PARTNER: {
+        enabled: false,
+        optInAt: null,
+        configured: newPartnerConfigured,
+      },
+    },
+  };
+};
+
+const buildAuthenticatedSubscriptionsResponse = async (
+  userId: UserId,
+): Promise<{
+  configured: boolean;
+  authenticated: boolean;
+  subscriptions: Record<
+    WeChatNotificationKind,
+    { enabled: boolean; optInAt: string | null; configured: boolean }
+  >;
+}> => {
+  const notificationOpt = await userNotificationOptRepo.findByUserId(userId);
+  const reminderConfigured =
+    (await subscriptionMessageService.isConfirmationReminderConfigured()) ||
+    templateMessageService.isReminderConfigured();
+  const newPartnerConfigured =
+    await subscriptionMessageService.isNewPartnerConfigured();
+
+  const reminder = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "REMINDER_CONFIRMATION",
+  );
+  const bookingResult = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "BOOKING_RESULT",
+  );
+  const newPartner = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "NEW_PARTNER",
+  );
+
+  return {
+    configured: true,
+    authenticated: true,
+    subscriptions: {
+      REMINDER_CONFIRMATION: {
+        enabled: reminder.enabled,
+        optInAt: reminder.optInAt ? reminder.optInAt.toISOString() : null,
+        configured: reminderConfigured,
+      },
+      BOOKING_RESULT: {
+        enabled: bookingResult.enabled,
+        optInAt: bookingResult.optInAt ? bookingResult.optInAt.toISOString() : null,
+        configured: true,
+      },
+      NEW_PARTNER: {
+        enabled: newPartner.enabled,
+        optInAt: newPartner.optInAt ? newPartner.optInAt.toISOString() : null,
+        configured: newPartnerConfigured,
+      },
+    },
+  };
+};
+
+const applyNotificationSubscriptionSideEffects = async (
+  userId: UserId,
+  kind: WeChatNotificationKind,
+  enabled: boolean,
+): Promise<number> => {
+  if (kind === "REMINDER_CONFIRMATION") {
+    if (enabled) {
+      await rebuildWeChatReminderJobsForUser(userId);
+      return 0;
+    }
+    return cancelWeChatReminderJobsForUser(userId);
+  }
+
+  if (kind === "NEW_PARTNER" && !enabled) {
+    return cancelWeChatNewPartnerJobsForUser(userId);
+  }
+
+  return 0;
 };
 
 const isHttpProtocol = (protocol: string): boolean =>
@@ -457,23 +573,118 @@ export const wechatRoute = app
       openId: sessionPayload.openId,
     });
   })
+  .get("/notifications/subscriptions", async (c) => {
+    if (!isOAuthRuntimeAvailable()) {
+      return c.json(await buildAnonymousSubscriptionsResponse(false));
+    }
+
+    const sessionSecret = resolveOAuthSessionSecret();
+    if (!sessionSecret) {
+      return c.json(await buildAnonymousSubscriptionsResponse(false));
+    }
+    const sessionPayload = await readSignedCookiePayload(
+      c,
+      OAUTH_SESSION_COOKIE_NAME,
+      sessionSecret,
+      oauthSessionCookiePayloadSchema,
+    );
+
+    if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
+      clearOAuthSessionCookie(c);
+      return c.json(await buildAnonymousSubscriptionsResponse(true));
+    }
+
+    const user = await userRepo.findByOpenId(sessionPayload.openId);
+    if (!user) {
+      const fallback = await buildAnonymousSubscriptionsResponse(true);
+      return c.json({
+        ...fallback,
+        authenticated: true,
+      });
+    }
+    return c.json(await buildAuthenticatedSubscriptionsResponse(user.id));
+  })
+  .post(
+    "/notifications/subscriptions",
+    zValidator("json", notificationSubscriptionUpdateSchema),
+    async (c) => {
+      if (!isOAuthRuntimeAvailable()) {
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
+
+      const sessionSecret = resolveOAuthSessionSecret();
+      if (!sessionSecret) {
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
+      const sessionPayload = await readSignedCookiePayload(
+        c,
+        OAUTH_SESSION_COOKIE_NAME,
+        sessionSecret,
+        oauthSessionCookiePayloadSchema,
+      );
+
+      if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
+        clearOAuthSessionCookie(c);
+        return c.json({ error: "WeChat login required" }, 401);
+      }
+
+      const user = await userRepo.findByOpenId(sessionPayload.openId);
+      if (!user) {
+        return c.json({ error: "User not found" }, 404);
+      }
+
+      const { kind, enabled } = c.req.valid("json");
+      const updatedNotificationOpt =
+        await userNotificationOptRepo.upsertWechatNotificationSubscription(
+        user.id,
+        kind,
+        enabled,
+      );
+      if (!updatedNotificationOpt) {
+        return c.json({ error: "Failed to update notification subscription" }, 500);
+      }
+      const snapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+        updatedNotificationOpt,
+        kind,
+      );
+      const deletedJobs = await applyNotificationSubscriptionSideEffects(
+        user.id,
+        kind,
+        enabled,
+      );
+      const fullState = await buildAuthenticatedSubscriptionsResponse(user.id);
+      const selectedState = fullState.subscriptions[kind];
+      return c.json({
+        ok: true,
+        kind,
+        enabled: snapshot.enabled,
+        optInAt: snapshot.optInAt ? snapshot.optInAt.toISOString() : null,
+        configured: selectedState.configured,
+        deletedJobs,
+      });
+    },
+  )
   .get("/reminders/subscription", async (c) => {
     if (!isOAuthRuntimeAvailable()) {
+      const fallback = await buildAnonymousSubscriptionsResponse(false);
+      const reminder = fallback.subscriptions.REMINDER_CONFIRMATION;
       return c.json({
-        configured: false,
-        authenticated: false,
-        enabled: false,
-        optInAt: null,
+        configured: fallback.configured && reminder.configured,
+        authenticated: fallback.authenticated,
+        enabled: reminder.enabled,
+        optInAt: reminder.optInAt,
       });
     }
 
     const sessionSecret = resolveOAuthSessionSecret();
     if (!sessionSecret) {
+      const fallback = await buildAnonymousSubscriptionsResponse(false);
+      const reminder = fallback.subscriptions.REMINDER_CONFIRMATION;
       return c.json({
-        configured: false,
-        authenticated: false,
-        enabled: false,
-        optInAt: null,
+        configured: fallback.configured && reminder.configured,
+        authenticated: fallback.authenticated,
+        enabled: reminder.enabled,
+        optInAt: reminder.optInAt,
       });
     }
     const sessionPayload = await readSignedCookiePayload(
@@ -485,32 +696,35 @@ export const wechatRoute = app
 
     if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
       clearOAuthSessionCookie(c);
+      const fallback = await buildAnonymousSubscriptionsResponse(true);
+      const reminder = fallback.subscriptions.REMINDER_CONFIRMATION;
       return c.json({
-        configured: true,
-        authenticated: false,
-        enabled: false,
-        optInAt: null,
+        configured: fallback.configured && reminder.configured,
+        authenticated: fallback.authenticated,
+        enabled: reminder.enabled,
+        optInAt: reminder.optInAt,
       });
     }
 
     const user = await userRepo.findByOpenId(sessionPayload.openId);
     if (!user) {
+      const fallback = await buildAnonymousSubscriptionsResponse(true);
+      const reminder = fallback.subscriptions.REMINDER_CONFIRMATION;
       return c.json({
-        configured: true,
+        configured: fallback.configured && reminder.configured,
         authenticated: true,
-        enabled: false,
-        optInAt: null,
+        enabled: reminder.enabled,
+        optInAt: reminder.optInAt,
       });
     }
-    const notificationOpt = await userNotificationOptRepo.findByUserId(user.id);
+    const fullState = await buildAuthenticatedSubscriptionsResponse(user.id);
+    const reminder = fullState.subscriptions.REMINDER_CONFIRMATION;
 
     return c.json({
-      configured: true,
-      authenticated: true,
-      enabled: notificationOpt?.wechatReminderOptIn ?? false,
-      optInAt: notificationOpt?.wechatReminderOptInAt
-        ? notificationOpt.wechatReminderOptInAt.toISOString()
-        : null,
+      configured: fullState.configured && reminder.configured,
+      authenticated: fullState.authenticated,
+      enabled: reminder.enabled,
+      optInAt: reminder.optInAt,
     });
   })
   .post(
@@ -544,27 +758,31 @@ export const wechatRoute = app
 
       const { enabled } = c.req.valid("json");
       const updatedNotificationOpt =
-        await userNotificationOptRepo.upsertWechatReminderSubscription(
+        await userNotificationOptRepo.upsertWechatNotificationSubscription(
         user.id,
+        "REMINDER_CONFIRMATION",
         enabled,
       );
       if (!updatedNotificationOpt) {
         return c.json({ error: "Failed to update reminder subscription" }, 500);
       }
-
-      let deletedJobs = 0;
-      if (enabled) {
-        await rebuildWeChatReminderJobsForUser(user.id);
-      } else {
-        deletedJobs = await cancelWeChatReminderJobsForUser(user.id);
-      }
+      const snapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+        updatedNotificationOpt,
+        "REMINDER_CONFIRMATION",
+      );
+      const deletedJobs = await applyNotificationSubscriptionSideEffects(
+        user.id,
+        "REMINDER_CONFIRMATION",
+        enabled,
+      );
+      const fullState = await buildAuthenticatedSubscriptionsResponse(user.id);
+      const reminder = fullState.subscriptions.REMINDER_CONFIRMATION;
 
       return c.json({
         ok: true,
-        enabled: updatedNotificationOpt.wechatReminderOptIn,
-        optInAt: updatedNotificationOpt.wechatReminderOptInAt
-          ? updatedNotificationOpt.wechatReminderOptInAt.toISOString()
-          : null,
+        enabled: snapshot.enabled,
+        optInAt: snapshot.optInAt ? snapshot.optInAt.toISOString() : null,
+        configured: fullState.configured && reminder.configured,
         deletedJobs,
       });
     },

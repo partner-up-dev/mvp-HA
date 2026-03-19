@@ -8,18 +8,27 @@ import {
 } from "@/shared/api/error";
 import { handleWeChatAuthRequiredError } from "@/processes/wechat/auth-error";
 
-type UpdateWeChatReminderSubscriptionInput = {
+type WeChatNotificationKind =
+  | "REMINDER_CONFIRMATION"
+  | "BOOKING_RESULT"
+  | "NEW_PARTNER";
+
+type UpdateWeChatNotificationSubscriptionInput = {
+  kind: WeChatNotificationKind;
   enabled: boolean;
 };
 
-export const useUpdateWeChatReminderSubscription = () => {
+export const useUpdateWeChatNotificationSubscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ enabled }: UpdateWeChatReminderSubscriptionInput) => {
-      const res = await client.api.wechat.reminders.subscription.$post(
+    mutationFn: async ({
+      kind,
+      enabled,
+    }: UpdateWeChatNotificationSubscriptionInput) => {
+      const res = await client.api.wechat.notifications.subscriptions.$post(
         {
-          json: { enabled },
+          json: { kind, enabled },
         },
         {
           init: {
@@ -32,10 +41,17 @@ export const useUpdateWeChatReminderSubscription = () => {
         const payload = await readApiErrorPayload(res);
         if (
           typeof window !== "undefined" &&
-          handleWeChatAuthRequiredError(res.status, payload, window.location.href)
+          handleWeChatAuthRequiredError(
+            res.status,
+            payload,
+            window.location.href,
+          )
         ) {
           throw new Error(
-            resolveApiErrorMessage(payload, i18n.global.t("prPage.wechatReminder.loginHint")),
+            resolveApiErrorMessage(
+              payload,
+              i18n.global.t("prPage.wechatReminder.loginHint"),
+            ),
           );
         }
 
@@ -51,10 +67,10 @@ export const useUpdateWeChatReminderSubscription = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.wechat.reminderSubscription(),
+        queryKey: queryKeys.wechat.notificationSubscriptions(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.wechat.notificationSubscriptions(),
+        queryKey: queryKeys.wechat.reminderSubscription(),
       });
     },
   });

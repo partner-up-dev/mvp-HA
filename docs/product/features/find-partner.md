@@ -56,12 +56,18 @@
   - `T-30min` 后禁止加入（event locked）。
 - Anchor PR 详情页提供“确认参与”动作，调用 `POST /api/apr/:id/confirm` 使槽位进入 `CONFIRMED`（若尚未确认）。
 - Anchor PR 详情页提供可选签到反馈（我已到场 / 我未到场），调用 `POST /api/apr/:id/check-in`；`didAttend=true` 时槽位进入 `ATTENDED`。
-- 仅 Anchor PR 详情页提供“公众号提醒”开关，查询/更新接口为：
+- `/me` 与 Anchor PR 详情页共用“通知订阅”卡片，查询/更新接口为：
+  - `GET /api/wechat/notifications/subscriptions`
+  - `POST /api/wechat/notifications/subscriptions`（`kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER"`, `enabled: boolean`）
+- 兼容接口仍保留：
   - `GET /api/wechat/reminders/subscription`
-  - `POST /api/wechat/reminders/subscription`（`enabled: boolean`）
-- 开启提醒后，系统会为已加入的 Anchor PR 槽位调度 `T-24h` 与 `T-2h` 提醒任务。
-- 订阅通知模板 ID 通过后端配置表 key `wechat.submsg_confirmation_reminder_template_id` 读取；若为空则回退环境变量 `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`。
-- Anchor PR 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
+  - `POST /api/wechat/reminders/subscription`（映射到 `REMINDER_CONFIRMATION`）
+- `REMINDER_CONFIRMATION` 开启后，系统会为已加入的 Anchor PR 槽位调度 `T-24h` 与 `T-2h` 提醒任务。
+- `REMINDER_CONFIRMATION` 订阅通知模板 ID 通过后端配置表 key `wechat.submsg_confirmation_reminder_template_id` 读取。
+- Anchor PR 退出、自动释放或关闭 `REMINDER_CONFIRMATION` 时，系统会删除对应未执行提醒任务（`PENDING/RETRY`）。
+- `NEW_PARTNER` 开启后，系统会在 Anchor PR 有新参与者加入时，向同 PR 其他活跃参与者发送订阅通知。
+- `NEW_PARTNER` 模板 ID 通过后端配置表 key `wechat.submsg_new_partner_template_id` 读取。
+- `BOOKING_RESULT` 当前仅支持开关持久化，不触发发送链路。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 - 当 `OPEN` 状态 PR 修改时间窗口时，系统会对当前所有活跃参与者执行同一时间冲突校验；若任一参与者发生冲突则拒绝本次修改（`409`，`JOIN_TIME_WINDOW_CONFLICT`）。
 - 创建者编辑规则：JWT `authenticated/service` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
@@ -98,6 +104,9 @@
 - `POST /api/wechat/reminders/subscription` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - 开启提醒后会创建具备 dedupe 的延迟任务；关闭提醒后会删除对应未执行任务并返回删除数量。
 - 提醒任务执行后会写入 `notification_deliveries`（包含 `result/errorCode/jobId`）。
+- `GET /api/wechat/notifications/subscriptions` 会按通知项返回 `enabled/optInAt/configured`。
+- `POST /api/wechat/notifications/subscriptions` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
+- `POST /api/wechat/notifications/subscriptions` 的 `kind=NEW_PARTNER` 关闭时会清理未执行的新搭子通知任务。
 - 仅 Anchor PR 在 `T-30min` 之后拒绝 join 请求（400）。
 - 仅 Anchor PR 在到达 `T-1h` 且槽位未确认时，会在读取/操作时懒触发自动释放，保证结构状态收敛。
 - 编辑弹窗与结构化创建页使用同一表单组件与同一校验逻辑。
