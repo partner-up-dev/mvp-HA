@@ -282,6 +282,17 @@ const clearOAuthStateCookie = (c: Context): void => {
   deleteCookie(c, OAUTH_STATE_COOKIE_NAME, resolveCookieBaseOptions(c));
 };
 
+const resolveOAuthStateCookieName = (nonce: string): string =>
+  `${OAUTH_STATE_COOKIE_NAME}_${nonce}`;
+
+const clearOAuthStateCookieByNonce = (c: Context, nonce: string): void => {
+  deleteCookie(
+    c,
+    resolveOAuthStateCookieName(nonce),
+    resolveCookieBaseOptions(c),
+  );
+};
+
 const clearOAuthSessionCookie = (c: Context): void => {
   deleteCookie(c, OAUTH_SESSION_COOKIE_NAME, resolveCookieBaseOptions(c));
 };
@@ -420,6 +431,16 @@ const setOAuthStateCookie = async (
   if (!sessionSecret) {
     throw new Error("WeChat OAuth state secret is not configured");
   }
+  await setSignedCookie(
+    c,
+    resolveOAuthStateCookieName(payload.nonce),
+    encodeSignedPayload(payload),
+    sessionSecret,
+    {
+      ...resolveCookieBaseOptions(c),
+      maxAge: OAUTH_STATE_TTL_SECONDS,
+    },
+  );
   await setSignedCookie(
     c,
     OAUTH_STATE_COOKIE_NAME,
@@ -916,33 +937,45 @@ export const wechatRoute = app
       const useMockOAuthFlow =
         isWeChatAbilityMockingEnabled() && code === OAUTH_MOCK_CODE;
       if (!useMockOAuthFlow && !oauthService.isConfigured()) {
+        clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         return c.json({ error: "WeChat OAuth is not configured" }, 503);
       }
 
       const sessionSecret = resolveOAuthSessionSecret();
       if (!sessionSecret) {
+        clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         return c.json({ error: "WeChat OAuth is not configured" }, 503);
       }
-      const statePayload = await readSignedCookiePayload(
-        c,
-        OAUTH_STATE_COOKIE_NAME,
-        sessionSecret,
-        oauthStateCookiePayloadSchema,
-      );
+      const statePayload =
+        (await readSignedCookiePayload(
+          c,
+          resolveOAuthStateCookieName(state),
+          sessionSecret,
+          oauthStateCookiePayloadSchema,
+        )) ??
+        (await readSignedCookiePayload(
+          c,
+          OAUTH_STATE_COOKIE_NAME,
+          sessionSecret,
+          oauthStateCookiePayloadSchema,
+        ));
 
       if (!statePayload) {
+        clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         return c.json({ error: "Invalid OAuth state" }, 400);
       }
 
       if (statePayload.expiresAtMs <= nowMs()) {
+        clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         return c.json({ error: "OAuth state expired" }, 400);
       }
 
       if (statePayload.nonce !== state) {
+        clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         return c.json({ error: "OAuth state mismatch" }, 400);
       }
@@ -958,6 +991,7 @@ export const wechatRoute = app
 
           await bindWeChatToCurrentUser(statePayload.bindUserId, bindOpenId);
           await setOAuthSessionCookie(c, bindOpenId);
+          clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
 
           return c.redirect(
@@ -974,9 +1008,11 @@ export const wechatRoute = app
         }
         await setOAuthSessionCookie(c, loginOpenId);
 
+        clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         return c.redirect(statePayload.returnTo, 302);
       } catch (error) {
+        clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         if (statePayload.mode === "bind") {
           const bindResult =
