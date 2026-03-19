@@ -8,6 +8,7 @@ import { partnerRequests } from "../../../entities/partner-request";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partners } from "../../../entities/partner";
 import { resolveDesiredSlotCount } from "../../pr-core/services/slot-management.service";
+import { assertNoUserTimeWindowConflict } from "../../pr-core/services/participation-time-conflict.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { normalizeUserLocationPool } from "../../../entities/anchor-event";
 import { resolveAnchorPartnerBoundsFromEvent } from "../services/anchor-partner-bounds";
@@ -135,6 +136,11 @@ export const createUserAnchorPR = async ({
     resolveUserByOpenId(openId),
   ]);
   const { event, batch, userLocation } = context;
+
+  await assertNoUserTimeWindowConflict({
+    userId: user.id,
+    targetTimeWindow: batch.timeWindow,
+  });
 
   const bounds = resolveAnchorPartnerBoundsFromEvent({
     defaults: {

@@ -1,213 +1,272 @@
-# PLAN - AnchorPRPage IA Refactor v2
+# PLAN - AnchorPRPage IA Refactor v3 (First-Principles Redesign)
 
-## 1. Objective
+## 1. First-Principles Framing
 
-Refactor `/apr/:id` to an action-first, low-noise information architecture that:
+The page must answer only three questions, in order:
 
-- Removes redundant information (especially repeated time/timeline statements).
-- Makes primary participation actions obvious and sequential.
-- Demotes secondary actions (subscription/share/exit) so they do not compete with participation.
-- Keeps frontend structure maintainable with explicit action state contracts.
+1. Is this the right PR for me right now?
+2. What is the one action I should do now?
+3. If I cannot do it now, when/how can I do it?
 
-## 2. Hard Requirements (Locked)
+Design implications:
 
-### 2.1 Information order
+- Keep identity info lightweight in header (`title + type + status`).
+- Keep high-interest context grouped (`location + time + preferences + participation overview`).
+- Keep complex/low-priority finance context separate (`subsidy/reimbursement`).
+- Limit prominent actions to at most two at once.
+- Never hide future-step actions silently; show disabled with a clear tip.
 
-Render in this exact priority:
+## 2. Locked Requirements
 
-1. Type, status
+## 2.1 Information priorities
+
+1. Type, status (with title in header)
 2. Location, activity time
 3. Preferences
-4. Current participants (who joined), minimum required participants
+4. Current participants (who), minimum required
 5. Subsidy
 
-### 2.2 Action order
+## 2.2 Action priorities
 
-Primary action flow:
+Primary chain:
 
 1. Join
-2. Booking contact verification (if required)
-3. Confirm
-4. Check-in
-5. Reimbursement
+2. Confirm
+3. Check-in
+4. Reimbursement
 
-Secondary action flow:
+Constraint:
+
+- Booking Contact is not a peer action; it is a required step inside Join flow.
+
+Secondary chain:
 
 1. Notification subscription
 2. Share/invite
-3. Exit
+3. Exit (second confirmation required)
 
-### 2.3 Action gating rules
+## 2.3 State rules
 
-- Confirm:
-  - Visible after user has joined.
-  - Disabled before confirmation start time.
-- Check-in:
-  - Visible after user is confirmed.
-  - Disabled before activity start time.
-- Reimbursement:
-  - Always visible.
-  - Disabled before activity end and when no reimbursable resource exists.
-- Exit:
-  - Must require second confirmation.
-- Notification subscription:
-  - Layout must support future multiple subscription items (not single hard-coded switch).
+- Confirm: visible after joined; disabled before confirmation start.
+- Check-in: visible after confirmed; disabled before activity start.
+- Reimbursement: always visible; disabled before activity end or when no reimbursable resource.
+- Notification subscriptions: list layout must be extensible to multiple items.
 
-## 3. Current IA Defects (Mapped)
+## 3. IA v3 Blueprint
 
-1. Information redundancy:
-- Time appears in multiple places (`facts`, `timeline`, booking summary), forcing repeated parsing.
-- Explanatory copy is long and often repeats blocked reasons already encoded in state.
+## 3.1 Top-level structure (mobile-first)
 
-2. Hierarchy and layout issues:
-- Content is fragmented across many cards with weak priority transitions.
-- Share block is too visually strong relative to participation flow.
+1. **Header Strip** (lightweight identity)
+- Back
+- Title
+- Type badge
+- Status badge
+- Creator quick entry (if creator): `[Manage]` or `[Edit]`
 
-3. Action-state clarity issues:
-- Some actions are hidden instead of shown-disabled, so users cannot see upcoming steps.
-- Action progression is split across multiple lanes, reducing "what next" clarity.
-
-## 4. Target IA v2
-
-## 4.1 Page structure
-
-1. **Core Snapshot Card** (single source of truth for core info)
-- Type + Status
-- Location + Activity Time (shown once)
+2. **Context Card: Event Fit**
+- Location
+- Time
 - Preferences
-- Participants summary: current count, roster preview, min required
-- Subsidy summary
+- Participation overview:
+  - current participants count
+  - minimum required
+  - compact roster preview (avatar + name chips)
 
-2. **Primary Action Flow Card**
-- Ordered action stack:
-  - Join
-  - Booking contact verification
-  - Confirm
-  - Check-in
-  - Reimbursement
-- Each action row includes:
-  - state badge (`Ready` / `Locked` / `Done`)
-  - one-line reason when disabled
-  - one main button
+3. **Subsidy Card** (separate, closer to reimbursement)
+- subsidy headline
+- compact highlights
+- reimbursement availability hint
+- reimbursement button (always visible, can be disabled with reason)
 
-3. **Secondary Actions Card**
-- Extensible subscription list
-- Share/invite entry (collapsed by default)
-- Exit entry (danger style, least visual weight in this card, requires confirm modal)
+4. **Action Dock** (at most two prominent actions)
+- Slot A: Primary action (Now)
+- Slot B: Secondary action (Next/Utility)
+- Disabled states always show tip text
 
-4. **Context Card (Optional/Collapsible)**
-- Alternatives/recovery
-- Detailed timeline and booking details
-- Creator tools (only for creator)
+5. **Utility Card**
+- Notification subscriptions (extensible list)
+- Share/invite entry (low visual emphasis)
+- Exit entry (danger, second-confirm modal)
 
-Rule: the first screen on mobile must contain Core Snapshot + top of Primary Action Flow.
+6. **Optional Context (collapsed by default)**
+- alternatives/recovery
+- detailed timeline
+- booking-support deep details
 
-## 4.2 Anti-redundancy rules
+## 3.2 Priority discipline
 
-- Time is rendered once in Core Snapshot. Other cards only reference deltas (for example, "opens in 30m"), not full duplicated time text.
-- Status explanation copy is one sentence max per action.
-- No lane may repeat the same blocked reason text already shown in Primary Action Flow.
+- Header carries identity, not heavy explanations.
+- Event Fit card is the core "decision context" block.
+- Subsidy is intentionally isolated to avoid polluting core decision context.
+- Utilities never visually compete with primary action.
 
-## 5. Action Visibility and Enablement Matrix
+## 4. Interaction Model
 
-| Action | Visible when | Enabled when | Disabled reason source |
-| --- | --- | --- | --- |
-| Join | Viewer not participant | `viewer.canJoin` | `viewer.joinBlockedReason` |
-| Booking contact verify | booking contact is required and owner is current viewer | booking contact state is not verified | booking contact owner/state |
-| Confirm | viewer is participant and slot state is at least `JOINED` | `viewer.canConfirm` | `viewer.confirmBlockedReason`; before confirm start -> show exact open time |
-| Check-in | slot state is `CONFIRMED` or `ATTENDED` | `viewer.canCheckIn` | `viewer.checkInBlockedReason`; before event start -> show start time |
-| Reimbursement | always | `reimbursement.eligible && reimbursement.canRequest` and activity ended | reimbursement reason (`NO_POSTPAID_SUPPORT`, `PR_NOT_CLOSED`, etc.) |
-| Subscription item | item policy says visible | item policy says enabled | per-item state |
-| Share/invite | always | always | none |
-| Exit | viewer is participant | `viewer.canExit` | `viewer.exitBlockedReason`; click requires second confirm modal |
+## 4.1 Two-prominent-actions cap
 
-## 6. View Model Changes (Recommended for Maintainability)
+At any moment, show no more than two prominent controls:
 
-Keep domain rules server-derived. Add an explicit action view model in Anchor PR detail payload:
+- Primary: single strongest CTA for current stage.
+- Secondary: one adjacent utility/next step.
 
-```ts
-type AnchorPRActionState = {
-  join: { visible: boolean; enabled: boolean; reason: string | null };
-  bookingContact: { visible: boolean; enabled: boolean; reason: string | null };
-  confirm: { visible: boolean; enabled: boolean; reason: string | null; opensAt: string | null };
-  checkIn: { visible: boolean; enabled: boolean; reason: string | null; opensAt: string | null };
-  reimbursement: { visible: true; enabled: boolean; reason: string | null };
-  exit: { visible: boolean; enabled: boolean; reason: string | null; requiresSecondConfirm: true };
-  subscriptions: Array<{
-    key: string;
-    title: string;
-    description: string;
-    visible: boolean;
-    enabled: boolean;
-    stateLabel: string;
-    actionLabel: string;
-  }>;
-};
+Everything else remains low-emphasis rows/links.
+
+## 4.2 Join flow with embedded Booking Contact
+
+`Join` click opens a 2-step modal/sheet:
+
+1. Step 1: Join confirmation summary
+2. Step 2 (conditional): booking contact verify/authorize if required
+
+Outcome:
+
+- If booking contact verification succeeds, join completes in same flow.
+- No standalone Booking Contact action row on main page.
+
+## 4.3 Disabled-action tips
+
+- Every disabled primary-chain action must render one-line reason directly below control.
+- Tips use concrete time/value:
+  - Confirm: "Opens at 18:00"
+  - Check-in: "Available after event starts at 19:00"
+  - Reimbursement: "Available after event end" or "No reimbursable resource"
+
+## 5. Wireframes
+
+## 5.1 Participant Wireframe (Mobile)
+
+```text
++----------------------------------------------------------------------------------+
+| [Back]  PR Title                                         [Type] [Status]        |
++----------------------------------------------------------------------------------+
+| EVENT FIT                                                                        |
+| -------------------------------------------------------------------------------- |
+| Location: XX Court                                                               |
+| Time: 2026-03-21 19:00-21:00                                                     |
+| Preferences: [Beginner] [Friendly pace]                                          |
+| Participation: 3 joined | Min required: 4                                        |
+| Roster: [A] [B] [You]                                                            |
++----------------------------------------------------------------------------------+
+| SUBSIDY & REIMBURSEMENT                                                          |
+| -------------------------------------------------------------------------------- |
+| Subsidy: Postpaid reimbursement up to CNY 30                                     |
+| Hint: Request available after event ends                                         |
+| [Reimbursement] (disabled)                                                       |
+| tip: Event not ended yet                                                         |
++----------------------------------------------------------------------------------+
+| ACTION DOCK                                                                      |
+| -------------------------------------------------------------------------------- |
+| Primary (Now): [Confirm] (disabled)                                              |
+| tip: Confirmation opens at 2026-03-21 18:00                                      |
+| Secondary: [Subscribe Reminder]                                                  |
++----------------------------------------------------------------------------------+
+| UTILITIES                                                                        |
+| -------------------------------------------------------------------------------- |
+| Subscriptions                                                                    |
+| - Official account reminder                    [On/Off]                          |
+| - (Future subscription item placeholder)       [--]                              |
+| Share / Invite                               [Open]                              |
+| Exit PR                                      [Exit] -> second confirm modal      |
++----------------------------------------------------------------------------------+
+| OPTIONAL CONTEXT (collapsed)                                                     |
+| -------------------------------------------------------------------------------- |
+| [Expand] Alternatives / Timeline / Booking details                               |
++----------------------------------------------------------------------------------+
 ```
 
-If backend extension is deferred, frontend can derive this VM from existing `partnerSection`, booking contact, and reimbursement query, but target should remain server-owned.
+## 5.2 Creator Wireframe (Mobile)
 
-## 7. Frontend Refactor Plan
+```text
++----------------------------------------------------------------------------------+
+| [Back]  PR Title                          [Type] [Status]   [Manage] [Edit]      |
++----------------------------------------------------------------------------------+
+| EVENT FIT                                                                        |
+| -------------------------------------------------------------------------------- |
+| Location / Time / Preferences / Participation overview                           |
++----------------------------------------------------------------------------------+
+| SUBSIDY & REIMBURSEMENT                                                          |
+| -------------------------------------------------------------------------------- |
+| Subsidy summary + [Reimbursement]                                                |
++----------------------------------------------------------------------------------+
+| ACTION DOCK                                                                      |
+| -------------------------------------------------------------------------------- |
+| Primary (Now): [Manage Participants]                                             |
+| Secondary: [Cancel Activity] or [Participant Action]                             |
+| (still max 2 prominent controls)                                                 |
++----------------------------------------------------------------------------------+
+| UTILITIES                                                                        |
+| -------------------------------------------------------------------------------- |
+| Subscriptions / Share / Exit (low emphasis)                                      |
++----------------------------------------------------------------------------------+
+```
 
-## Phase A - IA shell replacement
+Creator-specific rule:
 
-- Replace current multi-lane composition in `apps/frontend/src/pages/AnchorPRPage.vue` with:
-  - `APRCoreSnapshotCard`
-  - `APRPrimaryActionFlow`
-  - `APRSecondaryActionsCard`
-  - optional `APRContextCard`
-- Remove duplicate timeline-heavy text from first-view lanes.
+- Management entry must be near header, not hidden in bottom optional context.
 
-## Phase B - Action flow behavior
+## 6. Stage-to-Action Mapping (Participant)
 
-- Build `useAPRActionFlowState` use-case that maps backend state to ordered action rows.
-- Show disabled states for confirm/check-in instead of hiding when future-step locked.
-- Add exit second-confirm modal.
+| Stage | Primary action | Secondary action | Disabled tip requirement |
+| --- | --- | --- | --- |
+| Not joined | Join | Subscribe reminder or Share | If Join disabled, show reason |
+| Joined, before confirm window | Confirm (disabled) | Subscribe reminder | show confirm open time |
+| Joined, inside confirm window | Confirm | Subscribe reminder | none if enabled |
+| Confirmed, before event start | Check-in (disabled) | Subscribe reminder | show event start time |
+| Confirmed, event started | Check-in | Share/invite | none if enabled |
+| Event ended | Reimbursement (enabled or disabled by resource) | Share/invite | show reimbursement reason if disabled |
 
-## Phase C - Subscription and share demotion
+## 7. Data and Component Changes
 
-- Replace single reminder block with extensible list component `APRSubscriptionList`.
-- Move share UI under secondary card and collapse it by default.
-- Keep share functionality unchanged; change only IA placement and emphasis.
+## 7.1 Frontend composition target
 
-## Phase D - Reimbursement action integration
+- `AnchorPRPage.vue` becomes role-aware composer:
+  - `APRHeaderStrip`
+  - `APREventFitCard`
+  - `APRSubsidyCard`
+  - `APRActionDock`
+  - `APRUtilitiesCard`
+  - `APRContextCollapse`
 
-- Add reimbursement row to primary flow on AnchorPRPage.
-- Reuse existing reimbursement status query.
-- Button routes to `/apr/:id/booking-support` reimbursement area (or opens modal entry), with disabled reason shown inline.
+## 7.2 Use-case layer
 
-## Phase E - Copy and telemetry cleanup
+- Add `useAPRRoleAwareActions`:
+  - resolves `primaryAction`, `secondaryAction`
+  - enforces max-two-prominent-actions
+  - provides disabled tips
 
-- Shorten action descriptions to one line.
-- Keep/extend analytics:
-  - `anchor_pr_primary_cta_impression`
-  - `anchor_pr_primary_cta_click`
-  - `anchor_pr_secondary_action_click`
-  - new: `anchor_pr_action_disabled_impression` (action key + reason code)
+- Add `useAPRJoinFlow`:
+  - handles modal step sequence
+  - embeds booking contact verification inside join
 
-## 8. Backend Alignment Tasks
+## 7.3 Backend/view-model alignment (recommended)
 
-1. Ensure confirm/check-in blocked reasons are stable and machine-readable.
-2. Verify reimbursement gating aligns with "before activity end disabled":
-- If `PR_NOT_CLOSED` is not equivalent to "activity not ended", add explicit reason and timestamp support.
-3. Provide subscription items as a list-ready structure for future expansion.
+- Keep blocked reasons machine-readable.
+- Ensure reimbursement reason can explicitly represent:
+  - activity not ended
+  - no reimbursable resource
+- Provide list-ready subscription items (not single hard-coded toggle).
+
+## 8. Delivery Phases
+
+1. IA shell rewrite (header/event-fit/subsidy/action-dock/utilities).
+2. Role-aware action resolver with two-action cap.
+3. Join modal with embedded booking-contact step.
+4. Subsidy-reimbursement proximity and disabled-tip polish.
+5. Creator quick entries near header.
+6. Utility demotion and extensible subscription list.
+7. Build verification.
 
 ## 9. Acceptance Criteria
 
-1. Information appears in required order with no repeated full time blocks.
-2. Primary action flow order is fixed as requested.
-3. Confirm/check-in/reimbursement follow required visibility and disabled behavior.
-4. Exit always requires second confirmation.
-5. Subscription UI supports multiple items without layout rewrite.
-6. Share/invite is clearly secondary and no longer competes with primary flow.
-7. Frontend and backend builds pass:
+1. Header includes title/type/status and creator quick entry (if creator).
+2. Event Fit card contains only location/time/preferences/participation overview.
+3. Subsidy is in a separate card near reimbursement action.
+4. Booking contact is integrated into join flow, not shown as peer action.
+5. Page shows at most two prominent actions at once.
+6. Disabled primary-chain actions always include one-line tips.
+7. Confirm/check-in/reimbursement visibility and disabled behavior match locked rules.
+8. Exit requires second confirmation.
+9. Notification subscription UI supports future multiple items.
+10. Frontend/backend build passes:
 - `pnpm --filter @partner-up-dev/frontend build`
 - `pnpm --filter @partner-up-dev/backend build`
-
-## 10. Delivery Sequence
-
-1. IA shell + component split.
-2. Action state VM + disabled-state rendering.
-3. Secondary action demotion + extensible subscription list.
-4. Reimbursement row integration.
-5. Copy cleanup, analytics, and build verification.

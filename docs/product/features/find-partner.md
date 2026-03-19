@@ -49,6 +49,7 @@
 - Community PR 加入成功时对应 `Partner.status` 置为 `JOINED`。
 - Anchor PR 在 `T-1h~T-30min` 窗口加入时会立即置为 `CONFIRMED`。
 - `POST /api/cpr/:id/join` 与 `POST /api/apr/:id/join` 会在加入前校验“用户已加入且仍为非终态（非 `CLOSED/EXPIRED`）”的 PR 时间窗口是否与目标 PR 重叠；若重叠则拒绝加入（`409`，`code=JOIN_TIME_WINDOW_CONFLICT`）。
+- `POST /api/cpr/:id/publish` 与 `POST /api/events/:eventId/batches/:batchId/anchor-prs`（用户创建 Anchor PR）也会应用相同时间冲突校验；因为发布/创建后创建者会自动占用一个参与槽位。
 - 时间窗口重叠判定使用半开区间（`a.start < b.end && b.start < a.end`），边界相接（`end == start`）不算重叠；任一窗口不可比较（缺失/无法解析/`end <= start`）则跳过该对比。
 - 仅 Anchor PR 存在以下确认窗口规则：
   - `T-1h` 时刻会自动释放仍为 `JOINED` 的槽位（变为 `RELEASED` 并从 PR 当前参与列表移除）。
@@ -62,6 +63,7 @@
 - 订阅通知模板 ID 通过后端配置表 key `wechat.submsg_confirmation_reminder_template_id` 读取；若为空则回退环境变量 `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`。
 - Anchor PR 退出、自动释放或关闭提醒时，系统会删除对应未执行的提醒任务（`PENDING/RETRY`）。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
+- 当 `OPEN` 状态 PR 修改时间窗口时，系统会对当前所有活跃参与者执行同一时间冲突校验；若任一参与者发生冲突则拒绝本次修改（`409`，`JOIN_TIME_WINDOW_CONFLICT`）。
 - 创建者编辑规则：JWT `authenticated/service` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
 - 活动详情页（`/events/:eventId`）支持 `Card/List` 双模式切换：
   - `List`：保留批次 tab + PR 列表 + 创建卡片。
@@ -89,6 +91,7 @@
 - 新创建请求会按 `min/max` 创建槽位；当前参与人数由 `partners.pr_id` 下处于活跃状态的槽位动态聚合。
 - `POST /api/cpr/:id/join` 在当前无本地账户时会自动创建本地用户并返回鉴权上下文（含必要时新生成 PIN）。
 - `POST /api/cpr/:id/join` 与 `POST /api/apr/:id/join` 在用户已加入其它非终态且时间重叠的 PR 时返回 `409`，错误码 `JOIN_TIME_WINDOW_CONFLICT`。
+- `POST /api/cpr/:id/publish` 与 `POST /api/events/:eventId/batches/:batchId/anchor-prs` 在创建者时间冲突时也返回 `409`，错误码 `JOIN_TIME_WINDOW_CONFLICT`。
 - `POST /api/cpr/:id/exit` 依赖本地账户鉴权上下文，不要求微信登录态。
 - `POST /api/apr/:id/join`、`POST /api/apr/:id/exit`、`POST /api/apr/:id/confirm`、`POST /api/apr/:id/check-in` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - `GET /api/cpr/:id/partners/:partnerId/profile` 与 `GET /api/apr/:id/partners/:partnerId/profile` 仅在目标 slot 属于当前 PR 且为活跃参与状态时返回资料；否则返回 404。
@@ -98,6 +101,7 @@
 - 仅 Anchor PR 在 `T-30min` 之后拒绝 join 请求（400）。
 - 仅 Anchor PR 在到达 `T-1h` 且槽位未确认时，会在读取/操作时懒触发自动释放，保证结构状态收敛。
 - 编辑弹窗与结构化创建页使用同一表单组件与同一校验逻辑。
+- `PATCH /api/cpr/:id/content` 与 `PATCH /api/apr/:id/content` 在修改时间导致任一活跃参与者产生冲突时返回 `409`，错误码 `JOIN_TIME_WINDOW_CONFLICT`。
 
 ## 涉及端
 

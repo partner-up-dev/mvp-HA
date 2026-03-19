@@ -328,13 +328,34 @@ const isCreatePending = computed(
     publishCommunityPRMutation.isPending.value,
 );
 
-const createActionErrorMessage = computed(
-  () =>
-    createUserAnchorPRMutation.error.value?.message ??
+const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
+const createActionErrorMessage = computed(() => {
+  const createAnchorError = createUserAnchorPRMutation.error
+    .value as CreateUserAnchorPRError | null;
+  if (createAnchorError) {
+    switch (createAnchorError.code) {
+      case JOIN_TIME_WINDOW_CONFLICT_CODE:
+        return t("anchorEvent.createCard.errors.timeWindowConflict");
+      case "WECHAT_AUTH_REQUIRED":
+        return t("anchorEvent.createCard.errors.wechatAuthRequired");
+      case "WECHAT_OAUTH_NOT_CONFIGURED":
+        return t("anchorEvent.createCard.errors.wechatOAuthNotConfigured");
+      case "LOCATION_CAP_REACHED":
+        return t("anchorEvent.createCard.errors.locationCapReached");
+      case "ANCHOR_EVENT_NOT_FOUND":
+      case "ANCHOR_EVENT_BATCH_NOT_FOUND":
+        return t("anchorEvent.createCard.errors.eventUnavailable");
+      default:
+        return t("anchorEvent.createCard.errors.createFailed");
+    }
+  }
+
+  return (
     createCommunityPRMutation.error.value?.message ??
     publishCommunityPRMutation.error.value?.message ??
-    null,
-);
+    null
+  );
+});
 
 const goBackToPlaza = () => {
   router.push({ name: "event-plaza" });

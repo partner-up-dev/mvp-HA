@@ -12,6 +12,7 @@ import {
 import { resolveUserByOpenId } from "../services/user-resolver.service";
 import { ensureUserHasPin } from "../services/user-pin-auth.service";
 import { recalculatePRStatus } from "../services/slot-management.service";
+import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
@@ -104,6 +105,12 @@ export async function publishPR(
     generatedUserPin = creator.generatedUserPin;
     await prRepo.setCreatedBy(id, creatorUserId);
   }
+
+  await assertNoUserTimeWindowConflict({
+    userId: creatorUserId,
+    targetTimeWindow: request.time,
+    excludePrId: id,
+  });
 
   const updated = await prRepo.updateStatus(id, "OPEN");
   if (!updated) {

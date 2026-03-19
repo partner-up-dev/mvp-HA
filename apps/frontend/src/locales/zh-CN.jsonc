@@ -928,7 +928,15 @@
       "createAction": "创建搭子请求",
       "creatingAction": "创建中...",
       "optionMaxReached": "{locationId}（已达上限）",
-      "optionRemaining": "{locationId}（剩余 {count}）"
+      "optionRemaining": "{locationId}（剩余 {count}）",
+      "errors": {
+        "timeWindowConflict": "你加入的其它搭子请求与此时间冲突。",
+        "wechatAuthRequired": "请先完成微信登录，再创建活动搭子请求。",
+        "wechatOAuthNotConfigured": "当前环境暂未配置微信登录，暂时无法创建活动搭子请求。",
+        "locationCapReached": "该地点当前批次名额已满，请选择其他地点。",
+        "eventUnavailable": "当前活动场次不可用，请刷新后重试。",
+        "createFailed": "创建活动搭子请求失败，请稍后重试。"
+      }
     }
   },
   "prStatus": {

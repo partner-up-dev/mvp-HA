@@ -60,6 +60,7 @@
 - [ ] min-partners 必须大于1 （记得告诉 NL parsing LLM）
 - [ ] Community PR 允许提供一张图，空间会大很多（但是注意内容审查）
 - [x] 【MUST】时间冲突，不可加入
+  - [ ] Publish PR / Create APR 也需要检查时间冲突
 
 ### Detail Page
 

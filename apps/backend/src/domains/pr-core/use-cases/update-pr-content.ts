@@ -12,6 +12,7 @@ import {
   syncSlotCapacity,
   recalculatePRStatus,
 } from "../services/slot-management.service";
+import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
@@ -45,12 +46,35 @@ export async function updatePRContent(
   const minMaxChanged =
     refreshedRequest.minPartners !== fields.minPartners ||
     refreshedRequest.maxPartners !== fields.maxPartners;
+  const timeChanged =
+    refreshedRequest.time[0] !== fields.time[0] ||
+    refreshedRequest.time[1] !== fields.time[1];
   const currentParticipants = await partnerRepo.countActiveByPrId(id);
   assertPartnerBoundsValid(
     fields.minPartners,
     fields.maxPartners,
     currentParticipants,
   );
+
+  if (timeChanged && refreshedRequest.status !== "DRAFT") {
+    const activeParticipants =
+      await partnerRepo.listActiveParticipantSummariesByPrId(id);
+    const participantUserIds = Array.from(
+      new Set(
+        activeParticipants
+          .map((participant) => participant.userId)
+          .filter((userId): userId is UserId => userId !== null),
+      ),
+    );
+
+    for (const participantUserId of participantUserIds) {
+      await assertNoUserTimeWindowConflict({
+        userId: participantUserId,
+        targetTimeWindow: fields.time,
+        excludePrId: id,
+      });
+    }
+  }
 
   const updated = await prRepo.updateFields(id, fields);
   if (!updated) {
