@@ -29,7 +29,9 @@ type CodedHttpException = HTTPException & {
   code?: string;
 };
 
-const readSessionOpenId = async (c: Context<AuthEnv>): Promise<string | null> => {
+const readSessionOpenId = async (
+  c: Context<AuthEnv>,
+): Promise<string | null> => {
   const sessionPayload = await readOAuthSession(c);
   if (!sessionPayload) {
     return null;
@@ -55,12 +57,18 @@ export const nlWordCountSchema = createNaturalLanguagePRSchema.refine(
 
 export const updateStatusSchema = z.object({
   status: prStatusManualSchema,
-  pin: z.string().regex(/^\d{4}$/, "PIN must be 4 digits").optional(),
+  pin: z
+    .string()
+    .regex(/^\d{4}$/, "PIN must be 4 digits")
+    .optional(),
 });
 
 export const updateContentSchema = z.object({
   fields: partnerRequestFieldsSchema,
-  pin: z.string().regex(/^\d{4}$/, "PIN must be 4 digits").optional(),
+  pin: z
+    .string()
+    .regex(/^\d{4}$/, "PIN must be 4 digits")
+    .optional(),
 });
 
 export const prIdParamSchema = z.object({
@@ -202,7 +210,9 @@ export const requireAnchorAuthenticatedIdentity = async (
 
     const bound = await userRepo.bindOpenId(user.id, sessionOpenId);
     if (!bound) {
-      throw new HTTPException(500, { message: "Failed to bind WeChat account" });
+      throw new HTTPException(500, {
+        message: "Failed to bind WeChat account",
+      });
     }
 
     return {
@@ -215,7 +225,7 @@ export const requireAnchorAuthenticatedIdentity = async (
     return throwCodedHttpException(
       401,
       "Current account is not bound to this WeChat session",
-      WECHAT_BIND_REQUIRED_CODE,
+      WECHAT_AUTH_REQUIRED_CODE,
     );
   }
 

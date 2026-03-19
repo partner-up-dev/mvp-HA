@@ -3,7 +3,10 @@ import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/analytics/track";
-import { useExitAnchorPR, useJoinAnchorPR } from "@/domains/pr/queries/useAnchorPR";
+import {
+  useExitAnchorPR,
+  useJoinAnchorPR,
+} from "@/domains/pr/queries/useAnchorPR";
 import {
   useExitCommunityPR,
   useJoinCommunityPR,
@@ -15,6 +18,8 @@ const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
 const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
 const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
 const WECHAT_PHONE_VERIFY_FAILED_CODE = "WECHAT_PHONE_VERIFY_FAILED";
+const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
+const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 
 type JoinActionOptions = {
   wechatPhoneCredential?: string | null;
@@ -59,8 +64,12 @@ export const useSharedPRActions = ({
     return String(idValue);
   });
 
-  const canJoin = computed(() => pr.value?.partnerSection.viewer.canJoin ?? false);
-  const canExit = computed(() => pr.value?.partnerSection.viewer.canExit ?? false);
+  const canJoin = computed(
+    () => pr.value?.partnerSection.viewer.canJoin ?? false,
+  );
+  const canExit = computed(
+    () => pr.value?.partnerSection.viewer.canExit ?? false,
+  );
 
   const showEditContentAction = computed(() => {
     const status = pr.value?.status;
@@ -98,6 +107,12 @@ export const useSharedPRActions = ({
     }
     if (error.code === WECHAT_PHONE_VERIFY_FAILED_CODE) {
       return t("prPage.bookingContact.verifyFailed");
+    }
+    if (
+      error.code === WECHAT_AUTH_REQUIRED_CODE ||
+      error.code === WECHAT_BIND_REQUIRED_CODE
+    ) {
+      return t("prPage.wechatLoginRequired");
     }
     return null;
   });
@@ -153,7 +168,9 @@ export const useSharedPRActions = ({
   };
 
   function resolveSlotStateText(
-    slotState: PRDetailView["partnerSection"]["viewer"]["slotState"] | undefined,
+    slotState:
+      | PRDetailView["partnerSection"]["viewer"]["slotState"]
+      | undefined,
   ): string {
     switch (slotState) {
       case "JOINED":
