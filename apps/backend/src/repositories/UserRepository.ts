@@ -1,6 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
-import { users, type NewUser, type UserId } from "../entities/user";
+import {
+  users,
+  type NewUser,
+  type UserId,
+  type UserSex,
+} from "../entities/user";
 import { userReliability } from "../entities/user-reliability";
 import { userNotificationOpts } from "../entities/user-notification-opt";
 
@@ -30,7 +35,10 @@ export class UserRepository {
   }
 
   async findByOpenId(openId: string) {
-    const result = await db.select().from(users).where(eq(users.openId, openId));
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.openId, openId));
     return result[0] ?? null;
   }
 
@@ -89,6 +97,28 @@ export class UserRepository {
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async upgradeAnonymousUserWithWeChat(input: {
+    userId: UserId;
+    openId: string;
+    nickname: string | null;
+    sex: UserSex | null;
+    avatar: string | null;
+  }) {
+    const result = await db
+      .update(users)
+      .set({
+        openId: input.openId,
+        nickname: input.nickname,
+        sex: input.sex,
+        avatar: input.avatar,
+        role: "authenticated",
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, input.userId))
       .returning();
     return result[0] ?? null;
   }

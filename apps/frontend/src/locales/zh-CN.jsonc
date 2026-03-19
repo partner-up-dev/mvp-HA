@@ -314,9 +314,9 @@
       "title": "通知订阅",
       "items": {
         "REMINDER_CONFIRMATION": {
-          "title": "公众号提醒",
-          "enabledHint": "已开启提醒：活动前 24 小时和 2 小时会发送通知。",
-          "disabledHint": "提醒已关闭，可随时开启。"
+          "title": "确认席位提醒",
+          "enabledHint": "已开启确认席位提醒：活动前 24 小时和 2 小时会发送通知。",
+          "disabledHint": "确认席位提醒已关闭，可随时开启。"
         },
         "BOOKING_RESULT": {
           "title": "场地预订结果",

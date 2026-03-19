@@ -4,6 +4,7 @@ import { zValidator } from "@hono/zod-validator";
 import { HTTPException } from "hono/http-exception";
 import {
   authMiddleware,
+  issueAnonymousAuth,
   issueAuthForUser,
   readLocalCredentialHeaders,
 } from "../auth/middleware";
@@ -16,13 +17,22 @@ import {
   verifyUserPin,
 } from "../domains/pr-core/services/user-pin-auth.service";
 import { registerLocalUser } from "../domains/user/use-cases/register-local-user";
+import { registerAnonymousUser } from "../domains/user/use-cases/register-anonymous-user";
+import {
+  clearAnonymousSessionCookie,
+  setAnonymousSessionCookie,
+} from "../auth/anonymous-session";
 
 const app = new Hono<AuthEnv>();
 const userRepo = new UserRepository();
 
 const authSessionSchema = z.object({
   userId: z.string().trim().min(1).optional().nullable(),
-  userPin: z.string().regex(/^\d{4}$/).optional().nullable(),
+  userPin: z
+    .string()
+    .regex(/^\d{4}$/)
+    .optional()
+    .nullable(),
 });
 
 const adminLoginSchema = z.object({
@@ -66,6 +76,23 @@ export const authRoute = app
     const registered = await registerLocalUser();
     return c.json(registered);
   })
+  .post("/register/anonymous", async (c) => {
+    const auth = c.get("auth");
+    if (auth.role === "anonymous" && auth.userId) {
+      await setAnonymousSessionCookie(c, auth.userId);
+      return c.json({
+        role: "anonymous",
+        userId: auth.userId,
+        userPin: null,
+        accessToken: auth.token,
+      });
+    }
+
+    const registered = await registerAnonymousUser();
+    await setAnonymousSessionCookie(c, registered.userId);
+
+    return c.json(registered);
+  })
   .post("/session", zValidator("json", authSessionSchema), async (c) => {
     const auth = c.get("auth");
     if (auth.role !== "anonymous" && auth.userId) {
@@ -107,6 +134,7 @@ export const authRoute = app
       const ensured = await ensureUserHasPin(oauthUser);
       const authenticated = issueAuthForUser(ensured.user);
       c.set("auth", authenticated);
+      clearAnonymousSessionCookie(c);
 
       return c.json({
         role: authenticated.role,
@@ -116,10 +144,20 @@ export const authRoute = app
       });
     }
 
+    if (auth.role === "anonymous" && auth.userId) {
+      return c.json({
+        role: auth.role,
+        userId: auth.userId,
+        userPin: null,
+        accessToken: auth.token,
+      });
+    }
+
+    const anonymous = issueAnonymousAuth(null);
     return c.json({
       role: "anonymous" as const,
       userId: null,
       userPin: null,
-      accessToken: auth.token,
+      accessToken: anonymous.token,
     });
   });

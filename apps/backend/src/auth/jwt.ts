@@ -59,7 +59,7 @@ export const issueAccessToken = (
   const nowSec = Math.floor(nowMs / 1000);
   const claims: AuthClaims = {
     role,
-    sub: isAuthenticatedAuthRole(role) ? userId : null,
+    sub: userId ?? null,
     iat: nowSec,
     exp: nowSec + env.AUTH_JWT_EXPIRES_SECONDS,
   };

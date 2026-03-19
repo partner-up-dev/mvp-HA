@@ -21,7 +21,8 @@ export type AuthEnv = {
 };
 
 const readBearerToken = (c: Context): string | null => {
-  const authHeader = c.req.header("authorization") ?? c.req.header("Authorization");
+  const authHeader =
+    c.req.header("authorization") ?? c.req.header("Authorization");
   if (!authHeader?.startsWith(AUTH_HEADER_PREFIX)) return null;
   const token = authHeader.slice(AUTH_HEADER_PREFIX.length).trim();
   return token.length > 0 ? token : null;
@@ -30,15 +31,15 @@ const readBearerToken = (c: Context): string | null => {
 const mapUserRoleToAuthRole = (role: UserRole): AuthenticatedAuthRole =>
   role === "service" ? "service" : "authenticated";
 
-const buildAnonymousAuth = (): RequestAuth => {
-  const token = issueAccessToken("anonymous", null);
+const buildAnonymousAuth = (userId: UserId | null = null): RequestAuth => {
+  const token = issueAccessToken("anonymous", userId);
   const claims = verifyAccessToken(token);
   if (!claims) {
     throw new Error("Failed to issue anonymous access token");
   }
   return {
     role: "anonymous",
-    userId: null,
+    userId,
     token,
     claims,
   };
@@ -86,12 +87,12 @@ export const resolveRequestAuth = (c: Context): RequestAuth => {
   }
 
   if (shouldRenewAccessToken(claims)) {
-    return buildAnonymousAuth();
+    return buildAnonymousAuth(claims.sub as UserId | null);
   }
 
   return {
     role: "anonymous",
-    userId: null,
+    userId: claims.sub as UserId | null,
     token: bearer,
     claims,
   };
@@ -111,15 +112,19 @@ export const attachAuthTokenHeader = (c: Context, token: string): void => {
   c.header(ACCESS_TOKEN_HEADER, token);
 };
 
-export const issueAnonymousAuth = (): RequestAuth => buildAnonymousAuth();
+export const issueAnonymousAuth = (userId: UserId | null = null): RequestAuth =>
+  buildAnonymousAuth(userId);
 
 export const issueUserAuth = (userId: UserId): RequestAuth =>
   issueRoleAuth(userId, "authenticated");
 
-export const issueAuthForUser = (user: Pick<User, "id" | "role">): RequestAuth =>
-  issueRoleAuth(user.id, mapUserRoleToAuthRole(user.role));
+export const issueAuthForUser = (
+  user: Pick<User, "id" | "role">,
+): RequestAuth => issueRoleAuth(user.id, mapUserRoleToAuthRole(user.role));
 
-export const readLocalCredentialHeaders = (c: Context): {
+export const readLocalCredentialHeaders = (
+  c: Context,
+): {
   userId: string | null;
   userPin: string | null;
 } => {
