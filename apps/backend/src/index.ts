@@ -22,6 +22,7 @@ import { analyticsRoute } from "./controllers/analytics.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { poiRoute } from "./controllers/poi.controller";
+import { metaRoute } from "./controllers/meta.controller";
 import { adminAnchorManagementRoute } from "./controllers/admin-anchor-management.controller";
 import { adminBookingSupportRoute } from "./controllers/admin-booking-support.controller";
 import { adminPoiRoute } from "./controllers/admin-poi.controller";
@@ -145,6 +146,7 @@ const routes = app
   .route("/api/wechat", wechatRoute)
   .route("/api/wecom", wecomRoute)
   .route("/api/config", configRoute)
+  .route("/api/meta", metaRoute)
   .route("/api/analytics", analyticsRoute)
   .route("/api/pois", poiRoute)
   .route("/api/admin", adminAnchorManagementRoute)

@@ -221,6 +221,19 @@ export interface MessageSchema {
       support: string;
     };
   };
+  aboutPage: {
+    title: string;
+    description: string;
+    sectionTitle: string;
+    productNameLabel: string;
+    repositoryLabel: string;
+    frontendCommitLabel: string;
+    backendCommitLabel: string;
+    unknownValue: string;
+    backendCommitLoadFailed: string;
+    footerEntry: string;
+    footerNavLabel: string;
+  };
   createPage: {
     title: string;
     modeSwitchAria: string;
@@ -791,6 +804,7 @@ export interface MessageSchema {
     wechatInitTimeout: string;
     wechatInitError: string;
     initializeFailed: string;
+    fetchBackendBuildMetadataFailed: string;
     fetchPublicConfigFailed: string;
     fetchWechatReminderSubscriptionFailed: string;
     updateWechatReminderSubscriptionFailed: string;

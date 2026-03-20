@@ -26,6 +26,9 @@ export const queryKeys = {
   config: {
     public: (key: string) => ["config", "public", key] as const,
   },
+  meta: {
+    build: () => ["meta", "build"] as const,
+  },
   anchorEvent: {
     list: () => ["anchor-event", "list"] as const,
     detail: (eventId: number | null) =>
