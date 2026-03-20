@@ -399,6 +399,17 @@ export const useCheckInAnchorPRSlot = () => {
       );
 
       if (!res.ok) {
+        if (res.status === 403) {
+          return {
+            eligible: false,
+            canRequest: false,
+            requested: false,
+            reimbursementStatus: "NONE",
+            reimbursementAmount: null,
+            reason: "SLOT_NOT_ELIGIBLE",
+          };
+        }
+
         const payload = await readApiErrorPayload(res);
         throw new Error(
           resolveErrorMessage(
