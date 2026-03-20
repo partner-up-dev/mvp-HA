@@ -7,6 +7,11 @@ import {
   resolveApiErrorMessage,
   type ApiError,
 } from "@/shared/api/error";
+import {
+  handleWeChatAuthRequiredError,
+  isWeChatAuthRequiredError,
+} from "@/processes/wechat/auth-error";
+import { setPendingWeChatAction } from "@/processes/wechat/pending-wechat-action";
 
 type CreateUserAnchorPRInput = {
   eventId: number;
@@ -51,6 +56,22 @@ export const useCreateUserAnchorPR = () => {
 
       if (!response.ok) {
         const payload = await readApiErrorPayload(response);
+        if (
+          typeof window !== "undefined" &&
+          isWeChatAuthRequiredError(response.status, payload)
+        ) {
+          setPendingWeChatAction({
+            kind: "ANCHOR_EVENT_CREATE",
+            eventId,
+            batchId,
+            locationId,
+          });
+          handleWeChatAuthRequiredError(
+            response.status,
+            payload,
+            window.location.href,
+          );
+        }
         const error = buildApiError(
           resolveApiErrorMessage(payload, "创建活动搭子请求失败"),
           payload,

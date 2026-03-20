@@ -432,6 +432,11 @@ import { trackEvent } from "@/shared/analytics/track";
 import type { ApiError } from "@/shared/api/error";
 import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
 import { useWeChatNotificationSubscriptionsPanel } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
+import {
+  clearPendingWeChatAction,
+  readPendingWeChatAction,
+  type PendingWeChatAction,
+} from "@/processes/wechat/pending-wechat-action";
 
 type BlockedReason =
   AnchorPRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
@@ -465,13 +470,6 @@ const { t } = useI18n();
 const id = usePRRouteId();
 const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
 const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
-const AUTO_JOIN_STORAGE_KEY = "partner_up_anchor_pr_auto_join";
-const AUTO_JOIN_TTL_MS = 10 * 60 * 1000;
-
-type PendingAutoJoin = {
-  prId: number;
-  createdAt: number;
-};
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
 const reimbursementQuery = useAnchorReimbursementStatus(id);
@@ -807,51 +805,6 @@ const joinFlowNeedsBookingContact = computed(() => {
   );
 });
 
-const readPendingAutoJoin = (): PendingAutoJoin | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(AUTO_JOIN_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as PendingAutoJoin | null;
-    if (
-      !parsed ||
-      typeof parsed.prId !== "number" ||
-      typeof parsed.createdAt !== "number"
-    ) {
-      window.localStorage.removeItem(AUTO_JOIN_STORAGE_KEY);
-      return null;
-    }
-    if (Date.now() - parsed.createdAt > AUTO_JOIN_TTL_MS) {
-      window.localStorage.removeItem(AUTO_JOIN_STORAGE_KEY);
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-};
-
-const setPendingAutoJoin = (prId: number): void => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(
-      AUTO_JOIN_STORAGE_KEY,
-      JSON.stringify({ prId, createdAt: Date.now() } satisfies PendingAutoJoin),
-    );
-  } catch {
-    // Ignore storage failures.
-  }
-};
-
-const clearPendingAutoJoin = (): void => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(AUTO_JOIN_STORAGE_KEY);
-  } catch {
-    // Ignore storage failures.
-  }
-};
-
 const requestBookingContactCredential = async (): Promise<string | null> => {
   try {
     return await requestPhoneCredential();
@@ -881,22 +834,16 @@ const openJoinFlowModal = () => {
 
 const finalizeJoinFlow = async (
   wechatPhoneCredential?: string | null,
-  options: { trackAutoJoin?: boolean } = {},
 ) => {
   joinFlowPending.value = true;
   joinFlowError.value = null;
   bookingContactActionError.value = null;
-  if (id.value !== null && options.trackAutoJoin !== false) {
-    setPendingAutoJoin(id.value);
-  }
   const result = await sharedActions.handleJoin({ wechatPhoneCredential });
   joinFlowPending.value = false;
   if (result) {
-    clearPendingAutoJoin();
     closeJoinFlowModal();
     return;
   }
-  clearPendingAutoJoin();
   joinFlowError.value =
     primaryActionErrorMessage.value ?? t("errors.joinRequestFailed");
 };
@@ -921,38 +868,6 @@ const authorizeBookingContactAndJoin = async () => {
   }
   await finalizeJoinFlow(wechatPhoneCredential);
 };
-
-const attemptAutoJoin = async () => {
-  if (joinFlowPending.value) return;
-  if (id.value === null || !prDetail.value) return;
-  const pending = readPendingAutoJoin();
-  if (!pending || pending.prId !== id.value) return;
-  clearPendingAutoJoin();
-  const viewer = prDetail.value.partnerSection.viewer;
-  if (viewer.isParticipant || !viewer.canJoin) return;
-  if (joinFlowNeedsBookingContact.value) {
-    openJoinFlowModal();
-    return;
-  }
-  await finalizeJoinFlow(null, { trackAutoJoin: false });
-};
-
-watch(
-  () =>
-    [
-      id.value,
-      prDetail.value?.partnerSection.viewer.isParticipant,
-      prDetail.value?.partnerSection.viewer.canJoin,
-    ] as const,
-  () => {
-    void attemptAutoJoin();
-  },
-  { immediate: true },
-);
-
-onMounted(() => {
-  void attemptAutoJoin();
-});
 
 const ensureBookingContactVerified = async (): Promise<boolean> => {
   if (id.value === null) return false;
@@ -1017,6 +932,85 @@ const handleConfirmWithBookingContact = async () => {
       apiError.message ?? t("errors.confirmSlotFailed");
   }
 };
+
+const pendingActionReplayRunning = ref(false);
+
+const matchPendingActionForCurrentPR = (
+  pending: PendingWeChatAction | null,
+): PendingWeChatAction | null => {
+  if (!pending || id.value === null) {
+    return null;
+  }
+  if (
+    pending.kind === "ANCHOR_PR_JOIN" ||
+    pending.kind === "ANCHOR_PR_EXIT" ||
+    pending.kind === "ANCHOR_PR_CONFIRM"
+  ) {
+    return pending.prId === id.value ? pending : null;
+  }
+  return null;
+};
+
+const attemptPendingWeChatActionReplay = async () => {
+  if (pendingActionReplayRunning.value) return;
+  if (id.value === null || !prDetail.value) return;
+
+  const pending = matchPendingActionForCurrentPR(readPendingWeChatAction());
+  if (!pending) return;
+
+  pendingActionReplayRunning.value = true;
+  clearPendingWeChatAction();
+  try {
+    if (pending.kind === "ANCHOR_PR_JOIN") {
+      const viewer = prDetail.value.partnerSection.viewer;
+      if (viewer.isParticipant || !viewer.canJoin) return;
+      if (joinFlowNeedsBookingContact.value) {
+        openJoinFlowModal();
+        return;
+      }
+      await finalizeJoinFlow();
+      return;
+    }
+
+    if (pending.kind === "ANCHOR_PR_EXIT") {
+      if (!sharedActions.canExit.value) return;
+      await sharedActions.handleExit();
+      return;
+    }
+
+    if (!attendanceActions.canConfirm.value) return;
+    await handleConfirmWithBookingContact();
+  } catch (error) {
+    if (pending.kind === "ANCHOR_PR_EXIT") {
+      exitActionError.value =
+        error instanceof Error ? error.message : t("errors.exitRequestFailed");
+    } else {
+      bookingContactActionError.value =
+        error instanceof Error ? error.message : t("common.operationFailed");
+    }
+  } finally {
+    pendingActionReplayRunning.value = false;
+  }
+};
+
+watch(
+  () =>
+    [
+      id.value,
+      prDetail.value?.partnerSection.viewer.isParticipant,
+      prDetail.value?.partnerSection.viewer.canJoin,
+      prDetail.value?.partnerSection.viewer.canExit,
+      prDetail.value?.partnerSection.viewer.canConfirm,
+    ] as const,
+  () => {
+    void attemptPendingWeChatActionReplay();
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  void attemptPendingWeChatActionReplay();
+});
 
 const handleAcceptAlternativeBatch = async (
   targetTimeWindow: [string | null, string | null],

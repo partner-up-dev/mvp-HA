@@ -35,9 +35,9 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 - 点击首页或页面底部“联系作者”，进入 `/contact-support`；在该页可选择“联系客服”（报销/投诉）或跳转 `/contact-author` 反馈功能建议与 Bug。
 - 从历史 PartnerRequest 再发一个。
 - 对外分享或线下二维码可附带 `spm` 归因参数；若首个打开页面带有合法 `spm`，当前浏览器会话内的后续埋点会继续沿用该归因。
-- 在微信相关动作（如 Anchor PR 参与、提醒订阅等）中，系统由后端统一校验微信登录态并在未登录时引导 OAuth（无独立登录页）。
+- 在微信相关动作（如 Anchor PR 参与、提醒订阅等）中，系统由后端统一校验「JWT authenticated 会话 + 用户已绑定微信 openid」；未绑定时引导微信绑定 OAuth。
 - 在 Community PR 详情页执行“加入/退出”时，系统使用本地账户 + PIN 机制；若当前没有本地账户，会在首次加入时自动创建。
-- 在 Anchor PR 详情页执行“加入/退出 / 确认参与 / 签到”时，系统会强制校验「本地 authenticated 会话 + 微信登录态」；首次满足条件时会将 openid 绑定到当前用户，用于后续 slot 参与者识别。
+- 在 Anchor PR 详情页执行“加入/退出 / 确认参与 / 签到”时，系统会强制校验「本地 authenticated 会话 + 用户已绑定微信 openid」。
 - 在 Community / Anchor PR 的参与名单中，每条 roster item 展示头像 + 昵称；点击后可进入该参与者资料页（只读）。
 - Community PR 详情页仅提供 `join/exit`。
 - Anchor PR 详情页提供 `join/exit`、确认参与与可选签到（到场/未到场）反馈，用于可靠性与信任回流。

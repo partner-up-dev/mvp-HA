@@ -17,3 +17,34 @@ export const redirectToWeChatOAuthLogin = (returnTo: string): void => {
   if (typeof window === "undefined") return;
   window.location.assign(resolveOAuthLoginUrl(returnTo));
 };
+
+export const redirectToWeChatOAuthBind = async (
+  returnTo: string,
+): Promise<void> => {
+  if (typeof window === "undefined") return;
+
+  const res = await client.api.wechat.oauth.bind.$get(
+    {
+      query: { returnTo },
+    },
+    {
+      init: {
+        credentials: "include",
+      },
+    },
+  );
+
+  if (!res.ok) {
+    // Fallback to login flow if bind endpoint is temporarily unavailable.
+    redirectToWeChatOAuthLogin(returnTo);
+    return;
+  }
+
+  const payload = (await res.json()) as { authorizeUrl?: string };
+  if (!payload.authorizeUrl) {
+    redirectToWeChatOAuthLogin(returnTo);
+    return;
+  }
+
+  window.location.assign(payload.authorizeUrl);
+};

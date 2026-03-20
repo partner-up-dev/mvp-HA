@@ -92,7 +92,7 @@ src/
 - PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
 - 参与与流转: 支持加入/退出；达到最小人数自动转为 `READY`，达到最大人数自动转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。
 - 参与数据模型: 已迁移为 `minPartners` / `maxPartners` + `partners: partnerId[]`，并新增 `Partner`（含 `status`: `JOINED/CONFIRMED/RELEASED/ATTENDED`）用于 slot 级参与者标识。
-- 用户最小模型: 新增 `users` 表（`openid` 唯一绑定，含 `nickname/sex/avatar` + `ACTIVE/DISABLED`）；Community PR 加入可复用本地用户 / PIN 账户并在首次加入时自动创建本地用户，Anchor PR join/exit/confirm/check-in 仍依赖微信会话并绑定到 `partner.userId`。
+- 用户最小模型: 新增 `users` 表（`openid` 唯一绑定，含 `nickname/sex/avatar` + `ACTIVE/DISABLED`）；Community PR 加入可复用本地用户 / PIN 账户并在首次加入时自动创建本地用户，Anchor PR join/exit/confirm/check-in 依赖 JWT authenticated 会话 + `users.openid` 绑定关系。
 - 确认机制（5.2）: 新增 `/api/pr/:id/confirm`；`T-1h` 自动释放未确认 `JOINED` 槽位，`T-1h~T-30min` 加入即自动确认，`T-30min` 后禁止 join。
 - 公众号提醒（5.2）: 新增 `GET/POST /api/wechat/reminders/subscription`；当前仅 Anchor PR 参与会调度 `T-24h/T-2h` 任务（优先服务号订阅通知 `message/subscribe/bizsend`，模板 ID 读取 `config` 表 key `wechat.submsg_confirmation_reminder_template_id`；模板消息通道保留兜底），退出/释放/关闭提醒会删除待执行任务，发送结果落库 `notification_deliveries`。
 - 签到回流（5.3）: 新增 `/api/pr/:id/check-in`，记录 `didAttend` / `wouldJoinAgain`，到场时槽位置为 `ATTENDED`。

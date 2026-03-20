@@ -5,7 +5,11 @@ import { randomUUID } from "crypto";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { deleteCookie, getSignedCookie, setSignedCookie } from "hono/cookie";
-import { authMiddleware, type AuthEnv } from "../auth/middleware";
+import {
+  authMiddleware,
+  issueAuthForUser,
+  type AuthEnv,
+} from "../auth/middleware";
 import { env } from "../lib/env";
 import {
   isWeChatAbilityMockingEnabled,
@@ -21,6 +25,7 @@ import { UserRepository } from "../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
 import { bindWeChatToCurrentUser } from "../domains/user/use-cases/current-user";
 import { upgradeAnonymousUserWithWeChat } from "../domains/user/use-cases/upgrade-anonymous-user";
+import { ensureUserHasPin } from "../domains/pr-core/services/user-pin-auth.service";
 import {
   clearAnonymousSessionCookie,
   readAnonymousSessionCookie,
@@ -30,7 +35,7 @@ import {
   cancelWeChatReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
-import type { UserId } from "../entities/user";
+import type { User, UserId } from "../entities/user";
 import {
   wechatNotificationKindSchema,
   type WeChatNotificationKind,
@@ -48,10 +53,10 @@ const subscriptionMessageService = new WeChatSubscriptionMessageService();
 const templateMessageService = new WeChatTemplateMessageService();
 
 const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
-const OAUTH_SESSION_COOKIE_NAME = "wechat_oauth_session";
 const OAUTH_STATE_TTL_SECONDS = 10 * 60;
-const OAUTH_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 const OAUTH_MOCK_CODE = "mock-oauth-code";
+const ANCHOR_USER_AUTH_REQUIRED_CODE = "ANCHOR_USER_AUTH_REQUIRED";
+const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 
 const signatureQuerySchema = z.object({
   url: z.string().min(1),
@@ -78,12 +83,6 @@ const oauthStateCookiePayloadSchema = z.object({
   anonymousUserId: z.string().uuid().nullable(),
   expiresAtMs: z.number().int().positive(),
 });
-
-const oauthSessionCookiePayloadSchema = z.object({
-  openId: z.string().min(1),
-  issuedAtMs: z.number().int().positive(),
-  expiresAtMs: z.number().int().positive(),
-});
 const reminderSubscriptionUpdateSchema = z.object({
   enabled: z.boolean(),
 });
@@ -96,9 +95,6 @@ const resolvePhoneSchema = z.object({
 });
 
 type OAuthStateCookiePayload = z.infer<typeof oauthStateCookiePayloadSchema>;
-type OAuthSessionCookiePayload = z.infer<
-  typeof oauthSessionCookiePayloadSchema
->;
 type OAuthStateMode = OAuthStateCookiePayload["mode"];
 
 const nowMs = (): number => Date.now();
@@ -126,6 +122,7 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
   return {
     configured,
     authenticated: false,
+    wechatBound: false,
     subscriptions: {
       REMINDER_CONFIRMATION: {
         enabled: false,
@@ -151,6 +148,7 @@ const buildAuthenticatedSubscriptionsResponse = async (
 ): Promise<{
   configured: boolean;
   authenticated: boolean;
+  wechatBound: boolean;
   subscriptions: Record<
     WeChatNotificationKind,
     { enabled: boolean; optInAt: string | null; configured: boolean }
@@ -179,6 +177,7 @@ const buildAuthenticatedSubscriptionsResponse = async (
   return {
     configured: true,
     authenticated: true,
+    wechatBound: true,
     subscriptions: {
       REMINDER_CONFIRMATION: {
         enabled: reminder.enabled,
@@ -303,10 +302,6 @@ const clearOAuthStateCookieByNonce = (c: Context, nonce: string): void => {
     resolveOAuthStateCookieName(nonce),
     resolveCookieBaseOptions(c),
   );
-};
-
-const clearOAuthSessionCookie = (c: Context): void => {
-  deleteCookie(c, OAUTH_SESSION_COOKIE_NAME, resolveCookieBaseOptions(c));
 };
 
 const collectAllowedReturnToOrigins = (c: Context): Set<string> => {
@@ -465,33 +460,6 @@ const setOAuthStateCookie = async (
   );
 };
 
-const setOAuthSessionCookie = async (
-  c: Context,
-  openId: string,
-): Promise<void> => {
-  const sessionSecret = resolveOAuthSessionSecret();
-  if (!sessionSecret) {
-    throw new Error("WeChat OAuth session secret is not configured");
-  }
-  const issuedAtMs = nowMs();
-  const sessionPayload: OAuthSessionCookiePayload = {
-    openId,
-    issuedAtMs,
-    expiresAtMs: issuedAtMs + OAUTH_SESSION_TTL_SECONDS * 1000,
-  };
-
-  await setSignedCookie(
-    c,
-    OAUTH_SESSION_COOKIE_NAME,
-    encodeSignedPayload(sessionPayload),
-    sessionSecret,
-    {
-      ...resolveCookieBaseOptions(c),
-      maxAge: OAUTH_SESSION_TTL_SECONDS,
-    },
-  );
-};
-
 const buildOAuthStatePayload = (
   returnTo: string,
   mode: OAuthStateMode,
@@ -515,7 +483,88 @@ const requireAuthenticatedUserId = (c: Context): UserId => {
   return auth.userId as UserId;
 };
 
+const readSessionUserId = (c: Context<AuthEnv>): UserId | null => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    return null;
+  }
+  return auth.userId as UserId;
+};
+
+type OAuthCallbackAuthPayload = {
+  role: "authenticated" | "service";
+  userId: UserId;
+  userPin: string | null;
+  accessToken: string;
+};
+
+const issueOAuthCallbackAuth = async (
+  c: Context<AuthEnv>,
+  user: User,
+): Promise<OAuthCallbackAuthPayload> => {
+  const ensured = await ensureUserHasPin(user);
+  const authenticated = issueAuthForUser(ensured.user);
+  c.set("auth", authenticated);
+
+  return {
+    role: authenticated.role === "service" ? "service" : "authenticated",
+    userId: ensured.user.id,
+    userPin: ensured.userPin,
+    accessToken: authenticated.token,
+  };
+};
+
+const resolveAuthenticatedBoundUser = async (
+  c: Context,
+): Promise<
+  | { ok: true; user: User }
+  | { ok: false; status: 401; payload: { error: string; code: string } }
+> => {
+  let userId: UserId;
+  try {
+    userId = requireAuthenticatedUserId(c);
+  } catch {
+    return {
+      ok: false,
+      status: 401,
+      payload: {
+        error: "Authenticated user required",
+        code: ANCHOR_USER_AUTH_REQUIRED_CODE,
+      },
+    };
+  }
+
+  const user = await userRepo.findById(userId);
+  if (!user || user.status !== "ACTIVE") {
+    return {
+      ok: false,
+      status: 401,
+      payload: {
+        error: "Authenticated user required",
+        code: ANCHOR_USER_AUTH_REQUIRED_CODE,
+      },
+    };
+  }
+
+  if (!user.openId) {
+    return {
+      ok: false,
+      status: 401,
+      payload: {
+        error: "Current account is not bound to WeChat",
+        code: WECHAT_BIND_REQUIRED_CODE,
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    user,
+  };
+};
+
 export const wechatRoute = app
+  .use("*", authMiddleware)
   .get(
     "/jssdk-signature",
     zValidator("query", signatureQuerySchema),
@@ -550,21 +599,9 @@ export const wechatRoute = app
       );
     }
 
-    const sessionSecret = resolveOAuthSessionSecret();
-    if (!sessionSecret) {
-      return c.json({ error: "WeChat OAuth is not configured" }, 503);
-    }
-
-    const sessionPayload = await readSignedCookiePayload(
-      c,
-      OAUTH_SESSION_COOKIE_NAME,
-      sessionSecret,
-      oauthSessionCookiePayloadSchema,
-    );
-
-    if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
-      clearOAuthSessionCookie(c);
-      return c.json({ error: "WeChat login required" }, 401);
+    const identity = await resolveAuthenticatedBoundUser(c);
+    if (!identity.ok) {
+      return c.json(identity.payload, identity.status);
     }
 
     const { credential } = c.req.valid("json");
@@ -585,77 +622,26 @@ export const wechatRoute = app
       );
     }
   })
-  .get("/oauth/session", async (c) => {
-    if (!isOAuthRuntimeAvailable()) {
-      clearOAuthSessionCookie(c);
-      clearOAuthStateCookie(c);
-      return c.json({
-        configured: false,
-        authenticated: false,
-        openId: null,
-      });
-    }
-
-    const sessionSecret = resolveOAuthSessionSecret();
-    if (!sessionSecret) {
-      return c.json({
-        configured: false,
-        authenticated: false,
-        openId: null,
-      });
-    }
-    const sessionPayload = await readSignedCookiePayload(
-      c,
-      OAUTH_SESSION_COOKIE_NAME,
-      sessionSecret,
-      oauthSessionCookiePayloadSchema,
-    );
-
-    if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
-      clearOAuthSessionCookie(c);
-      return c.json({
-        configured: true,
-        authenticated: false,
-        openId: null,
-      });
-    }
-
-    return c.json({
-      configured: true,
-      authenticated: true,
-      openId: sessionPayload.openId,
-    });
-  })
   .get("/notifications/subscriptions", async (c) => {
     if (!isOAuthRuntimeAvailable()) {
       return c.json(await buildAnonymousSubscriptionsResponse(false));
     }
 
-    const sessionSecret = resolveOAuthSessionSecret();
-    if (!sessionSecret) {
-      return c.json(await buildAnonymousSubscriptionsResponse(false));
-    }
-    const sessionPayload = await readSignedCookiePayload(
-      c,
-      OAUTH_SESSION_COOKIE_NAME,
-      sessionSecret,
-      oauthSessionCookiePayloadSchema,
-    );
-
-    if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
-      clearOAuthSessionCookie(c);
-      return c.json(await buildAnonymousSubscriptionsResponse(true));
-    }
-
-    const user = await userRepo.findByOpenId(sessionPayload.openId);
-    if (!user) {
+    const identity = await resolveAuthenticatedBoundUser(c);
+    if (!identity.ok) {
       const fallback = await buildAnonymousSubscriptionsResponse(true);
+      if (identity.payload.code === ANCHOR_USER_AUTH_REQUIRED_CODE) {
+        return c.json(fallback);
+      }
       return c.json({
         ...fallback,
         authenticated: true,
       });
     }
-    return c.json(await buildAuthenticatedSubscriptionsResponse(user.id));
+
+    return c.json(
+      await buildAuthenticatedSubscriptionsResponse(identity.user.id),
+    );
   })
   .post(
     "/notifications/subscriptions",
@@ -665,31 +651,15 @@ export const wechatRoute = app
         return c.json({ error: "WeChat OAuth is not configured" }, 503);
       }
 
-      const sessionSecret = resolveOAuthSessionSecret();
-      if (!sessionSecret) {
-        return c.json({ error: "WeChat OAuth is not configured" }, 503);
-      }
-      const sessionPayload = await readSignedCookiePayload(
-        c,
-        OAUTH_SESSION_COOKIE_NAME,
-        sessionSecret,
-        oauthSessionCookiePayloadSchema,
-      );
-
-      if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
-        clearOAuthSessionCookie(c);
-        return c.json({ error: "WeChat login required" }, 401);
-      }
-
-      const user = await userRepo.findByOpenId(sessionPayload.openId);
-      if (!user) {
-        return c.json({ error: "User not found" }, 404);
+      const identity = await resolveAuthenticatedBoundUser(c);
+      if (!identity.ok) {
+        return c.json(identity.payload, identity.status);
       }
 
       const { kind, enabled } = c.req.valid("json");
       const updatedNotificationOpt =
         await userNotificationOptRepo.upsertWechatNotificationSubscription(
-          user.id,
+          identity.user.id,
           kind,
           enabled,
         );
@@ -704,11 +674,13 @@ export const wechatRoute = app
         kind,
       );
       const deletedJobs = await applyNotificationSubscriptionSideEffects(
-        user.id,
+        identity.user.id,
         kind,
         enabled,
       );
-      const fullState = await buildAuthenticatedSubscriptionsResponse(user.id);
+      const fullState = await buildAuthenticatedSubscriptionsResponse(
+        identity.user.id,
+      );
       const selectedState = fullState.subscriptions[kind];
       return c.json({
         ok: true,
@@ -727,58 +699,36 @@ export const wechatRoute = app
       return c.json({
         configured: fallback.configured && reminder.configured,
         authenticated: fallback.authenticated,
+        wechatBound: fallback.wechatBound,
         enabled: reminder.enabled,
         optInAt: reminder.optInAt,
       });
     }
 
-    const sessionSecret = resolveOAuthSessionSecret();
-    if (!sessionSecret) {
-      const fallback = await buildAnonymousSubscriptionsResponse(false);
+    const identity = await resolveAuthenticatedBoundUser(c);
+    if (!identity.ok) {
+      const fallback = await buildAnonymousSubscriptionsResponse(true);
       const reminder = fallback.subscriptions.REMINDER_CONFIRMATION;
+      const authenticated =
+        identity.payload.code === ANCHOR_USER_AUTH_REQUIRED_CODE ? false : true;
       return c.json({
         configured: fallback.configured && reminder.configured,
-        authenticated: fallback.authenticated,
+        authenticated,
+        wechatBound: false,
         enabled: reminder.enabled,
         optInAt: reminder.optInAt,
       });
     }
-    const sessionPayload = await readSignedCookiePayload(
-      c,
-      OAUTH_SESSION_COOKIE_NAME,
-      sessionSecret,
-      oauthSessionCookiePayloadSchema,
+
+    const fullState = await buildAuthenticatedSubscriptionsResponse(
+      identity.user.id,
     );
-
-    if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
-      clearOAuthSessionCookie(c);
-      const fallback = await buildAnonymousSubscriptionsResponse(true);
-      const reminder = fallback.subscriptions.REMINDER_CONFIRMATION;
-      return c.json({
-        configured: fallback.configured && reminder.configured,
-        authenticated: fallback.authenticated,
-        enabled: reminder.enabled,
-        optInAt: reminder.optInAt,
-      });
-    }
-
-    const user = await userRepo.findByOpenId(sessionPayload.openId);
-    if (!user) {
-      const fallback = await buildAnonymousSubscriptionsResponse(true);
-      const reminder = fallback.subscriptions.REMINDER_CONFIRMATION;
-      return c.json({
-        configured: fallback.configured && reminder.configured,
-        authenticated: true,
-        enabled: reminder.enabled,
-        optInAt: reminder.optInAt,
-      });
-    }
-    const fullState = await buildAuthenticatedSubscriptionsResponse(user.id);
     const reminder = fullState.subscriptions.REMINDER_CONFIRMATION;
 
     return c.json({
       configured: fullState.configured && reminder.configured,
       authenticated: fullState.authenticated,
+      wechatBound: fullState.wechatBound,
       enabled: reminder.enabled,
       optInAt: reminder.optInAt,
     });
@@ -791,31 +741,15 @@ export const wechatRoute = app
         return c.json({ error: "WeChat OAuth is not configured" }, 503);
       }
 
-      const sessionSecret = resolveOAuthSessionSecret();
-      if (!sessionSecret) {
-        return c.json({ error: "WeChat OAuth is not configured" }, 503);
-      }
-      const sessionPayload = await readSignedCookiePayload(
-        c,
-        OAUTH_SESSION_COOKIE_NAME,
-        sessionSecret,
-        oauthSessionCookiePayloadSchema,
-      );
-
-      if (!sessionPayload || sessionPayload.expiresAtMs <= nowMs()) {
-        clearOAuthSessionCookie(c);
-        return c.json({ error: "WeChat login required" }, 401);
-      }
-
-      const user = await userRepo.findByOpenId(sessionPayload.openId);
-      if (!user) {
-        return c.json({ error: "User not found" }, 404);
+      const identity = await resolveAuthenticatedBoundUser(c);
+      if (!identity.ok) {
+        return c.json(identity.payload, identity.status);
       }
 
       const { enabled } = c.req.valid("json");
       const updatedNotificationOpt =
         await userNotificationOptRepo.upsertWechatNotificationSubscription(
-          user.id,
+          identity.user.id,
           "REMINDER_CONFIRMATION",
           enabled,
         );
@@ -827,11 +761,13 @@ export const wechatRoute = app
         "REMINDER_CONFIRMATION",
       );
       const deletedJobs = await applyNotificationSubscriptionSideEffects(
-        user.id,
+        identity.user.id,
         "REMINDER_CONFIRMATION",
         enabled,
       );
-      const fullState = await buildAuthenticatedSubscriptionsResponse(user.id);
+      const fullState = await buildAuthenticatedSubscriptionsResponse(
+        identity.user.id,
+      );
       const reminder = fullState.subscriptions.REMINDER_CONFIRMATION;
 
       return c.json({
@@ -843,7 +779,6 @@ export const wechatRoute = app
       });
     },
   )
-  .use("/oauth/bind", authMiddleware)
   .get(
     "/oauth/mock/authorize",
     zValidator("query", oauthMockAuthorizeQuerySchema),
@@ -875,7 +810,14 @@ export const wechatRoute = app
         return c.json({ error: message }, 400);
       }
 
-      const anonymousUserId = await readAnonymousSessionCookie(c);
+      const sessionUserId = readSessionUserId(c);
+      const auth = c.get("auth");
+      const bindUserId =
+        auth.role === "anonymous" || !sessionUserId ? null : sessionUserId;
+      const anonymousUserId =
+        auth.role === "anonymous"
+          ? sessionUserId ?? (await readAnonymousSessionCookie(c))
+          : null;
 
       if (isWeChatAbilityMockingEnabled()) {
         const mockOpenId = resolveWeChatAbilityMockOpenId();
@@ -886,7 +828,7 @@ export const wechatRoute = app
         const statePayload = buildOAuthStatePayload(
           returnTo,
           "login",
-          null,
+          bindUserId,
           anonymousUserId,
         );
         await setOAuthStateCookie(c, statePayload);
@@ -904,7 +846,7 @@ export const wechatRoute = app
       const statePayload = buildOAuthStatePayload(
         returnTo,
         "login",
-        null,
+        bindUserId,
         anonymousUserId,
       );
       await setOAuthStateCookie(c, statePayload);
@@ -980,8 +922,17 @@ export const wechatRoute = app
         returnTo?: string | null,
       ) =>
         c.json({ ok: false, error, returnTo: returnTo ?? undefined }, status);
-      const respondSuccess = (returnTo: string) =>
-        c.json({ ok: true, returnTo });
+      const respondSuccess = (
+        returnTo: string,
+        auth?: OAuthCallbackAuthPayload,
+      ) => c.json({ ok: true, returnTo, auth });
+      const resolveActiveUserById = async (userId: UserId): Promise<User> => {
+        const user = await userRepo.findById(userId);
+        if (!user || user.status !== "ACTIVE") {
+          throw new Error("Authenticated user not found");
+        }
+        return user;
+      };
 
       const { code, state } = c.req.valid("query");
       if (!code || !state) {
@@ -1044,13 +995,47 @@ export const wechatRoute = app
             throw new Error("Mock WeChat openid is not configured");
           }
 
-          await bindWeChatToCurrentUser(statePayload.bindUserId, bindOpenId);
-          await setOAuthSessionCookie(c, bindOpenId);
+          const occupiedUser = await userRepo.findByOpenId(bindOpenId);
+          if (occupiedUser && occupiedUser.status === "ACTIVE") {
+            const authPayload = await issueOAuthCallbackAuth(c, occupiedUser);
+            clearAnonymousSessionCookie(c);
+            clearOAuthStateCookieByNonce(c, state);
+            clearOAuthStateCookie(c);
+
+            return respondSuccess(
+              appendBindResultToReturnTo(statePayload.returnTo, "success"),
+              authPayload,
+            );
+          }
+
+          const bindTargetUser = await resolveActiveUserById(
+            statePayload.bindUserId as UserId,
+          );
+          let boundUser: User;
+
+          if (bindTargetUser.role === "anonymous") {
+            const upgraded = await upgradeAnonymousUserWithWeChat({
+              userId: bindTargetUser.id,
+              openId: bindOpenId,
+              profile: null,
+            });
+            if (!upgraded) {
+              throw new Error("Failed to upgrade anonymous user");
+            }
+            boundUser = await resolveActiveUserById(upgraded.userId);
+          } else {
+            await bindWeChatToCurrentUser(bindTargetUser.id, bindOpenId);
+            boundUser = await resolveActiveUserById(bindTargetUser.id);
+          }
+
+          const authPayload = await issueOAuthCallbackAuth(c, boundUser);
+          clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
 
           return respondSuccess(
             appendBindResultToReturnTo(statePayload.returnTo, "success"),
+            authPayload,
           );
         }
 
@@ -1075,30 +1060,50 @@ export const wechatRoute = app
 
         const existingUser = await userRepo.findByOpenId(loginOpenId);
         if (existingUser) {
-          await setOAuthSessionCookie(c, loginOpenId);
+          const authPayload = await issueOAuthCallbackAuth(c, existingUser);
           clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
-          return respondSuccess(statePayload.returnTo);
+          return respondSuccess(statePayload.returnTo, authPayload);
         }
 
-        if (statePayload.anonymousUserId) {
-          const upgraded = await upgradeAnonymousUserWithWeChat({
-            userId: statePayload.anonymousUserId as UserId,
-            openId: loginOpenId,
-            profile: profile,
-          });
+        const bindCandidateUserId =
+          (statePayload.bindUserId as UserId | null) ??
+          (statePayload.anonymousUserId as UserId | null) ??
+          readSessionUserId(c);
+        if (bindCandidateUserId) {
+          const bindCandidateUser = await userRepo.findById(bindCandidateUserId);
+          if (
+            bindCandidateUser &&
+            bindCandidateUser.status === "ACTIVE" &&
+            !bindCandidateUser.openId
+          ) {
+            let boundCandidate: User | null = null;
+            if (bindCandidateUser.role === "anonymous") {
+              const upgraded = await upgradeAnonymousUserWithWeChat({
+                userId: bindCandidateUser.id,
+                openId: loginOpenId,
+                profile: profile,
+              });
+              if (upgraded) {
+                boundCandidate = await resolveActiveUserById(upgraded.userId);
+              }
+            } else {
+              await bindWeChatToCurrentUser(bindCandidateUser.id, loginOpenId);
+              boundCandidate = await userRepo.findById(bindCandidateUser.id);
+            }
 
-          if (upgraded) {
-            await setOAuthSessionCookie(c, loginOpenId);
-            clearAnonymousSessionCookie(c);
-            clearOAuthStateCookieByNonce(c, state);
-            clearOAuthStateCookie(c);
-            return respondSuccess(statePayload.returnTo);
+            if (boundCandidate && boundCandidate.status === "ACTIVE") {
+              const authPayload = await issueOAuthCallbackAuth(c, boundCandidate);
+              clearAnonymousSessionCookie(c);
+              clearOAuthStateCookieByNonce(c, state);
+              clearOAuthStateCookie(c);
+              return respondSuccess(statePayload.returnTo, authPayload);
+            }
           }
         }
 
-        const created = await userRepo.createIfNotExists({
+        const createdUser = await userRepo.createIfNotExists({
           id: randomUUID() as UserId,
           openId: loginOpenId,
           role: "authenticated",
@@ -1107,31 +1112,22 @@ export const wechatRoute = app
           sex: profile?.sex ?? null,
           avatar: profile?.avatar ?? null,
         });
-
-        if (!created) {
-          const racedUser = await userRepo.findByOpenId(loginOpenId);
-          if (!racedUser) {
-            throw new Error("Failed to create user for WeChat OAuth login");
-          }
+        const resolvedUser = createdUser ?? (await userRepo.findByOpenId(loginOpenId));
+        if (!resolvedUser || resolvedUser.status !== "ACTIVE") {
+          throw new Error("Failed to create user for WeChat OAuth login");
         }
 
-        await setOAuthSessionCookie(c, loginOpenId);
+        const authPayload = await issueOAuthCallbackAuth(c, resolvedUser);
         clearAnonymousSessionCookie(c);
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return respondSuccess(statePayload.returnTo);
+        return respondSuccess(statePayload.returnTo, authPayload);
       } catch (error) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
         if (statePayload.mode === "bind") {
-          const bindResult =
-            error instanceof Error &&
-            error.message === "WeChat account is already bound to another user"
-              ? "conflict"
-              : "failed";
-
           return respondSuccess(
-            appendBindResultToReturnTo(statePayload.returnTo, bindResult),
+            appendBindResultToReturnTo(statePayload.returnTo, "failed"),
           );
         }
 
@@ -1142,9 +1138,4 @@ export const wechatRoute = app
         return respondError(500, message, statePayload.returnTo);
       }
     },
-  )
-  .post("/oauth/logout", async (c) => {
-    clearOAuthSessionCookie(c);
-    clearOAuthStateCookie(c);
-    return c.json({ ok: true });
-  });
+  );

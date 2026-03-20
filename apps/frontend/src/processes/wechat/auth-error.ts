@@ -1,5 +1,8 @@
 import type { ApiErrorPayload } from "@/shared/api/error";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+import {
+  redirectToWeChatOAuthBind,
+  redirectToWeChatOAuthLogin,
+} from "@/processes/wechat/oauth-login";
 
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
@@ -19,6 +22,11 @@ export const handleWeChatAuthRequiredError = (
 ): boolean => {
   if (!isWeChatAuthRequiredError(status, payload)) {
     return false;
+  }
+
+  if (payload?.code === WECHAT_BIND_REQUIRED_CODE) {
+    void redirectToWeChatOAuthBind(returnTo);
+    return true;
   }
 
   redirectToWeChatOAuthLogin(returnTo);
