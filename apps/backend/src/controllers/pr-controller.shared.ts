@@ -209,6 +209,14 @@ export const getAuthenticatedUserId = (c: Context<AuthEnv>): UserId | null => {
   return auth.userId as UserId;
 };
 
+export const requireSessionUserId = (c: Context<AuthEnv>): UserId => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    throw new HTTPException(401, { message: "Authentication required" });
+  }
+  return auth.userId as UserId;
+};
+
 export const requireAuthenticatedUserId = (c: Context<AuthEnv>): UserId => {
   const userId = getAuthenticatedUserId(c);
   if (!userId) {

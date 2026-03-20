@@ -68,7 +68,7 @@ export async function getReimbursementStatus(
   const slot = await partnerRepo.findActiveByPrIdAndUserId(id, userId);
   if (!slot) {
     throw new HTTPException(403, {
-      message: "Reimbursement status is only available to participants",
+      message: "Reimbursement status is only available to active participants",
     });
   }
   if (slot.status !== "ATTENDED") {
