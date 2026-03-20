@@ -27,7 +27,7 @@ export interface ReimbursementStatusView {
 
 export async function getReimbursementStatus(
   id: PRId,
-  openId: string,
+  openId: string | null,
 ): Promise<ReimbursementStatusView> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -62,6 +62,17 @@ export async function getReimbursementStatus(
       reimbursementStatus: "NONE",
       reimbursementAmount: null,
       reason: "PR_NOT_CLOSED",
+    };
+  }
+
+  if (!openId) {
+    return {
+      eligible: false,
+      canRequest: false,
+      requested: false,
+      reimbursementStatus: "NONE",
+      reimbursementAmount: null,
+      reason: "SLOT_NOT_ELIGIBLE",
     };
   }
 

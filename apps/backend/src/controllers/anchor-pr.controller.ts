@@ -29,6 +29,7 @@ import {
   requireAuthenticatedOpenId,
   resolveAvatarUrl,
   tryReadAnchorAuthenticatedIdentity,
+  tryReadAuthenticatedOpenId,
   getAuthenticatedUserId,
   updateContentSchema,
   updateStatusSchema,
@@ -262,7 +263,7 @@ export const anchorPRRoute = app
     zValidator("param", prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { openId } = await requireAnchorAuthenticatedIdentity(c);
+      const openId = await tryReadAuthenticatedOpenId(c);
       const result = await getReimbursementStatus(id, openId);
       return c.json(result);
     },
