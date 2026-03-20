@@ -9,13 +9,8 @@ import {
   readLocalCredentialHeaders,
 } from "../auth/middleware";
 import type { AuthEnv } from "../auth/middleware";
-import { readOAuthSession } from "../auth/wechat-session";
 import { UserRepository } from "../repositories/UserRepository";
-import { resolveUserByOpenId } from "../domains/pr-core/services/user-resolver.service";
-import {
-  ensureUserHasPin,
-  verifyUserPin,
-} from "../domains/pr-core/services/user-pin-auth.service";
+import { verifyUserPin } from "../domains/pr-core/services/user-pin-auth.service";
 import { registerLocalUser } from "../domains/user/use-cases/register-local-user";
 import { registerAnonymousUser } from "../domains/user/use-cases/register-anonymous-user";
 import {
@@ -124,22 +119,6 @@ export const authRoute = app
         role: authenticated.role,
         userId: localUser.id,
         userPin: localUser.role === "service" ? null : candidateUserPin,
-        accessToken: authenticated.token,
-      });
-    }
-
-    const oauthSession = await readOAuthSession(c);
-    if (oauthSession) {
-      const oauthUser = await resolveUserByOpenId(oauthSession.openId);
-      const ensured = await ensureUserHasPin(oauthUser);
-      const authenticated = issueAuthForUser(ensured.user);
-      c.set("auth", authenticated);
-      clearAnonymousSessionCookie(c);
-
-      return c.json({
-        role: authenticated.role,
-        userId: ensured.user.id,
-        userPin: ensured.userPin,
         accessToken: authenticated.token,
       });
     }

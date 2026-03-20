@@ -19,6 +19,7 @@ import AdminBookingSupportPage from "@/pages/AdminBookingSupportPage.vue";
 import AdminPoisPage from "@/pages/AdminPoisPage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
+import AboutPage from "@/pages/AboutPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
 import AnchorEventPage from "@/pages/AnchorEventPage.vue";
 import WeChatOAuthCallbackPage from "@/pages/WeChatOAuthCallbackPage.vue";
@@ -144,6 +145,14 @@ const routes: RouteRecordRaw[] = [
     path: "/contact-author",
     name: "contact-author",
     component: ContactAuthorPage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/about",
+    name: "about",
+    component: AboutPage,
     meta: {
       wechatSharePolicy: "route",
     },

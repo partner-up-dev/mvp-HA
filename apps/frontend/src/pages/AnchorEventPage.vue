@@ -215,7 +215,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -241,6 +241,11 @@ import {
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { resolveCurrentSpmAttribution } from "@/shared/analytics/spm-attribution";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
+import type { ApiError } from "@/shared/api/error";
+import {
+  clearPendingWeChatAction,
+  readPendingWeChatAction,
+} from "@/processes/wechat/pending-wechat-action";
 
 type EventViewMode = "LIST" | "CARD";
 type TimeWindow = [string | null, string | null];
@@ -690,15 +695,32 @@ const handleViewActiveCardDetail = async () => {
   }
 };
 
-const APR_FALLBACK_STATUSES = new Set([400, 401, 404, 409, 503]);
+const APR_FALLBACK_STATUSES = new Set([400, 404, 409, 503]);
 const APR_FALLBACK_CODES = new Set([
   "LOCATION_CAP_REACHED",
   "INVALID_LOCATION",
   "ANCHOR_EVENT_NOT_FOUND",
   "ANCHOR_EVENT_BATCH_NOT_FOUND",
-  "WECHAT_AUTH_REQUIRED",
   "WECHAT_OAUTH_NOT_CONFIGURED",
 ]);
+const WECHAT_AUTH_BLOCKING_CODES = new Set([
+  "WECHAT_AUTH_REQUIRED",
+  "WECHAT_BIND_REQUIRED",
+]);
+
+const isWeChatAuthBlockingError = (
+  error: unknown,
+): error is CreateUserAnchorPRError => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const apiError = error as CreateUserAnchorPRError;
+  return (
+    apiError.status === 401 &&
+    typeof apiError.code === "string" &&
+    WECHAT_AUTH_BLOCKING_CODES.has(apiError.code)
+  );
+};
 
 const shouldFallbackToCommunity = (
   error: unknown,
@@ -801,6 +823,9 @@ const createPRWithFallback = async ({
     });
     await router.push(created.canonicalPath);
   } catch (error) {
+    if (isWeChatAuthBlockingError(error)) {
+      return;
+    }
     if (!shouldFallbackToCommunity(error)) {
       throw error;
     }
@@ -813,6 +838,51 @@ const createPRWithFallback = async ({
     await router.push(fallbackPath);
   }
 };
+
+const pendingCreateReplayRunning = ref(false);
+
+const attemptPendingCreateReplay = async () => {
+  if (pendingCreateReplayRunning.value) return;
+  const event = detail.value;
+  if (!event) return;
+
+  const pending = readPendingWeChatAction();
+  if (
+    !pending ||
+    pending.kind !== "ANCHOR_EVENT_CREATE" ||
+    pending.eventId !== event.id
+  ) {
+    return;
+  }
+
+  pendingCreateReplayRunning.value = true;
+  clearPendingWeChatAction();
+  try {
+    await createPRWithFallback({
+      targetBatchId: pending.batchId,
+      locationId: pending.locationId,
+    });
+  } catch (error) {
+    if (!isWeChatAuthBlockingError(error)) {
+      const apiError = error as ApiError;
+      cardActionError.value = apiError.message ?? t("common.operationFailed");
+    }
+  } finally {
+    pendingCreateReplayRunning.value = false;
+  }
+};
+
+watch(
+  () => detail.value?.id ?? null,
+  () => {
+    void attemptPendingCreateReplay();
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  void attemptPendingCreateReplay();
+});
 
 const handleCreateInList = async (locationId: string | null) => {
   const batch = selectedBatch.value;

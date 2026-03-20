@@ -148,13 +148,25 @@ export const anchorEventRoute = app
         openId = await requireAuthenticatedOpenId(c);
       } catch (error) {
         if (error instanceof HTTPException && error.status === 401) {
+          const code =
+            typeof (error as { code?: string }).code === "string"
+              ? (error as { code?: string }).code!
+              : "WECHAT_AUTH_REQUIRED";
+          const bindRequired = code === "WECHAT_BIND_REQUIRED";
+
           return problem({
-            type: "https://partnerup.sh/problems/wechat-auth-required",
-            title: "WeChat authentication required",
+            type: bindRequired
+              ? "https://partnerup.sh/problems/wechat-bind-required"
+              : "https://partnerup.sh/problems/wechat-auth-required",
+            title: bindRequired
+              ? "WeChat binding required"
+              : "WeChat authentication required",
             status: 401,
-            detail: "Please complete WeChat login before joining this demand card.",
+            detail: bindRequired
+              ? "Please bind WeChat before joining this demand card."
+              : "Please complete WeChat login before joining this demand card.",
             instance: c.req.path,
-            code: "WECHAT_AUTH_REQUIRED",
+            code,
           });
         }
         throw error;

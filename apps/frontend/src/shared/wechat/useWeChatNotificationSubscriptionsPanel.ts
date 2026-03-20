@@ -1,6 +1,9 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+import {
+  redirectToWeChatOAuthBind,
+  redirectToWeChatOAuthLogin,
+} from "@/processes/wechat/oauth-login";
 import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
 import { useWeChatNotificationSubscriptions } from "@/shared/wechat/queries/useWeChatNotificationSubscriptions";
 import { useUpdateWeChatNotificationSubscription } from "@/shared/wechat/queries/useUpdateWeChatNotificationSubscription";
@@ -10,7 +13,7 @@ export type WeChatNotificationKind =
   | "BOOKING_RESULT"
   | "NEW_PARTNER";
 
-type NotificationActionKind = "TOGGLE" | "LOGIN" | null;
+type NotificationActionKind = "TOGGLE" | "LOGIN" | "BIND" | null;
 
 export type NotificationSubscriptionCardItem = {
   key: WeChatNotificationKind;
@@ -45,6 +48,13 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (item.actionKind === "LOGIN") {
       if (typeof window !== "undefined") {
         redirectToWeChatOAuthLogin(window.location.href);
+      }
+      return;
+    }
+
+    if (item.actionKind === "BIND") {
+      if (typeof window !== "undefined") {
+        await redirectToWeChatOAuthBind(window.location.href);
       }
       return;
     }
@@ -101,6 +111,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     const payload = query.data.value;
     const oauthConfigured = payload?.configured ?? false;
     const authenticated = payload?.authenticated ?? false;
+    const wechatBound = payload?.wechatBound ?? false;
     const pendingKind = mutation.variables.value?.kind ?? null;
 
     for (const kind of visibleKinds) {
@@ -134,6 +145,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         description = t("prPage.wechatReminder.loginHint");
         actionLabel = t("prPage.wechatReminder.loginAction");
         actionKind = "LOGIN";
+        actionDisabled = false;
+      } else if (!wechatBound) {
+        description = t("mePage.wechat.unboundHint");
+        actionLabel = t("mePage.wechat.bindAction");
+        actionKind = "BIND";
         actionDisabled = false;
       } else {
         description = enabled

@@ -16,7 +16,11 @@ import {
   readApiErrorPayload,
   resolveApiErrorMessage,
 } from "@/shared/api/error";
-import { handleWeChatAuthRequiredError } from "@/processes/wechat/auth-error";
+import {
+  handleWeChatAuthRequiredError,
+  isWeChatAuthRequiredError,
+} from "@/processes/wechat/auth-error";
+import { setPendingWeChatAction } from "@/processes/wechat/pending-wechat-action";
 
 type AnchorPRActionInput = {
   id: PRId;
@@ -48,7 +52,6 @@ type AnchorPRUpdateStatusInput = {
 };
 
 type TimeWindow = [string | null, string | null];
-const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
 const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
 const WECHAT_PHONE_VERIFY_FAILED_CODE = "WECHAT_PHONE_VERIFY_FAILED";
@@ -98,12 +101,6 @@ const resolveErrorMessage = (
 
   return resolveApiErrorMessage(payload, fallback);
 };
-
-const isWeChatBindRequiredError = (
-  response: Response,
-  payload: ApiErrorPayload | null,
-): boolean =>
-  response.status === 401 && payload?.code === WECHAT_BIND_REQUIRED_CODE;
 
 const isBookingContactOwnerRequiredError = (
   payload: ApiErrorPayload | null,
@@ -205,11 +202,13 @@ export const useJoinAnchorPR = () => {
       let res = await requestJoin();
       let payload = res.ok ? null : await readApiErrorPayload(res);
 
-      if (isWeChatBindRequiredError(res, payload)) {
-        // Keep the current local session for the bind flow.
-      }
-
       if (!res.ok) {
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "ANCHOR_PR_JOIN",
+            prId: id,
+          });
+        }
         const fallbackMessage = isBookingContactOwnerRequiredError(payload)
           ? i18n.global.t("prPage.bookingContact.ownerVerifyBeforeJoin")
           : isBookingContactRequiredError(payload)
@@ -257,6 +256,12 @@ export const useExitAnchorPR = () => {
 
       if (!res.ok) {
         const payload = await readApiErrorPayload(res);
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "ANCHOR_PR_EXIT",
+            prId: id,
+          });
+        }
         throw new Error(
           resolveErrorMessage(
             res,
@@ -297,6 +302,12 @@ export const useConfirmAnchorPRSlot = () => {
 
       if (!res.ok) {
         const payload = await readApiErrorPayload(res);
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "ANCHOR_PR_CONFIRM",
+            prId: id,
+          });
+        }
         const fallbackMessage = isBookingContactRequiredError(payload)
           ? i18n.global.t("prPage.bookingContact.ownerVerifyBeforeConfirm")
           : i18n.global.t("errors.confirmSlotFailed");
@@ -388,6 +399,17 @@ export const useCheckInAnchorPRSlot = () => {
       );
 
       if (!res.ok) {
+        if (res.status === 403) {
+          return {
+            eligible: false,
+            canRequest: false,
+            requested: false,
+            reimbursementStatus: "NONE",
+            reimbursementAmount: null,
+            reason: "SLOT_NOT_ELIGIBLE",
+          };
+        }
+
         const payload = await readApiErrorPayload(res);
         throw new Error(
           resolveErrorMessage(

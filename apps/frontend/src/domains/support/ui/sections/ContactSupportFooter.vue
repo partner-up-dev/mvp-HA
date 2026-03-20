@@ -1,8 +1,13 @@
 <template>
   <footer class="contact-support-footer">
-    <RouterLink class="contact-support-link" :to="{ name: 'contact-support' }">
-      {{ t("contactAuthorPage.footerEntry") }}
-    </RouterLink>
+    <nav class="contact-support-nav" :aria-label="t('aboutPage.footerNavLabel')">
+      <RouterLink class="contact-support-link" :to="{ name: 'contact-support' }">
+        {{ t("contactAuthorPage.footerEntry") }}
+      </RouterLink>
+      <RouterLink class="contact-support-link" :to="{ name: 'about' }">
+        {{ t("aboutPage.footerEntry") }}
+      </RouterLink>
+    </nav>
   </footer>
 </template>
 
@@ -18,7 +23,14 @@ const { t } = useI18n();
   margin-top: var(--sys-spacing-lg);
   padding-top: var(--sys-spacing-sm);
   border-top: 1px solid var(--sys-color-outline-variant);
-  text-align: center;
+}
+
+.contact-support-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--sys-spacing-sm) var(--sys-spacing-med);
 }
 
 .contact-support-link {

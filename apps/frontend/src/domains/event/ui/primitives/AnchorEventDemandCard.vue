@@ -86,15 +86,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-const SWIPE_THRESHOLD = 96;
 const MAX_DRAG_DISTANCE = 260;
+const MIN_DISTANCE_THRESHOLD = 96;
+const DISTANCE_THRESHOLD_RATIO = 0.34;
+const FLICK_VELOCITY_THRESHOLD = 900;
+const ROTATION_DIVISOR = 22;
+const MAX_ROTATION_DEG = 18;
+const EXIT_TRANSITION = "transform 280ms cubic-bezier(0.16, 1, 0.3, 1)";
+const REBOUND_TRANSITION = "transform 440ms cubic-bezier(0.22, 1.35, 0.36, 1)";
+const MILLISECONDS_PER_SECOND = 1000;
+const EXIT_VIEWPORT_MULTIPLIER = 1.1;
+const EXIT_DRAG_MULTIPLIER = 1.5;
+const ACTION_EMIT_DELAY_MS = 180;
 
 type PointerState = {
   pointerId: number;
   startX: number;
+  lastX: number;
+  lastTimestamp: number;
+  tiltDirectionFactor: number;
+  pivotY: number;
 };
 
 const props = withDefaults(
@@ -122,26 +136,40 @@ const { t } = useI18n();
 
 const activePointer = ref<PointerState | null>(null);
 const translateX = ref(0);
+const rawTranslateX = ref(0);
+const swipeThreshold = ref(MIN_DISTANCE_THRESHOLD);
+const settleTransition = ref(REBOUND_TRANSITION);
+const actionTimeoutId = ref<number | null>(null);
 
 const isDragging = computed(() => activePointer.value !== null);
 const dragProgress = computed(() =>
-  Math.min(Math.abs(translateX.value) / SWIPE_THRESHOLD, 1),
+  Math.min(Math.abs(rawTranslateX.value) / swipeThreshold.value, 1),
 );
 const likeStampOpacity = computed(() =>
-  translateX.value > 0 ? dragProgress.value : 0,
+  rawTranslateX.value > 0 ? dragProgress.value : 0,
 );
 const nopeStampOpacity = computed(() =>
-  translateX.value < 0 ? dragProgress.value : 0,
+  rawTranslateX.value < 0 ? dragProgress.value : 0,
 );
+const rotationDeg = computed(() => {
+  const tiltDirectionFactor = activePointer.value?.tiltDirectionFactor ?? 1;
+  const rotation = (translateX.value / ROTATION_DIVISOR) * tiltDirectionFactor;
+  return Math.max(Math.min(rotation, MAX_ROTATION_DEG), -MAX_ROTATION_DEG);
+});
+const transformOrigin = computed(() => {
+  const pivotY = activePointer.value?.pivotY;
+  if (typeof pivotY !== "number") {
+    return "50% 50%";
+  }
+  return `50% ${pivotY}px`;
+});
 
 const cardStyle = computed(() => {
-  const rotate = translateX.value / 24;
   const scale = 1 - dragProgress.value * 0.02;
   return {
-    transform: `translateX(${translateX.value}px) rotate(${rotate}deg) scale(${scale})`,
-    transition: isDragging.value
-      ? "none"
-      : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+    transformOrigin: transformOrigin.value,
+    transform: `translateX(${translateX.value}px) rotate(${rotationDeg.value}deg) scale(${scale})`,
+    transition: isDragging.value ? "none" : settleTransition.value,
   };
 });
 
@@ -155,6 +183,16 @@ const applyDamping = (offsetX: number): number => {
 const resetDrag = () => {
   activePointer.value = null;
   translateX.value = 0;
+  rawTranslateX.value = 0;
+  settleTransition.value = REBOUND_TRANSITION;
+};
+
+const clearActionTimeout = () => {
+  if (actionTimeoutId.value === null) {
+    return;
+  }
+  window.clearTimeout(actionTimeoutId.value);
+  actionTimeoutId.value = null;
 };
 
 const handlePointerDown = (event: PointerEvent) => {
@@ -163,10 +201,27 @@ const handlePointerDown = (event: PointerEvent) => {
   const currentTarget = event.currentTarget;
   if (!(currentTarget instanceof HTMLElement)) return;
 
+  clearActionTimeout();
+
+  const rect = currentTarget.getBoundingClientRect();
+  const localY = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
+  const normalizedY =
+    rect.height > 0 ? Math.min(Math.max(localY / rect.height, 0), 1) : 0.5;
+  const tiltDirectionFactor = 1 - normalizedY * 2;
+  swipeThreshold.value = Math.max(
+    MIN_DISTANCE_THRESHOLD,
+    window.innerWidth * DISTANCE_THRESHOLD_RATIO,
+  );
+  settleTransition.value = REBOUND_TRANSITION;
+
   currentTarget.setPointerCapture(event.pointerId);
   activePointer.value = {
     pointerId: event.pointerId,
     startX: event.clientX,
+    lastX: event.clientX,
+    lastTimestamp: event.timeStamp,
+    tiltDirectionFactor,
+    pivotY: localY,
   };
 };
 
@@ -174,18 +229,27 @@ const handlePointerMove = (event: PointerEvent) => {
   const pointer = activePointer.value;
   if (!pointer || pointer.pointerId !== event.pointerId) return;
 
-  const offset = event.clientX - pointer.startX;
-  translateX.value = applyDamping(offset);
+  rawTranslateX.value = event.clientX - pointer.startX;
+  translateX.value = applyDamping(rawTranslateX.value);
+  pointer.lastX = event.clientX;
+  pointer.lastTimestamp = event.timeStamp;
 };
 
 const resolveSwipeAction = (
   offsetX: number,
+  velocityX: number,
 ): "skip" | "view-detail" | null => {
-  if (offsetX <= -SWIPE_THRESHOLD) {
+  if (
+    offsetX <= -swipeThreshold.value ||
+    velocityX <= -FLICK_VELOCITY_THRESHOLD
+  ) {
     return "skip";
   }
 
-  if (offsetX >= SWIPE_THRESHOLD) {
+  if (
+    offsetX >= swipeThreshold.value ||
+    velocityX >= FLICK_VELOCITY_THRESHOLD
+  ) {
     return "view-detail";
   }
 
@@ -196,24 +260,57 @@ const handlePointerUp = (event: PointerEvent) => {
   const pointer = activePointer.value;
   if (!pointer || pointer.pointerId !== event.pointerId) return;
 
-  const action = resolveSwipeAction(translateX.value);
-  resetDrag();
+  const timeDelta = Math.max(event.timeStamp - pointer.lastTimestamp, 1);
+  const velocityX =
+    ((event.clientX - pointer.lastX) / timeDelta) * MILLISECONDS_PER_SECOND;
+  const action = resolveSwipeAction(rawTranslateX.value, velocityX);
+  activePointer.value = null;
 
   if (action === "skip") {
-    emit("skip");
+    settleTransition.value = EXIT_TRANSITION;
+    translateX.value = -Math.max(
+      window.innerWidth * EXIT_VIEWPORT_MULTIPLIER,
+      MAX_DRAG_DISTANCE * EXIT_DRAG_MULTIPLIER,
+    );
+    actionTimeoutId.value = window.setTimeout(() => {
+      actionTimeoutId.value = null;
+      emit("skip");
+      resetDrag();
+    }, ACTION_EMIT_DELAY_MS);
     return;
   }
 
   if (action === "view-detail" && props.detailPrId !== null) {
-    emit("view-detail");
+    settleTransition.value = EXIT_TRANSITION;
+    translateX.value = Math.max(
+      window.innerWidth * EXIT_VIEWPORT_MULTIPLIER,
+      MAX_DRAG_DISTANCE * EXIT_DRAG_MULTIPLIER,
+    );
+    actionTimeoutId.value = window.setTimeout(() => {
+      actionTimeoutId.value = null;
+      emit("view-detail");
+      resetDrag();
+    }, ACTION_EMIT_DELAY_MS);
+    return;
   }
+
+  settleTransition.value = REBOUND_TRANSITION;
+  translateX.value = 0;
+  rawTranslateX.value = 0;
 };
 
 const handlePointerCancel = (event: PointerEvent) => {
   const pointer = activePointer.value;
   if (!pointer || pointer.pointerId !== event.pointerId) return;
-  resetDrag();
+  activePointer.value = null;
+  settleTransition.value = REBOUND_TRANSITION;
+  translateX.value = 0;
+  rawTranslateX.value = 0;
 };
+
+onBeforeUnmount(() => {
+  clearActionTimeout();
+});
 </script>
 
 <style lang="scss" scoped>

@@ -29,11 +29,16 @@ import { useI18n } from "vue-i18n";
 import { client } from "@/lib/rpc";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import {
+  useUserSessionStore,
+  type AuthSessionPayload,
+} from "@/shared/auth/useUserSessionStore";
 
 const { t } = useI18n();
 
 const status = ref<"processing" | "failed">("processing");
 const errorMessage = ref<string | null>(null);
+const userSessionStore = useUserSessionStore();
 
 const statusMessage = computed(() => {
   if (status.value === "failed") {
@@ -58,6 +63,7 @@ type OAuthCallbackResponse =
   | {
       ok: true;
       returnTo: string;
+      auth?: AuthSessionPayload;
     }
   | {
       ok: false;
@@ -97,6 +103,9 @@ const handleCallback = async (): Promise<void> => {
 
     const payload = (await res.json()) as OAuthCallbackResponse;
     if (payload.ok && payload.returnTo) {
+      if (payload.auth) {
+        userSessionStore.applyAuthSession(payload.auth);
+      }
       window.location.replace(payload.returnTo);
       return;
     }

@@ -27,6 +27,7 @@ import {
   prPartnerProfileParamSchema,
   requireAnchorAuthenticatedIdentity,
   requireAuthenticatedOpenId,
+  requireSessionUserId,
   resolveAvatarUrl,
   tryReadAnchorAuthenticatedIdentity,
   getAuthenticatedUserId,
@@ -262,8 +263,8 @@ export const anchorPRRoute = app
     zValidator("param", prIdParamSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { openId } = await requireAnchorAuthenticatedIdentity(c);
-      const result = await getReimbursementStatus(id, openId);
+      const userId = requireSessionUserId(c);
+      const result = await getReimbursementStatus(id, userId);
       return c.json(result);
     },
   );

@@ -223,6 +223,19 @@
       "support": "投诉 / 使用问题 / 功能建议 -> 联系企业微信客服"
     }
   },
+  "aboutPage": {
+    "title": "关于",
+    "description": "查看产品与版本信息。",
+    "sectionTitle": "版本信息",
+    "productNameLabel": "产品名称",
+    "repositoryLabel": "代码仓库",
+    "frontendCommitLabel": "前端 Commit Hash",
+    "backendCommitLabel": "后端 Commit Hash",
+    "unknownValue": "未知",
+    "backendCommitLoadFailed": "后端 commit hash 加载失败，请稍后重试。",
+    "footerEntry": "关于产品与版本",
+    "footerNavLabel": "页脚导航"
+  },
   "createPage": {
     "title": "创建搭子请求",
     "modeSwitchAria": "创建方式切换",
@@ -899,6 +912,7 @@
     "wechatInitTimeout": "微信 JS-SDK 初始化超时",
     "wechatInitError": "微信 JS-SDK 初始化错误：{message}",
     "initializeFailed": "初始化失败",
+    "fetchBackendBuildMetadataFailed": "获取后端构建信息失败",
     "fetchPublicConfigFailed": "获取公共配置失败",
     "fetchWechatReminderSubscriptionFailed": "获取公众号提醒状态失败",
     "updateWechatReminderSubscriptionFailed": "更新公众号提醒状态失败",
