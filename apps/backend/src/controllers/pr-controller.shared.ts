@@ -218,11 +218,11 @@ export const requireSessionUserId = (c: Context<AuthEnv>): UserId => {
 };
 
 export const requireAuthenticatedUserId = (c: Context<AuthEnv>): UserId => {
-  const userId = getAuthenticatedUserId(c);
-  if (!userId) {
+  const auth = c.get("auth");
+  if (auth.role === "anonymous") {
     throw new HTTPException(401, { message: "Authentication required" });
   }
-  return userId;
+  return requireSessionUserId(c);
 };
 
 export const buildCreatorIdentity = async (c: Context<AuthEnv>) => {
