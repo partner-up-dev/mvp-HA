@@ -2,7 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId } from "../../../entities/partner-request";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import type { UserId } from "../../../entities/user";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 
@@ -27,7 +27,7 @@ export interface ReimbursementStatusView {
 
 export async function getReimbursementStatus(
   id: PRId,
-  openId: string | null,
+  userId: UserId,
 ): Promise<ReimbursementStatusView> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -65,20 +65,13 @@ export async function getReimbursementStatus(
     };
   }
 
-  if (!openId) {
-    return {
-      eligible: false,
-      canRequest: false,
-      requested: false,
-      reimbursementStatus: "NONE",
-      reimbursementAmount: null,
-      reason: "SLOT_NOT_ELIGIBLE",
-    };
+  const slot = await partnerRepo.findActiveByPrIdAndUserId(id, userId);
+  if (!slot) {
+    throw new HTTPException(403, {
+      message: "Reimbursement status is only available to participants",
+    });
   }
-
-  const user = await resolveUserByOpenId(openId);
-  const slot = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
-  if (!slot || slot.status !== "ATTENDED") {
+  if (slot.status !== "ATTENDED") {
     return {
       eligible: false,
       canRequest: false,
