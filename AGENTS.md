@@ -26,6 +26,9 @@ Read following documents when needed and keep them current:
 ## Development Workflow
 
 - No need to maintain tests, just make sure the build passes.
+- Deeply integrated with GitHub:
+  - Use Github CLI (`gh`) to interact with GitHub.
+  - Manage issues, make use of templates (check `.github/ISSUE_TEMPLATE`)
 
 ## Coding Guidelines
 

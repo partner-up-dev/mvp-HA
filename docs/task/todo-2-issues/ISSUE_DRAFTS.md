@@ -25,7 +25,7 @@
 
 - 类型：Feature
 - 优先级：P0
-- 标签：backend, frontend, legal, auth
+- 标签：backend, legal, auth
 - 背景：TODO 有法务项，但当前主要是草案与方案文档，尚未形成线上闭环。
 - 目标：提供正式条款页面、版本化配置、同意记录与拦截机制。
 - 范围：
@@ -41,7 +41,7 @@
 
 - 类型：Bug/Rule
 - 优先级：P0
-- 标签：backend, frontend, llm, pr-domain
+- 标签：backend, llm, pr-domain
 - 背景：当前规则仍允许 minPartners 为 1 或空值，和 TODO 目标不一致。
 - 目标：在结构化创建、编辑、NL 解析、后台管理四条路径统一约束。
 - 范围：
@@ -71,7 +71,7 @@
 
 - 类型：Feature
 - 优先级：P0
-- 标签：admin, backend, frontend, notification
+- 标签：admin, backend, , notification
 - 背景：配置能力已存在，但“按请求执行 + 结果通知用户”闭环不足。
 - 目标：让运营可看到待处理项并回传成功/失败结果给用户。
 - 范围：
@@ -105,7 +105,7 @@
 
 - 类型：Chore
 - 优先级：P1
-- 标签：devops, ci
+- 标签：deployment
 - 背景：TODO 指出仍有优化空间。
 - 目标：缩短流水线耗时并提升稳定性。
 - 范围：
@@ -189,7 +189,7 @@
 
 - 类型：Feature
 - 优先级：P1
-- 标签：backend, frontend, moderation, storage
+- 标签：backend, moderation, storage
 - 背景：TODO 明确有该需求并提及审核风险。
 - 目标：支持单图上传，同时保证基本内容安全。
 - 范围：
@@ -203,7 +203,7 @@
 
 - 类型：Feature
 - 优先级：P1
-- 标签：backend, frontend, event
+- 标签：backend, , event
 - 背景：TODO 有“请求组织更多活动/批次并投票”的产品项。
 - 目标：收集需求并量化热度。
 - 范围：
@@ -216,7 +216,7 @@
 
 - 类型：Feature
 - 优先级：P1
-- 标签：backend, frontend, support
+- 标签：backend, , support
 - 背景：两个 TODO 目标一致，建议合并。
 - 目标：资源展示更直观，报销路径更少歧义。
 - 范围：
@@ -302,7 +302,7 @@
 
 - 类型：Feature
 - 优先级：P2
-- 标签：backend, frontend, poi
+- 标签：backend, , poi
 - 背景：POI 目前已有 id/gallery，但缺短名。
 - 目标：在卡片和列表里提升可读性。
 - 范围：
