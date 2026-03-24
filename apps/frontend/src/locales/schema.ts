@@ -307,6 +307,7 @@ export interface MessageSchema {
     };
     notificationSubscriptions: {
       title: string;
+      openSubscribeUnavailableHint: string;
       items: {
         REMINDER_CONFIRMATION: {
           title: string;

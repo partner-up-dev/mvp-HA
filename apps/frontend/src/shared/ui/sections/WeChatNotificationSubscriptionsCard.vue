@@ -10,8 +10,34 @@
         <p class="subscription-title">{{ item.title }}</p>
         <p class="subscription-desc">{{ item.description }}</p>
       </div>
+
       <button
-        v-if="item.actionLabel"
+        v-if="item.actionKind === 'OPEN_SUBSCRIBE' && item.pending"
+        :class="[
+          'action-btn',
+          props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
+        ]"
+        type="button"
+        disabled
+      >
+        {{ updatingLabel }}
+      </button>
+
+      <wx-open-subscribe
+        v-else-if="
+          item.actionKind === 'OPEN_SUBSCRIBE' &&
+          item.actionLabel &&
+          item.openSubscribeTemplateId &&
+          !item.actionDisabled
+        "
+        class="open-subscribe"
+        :template="item.openSubscribeTemplateId"
+        @success="handleOpenSubscribeSuccess(item.key, $event)"
+        @error="handleOpenSubscribeError(item.key, $event)"
+      ></wx-open-subscribe>
+
+      <button
+        v-else-if="item.actionLabel"
         :class="[
           'action-btn',
           props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
@@ -43,7 +69,36 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   action: [kind: NotificationSubscriptionCardItem["key"]];
+  "open-subscribe-success": [
+    kind: NotificationSubscriptionCardItem["key"],
+    detail: unknown,
+  ];
+  "open-subscribe-error": [
+    kind: NotificationSubscriptionCardItem["key"],
+    detail: unknown,
+  ];
 }>();
+
+const extractEventDetail = (event: unknown): unknown => {
+  if (event && typeof event === "object" && "detail" in event) {
+    return (event as { detail: unknown }).detail;
+  }
+  return null;
+};
+
+const handleOpenSubscribeSuccess = (
+  kind: NotificationSubscriptionCardItem["key"],
+  event: unknown,
+) => {
+  emit("open-subscribe-success", kind, extractEventDetail(event));
+};
+
+const handleOpenSubscribeError = (
+  kind: NotificationSubscriptionCardItem["key"],
+  event: unknown,
+) => {
+  emit("open-subscribe-error", kind, extractEventDetail(event));
+};
 </script>
 
 <style scoped lang="scss">
@@ -116,8 +171,14 @@ const emit = defineEmits<{
   color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
 }
 
+.open-subscribe {
+  display: inline-flex;
+  min-height: 2.5rem;
+}
+
 @media (max-width: 768px) {
-  .subscription-card .action-btn {
+  .subscription-card .action-btn,
+  .subscription-card .open-subscribe {
     width: 100%;
   }
 }

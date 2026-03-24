@@ -140,6 +140,15 @@ async function handleNewPartnerJob(
     });
   } catch (error) {
     const classified = classifyNewPartnerError(error);
+    if (classified.code === "43101") {
+      await userNotificationOptRepo.upsertWechatNotificationSubscription(
+        recipient.id,
+        "NEW_PARTNER",
+        false,
+      );
+      await cancelWeChatNewPartnerJobsForUser(recipient.id);
+    }
+
     throw new Error(
       classified.code
         ? `${classified.code}: ${classified.message}`

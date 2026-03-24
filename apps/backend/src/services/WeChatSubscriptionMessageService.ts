@@ -82,6 +82,14 @@ export class WeChatSubscriptionMessageService {
     return this.isConfigured("NEW_PARTNER");
   }
 
+  async getConfirmationReminderTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("REMINDER_CONFIRMATION");
+  }
+
+  async getNewPartnerTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("NEW_PARTNER");
+  }
+
   private async isConfigured(kind: SubscriptionTemplateKind): Promise<boolean> {
     const templateId = await this.resolveTemplateId(kind);
     return Boolean(

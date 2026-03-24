@@ -285,6 +285,15 @@ async function handleReminderJob(
     });
   } catch (error) {
     const classified = classifyReminderError(error);
+    if (classified.code === "43101") {
+      await userNotificationOptRepo.upsertWechatNotificationSubscription(
+        user.id,
+        "REMINDER_CONFIRMATION",
+        false,
+      );
+      await cancelWeChatReminderJobsForUser(user.id);
+    }
+
     await recordDelivery({
       jobId: context.jobId,
       payload,

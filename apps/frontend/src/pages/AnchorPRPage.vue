@@ -123,6 +123,8 @@
         :updating-label="t('prPage.wechatReminder.updating')"
         outline-profile="surface"
         @action="handleSubscriptionAction"
+        @open-subscribe-success="handleSubscriptionOpenSubscribeSuccess"
+        @open-subscribe-error="handleSubscriptionOpenSubscribeError"
       />
 
       <section class="section-card">
@@ -1089,6 +1091,20 @@ const handleSubscriptionAction = async (
   kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
 ) => {
   await notificationSubscriptions.handleAction(kind);
+};
+
+const handleSubscriptionOpenSubscribeSuccess = async (
+  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
+  detail: unknown,
+) => {
+  await notificationSubscriptions.handleOpenSubscribeSuccess(kind, detail);
+};
+
+const handleSubscriptionOpenSubscribeError = async (
+  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
+  detail: unknown,
+) => {
+  await notificationSubscriptions.handleOpenSubscribeError(kind, detail);
 };
 
 const requestExitWithConfirm = () => {

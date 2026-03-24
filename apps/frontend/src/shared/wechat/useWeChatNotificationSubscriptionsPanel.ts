@@ -1,19 +1,35 @@
-import { computed } from "vue";
+import { computed, ref, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   redirectToWeChatOAuthBind,
   redirectToWeChatOAuthLogin,
 } from "@/processes/wechat/oauth-login";
-import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
+import {
+  isWeChatAbilityEnv,
+  isWeChatAbilityMockingEnabled,
+} from "@/shared/wechat/ability-mocking";
 import { useWeChatNotificationSubscriptions } from "@/shared/wechat/queries/useWeChatNotificationSubscriptions";
 import { useUpdateWeChatNotificationSubscription } from "@/shared/wechat/queries/useUpdateWeChatNotificationSubscription";
+import { useWeChatShare } from "@/shared/wechat/useWeChatShare";
 
 export type WeChatNotificationKind =
   | "REMINDER_CONFIRMATION"
   | "BOOKING_RESULT"
   | "NEW_PARTNER";
 
-type NotificationActionKind = "TOGGLE" | "LOGIN" | "BIND" | null;
+type NotificationActionKind =
+  | "TOGGLE"
+  | "OPEN_SUBSCRIBE"
+  | "LOGIN"
+  | "BIND"
+  | null;
+
+type OpenSubscribeStatus =
+  | "accept"
+  | "reject"
+  | "cancel"
+  | "filter"
+  | "unknown";
 
 export type NotificationSubscriptionCardItem = {
   key: WeChatNotificationKind;
@@ -21,6 +37,7 @@ export type NotificationSubscriptionCardItem = {
   description: string;
   actionLabel: string | null;
   actionKind: NotificationActionKind;
+  openSubscribeTemplateId: string | null;
   actionDisabled: boolean;
   pending: boolean;
 };
@@ -35,10 +52,139 @@ export const useWeChatNotificationSubscriptionsPanel = ({
   const { t } = useI18n();
   const query = useWeChatNotificationSubscriptions();
   const mutation = useUpdateWeChatNotificationSubscription();
+  const { initWeChatSdk } = useWeChatShare();
+  const openSubscribeReady = ref<boolean>(isWeChatAbilityMockingEnabled());
+  const openSubscribePreparing = ref(false);
+  const openSubscribeError = ref<string | null>(null);
+
+  let openSubscribeInitPromise: Promise<boolean> | null = null;
 
   const isWeChatEnv = computed(() =>
     typeof navigator === "undefined" ? false : isWeChatAbilityEnv(),
   );
+
+  const ensureOpenSubscribeReady = async (): Promise<boolean> => {
+    if (isWeChatAbilityMockingEnabled()) {
+      openSubscribeReady.value = true;
+      openSubscribeError.value = null;
+      return true;
+    }
+    if (!isWeChatEnv.value) {
+      openSubscribeReady.value = false;
+      return false;
+    }
+    if (openSubscribeReady.value) {
+      return true;
+    }
+    if (openSubscribeInitPromise) {
+      return await openSubscribeInitPromise;
+    }
+
+    openSubscribeInitPromise = (async () => {
+      openSubscribePreparing.value = true;
+      try {
+        await initWeChatSdk({
+          openTagList: ["wx-open-subscribe"],
+        });
+        openSubscribeReady.value = true;
+        openSubscribeError.value = null;
+        return true;
+      } catch (error) {
+        openSubscribeReady.value = false;
+        openSubscribeError.value =
+          error instanceof Error ? error.message : t("errors.wechatInitFailed");
+        return false;
+      } finally {
+        openSubscribePreparing.value = false;
+        openSubscribeInitPromise = null;
+      }
+    })();
+
+    return await openSubscribeInitPromise;
+  };
+
+  watchEffect(() => {
+    if (isWeChatAbilityMockingEnabled()) {
+      return;
+    }
+    if (!isWeChatEnv.value) {
+      return;
+    }
+
+    const payload = query.data.value;
+    if (!payload?.configured || !payload.authenticated || !payload.wechatBound) {
+      return;
+    }
+
+    const needsOpenSubscribe = visibleKinds.some((kind) => {
+      const entry = payload.subscriptions[kind];
+      return Boolean(
+        entry &&
+          !entry.enabled &&
+          entry.configured &&
+          entry.requiresOpenSubscribe &&
+          entry.templateId,
+      );
+    });
+
+    if (!needsOpenSubscribe || openSubscribeReady.value || openSubscribePreparing.value) {
+      return;
+    }
+
+    void ensureOpenSubscribeReady();
+  });
+
+  const parseOpenSubscribeStatus = (
+    detail: unknown,
+    templateId: string,
+  ): OpenSubscribeStatus => {
+    if (isWeChatAbilityMockingEnabled()) {
+      return "accept";
+    }
+
+    if (!detail || typeof detail !== "object") {
+      return "unknown";
+    }
+
+    const payload = detail as { subscribeDetails?: unknown };
+    if (typeof payload.subscribeDetails !== "string") {
+      return "unknown";
+    }
+
+    try {
+      const rawDetails = JSON.parse(payload.subscribeDetails) as Record<
+        string,
+        unknown
+      >;
+      const templateDetailRaw =
+        rawDetails[templateId] ?? Object.values(rawDetails)[0] ?? null;
+      if (!templateDetailRaw) {
+        return "unknown";
+      }
+
+      const templateDetail =
+        typeof templateDetailRaw === "string"
+          ? (JSON.parse(templateDetailRaw) as { status?: unknown })
+          : (templateDetailRaw as { status?: unknown });
+
+      const status =
+        typeof templateDetail.status === "string"
+          ? templateDetail.status.toLowerCase()
+          : "";
+
+      if (
+        status === "accept" ||
+        status === "reject" ||
+        status === "cancel" ||
+        status === "filter"
+      ) {
+        return status;
+      }
+      return "unknown";
+    } catch {
+      return "unknown";
+    }
+  };
 
   const handleAction = async (kind: WeChatNotificationKind): Promise<void> => {
     const item = items.value.find((entry) => entry.key === kind);
@@ -59,10 +205,54 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       return;
     }
 
+    if (item.actionKind === "OPEN_SUBSCRIBE") {
+      await ensureOpenSubscribeReady();
+      return;
+    }
+
     const enabled = query.data.value?.subscriptions[kind].enabled ?? false;
     await mutation.mutateAsync({
       kind,
       enabled: !enabled,
+    });
+  };
+
+  const handleOpenSubscribeSuccess = async (
+    kind: WeChatNotificationKind,
+    detail: unknown,
+  ): Promise<void> => {
+    const item = items.value.find((entry) => entry.key === kind);
+    if (!item || item.actionKind !== "OPEN_SUBSCRIBE" || item.pending) {
+      return;
+    }
+
+    const templateId = item.openSubscribeTemplateId;
+    const status = templateId
+      ? parseOpenSubscribeStatus(detail, templateId)
+      : "unknown";
+
+    await mutation.mutateAsync({
+      kind,
+      enabled: status === "accept",
+    });
+  };
+
+  const handleOpenSubscribeError = async (
+    kind: WeChatNotificationKind,
+    detail: unknown,
+  ): Promise<void> => {
+    if (detail && typeof detail === "object") {
+      const payload = detail as { errMsg?: unknown; errCode?: unknown };
+      const errMsg = typeof payload.errMsg === "string" ? payload.errMsg : "";
+      const errCode = typeof payload.errCode === "string" ? payload.errCode : "";
+      if (errMsg || errCode) {
+        openSubscribeError.value = [errCode, errMsg].filter(Boolean).join(": ");
+      }
+    }
+
+    await mutation.mutateAsync({
+      kind,
+      enabled: false,
     });
   };
 
@@ -123,7 +313,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       let description = "";
       let actionLabel: string | null = null;
       let actionKind: NotificationActionKind = null;
+      let openSubscribeTemplateId: string | null = null;
       let actionDisabled = true;
+      const requiresOpenSubscribe = entry?.requiresOpenSubscribe ?? false;
+      const templateId = entry?.templateId ?? null;
 
       if (!oauthConfigured) {
         description = t("prPage.wechatReminder.unconfiguredHint");
@@ -158,8 +351,28 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         actionLabel = enabled
           ? t("prPage.wechatReminder.disableAction")
           : t("prPage.wechatReminder.enableAction");
-        actionKind = "TOGGLE";
-        actionDisabled = pending;
+
+        if (
+          !enabled &&
+          requiresOpenSubscribe &&
+          !isWeChatAbilityMockingEnabled()
+        ) {
+          actionKind = "OPEN_SUBSCRIBE";
+          openSubscribeTemplateId = openSubscribeReady.value ? templateId : null;
+          actionDisabled = pending || !templateId;
+          if (!templateId) {
+            description = t(
+              "prPage.notificationSubscriptions.openSubscribeUnavailableHint",
+            );
+          } else if (!openSubscribeReady.value && openSubscribeError.value) {
+            description = t(
+              "prPage.notificationSubscriptions.openSubscribeUnavailableHint",
+            );
+          }
+        } else {
+          actionKind = "TOGGLE";
+          actionDisabled = pending;
+        }
       }
 
       result.push({
@@ -168,6 +381,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         description,
         actionLabel,
         actionKind,
+        openSubscribeTemplateId,
         actionDisabled,
         pending,
       });
@@ -182,5 +396,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     query,
     mutation,
     handleAction,
+    handleOpenSubscribeSuccess,
+    handleOpenSubscribeError,
   };
 };

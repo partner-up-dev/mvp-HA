@@ -59,6 +59,9 @@
 - `/me` 与 Anchor PR 详情页共用“通知订阅”卡片，查询/更新接口为：
   - `GET /api/wechat/notifications/subscriptions`
   - `POST /api/wechat/notifications/subscriptions`（`kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER"`, `enabled: boolean`）
+- 对于 `REMINDER_CONFIRMATION` 与 `NEW_PARTNER`：
+  - 前端在微信环境使用 `wx-open-subscribe` 触发订阅授权；
+  - 授权结果直接映射开关状态：`accept => enabled=true`，`reject/cancel/filter/error => enabled=false`。
 - 兼容接口仍保留：
   - `GET /api/wechat/reminders/subscription`
   - `POST /api/wechat/reminders/subscription`（映射到 `REMINDER_CONFIRMATION`）
@@ -67,6 +70,7 @@
 - Anchor PR 退出、自动释放或关闭 `REMINDER_CONFIRMATION` 时，系统会删除对应未执行提醒任务（`PENDING/RETRY`）。
 - `NEW_PARTNER` 开启后，系统会在 Anchor PR 有新参与者加入时，向同 PR 其他活跃参与者发送订阅通知。
 - `NEW_PARTNER` 模板 ID 通过后端配置表 key `wechat.submsg_new_partner_template_id` 读取。
+- 若发送链路返回 `43101`（用户拒收订阅消息），系统会自动将对应通知项关闭，并清理该用户该通知项的待执行任务。
 - `BOOKING_RESULT` 当前仅支持开关持久化，不触发发送链路。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 - 当 `OPEN` 状态 PR 修改时间窗口时，系统会对当前所有活跃参与者执行同一时间冲突校验；若任一参与者发生冲突则拒绝本次修改（`409`，`JOIN_TIME_WINDOW_CONFLICT`）。
@@ -104,9 +108,10 @@
 - `POST /api/wechat/reminders/subscription` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - 开启提醒后会创建具备 dedupe 的延迟任务；关闭提醒后会删除对应未执行任务并返回删除数量。
 - 提醒任务执行后会写入 `notification_deliveries`（包含 `result/errorCode/jobId`）。
-- `GET /api/wechat/notifications/subscriptions` 会按通知项返回 `enabled/optInAt/configured`。
+- `GET /api/wechat/notifications/subscriptions` 会按通知项返回 `enabled/optInAt/configured/requiresOpenSubscribe/templateId`。
 - `POST /api/wechat/notifications/subscriptions` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - `POST /api/wechat/notifications/subscriptions` 的 `kind=NEW_PARTNER` 关闭时会清理未执行的新搭子通知任务。
+- `POST /api/wechat/notifications/subscriptions` 在 `REMINDER_CONFIRMATION` / `NEW_PARTNER` 的启用动作中，前端会先走微信开放标签订阅，最终以开放标签返回结果持久化启停状态。
 - 仅 Anchor PR 在 `T-30min` 之后拒绝 join 请求（400）。
 - 仅 Anchor PR 在到达 `T-1h` 且槽位未确认时，会在读取/操作时懒触发自动释放，保证结构状态收敛。
 - 编辑弹窗与结构化创建页使用同一表单组件与同一校验逻辑。
