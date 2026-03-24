@@ -229,7 +229,7 @@ const buildBaseSection = (
   const slotState: PartnerSectionView["viewer"]["slotState"] =
     selfActiveSlot?.status ??
     releasedSlotState ??
-    (publicPR.isViewerReleased ? "EXITED" : "NOT_JOINED");
+    "NOT_JOINED";
 
   return {
     capacity: {
