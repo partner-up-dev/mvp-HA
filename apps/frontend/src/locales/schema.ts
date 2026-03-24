@@ -266,6 +266,7 @@ export interface MessageSchema {
     slotConfirmed: string;
     slotAttended: string;
     slotNotJoined: string;
+    slotReleased: string;
     editContent: string;
     modifyStatus: string;
     publishDraft: {

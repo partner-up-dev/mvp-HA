@@ -13,14 +13,13 @@ import {
   desc,
   eq,
   inArray,
-  isNull,
   sql,
 } from "drizzle-orm";
 
 export type ActiveParticipantSummary = {
   partnerId: PartnerId;
   status: Extract<PartnerStatus, "JOINED" | "CONFIRMED" | "ATTENDED">;
-  userId: UserId | null;
+  userId: UserId;
   nickname: string | null;
   avatar: string | null;
 };
@@ -65,15 +64,6 @@ export class PartnerRepository {
         ),
       )
       .orderBy(desc(partners.id));
-  }
-
-  async findFirstReleasedSlot(prId: PRId) {
-    const result = await db
-      .select()
-      .from(partners)
-      .where(and(eq(partners.prId, prId), eq(partners.status, "RELEASED")))
-      .orderBy(asc(partners.id));
-    return result[0] ?? null;
   }
 
   async listActiveIdsByPrId(prId: PRId): Promise<PartnerId[]> {
@@ -183,17 +173,18 @@ export class PartnerRepository {
 
   async createSlot(data: {
     prId: PRId;
-    userId?: UserId | null;
-    status?: PartnerStatus;
+    userId: UserId;
+    status: PartnerStatus;
   }) {
     const now = new Date();
-    const nextStatus = data.status ?? "RELEASED";
+    const nextStatus = data.status;
     const result = await db
       .insert(partners)
       .values({
         prId: data.prId,
-        userId: data.userId ?? null,
+        userId: data.userId,
         status: nextStatus,
+        exitedAt: nextStatus === "EXITED" ? now : null,
         confirmedAt: nextStatus === "CONFIRMED" ? now : null,
         releasedAt: nextStatus === "RELEASED" ? now : null,
       })
@@ -201,68 +192,15 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
-  async createReleasedSlots(prId: PRId, count: number) {
-    if (count <= 0) return;
-    const now = new Date();
-    const rows: Array<typeof partners.$inferInsert> = Array.from(
-      { length: count },
-      () => ({
-        prId,
-        userId: null,
-        status: "RELEASED",
-        releasedAt: now,
-      }),
-    );
-    await db.insert(partners).values(rows);
-  }
-
-  async assignSlot(
-    id: PartnerId,
-    userId: UserId,
-    status: Exclude<PartnerStatus, "RELEASED" | "ATTENDED">,
-  ) {
+  async updateStatus(id: PartnerId, status: PartnerStatus) {
     const now = new Date();
     const result = await db
       .update(partners)
       .set({
-        userId,
         status,
-        confirmedAt: status === "CONFIRMED" ? now : null,
-        releasedAt: null,
-        attendedAt: null,
-        checkInAt: null,
-        didAttend: null,
-        wouldJoinAgain: null,
-        paymentStatus: "NONE",
-        reimbursementRequested: false,
-        reimbursementStatus: "NONE",
-        reimbursementAmount: null,
-        reimbursementRequestedAt: null,
-        reimbursementReviewedAt: null,
-        reimbursementPaidAt: null,
+        exitedAt: status === "EXITED" ? now : null,
+        releasedAt: status === "RELEASED" ? now : null,
       })
-      .where(eq(partners.id, id))
-      .returning();
-    return result[0] ?? null;
-  }
-
-  async bindUserIfUnbound(id: PartnerId, userId: UserId) {
-    const result = await db
-      .update(partners)
-      .set({ userId })
-      .where(and(eq(partners.id, id), isNull(partners.userId)))
-      .returning();
-    return result[0] ?? null;
-  }
-
-  async updateStatus(
-    id: PartnerId,
-    status: PartnerStatus,
-    userId?: UserId | null,
-  ) {
-    const result = await db
-      .update(partners)
-      .set({ status, userId })
       .where(eq(partners.id, id))
       .returning();
     return result[0] ?? null;
@@ -287,7 +225,7 @@ export class PartnerRepository {
       .update(partners)
       .set({
         status: "RELEASED",
-        userId: null,
+        exitedAt: null,
         confirmedAt: null,
         attendedAt: null,
         checkInAt: null,
@@ -304,6 +242,21 @@ export class PartnerRepository {
       })
       .where(eq(partners.id, id))
       .returning();
+    return result[0] ?? null;
+  }
+
+  async findReleasedByPrIdAndUserId(prId: PRId, userId: UserId) {
+    const result = await db
+      .select()
+      .from(partners)
+      .where(
+        and(
+          eq(partners.prId, prId),
+          eq(partners.userId, userId),
+          inArray(partners.status, ["RELEASED", "EXITED"]),
+        ),
+      )
+      .orderBy(desc(partners.id));
     return result[0] ?? null;
   }
 

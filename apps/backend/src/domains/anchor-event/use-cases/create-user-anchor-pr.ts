@@ -7,7 +7,6 @@ import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.servic
 import { partnerRequests } from "../../../entities/partner-request";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partners } from "../../../entities/partner";
-import { resolveDesiredSlotCount } from "../../pr-core/services/slot-management.service";
 import { assertNoUserTimeWindowConflict } from "../../pr-core/services/participation-time-conflict.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { normalizeUserLocationPool } from "../../../entities/anchor-event";
@@ -207,8 +206,6 @@ export const createUserAnchorPR = async ({
       autoHideAt: null,
     });
 
-    const slotCount = resolveDesiredSlotCount(root.minPartners, root.maxPartners);
-    const now = new Date();
     await tx.insert(partners).values({
       prId: root.id,
       userId: user.id,
@@ -227,16 +224,6 @@ export const createUserAnchorPR = async ({
       reimbursementReviewedAt: null,
       reimbursementPaidAt: null,
     });
-    if (slotCount > 1) {
-      await tx.insert(partners).values(
-        Array.from({ length: slotCount - 1 }, () => ({
-          prId: root.id,
-          userId: null,
-          status: "RELEASED" as const,
-          releasedAt: now,
-        })),
-      );
-    }
 
     return root;
   });
