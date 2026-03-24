@@ -55,7 +55,7 @@
   - `T-1h` 时刻会自动释放仍为 `JOINED` 的槽位（变为 `RELEASED` 并从 PR 当前参与列表移除）。
   - `T-30min` 后禁止加入（event locked）。
 - Anchor PR 详情页提供“确认参与”动作，调用 `POST /api/apr/:id/confirm` 使槽位进入 `CONFIRMED`（若尚未确认）。
-- Anchor PR 详情页提供可选签到反馈（我已到场 / 我未到场），调用 `POST /api/apr/:id/check-in`；`didAttend=true` 时槽位进入 `ATTENDED`。
+- Anchor PR 详情页提供可选签到反馈（仅“我已到场”），调用 `POST /api/apr/:id/check-in`；提交后槽位进入 `ATTENDED`，并记录 `wouldJoinAgain`。未提交签到视为 `CHECKIN_UNKNOWN`（`didAttend=null`）。
 - `/me` 与 Anchor PR 详情页共用“通知订阅”卡片，查询/更新接口为：
   - `GET /api/wechat/notifications/subscriptions`
   - `POST /api/wechat/notifications/subscriptions`（`kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER"`, `enabled: boolean`）
@@ -109,6 +109,8 @@
 - `POST /api/wechat/notifications/subscriptions` 的 `kind=NEW_PARTNER` 关闭时会清理未执行的新搭子通知任务。
 - 仅 Anchor PR 在 `T-30min` 之后拒绝 join 请求（400）。
 - 仅 Anchor PR 在到达 `T-1h` 且槽位未确认时，会在读取/操作时懒触发自动释放，保证结构状态收敛。
+- Anchor PR 详情页签到仅展示“我已到场”；不再提供“我未到场”提交动作。
+- 未触发签到提交时，参与槽位 `didAttend` 保持 `null`，表示 `CHECKIN_UNKNOWN`。
 - 编辑弹窗与结构化创建页使用同一表单组件与同一校验逻辑。
 - `PATCH /api/cpr/:id/content` 与 `PATCH /api/apr/:id/content` 在修改时间导致任一活跃参与者产生冲突时返回 `409`，错误码 `JOIN_TIME_WINDOW_CONFLICT`。
 

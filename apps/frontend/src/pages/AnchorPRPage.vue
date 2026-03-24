@@ -459,7 +459,6 @@ type DockActionKey =
   | "JOIN"
   | "CONFIRM"
   | "CHECKIN_ATTENDED"
-  | "CHECKIN_MISSED"
   | "CREATOR_EDIT"
   | "CREATOR_STATUS";
 
@@ -768,15 +767,6 @@ const dockActions = computed<DockActionItem[]>(() => {
         label: t("prPage.checkInAttended"),
         pendingLabel: t("prPage.checkingIn"),
         tone: "primary",
-        disabled: !viewer.canCheckIn,
-        pending: attendanceActions.checkInPending.value,
-        tip: checkInTip,
-      },
-      {
-        key: "CHECKIN_MISSED",
-        label: t("prPage.checkInMissed"),
-        pendingLabel: t("prPage.checkingIn"),
-        tone: "secondary",
         disabled: !viewer.canCheckIn,
         pending: attendanceActions.checkInPending.value,
         tip: checkInTip,
@@ -1100,11 +1090,7 @@ const handleDockAction = async (action: DockActionItem) => {
     return;
   }
   if (action.key === "CHECKIN_ATTENDED") {
-    attendanceActions.prepareCheckIn(true);
-    return;
-  }
-  if (action.key === "CHECKIN_MISSED") {
-    attendanceActions.prepareCheckIn(false);
+    attendanceActions.prepareCheckIn();
     return;
   }
   if (action.key === "CREATOR_EDIT") {
@@ -1171,7 +1157,7 @@ function mapDockActionToTrackType(
 ): "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT" | null {
   if (key === "JOIN") return "JOIN";
   if (key === "CONFIRM") return "CONFIRM_SLOT";
-  if (key === "CHECKIN_ATTENDED" || key === "CHECKIN_MISSED") return "CHECK_IN";
+  if (key === "CHECKIN_ATTENDED") return "CHECK_IN";
   return null;
 }
 

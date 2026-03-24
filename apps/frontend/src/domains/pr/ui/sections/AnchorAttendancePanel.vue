@@ -12,19 +12,10 @@
     <button
       v-if="hasJoined && canCheckIn"
       class="checkin-attended-btn"
-      @click="emit('prepare-check-in', true)"
+      @click="emit('prepare-check-in')"
       :disabled="checkInPending"
     >
       {{ checkInPending ? t("prPage.checkingIn") : t("prPage.checkInAttended") }}
-    </button>
-
-    <button
-      v-if="hasJoined && canCheckIn"
-      class="checkin-missed-btn"
-      @click="emit('prepare-check-in', false)"
-      :disabled="checkInPending"
-    >
-      {{ checkInPending ? t("prPage.checkingIn") : t("prPage.checkInMissed") }}
     </button>
   </section>
 
@@ -73,7 +64,7 @@ defineProps<{
 
 const emit = defineEmits<{
   "confirm-slot": [];
-  "prepare-check-in": [didAttend: boolean];
+  "prepare-check-in": [];
   "submit-check-in": [wouldJoinAgain: boolean];
   "cancel-check-in": [];
 }>();
@@ -95,8 +86,7 @@ const { t } = useI18n();
 }
 
 .confirm-slot-btn,
-.checkin-attended-btn,
-.checkin-missed-btn {
+.checkin-attended-btn {
   @include mx.pu-font(label-large);
   flex: 1;
   min-width: 0;
@@ -110,10 +100,6 @@ const { t } = useI18n();
 
 .checkin-attended-btn {
   @include mx.pu-rect-action(tertiary, default);
-}
-
-.checkin-missed-btn {
-  @include mx.pu-rect-action(outline, default);
 }
 
 .checkin-followup {

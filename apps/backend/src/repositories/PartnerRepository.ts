@@ -311,7 +311,6 @@ export class PartnerRepository {
   async reportCheckIn(
     id: PartnerId,
     payload: {
-      didAttend: boolean;
       wouldJoinAgain: boolean | null;
     },
   ) {
@@ -319,10 +318,10 @@ export class PartnerRepository {
     const result = await db
       .update(partners)
       .set({
-        status: payload.didAttend ? "ATTENDED" : undefined,
-        attendedAt: payload.didAttend ? now : undefined,
+        status: "ATTENDED",
+        attendedAt: now,
         checkInAt: now,
-        didAttend: payload.didAttend,
+        didAttend: true,
         wouldJoinAgain: payload.wouldJoinAgain,
       })
       .where(eq(partners.id, id))
