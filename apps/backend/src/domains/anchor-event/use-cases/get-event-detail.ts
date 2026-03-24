@@ -11,7 +11,7 @@ import {
   AnchorPRRepository,
   type AnchorPRRecord,
 } from "../../../repositories/AnchorPRRepository";
-import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { countActivePartnersForPR } from "../../pr-core/services/slot-management.service";
 import type {
   AnchorEventId,
   TimeWindowEntry,
@@ -27,7 +27,6 @@ import type { PartnerRequest } from "../../../entities/partner-request";
 const eventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
 const anchorPRRepo = new AnchorPRRepository();
-const partnerRepo = new PartnerRepository();
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -155,7 +154,7 @@ export async function getAnchorEventDetail(
 
     const detail = toBatchDetail(batch, prs, locationOptions);
     for (const pr of detail.prs) {
-      pr.partnerCount = await partnerRepo.countActiveByPrId(pr.id);
+      pr.partnerCount = await countActivePartnersForPR(pr.id);
     }
     batchDetails.push(detail);
   }

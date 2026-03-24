@@ -90,6 +90,13 @@
       </section>
 
       <section
+        v-if="prDetail.partnerSection.viewer.slotState === 'RELEASED'"
+        class="section-card released-notice"
+      >
+        <p class="released-notice__text">{{ t("prPage.slotReleased") }}</p>
+      </section>
+
+      <section
         v-for="action in dockActions"
         :key="action.key"
         class="section-card"
@@ -1407,6 +1414,17 @@ const goHome = () => {
 
 .page-action-error {
   margin-top: var(--sys-spacing-sm);
+}
+
+.released-notice {
+  background: var(--sys-color-error-container);
+  border-radius: 10px;
+}
+
+.released-notice__text {
+  margin: 0;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-error-container);
 }
 
 .subscription-card {

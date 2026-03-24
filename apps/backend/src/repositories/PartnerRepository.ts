@@ -287,7 +287,6 @@ export class PartnerRepository {
       .update(partners)
       .set({
         status: "RELEASED",
-        userId: null,
         confirmedAt: null,
         attendedAt: null,
         checkInAt: null,
@@ -304,6 +303,21 @@ export class PartnerRepository {
       })
       .where(eq(partners.id, id))
       .returning();
+    return result[0] ?? null;
+  }
+
+  async findReleasedByPrIdAndUserId(prId: PRId, userId: UserId) {
+    const result = await db
+      .select()
+      .from(partners)
+      .where(
+        and(
+          eq(partners.prId, prId),
+          eq(partners.userId, userId),
+          eq(partners.status, "RELEASED"),
+        ),
+      )
+      .orderBy(desc(partners.id));
     return result[0] ?? null;
   }
 

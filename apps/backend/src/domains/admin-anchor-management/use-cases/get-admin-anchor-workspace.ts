@@ -4,13 +4,12 @@ import {
   AnchorPRRepository,
   type AnchorPRRecord,
 } from "../../../repositories/AnchorPRRepository";
-import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { countActivePartnersForPR } from "../../pr-core/services/slot-management.service";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
 const anchorPRRepo = new AnchorPRRepository();
-const partnerRepo = new PartnerRepository();
 
 type AdminAnchorPRSummary = {
   prId: number;
@@ -78,7 +77,7 @@ const toAdminAnchorPRSummary = async (
   maxPartners: record.root.maxPartners,
   preferences: [...record.root.preferences],
   notes: record.root.notes,
-  partnerCount: await partnerRepo.countActiveByPrId(record.root.id),
+  partnerCount: await countActivePartnersForPR(record.root.id),
   confirmationStartOffsetMinutes: record.anchor.confirmationStartOffsetMinutes,
   confirmationEndOffsetMinutes: record.anchor.confirmationEndOffsetMinutes,
   joinLockOffsetMinutes: record.anchor.joinLockOffsetMinutes,

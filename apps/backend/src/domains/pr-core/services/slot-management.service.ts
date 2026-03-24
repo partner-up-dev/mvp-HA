@@ -124,6 +124,10 @@ export async function syncSlotCapacity(
 // Status recalculation
 // ---------------------------------------------------------------------------
 
+export async function countActivePartnersForPR(prId: PRId): Promise<number> {
+  return partnerRepo.countActiveByPrId(prId);
+}
+
 export async function recalculatePRStatus(prId: PRId): Promise<void> {
   const request = await prRepo.findById(prId);
   if (!request) {
