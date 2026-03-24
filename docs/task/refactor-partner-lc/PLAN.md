@@ -49,7 +49,7 @@
 
 ## 分阶段实施计划
 
-## Phase 1：统一服务口径并冻结契约
+### Phase 1：统一服务口径并冻结契约
 
 - 在 PR service/slot-management 中明确并复用唯一人数方法（active-only）
 - 清点并替换所有绕过此方法的调用点：
@@ -63,7 +63,7 @@
 - 服务层单一计数入口（已在当前修复 PR 奠定基础）
 - 调用点清单与替换完成记录
 
-## Phase 2：移除“释放槽位复用”能力
+### Phase 2：移除“释放槽位复用”能力
 
 - 停用/删除 `findFirstReleasedSlot`、`assignSlot` 这类复用路径
 - Join use case 改为“永远新增 partner row”
@@ -74,7 +74,7 @@
 - Join 行为可预测：无覆盖写
 - RELEASED 历史记录可追溯
 
-## Phase 3：容量与可加入判断改造
+### Phase 3：容量与可加入判断改造
 
 - 将“可加入”判断统一为：`activeCount < maxPartners`
 - 所有容量判断逻辑改为基于 active rows
@@ -84,7 +84,7 @@
 
 - 容量模型与生命周期模型一致
 
-## Phase 4：关联业务逻辑迁移
+### Phase 4：关联业务逻辑迁移
 
 梳理并改造与 partner 行 identity 强耦合的逻辑：
 
@@ -99,7 +99,7 @@
 
 - 下游流程不再受 slot 复用语义影响
 
-## Phase 5：数据库迁移与约束收敛
+### Phase 5：数据库迁移与约束收敛
 
 - 数据清理脚本：处理历史 `user_id IS NULL` 行
 - 增加/调整索引与约束，最终收敛到：
@@ -110,7 +110,7 @@
 
 - 模型层面对目标语义强约束
 
-## Phase 6：前后端视图与交互对齐
+### Phase 6：前后端视图与交互对齐
 
 - `slotState`/viewer state 语义与新模型一致
 - `RELEASED` 展示从“可能瞬时丢失”变为“基于历史记录可稳定判定”
