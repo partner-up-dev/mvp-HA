@@ -118,6 +118,9 @@
           {{ action.pending ? action.pendingLabel : action.label }}
         </button>
         <p v-if="action.tip" class="action-tip">{{ action.tip }}</p>
+        <p v-if="action.key === 'JOIN' && releaseNoticeText" class="action-tip">
+          {{ releaseNoticeText }}
+        </p>
       </section>
       <p
         v-if="primaryActionErrorMessage"
@@ -125,6 +128,16 @@
       >
         {{ primaryActionErrorMessage }}
       </p>
+
+      <AnchorPRRecoveryLane
+        v-if="showRecoveryLane"
+        :pr-id="id"
+        :section="prDetail.partnerSection"
+        :accept-alternative-batch-pending="
+          acceptAlternativeBatchMutation.isPending.value
+        "
+        @accept-alternative-batch="handleAcceptAlternativeBatch"
+      />
 
       <WeChatNotificationSubscriptionsCard
         v-if="showNotificationSubscriptionsCard"
@@ -190,15 +203,6 @@
         <AnchorPRAwarenessLane
           :pr-id="prDetail.id"
           :section="prDetail.partnerSection"
-        />
-
-        <AnchorPRRecoveryLane
-          :pr-id="id"
-          :section="prDetail.partnerSection"
-          :accept-alternative-batch-pending="
-            acceptAlternativeBatchMutation.isPending.value
-          "
-          @accept-alternative-batch="handleAcceptAlternativeBatch"
         />
 
         <section
@@ -604,6 +608,21 @@ const participantOverviewText = computed(() => {
   const min = prDetail.value.partnerSection.capacity.min;
   if (min === null) return `${current} 人已加入，当前未设置最低成团人数。`;
   return `${current} 人已加入，最低成团人数 ${min} 人。`;
+});
+
+const releaseNoticeText = computed(() => {
+  const releasedSlot = prDetail.value?.partnerSection.viewer.releasedSlot ?? null;
+  if (!releasedSlot) return null;
+  if (releasedSlot.state === "EXITED") {
+    return t("prPage.partnerSection.releaseNoticeExit");
+  }
+  return t("prPage.partnerSection.releaseNoticeAuto");
+});
+
+const showRecoveryLane = computed(() => {
+  const viewer = prDetail.value?.partnerSection.viewer;
+  if (!viewer) return false;
+  return !viewer.isParticipant && !viewer.canJoin;
 });
 
 const rosterPreview = computed(

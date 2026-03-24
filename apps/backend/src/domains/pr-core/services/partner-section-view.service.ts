@@ -1,6 +1,9 @@
 import type { PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import type { ActiveParticipantSummary } from "../../../repositories/PartnerRepository";
+import type {
+  ActiveParticipantSummary,
+  RosterParticipantSummary,
+} from "../../../repositories/PartnerRepository";
 import {
   hasEventStarted,
   isBookingDeadlineReached,
@@ -25,13 +28,15 @@ export type PartnerSectionActionBlockedReason =
   | "ALREADY_CONFIRMED"
   | "CHECKIN_NOT_OPEN";
 
+export type PartnerSectionReleaseState = "RELEASED" | "EXITED";
+
 export type PartnerSectionRosterItem = {
   partnerId: number;
   displayName: string;
   avatarUrl: string | null;
   isCreator: boolean;
   isSelf: boolean;
-  state: "JOINED" | "CONFIRMED" | "ATTENDED";
+  state: "JOINED" | "CONFIRMED" | "ATTENDED" | PartnerSectionReleaseState;
 };
 
 export type PartnerSectionView = {
@@ -64,6 +69,11 @@ export type PartnerSectionView = {
     exitBlockedReason: PartnerSectionActionBlockedReason;
     confirmBlockedReason: PartnerSectionActionBlockedReason;
     checkInBlockedReason: PartnerSectionActionBlockedReason;
+    releasedSlot: null | {
+      partnerId: number;
+      state: PartnerSectionReleaseState;
+      releasedAt: string | null;
+    };
   };
   reminder:
     | {
@@ -104,8 +114,9 @@ export type PartnerSectionView = {
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
 
+// Roster entries can include released slots, so accept the broader roster summary type.
 const resolveDisplayName = (
-  item: ActiveParticipantSummary,
+  item: RosterParticipantSummary,
   isCreator: boolean,
   isSelf: boolean,
 ): string => {
@@ -131,10 +142,32 @@ const resolveReadiness = (
   return "NEEDS_MORE";
 };
 
+const resolveReleaseState = (
+  partnerId: number,
+  releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
+): PartnerSectionReleaseState =>
+  releaseStateByPartnerId.get(partnerId) ?? "RELEASED";
+
+const resolveRosterState = (
+  status: RosterParticipantSummary["status"],
+  partnerId: number,
+  releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
+): PartnerSectionRosterItem["state"] => {
+  if (status === "EXITED") {
+    return "EXITED";
+  }
+  if (status === "RELEASED") {
+    return resolveReleaseState(partnerId, releaseStateByPartnerId);
+  }
+  return status;
+};
+
 const buildBaseSection = (
   publicPR: PublicPR,
   activeParticipants: ActiveParticipantSummary[],
+  rosterParticipants: RosterParticipantSummary[],
   viewerUserId: UserId | null,
+  releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
 ): Omit<
   PartnerSectionView,
   "scenario" | "reminder" | "timeline" | "bookingContact" | "fallbacks"
@@ -147,7 +180,7 @@ const buildBaseSection = (
     min === null ? 0 : Math.max(0, min - current);
   const readiness = resolveReadiness(publicPR.status, current, min, max);
 
-  const roster = activeParticipants.map((item) => {
+  const roster = rosterParticipants.map((item) => {
     const isCreator = Boolean(publicPR.createdBy && item.userId === publicPR.createdBy);
     const isSelf = Boolean(viewerUserId && item.userId === viewerUserId);
     return {
@@ -156,20 +189,47 @@ const buildBaseSection = (
       avatarUrl: item.avatar,
       isCreator,
       isSelf,
-      state: item.status,
+      state: resolveRosterState(
+        item.status,
+        item.partnerId,
+        releaseStateByPartnerId,
+      ),
     } satisfies PartnerSectionRosterItem;
   });
 
-  const selfRosterItem =
+  const selfActiveSlot =
     publicPR.myPartnerId === null
       ? null
-      : roster.find((item) => item.partnerId === publicPR.myPartnerId) ?? null;
+      : activeParticipants.find((item) => item.partnerId === publicPR.myPartnerId) ??
+        null;
   const isCreator = Boolean(viewerUserId && publicPR.createdBy === viewerUserId);
   const isParticipant = publicPR.myPartnerId !== null;
+  const releasedSlot = viewerUserId
+    ? rosterParticipants
+        .filter(
+          (item) =>
+            (item.status === "RELEASED" || item.status === "EXITED") &&
+            item.userId === viewerUserId,
+        )
+        .sort((a, b) => {
+          const aTime = a.releasedAt?.getTime() ?? 0;
+          const bTime = b.releasedAt?.getTime() ?? 0;
+          if (aTime !== bTime) return bTime - aTime;
+          return b.partnerId - a.partnerId;
+        })[0] ?? null
+    : null;
+
+  const releasedSlotState: PartnerSectionReleaseState | null =
+    releasedSlot === null
+      ? null
+      : releasedSlot.status === "EXITED"
+        ? "EXITED"
+        : resolveReleaseState(releasedSlot.partnerId, releaseStateByPartnerId);
 
   const slotState: PartnerSectionView["viewer"]["slotState"] =
-    selfRosterItem?.state ??
-    (publicPR.isViewerReleased ? "EXITED" : "NOT_JOINED");
+    selfActiveSlot?.status ??
+    releasedSlotState ??
+    "NOT_JOINED";
 
   return {
     capacity: {
@@ -194,6 +254,13 @@ const buildBaseSection = (
       exitBlockedReason: "NONE",
       confirmBlockedReason: "NONE",
       checkInBlockedReason: "NONE",
+      releasedSlot: releasedSlot
+        ? {
+            partnerId: releasedSlot.partnerId,
+            state: releasedSlotState ?? "RELEASED",
+            releasedAt: toIsoString(releasedSlot.releasedAt),
+          }
+        : null,
     },
   };
 };
@@ -202,8 +269,20 @@ export function buildCommunityPartnerSection(
   publicPR: PublicPR,
   activeParticipants: ActiveParticipantSummary[],
   viewerUserId: UserId | null,
+  options: {
+    rosterParticipants?: RosterParticipantSummary[];
+    releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+  } = {},
 ): PartnerSectionView {
-  const base = buildBaseSection(publicPR, activeParticipants, viewerUserId);
+  const rosterParticipants = options.rosterParticipants ?? activeParticipants;
+  const releaseStateByPartnerId = options.releaseStateByPartnerId ?? new Map();
+  const base = buildBaseSection(
+    publicPR,
+    activeParticipants,
+    rosterParticipants,
+    viewerUserId,
+    releaseStateByPartnerId,
+  );
   const current = activeParticipants.length;
 
   let canJoin = true;
@@ -270,6 +349,7 @@ export function buildCommunityPartnerSection(
 export function buildAnchorPartnerSection(params: {
   publicPR: PublicPR;
   activeParticipants: ActiveParticipantSummary[];
+  rosterParticipants: RosterParticipantSummary[];
   viewerUserId: UserId | null;
   policy: ResolvedAnchorParticipationPolicy;
   bookingDeadlineAt: Date | null;
@@ -288,18 +368,27 @@ export function buildAnchorPartnerSection(params: {
     status: PRStatus;
   }>;
   alternativeBatches: AlternativeBatchRecommendation[];
+  releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
 }): PartnerSectionView {
   const {
     publicPR,
     activeParticipants,
+    rosterParticipants,
     viewerUserId,
     policy,
     bookingDeadlineAt,
     bookingContact,
     sameBatchAlternatives,
     alternativeBatches,
+    releaseStateByPartnerId = new Map(),
   } = params;
-  const base = buildBaseSection(publicPR, activeParticipants, viewerUserId);
+  const base = buildBaseSection(
+    publicPR,
+    activeParticipants,
+    rosterParticipants,
+    viewerUserId,
+    releaseStateByPartnerId,
+  );
   const current = activeParticipants.length;
   const joinLocked = policy.joinLockAt
     ? Date.now() >= policy.joinLockAt.getTime()
