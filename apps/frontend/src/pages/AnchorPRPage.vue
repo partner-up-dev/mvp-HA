@@ -90,7 +90,10 @@
       </section>
 
       <section
-        v-if="prDetail.partnerSection.viewer.slotState === 'RELEASED'"
+        v-if="
+          prDetail.partnerSection.viewer.slotState === 'RELEASED' ||
+          prDetail.partnerSection.viewer.slotState === 'EXITED'
+        "
         class="section-card released-notice"
       >
         <p class="released-notice__text">{{ t("prPage.slotReleased") }}</p>
