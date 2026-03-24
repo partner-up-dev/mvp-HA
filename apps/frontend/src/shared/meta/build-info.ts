@@ -1,6 +1,6 @@
 export interface FrontendBuildInfo {
   frontendCommitHash: string;
-  repositoryUrl: string | null;
+  repositoryUrl: string;
 }
 
 const normalizeValue = (value: string | undefined): string | null => {
@@ -10,6 +10,7 @@ const normalizeValue = (value: string | undefined): string | null => {
 };
 
 export const frontendBuildInfo: FrontendBuildInfo = {
-  frontendCommitHash: normalizeValue(import.meta.env.VITE_FRONTEND_COMMIT_HASH) ?? "unknown",
-  repositoryUrl: normalizeValue(import.meta.env.VITE_REPOSITORY_URL),
+  frontendCommitHash:
+    normalizeValue(import.meta.env.VITE_FRONTEND_COMMIT_HASH) ?? "unknown",
+  repositoryUrl: "https://github.com/partner-up-dev/mvp-HA",
 };
