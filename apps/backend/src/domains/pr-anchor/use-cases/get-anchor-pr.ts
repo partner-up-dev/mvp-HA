@@ -105,6 +105,7 @@ const hasVisibleSameBatchStatus = (status: PRStatus): boolean =>
 
 const releaseActionStateMap = new Map<string, PartnerSectionReleaseState>([
   ["partner.exit", "EXITED"],
+  ["partner.auto_exit_confirmed", "EXITED"],
   ["partner.auto_release_unconfirmed", "RELEASED"],
 ]);
 // Ensure we fetch enough recent logs to cover release actions on larger rosters.
@@ -117,7 +118,8 @@ const resolveReleaseStateByPartnerId = async (
   >,
 ): Promise<Map<number, PartnerSectionReleaseState>> => {
   const hasReleased = rosterParticipants.some(
-    (participant) => participant.status === "RELEASED",
+    (participant) =>
+      participant.status === "RELEASED" || participant.status === "EXITED",
   );
   if (!hasReleased) return new Map();
 

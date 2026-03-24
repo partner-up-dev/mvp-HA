@@ -153,6 +153,9 @@ const resolveRosterState = (
   partnerId: number,
   releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
 ): PartnerSectionRosterItem["state"] => {
+  if (status === "EXITED") {
+    return "EXITED";
+  }
   if (status === "RELEASED") {
     return resolveReleaseState(partnerId, releaseStateByPartnerId);
   }
@@ -204,7 +207,9 @@ const buildBaseSection = (
   const releasedSlot = viewerUserId
     ? rosterParticipants
         .filter(
-          (item) => item.status === "RELEASED" && item.userId === viewerUserId,
+          (item) =>
+            (item.status === "RELEASED" || item.status === "EXITED") &&
+            item.userId === viewerUserId,
         )
         .sort((a, b) => {
           const aTime = a.releasedAt?.getTime() ?? 0;
@@ -214,8 +219,16 @@ const buildBaseSection = (
         })[0] ?? null
     : null;
 
+  const releasedSlotState: PartnerSectionReleaseState | null =
+    releasedSlot === null
+      ? null
+      : releasedSlot.status === "EXITED"
+        ? "EXITED"
+        : resolveReleaseState(releasedSlot.partnerId, releaseStateByPartnerId);
+
   const slotState: PartnerSectionView["viewer"]["slotState"] =
     selfActiveSlot?.status ??
+    releasedSlotState ??
     (publicPR.isViewerReleased ? "EXITED" : "NOT_JOINED");
 
   return {
@@ -244,10 +257,7 @@ const buildBaseSection = (
       releasedSlot: releasedSlot
         ? {
             partnerId: releasedSlot.partnerId,
-            state: resolveReleaseState(
-              releasedSlot.partnerId,
-              releaseStateByPartnerId,
-            ),
+            state: releasedSlotState ?? "RELEASED",
             releasedAt: toIsoString(releasedSlot.releasedAt),
           }
         : null,
