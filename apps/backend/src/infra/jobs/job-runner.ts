@@ -7,6 +7,7 @@ const TICK_LOCK_NAMESPACE = 2_147_483_001;
 const TICK_LOCK_KEY = 1;
 const DEFAULT_EARLY_TOLERANCE_MS = 15 * 60 * 1000;
 const DEFAULT_LATE_TOLERANCE_MS = 15 * 60 * 1000;
+// Sentinel value used to disable late tolerance checks for a job.
 export const NO_LATE_TOLERANCE_MS = -1;
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_BATCH_SIZE = 20;
@@ -124,6 +125,7 @@ const positiveOr = (value: number | undefined, fallback: number): number => {
   return Math.floor(value);
 };
 
+// Allow the sentinel to bypass the nonNegativeOr validation.
 const resolveLateToleranceMs = (value: number | undefined): number =>
   value === NO_LATE_TOLERANCE_MS
     ? NO_LATE_TOLERANCE_MS
