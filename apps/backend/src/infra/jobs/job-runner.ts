@@ -373,7 +373,7 @@ class JobRunnerImpl {
           updated_at = now(),
           last_error = coalesce(last_error, 'Missed tolerance window')
         where status in ('PENDING', 'RETRY')
-          and late_tolerance_ms >= 0
+          and late_tolerance_ms <> ${NO_LATE_TOLERANCE_MS}
           and run_at + (late_tolerance_ms * interval '1 millisecond') < now()
         returning id
       `);
@@ -386,7 +386,7 @@ class JobRunnerImpl {
             and (lease_until is null or lease_until < now())
             and now() >= run_at - (early_tolerance_ms * interval '1 millisecond')
             and (
-              late_tolerance_ms < 0
+              late_tolerance_ms = ${NO_LATE_TOLERANCE_MS}
               or now() <= run_at + (late_tolerance_ms * interval '1 millisecond')
             )
           order by run_at asc, id asc
