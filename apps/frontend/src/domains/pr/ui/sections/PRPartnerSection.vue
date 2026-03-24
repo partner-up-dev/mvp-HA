@@ -160,44 +160,78 @@
       </p>
 
       <div v-else class="partner-section__roster">
-        <router-link
-          v-for="item in section.roster"
-          :key="item.partnerId"
-          :to="partnerProfilePath(item.partnerId)"
-          class="partner-section__roster-item partner-section__roster-link"
-        >
-          <div class="partner-section__roster-main">
-            <div class="partner-section__roster-identity">
-              <img
-                v-if="item.avatarUrl"
-                :src="item.avatarUrl"
-                :alt="rosterAvatarAlt(item.displayName)"
-                class="partner-section__roster-avatar"
-              />
-              <div
-                v-else
-                class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
-                aria-hidden="true"
-              >
-                <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+        <template v-for="item in section.roster" :key="item.partnerId">
+          <router-link
+            v-if="isRosterLinkable(item.state)"
+            :to="partnerProfilePath(item.partnerId)"
+            class="partner-section__roster-item partner-section__roster-link"
+          >
+            <div class="partner-section__roster-main">
+              <div class="partner-section__roster-identity">
+                <img
+                  v-if="item.avatarUrl"
+                  :src="item.avatarUrl"
+                  :alt="rosterAvatarAlt(item.displayName)"
+                  class="partner-section__roster-avatar"
+                />
+                <div
+                  v-else
+                  class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
+                  aria-hidden="true"
+                >
+                  <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+                </div>
+                <span class="partner-section__roster-name">{{
+                  item.displayName
+                }}</span>
               </div>
-              <span class="partner-section__roster-name">{{
-                item.displayName
-              }}</span>
+              <div class="partner-section__roster-tags">
+                <span v-if="item.isSelf" class="partner-section__tag">
+                  {{ t("prPage.partnerSection.rosterSelf") }}
+                </span>
+                <span v-if="item.isCreator" class="partner-section__tag">
+                  {{ t("prPage.partnerSection.rosterCreator") }}
+                </span>
+              </div>
             </div>
-            <div class="partner-section__roster-tags">
-              <span v-if="item.isSelf" class="partner-section__tag">
-                {{ t("prPage.partnerSection.rosterSelf") }}
-              </span>
-              <span v-if="item.isCreator" class="partner-section__tag">
-                {{ t("prPage.partnerSection.rosterCreator") }}
-              </span>
+            <span class="partner-section__state-badge">
+              {{ rosterStateText(item.state) }}
+            </span>
+          </router-link>
+          <div v-else class="partner-section__roster-item">
+            <div class="partner-section__roster-main">
+              <div class="partner-section__roster-identity">
+                <img
+                  v-if="item.avatarUrl"
+                  :src="item.avatarUrl"
+                  :alt="rosterAvatarAlt(item.displayName)"
+                  class="partner-section__roster-avatar"
+                />
+                <div
+                  v-else
+                  class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
+                  aria-hidden="true"
+                >
+                  <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+                </div>
+                <span class="partner-section__roster-name">{{
+                  item.displayName
+                }}</span>
+              </div>
+              <div class="partner-section__roster-tags">
+                <span v-if="item.isSelf" class="partner-section__tag">
+                  {{ t("prPage.partnerSection.rosterSelf") }}
+                </span>
+                <span v-if="item.isCreator" class="partner-section__tag">
+                  {{ t("prPage.partnerSection.rosterCreator") }}
+                </span>
+              </div>
             </div>
+            <span class="partner-section__state-badge">
+              {{ rosterStateText(item.state) }}
+            </span>
           </div>
-          <span class="partner-section__state-badge">
-            {{ rosterStateText(item.state) }}
-          </span>
-        </router-link>
+        </template>
       </div>
     </section>
 
@@ -531,10 +565,18 @@ const rosterStateText = (
       return t("prPage.partnerSection.rosterConfirmed");
     case "ATTENDED":
       return t("prPage.partnerSection.rosterAttended");
+    case "EXITED":
+      return t("prPage.partnerSection.rosterExited");
+    case "RELEASED":
+      return t("prPage.partnerSection.rosterReleased");
     default:
       return t("prPage.partnerSection.rosterJoined");
   }
 };
+
+const isRosterLinkable = (
+  state: PartnerSectionView["roster"][number]["state"],
+): boolean => state !== "RELEASED" && state !== "EXITED";
 
 const rosterAvatarAlt = (name: string): string =>
   t("prPage.partnerSection.rosterAvatarAlt", { name });

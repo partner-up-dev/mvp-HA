@@ -16,15 +16,18 @@ import {
 } from "../../pr-booking-support";
 import {
   buildAnchorPartnerSection,
+  type PartnerSectionReleaseState,
   type PartnerSectionView,
 } from "../../pr-core/services/partner-section-view.service";
 import { resolveAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 import { resolveBookingContactState } from "../../pr-booking-support";
+import { OperationLogRepository } from "../../../infra/operation-log/operation-log.repository";
 
 const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
 const partnerRepo = new PartnerRepository();
+const operationLogRepo = new OperationLogRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -100,6 +103,48 @@ export type AnchorPRDetail = {
 const hasVisibleSameBatchStatus = (status: PRStatus): boolean =>
   status !== "FULL" && status !== "EXPIRED" && status !== "CLOSED";
 
+const releaseActionStateMap = new Map<string, PartnerSectionReleaseState>([
+  ["partner.exit", "EXITED"],
+  ["partner.auto_release_unconfirmed", "RELEASED"],
+]);
+
+const resolveReleaseStateByPartnerId = async (
+  prId: PRId,
+  rosterParticipants: Awaited<
+    ReturnType<typeof partnerRepo.listRosterParticipantSummariesByPrId>
+  >,
+): Promise<Map<number, PartnerSectionReleaseState>> => {
+  const hasReleased = rosterParticipants.some(
+    (participant) => participant.status === "RELEASED",
+  );
+  if (!hasReleased) return new Map();
+
+  const logs = await operationLogRepo.findByAggregate(
+    "partner_request",
+    String(prId),
+    Math.max(50, rosterParticipants.length * 2),
+  );
+  const releaseStateByPartnerId = new Map<number, PartnerSectionReleaseState>();
+
+  for (const log of logs) {
+    const state = releaseActionStateMap.get(log.action);
+    if (!state) continue;
+    const detail = log.detail as Record<string, unknown> | null;
+    const rawPartnerId = detail?.partnerId;
+    const partnerId =
+      typeof rawPartnerId === "number"
+        ? rawPartnerId
+        : typeof rawPartnerId === "string"
+          ? Number(rawPartnerId)
+          : null;
+    if (!partnerId || Number.isNaN(partnerId)) continue;
+    if (releaseStateByPartnerId.has(partnerId)) continue;
+    releaseStateByPartnerId.set(partnerId, state);
+  }
+
+  return releaseStateByPartnerId;
+};
+
 export async function getAnchorPRDetail(
   id: PRId,
   viewerIdentity?: {
@@ -161,6 +206,13 @@ export async function getAnchorPRDetail(
   const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
     id,
   );
+  const rosterParticipants = await partnerRepo.listRosterParticipantSummariesByPrId(
+    id,
+  );
+  const releaseStateByPartnerId = await resolveReleaseStateByPartnerId(
+    id,
+    rosterParticipants,
+  );
 
   return {
     id: publicPR.id,
@@ -218,12 +270,14 @@ export async function getAnchorPRDetail(
     partnerSection: buildAnchorPartnerSection({
       publicPR,
       activeParticipants,
+      rosterParticipants,
       viewerUserId,
       policy,
       bookingDeadlineAt,
       bookingContact,
       sameBatchAlternatives,
       alternativeBatches,
+      releaseStateByPartnerId,
     }),
   };
 }

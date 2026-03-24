@@ -25,6 +25,15 @@ export type ActiveParticipantSummary = {
   avatar: string | null;
 };
 
+export type RosterParticipantSummary = {
+  partnerId: PartnerId;
+  status: PartnerStatus;
+  userId: UserId | null;
+  nickname: string | null;
+  avatar: string | null;
+  releasedAt?: Date | null;
+};
+
 export class PartnerRepository {
   async findById(id: PartnerId) {
     const result = await db.select().from(partners).where(eq(partners.id, id));
@@ -117,6 +126,44 @@ export class PartnerRepository {
       userId: row.userId,
       nickname: row.nickname,
       avatar: row.avatar,
+    }));
+  }
+
+  async listRosterParticipantSummariesByPrId(
+    prId: PRId,
+  ): Promise<RosterParticipantSummary[]> {
+    const rows = await db
+      .select({
+        partnerId: partners.id,
+        status: partners.status,
+        userId: partners.userId,
+        nickname: users.nickname,
+        avatar: users.avatar,
+        releasedAt: partners.releasedAt,
+      })
+      .from(partners)
+      .leftJoin(users, eq(users.id, partners.userId))
+      .where(
+        and(
+          eq(partners.prId, prId),
+          inArray(partners.status, [
+            "JOINED",
+            "CONFIRMED",
+            "ATTENDED",
+            "RELEASED",
+          ]),
+          sql`${partners.userId} is not null`,
+        ),
+      )
+      .orderBy(asc(partners.id));
+
+    return rows.map((row) => ({
+      partnerId: row.partnerId,
+      status: row.status as PartnerStatus,
+      userId: row.userId,
+      nickname: row.nickname,
+      avatar: row.avatar,
+      releasedAt: row.releasedAt,
     }));
   }
 
@@ -287,7 +334,6 @@ export class PartnerRepository {
       .update(partners)
       .set({
         status: "RELEASED",
-        userId: null,
         confirmedAt: null,
         attendedAt: null,
         checkInAt: null,

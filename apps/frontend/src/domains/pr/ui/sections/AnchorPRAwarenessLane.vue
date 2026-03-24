@@ -16,36 +16,70 @@
     </p>
 
     <div v-else class="roster-list">
-      <router-link
-        v-for="item in section.roster"
-        :key="item.partnerId"
-        :to="partnerProfilePath(item.partnerId)"
-        class="roster-item roster-link"
-      >
-        <div class="roster-main">
-          <div class="roster-identity">
-            <img
-              v-if="item.avatarUrl"
-              :src="item.avatarUrl"
-              :alt="rosterAvatarAlt(item.displayName)"
-              class="roster-avatar"
-            />
-            <div v-else class="roster-avatar roster-avatar--fallback" aria-hidden="true">
-              <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+      <template v-for="item in section.roster" :key="item.partnerId">
+        <router-link
+          v-if="isRosterLinkable(item.state)"
+          :to="partnerProfilePath(item.partnerId)"
+          class="roster-item roster-link"
+        >
+          <div class="roster-main">
+            <div class="roster-identity">
+              <img
+                v-if="item.avatarUrl"
+                :src="item.avatarUrl"
+                :alt="rosterAvatarAlt(item.displayName)"
+                class="roster-avatar"
+              />
+              <div
+                v-else
+                class="roster-avatar roster-avatar--fallback"
+                aria-hidden="true"
+              >
+                <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+              </div>
+              <span class="roster-name">{{ item.displayName }}</span>
             </div>
-            <span class="roster-name">{{ item.displayName }}</span>
+            <div class="roster-tags">
+              <span v-if="item.isSelf" class="roster-tag">
+                {{ t("prPage.partnerSection.rosterSelf") }}
+              </span>
+              <span v-if="item.isCreator" class="roster-tag">
+                {{ t("prPage.partnerSection.rosterCreator") }}
+              </span>
+            </div>
           </div>
-          <div class="roster-tags">
-            <span v-if="item.isSelf" class="roster-tag">
-              {{ t("prPage.partnerSection.rosterSelf") }}
-            </span>
-            <span v-if="item.isCreator" class="roster-tag">
-              {{ t("prPage.partnerSection.rosterCreator") }}
-            </span>
+          <span class="roster-state">{{ rosterStateText(item.state) }}</span>
+        </router-link>
+        <div v-else class="roster-item">
+          <div class="roster-main">
+            <div class="roster-identity">
+              <img
+                v-if="item.avatarUrl"
+                :src="item.avatarUrl"
+                :alt="rosterAvatarAlt(item.displayName)"
+                class="roster-avatar"
+              />
+              <div
+                v-else
+                class="roster-avatar roster-avatar--fallback"
+                aria-hidden="true"
+              >
+                <span>{{ rosterAvatarFallback(item.displayName) }}</span>
+              </div>
+              <span class="roster-name">{{ item.displayName }}</span>
+            </div>
+            <div class="roster-tags">
+              <span v-if="item.isSelf" class="roster-tag">
+                {{ t("prPage.partnerSection.rosterSelf") }}
+              </span>
+              <span v-if="item.isCreator" class="roster-tag">
+                {{ t("prPage.partnerSection.rosterCreator") }}
+              </span>
+            </div>
           </div>
+          <span class="roster-state">{{ rosterStateText(item.state) }}</span>
         </div>
-        <span class="roster-state">{{ rosterStateText(item.state) }}</span>
-      </router-link>
+      </template>
     </div>
   </section>
 </template>
@@ -72,10 +106,18 @@ const rosterStateText = (
       return t("prPage.partnerSection.rosterConfirmed");
     case "ATTENDED":
       return t("prPage.partnerSection.rosterAttended");
+    case "EXITED":
+      return t("prPage.partnerSection.rosterExited");
+    case "RELEASED":
+      return t("prPage.partnerSection.rosterReleased");
     default:
       return t("prPage.partnerSection.rosterJoined");
   }
 };
+
+const isRosterLinkable = (
+  state: AnchorPartnerSection["roster"][number]["state"],
+): boolean => state !== "RELEASED" && state !== "EXITED";
 
 const partnerProfilePath = (partnerId: number): string =>
   anchorPRPartnerProfilePath(props.prId, partnerId);
