@@ -6,7 +6,7 @@ import { PartnerRepository } from "../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { UserRepository } from "../../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../../repositories/UserNotificationOptRepository";
-import { jobRunner, type JobHandlerContext } from "../jobs";
+import { jobRunner, NO_LATE_TOLERANCE_MS, type JobHandlerContext } from "../jobs";
 import {
   WeChatSubscriptionMessageError,
   WeChatSubscriptionMessageService,
@@ -205,6 +205,7 @@ export async function scheduleWeChatNewPartnerNotificationsForJoin(input: {
     await jobRunner.scheduleOnce({
       jobType: WECHAT_NEW_PARTNER_JOB_TYPE,
       runAt: new Date(),
+      lateToleranceMs: NO_LATE_TOLERANCE_MS,
       dedupeKey: buildNewPartnerDedupeKey(
         recipientUserId,
         input.request.id,

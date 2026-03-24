@@ -11,7 +11,7 @@ import { UserRepository } from "../../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../../repositories/UserNotificationOptRepository";
 import { NotificationDeliveryRepository } from "../../repositories/NotificationDeliveryRepository";
 import { getTimeWindowStart } from "../../domains/pr-core/services/time-window.service";
-import { jobRunner, type JobHandlerContext } from "../jobs";
+import { jobRunner, NO_LATE_TOLERANCE_MS, type JobHandlerContext } from "../jobs";
 import {
   WeChatTemplateMessageError,
   WeChatTemplateMessageService,
@@ -325,6 +325,7 @@ export async function scheduleWeChatReminderJobsForParticipant(
     await jobRunner.scheduleOnce({
       jobType: WECHAT_REMINDER_JOB_TYPE,
       runAt,
+      lateToleranceMs: NO_LATE_TOLERANCE_MS,
       dedupeKey: buildReminderDedupeKey(request.id, userId, reminderType),
       payload: {
         prId: request.id,
