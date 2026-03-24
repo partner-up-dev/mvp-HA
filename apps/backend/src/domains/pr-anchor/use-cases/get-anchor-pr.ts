@@ -107,6 +107,8 @@ const releaseActionStateMap = new Map<string, PartnerSectionReleaseState>([
   ["partner.exit", "EXITED"],
   ["partner.auto_release_unconfirmed", "RELEASED"],
 ]);
+// Ensure we fetch enough recent logs to cover release actions on larger rosters.
+const minReleaseLogLimit = 50;
 
 const resolveReleaseStateByPartnerId = async (
   prId: PRId,
@@ -122,7 +124,7 @@ const resolveReleaseStateByPartnerId = async (
   const logs = await operationLogRepo.findByAggregate(
     "partner_request",
     String(prId),
-    Math.max(50, rosterParticipants.length * 2),
+    Math.max(minReleaseLogLimit, rosterParticipants.length * 2),
   );
   const releaseStateByPartnerId = new Map<number, PartnerSectionReleaseState>();
 

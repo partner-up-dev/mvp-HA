@@ -108,6 +108,7 @@ export type PartnerSectionView = {
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
 
+// Roster entries can include released slots, so accept the broader roster summary type.
 const resolveDisplayName = (
   item: RosterParticipantSummary,
   isCreator: boolean,
