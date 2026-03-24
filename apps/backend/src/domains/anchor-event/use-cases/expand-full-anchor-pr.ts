@@ -110,11 +110,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
 
   await initializeSlotsForPR(
     createdRoot.id,
-    "ANCHOR",
-    createdRoot.minPartners,
-    createdRoot.maxPartners,
     null,
-    createdRoot.time,
   );
   await materializePRSupportResources({
     prId: createdRoot.id,

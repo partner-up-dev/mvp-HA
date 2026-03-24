@@ -124,11 +124,7 @@ export async function createAdminAnchorPR(
 
   await initializeSlotsForPR(
     createdRoot.id,
-    "ANCHOR",
-    createdRoot.minPartners,
-    createdRoot.maxPartners,
     null,
-    createdRoot.time,
   );
 
   await materializePRSupportResources({

@@ -54,7 +54,13 @@ export type PartnerSectionView = {
     isCreator: boolean;
     isParticipant: boolean;
     myPartnerId: number | null;
-    slotState: "NOT_JOINED" | "JOINED" | "CONFIRMED" | "ATTENDED";
+    slotState:
+      | "NOT_JOINED"
+      | "JOINED"
+      | "CONFIRMED"
+      | "ATTENDED"
+      | "EXITED"
+      | "RELEASED";
     canJoin: boolean;
     canExit: boolean;
     canConfirm: boolean;
@@ -208,6 +214,10 @@ const buildBaseSection = (
         })[0] ?? null
     : null;
 
+  const slotState: PartnerSectionView["viewer"]["slotState"] =
+    selfActiveSlot?.status ??
+    (publicPR.isViewerReleased ? "EXITED" : "NOT_JOINED");
+
   return {
     capacity: {
       current,
@@ -222,7 +232,7 @@ const buildBaseSection = (
       isCreator,
       isParticipant,
       myPartnerId: publicPR.myPartnerId,
-      slotState: selfActiveSlot?.status ?? "NOT_JOINED",
+      slotState,
       canJoin: false,
       canExit: false,
       canConfirm: false,
