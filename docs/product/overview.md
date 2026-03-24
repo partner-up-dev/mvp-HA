@@ -41,7 +41,7 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 - 在 Anchor PR 详情页执行“加入/退出 / 确认参与 / 签到”时，系统会强制校验「本地 authenticated 会话 + 用户已绑定微信 openid」。
 - 在 Community / Anchor PR 的参与名单中，每条 roster item 展示头像 + 昵称；点击后可进入该参与者资料页（只读）。
 - Community PR 详情页仅提供 `join/exit`。
-- Anchor PR 详情页提供 `join/exit`、确认参与与可选签到（到场/未到场）反馈，用于可靠性与信任回流。
+- Anchor PR 详情页提供 `join/exit`、确认参与与可选签到（仅“到场”）反馈；未提交签到默认为 `CHECKIN_UNKNOWN`，用于可靠性与信任回流。
 - Anchor PR 与 `/me` 页面共用“通知订阅”卡片，当前包含 3 个全局开关：`REMINDER_CONFIRMATION`（公众号提醒）、`BOOKING_RESULT`（场地预订结果）、`NEW_PARTNER`（新搭子）。
 - `REMINDER_CONFIRMATION` 开启后会按 `T-24h` 与 `T-2h` 触发服务号订阅通知提醒（模板消息通道保留为兼容兜底），关闭后会清理未执行提醒任务。
 - `NEW_PARTNER` 开启后，当你已加入的 Anchor PR 有新参与者加入时会触发服务号订阅通知。

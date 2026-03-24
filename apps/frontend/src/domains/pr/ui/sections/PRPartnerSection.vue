@@ -81,21 +81,10 @@
         v-if="section.scenario === 'ANCHOR' && section.viewer.canCheckIn"
         class="partner-section__secondary-btn"
         :disabled="checkInPending"
-        @click="emit('prepare-check-in', true)"
+        @click="emit('prepare-check-in')"
       >
         {{
           checkInPending ? t("prPage.checkingIn") : t("prPage.checkInAttended")
-        }}
-      </button>
-
-      <button
-        v-if="section.scenario === 'ANCHOR' && section.viewer.canCheckIn"
-        class="partner-section__secondary-btn"
-        :disabled="checkInPending"
-        @click="emit('prepare-check-in', false)"
-      >
-        {{
-          checkInPending ? t("prPage.checkingIn") : t("prPage.checkInMissed")
         }}
       </button>
     </div>
@@ -462,7 +451,7 @@ const emit = defineEmits<{
   join: [];
   exit: [];
   "confirm-slot": [];
-  "prepare-check-in": [didAttend: boolean];
+  "prepare-check-in": [];
   "submit-check-in": [wouldJoinAgain: boolean];
   "cancel-check-in": [];
   "toggle-reminder": [];

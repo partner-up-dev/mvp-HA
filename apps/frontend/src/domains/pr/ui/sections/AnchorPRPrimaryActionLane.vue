@@ -65,15 +65,6 @@
       </button>
 
       <button
-        v-if="showSecondaryCheckInMissed"
-        class="lane-secondary-btn"
-        :disabled="checkInPending"
-        @click="emit('prepare-check-in', false)"
-      >
-        {{ checkInPending ? t("prPage.checkingIn") : t("prPage.checkInMissed") }}
-      </button>
-
-      <button
         v-if="showRecoveryShortcut"
         class="lane-secondary-btn"
         @click="handleRecoveryShortcut"
@@ -129,7 +120,7 @@ const emit = defineEmits<{
   join: [];
   exit: [];
   "confirm-slot": [];
-  "prepare-check-in": [didAttend: boolean];
+  "prepare-check-in": [];
   "go-recovery": [];
 }>();
 
@@ -199,11 +190,6 @@ const primaryActionPending = computed(() => {
 
 const showSecondaryExit = computed(
   () => props.section.viewer.canExit && primaryActionType.value !== "EXIT",
-);
-
-const showSecondaryCheckInMissed = computed(
-  () =>
-    props.section.viewer.canCheckIn && primaryActionType.value === "CHECK_IN",
 );
 
 const showRecoveryShortcut = computed(
@@ -287,7 +273,7 @@ const handlePrimaryAction = () => {
 
   switch (primaryActionType.value) {
     case "CHECK_IN":
-      emit("prepare-check-in", true);
+      emit("prepare-check-in");
       return;
     case "CONFIRM_SLOT":
       emit("confirm-slot");

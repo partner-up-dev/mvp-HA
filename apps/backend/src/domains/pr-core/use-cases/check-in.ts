@@ -17,7 +17,7 @@ const userReliabilityRepo = new UserReliabilityRepository();
 export async function checkIn(
   id: PRId,
   openId: string,
-  payload: { didAttend: boolean; wouldJoinAgain: boolean | null },
+  payload: { wouldJoinAgain: boolean | null },
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -48,7 +48,7 @@ export async function checkIn(
   if (!updatedSlot) {
     throw new HTTPException(500, { message: "Failed to submit check-in" });
   }
-  if (payload.didAttend && slot.status !== "ATTENDED") {
+  if (slot.status !== "ATTENDED") {
     await userReliabilityRepo.applyDelta(user.id, { attended: 1 });
   }
 
@@ -61,7 +61,7 @@ export async function checkIn(
       prId: id,
       partnerId: slot.id,
       userId: user.id,
-      didAttend: payload.didAttend,
+      didAttend: true,
     },
   );
   void writeToOutbox(event);
@@ -71,7 +71,7 @@ export async function checkIn(
     action: "partner.check_in",
     aggregateType: "partner_request",
     aggregateId: String(id),
-    detail: { partnerId: slot.id, didAttend: payload.didAttend },
+    detail: { partnerId: slot.id, didAttend: true },
   });
 
   const latest = await prRepo.findById(id);
