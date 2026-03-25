@@ -38,7 +38,7 @@ import {
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
 const slotCheckInSchema = z.object({
-  didAttend: z.boolean(),
+  didAttend: z.boolean().optional(),
   wouldJoinAgain: z.boolean().nullable().optional(),
 });
 const acceptAlternativeBatchSchema = z.object({
@@ -251,8 +251,12 @@ export const anchorPRRoute = app
       await ensureAnchorPR(id);
       const { openId } = await requireAnchorAuthenticatedIdentity(c);
       const { didAttend, wouldJoinAgain } = c.req.valid("json");
+      if (didAttend === false) {
+        throw new HTTPException(400, {
+          message: "didAttend=false is no longer supported",
+        });
+      }
       const result = await checkIn(id, openId, {
-        didAttend,
         wouldJoinAgain: wouldJoinAgain ?? null,
       });
       return c.json(result);

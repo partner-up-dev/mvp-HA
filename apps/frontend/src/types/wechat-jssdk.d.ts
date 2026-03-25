@@ -5,6 +5,7 @@ declare global {
     | "updateAppMessageShareData"
     | "updateTimelineShareData"
     | "getPhoneNumber";
+  type WeChatOpenTagName = "wx-open-subscribe";
 
   type WeChatConfigPayload = {
     debug?: boolean;
@@ -13,6 +14,7 @@ declare global {
     nonceStr: string;
     signature: string;
     jsApiList: ReadonlyArray<WeChatJsApiName>;
+    openTagList?: ReadonlyArray<WeChatOpenTagName>;
   };
 
   type WeChatShareToChatPayload = {

@@ -217,6 +217,14 @@
     "supportTitle": "联系平台客服",
     "supportDescription": "投诉、使用问题、功能建议等。",
     "supportAction": "联系平台客服",
+    "betaGroupBadge": "内测群",
+    "betaGroupTitle": "加入微信内测群",
+    "betaGroupDescription": "获取内测动态与优先体验机会。",
+    "betaGroupAction": "查看群二维码",
+    "betaGroupModalTitle": "微信内测群",
+    "betaGroupModalDescription": "请使用微信扫码加入内测群。",
+    "betaGroupQrAlt": "微信内测群二维码",
+    "betaGroupQrMissing": "暂未配置内测群二维码",
     "authorEntry": "产品建议或 Bug 反馈？联系作者",
     "useCases": {
       "staff": "报销 / 转账问题 -> 联系企业微信员工",
@@ -268,6 +276,8 @@
     "slotConfirmed": "你已确认（{partnerId}）",
     "slotAttended": "你已到场（{partnerId}）",
     "slotNotJoined": "你可以加入",
+    "slotExited": "你已主动退出该活动",
+    "slotReleased": "你的名额已被释放",
     "editContent": "编辑内容",
     "modifyStatus": "修改状态",
     "publishDraft": {
@@ -326,21 +336,24 @@
     },
     "notificationSubscriptions": {
       "title": "通知订阅",
+      "subscribeOnceAction": "订阅 1 次",
+      "remainingCountWithHint": "剩余通知次数：{count}。{hint}",
+      "openSubscribeUnavailableHint": "当前微信订阅组件不可用，请升级微信后重试。",
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
-          "enabledHint": "已开启确认席位提醒：活动前 24 小时和 2 小时会发送通知。",
-          "disabledHint": "确认席位提醒已关闭，可随时开启。"
+          "enabledHint": "你可继续接收确认席位提醒（活动前 24 小时和 2 小时）。",
+          "disabledHint": "当前没有可用提醒次数，订阅后可下发 1 次。"
         },
         "BOOKING_RESULT": {
           "title": "场地预订结果",
-          "enabledHint": "已开启场地预订结果通知。",
-          "disabledHint": "场地预订结果通知已关闭。"
+          "enabledHint": "你可继续接收场地预订结果通知。",
+          "disabledHint": "当前没有可用通知次数，订阅后可下发 1 次。"
         },
         "NEW_PARTNER": {
           "title": "新搭子",
-          "enabledHint": "已开启新搭子通知，有人加入当前活动会提醒你。",
-          "disabledHint": "新搭子通知已关闭。",
+          "enabledHint": "你可继续接收新搭子通知（有人加入当前活动会提醒你）。",
+          "disabledHint": "当前没有可用通知次数，订阅后可下发 1 次。",
           "unconfiguredHint": "当前环境未配置“新搭子”通知模板。"
         }
       }
@@ -374,9 +387,14 @@
       "blockedStatus": "当前状态下不支持这个操作。",
       "blockedTimeWindowConflict": "你无法加入，因为你有另一个搭子请求与此时间冲突",
       "blockedCheckIn": "活动开始后才能反馈到场情况。",
+      "releaseNoticeAuto": "你未在确认截止前完成确认，名额已被释放。",
+      "releaseNoticeExit": "你已主动退出，名额已释放。",
+      "rosterBoardTitle": "搭子花名册",
       "rosterTitle": "当前搭子",
       "rosterCount": "{count} 人",
       "rosterEmpty": "还没有其它搭子，加入后你将成为该搭子请求的所有者。",
+      "rosterCurrentEmpty": "当前没有在场搭子。",
+      "rosterHistoryTitle": "历史搭子",
       "rosterSelf": "我",
       "rosterCreator": "发起者",
       "rosterAvatarAlt": "{name} 的头像",
@@ -384,6 +402,8 @@
       "rosterJoined": "已加入",
       "rosterConfirmed": "已确认",
       "rosterAttended": "已到场",
+      "rosterReleased": "已释放",
+      "rosterExited": "已退出",
       "timelineTitle": "参与时间线",
       "timelineEventStart": "活动开始",
       "timelineConfirmationWindow": "确认窗口",
@@ -653,7 +673,6 @@
     "title": "我的",
     "description": "管理微信绑定、服务通知、本地 PIN 和账户资料。",
     "loading": "正在加载你的资料...",
-    "authHint": "当前还是匿名状态。你可以先在这里注册本地账户，或在发布 / 加入搭子请求时自动生成账户和 PIN。",
     "register": {
       "title": "注册本地账户",
       "action": "立即注册",
@@ -675,7 +694,6 @@
     },
     "wechat": {
       "title": "绑定微信",
-      "authHint": "需要先拥有本地账户后，才能把当前账户绑定到微信。",
       "boundHint": "当前账户已绑定微信，可继续使用服务通知和微信内身份识别。",
       "nonWechatHint": "请在微信内打开本页后再绑定，这样才能完成官方授权。",
       "unboundHint": "在微信内完成一次授权后，当前本地账户就会与该微信账号绑定。",
@@ -685,6 +703,24 @@
       "bindSuccess": "微信绑定成功。",
       "bindConflict": "该微信账号已经绑定到其他用户，当前账户未发生变更。",
       "bindFailed": "微信绑定失败，请稍后重试。"
+    },
+    "wechatLogin": {
+      "title": "微信登录",
+      "wechatHint": "在微信内登录可恢复你已绑定的活动身份。",
+      "nonWechatHint": "请在微信内打开本页后再进行微信登录。",
+      "action": "微信登录",
+      "pending": "拉起授权中..."
+    },
+    "pinLogin": {
+      "title": "PIN 登录",
+      "description": "输入你保存的用户 ID 与 PIN，恢复本地账户。",
+      "userIdLabel": "用户 ID",
+      "userIdPlaceholder": "输入用户 ID",
+      "pinLabel": "PIN",
+      "pinPlaceholder": "输入 4 位 PIN",
+      "pinFormatHint": "PIN 需要是 4 位数字。",
+      "action": "PIN 登录",
+      "pending": "登录中..."
     },
     "reminder": {
       "title": "服务通知",
@@ -923,6 +959,7 @@
     "updateCurrentUserProfileFailed": "更新当前用户资料失败",
     "updateCurrentUserAvatarFailed": "更新当前头像失败",
     "startWechatBindFailed": "发起微信绑定失败",
+    "loginWithPinFailed": "PIN 登录失败",
     "registerLocalAccountFailed": "注册本地账户失败",
     "fetchReimbursementStatusFailed": "获取报销状态失败",
     "verifyBookingContactFailed": "预订联系人手机号授权失败"

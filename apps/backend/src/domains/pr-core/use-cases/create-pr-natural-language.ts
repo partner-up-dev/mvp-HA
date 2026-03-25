@@ -59,11 +59,7 @@ export async function createPRFromNaturalLanguage(
 
   await initializeSlotsForPR(
     request.id,
-    "COMMUNITY",
-    fields.minPartners,
-    fields.maxPartners,
     null,
-    fields.time,
   );
 
   const event = await eventBus.publish(

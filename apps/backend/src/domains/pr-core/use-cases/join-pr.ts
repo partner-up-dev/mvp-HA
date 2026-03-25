@@ -14,7 +14,10 @@ import {
 } from "../services/anchor-participation-policy.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { isJoinableStatus } from "../services/status-rules";
-import { recalculatePRStatus } from "../services/slot-management.service";
+import {
+  countActivePartnersForPR,
+  recalculatePRStatus,
+} from "../services/slot-management.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
@@ -73,7 +76,7 @@ export async function joinPRAsUser(
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
-  let targetStatus: PartnerStatus = "JOINED";
+  let targetStatus: Extract<PartnerStatus, "JOINED" | "CONFIRMED"> = "JOINED";
   const bookingContactRequired =
     refreshedRequest.prKind === "ANCHOR"
       ? await isBookingContactRequiredForPR(id)
@@ -128,7 +131,7 @@ export async function joinPRAsUser(
     excludePrId: id,
   });
 
-  const activeCount = await partnerRepo.countActiveByPrId(id);
+  const activeCount = await countActivePartnersForPR(id);
   let verifiedBookingContact: {
     phoneE164: string;
     phoneMasked: string;
@@ -184,24 +187,23 @@ export async function joinPRAsUser(
       message: "Cannot join - partner request is full",
     });
   }
-
-  let assignedPartnerId: number;
-  const released = await partnerRepo.findFirstReleasedSlot(id);
-  if (released) {
-    await partnerRepo.assignSlot(released.id, user.id, targetStatus);
-    assignedPartnerId = released.id;
-  } else if (refreshedRequest.maxPartners === null) {
-    const created = await partnerRepo.createSlot({
-      prId: id,
-      userId: user.id,
-      status: targetStatus,
-    });
-    assignedPartnerId = created!.id;
-  } else {
-    throw new HTTPException(400, {
-      message: "Cannot join - partner request is full",
+  const latestHistoricalSlot = await partnerRepo.findReleasedByPrIdAndUserId(
+    id,
+    user.id,
+  );
+  const joinedSlot = latestHistoricalSlot
+    ? await partnerRepo.reactivateSlot(latestHistoricalSlot.id, targetStatus)
+    : await partnerRepo.createSlot({
+        prId: id,
+        userId: user.id,
+        status: targetStatus,
+      });
+  if (!joinedSlot) {
+    throw new HTTPException(500, {
+      message: "Failed to persist join participation record",
     });
   }
+  const assignedPartnerId = joinedSlot.id;
 
   if (
     refreshedRequest.prKind === "ANCHOR" &&

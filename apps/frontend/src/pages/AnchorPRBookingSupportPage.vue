@@ -4,7 +4,7 @@
       :title="t('prBookingSupport.title')"
       :subtitle="t('prBookingSupport.subtitle')"
       :back-label="t('prBookingSupport.backToDetail')"
-      @back="handleBackClick"
+      :back-fallback-to="backFallbackTo"
     />
 
     <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
@@ -230,7 +230,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
@@ -250,14 +250,7 @@ import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredenti
 import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
 
 const route = useRoute();
-const router = useRouter();
 const { t, locale } = useI18n();
-
-const handleBackClick = () => {
-  if (id.value !== null) {
-    router.push(anchorPRDetailPath(id.value));
-  }
-};
 
 const id = computed<PRId | null>(() => {
   const rawId = Array.isArray(route.params.id)
@@ -265,6 +258,12 @@ const id = computed<PRId | null>(() => {
     : route.params.id;
   const parsed = Number(rawId);
   return Number.isFinite(parsed) && parsed > 0 ? (parsed as PRId) : null;
+});
+const backFallbackTo = computed(() => {
+  if (id.value !== null) {
+    return anchorPRDetailPath(id.value);
+  }
+  return "/";
 });
 
 const { data, isLoading, error } = useAnchorPRBookingSupport(id);

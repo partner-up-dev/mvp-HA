@@ -35,7 +35,6 @@ type AnchorPRVerifyBookingContactInput = {
 
 type AnchorPRCheckInInput = {
   id: PRId;
-  didAttend: boolean;
   wouldJoinAgain: boolean | null;
 };
 
@@ -378,16 +377,11 @@ export const useCheckInAnchorPRSlot = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      didAttend,
-      wouldJoinAgain,
-    }: AnchorPRCheckInInput) => {
+    mutationFn: async ({ id, wouldJoinAgain }: AnchorPRCheckInInput) => {
       const res = await client.api.apr[":id"]["check-in"].$post(
         {
           param: { id: id.toString() },
           json: {
-            didAttend,
             wouldJoinAgain,
           },
         },

@@ -6,11 +6,8 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import type { PartnerStatus } from "../../../entities/partner";
 import type {
   PRId,
-  PRKind,
-  PartnerRequestFields,
 } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import {
@@ -48,81 +45,47 @@ export function assertPartnerBoundsValid(
 }
 
 // ---------------------------------------------------------------------------
-// Desired slot count
-// ---------------------------------------------------------------------------
-
-export function resolveDesiredSlotCount(
-  minPartners: number | null,
-  maxPartners: number | null,
-): number {
-  if (maxPartners !== null) return Math.max(1, maxPartners);
-  if (minPartners !== null) return Math.max(1, minPartners);
-  return 1;
-}
-
-// ---------------------------------------------------------------------------
 // Slot lifecycle
 // ---------------------------------------------------------------------------
 
 export async function initializeSlotsForPR(
   prId: PRId,
-  prKind: PRKind,
-  minPartners: number | null,
-  maxPartners: number | null,
   creatorUserId: UserId | null,
-  _timeWindow: PartnerRequestFields["time"],
 ): Promise<void> {
-  const desired = resolveDesiredSlotCount(minPartners, maxPartners);
-
   if (creatorUserId) {
-    const creatorStatus: PartnerStatus = "JOINED";
     await partnerRepo.createSlot({
       prId,
       userId: creatorUserId,
-      status: creatorStatus,
+      status: "JOINED",
     });
-    await partnerRepo.createReleasedSlots(prId, Math.max(0, desired - 1));
-  } else {
-    await partnerRepo.createReleasedSlots(prId, desired);
   }
 }
 
 export async function syncSlotCapacity(
   prId: PRId,
-  minPartners: number | null,
   maxPartners: number | null,
 ): Promise<void> {
-  const desired = resolveDesiredSlotCount(minPartners, maxPartners);
-  const slots = await partnerRepo.findByPrId(prId);
-  const currentTotal = slots.length;
-
-  if (currentTotal < desired) {
-    await partnerRepo.createReleasedSlots(prId, desired - currentTotal);
-    return;
-  }
-
-  if (currentTotal === desired) return;
-
-  const toRemoveCount = currentTotal - desired;
-  const removable = slots
-    .filter((slot) => slot.status === "RELEASED")
-    .sort((a, b) => b.id - a.id)
-    .slice(0, toRemoveCount)
-    .map((slot) => slot.id);
-
-  if (removable.length < toRemoveCount) {
+  if (maxPartners === null) return;
+  const activeCount = await countActivePartnersForPR(prId);
+  if (activeCount > maxPartners) {
     throw new HTTPException(400, {
       message:
-        "Invalid partner bounds - unable to shrink slots because active partners exceed target capacity",
+        "Invalid partner bounds - maxPartners cannot be smaller than active participants",
     });
   }
-
-  await partnerRepo.deleteByIds(removable);
 }
 
 // ---------------------------------------------------------------------------
 // Status recalculation
 // ---------------------------------------------------------------------------
+
+export async function countActivePartnersForPR(prId: PRId): Promise<number> {
+  return partnerRepo.countActiveByPrId(prId);
+}
+
+export async function listActiveParticipantSummariesForPR(prId: PRId) {
+  return partnerRepo.listActiveParticipantSummariesByPrId(prId);
+}
 
 export async function recalculatePRStatus(prId: PRId): Promise<void> {
   const request = await prRepo.findById(prId);
@@ -130,7 +93,7 @@ export async function recalculatePRStatus(prId: PRId): Promise<void> {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
 
-  const activeCount = await partnerRepo.countActiveByPrId(prId);
+  const activeCount = await countActivePartnersForPR(prId);
   const nextStatus = deriveStatusFromPartnerCount(
     activeCount,
     request.minPartners,
