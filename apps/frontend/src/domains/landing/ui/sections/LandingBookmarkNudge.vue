@@ -36,7 +36,9 @@
         <button
           class="nudge-action nudge-action--ghost"
           type="button"
-          :disabled="isWechatEnv && followLoading"
+          :disabled="
+            isWechatEnv && (followLoading || officialAccountConfigLoading)
+          "
           @click="handlePrimaryAction"
         >
           {{ primaryActionLabel }}
@@ -71,6 +73,7 @@ const {
   followOfficialAccount,
   followSchemeUrl,
   isConfigured: officialAccountConfigured,
+  configLoading: officialAccountConfigLoading,
 } = useWeChatOfficialAccountFollow();
 const isWechatEnv = computed(() => environment.value === "wechat");
 
@@ -134,6 +137,10 @@ const handleFollowOfficialAccount = async () => {
 
   trackAction("follow_official_account");
 
+  if (officialAccountConfigLoading.value) {
+    return;
+  }
+
   if (!officialAccountConfigured.value) {
     hideForToday();
     return;
@@ -145,8 +152,8 @@ const handleFollowOfficialAccount = async () => {
     hideForToday();
   } catch (error) {
     console.warn("Failed to open official account profile", error);
-    if (typeof window !== "undefined" && followSchemeUrl) {
-      window.location.href = followSchemeUrl;
+    if (typeof window !== "undefined" && followSchemeUrl.value) {
+      window.location.href = followSchemeUrl.value;
     }
     hideForToday();
   } finally {

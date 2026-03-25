@@ -331,6 +331,10 @@ values
   (
     'wecom_support_link_wechat_out',
     'https://work.weixin.qq.com/kfid/kfc64fa7b5ec8b01916'
+  ),
+  (
+    'wechat_official_account_username',
+    ''
   )
 on conflict (key) do update
 set
