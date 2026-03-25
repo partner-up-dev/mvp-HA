@@ -10,15 +10,17 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { normalizeSystemLocationPool } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
+import {
+  isActiveVisibleAnchorPRStatus,
+  listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh,
+  listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh,
+} from "../../pr-core/services/anchor-pr-temporal-read.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const partnerRepo = new PartnerRepository();
-
-const isOccupiedStatus = (status: string): boolean =>
-  status !== "EXPIRED" && status !== "CLOSED";
 
 const findNextAvailableLocation = (
   pool: string[],
@@ -58,12 +60,15 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   const batch = await batchRepo.findById(fullPR.anchor.batchId);
   if (!batch) return;
 
-  const batchPRs = await anchorPRRepo.findVisibleByBatchId(fullPR.anchor.batchId);
+  const batchPRs = await listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh(
+    fullPR.anchor.batchId,
+  );
   const occupiedLocations = new Set<string>(
     batchPRs
       .filter(
         (record) =>
-          isOccupiedStatus(record.root.status) && !!record.root.location,
+          isActiveVisibleAnchorPRStatus(record.root.status) &&
+          !!record.root.location,
       )
       .map((record) => record.root.location as string),
   );
@@ -79,11 +84,16 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
 
   // Best-effort idempotency: if a visible PR already exists at target location,
   // do not create a duplicate.
-  const existingAtTarget = await anchorPRRepo.findVisibleByBatchIdAndLocation(
-    fullPR.anchor.batchId,
-    targetLocation,
-  );
-  if (existingAtTarget.some((record) => isOccupiedStatus(record.root.status))) {
+  const existingAtTarget =
+    await listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh(
+      fullPR.anchor.batchId,
+      targetLocation,
+    );
+  if (
+    existingAtTarget.some((record) =>
+      isActiveVisibleAnchorPRStatus(record.root.status),
+    )
+  ) {
     return;
   }
 

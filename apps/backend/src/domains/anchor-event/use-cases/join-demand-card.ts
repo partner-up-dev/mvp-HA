@@ -1,10 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import {
-  AnchorPRRepository,
-  type AnchorPRRecord,
-} from "../../../repositories/AnchorPRRepository";
+import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { joinPR } from "../../pr-core";
 import type {
@@ -12,10 +9,10 @@ import type {
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
+import { listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh } from "../../pr-core/services/anchor-pr-temporal-read.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
-const anchorPRRepo = new AnchorPRRepository();
 const partnerRepo = new PartnerRepository();
 
 const NO_JOINABLE_CANDIDATE_CODE = "NO_JOINABLE_CANDIDATE";
@@ -176,10 +173,11 @@ export const joinDemandCard = async ({
     preferenceFingerprint,
   );
 
-  const records = await anchorPRRepo.findVisibleByBatchIdAndLocation(
-    batchId,
-    normalizedLocation,
-  );
+  const records =
+    await listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh(
+      batchId,
+      normalizedLocation,
+    );
 
   const matchedByEvent = records.filter(
     (record) => record.anchor.anchorEventId === event.id,

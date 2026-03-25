@@ -21,6 +21,8 @@
 
 - `GET /api/cpr/:id`：读取 Community PR 详情时进行过期判断。
 - `GET /api/apr/:id`：读取 Anchor PR 详情时进行过期判断。
+- `GET /api/events/:eventId`：读取 Event 页批次 PR 卡片时，对返回的 Anchor PR 批量做懒刷新。
+- Anchor 场景中的状态敏感读取（如 demand-card 候选筛选、同批次备选位点计算、用户位点容量判断）统一通过同一懒刷新读路径。
 - 其他读取场景（如 `/api/pr/mine/created`、`/api/pr/mine/joined`、批量摘要读取、分享生成）依赖同一懒刷新逻辑。
 
 ## 例子

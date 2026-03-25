@@ -20,6 +20,7 @@ import {
 } from "../../pr-core/services/partner-section-view.service";
 import { resolveAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 import { resolveBookingContactState } from "../../pr-booking-support";
+import { listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh } from "../../pr-core/services/anchor-pr-temporal-read.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
@@ -131,7 +132,10 @@ export async function getAnchorPRDetail(
 
   const sameBatchAlternatives: SameBatchAlternative[] = [];
   if (publicPR.status === "FULL") {
-    const sameBatchRecords = await anchorPRRepo.findVisibleByBatchId(anchor.batchId);
+    const sameBatchRecords =
+      await listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh(
+        anchor.batchId,
+      );
     for (const record of sameBatchRecords) {
       if (record.root.id === publicPR.id) continue;
       const location = record.root.location?.trim();

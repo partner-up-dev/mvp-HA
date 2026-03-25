@@ -4,6 +4,7 @@ import { AnchorEventRepository } from "../../../repositories/AnchorEventReposito
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import type { PRId } from "../../../entities/partner-request";
+import { listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh } from "../services/anchor-pr-temporal-read.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -97,10 +98,11 @@ export async function recommendAlternativeBatches(
       continue;
     }
 
-    const prsAtSameLocation = await anchorPRRepo.findVisibleByBatchIdAndLocation(
-      matchedBatch.id,
-      source.location,
-    );
+    const prsAtSameLocation =
+      await listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh(
+        matchedBatch.id,
+        source.location,
+      );
     const joinable = prsAtSameLocation.find((record) =>
       hasJoinableStatus(record.root.status),
     );
