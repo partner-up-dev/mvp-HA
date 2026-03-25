@@ -15,11 +15,19 @@
         <span class="i-mdi-close" aria-hidden="true"></span>
       </button>
 
-      <p class="nudge-title">{{ t("home.bookmarkNudge.title") }}</p>
+      <p class="nudge-title">
+        {{
+          isWechatEnv
+            ? t("home.bookmarkNudge.wechatTitle")
+            : t("home.bookmarkNudge.title")
+        }}
+      </p>
       <p class="nudge-hint">
         {{
-          environment === "wechat"
-            ? t("home.bookmarkNudge.wechatHint")
+          isWechatEnv
+            ? t("home.bookmarkNudge.wechatHint", {
+                name: t("home.bookmarkNudge.officialAccountName"),
+              })
             : t("home.bookmarkNudge.browserHint")
         }}
       </p>
@@ -28,20 +36,17 @@
         <button
           class="nudge-action nudge-action--ghost"
           type="button"
-          @click="handleBookmarkHint"
+          :disabled="isWechatEnv && followLoading"
+          @click="handlePrimaryAction"
         >
-          {{ t("home.bookmarkNudge.bookmarkAction") }}
+          {{ primaryActionLabel }}
         </button>
         <button
           class="nudge-action nudge-action--primary"
           type="button"
           @click="handleCopyLink"
         >
-          {{
-            copied
-              ? t("home.bookmarkNudge.copiedAction")
-              : t("home.bookmarkNudge.copyAction")
-          }}
+          {{ secondaryActionLabel }}
         </button>
       </div>
     </aside>
@@ -49,24 +54,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useLandingBookmarkNudge } from "@/domains/landing/use-cases/useLandingBookmarkNudge";
 import { trackEvent } from "@/shared/analytics/track";
+import { useWeChatOfficialAccountFollow } from "@/shared/wechat/useWeChatOfficialAccountFollow";
 
 const { t } = useI18n();
 const { isVisible, triggerDepth, triggerMode, environment, hideForToday } =
   useLandingBookmarkNudge();
 const copied = ref(false);
 const hasTrackedShown = ref(false);
+const followLoading = ref(false);
+const {
+  followOfficialAccount,
+  followSchemeUrl,
+  isConfigured: officialAccountConfigured,
+} = useWeChatOfficialAccountFollow();
+const isWechatEnv = computed(() => environment.value === "wechat");
 
-const trackAction = (action: "bookmark_hint" | "copy_link" | "dismiss") => {
+type BookmarkNudgeAction =
+  | "bookmark_hint"
+  | "copy_link"
+  | "copy_official_account"
+  | "dismiss"
+  | "follow_official_account";
+
+const trackAction = (action: BookmarkNudgeAction) => {
   trackEvent("home_bookmark_action_click", {
     action,
     environment: environment.value,
   });
 };
+
+const primaryActionLabel = computed(() =>
+  isWechatEnv.value
+    ? t("home.bookmarkNudge.wechatAction")
+    : t("home.bookmarkNudge.bookmarkAction"),
+);
+
+const secondaryActionLabel = computed(() => {
+  if (copied.value) return t("home.bookmarkNudge.copiedAction");
+  return isWechatEnv.value
+    ? t("home.bookmarkNudge.wechatCopyAction")
+    : t("home.bookmarkNudge.copyAction");
+});
+
+const copyTarget = computed(() => {
+  if (isWechatEnv.value) return t("home.bookmarkNudge.officialAccountName");
+  if (typeof window === "undefined") return "";
+  return window.location.href;
+});
+
+const copyActionName = computed<BookmarkNudgeAction>(() =>
+  isWechatEnv.value ? "copy_official_account" : "copy_link",
+);
 
 watch(isVisible, (visible) => {
   if (!visible || hasTrackedShown.value) return;
@@ -83,18 +126,60 @@ const handleBookmarkHint = () => {
   hideForToday();
 };
 
+const handleFollowOfficialAccount = async () => {
+  if (!isWechatEnv.value) {
+    handleBookmarkHint();
+    return;
+  }
+
+  trackAction("follow_official_account");
+
+  if (!officialAccountConfigured.value) {
+    hideForToday();
+    return;
+  }
+
+  try {
+    followLoading.value = true;
+    await followOfficialAccount();
+    hideForToday();
+  } catch (error) {
+    console.warn("Failed to open official account profile", error);
+    if (typeof window !== "undefined" && followSchemeUrl) {
+      window.location.href = followSchemeUrl;
+    }
+    hideForToday();
+  } finally {
+    followLoading.value = false;
+  }
+};
+
+const handlePrimaryAction = async () => {
+  if (isWechatEnv.value) {
+    await handleFollowOfficialAccount();
+    return;
+  }
+  handleBookmarkHint();
+};
+
 const handleCopyLink = async () => {
   if (typeof window === "undefined") return;
   try {
-    await copyToClipboard(window.location.href);
+    const target = copyTarget.value;
+    if (!target) {
+      trackAction(copyActionName.value);
+      hideForToday();
+      return;
+    }
+    await copyToClipboard(target);
     copied.value = true;
-    trackAction("copy_link");
+    trackAction(copyActionName.value);
     window.setTimeout(() => {
       hideForToday();
     }, 400);
   } catch (error) {
     console.warn("Failed to copy home link", error);
-    trackAction("copy_link");
+    trackAction(copyActionName.value);
   }
 };
 
