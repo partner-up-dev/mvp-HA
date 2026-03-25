@@ -56,8 +56,8 @@
                 :key="`preview-${previewCard.cardKey}`"
                 class="card-stack-preview"
                 :style="{
-                  '--card-stack-depth': String(previewIndex + 1),
                   zIndex: 2 - previewIndex,
+                  animationDelay: `${70 + previewIndex * 40}ms`,
                 }"
                 :display-location-name="previewCard.displayLocationName"
                 :time-label="previewCard.timeLabel"
@@ -65,6 +65,7 @@
                 :cover-image="previewCard.coverImage"
                 :detail-pr-id="previewCard.detailPrId"
                 :preview="true"
+                :preview-depth="previewIndex + 1"
                 aria-hidden="true"
               />
 
@@ -1041,17 +1042,10 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 }
 
 .card-stack-preview {
-  --card-stack-depth: 1;
   position: absolute;
   inset: 0;
-  transform:
-    translateY(calc(14px + (var(--card-stack-depth) - 1) * 12px))
-    scale(calc(0.972 - (var(--card-stack-depth) - 1) * 0.028));
-  transform-origin: center top;
-  opacity: calc(1 - (var(--card-stack-depth) - 1) * 0.12);
   pointer-events: none;
   animation: card-preview-reveal 220ms ease-out both;
-  animation-delay: calc(70ms + (var(--card-stack-depth) - 1) * 40ms);
 }
 
 @keyframes card-front-promote {
