@@ -42,9 +42,10 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 - 在 Community / Anchor PR 的参与名单中，每条 roster item 展示头像 + 昵称；点击后可进入该参与者资料页（只读）。
 - Community PR 详情页仅提供 `join/exit`。
 - Anchor PR 详情页提供 `join/exit`、确认参与与可选签到（仅“到场”）反馈；未提交签到默认为 `CHECKIN_UNKNOWN`，用于可靠性与信任回流。
-- Anchor PR 与 `/me` 页面共用“通知订阅”卡片，当前包含 3 个全局开关：`REMINDER_CONFIRMATION`（公众号提醒）、`BOOKING_RESULT`（场地预订结果）、`NEW_PARTNER`（新搭子）。
-- `REMINDER_CONFIRMATION` 与 `NEW_PARTNER` 在微信环境中采用服务号开放标签订阅（`wx-open-subscribe`）作为开关真值来源：用户授权成功视为开启，拒绝/取消/过滤/失败视为关闭。
-- `REMINDER_CONFIRMATION` 开启后会按 `T-24h` 与 `T-2h` 触发服务号订阅通知提醒（模板消息通道保留为兼容兜底），关闭后会清理未执行提醒任务。
-- `NEW_PARTNER` 开启后，当你已加入的 Anchor PR 有新参与者加入时会触发服务号订阅通知。
-- 发送链路若返回 `43101`（用户拒收订阅消息），后端会自动关闭对应通知开关并清理该用户待执行通知任务，避免重复失败。
-- `BOOKING_RESULT` 当前仅支持开关持久化，发送链路待后续预订处理控制台接入。
+- Anchor PR 与 `/me` 页面共用“通知订阅”卡片，当前包含 3 个全局通知项：`REMINDER_CONFIRMATION`（公众号提醒）、`BOOKING_RESULT`（场地预订结果）、`NEW_PARTNER`（新搭子）。
+- 通知订阅按“剩余可发送次数（remainingCount）”建模，而不是简单开关：每次成功订阅会增加 1 次发送额度。
+- 三个通知项在微信环境都可通过服务号开放标签（`wx-open-subscribe`）订阅；其中 `accept` 会增加 1 次，`reject` 会清零该通知项次数，`cancel/filter/error` 保持原次数不变。
+- `REMINDER_CONFIRMATION` 有剩余次数时会按 `T-24h` 与 `T-2h` 触发服务号订阅通知提醒（模板消息通道保留为兼容兜底）；次数归零后会清理未执行提醒任务。
+- `NEW_PARTNER` 有剩余次数时，当你已加入的 Anchor PR 有新参与者加入会触发服务号订阅通知；次数归零后会清理该用户待执行的新搭子通知任务。
+- 发送链路若返回 `43101`（用户拒收订阅消息），后端会自动将对应通知项次数清零并清理待执行任务，避免重复失败。
+- `BOOKING_RESULT` 当前仅做次数持久化与订阅链路配置，发送链路待后续预订处理控制台接入。

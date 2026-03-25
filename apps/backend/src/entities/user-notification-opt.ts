@@ -1,4 +1,4 @@
-import { boolean, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users, type UserId } from "./user";
@@ -21,14 +21,25 @@ export const userNotificationOpts = pgTable("user_notification_opts", {
     .notNull()
     .default(false),
   wechatReminderOptInAt: timestamp("wechat_reminder_opt_in_at"),
+  wechatReminderRemainingCount: integer("wechat_reminder_remaining_count")
+    .notNull()
+    .default(0),
   wechatBookingResultOptIn: boolean("wechat_booking_result_opt_in")
     .notNull()
     .default(false),
   wechatBookingResultOptInAt: timestamp("wechat_booking_result_opt_in_at"),
+  wechatBookingResultRemainingCount: integer(
+    "wechat_booking_result_remaining_count",
+  )
+    .notNull()
+    .default(0),
   wechatNewPartnerOptIn: boolean("wechat_new_partner_opt_in")
     .notNull()
     .default(false),
   wechatNewPartnerOptInAt: timestamp("wechat_new_partner_opt_in_at"),
+  wechatNewPartnerRemainingCount: integer("wechat_new_partner_remaining_count")
+    .notNull()
+    .default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

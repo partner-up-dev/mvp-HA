@@ -251,7 +251,11 @@ async function handleReminderJob(
   }
 
   const notificationOpt = await userNotificationOptRepo.findByUserId(user.id);
-  if (!notificationOpt?.wechatReminderOptIn) {
+  const reminderSnapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "REMINDER_CONFIRMATION",
+  );
+  if (!reminderSnapshot.enabled) {
     await recordDelivery({
       jobId: context.jobId,
       payload,
@@ -351,13 +355,20 @@ async function handleReminderJob(
       payload,
       result: "SUCCESS",
     });
+    const consumeResult =
+      await userNotificationOptRepo.consumeOneWechatNotificationCredit(
+        user.id,
+        "REMINDER_CONFIRMATION",
+      );
+    if (consumeResult.consumed && consumeResult.remainingCount <= 0) {
+      await cancelWeChatReminderJobsForUser(user.id);
+    }
   } catch (error) {
     const classified = classifyReminderError(error);
     if (classified.code === "43101") {
-      await userNotificationOptRepo.upsertWechatNotificationSubscription(
+      await userNotificationOptRepo.clearWechatNotificationCredits(
         user.id,
         "REMINDER_CONFIRMATION",
-        false,
       );
       await cancelWeChatReminderJobsForUser(user.id);
     }
@@ -389,7 +400,11 @@ export async function scheduleWeChatReminderJobsForParticipant(
   const notificationOpt = user
     ? await userNotificationOptRepo.findByUserId(userId)
     : null;
-  if (!user || !notificationOpt?.wechatReminderOptIn) {
+  const reminderSnapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "REMINDER_CONFIRMATION",
+  );
+  if (!user || !reminderSnapshot.enabled) {
     return;
   }
 
@@ -504,13 +519,20 @@ async function handleNewPartnerJob(
       appliedAt: formatAppliedAt(payload.joinedAtIso),
       page: prPage,
     });
+    const consumeResult =
+      await userNotificationOptRepo.consumeOneWechatNotificationCredit(
+        recipient.id,
+        "NEW_PARTNER",
+      );
+    if (consumeResult.consumed && consumeResult.remainingCount <= 0) {
+      await cancelWeChatNewPartnerJobsForUser(recipient.id);
+    }
   } catch (error) {
     const classified = classifyNewPartnerError(error);
     if (classified.code === "43101") {
-      await userNotificationOptRepo.upsertWechatNotificationSubscription(
+      await userNotificationOptRepo.clearWechatNotificationCredits(
         recipient.id,
         "NEW_PARTNER",
-        false,
       );
       await cancelWeChatNewPartnerJobsForUser(recipient.id);
     }
