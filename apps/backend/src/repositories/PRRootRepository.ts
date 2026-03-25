@@ -73,7 +73,10 @@ export class PRRootRepository {
     return result[0] ?? null;
   }
 
-  async setCreatedBy(id: PRId, userId: UserId): Promise<PartnerRequest | null> {
+  async setCreatedBy(
+    id: PRId,
+    userId: UserId | null,
+  ): Promise<PartnerRequest | null> {
     const result = await db
       .update(partnerRequests)
       .set({ createdBy: userId })

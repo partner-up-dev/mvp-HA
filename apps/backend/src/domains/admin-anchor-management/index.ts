@@ -5,5 +5,6 @@ export * from "./use-cases/get-admin-anchor-workspace";
 export * from "./use-cases/update-admin-anchor-event";
 export * from "./use-cases/update-admin-anchor-event-batch";
 export * from "./use-cases/update-admin-anchor-pr-content";
+export * from "./use-cases/release-admin-anchor-pr-partner";
 export * from "./use-cases/update-admin-anchor-pr-status";
 export * from "./use-cases/update-admin-anchor-pr-visibility";

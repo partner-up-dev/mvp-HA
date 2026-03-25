@@ -19,6 +19,7 @@ import {
   createAdminAnchorEventBatch,
   createAdminAnchorPR,
   getAdminAnchorWorkspace,
+  releaseAdminAnchorPRPartner,
   updateAdminAnchorEvent,
   updateAdminAnchorEventBatch,
   updateAdminAnchorPRContent,
@@ -38,6 +39,10 @@ const batchIdParamSchema = z.object({
 
 const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
+});
+const partnerIdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  partnerId: z.coerce.number().int().positive(),
 });
 
 const timeWindowSchema = z.tuple([z.string().nullable(), z.string().nullable()]);
@@ -129,6 +134,9 @@ const adminUpdateAnchorPRStatusSchema = z.object({
 
 const adminUpdateAnchorPRVisibilitySchema = z.object({
   visibilityStatus: visibilityStatusSchema,
+});
+const adminManualReleaseSchema = z.object({
+  reason: z.string().trim().min(1),
 });
 
 export const adminAnchorManagementRoute = app
@@ -247,5 +255,22 @@ export const adminAnchorManagementRoute = app
       const { visibilityStatus } = c.req.valid("json");
       await updateAdminAnchorPRVisibility(id, visibilityStatus);
       return c.json({ ok: true });
+    },
+  )
+  .post(
+    "/anchor-prs/:id/partners/:partnerId/release",
+    zValidator("param", partnerIdParamSchema),
+    zValidator("json", adminManualReleaseSchema),
+    async (c) => {
+      const { id, partnerId } = c.req.valid("param");
+      const { reason } = c.req.valid("json");
+      const auth = c.get("auth");
+      const result = await releaseAdminAnchorPRPartner({
+        prId: id,
+        partnerId,
+        reason,
+        actorUserId: auth.userId ?? null,
+      });
+      return c.json(result);
     },
   );

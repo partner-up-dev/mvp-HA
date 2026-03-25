@@ -5,7 +5,3 @@ export const isWeChatAbilityMockingEnabled = (): boolean =>
 
 export const isWeChatAbilityEnv = (): boolean =>
   isWeChatAbilityMockingEnabled() || isWeChatBrowser();
-
-export const createMockWeChatPhoneCredential = (): string =>
-  `mock-phone-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-

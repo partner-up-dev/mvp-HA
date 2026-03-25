@@ -15,14 +15,13 @@ import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBo
 import type { ApiError } from "@/shared/api/error";
 
 const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
-const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
-const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
-const WECHAT_PHONE_VERIFY_FAILED_CODE = "WECHAT_PHONE_VERIFY_FAILED";
+const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
+const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 
 type JoinActionOptions = {
-  wechatPhoneCredential?: string | null;
+  bookingContactPhone?: string | null;
 };
 
 type UseSharedPRActionsOptions = {
@@ -99,13 +98,10 @@ export const useSharedPRActions = ({
     if (error.code === JOIN_TIME_WINDOW_CONFLICT_CODE) {
       return t("prPage.partnerSection.blockedTimeWindowConflict");
     }
-    if (error.code === BOOKING_CONTACT_OWNER_REQUIRED_CODE) {
+    if (error.code === BOOKING_CONTACT_PHONE_REQUIRED_CODE) {
       return t("prPage.bookingContact.ownerVerifyBeforeJoin");
     }
-    if (error.code === BOOKING_CONTACT_REQUIRED_CODE) {
-      return t("prPage.bookingContact.ownerBlockedHint");
-    }
-    if (error.code === WECHAT_PHONE_VERIFY_FAILED_CODE) {
+    if (error.code === BOOKING_CONTACT_PHONE_INVALID_CODE) {
       return t("prPage.bookingContact.verifyFailed");
     }
     if (
@@ -126,7 +122,7 @@ export const useSharedPRActions = ({
         scenario === "ANCHOR"
           ? await anchorJoinMutation.mutateAsync({
               id: id.value,
-              wechatPhoneCredential: options.wechatPhoneCredential ?? null,
+              bookingContactPhone: options.bookingContactPhone ?? null,
             })
           : await communityJoinMutation.mutateAsync({ id: id.value });
       trackEvent("pr_join_success", {

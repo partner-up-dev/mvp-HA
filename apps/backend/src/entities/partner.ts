@@ -56,6 +56,7 @@ export const partners = pgTable("partners", {
   confirmedAt: timestamp("confirmed_at"),
   exitedAt: timestamp("exited_at"),
   releasedAt: timestamp("released_at"),
+  releaseReason: text("release_reason"),
   attendedAt: timestamp("attended_at"),
   checkInAt: timestamp("check_in_at"),
   didAttend: boolean("did_attend"),
