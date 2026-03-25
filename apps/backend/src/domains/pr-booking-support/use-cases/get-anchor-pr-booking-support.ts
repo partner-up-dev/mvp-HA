@@ -21,6 +21,7 @@ export interface AnchorPRBookingSupportDetail {
   status: PRStatus;
   anchorEventId: number;
   batchId: number;
+  viewerIsCreator: boolean;
   bookingSupport: {
     overview: {
       title: string;
@@ -91,6 +92,7 @@ export async function getAnchorPRBookingSupport(
     status: root.status,
     anchorEventId: anchor.anchorEventId,
     batchId: anchor.batchId,
+    viewerIsCreator: Boolean(root.createdBy && root.createdBy === viewerUserId),
     bookingSupport: {
       overview: {
         title: "预订与资助",
