@@ -68,6 +68,9 @@ export type AdminAnchorEventInput = {
   }>;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationStartOffsetMinutes: number;
+  defaultConfirmationEndOffsetMinutes: number;
+  defaultJoinLockOffsetMinutes: number;
   coverImage: string | null;
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };

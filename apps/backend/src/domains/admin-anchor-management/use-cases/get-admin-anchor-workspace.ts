@@ -52,6 +52,9 @@ export type AdminAnchorEventSummary = {
   }>;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationStartOffsetMinutes: number;
+  defaultConfirmationEndOffsetMinutes: number;
+  defaultJoinLockOffsetMinutes: number;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   status: string;
@@ -132,6 +135,11 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
           : [],
         defaultMinPartners: event.defaultMinPartners ?? null,
         defaultMaxPartners: event.defaultMaxPartners ?? null,
+        defaultConfirmationStartOffsetMinutes:
+          event.defaultConfirmationStartOffsetMinutes,
+        defaultConfirmationEndOffsetMinutes:
+          event.defaultConfirmationEndOffsetMinutes,
+        defaultJoinLockOffsetMinutes: event.defaultJoinLockOffsetMinutes,
         timeWindowPool: Array.isArray(event.timeWindowPool)
           ? event.timeWindowPool.map(
               (entry): [string | null, string | null] => [entry[0], entry[1]],
