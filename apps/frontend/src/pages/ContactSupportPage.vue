@@ -286,9 +286,7 @@ const goHome = () => {
 }
 
 .contact-action--beta-group {
-  background: var(--sys-color-surface);
-  color: var(--sys-color-on-surface);
-  border: 1px solid var(--sys-color-outline-variant);
+  @include mx.pu-pill-action(outline-transparent);
 }
 
 .beta-group-modal-body {
