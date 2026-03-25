@@ -103,6 +103,13 @@ const REBOUND_TRANSITION = "transform 440ms cubic-bezier(0.22, 1.35, 0.36, 1)";
 const MILLISECONDS_PER_SECOND = 1000;
 const VELOCITY_SAMPLE_WINDOW_MS = 90;
 const MAX_VELOCITY_SAMPLES = 8;
+const PREVIEW_BASE_OFFSET_Y = 14;
+const PREVIEW_OFFSET_STEP_Y = 12;
+const PREVIEW_BASE_SCALE = 0.972;
+const PREVIEW_SCALE_STEP = 0.028;
+const PREVIEW_MIN_SCALE = 0.88;
+const PREVIEW_OPACITY_STEP = 0.12;
+const PREVIEW_MIN_OPACITY = 0.72;
 const EXIT_VIEWPORT_MULTIPLIER = 1.1;
 const EXIT_DRAG_MULTIPLIER = 1.5;
 
@@ -131,12 +138,14 @@ const props = withDefaults(
     detailPrId?: number | null;
     pending?: boolean;
     preview?: boolean;
+    previewDepth?: number;
   }>(),
   {
     coverImage: null,
     detailPrId: null,
     pending: false,
     preview: false,
+    previewDepth: 1,
   },
 );
 
@@ -182,6 +191,10 @@ const rotationDeg = computed(() => {
   return Math.max(Math.min(rotation, MAX_ROTATION_DEG), -MAX_ROTATION_DEG);
 });
 const transformOrigin = computed(() => {
+  if (props.preview) {
+    return "center top";
+  }
+
   const pivotY = activePointer.value?.pivotY;
   if (typeof pivotY !== "number") {
     return "50% 50%";
@@ -190,6 +203,26 @@ const transformOrigin = computed(() => {
 });
 
 const cardStyle = computed(() => {
+  if (props.preview) {
+    const depth = Math.max(props.previewDepth, 1);
+    const offsetY = PREVIEW_BASE_OFFSET_Y + (depth - 1) * PREVIEW_OFFSET_STEP_Y;
+    const previewScale = Math.max(
+      PREVIEW_BASE_SCALE - (depth - 1) * PREVIEW_SCALE_STEP,
+      PREVIEW_MIN_SCALE,
+    );
+    const previewOpacity = Math.max(
+      1 - (depth - 1) * PREVIEW_OPACITY_STEP,
+      PREVIEW_MIN_OPACITY,
+    );
+
+    return {
+      transformOrigin: transformOrigin.value,
+      transform: `translateY(${offsetY}px) scale(${previewScale})`,
+      transition: "none",
+      opacity: previewOpacity,
+    };
+  }
+
   const scale = 1 - dragProgress.value * 0.02;
   return {
     transformOrigin: transformOrigin.value,
