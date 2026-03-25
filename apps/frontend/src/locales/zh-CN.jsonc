@@ -656,7 +656,6 @@
     "title": "我的",
     "description": "管理微信绑定、服务通知、本地 PIN 和账户资料。",
     "loading": "正在加载你的资料...",
-    "authHint": "当前还是匿名状态。你可以先在这里注册本地账户，或在发布 / 加入搭子请求时自动生成账户和 PIN。",
     "register": {
       "title": "注册本地账户",
       "action": "立即注册",
@@ -678,7 +677,6 @@
     },
     "wechat": {
       "title": "绑定微信",
-      "authHint": "需要先拥有本地账户后，才能把当前账户绑定到微信。",
       "boundHint": "当前账户已绑定微信，可继续使用服务通知和微信内身份识别。",
       "nonWechatHint": "请在微信内打开本页后再绑定，这样才能完成官方授权。",
       "unboundHint": "在微信内完成一次授权后，当前本地账户就会与该微信账号绑定。",
@@ -688,6 +686,24 @@
       "bindSuccess": "微信绑定成功。",
       "bindConflict": "该微信账号已经绑定到其他用户，当前账户未发生变更。",
       "bindFailed": "微信绑定失败，请稍后重试。"
+    },
+    "wechatLogin": {
+      "title": "微信登录",
+      "wechatHint": "在微信内登录可恢复你已绑定的活动身份。",
+      "nonWechatHint": "请在微信内打开本页后再进行微信登录。",
+      "action": "微信登录",
+      "pending": "拉起授权中..."
+    },
+    "pinLogin": {
+      "title": "PIN 登录",
+      "description": "输入你保存的用户 ID 与 PIN，恢复本地账户。",
+      "userIdLabel": "用户 ID",
+      "userIdPlaceholder": "输入用户 ID",
+      "pinLabel": "PIN",
+      "pinPlaceholder": "输入 4 位 PIN",
+      "pinFormatHint": "PIN 需要是 4 位数字。",
+      "action": "PIN 登录",
+      "pending": "登录中..."
     },
     "reminder": {
       "title": "服务通知",
@@ -926,6 +942,7 @@
     "updateCurrentUserProfileFailed": "更新当前用户资料失败",
     "updateCurrentUserAvatarFailed": "更新当前头像失败",
     "startWechatBindFailed": "发起微信绑定失败",
+    "loginWithPinFailed": "PIN 登录失败",
     "registerLocalAccountFailed": "注册本地账户失败",
     "fetchReimbursementStatusFailed": "获取报销状态失败",
     "verifyBookingContactFailed": "预订联系人手机号授权失败"

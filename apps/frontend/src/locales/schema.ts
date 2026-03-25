@@ -394,7 +394,6 @@ export interface MessageSchema {
     title: string;
     description: string;
     loading: string;
-    authHint: string;
     register: {
       title: string;
       action: string;
@@ -416,7 +415,6 @@ export interface MessageSchema {
     };
     wechat: {
       title: string;
-      authHint: string;
       boundHint: string;
       nonWechatHint: string;
       unboundHint: string;
@@ -426,6 +424,24 @@ export interface MessageSchema {
       bindSuccess: string;
       bindConflict: string;
       bindFailed: string;
+    };
+    wechatLogin: {
+      title: string;
+      wechatHint: string;
+      nonWechatHint: string;
+      action: string;
+      pending: string;
+    };
+    pinLogin: {
+      title: string;
+      description: string;
+      userIdLabel: string;
+      userIdPlaceholder: string;
+      pinLabel: string;
+      pinPlaceholder: string;
+      pinFormatHint: string;
+      action: string;
+      pending: string;
     };
     reminder: {
       title: string;
@@ -814,6 +830,7 @@ export interface MessageSchema {
     updateCurrentUserProfileFailed: string;
     updateCurrentUserAvatarFailed: string;
     startWechatBindFailed: string;
+    loginWithPinFailed: string;
     registerLocalAccountFailed: string;
   };
   posterStyles: {
