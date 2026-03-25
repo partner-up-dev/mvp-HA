@@ -30,6 +30,9 @@
 - 创建成功时系统会按 `min/max` 预创建 `partners` 槽位；对已发布请求会保证“创建者占用一个槽位”。
 - `/me` 作为个人中心：展示当前资料、微信绑定、公众号服务通知开关、本地 `user-id/user-pin`，并提供进入历史列表的入口。
 - `/pr/mine` 聚合展示“我创建的 / 我加入的”列表，列表项按 canonicalPath 跳转到 `/cpr/:id` 或 `/apr/:id`。
+- 页面头部返回按钮默认遵循“有历史则返回、无历史则回退”的规则：
+  - 默认回退到首页 `/`；
+  - Anchor PR 详情页在无历史时回退到所属活动页 `/events/:eventId`。
 - Community PR 详情页（`/cpr/:id`）支持：
   - 草稿发布
   - `join/exit`
@@ -93,6 +96,9 @@
 - `Card` 模式下不显示批次 tab，卡片队列跨全部批次轮转，且每张卡片展示清晰时间标签。
 - `Card` 模式接受卡片可直接加入（无需先进入 PR 详情页）。
 - `POST /api/events/:eventId/demand-cards/:cardKey/join` 在无可加入候选时返回 `NO_JOINABLE_CANDIDATE`。
+- 直达打开仅含单页历史栈时，页面头部返回按钮不会失效：
+  - 普通页面会回退到首页 `/`；
+  - Anchor PR 详情页会回退到所属活动页 `/events/:eventId`。
 - `/cpr/new` 页面存在头部、创建方式切换区；结构化模式下提供表单主体与页脚双动作按钮（保存/创建）。
 - 结构化创建请求命中 `POST /api/cpr`（请求体为 `PartnerRequestFields`），始终创建 `DRAFT`。
 - 自然语言创建请求命中 `POST /api/cpr/natural_language`，始终创建 `DRAFT`。

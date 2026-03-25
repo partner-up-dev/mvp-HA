@@ -15,7 +15,7 @@
       <PageHeader
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
-        @back="goBackToPlaza"
+        :back-fallback-to="{ name: 'event-plaza' }"
       >
         <template #top-actions>
           <div
@@ -361,10 +361,6 @@ const createActionErrorMessage = computed(() => {
     null
   );
 });
-
-const goBackToPlaza = () => {
-  router.push({ name: "event-plaza" });
-};
 
 const resolveBatchStartTimestamp = (timeWindow: TimeWindow): number => {
   const [start] = timeWindow;

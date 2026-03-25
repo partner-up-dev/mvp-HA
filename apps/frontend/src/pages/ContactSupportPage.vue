@@ -1,7 +1,7 @@
 <template>
   <PageScaffoldCentered class="contact-support-page">
     <template #header>
-      <PageHeader :title="t('contactSupportPage.title')" @back="goHome" />
+      <PageHeader :title="t('contactSupportPage.title')" />
     </template>
 
     <section
@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
@@ -68,7 +68,6 @@ const DEFAULT_SUPPORT_LINK_WECHAT_OUT =
   "https://work.weixin.qq.com/nl/act/p/4030a5b69149404d";
 const DEFAULT_STAFF_LINK = "https://work.weixin.qq.com/ca/cawcdeaeb65ab3d47f";
 
-const router = useRouter();
 const { t } = useI18n();
 
 const supportLinkWechatInQuery = usePublicConfig(
@@ -143,9 +142,6 @@ const staffLink = computed(() => {
   );
 });
 
-const goHome = () => {
-  router.push("/");
-};
 </script>
 
 <style lang="scss" scoped>

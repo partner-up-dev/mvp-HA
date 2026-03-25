@@ -1,7 +1,7 @@
 <template>
   <PageScaffoldCentered class="contact-author-page">
     <template #header>
-      <PageHeader :title="t('contactAuthorPage.title')" @back="goHome" />
+      <PageHeader :title="t('contactAuthorPage.title')" />
     </template>
 
     <LoadingIndicator
@@ -38,7 +38,6 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
@@ -46,15 +45,11 @@ import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
-const router = useRouter();
 const { t } = useI18n();
 const publicConfigQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.authorWechatQrCode);
 
 const qrCodeUrl = computed(() => publicConfigQuery.data.value?.value ?? null);
 
-const goHome = () => {
-  router.push("/");
-};
 </script>
 
 <style lang="scss" scoped>
