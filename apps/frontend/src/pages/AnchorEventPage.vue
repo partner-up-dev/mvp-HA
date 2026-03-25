@@ -88,6 +88,25 @@
             </div>
           </div>
 
+          <div class="card-mode__actions">
+            <button
+              type="button"
+              class="card-mode__action card-mode__action--skip"
+              :disabled="isCardRouting"
+              @click="handleSkipActiveCard"
+            >
+              {{ t("anchorEvent.card.skipButton") }}
+            </button>
+            <button
+              type="button"
+              class="card-mode__action card-mode__action--detail"
+              :disabled="isCardRouting || activeDemandCard.detailPrId === null"
+              @click="handleViewActiveCardDetail"
+            >
+              {{ t("anchorEvent.card.detailButton") }}
+            </button>
+          </div>
+
           <p v-if="cardActionError" class="card-mode__error">
             {{ cardActionError }}
           </p>
@@ -1072,6 +1091,37 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   color: var(--sys-color-error);
   padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
   padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+}
+
+.card-mode__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sys-spacing-sm);
+  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
+  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+}
+
+.card-mode__action {
+  @include mx.pu-pill-action(outline-transparent, default);
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.card-mode__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.card-mode__action--detail {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border-color: var(--sys-color-primary);
+}
+
+.card-mode__action--skip {
+  color: var(--sys-color-error);
+  border-color: var(--sys-color-error);
 }
 
 .card-empty {

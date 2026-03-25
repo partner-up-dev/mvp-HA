@@ -63,26 +63,6 @@
         </p>
       </section>
 
-      <div v-if="!preview" class="demand-card__actions">
-        <button
-          type="button"
-          class="demand-card__action demand-card__action--skip"
-          :disabled="isInteractionLocked"
-          @pointerdown.stop
-          @click="emit('skip')"
-        >
-          {{ t("anchorEvent.card.skipButton") }}
-        </button>
-        <button
-          type="button"
-          class="demand-card__action demand-card__action--detail"
-          :disabled="isInteractionLocked || detailPrId === null"
-          @pointerdown.stop
-          @click="emit('view-detail')"
-        >
-          {{ t("anchorEvent.card.detailButton") }}
-        </button>
-      </div>
     </div>
   </article>
 </template>
@@ -633,32 +613,4 @@ watch(() => props.pending, (isPending) => {
   color: var(--sys-color-on-surface-variant);
 }
 
-.demand-card__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-sm);
-}
-
-.demand-card__action {
-  @include mx.pu-pill-action(outline-transparent, default);
-  border: none;
-  cursor: pointer;
-  min-height: 48px;
-}
-
-.demand-card__action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.demand-card__action--detail {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border-color: var(--sys-color-primary);
-}
-
-.demand-card__action--skip {
-  color: var(--sys-color-error);
-  border-color: var(--sys-color-error);
-}
 </style>
