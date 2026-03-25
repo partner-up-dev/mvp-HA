@@ -78,6 +78,7 @@
               </article>
 
               <AnchorEventDemandCard
+                :key="activeDemandCard.cardKey"
                 class="card-stage__front"
                 :display-location-name="activeDemandCard.displayLocationName"
                 :time-label="activeDemandCard.timeLabel"
