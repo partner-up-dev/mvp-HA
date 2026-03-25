@@ -29,31 +29,6 @@
         :message="t('mePage.loading')"
       />
 
-      <section
-        v-else-if="!userSessionStore.isAuthenticated"
-        class="surface-card"
-      >
-        <div class="section-header">
-          <div>
-            <h2>{{ t("mePage.register.title") }}</h2>
-            <p>{{ t("mePage.authHint") }}</p>
-          </div>
-        </div>
-
-        <button
-          class="primary-button"
-          type="button"
-          :disabled="registerLocalAccountMutation.isPending.value"
-          @click="handleRegisterLocalAccount"
-        >
-          {{
-            registerLocalAccountMutation.isPending.value
-              ? t("mePage.register.pending")
-              : t("mePage.register.action")
-          }}
-        </button>
-      </section>
-
       <section class="surface-card">
         <div class="section-header">
           <div>
@@ -141,117 +116,214 @@
         </div>
       </section>
 
-      <section class="surface-card">
-        <div class="section-header">
-          <div>
-            <h2>{{ t("mePage.wechat.title") }}</h2>
-            <p>{{ bindHintText }}</p>
-          </div>
-        </div>
-
-        <button
-          class="primary-button"
-          type="button"
-          :disabled="bindActionDisabled"
-          @click="handleStartWeChatBind"
-        >
-          {{
-            startWeChatBindMutation.isPending.value
-              ? t("mePage.wechat.bindingAction")
-              : wechatBound
-                ? t("mePage.wechat.boundAction")
-                : t("mePage.wechat.bindAction")
-          }}
-        </button>
-      </section>
-
-      <WeChatNotificationSubscriptionsCard
-        :title="t('mePage.reminder.title')"
-      >
-        <APRNotificationSubscriptions
-          :updating-label="t('prPage.wechatReminder.updating')"
-          @error-change="handleNotificationPanelErrorChange"
-        />
-      </WeChatNotificationSubscriptionsCard>
-
-      <section class="surface-card">
-        <div class="section-header">
-          <div>
-            <h2>{{ t("mePage.credentials.title") }}</h2>
-            <p>{{ t("mePage.credentials.description") }}</p>
-          </div>
-        </div>
-
-        <div class="credential-list">
-          <div class="credential-item">
-            <div class="credential-copy">
-              <span class="credential-label">{{
-                t("mePage.credentials.userIdLabel")
-              }}</span>
-              <code class="credential-value">{{ storedUserIdLabel }}</code>
+      <template v-if="!userSessionStore.isAuthenticated">
+        <section class="surface-card">
+          <div class="section-header">
+            <div>
+              <h2>{{ t("mePage.wechatLogin.title") }}</h2>
+              <p>{{ wechatLoginHintText }}</p>
             </div>
+          </div>
+
+          <button
+            v-if="isWeChatEnv"
+            class="primary-button"
+            type="button"
+            :disabled="wechatLoginPending"
+            @click="handleStartWeChatLogin"
+          >
+            {{
+              wechatLoginPending
+                ? t("mePage.wechatLogin.pending")
+                : t("mePage.wechatLogin.action")
+            }}
+          </button>
+        </section>
+
+        <section class="surface-card">
+          <div class="section-header">
+            <div>
+              <h2>{{ t("mePage.pinLogin.title") }}</h2>
+              <p>{{ t("mePage.pinLogin.description") }}</p>
+            </div>
+          </div>
+
+          <div class="pin-login-fields">
+            <label class="field">
+              <span class="field__label">{{
+                t("mePage.pinLogin.userIdLabel")
+              }}</span>
+              <input
+                v-model="pinLoginDraft.userId"
+                class="field__input"
+                type="text"
+                :placeholder="t('mePage.pinLogin.userIdPlaceholder')"
+                autocomplete="username"
+                @keydown.enter.prevent="handlePinLogin"
+              />
+            </label>
+
+            <label class="field">
+              <span class="field__label">{{
+                t("mePage.pinLogin.pinLabel")
+              }}</span>
+              <input
+                v-model="pinLoginDraft.userPin"
+                class="field__input"
+                type="password"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="4"
+                :placeholder="t('mePage.pinLogin.pinPlaceholder')"
+                autocomplete="one-time-code"
+                @keydown.enter.prevent="handlePinLogin"
+              />
+              <p v-if="showPinFormatHint" class="field__hint">
+                {{ t("mePage.pinLogin.pinFormatHint") }}
+              </p>
+            </label>
+          </div>
+
+          <div class="profile-actions">
+            <button
+              class="primary-button"
+              type="button"
+              :disabled="!canSubmitPinLogin"
+              @click="handlePinLogin"
+            >
+              {{
+                loginWithPinMutation.isPending.value
+                  ? t("mePage.pinLogin.pending")
+                  : t("mePage.pinLogin.action")
+              }}
+            </button>
             <button
               class="secondary-button"
               type="button"
-              :disabled="!storedUserId"
-              @click="handleCopyCredential('userId', storedUserId)"
+              :disabled="registerLocalAccountMutation.isPending.value"
+              @click="handleRegisterLocalAccount"
             >
               {{
-                copiedField === "userId" ? t("common.copied") : t("common.copy")
+                registerLocalAccountMutation.isPending.value
+                  ? t("mePage.register.pending")
+                  : t("mePage.register.action")
               }}
             </button>
           </div>
+        </section>
+      </template>
 
-          <div class="credential-item">
-            <div class="credential-copy">
-              <span class="credential-label">{{
-                t("mePage.credentials.userPinLabel")
-              }}</span>
-              <code class="credential-value">{{ displayedUserPin }}</code>
-            </div>
-            <div class="credential-actions">
-              <button
-                class="secondary-button"
-                type="button"
-                :disabled="!storedUserPin"
-                @click="pinVisible = !pinVisible"
-              >
-                {{
-                  pinVisible
-                    ? t("mePage.credentials.hidePin")
-                    : t("mePage.credentials.showPin")
-                }}
-              </button>
-              <button
-                class="secondary-button"
-                type="button"
-                :disabled="!storedUserPin"
-                @click="handleCopyCredential('userPin', storedUserPin)"
-              >
-                {{
-                  copiedField === "userPin"
-                    ? t("common.copied")
-                    : t("common.copy")
-                }}
-              </button>
+      <template v-else>
+        <section class="surface-card">
+          <div class="section-header">
+            <div>
+              <h2>{{ t("mePage.wechat.title") }}</h2>
+              <p>{{ bindHintText }}</p>
             </div>
           </div>
-        </div>
-      </section>
 
-      <RouterLink class="history-link" :to="{ name: 'pr-mine' }">
-        <div class="history-link__copy">
-          <h2>{{ t("mePage.history.title") }}</h2>
-          <p>{{ t("mePage.history.description") }}</p>
-        </div>
-        <span class="history-link__action">
-          {{ t("mePage.history.action") }}
-          <span
-            class="history-link__icon i-mdi:arrow-right"
-            aria-hidden="true"
-          ></span>
-        </span>
-      </RouterLink>
+          <button
+            class="primary-button"
+            type="button"
+            :disabled="bindActionDisabled"
+            @click="handleStartWeChatBind"
+          >
+            {{
+              startWeChatBindMutation.isPending.value
+                ? t("mePage.wechat.bindingAction")
+                : wechatBound
+                  ? t("mePage.wechat.boundAction")
+                  : t("mePage.wechat.bindAction")
+            }}
+          </button>
+        </section>
+
+        <WeChatNotificationSubscriptionsCard
+          :title="t('mePage.reminder.title')"
+          :items="notificationSubscriptionItems"
+          :updating-label="t('prPage.wechatReminder.updating')"
+          @action="handleNotificationSubscriptionAction"
+        />
+
+        <section class="surface-card">
+          <div class="section-header">
+            <div>
+              <h2>{{ t("mePage.credentials.title") }}</h2>
+              <p>{{ t("mePage.credentials.description") }}</p>
+            </div>
+          </div>
+
+          <div class="credential-list">
+            <div class="credential-item">
+              <div class="credential-copy">
+                <span class="credential-label">{{
+                  t("mePage.credentials.userIdLabel")
+                }}</span>
+                <code class="credential-value">{{ storedUserIdLabel }}</code>
+              </div>
+              <button
+                class="secondary-button"
+                type="button"
+                :disabled="!storedUserId"
+                @click="handleCopyCredential('userId', storedUserId)"
+              >
+                {{
+                  copiedField === "userId" ? t("common.copied") : t("common.copy")
+                }}
+              </button>
+            </div>
+
+            <div class="credential-item">
+              <div class="credential-copy">
+                <span class="credential-label">{{
+                  t("mePage.credentials.userPinLabel")
+                }}</span>
+                <code class="credential-value">{{ displayedUserPin }}</code>
+              </div>
+              <div class="credential-actions">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  :disabled="!storedUserPin"
+                  @click="pinVisible = !pinVisible"
+                >
+                  {{
+                    pinVisible
+                      ? t("mePage.credentials.hidePin")
+                      : t("mePage.credentials.showPin")
+                  }}
+                </button>
+                <button
+                  class="secondary-button"
+                  type="button"
+                  :disabled="!storedUserPin"
+                  @click="handleCopyCredential('userPin', storedUserPin)"
+                >
+                  {{
+                    copiedField === "userPin"
+                      ? t("common.copied")
+                      : t("common.copy")
+                  }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <RouterLink class="history-link" :to="{ name: 'pr-mine' }">
+          <div class="history-link__copy">
+            <h2>{{ t("mePage.history.title") }}</h2>
+            <p>{{ t("mePage.history.description") }}</p>
+          </div>
+          <span class="history-link__action">
+            {{ t("mePage.history.action") }}
+            <span
+              class="history-link__icon i-mdi:arrow-right"
+              aria-hidden="true"
+            ></span>
+          </span>
+        </RouterLink>
+      </template>
     </div>
 
     <template #footer>
@@ -261,7 +333,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
@@ -270,15 +342,19 @@ import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFo
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
-import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { useCurrentUserProfile } from "@/domains/user/queries/useCurrentUserProfile";
 import { useUpdateCurrentUserProfile } from "@/domains/user/queries/useUpdateCurrentUserProfile";
 import { useUpdateCurrentUserAvatar } from "@/domains/user/queries/useUpdateCurrentUserAvatar";
 import { useStartWeChatBind } from "@/domains/user/queries/useStartWeChatBind";
 import { useRegisterLocalAccount } from "@/domains/user/queries/useRegisterLocalAccount";
+import { useLoginWithPin } from "@/domains/user/queries/useLoginWithPin";
+import { useWeChatNotificationSubscriptionsPanel } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { copyToClipboard } from "@/lib/clipboard";
+import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+
+const PIN_PATTERN = /^\d{4}$/;
 
 const router = useRouter();
 const route = useRoute();
@@ -290,13 +366,25 @@ const updateProfileMutation = useUpdateCurrentUserProfile();
 const updateAvatarMutation = useUpdateCurrentUserAvatar();
 const startWeChatBindMutation = useStartWeChatBind();
 const registerLocalAccountMutation = useRegisterLocalAccount();
+const loginWithPinMutation = useLoginWithPin();
+const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
+  visibleKinds: [
+    "REMINDER_CONFIRMATION",
+    "BOOKING_RESULT",
+    "NEW_PARTNER",
+  ] as const,
+});
 
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const nicknameDraft = ref("");
 const pinVisible = ref(false);
 const copiedField = ref<"userId" | "userPin" | null>(null);
 const copyErrorMessage = ref<string | null>(null);
-const notificationPanelError = ref<Error | null>(null);
+const wechatLoginPending = ref(false);
+const pinLoginDraft = reactive({
+  userId: "",
+  userPin: "",
+});
 
 const currentUser = computed(() => currentUserQuery.data.value ?? null);
 const canEditProfile = computed(
@@ -316,6 +404,24 @@ const displayedUserPin = computed(() => {
 });
 const isWeChatEnv = computed(() =>
   typeof navigator === "undefined" ? false : isWeChatBrowser(),
+);
+const wechatLoginHintText = computed(() =>
+  isWeChatEnv.value
+    ? t("mePage.wechatLogin.wechatHint")
+    : t("mePage.wechatLogin.nonWechatHint"),
+);
+const normalizedPinLoginUserId = computed(() => pinLoginDraft.userId.trim());
+const normalizedPinLoginPin = computed(() => pinLoginDraft.userPin.trim());
+const showPinFormatHint = computed(
+  () =>
+    normalizedPinLoginPin.value.length > 0 &&
+    !PIN_PATTERN.test(normalizedPinLoginPin.value),
+);
+const canSubmitPinLogin = computed(
+  () =>
+    !loginWithPinMutation.isPending.value &&
+    normalizedPinLoginUserId.value.length > 0 &&
+    PIN_PATTERN.test(normalizedPinLoginPin.value),
 );
 const bindFeedbackCode = computed(() => {
   const raw = route.query.wechatBind;
@@ -352,16 +458,12 @@ const canSaveNickname = computed(() => {
 });
 const bindActionDisabled = computed(
   () =>
-    !userSessionStore.isAuthenticated ||
     currentUser.value === null ||
     wechatBound.value ||
     !isWeChatEnv.value ||
     startWeChatBindMutation.isPending.value,
 );
 const bindHintText = computed(() => {
-  if (!userSessionStore.isAuthenticated) {
-    return t("mePage.wechat.authHint");
-  }
   if (wechatBound.value) {
     return t("mePage.wechat.boundHint");
   }
@@ -371,6 +473,9 @@ const bindHintText = computed(() => {
   return t("mePage.wechat.unboundHint");
 });
 
+const notificationSubscriptionItems = computed(
+  () => notificationSubscriptions.items.value,
+);
 const errorMessage = computed(() => {
   const candidates = [
     currentUserQuery.error.value,
@@ -378,7 +483,8 @@ const errorMessage = computed(() => {
     updateAvatarMutation.error.value,
     startWeChatBindMutation.error.value,
     registerLocalAccountMutation.error.value,
-    notificationPanelError.value,
+    loginWithPinMutation.error.value,
+    notificationSubscriptions.mutation.error.value,
   ];
 
   const firstError = candidates.find((candidate) => candidate instanceof Error);
@@ -419,6 +525,25 @@ const handleAvatarChange = async (event: Event) => {
   }
 };
 
+const handleStartWeChatLogin = () => {
+  if (typeof window === "undefined") return;
+  if (!isWeChatEnv.value || wechatLoginPending.value) return;
+
+  wechatLoginPending.value = true;
+  redirectToWeChatOAuthLogin(window.location.href);
+};
+
+const handlePinLogin = async () => {
+  if (!canSubmitPinLogin.value) return;
+
+  const payload = await loginWithPinMutation.mutateAsync({
+    userId: normalizedPinLoginUserId.value,
+    userPin: normalizedPinLoginPin.value,
+  });
+  userSessionStore.applyAuthSession(payload);
+  pinLoginDraft.userPin = "";
+};
+
 const handleStartWeChatBind = async () => {
   if (bindActionDisabled.value || typeof window === "undefined") return;
 
@@ -433,8 +558,10 @@ const handleRegisterLocalAccount = async () => {
   userSessionStore.applyAuthSession(payload);
 };
 
-const handleNotificationPanelErrorChange = (error: Error | null) => {
-  notificationPanelError.value = error;
+const handleNotificationSubscriptionAction = async (
+  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
+) => {
+  await notificationSubscriptions.handleAction(kind);
 };
 
 const handleCopyCredential = async (
@@ -499,12 +626,6 @@ const goHome = () => {
 .feedback-banner--error {
   background: var(--sys-color-error-container);
   color: var(--sys-color-on-error-container);
-}
-
-.auth-hint {
-  margin: 0;
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .section-header {
@@ -572,10 +693,15 @@ const goHome = () => {
 }
 
 .profile-form,
-.field {
+.field,
+.pin-login-fields {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
+}
+
+.pin-login-fields {
+  gap: var(--sys-spacing-med);
 }
 
 .field__label {
@@ -585,6 +711,12 @@ const goHome = () => {
 
 .field__input {
   @include mx.pu-field-shell;
+}
+
+.field__hint {
+  margin: 0;
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .profile-actions,
