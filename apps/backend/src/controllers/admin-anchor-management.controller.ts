@@ -50,9 +50,6 @@ const adminAnchorEventInputSchema = z.object({
   userLocationPool: z.array(userLocationEntrySchema),
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
-  defaultConfirmationStartOffsetMinutes: z.number().int().nonnegative(),
-  defaultConfirmationEndOffsetMinutes: z.number().int().nonnegative(),
-  defaultJoinLockOffsetMinutes: z.number().int().nonnegative(),
   coverImage: z.string().trim().nullable(),
   status: anchorEventStatusSchema,
 }).superRefine((value, context) => {
@@ -61,33 +58,11 @@ const adminAnchorEventInputSchema = z.object({
     defaultMinPartners !== null &&
     defaultMaxPartners !== null &&
     defaultMinPartners > defaultMaxPartners
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["defaultMinPartners"],
-        message: "defaultMinPartners cannot exceed defaultMaxPartners",
-      });
-    }
-
-  if (
-    value.defaultConfirmationStartOffsetMinutes <=
-    value.defaultConfirmationEndOffsetMinutes
   ) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ["defaultConfirmationStartOffsetMinutes"],
-      message: "确认开始需早于确认截止",
-    });
-  }
-
-  if (
-    value.defaultJoinLockOffsetMinutes <
-    value.defaultConfirmationEndOffsetMinutes
-  ) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["defaultJoinLockOffsetMinutes"],
-      message: "停止加入需不晚于确认截止",
+      path: ["defaultMinPartners"],
+      message: "defaultMinPartners cannot exceed defaultMaxPartners",
     });
   }
 });
