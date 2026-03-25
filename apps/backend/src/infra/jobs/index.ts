@@ -1,4 +1,4 @@
-export { jobRunner } from "./job-runner";
+export { jobRunner, NO_LATE_TOLERANCE_MS } from "./job-runner";
 export type {
   ScheduleOnceConfig,
   ScheduleOnceResult,

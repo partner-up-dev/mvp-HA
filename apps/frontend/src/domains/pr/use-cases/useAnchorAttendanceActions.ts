@@ -22,7 +22,7 @@ export const useAnchorAttendanceActions = ({
   const { t } = useI18n();
   const confirmSlotMutation = useConfirmAnchorPRSlot();
   const checkInSlotMutation = useCheckInAnchorPRSlot();
-  const pendingCheckInDidAttend = ref<boolean | null>(null);
+  const checkInFollowupOpen = ref(false);
 
   const hasJoined = computed(
     () => pr.value?.partnerSection.viewer.isParticipant ?? false,
@@ -31,15 +31,12 @@ export const useAnchorAttendanceActions = ({
   const canConfirm = computed(() => pr.value?.partnerSection.viewer.canConfirm ?? false);
   const canCheckIn = computed(() => pr.value?.partnerSection.viewer.canCheckIn ?? false);
 
-  const checkInFollowupStatusLabel = computed(() => {
-    if (pendingCheckInDidAttend.value === true) {
-      return t("prPage.checkInFollowupForAttended");
-    }
-    return t("prPage.checkInFollowupForMissed");
-  });
+  const checkInFollowupStatusLabel = computed(
+    () => t("prPage.checkInFollowupForAttended"),
+  );
 
   const showCheckInFollowup = computed(
-    () => hasJoined.value && pendingCheckInDidAttend.value !== null,
+    () => hasJoined.value && checkInFollowupOpen.value,
   );
 
   const confirmPending = computed(() => confirmSlotMutation.isPending.value);
@@ -57,21 +54,20 @@ export const useAnchorAttendanceActions = ({
     onActionSuccess?.();
   };
 
-  const prepareCheckIn = (didAttend: boolean) => {
-    pendingCheckInDidAttend.value = didAttend;
+  const prepareCheckIn = () => {
+    checkInFollowupOpen.value = true;
   };
 
   const cancelPendingCheckIn = () => {
-    pendingCheckInDidAttend.value = null;
+    checkInFollowupOpen.value = false;
   };
 
   const submitCheckIn = async (wouldJoinAgain: boolean) => {
     if (id.value === null) return;
-    if (pendingCheckInDidAttend.value === null) return;
+    if (!checkInFollowupOpen.value) return;
 
     await checkInSlotMutation.mutateAsync({
       id: id.value,
-      didAttend: pendingCheckInDidAttend.value,
       wouldJoinAgain,
     });
 
@@ -79,12 +75,12 @@ export const useAnchorAttendanceActions = ({
       prId: id.value,
       prKind: "ANCHOR",
       scenarioType: pr.value?.core.type,
-      didAttend: pendingCheckInDidAttend.value,
+      didAttend: true,
       wouldJoinAgain,
     });
     onActionSuccess?.();
 
-    pendingCheckInDidAttend.value = null;
+    checkInFollowupOpen.value = false;
   };
 
   return {

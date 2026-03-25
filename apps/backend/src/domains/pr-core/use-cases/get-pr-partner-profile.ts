@@ -3,9 +3,8 @@ import type { PartnerId } from "../../../entities/partner";
 import type { PRId, PRKind } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
+import { readPartnerRequestById } from "../services/pr-read.service";
 
-const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 
 export type PRPartnerProfile = {
@@ -43,7 +42,9 @@ export async function getPRPartnerProfile(params: {
   viewerUserId?: UserId | null;
 }): Promise<PRPartnerProfile> {
   const { prId, partnerId, prKind, viewerUserId = null } = params;
-  const request = await prRepo.findById(prId);
+  const request = await readPartnerRequestById(prId, {
+    consistency: "eventual",
+  });
   if (!request || request.prKind !== prKind) {
     throw new HTTPException(404, { message: resolveNotFoundMessage(prKind) });
   }

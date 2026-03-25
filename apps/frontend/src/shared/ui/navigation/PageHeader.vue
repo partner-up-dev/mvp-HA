@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { getCurrentInstance } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, type RouteLocationRaw } from "vue-router";
 
 const props = withDefaults(
   defineProps<{
@@ -34,6 +34,7 @@ const props = withDefaults(
     subtitle?: string;
     showBack?: boolean;
     backLabel?: string;
+    backFallbackTo?: RouteLocationRaw;
   }>(),
   {
     showBack: true,
@@ -46,10 +47,17 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const router = useRouter();
+const defaultBackFallbackTo: RouteLocationRaw = { path: "/" };
 
 const backLabel = props.backLabel ?? t("common.backToHome");
 
-function handleBack() {
+const canGoBack = (): boolean =>
+  typeof window !== "undefined" && window.history.length > 1;
+
+const resolveBackFallbackTo = (): RouteLocationRaw =>
+  props.backFallbackTo ?? defaultBackFallbackTo;
+
+async function handleBack(): Promise<void> {
   const inst = getCurrentInstance();
   const hasListener =
     !!inst?.vnode.props &&
@@ -61,7 +69,12 @@ function handleBack() {
     return;
   }
 
-  router.back();
+  if (canGoBack()) {
+    router.back();
+    return;
+  }
+
+  await router.replace(resolveBackFallbackTo());
 }
 </script>
 

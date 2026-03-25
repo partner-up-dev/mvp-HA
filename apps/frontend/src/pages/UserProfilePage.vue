@@ -4,7 +4,7 @@
       <PageHeader
         :title="t('userProfilePage.title')"
         :subtitle="subtitle"
-        @back="goBack"
+        :back-fallback-to="backFallbackTo"
       />
     </template>
 
@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
@@ -78,7 +78,6 @@ import {
 } from "@/domains/user/queries/usePRPartnerProfile";
 
 const route = useRoute();
-const router = useRouter();
 const { t } = useI18n();
 
 const parsePositiveInt = (value: unknown): number | null => {
@@ -138,24 +137,17 @@ const errorMessage = computed(() => {
   return null;
 });
 
-const goBack = () => {
-  if (typeof window !== "undefined" && window.history.length > 1) {
-    router.back();
-    return;
-  }
-
+const backFallbackTo = computed(() => {
   if (prId.value !== null && scenario.value === "ANCHOR") {
-    router.push(anchorPRDetailPath(prId.value as PRId));
-    return;
+    return anchorPRDetailPath(prId.value as PRId);
   }
 
   if (prId.value !== null) {
-    router.push(communityPRDetailPath(prId.value as PRId));
-    return;
+    return communityPRDetailPath(prId.value as PRId);
   }
 
-  router.push("/");
-};
+  return "/";
+});
 </script>
 
 <style scoped lang="scss">

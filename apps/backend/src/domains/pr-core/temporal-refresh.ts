@@ -21,7 +21,10 @@ import {
   isActivatableStatus,
   isExpirableStatus,
 } from "./services/status-rules";
-import { recalculatePRStatus } from "./services/slot-management.service";
+import {
+  listActiveParticipantSummariesForPR,
+  recalculatePRStatus,
+} from "./services/slot-management.service";
 import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
 import { operationLogService } from "../../infra/operation-log";
 import { getEffectiveBookingDeadline } from "../pr-booking-support";
@@ -201,16 +204,14 @@ async function releaseUnconfirmedSlotsIfNeeded(
   const trigger = await resolveReleaseTrigger(request, resourceBookingDeadlineAt);
   if (!trigger) return;
 
-  const slots = await partnerRepo.findByPrId(request.id);
-  const releasing = slots.filter((slot) => slot.status === "JOINED");
+  const participants = await listActiveParticipantSummariesForPR(request.id);
+  const releasing = participants.filter((slot) => slot.status === "JOINED");
   if (releasing.length === 0) return;
 
   for (const slot of releasing) {
-    if (slot.userId) {
-      await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
-      await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
-    }
-    await partnerRepo.markReleased(slot.id);
+    await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
+    await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
+    await partnerRepo.markReleased(slot.partnerId);
 
     operationLogService.log({
       actorId: slot.userId,
@@ -218,7 +219,7 @@ async function releaseUnconfirmedSlotsIfNeeded(
       aggregateType: "partner_request",
       aggregateId: String(request.id),
       detail: {
-        partnerId: slot.id,
+        partnerId: slot.partnerId,
         trigger,
       },
     });

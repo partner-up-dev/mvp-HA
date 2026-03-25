@@ -1,7 +1,7 @@
 <template>
   <Transition name="bottom-drawer">
     <div
-      v-if="open"
+      v-show="open"
       class="bottom-drawer-overlay"
       :style="{ zIndex: String(zIndex) }"
       @click.self="handleBackdropClick"

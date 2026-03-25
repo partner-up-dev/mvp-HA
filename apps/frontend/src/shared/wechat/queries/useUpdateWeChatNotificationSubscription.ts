@@ -13,9 +13,11 @@ type WeChatNotificationKind =
   | "BOOKING_RESULT"
   | "NEW_PARTNER";
 
+type WeChatNotificationAction = "ADD_ONE" | "CLEAR";
+
 type UpdateWeChatNotificationSubscriptionInput = {
   kind: WeChatNotificationKind;
-  enabled: boolean;
+  action: WeChatNotificationAction;
 };
 
 export const useUpdateWeChatNotificationSubscription = () => {
@@ -24,11 +26,11 @@ export const useUpdateWeChatNotificationSubscription = () => {
   return useMutation({
     mutationFn: async ({
       kind,
-      enabled,
+      action,
     }: UpdateWeChatNotificationSubscriptionInput) => {
       const res = await client.api.wechat.notifications.subscriptions.$post(
         {
-          json: { kind, enabled },
+          json: { kind, action },
         },
         {
           init: {
