@@ -43,7 +43,7 @@
       <section
         v-if="
           bookingSupportDetail.bookingSupport.bookingContact.required &&
-          bookingSupportDetail.viewerIsCreator
+          bookingSupportDetail.bookingSupport.bookingContact.ownerIsCurrentViewer
         "
         class="card"
       >
