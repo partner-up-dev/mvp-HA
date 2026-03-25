@@ -84,9 +84,10 @@ const oauthStateCookiePayloadSchema = z.object({
 const reminderSubscriptionUpdateSchema = z.object({
   enabled: z.boolean(),
 });
+const notificationSubscriptionActionSchema = z.enum(["ADD_ONE", "CLEAR"]);
 const notificationSubscriptionUpdateSchema = z.object({
   kind: wechatNotificationKindSchema,
-  enabled: z.boolean(),
+  action: notificationSubscriptionActionSchema,
 });
 
 type OAuthStateCookiePayload = z.infer<typeof oauthStateCookiePayloadSchema>;
@@ -94,6 +95,7 @@ type OAuthStateMode = OAuthStateCookiePayload["mode"];
 type NotificationSubscriptionState = {
   enabled: boolean;
   optInAt: string | null;
+  remainingCount: number;
   configured: boolean;
   requiresOpenSubscribe: boolean;
   templateId: string | null;
@@ -128,14 +130,21 @@ const buildNotificationChannelState = async (): Promise<{
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
 }> => {
-  const [reminderTemplateId, newPartnerTemplateId] = await Promise.all([
-    subscriptionMessageService.getConfirmationReminderTemplateId(),
-    subscriptionMessageService.getNewPartnerTemplateId(),
-  ]);
+  const [reminderTemplateId, bookingResultTemplateId, newPartnerTemplateId] =
+    await Promise.all([
+      subscriptionMessageService.getConfirmationReminderTemplateId(),
+      subscriptionMessageService.getBookingResultTemplateId(),
+      subscriptionMessageService.getNewPartnerTemplateId(),
+    ]);
 
-  const [reminderSubmsgConfigured, newPartnerSubmsgConfigured] =
+  const [
+    reminderSubmsgConfigured,
+    bookingResultSubmsgConfigured,
+    newPartnerSubmsgConfigured,
+  ] =
     await Promise.all([
       subscriptionMessageService.isConfirmationReminderConfigured(),
+      subscriptionMessageService.isBookingResultConfigured(),
       subscriptionMessageService.isNewPartnerConfigured(),
     ]);
 
@@ -148,9 +157,10 @@ const buildNotificationChannelState = async (): Promise<{
       templateId: reminderTemplateId,
     },
     bookingResult: {
-      configured: true,
-      requiresOpenSubscribe: false,
-      templateId: null,
+      configured: bookingResultSubmsgConfigured,
+      requiresOpenSubscribe:
+        bookingResultSubmsgConfigured && Boolean(bookingResultTemplateId),
+      templateId: bookingResultTemplateId,
     },
     newPartner: {
       configured: newPartnerSubmsgConfigured,
@@ -172,6 +182,7 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
       REMINDER_CONFIRMATION: {
         enabled: false,
         optInAt: null,
+        remainingCount: 0,
         configured: channels.reminder.configured,
         requiresOpenSubscribe: channels.reminder.requiresOpenSubscribe,
         templateId: channels.reminder.templateId,
@@ -179,6 +190,7 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
       BOOKING_RESULT: {
         enabled: false,
         optInAt: null,
+        remainingCount: 0,
         configured: channels.bookingResult.configured,
         requiresOpenSubscribe: channels.bookingResult.requiresOpenSubscribe,
         templateId: channels.bookingResult.templateId,
@@ -186,6 +198,7 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
       NEW_PARTNER: {
         enabled: false,
         optInAt: null,
+        remainingCount: 0,
         configured: channels.newPartner.configured,
         requiresOpenSubscribe: channels.newPartner.requiresOpenSubscribe,
         templateId: channels.newPartner.templateId,
@@ -226,6 +239,7 @@ const buildAuthenticatedSubscriptionsResponse = async (
       REMINDER_CONFIRMATION: {
         enabled: reminder.enabled,
         optInAt: reminder.optInAt ? reminder.optInAt.toISOString() : null,
+        remainingCount: reminder.remainingCount,
         configured: channels.reminder.configured,
         requiresOpenSubscribe: channels.reminder.requiresOpenSubscribe,
         templateId: channels.reminder.templateId,
@@ -235,6 +249,7 @@ const buildAuthenticatedSubscriptionsResponse = async (
         optInAt: bookingResult.optInAt
           ? bookingResult.optInAt.toISOString()
           : null,
+        remainingCount: bookingResult.remainingCount,
         configured: channels.bookingResult.configured,
         requiresOpenSubscribe: channels.bookingResult.requiresOpenSubscribe,
         templateId: channels.bookingResult.templateId,
@@ -242,6 +257,7 @@ const buildAuthenticatedSubscriptionsResponse = async (
       NEW_PARTNER: {
         enabled: newPartner.enabled,
         optInAt: newPartner.optInAt ? newPartner.optInAt.toISOString() : null,
+        remainingCount: newPartner.remainingCount,
         configured: channels.newPartner.configured,
         requiresOpenSubscribe: channels.newPartner.requiresOpenSubscribe,
         templateId: channels.newPartner.templateId,
@@ -253,17 +269,21 @@ const buildAuthenticatedSubscriptionsResponse = async (
 const applyNotificationSubscriptionSideEffects = async (
   userId: UserId,
   kind: WeChatNotificationKind,
-  enabled: boolean,
+  previousRemainingCount: number,
+  nextRemainingCount: number,
 ): Promise<number> => {
   if (kind === "REMINDER_CONFIRMATION") {
-    if (enabled) {
+    if (nextRemainingCount <= 0) {
+      return cancelWeChatReminderJobsForUser(userId);
+    }
+    if (previousRemainingCount <= 0 && nextRemainingCount > 0) {
       await rebuildWeChatReminderJobsForUser(userId);
       return 0;
     }
-    return cancelWeChatReminderJobsForUser(userId);
+    return 0;
   }
 
-  if (kind === "NEW_PARTNER" && !enabled) {
+  if (kind === "NEW_PARTNER" && nextRemainingCount <= 0) {
     return cancelWeChatNewPartnerJobsForUser(userId);
   }
 
@@ -672,13 +692,24 @@ export const wechatRoute = app
         return c.json(identity.payload, identity.status);
       }
 
-      const { kind, enabled } = c.req.valid("json");
+      const { kind, action } = c.req.valid("json");
+      const currentNotificationOpt = await userNotificationOptRepo.findByUserId(
+        identity.user.id,
+      );
+      const previousSnapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+        currentNotificationOpt,
+        kind,
+      );
       const updatedNotificationOpt =
-        await userNotificationOptRepo.upsertWechatNotificationSubscription(
-          identity.user.id,
-          kind,
-          enabled,
-        );
+        action === "ADD_ONE"
+          ? await userNotificationOptRepo.addOneWechatNotificationCredit(
+              identity.user.id,
+              kind,
+            )
+          : await userNotificationOptRepo.clearWechatNotificationCredits(
+              identity.user.id,
+              kind,
+            );
       if (!updatedNotificationOpt) {
         return c.json(
           { error: "Failed to update notification subscription" },
@@ -692,7 +723,8 @@ export const wechatRoute = app
       const deletedJobs = await applyNotificationSubscriptionSideEffects(
         identity.user.id,
         kind,
-        enabled,
+        previousSnapshot.remainingCount,
+        snapshot.remainingCount,
       );
       const fullState = await buildAuthenticatedSubscriptionsResponse(
         identity.user.id,
@@ -701,8 +733,10 @@ export const wechatRoute = app
       return c.json({
         ok: true,
         kind,
+        action,
         enabled: snapshot.enabled,
         optInAt: snapshot.optInAt ? snapshot.optInAt.toISOString() : null,
+        remainingCount: snapshot.remainingCount,
         configured: selectedState.configured,
         deletedJobs,
       });
@@ -718,6 +752,7 @@ export const wechatRoute = app
         wechatBound: fallback.wechatBound,
         enabled: reminder.enabled,
         optInAt: reminder.optInAt,
+        remainingCount: reminder.remainingCount,
       });
     }
 
@@ -733,6 +768,7 @@ export const wechatRoute = app
         wechatBound: false,
         enabled: reminder.enabled,
         optInAt: reminder.optInAt,
+        remainingCount: reminder.remainingCount,
       });
     }
 
@@ -747,6 +783,7 @@ export const wechatRoute = app
       wechatBound: fullState.wechatBound,
       enabled: reminder.enabled,
       optInAt: reminder.optInAt,
+      remainingCount: reminder.remainingCount,
     });
   })
   .post(
@@ -763,11 +800,18 @@ export const wechatRoute = app
       }
 
       const { enabled } = c.req.valid("json");
+      const currentNotificationOpt = await userNotificationOptRepo.findByUserId(
+        identity.user.id,
+      );
+      const previousSnapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+        currentNotificationOpt,
+        "REMINDER_CONFIRMATION",
+      );
       const updatedNotificationOpt =
-        await userNotificationOptRepo.upsertWechatNotificationSubscription(
+        await userNotificationOptRepo.setWechatNotificationRemainingCount(
           identity.user.id,
           "REMINDER_CONFIRMATION",
-          enabled,
+          enabled ? 1 : 0,
         );
       if (!updatedNotificationOpt) {
         return c.json({ error: "Failed to update reminder subscription" }, 500);
@@ -779,7 +823,8 @@ export const wechatRoute = app
       const deletedJobs = await applyNotificationSubscriptionSideEffects(
         identity.user.id,
         "REMINDER_CONFIRMATION",
-        enabled,
+        previousSnapshot.remainingCount,
+        snapshot.remainingCount,
       );
       const fullState = await buildAuthenticatedSubscriptionsResponse(
         identity.user.id,
@@ -790,6 +835,7 @@ export const wechatRoute = app
         ok: true,
         enabled: snapshot.enabled,
         optInAt: snapshot.optInAt ? snapshot.optInAt.toISOString() : null,
+        remainingCount: snapshot.remainingCount,
         configured: fullState.configured && reminder.configured,
         deletedJobs,
       });

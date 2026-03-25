@@ -164,12 +164,16 @@ export interface MessageSchema {
     };
     bookmarkNudge: {
       title: string;
+      wechatTitle: string;
       wechatHint: string;
       browserHint: string;
       bookmarkAction: string;
+      wechatAction: string;
       copyAction: string;
+      wechatCopyAction: string;
       copiedAction: string;
       dismissAction: string;
+      officialAccountName: string;
     };
     topics: {
       movie: {
@@ -317,6 +321,8 @@ export interface MessageSchema {
     };
     notificationSubscriptions: {
       title: string;
+      subscribeOnceAction: string;
+      remainingCountWithHint: string;
       openSubscribeUnavailableHint: string;
       items: {
         REMINDER_CONFIRMATION: {
@@ -745,6 +751,9 @@ export interface MessageSchema {
     eventStatusLabel: string;
     eventDefaultMinPartnersLabel: string;
     eventDefaultMaxPartnersLabel: string;
+    eventDefaultConfirmationStartLabel: string;
+    eventDefaultConfirmationEndLabel: string;
+    eventDefaultJoinLockLabel: string;
     eventPoiHint: string;
     eventLocationPoolLabel: string;
     eventTimeWindowHint: string;

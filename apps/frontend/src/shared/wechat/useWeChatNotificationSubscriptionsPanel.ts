@@ -18,7 +18,7 @@ export type WeChatNotificationKind =
   | "NEW_PARTNER";
 
 type NotificationActionKind =
-  | "TOGGLE"
+  | "ADD_ONE"
   | "OPEN_SUBSCRIBE"
   | "LOGIN"
   | "BIND"
@@ -120,7 +120,6 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       const entry = payload.subscriptions[kind];
       return Boolean(
         entry &&
-          !entry.enabled &&
           entry.configured &&
           entry.requiresOpenSubscribe &&
           entry.templateId,
@@ -210,11 +209,12 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       return;
     }
 
-    const enabled = query.data.value?.subscriptions[kind].enabled ?? false;
-    await mutation.mutateAsync({
-      kind,
-      enabled: !enabled,
-    });
+    if (item.actionKind === "ADD_ONE") {
+      await mutation.mutateAsync({
+        kind,
+        action: "ADD_ONE",
+      });
+    }
   };
 
   const handleOpenSubscribeSuccess = async (
@@ -231,10 +231,20 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       ? parseOpenSubscribeStatus(detail, templateId)
       : "unknown";
 
-    await mutation.mutateAsync({
-      kind,
-      enabled: status === "accept",
-    });
+    if (status === "accept") {
+      await mutation.mutateAsync({
+        kind,
+        action: "ADD_ONE",
+      });
+      return;
+    }
+
+    if (status === "reject") {
+      await mutation.mutateAsync({
+        kind,
+        action: "CLEAR",
+      });
+    }
   };
 
   const handleOpenSubscribeError = async (
@@ -249,11 +259,6 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         openSubscribeError.value = [errCode, errMsg].filter(Boolean).join(": ");
       }
     }
-
-    await mutation.mutateAsync({
-      kind,
-      enabled: false,
-    });
   };
 
   const resolveItemTitle = (kind: WeChatNotificationKind): string => {
@@ -306,7 +311,8 @@ export const useWeChatNotificationSubscriptionsPanel = ({
 
     for (const kind of visibleKinds) {
       const entry = payload?.subscriptions[kind];
-      const enabled = entry?.enabled ?? false;
+      const remainingCount = Math.max(0, entry?.remainingCount ?? 0);
+      const enabled = remainingCount > 0;
       const kindConfigured = entry?.configured ?? false;
       const pending = mutation.isPending.value && pendingKind === kind;
 
@@ -345,15 +351,19 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         actionKind = "BIND";
         actionDisabled = false;
       } else {
-        description = enabled
+        const itemHint = enabled
           ? resolveItemEnabledHint(kind)
           : resolveItemDisabledHint(kind);
-        actionLabel = enabled
-          ? t("prPage.wechatReminder.disableAction")
-          : t("prPage.wechatReminder.enableAction");
+        description = t(
+          "prPage.notificationSubscriptions.remainingCountWithHint",
+          {
+            count: remainingCount,
+            hint: itemHint,
+          },
+        );
+        actionLabel = t("prPage.notificationSubscriptions.subscribeOnceAction");
 
         if (
-          !enabled &&
           requiresOpenSubscribe &&
           !isWeChatAbilityMockingEnabled()
         ) {
@@ -370,7 +380,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
             );
           }
         } else {
-          actionKind = "TOGGLE";
+          actionKind = "ADD_ONE";
           actionDisabled = pending;
         }
       }

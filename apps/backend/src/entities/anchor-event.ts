@@ -167,6 +167,19 @@ export const anchorEvents = pgTable("anchor_events", {
     .notNull(),
   defaultMinPartners: integer("default_min_partners"),
   defaultMaxPartners: integer("default_max_partners"),
+  defaultConfirmationStartOffsetMinutes: integer(
+    "default_confirmation_start_offset_minutes",
+  )
+    .notNull()
+    .default(120),
+  defaultConfirmationEndOffsetMinutes: integer(
+    "default_confirmation_end_offset_minutes",
+  )
+    .notNull()
+    .default(30),
+  defaultJoinLockOffsetMinutes: integer("default_join_lock_offset_minutes")
+    .notNull()
+    .default(30),
   coverImage: text("cover_image"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

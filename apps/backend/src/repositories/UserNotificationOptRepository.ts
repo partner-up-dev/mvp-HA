@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   userNotificationOpts,
@@ -10,6 +10,18 @@ import type { UserId } from "../entities/user";
 export type NotificationSubscriptionSnapshot = {
   enabled: boolean;
   optInAt: Date | null;
+  remainingCount: number;
+};
+
+export type ConsumeNotificationCreditResult = {
+  consumed: boolean;
+  remainingCount: number;
+  row: UserNotificationOpt | null;
+};
+
+const normalizeRemainingCount = (value: number): number => {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.trunc(value));
 };
 
 export class UserNotificationOptRepository {
@@ -40,24 +52,28 @@ export class UserNotificationOptRepository {
       return {
         enabled: false,
         optInAt: null,
+        remainingCount: 0,
       };
     }
 
     if (kind === "REMINDER_CONFIRMATION") {
       return {
-        enabled: opt.wechatReminderOptIn,
+        enabled: opt.wechatReminderRemainingCount > 0,
         optInAt: opt.wechatReminderOptInAt,
+        remainingCount: opt.wechatReminderRemainingCount,
       };
     }
     if (kind === "BOOKING_RESULT") {
       return {
-        enabled: opt.wechatBookingResultOptIn,
+        enabled: opt.wechatBookingResultRemainingCount > 0,
         optInAt: opt.wechatBookingResultOptInAt,
+        remainingCount: opt.wechatBookingResultRemainingCount,
       };
     }
     return {
-      enabled: opt.wechatNewPartnerOptIn,
+      enabled: opt.wechatNewPartnerRemainingCount > 0,
       optInAt: opt.wechatNewPartnerOptInAt,
+      remainingCount: opt.wechatNewPartnerRemainingCount,
     };
   }
 
@@ -66,7 +82,17 @@ export class UserNotificationOptRepository {
     kind: WeChatNotificationKind,
     enabled: boolean,
   ): Promise<UserNotificationOpt | null> {
+    return this.setWechatNotificationRemainingCount(userId, kind, enabled ? 1 : 0);
+  }
+
+  async setWechatNotificationRemainingCount(
+    userId: UserId,
+    kind: WeChatNotificationKind,
+    remainingCount: number,
+  ): Promise<UserNotificationOpt | null> {
     const now = new Date();
+    const normalizedCount = normalizeRemainingCount(remainingCount);
+    const enabled = normalizedCount > 0;
     const optInAt = enabled ? now : null;
 
     if (kind === "REMINDER_CONFIRMATION") {
@@ -74,6 +100,7 @@ export class UserNotificationOptRepository {
         .insert(userNotificationOpts)
         .values({
           userId,
+          wechatReminderRemainingCount: normalizedCount,
           wechatReminderOptIn: enabled,
           wechatReminderOptInAt: optInAt,
           updatedAt: now,
@@ -81,6 +108,7 @@ export class UserNotificationOptRepository {
         .onConflictDoUpdate({
           target: userNotificationOpts.userId,
           set: {
+            wechatReminderRemainingCount: normalizedCount,
             wechatReminderOptIn: enabled,
             wechatReminderOptInAt: optInAt,
             updatedAt: now,
@@ -95,6 +123,7 @@ export class UserNotificationOptRepository {
         .insert(userNotificationOpts)
         .values({
           userId,
+          wechatBookingResultRemainingCount: normalizedCount,
           wechatBookingResultOptIn: enabled,
           wechatBookingResultOptInAt: optInAt,
           updatedAt: now,
@@ -102,6 +131,7 @@ export class UserNotificationOptRepository {
         .onConflictDoUpdate({
           target: userNotificationOpts.userId,
           set: {
+            wechatBookingResultRemainingCount: normalizedCount,
             wechatBookingResultOptIn: enabled,
             wechatBookingResultOptInAt: optInAt,
             updatedAt: now,
@@ -115,6 +145,7 @@ export class UserNotificationOptRepository {
       .insert(userNotificationOpts)
       .values({
         userId,
+        wechatNewPartnerRemainingCount: normalizedCount,
         wechatNewPartnerOptIn: enabled,
         wechatNewPartnerOptInAt: optInAt,
         updatedAt: now,
@@ -122,6 +153,7 @@ export class UserNotificationOptRepository {
       .onConflictDoUpdate({
         target: userNotificationOpts.userId,
         set: {
+          wechatNewPartnerRemainingCount: normalizedCount,
           wechatNewPartnerOptIn: enabled,
           wechatNewPartnerOptInAt: optInAt,
           updatedAt: now,
@@ -129,5 +161,163 @@ export class UserNotificationOptRepository {
       })
       .returning();
     return result[0] ?? null;
+  }
+
+  async addOneWechatNotificationCredit(
+    userId: UserId,
+    kind: WeChatNotificationKind,
+  ): Promise<UserNotificationOpt | null> {
+    const now = new Date();
+
+    if (kind === "REMINDER_CONFIRMATION") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatReminderRemainingCount: 1,
+          wechatReminderOptIn: true,
+          wechatReminderOptInAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatReminderRemainingCount: sql`${userNotificationOpts.wechatReminderRemainingCount} + 1`,
+            wechatReminderOptIn: true,
+            wechatReminderOptInAt: now,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
+    if (kind === "BOOKING_RESULT") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatBookingResultRemainingCount: 1,
+          wechatBookingResultOptIn: true,
+          wechatBookingResultOptInAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatBookingResultRemainingCount: sql`${userNotificationOpts.wechatBookingResultRemainingCount} + 1`,
+            wechatBookingResultOptIn: true,
+            wechatBookingResultOptInAt: now,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
+    const result = await db
+      .insert(userNotificationOpts)
+      .values({
+        userId,
+        wechatNewPartnerRemainingCount: 1,
+        wechatNewPartnerOptIn: true,
+        wechatNewPartnerOptInAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: userNotificationOpts.userId,
+        set: {
+          wechatNewPartnerRemainingCount: sql`${userNotificationOpts.wechatNewPartnerRemainingCount} + 1`,
+          wechatNewPartnerOptIn: true,
+          wechatNewPartnerOptInAt: now,
+          updatedAt: now,
+        },
+      })
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async clearWechatNotificationCredits(
+    userId: UserId,
+    kind: WeChatNotificationKind,
+  ): Promise<UserNotificationOpt | null> {
+    return this.setWechatNotificationRemainingCount(userId, kind, 0);
+  }
+
+  async consumeOneWechatNotificationCredit(
+    userId: UserId,
+    kind: WeChatNotificationKind,
+  ): Promise<ConsumeNotificationCreditResult> {
+    const now = new Date();
+
+    if (kind === "REMINDER_CONFIRMATION") {
+      const result = await db
+        .update(userNotificationOpts)
+        .set({
+          wechatReminderRemainingCount: sql`${userNotificationOpts.wechatReminderRemainingCount} - 1`,
+          wechatReminderOptIn: sql`(${userNotificationOpts.wechatReminderRemainingCount} - 1) > 0`,
+          wechatReminderOptInAt: sql`case when (${userNotificationOpts.wechatReminderRemainingCount} - 1) > 0 then ${userNotificationOpts.wechatReminderOptInAt} else null end`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(userNotificationOpts.userId, userId),
+            gt(userNotificationOpts.wechatReminderRemainingCount, 0),
+          ),
+        )
+        .returning();
+      const row = result[0] ?? null;
+      return {
+        consumed: row !== null,
+        remainingCount: row?.wechatReminderRemainingCount ?? 0,
+        row,
+      };
+    }
+
+    if (kind === "BOOKING_RESULT") {
+      const result = await db
+        .update(userNotificationOpts)
+        .set({
+          wechatBookingResultRemainingCount: sql`${userNotificationOpts.wechatBookingResultRemainingCount} - 1`,
+          wechatBookingResultOptIn: sql`(${userNotificationOpts.wechatBookingResultRemainingCount} - 1) > 0`,
+          wechatBookingResultOptInAt: sql`case when (${userNotificationOpts.wechatBookingResultRemainingCount} - 1) > 0 then ${userNotificationOpts.wechatBookingResultOptInAt} else null end`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(userNotificationOpts.userId, userId),
+            gt(userNotificationOpts.wechatBookingResultRemainingCount, 0),
+          ),
+        )
+        .returning();
+      const row = result[0] ?? null;
+      return {
+        consumed: row !== null,
+        remainingCount: row?.wechatBookingResultRemainingCount ?? 0,
+        row,
+      };
+    }
+
+    const result = await db
+      .update(userNotificationOpts)
+      .set({
+        wechatNewPartnerRemainingCount: sql`${userNotificationOpts.wechatNewPartnerRemainingCount} - 1`,
+        wechatNewPartnerOptIn: sql`(${userNotificationOpts.wechatNewPartnerRemainingCount} - 1) > 0`,
+        wechatNewPartnerOptInAt: sql`case when (${userNotificationOpts.wechatNewPartnerRemainingCount} - 1) > 0 then ${userNotificationOpts.wechatNewPartnerOptInAt} else null end`,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(userNotificationOpts.userId, userId),
+          gt(userNotificationOpts.wechatNewPartnerRemainingCount, 0),
+        ),
+      )
+      .returning();
+    const row = result[0] ?? null;
+    return {
+      consumed: row !== null,
+      remainingCount: row?.wechatNewPartnerRemainingCount ?? 0,
+      row,
+    };
   }
 }

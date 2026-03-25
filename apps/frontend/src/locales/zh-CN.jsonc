@@ -166,12 +166,16 @@
     },
     "bookmarkNudge": {
       "title": "先收藏这个页面",
-      "wechatHint": "点击右上角···可收藏到微信，想找搭子时一键回来。",
+      "wechatTitle": "关注搭一把公众号",
+      "wechatHint": "关注{name}公众号，活动更新、报名入口都会在微信里提醒你。",
       "browserHint": "将本站加入浏览器书签，随时回来找搭子。",
       "bookmarkAction": "我知道了",
+      "wechatAction": "关注公众号",
       "copyAction": "复制首页链接",
+      "wechatCopyAction": "复制公众号名称",
       "copiedAction": "已复制",
-      "dismissAction": "稍后再说"
+      "dismissAction": "稍后再说",
+      "officialAccountName": "搭一把"
     },
     "topics": {
       "movie": {
@@ -331,27 +335,29 @@
       "nonWechatHint": "当前不在微信环境，无法开启公众号提醒。",
       "unconfiguredHint": "当前环境未配置公众号提醒通道。",
       "loginHint": "需要先完成微信登录后才能开启提醒。",
-      "enabledHint": "已开启提醒：活动前 24 小时和 2 小时会发送通知。",
+      "enabledHint": "已开启提醒：确认开始和确认截止前 30 分钟会发送通知。",
       "disabledHint": "提醒已关闭，可随时开启。"
     },
     "notificationSubscriptions": {
       "title": "通知订阅",
+      "subscribeOnceAction": "订阅 1 次",
+      "remainingCountWithHint": "剩余通知次数：{count}。{hint}",
       "openSubscribeUnavailableHint": "当前微信订阅组件不可用，请升级微信后重试。",
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
-          "enabledHint": "已开启确认席位提醒：活动前 24 小时和 2 小时会发送通知。",
-          "disabledHint": "确认席位提醒已关闭，可随时开启。"
+          "enabledHint": "你可继续接收确认席位提醒（确认开始和确认截止前 30 分钟）。",
+          "disabledHint": "当前没有可用提醒次数，订阅后可下发 1 次。"
         },
         "BOOKING_RESULT": {
           "title": "场地预订结果",
-          "enabledHint": "已开启场地预订结果通知。",
-          "disabledHint": "场地预订结果通知已关闭。"
+          "enabledHint": "你可继续接收场地预订结果通知。",
+          "disabledHint": "当前没有可用通知次数，订阅后可下发 1 次。"
         },
         "NEW_PARTNER": {
           "title": "新搭子",
-          "enabledHint": "已开启新搭子通知，有人加入当前活动会提醒你。",
-          "disabledHint": "新搭子通知已关闭。",
+          "enabledHint": "你可继续接收新搭子通知（有人加入当前活动会提醒你）。",
+          "disabledHint": "当前没有可用通知次数，订阅后可下发 1 次。",
           "unconfiguredHint": "当前环境未配置“新搭子”通知模板。"
         }
       }
@@ -596,6 +602,9 @@
     "eventStatusLabel": "活动状态",
     "eventDefaultMinPartnersLabel": "默认最少人数",
     "eventDefaultMaxPartnersLabel": "默认最多人数",
+    "eventDefaultConfirmationStartLabel": "默认确认开始（分钟前）",
+    "eventDefaultConfirmationEndLabel": "默认确认截止（分钟前）",
+    "eventDefaultJoinLockLabel": "默认停止加入（分钟前）",
     "eventPoiHint": "POI 库与 Gallery 在「POIs 配置」页面维护；这里维护当前活动引用的 POI ID 列表。",
     "eventLocationPoolLabel": "场地池（每行一个）",
     "eventTimeWindowHint": "时间池由批次自动同步，无需单独编辑。",
@@ -945,6 +954,8 @@
     "wechatInitFailed": "微信 JS-SDK 初始化失败",
     "wechatInitTimeout": "微信 JS-SDK 初始化超时",
     "wechatInitError": "微信 JS-SDK 初始化错误：{message}",
+    "wechatOfficialAccountUnavailable": "公众号信息未配置，暂时无法打开关注入口",
+    "wechatFollowNotSupported": "当前环境无法打开公众号，请在微信内重试",
     "initializeFailed": "初始化失败",
     "fetchBackendBuildMetadataFailed": "获取后端构建信息失败",
     "fetchPublicConfigFailed": "获取公共配置失败",

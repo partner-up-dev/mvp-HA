@@ -14,6 +14,7 @@ const publicConfigParamSchema = z.object({
     "wecom_service_qr_code",
     "wecom_support_link_wechat_in",
     "wecom_support_link_wechat_out",
+    "wechat_official_account_username",
   ]),
 });
 

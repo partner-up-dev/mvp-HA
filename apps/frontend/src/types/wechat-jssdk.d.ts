@@ -3,7 +3,9 @@ export {};
 declare global {
   type WeChatJsApiName =
     | "updateAppMessageShareData"
-    | "updateTimelineShareData";
+    | "updateTimelineShareData"
+    | "openOfficialAccountProfile";
+
   type WeChatOpenTagName = "wx-open-subscribe";
 
   type WeChatConfigPayload = {
@@ -33,6 +35,14 @@ declare global {
     fail?: (error: unknown) => void;
   };
 
+  type WeChatOpenOfficialAccountProfileResponse = {
+    err_msg?: string;
+    errMsg?: string;
+  } & Record<string, unknown>;
+
+  type WeChatOpenOfficialAccountProfilePayload = {
+    username: string;
+  };
   type WeChatJssdk = {
     config: (payload: WeChatConfigPayload) => void;
     ready: (cb: () => void) => void;
@@ -43,6 +53,10 @@ declare global {
       methodName: string,
       data: Record<string, unknown>,
       callback: (response: Record<string, unknown>) => void,
+    ) => void;
+    openOfficialAccountProfile?: (
+      payload: WeChatOpenOfficialAccountProfilePayload,
+      callback?: (response: WeChatOpenOfficialAccountProfileResponse) => void,
     ) => void;
   };
 
