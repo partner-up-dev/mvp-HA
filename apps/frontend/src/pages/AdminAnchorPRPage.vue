@@ -81,41 +81,6 @@
                   />
                 </label>
               </div>
-              <div class="grid-2">
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminAnchorPR.eventDefaultConfirmationStartLabel")
-                  }}</span>
-                  <input
-                    v-model.number="eventForm.defaultConfirmationStartOffsetMinutes"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminAnchorPR.eventDefaultConfirmationEndLabel")
-                  }}</span>
-                  <input
-                    v-model.number="eventForm.defaultConfirmationEndOffsetMinutes"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminAnchorPR.eventDefaultJoinLockLabel")
-                  }}</span>
-                  <input
-                    v-model.number="eventForm.defaultJoinLockOffsetMinutes"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-              </div>
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventLocationPoolLabel") }}</span><textarea v-model="eventForm.systemLocationPoolText" class="field-input field-textarea"></textarea></label>
               <label class="field">
                 <span class="field-label">用户可创建地点池（每行: 地点ID,上限）</span>
@@ -282,73 +247,18 @@ import {
 } from "@/shared/datetime/formatLocalDateTime";
 import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
 
-const DEFAULT_CONFIRMATION_START_OFFSET_MINUTES = 120;
-const DEFAULT_CONFIRMATION_END_OFFSET_MINUTES = 30;
-const DEFAULT_JOIN_LOCK_OFFSET_MINUTES = DEFAULT_CONFIRMATION_END_OFFSET_MINUTES;
-
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
 type BatchRecord = EventRecord["batches"][number];
 type PRRecord = BatchRecord["prs"][number];
-type EventForm = { title: string; type: string; description: string; coverImage: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; defaultMinPartners: number | null; defaultMaxPartners: number | null; defaultConfirmationStartOffsetMinutes: number; defaultConfirmationEndOffsetMinutes: number; defaultJoinLockOffsetMinutes: number; systemLocationPoolText: string; userLocationPoolText: string };
+type EventForm = { title: string; type: string; description: string; coverImage: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; defaultMinPartners: number | null; defaultMaxPartners: number | null; systemLocationPoolText: string; userLocationPoolText: string };
 type BatchForm = { start: string; end: string; status: "OPEN" | "FULL" | "EXPIRED" };
 type PRForm = { title: string; type: string; location: string; minPartners: number | null; maxPartners: number | null; confirmationStartOffsetMinutes: number; confirmationEndOffsetMinutes: number; joinLockOffsetMinutes: number; preferencesText: string; notes: string; status: "OPEN" | "READY" | "ACTIVE" | "CLOSED"; visibilityStatus: "VISIBLE" | "HIDDEN" };
 
-const emptyEventForm = (): EventForm => ({
-  title: "",
-  type: "",
-  description: "",
-  coverImage: "",
-  status: "ACTIVE",
-  defaultMinPartners: null,
-  defaultMaxPartners: null,
-  defaultConfirmationStartOffsetMinutes: DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
-  defaultConfirmationEndOffsetMinutes: DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
-  defaultJoinLockOffsetMinutes: DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
-  systemLocationPoolText: "",
-  userLocationPoolText: "",
-});
+const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", status: "ACTIVE", defaultMinPartners: null, defaultMaxPartners: null, systemLocationPoolText: "", userLocationPoolText: "" });
 const emptyBatchForm = (): BatchForm => ({ start: "", end: "", status: "OPEN" });
-const emptyPRForm = (
-  event: EventRecord | null = null,
-  location = "",
-  type = "",
-): PRForm => ({
-  title: "",
-  type,
-  location,
-  minPartners: event?.defaultMinPartners ?? null,
-  maxPartners: event?.defaultMaxPartners ?? null,
-  confirmationStartOffsetMinutes:
-    event?.defaultConfirmationStartOffsetMinutes ??
-    DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
-  confirmationEndOffsetMinutes:
-    event?.defaultConfirmationEndOffsetMinutes ??
-    DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
-  joinLockOffsetMinutes:
-    event?.defaultJoinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
-  preferencesText: "",
-  notes: "",
-  status: "OPEN",
-  visibilityStatus: "VISIBLE",
-});
-const toEventForm = (event: EventRecord): EventForm => ({
-  title: event.title,
-  type: event.type,
-  description: event.description ?? "",
-  coverImage: event.coverImage ?? "",
-  status: event.status as EventForm["status"],
-  defaultMinPartners: event.defaultMinPartners ?? null,
-  defaultMaxPartners: event.defaultMaxPartners ?? null,
-  defaultConfirmationStartOffsetMinutes:
-    event.defaultConfirmationStartOffsetMinutes,
-  defaultConfirmationEndOffsetMinutes: event.defaultConfirmationEndOffsetMinutes,
-  defaultJoinLockOffsetMinutes: event.defaultJoinLockOffsetMinutes,
-  systemLocationPoolText: event.systemLocationPool.join("\n"),
-  userLocationPoolText: event.userLocationPool
-    .map((entry) => `${entry.id},${entry.perBatchCap}`)
-    .join("\n"),
-});
+const emptyPRForm = (location = "", type = ""): PRForm => ({ title: "", type, location, minPartners: null, maxPartners: null, confirmationStartOffsetMinutes: 120, confirmationEndOffsetMinutes: 30, joinLockOffsetMinutes: 30, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
+const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", status: event.status as EventForm["status"], defaultMinPartners: event.defaultMinPartners ?? null, defaultMaxPartners: event.defaultMaxPartners ?? null, systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
 const toBatchForm = (batch: BatchRecord): BatchForm => ({ start: batch.timeWindow[0] ?? "", end: batch.timeWindow[1] ?? "", status: batch.status as BatchForm["status"] });
 const toPRForm = (pr: PRRecord): PRForm => ({
   title: pr.title ?? "",
@@ -446,10 +356,6 @@ const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
   }
   return null;
 };
-const normalizeNonNegativeInteger = (
-  value: unknown,
-  fallback: number,
-): number => normalizeNullableNonNegativeInteger(value) ?? fallback;
 const formatWindow = (windowValue: [string | null, string | null]) =>
   formatLocalDateTimeWindowLabel(windowValue, {}, "?");
 const formatDateTime = (value: string | null) =>
@@ -519,28 +425,28 @@ watch([events, isAdmin, isCreatingEvent], ([nextEvents, adminReady, creating]) =
   if (!nextEvents.some((event) => String(event.id) === selectedEventIdRaw.value)) selectedEventIdRaw.value = String(nextEvents[0].id);
 }, { immediate: true });
 watch([selectedEvent, isCreatingEvent], ([event, creating]) => {
-  if (creating) { eventForm.value = emptyEventForm(); selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(null, "", ""); return; }
-  if (!event) { eventForm.value = emptyEventForm(); selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(null, "", ""); return; }
+  if (creating) { eventForm.value = emptyEventForm(); selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(); return; }
+  if (!event) { eventForm.value = emptyEventForm(); selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(); return; }
   eventForm.value = toEventForm(event);
   if (!event.batches.some((batch) => String(batch.id) === selectedBatchIdRaw.value)) selectedBatchIdRaw.value = event.batches[0] ? String(event.batches[0].id) : "";
 }, { immediate: true });
 watch([selectedBatch, isCreatingBatch, selectedEvent], ([batch, creating, event]) => {
-  if (creating) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(event ?? null, firstEventLocation(event), event?.type ?? ""); return; }
-  if (!batch || !event) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(event ?? null, firstEventLocation(event), event?.type ?? ""); return; }
+  if (creating) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
+  if (!batch || !event) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
   batchForm.value = toBatchForm(batch);
   if (!batch.prs.some((pr) => String(pr.prId) === selectedPRIdRaw.value)) selectedPRIdRaw.value = batch.prs[0] ? String(batch.prs[0].prId) : "";
 }, { immediate: true });
 watch([selectedPR, isCreatingPR, selectedEvent], ([pr, creating, event]) => {
-  if (creating) { prForm.value = emptyPRForm(event ?? null, firstEventLocation(event), event?.type ?? ""); return; }
-  if (!pr || !event) { prForm.value = emptyPRForm(event ?? null, firstEventLocation(event), event?.type ?? ""); return; }
+  if (creating) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
+  if (!pr || !event) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
   prForm.value = { ...toPRForm(pr), location: pr.location ?? firstEventLocation(event), type: pr.type };
 }, { immediate: true });
 
-const prepareNewEvent = () => { isCreatingEvent.value = true; isCreatingBatch.value = false; isCreatingPR.value = false; selectedEventIdRaw.value = ""; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; eventForm.value = emptyEventForm(); batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(null, "", ""); };
+const prepareNewEvent = () => { isCreatingEvent.value = true; isCreatingBatch.value = false; isCreatingPR.value = false; selectedEventIdRaw.value = ""; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; eventForm.value = emptyEventForm(); batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(); };
 const selectEvent = (eventId: number) => { isCreatingEvent.value = false; isCreatingBatch.value = false; isCreatingPR.value = false; selectedEventIdRaw.value = String(eventId); };
-const prepareNewBatch = () => { if (!selectedEvent.value) return; isCreatingBatch.value = true; isCreatingPR.value = false; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(selectedEvent.value, firstEventLocation(selectedEvent.value), selectedEvent.value.type); };
+const prepareNewBatch = () => { if (!selectedEvent.value) return; isCreatingBatch.value = true; isCreatingPR.value = false; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type); };
 const selectBatch = (batchId: number) => { isCreatingBatch.value = false; isCreatingPR.value = false; selectedBatchIdRaw.value = String(batchId); };
-const prepareNewPR = () => { if (!selectedEvent.value || selectedBatchId.value === null) return; isCreatingPR.value = true; selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(selectedEvent.value, firstEventLocation(selectedEvent.value), selectedEvent.value.type); };
+const prepareNewPR = () => { if (!selectedEvent.value || selectedBatchId.value === null) return; isCreatingPR.value = true; selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type); };
 const selectPR = (prId: number) => { isCreatingPR.value = false; selectedPRIdRaw.value = String(prId); };
 
 const handleSaveEvent = async () => {
@@ -555,18 +461,6 @@ const handleSaveEvent = async () => {
     ),
     defaultMaxPartners: normalizeNullableNonNegativeInteger(
       eventForm.value.defaultMaxPartners,
-    ),
-    defaultConfirmationStartOffsetMinutes: normalizeNonNegativeInteger(
-      eventForm.value.defaultConfirmationStartOffsetMinutes,
-      DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
-    ),
-    defaultConfirmationEndOffsetMinutes: normalizeNonNegativeInteger(
-      eventForm.value.defaultConfirmationEndOffsetMinutes,
-      DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
-    ),
-    defaultJoinLockOffsetMinutes: normalizeNonNegativeInteger(
-      eventForm.value.defaultJoinLockOffsetMinutes,
-      DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
     ),
     coverImage: eventForm.value.coverImage.trim() || null,
     status: eventForm.value.status,
