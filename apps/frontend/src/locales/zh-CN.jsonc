@@ -335,7 +335,7 @@
       "nonWechatHint": "当前不在微信环境，无法开启公众号提醒。",
       "unconfiguredHint": "当前环境未配置公众号提醒通道。",
       "loginHint": "需要先完成微信登录后才能开启提醒。",
-      "enabledHint": "已开启提醒：活动前 24 小时和 2 小时会发送通知。",
+      "enabledHint": "已开启提醒：确认开始和确认截止前 30 分钟会发送通知。",
       "disabledHint": "提醒已关闭，可随时开启。"
     },
     "notificationSubscriptions": {
@@ -346,7 +346,7 @@
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
-          "enabledHint": "你可继续接收确认席位提醒（活动前 24 小时和 2 小时）。",
+          "enabledHint": "你可继续接收确认席位提醒（确认开始和确认截止前 30 分钟）。",
           "disabledHint": "当前没有可用提醒次数，订阅后可下发 1 次。"
         },
         "BOOKING_RESULT": {
