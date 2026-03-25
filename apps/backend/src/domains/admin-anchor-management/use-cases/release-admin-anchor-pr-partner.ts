@@ -1,22 +1,18 @@
 import { HTTPException } from "hono/http-exception";
 import type { PartnerId, PRId, UserId } from "../../../entities";
-import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import { cancelWeChatReminderJobsForParticipant } from "../../../infra/notifications";
 import { recalculatePRStatus } from "../../pr-core/services/slot-management.service";
 import { syncAnchorBookingTriggeredState } from "../../pr-core/services/anchor-booking-trigger.service";
-import { resolveBookingContactState } from "../../pr-booking-support";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import { applyAnchorParticipantReleaseEffects } from "../../pr-core/services/anchor-participant-release-effects.service";
 
 const anchorPRRepo = new AnchorPRRepository();
-const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
-const bookingContactRepo = new AnchorPRBookingContactRepository();
 
 const isReleaseableStatus = (status: string): boolean =>
   status === "JOINED" || status === "CONFIRMED";
@@ -66,28 +62,14 @@ export async function releaseAdminAnchorPRPartner(input: {
   await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
   await cancelWeChatReminderJobsForParticipant(input.prId, slot.userId);
 
-  const bookingContact = await bookingContactRepo.findByPrId(input.prId);
-  const bookingContactCleared =
-    bookingContact !== null && bookingContact.ownerPartnerId === releasedSlot.id;
-  if (bookingContactCleared) {
-    await bookingContactRepo.deleteByPrId(input.prId);
-  }
-
-  let creatorTransferredToUserId = record.root.createdBy ?? null;
-  if (record.root.createdBy && record.root.createdBy === slot.userId) {
-    const activeParticipants =
-      await partnerRepo.listActiveParticipantSummariesByPrId(input.prId);
-    const successor = activeParticipants[0] ?? null;
-    creatorTransferredToUserId = successor?.userId ?? null;
-    await prRepo.setCreatedBy(input.prId, creatorTransferredToUserId);
-  }
+  const { bookingContactCleared, creatorTransferredToUserId } =
+    await applyAnchorParticipantReleaseEffects({
+      prId: input.prId,
+      releasedUserIds: [slot.userId],
+    });
 
   await recalculatePRStatus(input.prId);
   await syncAnchorBookingTriggeredState(input.prId);
-  await resolveBookingContactState({
-    prId: input.prId,
-    viewerUserId: null,
-  });
 
   const event = await eventBus.publish(
     "partner.slot_released",

@@ -28,8 +28,8 @@ import {
 import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
 import { operationLogService } from "../../infra/operation-log";
 import { getEffectiveBookingDeadline } from "../pr-booking-support";
-import { resolveBookingContactState } from "../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "./services/anchor-booking-trigger.service";
+import { applyAnchorParticipantReleaseEffects } from "./services/anchor-participant-release-effects.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -207,6 +207,7 @@ async function releaseUnconfirmedSlotsIfNeeded(
   const participants = await listActiveParticipantSummariesForPR(request.id);
   const releasing = participants.filter((slot) => slot.status === "JOINED");
   if (releasing.length === 0) return;
+  const releasedUserIds = releasing.map((slot) => slot.userId);
 
   for (const slot of releasing) {
     await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
@@ -227,9 +228,9 @@ async function releaseUnconfirmedSlotsIfNeeded(
 
   await recalculatePRStatus(request.id);
   if (request.prKind === "ANCHOR") {
-    await resolveBookingContactState({
+    await applyAnchorParticipantReleaseEffects({
       prId: request.id,
-      viewerUserId: null,
+      releasedUserIds,
     });
   }
 }
