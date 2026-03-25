@@ -254,6 +254,35 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
+  async reactivateSlot(
+    id: PartnerId,
+    status: Extract<PartnerStatus, "JOINED" | "CONFIRMED">,
+  ) {
+    const now = new Date();
+    const result = await db
+      .update(partners)
+      .set({
+        status,
+        confirmedAt: status === "CONFIRMED" ? now : null,
+        exitedAt: null,
+        releasedAt: null,
+        attendedAt: null,
+        checkInAt: null,
+        didAttend: null,
+        wouldJoinAgain: null,
+        paymentStatus: "NONE",
+        reimbursementRequested: false,
+        reimbursementStatus: "NONE",
+        reimbursementAmount: null,
+        reimbursementRequestedAt: null,
+        reimbursementReviewedAt: null,
+        reimbursementPaidAt: null,
+      })
+      .where(eq(partners.id, id))
+      .returning();
+    return result[0] ?? null;
+  }
+
   async markConfirmed(id: PartnerId) {
     const now = new Date();
     const result = await db

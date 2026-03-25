@@ -89,14 +89,8 @@
         </div>
       </section>
 
-      <section
-        v-if="
-          prDetail.partnerSection.viewer.slotState === 'RELEASED' ||
-          prDetail.partnerSection.viewer.slotState === 'EXITED'
-        "
-        class="section-card released-notice"
-      >
-        <p class="released-notice__text">{{ t("prPage.slotReleased") }}</p>
+      <section v-if="releaseNoticeText" class="section-card released-notice">
+        <p class="released-notice__text">{{ releaseNoticeText }}</p>
       </section>
 
       <section
@@ -454,6 +448,8 @@ import {
 
 type BlockedReason =
   AnchorPRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
+type RosterState =
+  AnchorPRDetailResponse["partnerSection"]["roster"][number]["state"];
 
 type DockActionKey =
   | "JOIN"
@@ -610,6 +606,9 @@ const participantOverviewText = computed(() => {
   return `${current} 人已加入，最低成团人数 ${min} 人。`;
 });
 
+const isActiveRosterState = (state: RosterState): boolean =>
+  state === "JOINED" || state === "CONFIRMED" || state === "ATTENDED";
+
 const releaseNoticeText = computed(() => {
   const releasedSlot = prDetail.value?.partnerSection.viewer.releasedSlot ?? null;
   if (!releasedSlot) return null;
@@ -625,13 +624,16 @@ const showRecoveryLane = computed(() => {
   return !viewer.isParticipant && !viewer.canJoin;
 });
 
+const activeRoster = computed(() =>
+  prDetail.value?.partnerSection.roster.filter((item) =>
+    isActiveRosterState(item.state),
+  ) ?? [],
+);
 const rosterPreview = computed(
-  () => prDetail.value?.partnerSection.roster.slice(0, 4) ?? [],
+  () => activeRoster.value.slice(0, 4),
 );
 const hasMoreRoster = computed(
-  () =>
-    (prDetail.value?.partnerSection.roster.length ?? 0) >
-    rosterPreview.value.length,
+  () => activeRoster.value.length > rosterPreview.value.length,
 );
 
 const bookingSupportSummaryHeadline = computed(() => {
