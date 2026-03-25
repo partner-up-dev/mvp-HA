@@ -1,27 +1,23 @@
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
   PRId,
+  PartnerRequest,
   PartnerRequestSummary,
 } from "../../../entities/partner-request";
-import { refreshTemporalStatus } from "../temporal-refresh";
 import { toPublicStatus } from "../services/status-rules";
+import { readPartnerRequestsByIds } from "../services/pr-read.service";
 
-const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 
 export async function buildPartnerRequestSummaries(
-  rows: Array<Awaited<ReturnType<PartnerRequestRepository["findById"]>>>,
+  rows: Array<PartnerRequest | null>,
 ): Promise<PartnerRequestSummary[]> {
   const filteredRows = rows.filter((row): row is NonNullable<typeof row> =>
     Boolean(row),
   );
-  const refreshedRows = await Promise.all(
-    filteredRows.map((row) => refreshTemporalStatus(row)),
-  );
 
   return Promise.all(
-    refreshedRows.map(async (row) => {
+    filteredRows.map(async (row) => {
       const partners = await partnerRepo.listActiveIdsByPrId(row.id);
       return {
         id: row.id,
@@ -44,6 +40,8 @@ export async function getPRSummariesByIds(
   ids: PRId[],
 ): Promise<PartnerRequestSummary[]> {
   const uniqueIds = Array.from(new Set(ids));
-  const rows = await prRepo.findByIds(uniqueIds);
+  const rows = await readPartnerRequestsByIds(uniqueIds, {
+    consistency: "strong",
+  });
   return buildPartnerRequestSummaries(rows);
 }

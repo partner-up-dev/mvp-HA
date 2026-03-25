@@ -4,7 +4,6 @@
       <PageHeader
         :title="t('aboutPage.title')"
         :subtitle="t('aboutPage.description')"
-        @back="goHome"
       />
     </template>
 
@@ -59,14 +58,12 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 import { frontendBuildInfo } from "@/shared/meta/build-info";
 import { useBackendBuildMetadata } from "@/shared/meta/queries/useBackendBuildMetadata";
 
-const router = useRouter();
 const { t } = useI18n();
 const backendBuildMetadataQuery = useBackendBuildMetadata();
 
@@ -87,9 +84,6 @@ const backendCommitHash = computed(() => {
   );
 });
 
-const goHome = () => {
-  router.push("/");
-};
 </script>
 
 <style scoped lang="scss">

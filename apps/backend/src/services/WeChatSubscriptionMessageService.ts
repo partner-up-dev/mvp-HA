@@ -31,10 +31,15 @@ const subscribeSendResponseSchema = z.object({
 
 const CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID =
   "wechat.submsg_confirmation_reminder_template_id";
+const CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID =
+  "wechat.submsg_booking_result_template_id";
 const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
   "wechat.submsg_new_partner_template_id";
 
-type SubscriptionTemplateKind = "REMINDER_CONFIRMATION" | "NEW_PARTNER";
+type SubscriptionTemplateKind =
+  | "REMINDER_CONFIRMATION"
+  | "BOOKING_RESULT"
+  | "NEW_PARTNER";
 
 export class WeChatSubscriptionMessageError extends Error {
   constructor(
@@ -54,6 +59,7 @@ export interface SendConfirmationReminderParams {
   orderNo: string;
   appointmentAt: string;
   remark: string;
+  page: string | null;
 }
 
 export interface SendNewPartnerNotificationParams {
@@ -62,6 +68,7 @@ export interface SendNewPartnerNotificationParams {
   teamName: string;
   tip: string;
   appliedAt: string;
+  page: string | null;
 }
 
 const clipText = (value: string, max: number): string =>
@@ -78,8 +85,24 @@ export class WeChatSubscriptionMessageService {
     return this.isConfigured("REMINDER_CONFIRMATION");
   }
 
+  async isBookingResultConfigured(): Promise<boolean> {
+    return this.isConfigured("BOOKING_RESULT");
+  }
+
   async isNewPartnerConfigured(): Promise<boolean> {
     return this.isConfigured("NEW_PARTNER");
+  }
+
+  async getConfirmationReminderTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("REMINDER_CONFIRMATION");
+  }
+
+  async getBookingResultTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("BOOKING_RESULT");
+  }
+
+  async getNewPartnerTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("NEW_PARTNER");
   }
 
   private async isConfigured(kind: SubscriptionTemplateKind): Promise<boolean> {
@@ -97,6 +120,8 @@ export class WeChatSubscriptionMessageService {
     const configKey =
       kind === "REMINDER_CONFIRMATION"
         ? CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
+        : kind === "BOOKING_RESULT"
+          ? CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
         : CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID;
 
     const configuredTemplateId = await this.configService.getValue(configKey);
@@ -123,6 +148,8 @@ export class WeChatSubscriptionMessageService {
       const templateKey =
         kind === "REMINDER_CONFIRMATION"
           ? "wechat.submsg_confirmation_reminder_template_id"
+          : kind === "BOOKING_RESULT"
+            ? "wechat.submsg_booking_result_template_id"
           : "wechat.submsg_new_partner_template_id";
       throw new Error(`Missing config: ${templateKey}`);
     }
@@ -191,6 +218,7 @@ export class WeChatSubscriptionMessageService {
       body: JSON.stringify({
         touser: params.openId,
         template_id: templateId,
+        page: params.page ?? undefined,
         miniprogram_state: "formal",
         lang: "zh_CN",
         data: {
@@ -236,6 +264,7 @@ export class WeChatSubscriptionMessageService {
       body: JSON.stringify({
         touser: params.openId,
         template_id: templateId,
+        page: params.page ?? undefined,
         miniprogram_state: "formal",
         lang: "zh_CN",
         data: {

@@ -8,6 +8,13 @@
       "when": 1772978902162,
       "tag": "0000_booking_support_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774349000000,
+      "tag": "0008_partner_lifecycle_exit_and_user_not_null",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,6 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
-import { resolveDesiredSlotCount } from "../services/slot-management.service";
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
@@ -12,7 +11,6 @@ import { db } from "../../../lib/db";
 import { anchorEventBatches } from "../../../entities/anchor-event-batch";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partnerRequests } from "../../../entities/partner-request";
-import { partners } from "../../../entities/partner";
 import { materializePRSupportResources } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
@@ -167,26 +165,6 @@ export async function acceptAlternativeBatch(
         root: insertedRoot[0],
         anchor: insertedAnchor[0],
       };
-      const targetRoot = insertedRoot[0];
-
-      const slotCount = resolveDesiredSlotCount(
-        targetRoot.minPartners,
-        targetRoot.maxPartners,
-      );
-      if (slotCount > 0) {
-        const now = new Date();
-        const rows: Array<typeof partners.$inferInsert> = Array.from(
-          { length: slotCount },
-          () => ({
-            prId: targetRoot.id,
-            userId: null,
-            status: "RELEASED",
-            releasedAt: now,
-          }),
-        );
-        await tx.insert(partners).values(rows);
-      }
-
       createdPr = true;
     }
     if (!targetPRRecord) {

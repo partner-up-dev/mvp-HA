@@ -9,6 +9,7 @@ import {
 } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
+import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr-core/services/pr-read.service";
 import type { PRId } from "../../../entities";
 
 const anchorPRRepo = new AnchorPRRepository();
@@ -63,21 +64,15 @@ export async function updateAdminAnchorPRContent(
 
     nextLocationSource = matchedUserLocation ? "USER" : "SYSTEM";
     if (matchedUserLocation) {
-      const activeCount =
-        await anchorPRRepo.countActiveVisibleByBatchAndLocationSource(
-          batch.id,
-          input.location,
-          "USER",
+      const effectiveActiveCount =
+        await countActiveVisibleAnchorPRsByBatchAndLocationSource(
+          {
+            batchId: batch.id,
+            location: input.location,
+            locationSource: "USER",
+            excludePrId: anchorRecord.root.id,
+          },
         );
-      const isCurrentPRCounted =
-        anchorRecord.anchor.locationSource === "USER" &&
-        anchorRecord.anchor.visibilityStatus === "VISIBLE" &&
-        anchorRecord.root.location === input.location &&
-        anchorRecord.root.status !== "CLOSED" &&
-        anchorRecord.root.status !== "EXPIRED";
-      const effectiveActiveCount = isCurrentPRCounted
-        ? Math.max(activeCount - 1, 0)
-        : activeCount;
       if (effectiveActiveCount >= matchedUserLocation.perBatchCap) {
         throw new HTTPException(409, {
           message: "Selected location has reached per-batch cap",

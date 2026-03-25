@@ -24,7 +24,7 @@
     :confirm-pending="confirmPending"
     :check-in-pending="checkInPending"
     @confirm-slot="emit('confirm-slot')"
-    @prepare-check-in="emit('prepare-check-in', $event)"
+    @prepare-check-in="emit('prepare-check-in')"
     @submit-check-in="emit('submit-check-in', $event)"
     @cancel-check-in="emit('cancel-check-in')"
   />
@@ -56,7 +56,7 @@ const emit = defineEmits<{
   join: [];
   exit: [];
   "confirm-slot": [];
-  "prepare-check-in": [didAttend: boolean];
+  "prepare-check-in": [];
   "submit-check-in": [wouldJoinAgain: boolean];
   "cancel-check-in": [];
   "edit-content": [];

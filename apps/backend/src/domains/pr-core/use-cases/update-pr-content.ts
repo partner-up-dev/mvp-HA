@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import type {
   PRId,
@@ -9,6 +8,8 @@ import type {
 import type { UserId } from "../../../entities/user";
 import {
   assertPartnerBoundsValid,
+  countActivePartnersForPR,
+  listActiveParticipantSummariesForPR,
   syncSlotCapacity,
   recalculatePRStatus,
 } from "../services/slot-management.service";
@@ -19,7 +20,6 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
-const partnerRepo = new PartnerRepository();
 const communityPRRepo = new CommunityPRRepository();
 
 export async function updatePRContent(
@@ -49,7 +49,7 @@ export async function updatePRContent(
   const timeChanged =
     refreshedRequest.time[0] !== fields.time[0] ||
     refreshedRequest.time[1] !== fields.time[1];
-  const currentParticipants = await partnerRepo.countActiveByPrId(id);
+  const currentParticipants = await countActivePartnersForPR(id);
   assertPartnerBoundsValid(
     fields.minPartners,
     fields.maxPartners,
@@ -57,14 +57,9 @@ export async function updatePRContent(
   );
 
   if (timeChanged && refreshedRequest.status !== "DRAFT") {
-    const activeParticipants =
-      await partnerRepo.listActiveParticipantSummariesByPrId(id);
+    const activeParticipants = await listActiveParticipantSummariesForPR(id);
     const participantUserIds = Array.from(
-      new Set(
-        activeParticipants
-          .map((participant) => participant.userId)
-          .filter((userId): userId is UserId => userId !== null),
-      ),
+      new Set(activeParticipants.map((participant) => participant.userId)),
     );
 
     for (const participantUserId of participantUserIds) {
@@ -90,7 +85,7 @@ export async function updatePRContent(
   }
 
   if (minMaxChanged) {
-    await syncSlotCapacity(id, fields.minPartners, fields.maxPartners);
+    await syncSlotCapacity(id, fields.maxPartners);
   }
   await prRepo.clearPosterCache(id);
 

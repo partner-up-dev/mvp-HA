@@ -71,7 +71,7 @@ export async function exitPRByUserId(
     });
   }
 
-  await partnerRepo.markReleased(activeSlot.id);
+  await partnerRepo.updateStatus(activeSlot.id, "EXITED");
   await userReliabilityRepo.applyDelta(userId, { released: 1 });
   if (refreshedRequest.prKind === "ANCHOR") {
     await cancelWeChatReminderJobsForParticipant(id, userId);

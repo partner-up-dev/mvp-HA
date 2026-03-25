@@ -36,6 +36,7 @@ src/
 │   └── pr-core/          # PartnerRequest lifecycle domain
 │       ├── use-cases/    # One function per business action (create, join, exit, confirm, check-in, etc.)
 │       ├── services/     # Domain services (time-window, status-rules, slot-management, user-resolver, pr-view)
+│       ├── services/pr-read.service.ts  # Centralized PR read entrypoint with strong/eventual consistency
 │       └── temporal-refresh.ts  # Shared temporal status refresh logic
 ├── infra/
 │   ├── events/           # Domain Event Bus + Outbox writer/worker (INFRA-02)

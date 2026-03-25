@@ -219,6 +219,14 @@ export interface MessageSchema {
     supportTitle: string;
     supportDescription: string;
     supportAction: string;
+    betaGroupBadge: string;
+    betaGroupTitle: string;
+    betaGroupDescription: string;
+    betaGroupAction: string;
+    betaGroupModalTitle: string;
+    betaGroupModalDescription: string;
+    betaGroupQrAlt: string;
+    betaGroupQrMissing: string;
     authorEntry: string;
     useCases: {
       employee: string;
@@ -270,6 +278,8 @@ export interface MessageSchema {
     slotConfirmed: string;
     slotAttended: string;
     slotNotJoined: string;
+    slotExited: string;
+    slotReleased: string;
     editContent: string;
     modifyStatus: string;
     publishDraft: {
@@ -311,6 +321,9 @@ export interface MessageSchema {
     };
     notificationSubscriptions: {
       title: string;
+      subscribeOnceAction: string;
+      remainingCountWithHint: string;
+      openSubscribeUnavailableHint: string;
       items: {
         REMINDER_CONFIRMATION: {
           title: string;
@@ -357,9 +370,12 @@ export interface MessageSchema {
       blockedNotJoined: string;
       blockedStatus: string;
       blockedCheckIn: string;
+      rosterBoardTitle: string;
       rosterTitle: string;
       rosterCount: string;
       rosterEmpty: string;
+      rosterCurrentEmpty: string;
+      rosterHistoryTitle: string;
       rosterSelf: string;
       rosterCreator: string;
       rosterAvatarAlt: string;
@@ -396,7 +412,6 @@ export interface MessageSchema {
     title: string;
     description: string;
     loading: string;
-    authHint: string;
     register: {
       title: string;
       action: string;
@@ -418,7 +433,6 @@ export interface MessageSchema {
     };
     wechat: {
       title: string;
-      authHint: string;
       boundHint: string;
       nonWechatHint: string;
       unboundHint: string;
@@ -428,6 +442,24 @@ export interface MessageSchema {
       bindSuccess: string;
       bindConflict: string;
       bindFailed: string;
+    };
+    wechatLogin: {
+      title: string;
+      wechatHint: string;
+      nonWechatHint: string;
+      action: string;
+      pending: string;
+    };
+    pinLogin: {
+      title: string;
+      description: string;
+      userIdLabel: string;
+      userIdPlaceholder: string;
+      pinLabel: string;
+      pinPlaceholder: string;
+      pinFormatHint: string;
+      action: string;
+      pending: string;
     };
     reminder: {
       title: string;
@@ -816,6 +848,7 @@ export interface MessageSchema {
     updateCurrentUserProfileFailed: string;
     updateCurrentUserAvatarFailed: string;
     startWechatBindFailed: string;
+    loginWithPinFailed: string;
     registerLocalAccountFailed: string;
   };
   posterStyles: {
