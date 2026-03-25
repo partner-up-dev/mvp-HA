@@ -54,6 +54,7 @@ export interface SendConfirmationReminderParams {
   orderNo: string;
   appointmentAt: string;
   remark: string;
+  page: string | null;
 }
 
 export interface SendNewPartnerNotificationParams {
@@ -62,6 +63,7 @@ export interface SendNewPartnerNotificationParams {
   teamName: string;
   tip: string;
   appliedAt: string;
+  page: string | null;
 }
 
 const clipText = (value: string, max: number): string =>
@@ -199,6 +201,7 @@ export class WeChatSubscriptionMessageService {
       body: JSON.stringify({
         touser: params.openId,
         template_id: templateId,
+        page: params.page ?? undefined,
         miniprogram_state: "formal",
         lang: "zh_CN",
         data: {
@@ -244,6 +247,7 @@ export class WeChatSubscriptionMessageService {
       body: JSON.stringify({
         touser: params.openId,
         template_id: templateId,
+        page: params.page ?? undefined,
         miniprogram_state: "formal",
         lang: "zh_CN",
         data: {
