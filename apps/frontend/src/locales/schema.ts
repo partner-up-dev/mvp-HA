@@ -751,6 +751,9 @@ export interface MessageSchema {
     eventStatusLabel: string;
     eventDefaultMinPartnersLabel: string;
     eventDefaultMaxPartnersLabel: string;
+    eventDefaultConfirmationStartLabel: string;
+    eventDefaultConfirmationEndLabel: string;
+    eventDefaultJoinLockLabel: string;
     eventPoiHint: string;
     eventLocationPoolLabel: string;
     eventTimeWindowHint: string;
