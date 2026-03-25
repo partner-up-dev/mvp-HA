@@ -7,7 +7,7 @@ import {
 import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
 import { useWeChatShare } from "@/shared/wechat/useWeChatShare";
 
-const FALLBACK_OFFICIAL_ACCOUNT_USERNAME = "PartnerUp_Official";
+const FALLBACK_OFFICIAL_ACCOUNT_USERNAME = "Partner_Up_Official";
 
 const normalizeOfficialAccountUsername = (
   value: string | null | undefined,
@@ -19,7 +19,9 @@ export const useWeChatOfficialAccountFollow = () => {
     PUBLIC_CONFIG_KEYS.wechatOfficialAccountUsername,
   );
   const configuredOfficialAccountUsername = computed(() =>
-    normalizeOfficialAccountUsername(officialAccountConfigQuery.data.value?.value),
+    normalizeOfficialAccountUsername(
+      officialAccountConfigQuery.data.value?.value,
+    ),
   );
   const officialAccountUsername = computed(
     () =>
@@ -91,8 +93,6 @@ export const useWeChatOfficialAccountFollow = () => {
     followSchemeUrl,
     isConfigured: computed(() => officialAccountUsername.value.length > 0),
     officialAccountUsername,
-    configLoading: computed(
-      () => officialAccountConfigQuery.isLoading.value,
-    ),
+    configLoading: computed(() => officialAccountConfigQuery.isLoading.value),
   };
 };
