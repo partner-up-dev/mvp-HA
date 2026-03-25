@@ -266,6 +266,7 @@ export interface MessageSchema {
     slotConfirmed: string;
     slotAttended: string;
     slotNotJoined: string;
+    slotExited: string;
     slotReleased: string;
     editContent: string;
     modifyStatus: string;
@@ -355,9 +356,12 @@ export interface MessageSchema {
       blockedNotJoined: string;
       blockedStatus: string;
       blockedCheckIn: string;
+      rosterBoardTitle: string;
       rosterTitle: string;
       rosterCount: string;
       rosterEmpty: string;
+      rosterCurrentEmpty: string;
+      rosterHistoryTitle: string;
       rosterSelf: string;
       rosterCreator: string;
       rosterAvatarAlt: string;

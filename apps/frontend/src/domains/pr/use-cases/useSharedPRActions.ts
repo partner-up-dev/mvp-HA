@@ -180,6 +180,7 @@ export const useSharedPRActions = ({
       case "ATTENDED":
         return t("prPage.slotAttended", { partnerId: shortPartnerId.value });
       case "EXITED":
+        return t("prPage.slotExited");
       case "RELEASED":
         return t("prPage.slotReleased");
       default:

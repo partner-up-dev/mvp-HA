@@ -76,7 +76,7 @@ export async function joinPRAsUser(
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
-  let targetStatus: PartnerStatus = "JOINED";
+  let targetStatus: Extract<PartnerStatus, "JOINED" | "CONFIRMED"> = "JOINED";
   const bookingContactRequired =
     refreshedRequest.prKind === "ANCHOR"
       ? await isBookingContactRequiredForPR(id)
@@ -187,17 +187,23 @@ export async function joinPRAsUser(
       message: "Cannot join - partner request is full",
     });
   }
-  const created = await partnerRepo.createSlot({
-    prId: id,
-    userId: user.id,
-    status: targetStatus,
-  });
-  if (!created) {
+  const latestHistoricalSlot = await partnerRepo.findReleasedByPrIdAndUserId(
+    id,
+    user.id,
+  );
+  const joinedSlot = latestHistoricalSlot
+    ? await partnerRepo.reactivateSlot(latestHistoricalSlot.id, targetStatus)
+    : await partnerRepo.createSlot({
+        prId: id,
+        userId: user.id,
+        status: targetStatus,
+      });
+  if (!joinedSlot) {
     throw new HTTPException(500, {
-      message: "Failed to create join participation record",
+      message: "Failed to persist join participation record",
     });
   }
-  const assignedPartnerId = created.id;
+  const assignedPartnerId = joinedSlot.id;
 
   if (
     refreshedRequest.prKind === "ANCHOR" &&
