@@ -298,31 +298,33 @@
         </template>
 
         <template v-else>
-          <p class="modal-text">当前加入需要你先填写预订联系人手机号。</p>
-          <input
-            v-model.trim="joinFlowPhoneInput"
-            class="modal-phone-input"
-            type="tel"
-            inputmode="numeric"
-            maxlength="11"
-            placeholder="请输入 11 位大陆手机号"
-          />
-          <div class="modal-actions">
-            <button
-              class="action-btn action-btn--surface"
-              type="button"
-              @click="closeJoinFlowModal"
-            >
-              {{ t("common.cancel") }}
-            </button>
-            <button
-              class="action-btn"
-              type="button"
-              :disabled="joinFlowPending"
-              @click="submitJoinFlowPhoneAndJoin"
-            >
-              {{ joinFlowPending ? t("prPage.joining") : "填写并加入" }}
-            </button>
+          <div class="join-phone-step">
+            <p class="modal-text">当前加入需要你先填写预订联系人手机号。</p>
+            <input
+              v-model.trim="joinFlowPhoneInput"
+              class="modal-phone-input"
+              type="tel"
+              inputmode="numeric"
+              maxlength="11"
+              placeholder="请输入 11 位大陆手机号"
+            />
+            <div class="modal-actions">
+              <button
+                class="action-btn action-btn--surface"
+                type="button"
+                @click="closeJoinFlowModal"
+              >
+                {{ t("common.cancel") }}
+              </button>
+              <button
+                class="action-btn"
+                type="button"
+                :disabled="joinFlowPending"
+                @click="submitJoinFlowPhoneAndJoin"
+              >
+                {{ joinFlowPending ? t("prPage.joining") : "填写并加入" }}
+              </button>
+            </div>
           </div>
         </template>
         <p v-if="joinFlowError" class="action-error">{{ joinFlowError }}</p>
@@ -1391,6 +1393,16 @@ const reimbursementReasonText = (
   @include mx.pu-font(body-medium);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
+}
+
+.join-phone-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+}
+
+.join-phone-step .modal-text {
+  margin: 0;
 }
 
 .modal-actions {

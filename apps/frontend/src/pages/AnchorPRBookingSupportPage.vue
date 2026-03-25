@@ -41,7 +41,10 @@
       </section>
 
       <section
-        v-if="bookingSupportDetail.bookingSupport.bookingContact.required"
+        v-if="
+          bookingSupportDetail.bookingSupport.bookingContact.required &&
+          bookingSupportDetail.viewerIsCreator
+        "
         class="card"
       >
         <h2 class="card-title">{{ t("prBookingSupport.bookingContact.title") }}</h2>
