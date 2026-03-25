@@ -15,7 +15,7 @@ export const resolveOAuthLoginUrl = (returnTo: string): string => {
 
 export const redirectToWeChatOAuthLogin = (returnTo: string): void => {
   if (typeof window === "undefined") return;
-  window.location.assign(resolveOAuthLoginUrl(returnTo));
+  window.location.replace(resolveOAuthLoginUrl(returnTo));
 };
 
 export const redirectToWeChatOAuthBind = async (
@@ -46,5 +46,5 @@ export const redirectToWeChatOAuthBind = async (
     return;
   }
 
-  window.location.assign(payload.authorizeUrl);
+  window.location.replace(payload.authorizeUrl);
 };
