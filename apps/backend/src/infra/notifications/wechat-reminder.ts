@@ -326,12 +326,14 @@ async function handleReminderJob(
 
   try {
     if (submsgConfigured) {
+      const prPage = resolvePrUrl(request);
       await subscriptionMessageService.sendConfirmationReminder({
         openId: user.openId,
         orderContent: resolveReminderTitle(request),
         orderNo: resolveReminderOrderNo(request, user.id),
         appointmentAt: formatReminderDateField(startAt),
         remark: resolveReminderRemark(payload.reminderType),
+        page: prPage,
       });
     } else {
       await templateService.sendReminderTemplate({
@@ -491,6 +493,7 @@ async function handleNewPartnerJob(
 
   const joinedUser = await userRepo.findById(payload.joinedUserId);
   const applicantName = resolveApplicantName(joinedUser?.nickname ?? null);
+  const prPage = resolvePrUrl(request);
 
   try {
     await subscriptionMessageService.sendNewPartnerNotification({
@@ -499,6 +502,7 @@ async function handleNewPartnerJob(
       teamName: resolveTeamName(request),
       tip: NEW_PARTNER_TIP,
       appliedAt: formatAppliedAt(payload.joinedAtIso),
+      page: prPage,
     });
   } catch (error) {
     const classified = classifyNewPartnerError(error);
