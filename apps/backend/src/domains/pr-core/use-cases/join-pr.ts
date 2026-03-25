@@ -190,6 +190,14 @@ export async function joinPRAsUser(
 
   if (
     refreshedRequest.prKind === "ANCHOR" &&
+    refreshedRequest.createdBy === null &&
+    activeCount === 0
+  ) {
+    await prRepo.setCreatedBy(id, user.id);
+  }
+
+  if (
+    refreshedRequest.prKind === "ANCHOR" &&
     bookingContactRequired &&
     activeCount === 0 &&
     bookingContactPhoneInput
