@@ -7,6 +7,8 @@ const TICK_LOCK_NAMESPACE = 2_147_483_001;
 const TICK_LOCK_KEY = 1;
 const DEFAULT_EARLY_TOLERANCE_MS = 15 * 60 * 1000;
 const DEFAULT_LATE_TOLERANCE_MS = 15 * 60 * 1000;
+// Sentinel value used to disable late tolerance checks for a job.
+export const NO_LATE_TOLERANCE_MS = -1;
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_BATCH_SIZE = 20;
 const DEFAULT_MAX_BATCHES = 3;
@@ -123,6 +125,12 @@ const positiveOr = (value: number | undefined, fallback: number): number => {
   return Math.floor(value);
 };
 
+// Allow the sentinel to bypass the nonNegativeOr validation.
+const resolveLateToleranceMs = (value: number | undefined): number =>
+  value === NO_LATE_TOLERANCE_MS
+    ? NO_LATE_TOLERANCE_MS
+    : nonNegativeOr(value, DEFAULT_LATE_TOLERANCE_MS);
+
 const toDate = (value: Date | string): Date => {
   if (value instanceof Date) return value;
   return new Date(value);
@@ -183,10 +191,7 @@ class JobRunnerImpl {
       config.earlyToleranceMs,
       DEFAULT_EARLY_TOLERANCE_MS,
     );
-    const lateToleranceMs = nonNegativeOr(
-      config.lateToleranceMs,
-      DEFAULT_LATE_TOLERANCE_MS,
-    );
+    const lateToleranceMs = resolveLateToleranceMs(config.lateToleranceMs);
     const maxAttempts = Math.max(
       1,
       positiveOr(config.maxAttempts, DEFAULT_MAX_ATTEMPTS),
@@ -368,6 +373,7 @@ class JobRunnerImpl {
           updated_at = now(),
           last_error = coalesce(last_error, 'Missed tolerance window')
         where status in ('PENDING', 'RETRY')
+          and late_tolerance_ms <> ${NO_LATE_TOLERANCE_MS}
           and run_at + (late_tolerance_ms * interval '1 millisecond') < now()
         returning id
       `);
@@ -379,7 +385,10 @@ class JobRunnerImpl {
           where status in ('PENDING', 'RETRY')
             and (lease_until is null or lease_until < now())
             and now() >= run_at - (early_tolerance_ms * interval '1 millisecond')
-            and now() <= run_at + (late_tolerance_ms * interval '1 millisecond')
+            and (
+              late_tolerance_ms = ${NO_LATE_TOLERANCE_MS}
+              or now() <= run_at + (late_tolerance_ms * interval '1 millisecond')
+            )
           order by run_at asc, id asc
           for update skip locked
           limit ${batchSize}

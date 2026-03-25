@@ -161,7 +161,9 @@ export async function getAnchorPRDetail(
   const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
     id,
   );
-
+  const rosterParticipants = await partnerRepo.listRosterParticipantSummariesByPrId(
+    id,
+  );
   return {
     id: publicPR.id,
     prKind: "ANCHOR",
@@ -218,6 +220,7 @@ export async function getAnchorPRDetail(
     partnerSection: buildAnchorPartnerSection({
       publicPR,
       activeParticipants,
+      rosterParticipants,
       viewerUserId,
       policy,
       bookingDeadlineAt,

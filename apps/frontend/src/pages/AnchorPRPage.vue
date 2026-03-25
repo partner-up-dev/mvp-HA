@@ -90,6 +90,16 @@
       </section>
 
       <section
+        v-if="
+          prDetail.partnerSection.viewer.slotState === 'RELEASED' ||
+          prDetail.partnerSection.viewer.slotState === 'EXITED'
+        "
+        class="section-card released-notice"
+      >
+        <p class="released-notice__text">{{ t("prPage.slotReleased") }}</p>
+      </section>
+
+      <section
         v-for="action in dockActions"
         :key="action.key"
         class="section-card"
@@ -108,6 +118,9 @@
           {{ action.pending ? action.pendingLabel : action.label }}
         </button>
         <p v-if="action.tip" class="action-tip">{{ action.tip }}</p>
+        <p v-if="action.key === 'JOIN' && releaseNoticeText" class="action-tip">
+          {{ releaseNoticeText }}
+        </p>
       </section>
       <p
         v-if="primaryActionErrorMessage"
@@ -115,6 +128,16 @@
       >
         {{ primaryActionErrorMessage }}
       </p>
+
+      <AnchorPRRecoveryLane
+        v-if="showRecoveryLane"
+        :pr-id="id"
+        :section="prDetail.partnerSection"
+        :accept-alternative-batch-pending="
+          acceptAlternativeBatchMutation.isPending.value
+        "
+        @accept-alternative-batch="handleAcceptAlternativeBatch"
+      />
 
       <WeChatNotificationSubscriptionsCard
         v-if="showNotificationSubscriptionsCard"
@@ -181,15 +204,6 @@
         <AnchorPRAwarenessLane
           :pr-id="prDetail.id"
           :section="prDetail.partnerSection"
-        />
-
-        <AnchorPRRecoveryLane
-          :pr-id="id"
-          :section="prDetail.partnerSection"
-          :accept-alternative-batch-pending="
-            acceptAlternativeBatchMutation.isPending.value
-          "
-          @accept-alternative-batch="handleAcceptAlternativeBatch"
         />
 
         <section
@@ -446,7 +460,6 @@ type DockActionKey =
   | "JOIN"
   | "CONFIRM"
   | "CHECKIN_ATTENDED"
-  | "CHECKIN_MISSED"
   | "CREATOR_EDIT"
   | "CREATOR_STATUS";
 
@@ -587,6 +600,21 @@ const participantOverviewText = computed(() => {
   const min = prDetail.value.partnerSection.capacity.min;
   if (min === null) return `${current} 人已加入，当前未设置最低成团人数。`;
   return `${current} 人已加入，最低成团人数 ${min} 人。`;
+});
+
+const releaseNoticeText = computed(() => {
+  const releasedSlot = prDetail.value?.partnerSection.viewer.releasedSlot ?? null;
+  if (!releasedSlot) return null;
+  if (releasedSlot.state === "EXITED") {
+    return t("prPage.partnerSection.releaseNoticeExit");
+  }
+  return t("prPage.partnerSection.releaseNoticeAuto");
+});
+
+const showRecoveryLane = computed(() => {
+  const viewer = prDetail.value?.partnerSection.viewer;
+  if (!viewer) return false;
+  return !viewer.isParticipant && !viewer.canJoin;
 });
 
 const rosterPreview = computed(
@@ -732,15 +760,6 @@ const dockActions = computed<DockActionItem[]>(() => {
         label: t("prPage.checkInAttended"),
         pendingLabel: t("prPage.checkingIn"),
         tone: "primary",
-        disabled: !viewer.canCheckIn,
-        pending: attendanceActions.checkInPending.value,
-        tip: checkInTip,
-      },
-      {
-        key: "CHECKIN_MISSED",
-        label: t("prPage.checkInMissed"),
-        pendingLabel: t("prPage.checkingIn"),
-        tone: "secondary",
         disabled: !viewer.canCheckIn,
         pending: attendanceActions.checkInPending.value,
         tip: checkInTip,
@@ -1062,11 +1081,7 @@ const handleDockAction = async (action: DockActionItem) => {
     return;
   }
   if (action.key === "CHECKIN_ATTENDED") {
-    attendanceActions.prepareCheckIn(true);
-    return;
-  }
-  if (action.key === "CHECKIN_MISSED") {
-    attendanceActions.prepareCheckIn(false);
+    attendanceActions.prepareCheckIn();
     return;
   }
   if (action.key === "CREATOR_EDIT") {
@@ -1127,7 +1142,7 @@ function mapDockActionToTrackType(
 ): "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT" | null {
   if (key === "JOIN") return "JOIN";
   if (key === "CONFIRM") return "CONFIRM_SLOT";
-  if (key === "CHECKIN_ATTENDED" || key === "CHECKIN_MISSED") return "CHECK_IN";
+  if (key === "CHECKIN_ATTENDED") return "CHECK_IN";
   return null;
 }
 
@@ -1394,6 +1409,16 @@ const goHome = () => {
   margin-top: var(--sys-spacing-sm);
 }
 
+.released-notice {
+  background: var(--sys-color-error-container);
+  border-radius: 10px;
+}
+
+.released-notice__text {
+  margin: 0;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-error-container);
+}
 .context-details {
   margin-top: var(--sys-spacing-lg);
 }

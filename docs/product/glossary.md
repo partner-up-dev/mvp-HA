@@ -20,7 +20,7 @@
 - SettlementMode：资助结算时机（NONE / PLATFORM_PREPAID / PLATFORM_POSTPAID）。
 - ReimbursementStatus：报销状态（NONE / PENDING / APPROVED / REJECTED / PAID）。
 - Confirmation Window：Anchor PR 专属确认时序窗口（T-1h 自动释放未确认槽位；T-1h~T-30min 加入即确认；T-30min 后禁止加入）。
-- Check-in Signal：Anchor PR 专属签到回流信号（didAttend / wouldJoinAgain），用于近似到场率与复参与意愿。
+- Check-in Signal：Anchor PR 专属签到回流信号（attended only：`didAttend=true` + `wouldJoinAgain`）；未提交时保持 `didAttend=null`，记为 `CHECKIN_UNKNOWN`。
 - User（最小模型）：核心用户主体，`users.id` 使用 UUID；表内维护身份、角色与资料字段（`openid`、`role=anonymous/authenticated/service`、`nickname`、`sex`、`avatar`、`pin_hash`、`status`）。
 - UserReliability：用户可靠性统计表（`user_reliability`），维护 join / confirm / attend / release 计数与派生比率。
 - UserNotificationOpts：用户通知偏好表（`user_notification_opts`），当前维护 3 个公众号通知开关：`REMINDER_CONFIRMATION`（活动前提醒）、`BOOKING_RESULT`（场地预订结果）、`NEW_PARTNER`（新搭子）。

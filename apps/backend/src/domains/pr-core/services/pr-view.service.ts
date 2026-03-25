@@ -15,6 +15,7 @@ export type PublicPR = Omit<PartnerRequest, "title"> & {
   title?: string;
   partners: number[];
   myPartnerId: number | null;
+  isViewerReleased: boolean;
   rawText: string | null;
   budget: string | null;
 };
@@ -25,12 +26,20 @@ export async function toPublicPR(
 ): Promise<PublicPR> {
   const partners = await partnerRepo.listActiveIdsByPrId(request.id);
   let myPartnerId: number | null = null;
+  let isViewerReleased = false;
   if (viewerUserId) {
     const slot = await partnerRepo.findActiveByPrIdAndUserId(
       request.id,
       viewerUserId,
     );
     myPartnerId = slot?.id ?? null;
+    if (myPartnerId === null) {
+      const releasedSlot = await partnerRepo.findReleasedByPrIdAndUserId(
+        request.id,
+        viewerUserId,
+      );
+      isViewerReleased = releasedSlot !== null;
+    }
   }
 
   const { title, ...rest } = request;
@@ -47,6 +56,7 @@ export async function toPublicPR(
     title: title ?? undefined,
     partners,
     myPartnerId,
+    isViewerReleased,
     rawText,
     budget,
   };

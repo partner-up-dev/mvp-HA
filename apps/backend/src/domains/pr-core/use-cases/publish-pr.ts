@@ -38,14 +38,14 @@ const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
   }
 
   const targetStatus = "JOINED";
-  const released = await partnerRepo.findFirstReleasedSlot(prId);
-  if (released) {
-    await partnerRepo.assignSlot(released.id, creatorUserId, targetStatus);
-  } else {
-    await partnerRepo.createSlot({
-      prId,
-      userId: creatorUserId,
-      status: targetStatus,
+  const created = await partnerRepo.createSlot({
+    prId,
+    userId: creatorUserId,
+    status: targetStatus,
+  });
+  if (!created) {
+    throw new HTTPException(500, {
+      message: "Failed to create creator partner slot",
     });
   }
 

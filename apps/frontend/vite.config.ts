@@ -72,32 +72,12 @@ const readGitValue = (command: string): string | null => {
   }
 };
 
-const normalizeRepositoryUrl = (value: string | null): string | null => {
-  if (!value) return null;
-
-  const withoutGitSuffix = value.replace(/\.git$/, "");
-  const sshMatch = withoutGitSuffix.match(/^git@([^:]+):(.+)$/);
-  if (sshMatch) {
-    const host = sshMatch[1];
-    const path = sshMatch[2];
-    return `https://${host}/${path}`;
-  }
-
-  return withoutGitSuffix;
-};
-
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
   const frontendCommitHash =
     normalizeEnvValue(env.VITE_FRONTEND_COMMIT_HASH) ??
     readGitValue("git rev-parse HEAD") ??
     "unknown";
-  const repositoryUrl =
-    normalizeRepositoryUrl(
-      normalizeEnvValue(env.VITE_REPOSITORY_URL) ??
-        readGitValue("git config --get remote.origin.url"),
-    ) ??
-    "";
 
   return {
     plugins: [
@@ -116,7 +96,6 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_FRONTEND_COMMIT_HASH": JSON.stringify(
         frontendCommitHash,
       ),
-      "import.meta.env.VITE_REPOSITORY_URL": JSON.stringify(repositoryUrl),
     },
     build: {
       outDir: "./dist",

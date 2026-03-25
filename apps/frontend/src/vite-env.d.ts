@@ -10,7 +10,6 @@ interface ImportMetaEnv {
   readonly VITE_API_URL: string;
   readonly VITE_WECHAT_ABILITY_MOCKING_ENABLED?: "true" | "false";
   readonly VITE_FRONTEND_COMMIT_HASH: string;
-  readonly VITE_REPOSITORY_URL: string;
 }
 
 interface ImportMeta {
