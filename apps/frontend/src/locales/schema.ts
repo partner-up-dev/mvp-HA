@@ -164,12 +164,16 @@ export interface MessageSchema {
     };
     bookmarkNudge: {
       title: string;
+      wechatTitle: string;
       wechatHint: string;
       browserHint: string;
       bookmarkAction: string;
+      wechatAction: string;
       copyAction: string;
+      wechatCopyAction: string;
       copiedAction: string;
       dismissAction: string;
+      officialAccountName: string;
     };
     topics: {
       movie: {
