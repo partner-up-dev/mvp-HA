@@ -15,9 +15,9 @@ import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
 import type { UserLocationEntry } from "../../../entities/anchor-event";
 import {
-  countActiveVisibleAnchorPRsByBatchAndLocationSourceWithTemporalRefresh,
-  listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh,
-} from "../../pr-core/services/anchor-pr-temporal-read.service";
+  countActiveVisibleAnchorPRsByBatchAndLocationSource,
+  readVisibleAnchorPRRecordsByBatchIdAndLocation,
+} from "../../pr-core/services/pr-read.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
@@ -111,7 +111,7 @@ export const checkUserAnchorPRAvailability = async ({
   });
 
   const activeCount =
-    await countActiveVisibleAnchorPRsByBatchAndLocationSourceWithTemporalRefresh(
+    await countActiveVisibleAnchorPRsByBatchAndLocationSource(
       {
         batchId: context.batch.id,
         location: locationId,
@@ -145,7 +145,7 @@ export const createUserAnchorPR = async ({
     userId: user.id,
     targetTimeWindow: batch.timeWindow,
   });
-  await listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh(
+  await readVisibleAnchorPRRecordsByBatchIdAndLocation(
     batch.id,
     locationId,
   );

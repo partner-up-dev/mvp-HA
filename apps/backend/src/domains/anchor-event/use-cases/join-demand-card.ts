@@ -9,7 +9,7 @@ import type {
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
-import { listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh } from "../../pr-core/services/anchor-pr-temporal-read.service";
+import { readVisibleAnchorPRRecordsByBatchIdAndLocation } from "../../pr-core/services/pr-read.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
@@ -174,7 +174,7 @@ export const joinDemandCard = async ({
   );
 
   const records =
-    await listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh(
+    await readVisibleAnchorPRRecordsByBatchIdAndLocation(
       batchId,
       normalizedLocation,
     );

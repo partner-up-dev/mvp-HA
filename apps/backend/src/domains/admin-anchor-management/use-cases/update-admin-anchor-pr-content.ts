@@ -9,7 +9,7 @@ import {
 } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
-import { countActiveVisibleAnchorPRsByBatchAndLocationSourceWithTemporalRefresh } from "../../pr-core/services/anchor-pr-temporal-read.service";
+import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr-core/services/pr-read.service";
 import type { PRId } from "../../../entities";
 
 const anchorPRRepo = new AnchorPRRepository();
@@ -65,7 +65,7 @@ export async function updateAdminAnchorPRContent(
     nextLocationSource = matchedUserLocation ? "USER" : "SYSTEM";
     if (matchedUserLocation) {
       const effectiveActiveCount =
-        await countActiveVisibleAnchorPRsByBatchAndLocationSourceWithTemporalRefresh(
+        await countActiveVisibleAnchorPRsByBatchAndLocationSource(
           {
             batchId: batch.id,
             location: input.location,

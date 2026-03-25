@@ -11,7 +11,7 @@ import {
 } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
 import { resolveAnchorPartnerBoundsFromEvent } from "../../anchor-event/services/anchor-partner-bounds";
-import { countActiveVisibleAnchorPRsByBatchAndLocationSourceWithTemporalRefresh } from "../../pr-core/services/anchor-pr-temporal-read.service";
+import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr-core/services/pr-read.service";
 import type {
   AnchorPartnerRequest,
   AnchorEventBatchId,
@@ -69,7 +69,7 @@ export async function createAdminAnchorPR(
   const locationSource = matchedUserLocation ? "USER" : "SYSTEM";
   if (matchedUserLocation) {
     const activeCount =
-      await countActiveVisibleAnchorPRsByBatchAndLocationSourceWithTemporalRefresh(
+      await countActiveVisibleAnchorPRsByBatchAndLocationSource(
         {
           batchId: batch.id,
           location: input.location,

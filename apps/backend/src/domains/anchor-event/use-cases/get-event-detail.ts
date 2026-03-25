@@ -22,8 +22,8 @@ import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
 import type { PartnerRequest } from "../../../entities/partner-request";
 import {
   isActiveVisibleAnchorPRStatus,
-  listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh,
-} from "../../pr-core/services/anchor-pr-temporal-read.service";
+  readVisibleAnchorPRRecordsByBatchId,
+} from "../../pr-core/services/pr-read.service";
 
 const eventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
@@ -133,7 +133,7 @@ export async function getAnchorEventDetail(
   // Fetch PRs for each batch
   const batchDetails: BatchDetail[] = [];
   for (const batch of batches) {
-    const prs = await listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh(
+    const prs = await readVisibleAnchorPRRecordsByBatchId(
       batch.id,
     );
     const activeUserCountsByLocation = new Map<string, number>();

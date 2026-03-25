@@ -1,12 +1,10 @@
 import { HTTPException } from "hono/http-exception";
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import { refreshTemporalStatus } from "../temporal-refresh";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { readPartnerRequestById } from "../services/pr-read.service";
 
-const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
 
@@ -29,12 +27,13 @@ export async function getReimbursementStatus(
   id: PRId,
   userId: UserId,
 ): Promise<ReimbursementStatusView> {
-  const request = await prRepo.findById(id);
+  const request = await readPartnerRequestById(id, {
+    consistency: "strong",
+  });
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
-  const refreshedRequest = await refreshTemporalStatus(request);
-  if (refreshedRequest.prKind !== "ANCHOR") {
+  if (request.prKind !== "ANCHOR") {
     throw new HTTPException(400, {
       message: "Reimbursement is only available for anchor PR",
     });
@@ -54,7 +53,7 @@ export async function getReimbursementStatus(
     };
   }
 
-  if (refreshedRequest.status !== "CLOSED") {
+  if (request.status !== "CLOSED") {
     return {
       eligible: false,
       canRequest: false,

@@ -12,9 +12,9 @@ import { normalizeSystemLocationPool } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import {
   isActiveVisibleAnchorPRStatus,
-  listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh,
-  listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh,
-} from "../../pr-core/services/anchor-pr-temporal-read.service";
+  readVisibleAnchorPRRecordsByBatchId,
+  readVisibleAnchorPRRecordsByBatchIdAndLocation,
+} from "../../pr-core/services/pr-read.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -60,7 +60,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   const batch = await batchRepo.findById(fullPR.anchor.batchId);
   if (!batch) return;
 
-  const batchPRs = await listVisibleAnchorPRRecordsByBatchIdWithTemporalRefresh(
+  const batchPRs = await readVisibleAnchorPRRecordsByBatchId(
     fullPR.anchor.batchId,
   );
   const occupiedLocations = new Set<string>(
@@ -85,7 +85,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   // Best-effort idempotency: if a visible PR already exists at target location,
   // do not create a duplicate.
   const existingAtTarget =
-    await listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh(
+    await readVisibleAnchorPRRecordsByBatchIdAndLocation(
       fullPR.anchor.batchId,
       targetLocation,
     );

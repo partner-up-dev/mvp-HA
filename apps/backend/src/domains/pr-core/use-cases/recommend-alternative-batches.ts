@@ -1,12 +1,13 @@
 import { HTTPException } from "hono/http-exception";
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import type { PRId } from "../../../entities/partner-request";
-import { listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh } from "../services/anchor-pr-temporal-read.service";
+import {
+  readPartnerRequestById,
+  readVisibleAnchorPRRecordsByBatchIdAndLocation,
+} from "../services/pr-read.service";
 
-const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
 const anchorPRRepo = new AnchorPRRepository();
@@ -39,7 +40,9 @@ export interface AlternativeBatchRecommendationResult {
 export async function recommendAlternativeBatches(
   sourcePrId: PRId,
 ): Promise<AlternativeBatchRecommendationResult> {
-  const sourceRequest = await prRepo.findById(sourcePrId);
+  const sourceRequest = await readPartnerRequestById(sourcePrId, {
+    consistency: "strong",
+  });
   if (!sourceRequest) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
@@ -99,7 +102,7 @@ export async function recommendAlternativeBatches(
     }
 
     const prsAtSameLocation =
-      await listVisibleAnchorPRRecordsByBatchIdAndLocationWithTemporalRefresh(
+      await readVisibleAnchorPRRecordsByBatchIdAndLocation(
         matchedBatch.id,
         source.location,
       );
