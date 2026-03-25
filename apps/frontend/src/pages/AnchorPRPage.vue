@@ -119,13 +119,12 @@
       <WeChatNotificationSubscriptionsCard
         v-if="showNotificationSubscriptionsCard"
         :title="t('prPage.notificationSubscriptions.title')"
-        :items="subscriptionItems"
-        :updating-label="t('prPage.wechatReminder.updating')"
-        outline-profile="surface"
-        @action="handleSubscriptionAction"
-        @open-subscribe-success="handleSubscriptionOpenSubscribeSuccess"
-        @open-subscribe-error="handleSubscriptionOpenSubscribeError"
-      />
+      >
+        <APRNotificationSubscriptions
+          :updating-label="t('prPage.wechatReminder.updating')"
+          outline-profile="surface"
+        />
+      </WeChatNotificationSubscriptionsCard>
 
       <section class="section-card">
         <h2 class="section-title">分享邀请</h2>
@@ -397,6 +396,7 @@ import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModa
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
+import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -433,7 +433,6 @@ import {
 import { trackEvent } from "@/shared/analytics/track";
 import type { ApiError } from "@/shared/api/error";
 import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
-import { useWeChatNotificationSubscriptionsPanel } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
@@ -553,14 +552,6 @@ watch(
     }
   },
 );
-
-const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
-  visibleKinds: [
-    "REMINDER_CONFIRMATION",
-    "BOOKING_RESULT",
-    "NEW_PARTNER",
-  ] as const,
-});
 
 useBodyScrollLock(
   computed(
@@ -791,8 +782,6 @@ const showNotificationSubscriptionsCard = computed(() => {
   if (!section?.reminder.supported) return false;
   return section.viewer.isParticipant;
 });
-
-const subscriptionItems = computed(() => notificationSubscriptions.items.value);
 
 const exitBlockedTip = computed(() => {
   const viewer = prDetail.value?.partnerSection.viewer;
@@ -1085,26 +1074,6 @@ const handleDockAction = async (action: DockActionItem) => {
     return;
   }
   handleOpenCreatorModifyStatus();
-};
-
-const handleSubscriptionAction = async (
-  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
-) => {
-  await notificationSubscriptions.handleAction(kind);
-};
-
-const handleSubscriptionOpenSubscribeSuccess = async (
-  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
-  detail: unknown,
-) => {
-  await notificationSubscriptions.handleOpenSubscribeSuccess(kind, detail);
-};
-
-const handleSubscriptionOpenSubscribeError = async (
-  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
-  detail: unknown,
-) => {
-  await notificationSubscriptions.handleOpenSubscribeError(kind, detail);
 };
 
 const requestExitWithConfirm = () => {
@@ -1423,30 +1392,6 @@ const goHome = () => {
 
 .page-action-error {
   margin-top: var(--sys-spacing-sm);
-}
-
-.subscription-card {
-  @include mx.pu-surface-card(outline);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.subscription-main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-}
-
-.subscription-title {
-  margin: 0;
-  @include mx.pu-font(label-large);
-}
-
-.subscription-desc {
-  margin: 0;
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .context-details {
