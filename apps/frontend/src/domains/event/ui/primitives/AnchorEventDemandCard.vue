@@ -94,22 +94,29 @@ import { useI18n } from "vue-i18n";
 const MAX_DRAG_DISTANCE = 260;
 const MIN_DISTANCE_THRESHOLD = 96;
 const DISTANCE_THRESHOLD_RATIO = 0.34;
-const FLICK_VELOCITY_THRESHOLD = 900;
+const FLICK_VELOCITY_THRESHOLD = 760;
+const FLICK_MIN_DISTANCE = 22;
 const ROTATION_DIVISOR = 22;
 const MAX_ROTATION_DEG = 18;
 const EXIT_TRANSITION = "transform 280ms cubic-bezier(0.16, 1, 0.3, 1)";
 const REBOUND_TRANSITION = "transform 440ms cubic-bezier(0.22, 1.35, 0.36, 1)";
 const MILLISECONDS_PER_SECOND = 1000;
+const VELOCITY_SAMPLE_WINDOW_MS = 90;
+const MAX_VELOCITY_SAMPLES = 8;
 const EXIT_VIEWPORT_MULTIPLIER = 1.1;
 const EXIT_DRAG_MULTIPLIER = 1.5;
+
+type MotionSample = {
+  x: number;
+  timestamp: number;
+};
 
 type PointerState = {
   pointerId: number;
   startX: number;
-  lastX: number;
-  lastTimestamp: number;
   tiltDirectionFactor: number;
   pivotY: number;
+  motionSamples: MotionSample[];
 };
 
 type SwipeAction = "skip" | "view-detail";
@@ -198,6 +205,37 @@ const applyDamping = (offsetX: number): number => {
   return sign * damped;
 };
 
+const appendMotionSample = (
+  pointer: PointerState,
+  x: number,
+  timestamp: number,
+) => {
+  pointer.motionSamples.push({ x, timestamp });
+  const sampleWindowStart = timestamp - VELOCITY_SAMPLE_WINDOW_MS * 2;
+  pointer.motionSamples = pointer.motionSamples
+    .filter((sample) => sample.timestamp >= sampleWindowStart)
+    .slice(-MAX_VELOCITY_SAMPLES);
+};
+
+const resolveVelocityX = (
+  pointer: PointerState,
+  endX: number,
+  endTimestamp: number,
+): number => {
+  const samples = [
+    ...pointer.motionSamples,
+    { x: endX, timestamp: endTimestamp },
+  ].sort((left, right) => left.timestamp - right.timestamp);
+  const windowStart = endTimestamp - VELOCITY_SAMPLE_WINDOW_MS;
+  const earliestWindowSample =
+    samples.find((sample) => sample.timestamp >= windowStart) ?? samples[0];
+
+  const timeDelta = Math.max(endTimestamp - earliestWindowSample.timestamp, 1);
+  return (
+    ((endX - earliestWindowSample.x) / timeDelta) * MILLISECONDS_PER_SECOND
+  );
+};
+
 const resetCardState = () => {
   activePointer.value = null;
   translateX.value = 0;
@@ -259,10 +297,9 @@ const handlePointerDown = (event: PointerEvent) => {
   activePointer.value = {
     pointerId: event.pointerId,
     startX: event.clientX,
-    lastX: event.clientX,
-    lastTimestamp: event.timeStamp,
     tiltDirectionFactor,
     pivotY: localY,
+    motionSamples: [{ x: event.clientX, timestamp: event.timeStamp }],
   };
 };
 
@@ -278,24 +315,28 @@ const handlePointerMove = (event: PointerEvent) => {
 
   rawTranslateX.value = event.clientX - pointer.startX;
   translateX.value = applyDamping(rawTranslateX.value);
-  pointer.lastX = event.clientX;
-  pointer.lastTimestamp = event.timeStamp;
+  appendMotionSample(pointer, event.clientX, event.timeStamp);
 };
 
 const resolveSwipeAction = (
   offsetX: number,
   velocityX: number,
 ): SwipeAction | null => {
+  const isFastSkipGesture =
+    velocityX <= -FLICK_VELOCITY_THRESHOLD && offsetX <= -FLICK_MIN_DISTANCE;
+  const isFastDetailGesture =
+    velocityX >= FLICK_VELOCITY_THRESHOLD && offsetX >= FLICK_MIN_DISTANCE;
+
   if (
     offsetX <= -swipeThreshold.value ||
-    velocityX <= -FLICK_VELOCITY_THRESHOLD
+    isFastSkipGesture
   ) {
     return "skip";
   }
 
   if (
     offsetX >= swipeThreshold.value ||
-    velocityX >= FLICK_VELOCITY_THRESHOLD
+    isFastDetailGesture
   ) {
     return "view-detail";
   }
@@ -313,9 +354,7 @@ const handlePointerUp = (event: PointerEvent) => {
     return;
   }
 
-  const timeDelta = Math.max(event.timeStamp - pointer.lastTimestamp, 1);
-  const velocityX =
-    ((event.clientX - pointer.lastX) / timeDelta) * MILLISECONDS_PER_SECOND;
+  const velocityX = resolveVelocityX(pointer, event.clientX, event.timeStamp);
   const action = resolveSwipeAction(rawTranslateX.value, velocityX);
   activePointer.value = null;
 

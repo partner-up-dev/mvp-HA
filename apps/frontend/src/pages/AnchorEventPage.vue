@@ -52,14 +52,18 @@
           <div class="card-stage">
             <div class="card-stage__inner">
               <AnchorEventDemandCard
-                v-if="nextDemandCard"
-                :key="`preview-${nextDemandCard.cardKey}`"
+                v-for="(previewCard, previewIndex) in stackPreviewCards"
+                :key="`preview-${previewCard.cardKey}`"
                 class="card-stack-preview"
-                :display-location-name="nextDemandCard.displayLocationName"
-                :time-label="nextDemandCard.timeLabel"
-                :preference-tags="nextDemandCard.preferenceTags"
-                :cover-image="nextDemandCard.coverImage"
-                :detail-pr-id="nextDemandCard.detailPrId"
+                :style="{
+                  '--card-stack-depth': String(previewIndex + 1),
+                  zIndex: 2 - previewIndex,
+                }"
+                :display-location-name="previewCard.displayLocationName"
+                :time-label="previewCard.timeLabel"
+                :preference-tags="previewCard.preferenceTags"
+                :cover-image="previewCard.coverImage"
+                :detail-pr-id="previewCard.detailPrId"
                 :preview="true"
                 aria-hidden="true"
               />
@@ -641,7 +645,7 @@ const remainingDemandCards = computed(() =>
 );
 
 const activeDemandCard = computed(() => remainingDemandCards.value[0] ?? null);
-const nextDemandCard = computed(() => remainingDemandCards.value[1] ?? null);
+const stackPreviewCards = computed(() => remainingDemandCards.value.slice(1, 3));
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -1028,7 +1032,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 .card-stage__front-shell {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   animation: card-front-promote 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1037,12 +1041,17 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 }
 
 .card-stack-preview {
+  --card-stack-depth: 1;
   position: absolute;
   inset: 0;
-  transform: translateY(14px) scale(0.972);
-  z-index: 1;
+  transform:
+    translateY(calc(14px + (var(--card-stack-depth) - 1) * 12px))
+    scale(calc(0.972 - (var(--card-stack-depth) - 1) * 0.028));
+  transform-origin: center top;
+  opacity: calc(1 - (var(--card-stack-depth) - 1) * 0.12);
   pointer-events: none;
-  animation: card-preview-reveal 220ms ease-out 90ms both;
+  animation: card-preview-reveal 220ms ease-out both;
+  animation-delay: calc(70ms + (var(--card-stack-depth) - 1) * 40ms);
 }
 
 @keyframes card-front-promote {
