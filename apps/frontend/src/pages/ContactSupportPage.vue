@@ -207,7 +207,7 @@ const goHome = () => {
 .contact-actions {
   width: min(100%, var(--dcs-layout-support-actions-max-width));
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-spacing-med);
 }
 
@@ -230,6 +230,7 @@ const goHome = () => {
 }
 
 .contact-card--beta-group {
+  grid-column: 1 / -1;
   align-content: space-between;
   border-color: var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-low);
@@ -244,12 +245,8 @@ const goHome = () => {
 }
 
 .contact-badge--beta-group {
-  @include mx.pu-font(label-medium);
-  width: fit-content;
-  border-radius: var(--sys-radius-pill);
-  padding: var(--sys-spacing-2xs) var(--sys-spacing-sm);
-  color: var(--sys-color-on-surface-variant);
-  background: var(--sys-color-surface-container-high);
+  @include mx.pu-pill-badge(secondary);
+  opacity: 0.8;
 }
 
 .contact-copy {
