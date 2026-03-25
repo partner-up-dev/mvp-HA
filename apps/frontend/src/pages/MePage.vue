@@ -167,10 +167,12 @@
 
       <WeChatNotificationSubscriptionsCard
         :title="t('mePage.reminder.title')"
-        :items="notificationSubscriptionItems"
-        :updating-label="t('prPage.wechatReminder.updating')"
-        @action="handleNotificationSubscriptionAction"
-      />
+      >
+        <APRNotificationSubscriptions
+          :updating-label="t('prPage.wechatReminder.updating')"
+          @error-change="handleNotificationPanelErrorChange"
+        />
+      </WeChatNotificationSubscriptionsCard>
 
       <section class="surface-card">
         <div class="section-header">
@@ -268,13 +270,13 @@ import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFo
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
+import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { useCurrentUserProfile } from "@/domains/user/queries/useCurrentUserProfile";
 import { useUpdateCurrentUserProfile } from "@/domains/user/queries/useUpdateCurrentUserProfile";
 import { useUpdateCurrentUserAvatar } from "@/domains/user/queries/useUpdateCurrentUserAvatar";
 import { useStartWeChatBind } from "@/domains/user/queries/useStartWeChatBind";
 import { useRegisterLocalAccount } from "@/domains/user/queries/useRegisterLocalAccount";
-import { useWeChatNotificationSubscriptionsPanel } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { copyToClipboard } from "@/lib/clipboard";
 
@@ -288,19 +290,13 @@ const updateProfileMutation = useUpdateCurrentUserProfile();
 const updateAvatarMutation = useUpdateCurrentUserAvatar();
 const startWeChatBindMutation = useStartWeChatBind();
 const registerLocalAccountMutation = useRegisterLocalAccount();
-const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
-  visibleKinds: [
-    "REMINDER_CONFIRMATION",
-    "BOOKING_RESULT",
-    "NEW_PARTNER",
-  ] as const,
-});
 
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const nicknameDraft = ref("");
 const pinVisible = ref(false);
 const copiedField = ref<"userId" | "userPin" | null>(null);
 const copyErrorMessage = ref<string | null>(null);
+const notificationPanelError = ref<Error | null>(null);
 
 const currentUser = computed(() => currentUserQuery.data.value ?? null);
 const canEditProfile = computed(
@@ -375,9 +371,6 @@ const bindHintText = computed(() => {
   return t("mePage.wechat.unboundHint");
 });
 
-const notificationSubscriptionItems = computed(
-  () => notificationSubscriptions.items.value,
-);
 const errorMessage = computed(() => {
   const candidates = [
     currentUserQuery.error.value,
@@ -385,7 +378,7 @@ const errorMessage = computed(() => {
     updateAvatarMutation.error.value,
     startWeChatBindMutation.error.value,
     registerLocalAccountMutation.error.value,
-    notificationSubscriptions.mutation.error.value,
+    notificationPanelError.value,
   ];
 
   const firstError = candidates.find((candidate) => candidate instanceof Error);
@@ -440,10 +433,8 @@ const handleRegisterLocalAccount = async () => {
   userSessionStore.applyAuthSession(payload);
 };
 
-const handleNotificationSubscriptionAction = async (
-  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
-) => {
-  await notificationSubscriptions.handleAction(kind);
+const handleNotificationPanelErrorChange = (error: Error | null) => {
+  notificationPanelError.value = error;
 };
 
 const handleCopyCredential = async (

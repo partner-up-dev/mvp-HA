@@ -96,6 +96,13 @@ const resolvePhoneSchema = z.object({
 
 type OAuthStateCookiePayload = z.infer<typeof oauthStateCookiePayloadSchema>;
 type OAuthStateMode = OAuthStateCookiePayload["mode"];
+type NotificationSubscriptionState = {
+  enabled: boolean;
+  optInAt: string | null;
+  configured: boolean;
+  requiresOpenSubscribe: boolean;
+  templateId: string | null;
+};
 
 const nowMs = (): number => Date.now();
 
@@ -112,12 +119,55 @@ const resolveOAuthSessionSecret = (): string | null => {
   return null;
 };
 
+const buildNotificationChannelState = async (): Promise<{
+  reminder: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
+  bookingResult: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
+  newPartner: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
+}> => {
+  const [reminderTemplateId, newPartnerTemplateId] = await Promise.all([
+    subscriptionMessageService.getConfirmationReminderTemplateId(),
+    subscriptionMessageService.getNewPartnerTemplateId(),
+  ]);
+
+  const [reminderSubmsgConfigured, newPartnerSubmsgConfigured] =
+    await Promise.all([
+      subscriptionMessageService.isConfirmationReminderConfigured(),
+      subscriptionMessageService.isNewPartnerConfigured(),
+    ]);
+
+  return {
+    reminder: {
+      configured:
+        reminderSubmsgConfigured || templateMessageService.isReminderConfigured(),
+      requiresOpenSubscribe:
+        reminderSubmsgConfigured && Boolean(reminderTemplateId),
+      templateId: reminderTemplateId,
+    },
+    bookingResult: {
+      configured: true,
+      requiresOpenSubscribe: false,
+      templateId: null,
+    },
+    newPartner: {
+      configured: newPartnerSubmsgConfigured,
+      requiresOpenSubscribe:
+        newPartnerSubmsgConfigured && Boolean(newPartnerTemplateId),
+      templateId: newPartnerTemplateId,
+    },
+  };
+};
+
 const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
-  const reminderConfigured =
-    (await subscriptionMessageService.isConfirmationReminderConfigured()) ||
-    templateMessageService.isReminderConfigured();
-  const newPartnerConfigured =
-    await subscriptionMessageService.isNewPartnerConfigured();
+  const channels = await buildNotificationChannelState();
 
   return {
     configured,
@@ -127,17 +177,23 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
       REMINDER_CONFIRMATION: {
         enabled: false,
         optInAt: null,
-        configured: reminderConfigured,
+        configured: channels.reminder.configured,
+        requiresOpenSubscribe: channels.reminder.requiresOpenSubscribe,
+        templateId: channels.reminder.templateId,
       },
       BOOKING_RESULT: {
         enabled: false,
         optInAt: null,
-        configured: true,
+        configured: channels.bookingResult.configured,
+        requiresOpenSubscribe: channels.bookingResult.requiresOpenSubscribe,
+        templateId: channels.bookingResult.templateId,
       },
       NEW_PARTNER: {
         enabled: false,
         optInAt: null,
-        configured: newPartnerConfigured,
+        configured: channels.newPartner.configured,
+        requiresOpenSubscribe: channels.newPartner.requiresOpenSubscribe,
+        templateId: channels.newPartner.templateId,
       },
     },
   };
@@ -149,17 +205,10 @@ const buildAuthenticatedSubscriptionsResponse = async (
   configured: boolean;
   authenticated: boolean;
   wechatBound: boolean;
-  subscriptions: Record<
-    WeChatNotificationKind,
-    { enabled: boolean; optInAt: string | null; configured: boolean }
-  >;
+  subscriptions: Record<WeChatNotificationKind, NotificationSubscriptionState>;
 }> => {
   const notificationOpt = await userNotificationOptRepo.findByUserId(userId);
-  const reminderConfigured =
-    (await subscriptionMessageService.isConfirmationReminderConfigured()) ||
-    templateMessageService.isReminderConfigured();
-  const newPartnerConfigured =
-    await subscriptionMessageService.isNewPartnerConfigured();
+  const channels = await buildNotificationChannelState();
 
   const reminder = userNotificationOptRepo.getSubscriptionSnapshot(
     notificationOpt,
@@ -182,19 +231,25 @@ const buildAuthenticatedSubscriptionsResponse = async (
       REMINDER_CONFIRMATION: {
         enabled: reminder.enabled,
         optInAt: reminder.optInAt ? reminder.optInAt.toISOString() : null,
-        configured: reminderConfigured,
+        configured: channels.reminder.configured,
+        requiresOpenSubscribe: channels.reminder.requiresOpenSubscribe,
+        templateId: channels.reminder.templateId,
       },
       BOOKING_RESULT: {
         enabled: bookingResult.enabled,
         optInAt: bookingResult.optInAt
           ? bookingResult.optInAt.toISOString()
           : null,
-        configured: true,
+        configured: channels.bookingResult.configured,
+        requiresOpenSubscribe: channels.bookingResult.requiresOpenSubscribe,
+        templateId: channels.bookingResult.templateId,
       },
       NEW_PARTNER: {
         enabled: newPartner.enabled,
         optInAt: newPartner.optInAt ? newPartner.optInAt.toISOString() : null,
-        configured: newPartnerConfigured,
+        configured: channels.newPartner.configured,
+        requiresOpenSubscribe: channels.newPartner.requiresOpenSubscribe,
+        templateId: channels.newPartner.templateId,
       },
     },
   };

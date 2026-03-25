@@ -80,7 +80,18 @@ export default defineConfig(({ mode }) => {
     "unknown";
 
   return {
-    plugins: [jsoncPlugin(), deferCssPlugin(), unocss(), vue()],
+    plugins: [
+      jsoncPlugin(),
+      deferCssPlugin(),
+      unocss(),
+      vue({
+        template: {
+          compilerOptions: {
+            isCustomElement: (tag) => tag.startsWith("wx-open-"),
+          },
+        },
+      }),
+    ],
     define: {
       "import.meta.env.VITE_FRONTEND_COMMIT_HASH": JSON.stringify(
         frontendCommitHash,

@@ -327,6 +327,7 @@
     },
     "notificationSubscriptions": {
       "title": "通知订阅",
+      "openSubscribeUnavailableHint": "当前微信订阅组件不可用，请升级微信后重试。",
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
