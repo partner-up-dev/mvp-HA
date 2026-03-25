@@ -12,6 +12,12 @@ import { assertNoUserTimeWindowConflict } from "../../pr-core/services/participa
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { normalizeUserLocationPool } from "../../../entities/anchor-event";
 import { resolveAnchorPartnerBoundsFromEvent } from "../services/anchor-partner-bounds";
+import {
+  DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
+  DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
+  DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
+  validateAnchorParticipationPolicyOffsets,
+} from "../../pr-core/services/anchor-participation-policy.service";
 import type { AnchorEvent, AnchorEventId } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
@@ -149,6 +155,18 @@ export const createUserAnchorPR = async ({
     },
   });
 
+  const participationPolicyOffsets = {
+    confirmationStartOffsetMinutes:
+      event.defaultConfirmationStartOffsetMinutes ??
+      DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
+    confirmationEndOffsetMinutes:
+      event.defaultConfirmationEndOffsetMinutes ??
+      DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
+    joinLockOffsetMinutes:
+      event.defaultJoinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
+  };
+  validateAnchorParticipationPolicyOffsets(participationPolicyOffsets);
+
   const createdRoot = await db.transaction(async (tx) => {
     await tx.execute(
       sql`select pg_advisory_xact_lock(${ANCHOR_USER_CREATE_LOCK_NAMESPACE}, ${batch.id})`,
@@ -200,9 +218,11 @@ export const createUserAnchorPR = async ({
       batchId: batch.id,
       locationSource: "USER",
       visibilityStatus: "VISIBLE",
-      confirmationStartOffsetMinutes: 120,
-      confirmationEndOffsetMinutes: 30,
-      joinLockOffsetMinutes: 30,
+      confirmationStartOffsetMinutes:
+        participationPolicyOffsets.confirmationStartOffsetMinutes,
+      confirmationEndOffsetMinutes:
+        participationPolicyOffsets.confirmationEndOffsetMinutes,
+      joinLockOffsetMinutes: participationPolicyOffsets.joinLockOffsetMinutes,
       bookingTriggeredAt: null,
       autoHideAt: null,
     });
