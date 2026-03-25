@@ -3,7 +3,6 @@
     <PageHeader
       :title="t('eventPlaza.title')"
       :subtitle="t('eventPlaza.subtitle')"
-      @back="goHome"
     />
 
     <div v-if="isLoading" class="loading-state">
@@ -26,17 +25,13 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
 
 const { t } = useI18n();
-const router = useRouter();
 const { data: events, isLoading, isError } = useAnchorEvents();
-
-const goHome = () => router.push("/");
 </script>
 
 <style lang="scss" scoped>

@@ -6,7 +6,7 @@
     <template v-else-if="prDetail">
       <PageHeader
         :title="prDetail.title ?? t('prPage.metaFallbackTitle')"
-        @back="goHome"
+        :back-fallback-to="backFallbackTo"
       >
         <template #top-actions>
           <div v-if="isCreator" class="header-quick-actions">
@@ -484,6 +484,13 @@ const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
 const { data, isLoading, error, refetch } = useAnchorPR(id);
 const reimbursementQuery = useAnchorReimbursementStatus(id);
 const prDetail = computed(() => data.value);
+const backFallbackTo = computed(() => {
+  const anchorEventId = prDetail.value?.anchor.anchorEventId ?? null;
+  if (anchorEventId !== null && Number.isFinite(anchorEventId) && anchorEventId > 0) {
+    return `/events/${anchorEventId}`;
+  }
+  return "/";
+});
 const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const joinMutation = useJoinAnchorPR();
 const verifyBookingContactMutation = useVerifyAnchorPRBookingContact();
@@ -1237,9 +1244,6 @@ const reimbursementReasonText = (
   return t("prBookingSupport.reimbursement.reasonAlreadyRequested");
 };
 
-const goHome = () => {
-  router.push("/");
-};
 </script>
 
 <style lang="scss" scoped>

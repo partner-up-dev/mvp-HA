@@ -4,7 +4,6 @@
       <PageHeader
         :title="t('mePage.title')"
         :subtitle="t('mePage.description')"
-        @back="goHome"
       />
     </template>
 
@@ -334,7 +333,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
@@ -356,7 +355,6 @@ import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
 
 const PIN_PATTERN = /^\d{4}$/;
 
-const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
@@ -585,9 +583,6 @@ const handleCopyCredential = async (
   }
 };
 
-const goHome = () => {
-  router.push("/");
-};
 </script>
 
 <style scoped lang="scss">
