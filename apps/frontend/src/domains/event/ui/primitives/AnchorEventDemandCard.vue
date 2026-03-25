@@ -4,6 +4,7 @@
     :class="{
       'demand-card--dragging': isDragging,
       'demand-card--pending': isPendingState,
+      'demand-card--preview': preview,
     }"
     :style="cardStyle"
     @pointerdown="handlePointerDown"
@@ -12,7 +13,7 @@
     @pointercancel="handlePointerCancel"
     @transitionend="handleTransitionEnd"
   >
-    <div class="demand-card__stamps" aria-hidden="true">
+    <div v-if="!preview" class="demand-card__stamps" aria-hidden="true">
       <span
         class="demand-card__stamp demand-card__stamp--like"
         :style="{ opacity: likeStampOpacity }"
@@ -62,7 +63,7 @@
         </p>
       </section>
 
-      <div class="demand-card__actions">
+      <div v-if="!preview" class="demand-card__actions">
         <button
           type="button"
           class="demand-card__action demand-card__action--skip"
@@ -122,11 +123,13 @@ const props = withDefaults(
     coverImage?: string | null;
     detailPrId?: number | null;
     pending?: boolean;
+    preview?: boolean;
   }>(),
   {
     coverImage: null,
     detailPrId: null,
     pending: false,
+    preview: false,
   },
 );
 
@@ -148,10 +151,11 @@ const hasDispatchedExitAction = ref(false);
 
 const isDragging = computed(() => swipePhase.value === "dragging");
 const isPendingState = computed(
-  () => props.pending || swipePhase.value === "exiting",
+  () => (!props.preview && props.pending) || swipePhase.value === "exiting",
 );
 const isInteractionLocked = computed(
   () =>
+    props.preview ||
     props.pending ||
     swipePhase.value === "exiting" ||
     swipePhase.value === "rebounding",
@@ -335,6 +339,10 @@ const handlePointerCancel = (event: PointerEvent) => {
 };
 
 const handleTransitionEnd = (event: TransitionEvent) => {
+  if (props.preview) {
+    return;
+  }
+
   if (
     event.propertyName !== "transform" ||
     event.target !== event.currentTarget
@@ -413,6 +421,18 @@ watch(() => props.pending, (isPending) => {
 
 .demand-card--pending {
   opacity: 0.9;
+}
+
+.demand-card--preview {
+  box-shadow: var(--sys-shadow-2);
+}
+
+.demand-card--preview .demand-card__cover {
+  filter: saturate(0.85) brightness(0.9);
+}
+
+.demand-card--preview .demand-card__content {
+  gap: var(--sys-spacing-sm);
 }
 
 .demand-card__stamps {
