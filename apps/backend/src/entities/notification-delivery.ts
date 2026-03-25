@@ -13,8 +13,21 @@ import { jobs } from "./job";
 import { partnerRequests, type PRId } from "./partner-request";
 import { users, type UserId } from "./user";
 
-export const reminderTypeSchema = z.enum(["T_MINUS_24H", "T_MINUS_2H"]);
+export const confirmationReminderTypes = [
+  "CONFIRMATION_WINDOW_OPEN",
+  "CONFIRMATION_WINDOW_LAST_CALL",
+] as const;
+export const legacyReminderTypes = ["T_MINUS_24H", "T_MINUS_2H"] as const;
+const reminderTypeValues = [
+  ...confirmationReminderTypes,
+  ...legacyReminderTypes,
+] as const;
+
+export const reminderTypeSchema = z.enum(reminderTypeValues);
 export type ReminderType = z.infer<typeof reminderTypeSchema>;
+export type ConfirmationReminderType =
+  (typeof confirmationReminderTypes)[number];
+export type LegacyReminderType = (typeof legacyReminderTypes)[number];
 
 export const notificationDeliveryResultSchema = z.enum([
   "SUCCESS",

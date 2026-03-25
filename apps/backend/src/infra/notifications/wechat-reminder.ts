@@ -1,15 +1,21 @@
 import { z } from "zod";
 import type { PRId, PartnerRequest } from "../../entities/partner-request";
 import {
+  confirmationReminderTypes,
+  legacyReminderTypes,
   reminderTypeSchema,
+  type ConfirmationReminderType,
+  type LegacyReminderType,
   type ReminderType,
 } from "../../entities/notification-delivery";
 import { userIdSchema, type UserId } from "../../entities/user";
+import { AnchorPRRepository } from "../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { UserRepository } from "../../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../../repositories/UserNotificationOptRepository";
 import { NotificationDeliveryRepository } from "../../repositories/NotificationDeliveryRepository";
+import { resolveAnchorParticipationPolicy } from "../../domains/pr-core/services/anchor-participation-policy.service";
 import { getTimeWindowStart } from "../../domains/pr-core/services/time-window.service";
 import { jobRunner, type JobHandlerContext } from "../jobs";
 import {
@@ -24,7 +30,9 @@ import { env } from "../../lib/env";
 
 const WECHAT_REMINDER_JOB_TYPE = "wechat.reminder.confirmation";
 const REMINDER_DEDUPE_PREFIX = "wechat-reminder";
-const REMINDER_TYPES: readonly ReminderType[] = ["T_MINUS_24H", "T_MINUS_2H"];
+const REMINDER_TYPES = confirmationReminderTypes;
+const LEGACY_REMINDER_TYPES = legacyReminderTypes;
+const CONFIRMATION_LAST_CALL_OFFSET_MS = 30 * 60 * 1000;
 
 const reminderJobPayloadSchema = z.object({
   prId: z.coerce.number().int().positive(),
@@ -34,8 +42,12 @@ const reminderJobPayloadSchema = z.object({
 });
 
 type ReminderJobPayload = z.infer<typeof reminderJobPayloadSchema>;
+type NormalizedReminderJobPayload = Omit<ReminderJobPayload, "reminderType"> & {
+  reminderType: ConfirmationReminderType;
+};
 
 const prRepo = new PartnerRequestRepository();
+const anchorRepo = new AnchorPRRepository();
 const partnerRepo = new PartnerRepository();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
@@ -45,9 +57,17 @@ const templateService = new WeChatTemplateMessageService();
 
 let handlerRegistered = false;
 
-const reminderOffsetMsByType: Record<ReminderType, number> = {
-  T_MINUS_24H: 24 * 60 * 60 * 1000,
-  T_MINUS_2H: 2 * 60 * 60 * 1000,
+const normalizeReminderType = (
+  reminderType: ReminderType,
+): ConfirmationReminderType => {
+  if (reminderType === "T_MINUS_24H") return "CONFIRMATION_WINDOW_OPEN";
+  if (reminderType === "T_MINUS_2H") return "CONFIRMATION_WINDOW_LAST_CALL";
+  return reminderType;
+};
+
+type ReminderScheduleEntry = {
+  reminderType: ConfirmationReminderType;
+  runAt: Date | null;
 };
 
 const buildReminderDedupeKey = (
@@ -59,14 +79,36 @@ const buildReminderDedupeKey = (
 const buildReminderDedupePrefixForUser = (userId: UserId): string =>
   `${REMINDER_DEDUPE_PREFIX}:${userId}:`;
 
-const getReminderRunAt = (
+const resolveReminderScheduleTimes = async (
   request: PartnerRequest,
-  reminderType: ReminderType,
-): Date | null => {
-  const start = getTimeWindowStart(request.time);
-  if (!start) return null;
-  return new Date(start.getTime() - reminderOffsetMsByType[reminderType]);
+): Promise<ReminderScheduleEntry[]> => {
+  if (request.prKind !== "ANCHOR") return [];
+  const anchor = await anchorRepo.findByPrId(request.id);
+  if (!anchor) return [];
+
+  const policy = resolveAnchorParticipationPolicy(anchor, request.time);
+  const schedule: ReminderScheduleEntry[] = [
+    {
+      reminderType: "CONFIRMATION_WINDOW_OPEN",
+      runAt: policy.confirmationStartAt,
+    },
+    {
+      reminderType: "CONFIRMATION_WINDOW_LAST_CALL",
+      runAt: policy.confirmationEndAt
+        ? new Date(
+            policy.confirmationEndAt.getTime() - CONFIRMATION_LAST_CALL_OFFSET_MS,
+          )
+        : null,
+    },
+  ];
+
+  return schedule;
 };
+
+const REMINDER_TYPES_FOR_DELETION: readonly ReminderType[] = [
+  ...REMINDER_TYPES,
+  ...LEGACY_REMINDER_TYPES,
+];
 
 const resolvePrUrl = (request: PartnerRequest): string | null => {
   const frontendUrl = env.FRONTEND_URL?.trim();
@@ -112,7 +154,7 @@ const formatReminderDateField = (startAt: Date): string => {
 
 const recordDelivery = async (input: {
   jobId: number;
-  payload: ReminderJobPayload;
+  payload: NormalizedReminderJobPayload;
   result: "SUCCESS" | "FAILED" | "SKIPPED";
   errorCode?: string | null;
   errorMessage?: string | null;
@@ -159,8 +201,12 @@ const resolveReminderOrderNo = (
   userId: UserId,
 ): string => `PR-${request.id}-${userId.slice(-6)}`;
 
-const resolveReminderRemark = (reminderType: ReminderType): string =>
-  reminderType === "T_MINUS_24H" ? "活动前24小时提醒" : "活动前2小时提醒";
+const resolveReminderRemark = (
+  reminderType: ConfirmationReminderType,
+): string =>
+  reminderType === "CONFIRMATION_WINDOW_OPEN"
+    ? "确认席位开始提醒"
+    : "确认截止前30分钟提醒";
 
 async function handleReminderJob(
   payloadRaw: Record<string, unknown>,
@@ -170,7 +216,10 @@ async function handleReminderJob(
   if (!parseResult.success) {
     throw new Error("Invalid wechat reminder job payload");
   }
-  const payload = parseResult.data;
+  const payload: NormalizedReminderJobPayload = {
+    ...parseResult.data,
+    reminderType: normalizeReminderType(parseResult.data.reminderType),
+  };
 
   const user = await userRepo.findById(payload.userId);
   if (!user || user.status !== "ACTIVE") {
@@ -316,8 +365,8 @@ export async function scheduleWeChatReminderJobsForParticipant(
     return;
   }
 
-  for (const reminderType of REMINDER_TYPES) {
-    const runAt = getReminderRunAt(request, reminderType);
+  const schedule = await resolveReminderScheduleTimes(request);
+  for (const { reminderType, runAt } of schedule) {
     if (!runAt || runAt.getTime() <= Date.now()) {
       continue;
     }
@@ -341,7 +390,7 @@ export async function cancelWeChatReminderJobsForParticipant(
   userId: UserId,
 ): Promise<number> {
   let deleted = 0;
-  for (const reminderType of REMINDER_TYPES) {
+  for (const reminderType of REMINDER_TYPES_FOR_DELETION) {
     deleted += await jobRunner.deletePendingJobsByDedupe({
       jobType: WECHAT_REMINDER_JOB_TYPE,
       dedupeKey: buildReminderDedupeKey(prId, userId, reminderType),
