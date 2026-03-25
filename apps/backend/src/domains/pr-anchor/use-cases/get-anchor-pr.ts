@@ -1,12 +1,10 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId, PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
 import { toPublicPR } from "../../pr-core/services/pr-view.service";
-import { refreshTemporalStatus } from "../../pr-core/temporal-refresh";
 import { recommendAlternativeBatches } from "../../pr-core/use-cases/recommend-alternative-batches";
 import type { AlternativeBatchRecommendation } from "../../pr-core/use-cases/recommend-alternative-batches";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
@@ -20,8 +18,11 @@ import {
 } from "../../pr-core/services/partner-section-view.service";
 import { resolveAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 import { resolveBookingContactState } from "../../pr-booking-support";
+import {
+  readPartnerRequestById,
+  readVisibleAnchorPRRecordsByBatchId,
+} from "../../pr-core/services/pr-read.service";
 
-const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
 const partnerRepo = new PartnerRepository();
@@ -107,7 +108,9 @@ export async function getAnchorPRDetail(
     openId?: string | null;
   },
 ): Promise<AnchorPRDetail> {
-  const request = await prRepo.findById(id);
+  const request = await readPartnerRequestById(id, {
+    consistency: "strong",
+  });
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
@@ -115,13 +118,12 @@ export async function getAnchorPRDetail(
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
 
-  const refreshed = await refreshTemporalStatus(request);
   const viewerOpenId = viewerIdentity?.openId?.trim() ?? null;
   const viewerUserId =
     viewerOpenId && viewerOpenId.length > 0
       ? (await resolveUserByOpenId(viewerOpenId)).id
       : viewerIdentity?.userId ?? null;
-  const publicPR = await toPublicPR(refreshed, viewerUserId);
+  const publicPR = await toPublicPR(request, viewerUserId);
   const anchor = await anchorPRRepo.findByPrId(id);
   if (!anchor) {
     throw new HTTPException(500, {
@@ -131,7 +133,10 @@ export async function getAnchorPRDetail(
 
   const sameBatchAlternatives: SameBatchAlternative[] = [];
   if (publicPR.status === "FULL") {
-    const sameBatchRecords = await anchorPRRepo.findVisibleByBatchId(anchor.batchId);
+    const sameBatchRecords =
+      await readVisibleAnchorPRRecordsByBatchId(
+        anchor.batchId,
+      );
     for (const record of sameBatchRecords) {
       if (record.root.id === publicPR.id) continue;
       const location = record.root.location?.trim();
@@ -157,7 +162,7 @@ export async function getAnchorPRDetail(
     supportResources: supportRows,
     effectiveBookingDeadlineAt: bookingDeadlineAt,
   });
-  const policy = resolveAnchorParticipationPolicy(anchor, refreshed.time);
+  const policy = resolveAnchorParticipationPolicy(anchor, request.time);
   const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
     id,
   );

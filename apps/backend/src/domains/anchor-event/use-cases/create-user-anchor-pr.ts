@@ -2,7 +2,6 @@ import { and, count, eq, notInArray, sql } from "drizzle-orm";
 import { db } from "../../../lib/db";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
 import { partnerRequests } from "../../../entities/partner-request";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
@@ -15,10 +14,13 @@ import type { AnchorEvent, AnchorEventId } from "../../../entities/anchor-event"
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
 import type { UserLocationEntry } from "../../../entities/anchor-event";
+import {
+  countActiveVisibleAnchorPRsByBatchAndLocationSource,
+  readVisibleAnchorPRRecordsByBatchIdAndLocation,
+} from "../../pr-core/services/pr-read.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
-const anchorPRRepo = new AnchorPRRepository();
 
 const ANCHOR_USER_CREATE_LOCK_NAMESPACE = 31_017;
 
@@ -108,11 +110,14 @@ export const checkUserAnchorPRAvailability = async ({
     locationId,
   });
 
-  const activeCount = await anchorPRRepo.countActiveVisibleByBatchAndLocationSource(
-    context.batch.id,
-    locationId,
-    "USER",
-  );
+  const activeCount =
+    await countActiveVisibleAnchorPRsByBatchAndLocationSource(
+      {
+        batchId: context.batch.id,
+        location: locationId,
+        locationSource: "USER",
+      },
+    );
   if (activeCount >= context.userLocation.perBatchCap) {
     throw new LocationCapReachedError(locationId);
   }
@@ -140,6 +145,10 @@ export const createUserAnchorPR = async ({
     userId: user.id,
     targetTimeWindow: batch.timeWindow,
   });
+  await readVisibleAnchorPRRecordsByBatchIdAndLocation(
+    batch.id,
+    locationId,
+  );
 
   const bounds = resolveAnchorPartnerBoundsFromEvent({
     defaults: {

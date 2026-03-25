@@ -1,15 +1,12 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import {
-  AnchorPRRepository,
-  type AnchorPRRecord,
-} from "../../../repositories/AnchorPRRepository";
+import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
 import { countActivePartnersForPR } from "../../pr-core/services/slot-management.service";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
+import { readAnchorPRRecordsByBatchId } from "../../pr-core/services/pr-read.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
-const anchorPRRepo = new AnchorPRRepository();
 
 type AdminAnchorPRSummary = {
   prId: number;
@@ -101,7 +98,9 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
             return leftStart.localeCompare(rightStart);
           })
           .map(async (batch) => {
-            const prs = await anchorPRRepo.findByBatchId(batch.id);
+            const prs = await readAnchorPRRecordsByBatchId(batch.id, {
+              consistency: "strong",
+            });
             const prSummaries = await Promise.all(
               prs.map((record) => toAdminAnchorPRSummary(record)),
             );
