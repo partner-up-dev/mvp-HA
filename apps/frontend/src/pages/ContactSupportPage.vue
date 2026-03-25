@@ -45,7 +45,47 @@
           {{ t("contactSupportPage.supportAction") }}
         </a>
       </div>
+
+      <div class="contact-card contact-card--beta-group">
+        <span class="contact-badge contact-badge--beta-group">
+          {{ t("contactSupportPage.betaGroupBadge") }}
+        </span>
+        <div class="contact-copy">
+          <h2>{{ t("contactSupportPage.betaGroupTitle") }}</h2>
+          <p>{{ t("contactSupportPage.betaGroupDescription") }}</p>
+        </div>
+
+        <button
+          class="contact-action contact-action--beta-group"
+          type="button"
+          @click="showBetaGroupModal = true"
+        >
+          {{ t("contactSupportPage.betaGroupAction") }}
+        </button>
+      </div>
     </section>
+
+    <Modal
+      :open="showBetaGroupModal"
+      :title="t('contactSupportPage.betaGroupModalTitle')"
+      max-width="420px"
+      @close="showBetaGroupModal = false"
+    >
+      <div class="beta-group-modal-body">
+        <p class="beta-group-modal-description">
+          {{ t("contactSupportPage.betaGroupModalDescription") }}
+        </p>
+        <img
+          v-if="betaGroupQrCodeUrl"
+          :src="betaGroupQrCodeUrl"
+          :alt="t('contactSupportPage.betaGroupQrAlt')"
+          class="beta-group-qr-image"
+        />
+        <p v-else class="beta-group-qr-empty">
+          {{ t("contactSupportPage.betaGroupQrMissing") }}
+        </p>
+      </div>
+    </Modal>
 
     <RouterLink class="author-link" :to="{ name: 'contact-author' }">
       {{ t("contactSupportPage.authorEntry") }}
@@ -54,11 +94,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
+import Modal from "@/shared/ui/overlay/Modal.vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
@@ -70,6 +111,7 @@ const DEFAULT_STAFF_LINK = "https://work.weixin.qq.com/ca/cawcdeaeb65ab3d47f";
 
 const router = useRouter();
 const { t } = useI18n();
+const showBetaGroupModal = ref(false);
 
 const supportLinkWechatInQuery = usePublicConfig(
   PUBLIC_CONFIG_KEYS.wecomSupportLinkWechatIn,
@@ -78,6 +120,7 @@ const supportLinkWechatOutQuery = usePublicConfig(
   PUBLIC_CONFIG_KEYS.wecomSupportLinkWechatOut,
 );
 const staffLinkQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.wecomStaffLink);
+const betaGroupQrCodeQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.wechatBetaGroupQrCode);
 
 const normalizeHttpUrl = (value: string | null | undefined): string | null => {
   if (!value) return null;
@@ -143,6 +186,14 @@ const staffLink = computed(() => {
   );
 });
 
+const betaGroupQrCodeUrl = computed(() => {
+  if (betaGroupQrCodeQuery.isLoading.value || betaGroupQrCodeQuery.error.value) {
+    return null;
+  }
+
+  return normalizeHttpUrl(betaGroupQrCodeQuery.data.value?.value);
+});
+
 const goHome = () => {
   router.push("/");
 };
@@ -156,7 +207,7 @@ const goHome = () => {
 .contact-actions {
   width: min(100%, var(--dcs-layout-support-actions-max-width));
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--sys-spacing-med);
 }
 
@@ -178,12 +229,27 @@ const goHome = () => {
   border-color: var(--sys-color-secondary);
 }
 
+.contact-card--beta-group {
+  align-content: space-between;
+  border-color: var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container-low);
+}
+
 .contact-badge--staff {
   @include mx.pu-pill-badge(primary);
 }
 
 .contact-badge--support {
   @include mx.pu-pill-badge(secondary);
+}
+
+.contact-badge--beta-group {
+  @include mx.pu-font(label-medium);
+  width: fit-content;
+  border-radius: var(--sys-radius-pill);
+  padding: var(--sys-spacing-2xs) var(--sys-spacing-sm);
+  color: var(--sys-color-on-surface-variant);
+  background: var(--sys-color-surface-container-high);
 }
 
 .contact-copy {
@@ -220,6 +286,35 @@ const goHome = () => {
 
 .contact-action--support {
   @include mx.pu-pill-action(solid-secondary);
+}
+
+.contact-action--beta-group {
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
+  border: 1px solid var(--sys-color-outline-variant);
+}
+
+.beta-group-modal-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--sys-spacing-sm);
+}
+
+.beta-group-modal-description {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.beta-group-qr-image {
+  width: min(100%, 260px);
+  border-radius: var(--sys-radius-md);
+}
+
+.beta-group-qr-empty {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
 }
 
 .author-link {

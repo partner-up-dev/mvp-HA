@@ -215,6 +215,14 @@ export interface MessageSchema {
     supportTitle: string;
     supportDescription: string;
     supportAction: string;
+    betaGroupBadge: string;
+    betaGroupTitle: string;
+    betaGroupDescription: string;
+    betaGroupAction: string;
+    betaGroupModalTitle: string;
+    betaGroupModalDescription: string;
+    betaGroupQrAlt: string;
+    betaGroupQrMissing: string;
     authorEntry: string;
     useCases: {
       employee: string;
