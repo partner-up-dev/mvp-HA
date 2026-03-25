@@ -68,7 +68,7 @@
 - 兼容接口仍保留：
   - `GET /api/wechat/reminders/subscription`
   - `POST /api/wechat/reminders/subscription`（映射到 `REMINDER_CONFIRMATION`）
-- `REMINDER_CONFIRMATION` 开启后，系统会为已加入的 Anchor PR 槽位调度“确认席位窗口开始”与“确认截止前 30 分钟”提醒任务（基于 Anchor PR 的确认窗口）。
+- `REMINDER_CONFIRMATION` 有剩余次数时，系统会为已加入的 Anchor PR 槽位调度“确认席位窗口开始”与“确认截止前 30 分钟”提醒任务（基于 Anchor PR 的确认窗口）。
 - `REMINDER_CONFIRMATION` 订阅通知模板 ID 通过后端配置表 key `wechat.submsg_confirmation_reminder_template_id` 读取。
 - `BOOKING_RESULT` 订阅通知模板 ID 通过后端配置表 key `wechat.submsg_booking_result_template_id` 读取。
 - Anchor PR 退出、自动释放或 `REMINDER_CONFIRMATION` 次数归零时，系统会删除对应未执行提醒任务（`PENDING/RETRY`）。
