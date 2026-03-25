@@ -26,11 +26,11 @@ type AnchorPRActionInput = {
   id: PRId;
 };
 type AnchorPRJoinInput = AnchorPRActionInput & {
-  wechatPhoneCredential?: string | null;
+  bookingContactPhone?: string | null;
 };
-type AnchorPRVerifyBookingContactInput = {
+type AnchorPRUpdateBookingContactPhoneInput = {
   id: PRId;
-  wechatPhoneCredential: string;
+  phone: string;
 };
 
 type AnchorPRCheckInInput = {
@@ -51,9 +51,8 @@ type AnchorPRUpdateStatusInput = {
 };
 
 type TimeWindow = [string | null, string | null];
-const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
-const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
-const WECHAT_PHONE_VERIFY_FAILED_CODE = "WECHAT_PHONE_VERIFY_FAILED";
+const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
+const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
 export type AnchorPRDetailResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["$get"]
@@ -75,8 +74,8 @@ export type AnchorReimbursementStatusResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["reimbursement"]["status"]["$get"]
 >;
 
-export type VerifyAnchorPRBookingContactResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["booking-contact"]["verify"]["$post"]
+export type UpdateAnchorPRBookingContactPhoneResponse = InferResponseType<
+  (typeof client.api.apr)[":id"]["booking-contact"]["phone"]["$put"]
 >;
 
 const resolveErrorMessage = (
@@ -101,17 +100,13 @@ const resolveErrorMessage = (
   return resolveApiErrorMessage(payload, fallback);
 };
 
-const isBookingContactOwnerRequiredError = (
+const isBookingContactPhoneRequiredError = (
   payload: ApiErrorPayload | null,
-): boolean => payload?.code === BOOKING_CONTACT_OWNER_REQUIRED_CODE;
+): boolean => payload?.code === BOOKING_CONTACT_PHONE_REQUIRED_CODE;
 
-const isBookingContactRequiredError = (
+const isBookingContactPhoneInvalidError = (
   payload: ApiErrorPayload | null,
-): boolean => payload?.code === BOOKING_CONTACT_REQUIRED_CODE;
-
-const isWeChatPhoneVerifyFailedError = (
-  payload: ApiErrorPayload | null,
-): boolean => payload?.code === WECHAT_PHONE_VERIFY_FAILED_CODE;
+): boolean => payload?.code === BOOKING_CONTACT_PHONE_INVALID_CODE;
 
 export const useAnchorPR = (id: Ref<PRId | null>) => {
   const queryKey = computed(() => queryKeys.anchorPR.detail(id.value));
@@ -183,13 +178,13 @@ export const useJoinAnchorPR = () => {
   return useMutation({
     mutationFn: async ({
       id,
-      wechatPhoneCredential = null,
+      bookingContactPhone = null,
     }: AnchorPRJoinInput) => {
       const requestJoin = async () =>
         client.api.apr[":id"].join.$post(
           {
             param: { id: id.toString() },
-            json: wechatPhoneCredential ? { wechatPhoneCredential } : {},
+            json: bookingContactPhone ? { bookingContactPhone } : {},
           },
           {
             init: {
@@ -208,11 +203,9 @@ export const useJoinAnchorPR = () => {
             prId: id,
           });
         }
-        const fallbackMessage = isBookingContactOwnerRequiredError(payload)
-          ? i18n.global.t("prPage.bookingContact.ownerVerifyBeforeJoin")
-          : isBookingContactRequiredError(payload)
-            ? i18n.global.t("prPage.bookingContact.ownerBlockedHint")
-            : isWeChatPhoneVerifyFailedError(payload)
+        const fallbackMessage = isBookingContactPhoneRequiredError(payload)
+            ? i18n.global.t("prPage.bookingContact.ownerVerifyBeforeJoin")
+            : isBookingContactPhoneInvalidError(payload)
               ? i18n.global.t("prPage.bookingContact.verifyFailed")
               : i18n.global.t("errors.joinRequestFailed");
         throw buildApiError(
@@ -307,11 +300,12 @@ export const useConfirmAnchorPRSlot = () => {
             prId: id,
           });
         }
-        const fallbackMessage = isBookingContactRequiredError(payload)
-          ? i18n.global.t("prPage.bookingContact.ownerVerifyBeforeConfirm")
-          : i18n.global.t("errors.confirmSlotFailed");
         throw buildApiError(
-          resolveErrorMessage(res, payload, fallbackMessage),
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.confirmSlotFailed"),
+          ),
           payload,
         );
       }
@@ -326,21 +320,21 @@ export const useConfirmAnchorPRSlot = () => {
   });
 };
 
-export const useVerifyAnchorPRBookingContact = () => {
+export const useUpdateAnchorPRBookingContactPhone = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    VerifyAnchorPRBookingContactResponse,
+    UpdateAnchorPRBookingContactPhoneResponse,
     Error,
-    AnchorPRVerifyBookingContactInput
+    AnchorPRUpdateBookingContactPhoneInput
   >({
-    mutationFn: async ({ id, wechatPhoneCredential }) => {
+    mutationFn: async ({ id, phone }) => {
       const res = await client.api.apr[":id"]["booking-contact"][
-        "verify"
-      ].$post(
+        "phone"
+      ].$put(
         {
           param: { id: id.toString() },
-          json: { wechatPhoneCredential },
+          json: { phone },
         },
         {
           init: {
@@ -351,11 +345,12 @@ export const useVerifyAnchorPRBookingContact = () => {
 
       if (!res.ok) {
         const payload = await readApiErrorPayload(res);
-        const fallbackMessage = isWeChatPhoneVerifyFailedError(payload)
-          ? i18n.global.t("prPage.bookingContact.verifyFailed")
-          : i18n.global.t("errors.verifyBookingContactFailed");
         throw buildApiError(
-          resolveErrorMessage(res, payload, fallbackMessage),
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.verifyBookingContactFailed"),
+          ),
           payload,
         );
       }

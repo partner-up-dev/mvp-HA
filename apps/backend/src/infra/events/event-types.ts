@@ -88,7 +88,9 @@ export interface PartnerCheckedInPayload {
 export interface PartnerSlotReleasedPayload {
   prId: number;
   partnerId: number;
-  reason: "unconfirmed" | "exited";
+  reason: "unconfirmed" | "exited" | "manual";
+  trigger: "system" | "admin_manual";
+  manualReason: string | null;
 }
 
 // ---------------------------------------------------------------------------

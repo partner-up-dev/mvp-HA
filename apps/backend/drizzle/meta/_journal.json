@@ -15,6 +15,13 @@
       "when": 1774349000000,
       "tag": "0008_partner_lifecycle_exit_and_user_not_null",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774400000000,
+      "tag": "0009_phone_input_and_manual_release_reason",
+      "breakpoints": true
     }
   ]
 }

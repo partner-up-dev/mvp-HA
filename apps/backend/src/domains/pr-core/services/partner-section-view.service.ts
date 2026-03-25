@@ -73,6 +73,7 @@ export type PartnerSectionView = {
       partnerId: number;
       state: PartnerSectionReleaseState;
       releasedAt: string | null;
+      releaseReason: string | null;
     };
   };
   reminder:
@@ -259,6 +260,7 @@ const buildBaseSection = (
             partnerId: releasedSlot.partnerId,
             state: releasedSlotState ?? "RELEASED",
             releasedAt: toIsoString(releasedSlot.releasedAt),
+            releaseReason: releasedSlot.releaseReason ?? null,
           }
         : null,
     },
@@ -444,12 +446,6 @@ export function buildAnchorPartnerSection(params: {
   if (!base.viewer.isParticipant) {
     canConfirm = false;
     confirmBlockedReason = "NOT_JOINED";
-  } else if (
-    bookingContact.required &&
-    bookingContact.state !== "VERIFIED"
-  ) {
-    canConfirm = false;
-    confirmBlockedReason = "BOOKING_CONTACT_REQUIRED";
   } else if (base.viewer.slotState === "CONFIRMED" || base.viewer.slotState === "ATTENDED") {
     canConfirm = false;
     confirmBlockedReason = "ALREADY_CONFIRMED";

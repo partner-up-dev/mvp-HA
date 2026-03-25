@@ -53,6 +53,5 @@
 ## 开发调试约定（非生产）
 
 - 本地开发可开启后端环境变量 `WECHAT_ABILITY_MOCKING_ENABLED=true`，并可通过 `WECHAT_ABILITY_MOCK_OPEN_ID` 指定固定 mock openid。
-- 若前端不在微信 WebView 中调试手机号能力，可额外设置 `VITE_WECHAT_ABILITY_MOCKING_ENABLED=true`，前端会视为微信能力可用并返回随机 mock credential（后端 mock 会解析为固定默认手机号）。
 - 开启后，`GET /api/wechat/oauth/login` 会先重定向到后端 mock 授权地址 `GET /api/wechat/oauth/mock/authorize`，再回到 `GET /api/wechat/oauth/callback` 完成 session cookie 签发（openid 取 `WECHAT_ABILITY_MOCK_OPEN_ID`）。
 - 该能力仅用于非生产调试；生产环境必须保持关闭。

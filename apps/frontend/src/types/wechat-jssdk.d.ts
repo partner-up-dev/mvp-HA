@@ -3,8 +3,7 @@ export {};
 declare global {
   type WeChatJsApiName =
     | "updateAppMessageShareData"
-    | "updateTimelineShareData"
-    | "getPhoneNumber";
+    | "updateTimelineShareData";
   type WeChatOpenTagName = "wx-open-subscribe";
 
   type WeChatConfigPayload = {
@@ -34,12 +33,6 @@ declare global {
     fail?: (error: unknown) => void;
   };
 
-  type WeChatInvokeGetPhoneNumberResponse = {
-    err_msg?: string;
-    errMsg?: string;
-    code?: string;
-  } & Record<string, unknown>;
-
   type WeChatJssdk = {
     config: (payload: WeChatConfigPayload) => void;
     ready: (cb: () => void) => void;
@@ -49,7 +42,7 @@ declare global {
     invoke?: (
       methodName: string,
       data: Record<string, unknown>,
-      callback: (response: WeChatInvokeGetPhoneNumberResponse) => void,
+      callback: (response: Record<string, unknown>) => void,
     ) => void;
   };
 

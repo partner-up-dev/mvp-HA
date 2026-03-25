@@ -14,17 +14,11 @@ import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
-import { resolveBookingContactState } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
-const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
-
-type CodedHttpException = HTTPException & {
-  code?: string;
-};
 
 export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
@@ -51,20 +45,6 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
   }
 
   const user = await resolveUserByOpenId(openId);
-  const bookingContactState = await resolveBookingContactState({
-    prId: id,
-    viewerUserId: user.id,
-  });
-  if (
-    bookingContactState.required &&
-    bookingContactState.state !== "VERIFIED"
-  ) {
-    const error = new HTTPException(409, {
-      message: "Cannot confirm - booking contact is required",
-    }) as CodedHttpException;
-    error.code = BOOKING_CONTACT_REQUIRED_CODE;
-    throw error;
-  }
   const slot = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
   if (!slot) {
     throw new HTTPException(400, {

@@ -31,7 +31,7 @@ export class AnchorPRBookingContactRepository {
     input: UpsertAnchorPRBookingContactInput,
   ): Promise<AnchorPRBookingContact | null> {
     const now = new Date();
-    const verifiedSource = input.verifiedSource ?? "WECHAT_SERVICE_ACCOUNT";
+    const verifiedSource = input.verifiedSource ?? "PHONE_INPUT_FORM";
 
     const result = await db
       .insert(anchorPRBookingContacts)

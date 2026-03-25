@@ -298,7 +298,15 @@
         </template>
 
         <template v-else>
-          <p class="modal-text">当前加入需要你先完成预订联系人手机号授权。</p>
+          <p class="modal-text">当前加入需要你先填写预订联系人手机号。</p>
+          <input
+            v-model.trim="joinFlowPhoneInput"
+            class="modal-phone-input"
+            type="tel"
+            inputmode="numeric"
+            maxlength="11"
+            placeholder="请输入 11 位大陆手机号"
+          />
           <div class="modal-actions">
             <button
               class="action-btn action-btn--surface"
@@ -311,9 +319,9 @@
               class="action-btn"
               type="button"
               :disabled="joinFlowPending"
-              @click="authorizeBookingContactAndJoin"
+              @click="submitJoinFlowPhoneAndJoin"
             >
-              {{ joinFlowPending ? t("prPage.joining") : "授权并加入" }}
+              {{ joinFlowPending ? t("prPage.joining") : "填写并加入" }}
             </button>
           </div>
         </template>
@@ -417,7 +425,6 @@ import {
   useAnchorPR,
   useAnchorReimbursementStatus,
   useJoinAnchorPR,
-  useVerifyAnchorPRBookingContact,
   type AnchorPRDetailResponse,
 } from "@/domains/pr/queries/useAnchorPR";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
@@ -440,7 +447,6 @@ import {
 } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/analytics/track";
 import type { ApiError } from "@/shared/api/error";
-import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
 import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
@@ -478,8 +484,8 @@ type ViewerState =
 const router = useRouter();
 const { t } = useI18n();
 const id = usePRRouteId();
-const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
-const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
+const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
+const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
 const reimbursementQuery = useAnchorReimbursementStatus(id);
@@ -493,20 +499,19 @@ const backFallbackTo = computed(() => {
 });
 const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const joinMutation = useJoinAnchorPR();
-const verifyBookingContactMutation = useVerifyAnchorPRBookingContact();
 const acceptAlternativeBatchMutation = useAcceptAnchorAlternativeBatch();
 const userSessionStore = useUserSessionStore();
-const { requestPhoneCredential } = useWeChatPhoneCredential();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
 const showJoinFlowModal = ref(false);
 const showExitConfirmModal = ref(false);
 const showShareDrawer = ref(false);
-const joinFlowStep = ref<"SUMMARY" | "BOOKING_CONTACT">("SUMMARY");
+const joinFlowStep = ref<"SUMMARY" | "PHONE_INPUT">("SUMMARY");
 const joinFlowPending = ref(false);
 const joinFlowError = ref<string | null>(null);
 const bookingContactActionError = ref<string | null>(null);
+const joinFlowPhoneInput = ref("");
 const exitActionError = ref<string | null>(null);
 const lastPrimaryImpressionKey = ref("");
 
@@ -613,6 +618,10 @@ const releaseNoticeText = computed(() => {
   if (!releasedSlot) return null;
   if (releasedSlot.state === "EXITED") {
     return t("prPage.partnerSection.releaseNoticeExit");
+  }
+  const manualReason = releasedSlot.releaseReason?.trim() ?? "";
+  if (manualReason.length > 0) {
+    return `你的名额已由管理员手动释放。原因：${manualReason}`;
   }
   return t("prPage.partnerSection.releaseNoticeAuto");
 });
@@ -824,21 +833,21 @@ const joinFlowNeedsBookingContact = computed(() => {
   );
 });
 
-const requestBookingContactCredential = async (): Promise<string | null> => {
-  try {
-    return await requestPhoneCredential();
-  } catch (error) {
-    bookingContactActionError.value =
-      error instanceof Error
-        ? error.message
-        : t("prPage.bookingContact.verifyFailed");
-    return null;
+const validateJoinFlowPhoneInput = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "请输入手机号";
   }
+  if (!CN_MAINLAND_MOBILE_REGEX.test(trimmed)) {
+    return "请输入 11 位大陆手机号";
+  }
+  return null;
 };
 
 const closeJoinFlowModal = () => {
   showJoinFlowModal.value = false;
   joinFlowStep.value = "SUMMARY";
+  joinFlowPhoneInput.value = "";
   joinFlowPending.value = false;
   joinFlowError.value = null;
 };
@@ -848,16 +857,17 @@ const openJoinFlowModal = () => {
   joinFlowError.value = null;
   joinFlowPending.value = false;
   joinFlowStep.value = "SUMMARY";
+  joinFlowPhoneInput.value = "";
   showJoinFlowModal.value = true;
 };
 
 const finalizeJoinFlow = async (
-  wechatPhoneCredential?: string | null,
+  bookingContactPhone?: string | null,
 ) => {
   joinFlowPending.value = true;
   joinFlowError.value = null;
   bookingContactActionError.value = null;
-  const result = await sharedActions.handleJoin({ wechatPhoneCredential });
+  const result = await sharedActions.handleJoin({ bookingContactPhone });
   joinFlowPending.value = false;
   if (result) {
     closeJoinFlowModal();
@@ -870,58 +880,20 @@ const finalizeJoinFlow = async (
 const continueJoinFlow = async () => {
   if (joinFlowPending.value) return;
   if (joinFlowNeedsBookingContact.value) {
-    joinFlowStep.value = "BOOKING_CONTACT";
+    joinFlowStep.value = "PHONE_INPUT";
     return;
   }
   await finalizeJoinFlow();
 };
 
-const authorizeBookingContactAndJoin = async () => {
+const submitJoinFlowPhoneAndJoin = async () => {
   if (joinFlowPending.value) return;
-  const wechatPhoneCredential = await requestBookingContactCredential();
-  if (!wechatPhoneCredential) {
-    joinFlowError.value =
-      bookingContactActionError.value ??
-      t("prPage.bookingContact.verifyFailed");
+  const phoneInputError = validateJoinFlowPhoneInput(joinFlowPhoneInput.value);
+  if (phoneInputError) {
+    joinFlowError.value = phoneInputError;
     return;
   }
-  await finalizeJoinFlow(wechatPhoneCredential);
-};
-
-const ensureBookingContactVerified = async (): Promise<boolean> => {
-  if (id.value === null) return false;
-
-  const bookingContact = currentBookingContact.value;
-  if (!bookingContact?.required || bookingContact.state === "VERIFIED") {
-    return true;
-  }
-  if (!bookingContact.ownerIsCurrentViewer) {
-    bookingContactActionError.value = t(
-      "prPage.bookingContact.ownerBlockedHint",
-    );
-    return false;
-  }
-
-  const wechatPhoneCredential = await requestBookingContactCredential();
-  if (!wechatPhoneCredential) {
-    return false;
-  }
-
-  try {
-    await verifyBookingContactMutation.mutateAsync({
-      id: id.value,
-      wechatPhoneCredential,
-    });
-    await refetch();
-    bookingContactActionError.value = null;
-    return true;
-  } catch (error) {
-    bookingContactActionError.value =
-      error instanceof Error
-        ? error.message
-        : t("prPage.bookingContact.verifyFailed");
-    return false;
-  }
+  await finalizeJoinFlow(joinFlowPhoneInput.value.trim());
 };
 
 const handleConfirmWithBookingContact = async () => {
@@ -930,25 +902,8 @@ const handleConfirmWithBookingContact = async () => {
   try {
     await attendanceActions.handleConfirmSlot();
   } catch (error) {
-    const apiError = error as ApiError;
-    if (apiError.code === BOOKING_CONTACT_REQUIRED_CODE) {
-      const verified = await ensureBookingContactVerified();
-      if (!verified) {
-        return;
-      }
-      try {
-        await attendanceActions.handleConfirmSlot();
-        bookingContactActionError.value = null;
-      } catch (retryError) {
-        bookingContactActionError.value =
-          retryError instanceof Error
-            ? retryError.message
-            : t("errors.confirmSlotFailed");
-      }
-      return;
-    }
     bookingContactActionError.value =
-      apiError.message ?? t("errors.confirmSlotFailed");
+      error instanceof Error ? error.message : t("errors.confirmSlotFailed");
   }
 };
 
@@ -1043,22 +998,10 @@ const handleAcceptAlternativeBatch = async (
     await joinMutation.mutateAsync({ id: result.prId as PRId });
   } catch (error) {
     const apiError = error as ApiError;
-    if (apiError.code === BOOKING_CONTACT_OWNER_REQUIRED_CODE) {
-      const wechatPhoneCredential = await requestBookingContactCredential();
-      if (wechatPhoneCredential) {
-        try {
-          await joinMutation.mutateAsync({
-            id: result.prId as PRId,
-            wechatPhoneCredential,
-          });
-          bookingContactActionError.value = null;
-        } catch (retryError) {
-          bookingContactActionError.value =
-            retryError instanceof Error
-              ? retryError.message
-              : t("errors.joinRequestFailed");
-        }
-      }
+    if (apiError.code === BOOKING_CONTACT_PHONE_REQUIRED_CODE) {
+      bookingContactActionError.value = t(
+        "prPage.bookingContact.ownerVerifyBeforeJoin",
+      );
     } else {
       bookingContactActionError.value =
         apiError.message ?? t("errors.joinRequestFailed");
@@ -1438,6 +1381,16 @@ const reimbursementReasonText = (
   margin: 0 0 var(--sys-spacing-sm);
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.modal-phone-input {
+  width: 100%;
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  @include mx.pu-font(body-medium);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .modal-actions {

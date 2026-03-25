@@ -31,6 +31,7 @@ export type RosterParticipantSummary = {
   nickname: string | null;
   avatar: string | null;
   releasedAt?: Date | null;
+  releaseReason?: string | null;
 };
 
 export class PartnerRepository {
@@ -130,6 +131,7 @@ export class PartnerRepository {
         nickname: users.nickname,
         avatar: users.avatar,
         releasedAt: partners.releasedAt,
+        releaseReason: partners.releaseReason,
       })
       .from(partners)
       .leftJoin(users, eq(users.id, partners.userId))
@@ -155,6 +157,7 @@ export class PartnerRepository {
       nickname: row.nickname,
       avatar: row.avatar,
       releasedAt: row.releasedAt,
+      releaseReason: row.releaseReason,
     }));
   }
 
@@ -235,6 +238,7 @@ export class PartnerRepository {
         exitedAt: nextStatus === "EXITED" ? now : null,
         confirmedAt: nextStatus === "CONFIRMED" ? now : null,
         releasedAt: nextStatus === "RELEASED" ? now : null,
+        releaseReason: null,
       })
       .returning();
     return result[0] ?? null;
@@ -248,6 +252,7 @@ export class PartnerRepository {
         status,
         exitedAt: status === "EXITED" ? now : null,
         releasedAt: status === "RELEASED" ? now : null,
+        releaseReason: null,
       })
       .where(eq(partners.id, id))
       .returning();
@@ -266,6 +271,7 @@ export class PartnerRepository {
         confirmedAt: status === "CONFIRMED" ? now : null,
         exitedAt: null,
         releasedAt: null,
+        releaseReason: null,
         attendedAt: null,
         checkInAt: null,
         didAttend: null,
@@ -296,7 +302,12 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
-  async markReleased(id: PartnerId) {
+  async markReleased(
+    id: PartnerId,
+    options: {
+      releaseReason?: string | null;
+    } = {},
+  ) {
     const now = new Date();
     const result = await db
       .update(partners)
@@ -316,6 +327,7 @@ export class PartnerRepository {
         reimbursementReviewedAt: null,
         reimbursementPaidAt: null,
         releasedAt: now,
+        releaseReason: options.releaseReason ?? null,
       })
       .where(eq(partners.id, id))
       .returning();

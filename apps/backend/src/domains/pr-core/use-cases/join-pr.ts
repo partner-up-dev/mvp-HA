@@ -29,10 +29,9 @@ import {
 } from "../../../infra/notifications";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
-import { WeChatPhoneService } from "../../../services/WeChatPhoneService";
 import {
   isBookingContactRequiredForPR,
-  resolveBookingContactState,
+  normalizeMainlandChinaMobilePhone,
 } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
@@ -40,10 +39,8 @@ const partnerRepo = new PartnerRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 const bookingContactRepo = new AnchorPRBookingContactRepository();
-const weChatPhoneService = new WeChatPhoneService();
-const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
-const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
-const WECHAT_PHONE_VERIFY_FAILED_CODE = "WECHAT_PHONE_VERIFY_FAILED";
+const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
+const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
 type CodedHttpException = HTTPException & {
   code?: string;
@@ -62,7 +59,7 @@ const throwCodedHttpException = (
 };
 
 type JoinPRAsUserOptions = {
-  wechatPhoneCredential?: string | null;
+  bookingContactPhone?: string | null;
 };
 
 export async function joinPRAsUser(
@@ -132,50 +129,36 @@ export async function joinPRAsUser(
   });
 
   const activeCount = await countActivePartnersForPR(id);
-  let verifiedBookingContact: {
-    phoneE164: string;
-    phoneMasked: string;
-  } | null = null;
+  let bookingContactPhoneInput:
+    | {
+        phoneE164: string;
+        phoneMasked: string;
+      }
+    | null = null;
 
   if (refreshedRequest.prKind === "ANCHOR" && bookingContactRequired) {
     const isFirstActiveOwnerJoin = activeCount === 0;
 
     if (isFirstActiveOwnerJoin) {
-      const credential = options.wechatPhoneCredential?.trim() ?? "";
-      if (!credential) {
+      const phone = options.bookingContactPhone?.trim() ?? "";
+      if (!phone) {
         return throwCodedHttpException(
           409,
-          "Cannot join - booking contact owner must verify phone first",
-          BOOKING_CONTACT_OWNER_REQUIRED_CODE,
+          "Cannot join - first active participant must provide booking contact phone",
+          BOOKING_CONTACT_PHONE_REQUIRED_CODE,
         );
       }
 
-      try {
-        verifiedBookingContact =
-          await weChatPhoneService.resolvePhoneFromCredential(credential);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to verify phone with WeChat";
+      const normalizedPhone = normalizeMainlandChinaMobilePhone(phone);
+      if (!normalizedPhone) {
         return throwCodedHttpException(
           400,
-          message,
-          WECHAT_PHONE_VERIFY_FAILED_CODE,
+          "Phone must match mainland China mobile format (11 digits, starts with 1)",
+          BOOKING_CONTACT_PHONE_INVALID_CODE,
         );
       }
-    } else if (targetStatus === "CONFIRMED") {
-      const bookingContactState = await resolveBookingContactState({
-        prId: id,
-        viewerUserId: user.id,
-      });
-      if (bookingContactState.state !== "VERIFIED") {
-        return throwCodedHttpException(
-          409,
-          "Cannot join - booking contact is required before confirmation",
-          BOOKING_CONTACT_REQUIRED_CODE,
-        );
-      }
+
+      bookingContactPhoneInput = normalizedPhone;
     }
   }
 
@@ -209,14 +192,15 @@ export async function joinPRAsUser(
     refreshedRequest.prKind === "ANCHOR" &&
     bookingContactRequired &&
     activeCount === 0 &&
-    verifiedBookingContact
+    bookingContactPhoneInput
   ) {
     await bookingContactRepo.upsertByPrId({
       prId: id,
       ownerPartnerId: assignedPartnerId,
       ownerUserId: user.id,
-      phoneE164: verifiedBookingContact.phoneE164,
-      phoneMasked: verifiedBookingContact.phoneMasked,
+      phoneE164: bookingContactPhoneInput.phoneE164,
+      phoneMasked: bookingContactPhoneInput.phoneMasked,
+      verifiedSource: "PHONE_INPUT_FORM",
     });
   }
 

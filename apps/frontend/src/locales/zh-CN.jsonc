@@ -302,13 +302,13 @@
       "deadlineWithValue": "最晚需要在 {deadline} 前完成预订安排"
     },
     "bookingContact": {
-      "ownerVerifyBeforeJoin": "你是首位参与者，需要先通过微信授权手机号后才能加入。",
-      "ownerVerifyBeforeConfirm": "你需要先通过微信授权手机号，平台才能代你完成预订。",
-      "ownerBlockedHint": "当前需要由首位搭子先完成手机号授权后，才能继续确认。",
-      "nonWechatHint": "仅支持在微信环境中完成手机号授权。",
-      "unsupportedHint": "当前微信版本暂不支持手机号授权，请升级微信后重试。",
-      "userCancelled": "你已取消手机号授权。",
-      "verifyFailed": "手机号授权失败，请稍后重试。"
+      "ownerVerifyBeforeJoin": "你是首位参与者，需要先填写手机号后才能加入。",
+      "ownerVerifyBeforeConfirm": "你需要先填写手机号，平台才能代你完成预订。",
+      "ownerBlockedHint": "当前需要由首位搭子先填写手机号后，才能继续确认。",
+      "nonWechatHint": "请填写手机号后继续。",
+      "unsupportedHint": "当前暂不支持自动获取手机号，请手动填写。",
+      "userCancelled": "你已取消手机号填写。",
+      "verifyFailed": "手机号填写失败，请稍后重试。"
     },
     "wechatLoginRequired": "需要先完成微信登录，才能继续加入当前活动。",
     "sameBatch": {
@@ -425,18 +425,18 @@
     },
     "bookingContact": {
       "title": "预订联系人手机号",
-      "stateMissingOwnerSelf": "你是当前预订联系人，请先完成手机号授权。",
-      "stateMissingOwnerOther": "当前预订联系人尚未完成手机号授权。",
-      "stateVerified": "预订联系人手机号已完成授权。",
-      "stateVerifiedWithPhone": "已授权手机号：{phone}",
-      "ownerSelfHint": "完成授权后，平台可在代预订时联系你确认订单细节。",
-      "ownerOtherHint": "请等待当前预订联系人完成授权后再继续确认或锁位流程。",
+      "stateMissingOwnerSelf": "你是当前预订联系人，请先填写手机号。",
+      "stateMissingOwnerOther": "当前预订联系人尚未填写手机号。",
+      "stateVerified": "预订联系人手机号已填写。",
+      "stateVerifiedWithPhone": "已填写手机号：{phone}",
+      "ownerSelfHint": "填写后，平台可在代预订时联系你确认订单细节；你也可以后续更新。",
+      "ownerOtherHint": "请等待当前预订联系人填写手机号后再继续确认或锁位流程。",
       "verifiedHint": "平台将使用该手机号在代预订时与你确认关键信息。",
-      "deadlineWithValue": "建议在 {deadline} 前完成手机号授权。",
-      "verifyAction": "微信授权手机号",
-      "verifying": "授权中...",
+      "deadlineWithValue": "建议在 {deadline} 前完成手机号填写。",
+      "verifyAction": "保存手机号",
+      "verifying": "保存中...",
       "goWechatLogin": "去微信登录",
-      "verifyFailed": "手机号授权失败，请稍后重试。"
+      "verifyFailed": "手机号保存失败，请稍后重试。"
     },
     "resource": {
       "bookingRequired": "是否需要预订",

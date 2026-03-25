@@ -20,7 +20,6 @@ import {
   WeChatOAuthService,
   type WeChatOAuthUserProfile,
 } from "../services/WeChatOAuthService";
-import { WeChatPhoneService } from "../services/WeChatPhoneService";
 import { UserRepository } from "../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
 import { bindWeChatToCurrentUser } from "../domains/user/use-cases/current-user";
@@ -46,7 +45,6 @@ import { WeChatTemplateMessageService } from "../services/WeChatTemplateMessageS
 const app = new Hono<AuthEnv>();
 const jssdkService = new WeChatJssdkService();
 const oauthService = new WeChatOAuthService();
-const phoneService = new WeChatPhoneService();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
 const subscriptionMessageService = new WeChatSubscriptionMessageService();
@@ -89,9 +87,6 @@ const reminderSubscriptionUpdateSchema = z.object({
 const notificationSubscriptionUpdateSchema = z.object({
   kind: wechatNotificationKindSchema,
   enabled: z.boolean(),
-});
-const resolvePhoneSchema = z.object({
-  credential: z.string().trim().min(1),
 });
 
 type OAuthStateCookiePayload = z.infer<typeof oauthStateCookiePayloadSchema>;
@@ -643,40 +638,6 @@ export const wechatRoute = app
       }
     },
   )
-  .post("/phone/resolve", zValidator("json", resolvePhoneSchema), async (c) => {
-    if (!isOAuthRuntimeAvailable()) {
-      return c.json({ error: "WeChat OAuth is not configured" }, 503);
-    }
-    if (!phoneService.isConfigured() && !isWeChatAbilityMockingEnabled()) {
-      return c.json(
-        { error: "WeChat phone capability is not configured" },
-        503,
-      );
-    }
-
-    const identity = await resolveAuthenticatedBoundUser(c);
-    if (!identity.ok) {
-      return c.json(identity.payload, identity.status);
-    }
-
-    const { credential } = c.req.valid("json");
-    try {
-      const phone = await phoneService.resolvePhoneFromCredential(credential);
-      return c.json(phone);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to resolve WeChat phone";
-      return c.json(
-        {
-          error: message,
-          code: "WECHAT_PHONE_VERIFY_FAILED",
-        },
-        400,
-      );
-    }
-  })
   .get("/notifications/subscriptions", async (c) => {
     if (!isOAuthRuntimeAvailable()) {
       return c.json(await buildAnonymousSubscriptionsResponse(false));
