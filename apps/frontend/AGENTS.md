@@ -25,6 +25,9 @@
 
 Read following documents when needed and keep them current:
 
+- `docs/20-product-tdd/*.md`
+- `docs/30-unit-tdd/frontend/*.md`
+- `docs/40-deployment/*.md`
 - Architecture: `src/ARCHITECTURE.md`
 - Vue Component Guideline: See `src/AGENTS.components.md`.
 - Styling governance: `src/styles/TOKEN-GOVERNANCE.md`
@@ -79,8 +82,8 @@ Rules:
 - 公众号提醒交互: 当前仅 Anchor PR 详情页提供“公众号提醒”开关；微信环境且已登录时可开启/关闭（`GET/POST /api/wechat/reminders/subscription`），非微信或未登录时展示降级提示。
 - 分享能力: 支持系统分享（Web Share API，失败时回退复制链接）；微信内置 WebView 分享卡片（PR 详情页支持缩略图卡片，首页/创建页/联系客服页可直接分享至聊天与朋友圈）；小红书文案与海报生成、下载并跳转 App；公开分享链接支持 `spm` 参数归因并在当前浏览器会话内延续到后续埋点。
 - 国际化能力: 已接入 `vue-i18n`，当前仅启用 `zh-CN`；文案位于 `src/locales/zh-CN.jsonc`，使用 `MessageSchema` 提供类型支持。
-- 客服联系能力: 首页与各页面页脚保留“联系作者”入口（跳转 `/contact-support`）；`/contact-support` 页面会根据微信内外环境自动跳转企业微信客服链接（优先读取后端公共配置，加载中/失败/缺失时回退默认链接），并提供前往 `/contact-author` 的作者反馈入口。
-- 关于页能力: 新增 `/about` 页面，展示产品名称、代码仓库地址、前端 commit hash（构建注入）与后端 commit hash（通过 `/api/meta/build` 拉取）。
+- 客服联系能力: 首页与各页面页脚保留“需要帮助”入口（跳转 `/contact-support`）；`/contact-support` 页面会根据微信内外环境自动跳转企业微信客服链接（优先读取后端公共配置，加载中/失败/缺失时回退默认链接），并提供前往 `/contact-author` 与 `/about` 的入口。
+- 关于页能力: `/about` 页面展示产品名称、代码仓库地址、前端 commit hash（构建注入）与后端 commit hash（通过 `/api/meta/build` 拉取），并可弹出公众号二维码。
 
 ### Known Limitations & Mocks
 
