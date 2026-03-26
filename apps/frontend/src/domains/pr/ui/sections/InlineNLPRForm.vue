@@ -52,19 +52,6 @@
           ></span>
         </button>
       </div>
-    <div class="row row--actions">
-      <button
-        type="button"
-        class="ghost-action"
-        :disabled="isSubmitting"
-        @click="applyExample"
-      >
-        {{ t("nlForm.useExample") }}
-      </button>
-      <span v-if="isVoiceSupported" class="voice-hint">{{
-        t("nlForm.voiceHint")
-      }}</span>
-    </div>
     <p v-if="voiceErrorMessage" class="error-message voice-error">
       {{ voiceErrorMessage }}
     </p>
@@ -208,10 +195,6 @@ const onSubmit = async () => {
   await submitHandler();
 };
 
-const applyExample = () => {
-  setFieldValue("rawText", placeholderText.value);
-};
-
 const handleVoicePressStart = async () => {
   if (!isVoiceSupported.value || isSubmitting.value) return;
   if (isVoiceProcessing.value) return;
@@ -351,6 +334,9 @@ const handleVoicePressCancel = async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   cursor: pointer;
   transition:
     opacity 180ms ease,
@@ -374,33 +360,6 @@ const handleVoicePressCancel = async () => {
 
 .voice-icon {
   @include mx.pu-icon(small, true);
-}
-
-.row--actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-spacing-xs);
-  flex-basis: 100%;
-}
-
-.ghost-action {
-  @include mx.pu-font(label-medium);
-  color: var(--sys-color-primary);
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: var(--sys-opacity-disabled);
-    cursor: not-allowed;
-  }
-}
-
-.voice-hint {
-  @include mx.pu-font(label-small);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .error-message {
