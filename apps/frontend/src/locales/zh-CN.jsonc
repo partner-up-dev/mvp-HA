@@ -937,7 +937,18 @@
   "nlForm": {
     "submit": "解析",
     "parsing": "正在解析你的请求...",
-    "createFailed": "创建失败"
+    "createFailed": "创建失败",
+    "useExample": "用当前示例填充",
+    "voiceAction": "按住语音键说话",
+    "voiceRecording": "录音中…松开发送",
+    "voiceProcessing": "正在转写...",
+    "voiceWeChatOnly": "语音输入仅在微信内可用",
+    "voicePermissionDenied": "无法获取麦克风权限，请允许录音",
+    "voiceStartFailed": "录音启动失败（{message}）",
+    "voiceStopFailed": "录音结束失败（{message}）",
+    "voiceTranslateFailed": "语音转写失败（{message}）",
+    "voiceEmptyResult": "没听清，再试一次吧",
+    "voiceHint": "在微信内按住麦克风键说话，松手自动转文字"
   },
   "partnerRequestForm": {
     "title": "标题",
