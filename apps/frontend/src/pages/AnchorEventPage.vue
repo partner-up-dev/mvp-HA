@@ -197,23 +197,12 @@
                 v-if="expiredBatchOptions.length > 0"
                 class="expired-batch-menu"
               >
-                <button
-                  type="button"
-                  class="expired-batch-menu__trigger"
-                  :aria-expanded="isExpiredBatchMenuOpen"
-                  @click="isExpiredBatchMenuOpen = !isExpiredBatchMenuOpen"
-                >
-                  {{ t("anchorEvent.expiredBatches.trigger") }}
-                </button>
-                <div
-                  v-if="isExpiredBatchMenuOpen"
-                  class="expired-batch-menu__panel"
-                >
-                  <AnchorEventExpiredBatchSelector
-                    :options="expiredBatchOptions"
-                    @select="handleExpiredBatchSelect"
-                  />
-                </div>
+                <DropdownSelector
+                  :trigger-label="t('anchorEvent.expiredBatches.trigger')"
+                  :value="selectedExpiredBatchId"
+                  :options="expiredBatchOptions"
+                  @select="handleExpiredBatchSelect"
+                />
               </div>
             </template>
           </TabBar>
@@ -264,7 +253,7 @@ import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
 import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
-import AnchorEventExpiredBatchSelector from "@/domains/event/ui/primitives/AnchorEventExpiredBatchSelector.vue";
+import DropdownSelector from "@/shared/ui/forms/DropdownSelector.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
@@ -297,6 +286,11 @@ type LocationOption =
 
 type CardBatchOption = {
   batchId: number;
+  label: string;
+};
+
+type ExpiredBatchOption = {
+  value: number;
   label: string;
 };
 
@@ -349,7 +343,6 @@ const resolveInitialViewMode = (): EventViewMode => {
 
 const viewMode = ref<EventViewMode>(resolveInitialViewMode());
 const selectedBatchId = ref<number | null>(null);
-const isExpiredBatchMenuOpen = ref(false);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
@@ -474,7 +467,6 @@ const batchTabs = computed(() =>
 const handleBatchTabChange = (value: string | number) => {
   if (typeof value !== "number") return;
   selectedBatchId.value = value;
-  isExpiredBatchMenuOpen.value = false;
 };
 
 const selectedBatch = computed(
@@ -483,23 +475,32 @@ const selectedBatch = computed(
     null,
 );
 
-const expiredBatchOptions = computed<CardBatchOption[]>(() =>
+const expiredBatchOptions = computed<ExpiredBatchOption[]>(() =>
   sortedBatches.value
     .filter((batch) => isExpiredBatch(batch))
     .map((batch, index) => ({
-      batchId: batch.id,
+      value: batch.id,
       label: formatBatchLabel(batch.timeWindow, index),
     })),
 );
 
-const handleExpiredBatchSelect = (batchId: number) => {
-  selectedBatchId.value = batchId;
-  isExpiredBatchMenuOpen.value = false;
-};
+const selectedExpiredBatchId = computed<number | null>(() => {
+  const current = selectedBatch.value;
+  if (!current || !isExpiredBatch(current)) {
+    return null;
+  }
 
-watch(viewMode, () => {
-  isExpiredBatchMenuOpen.value = false;
+  return current.id;
 });
+
+
+const handleExpiredBatchSelect = (value: string | number) => {
+  if (typeof value !== "number") {
+    return;
+  }
+
+  selectedBatchId.value = value;
+};
 
 watch(
   sortedBatches,
@@ -1070,19 +1071,9 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   flex-shrink: 0;
 }
 
-.expired-batch-menu__trigger {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-pill-action(outline-transparent, default);
+.expired-batch-menu :deep(.dropdown-selector__trigger) {
   border: 1px dashed var(--sys-color-outline);
   background: var(--sys-color-surface);
-  cursor: pointer;
-}
-
-.expired-batch-menu__panel {
-  position: absolute;
-  left: 0;
-  top: calc(100% + var(--sys-spacing-xs));
-  z-index: 10;
 }
 
 .pr-list {
