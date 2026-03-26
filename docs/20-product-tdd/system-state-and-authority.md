@@ -7,7 +7,7 @@ Persisted in Postgres via backend entities/repositories:
 - PartnerRequest and scene-specific PR records
 - Partner slots and participation state
 - users, user notification options, and user reliability
-- anchor events, batches, POIs, support resources, and booking contacts
+- anchor events, batches, POIs, support resources, booking contacts, and booking execution records
 - config, operation logs, domain events, outbox events, jobs, and notification deliveries
 - analytics aggregate tables
 

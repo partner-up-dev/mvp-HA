@@ -19,4 +19,5 @@
 
 - session bootstrap still restores expected browser continuity
 - Community and Anchor PR pages still read and mutate through the expected route/API families
+- admin booking-execution page still reads pending/audit workspace data and can submit or release through the expected admin RPC surfaces
 - WeChat auth-required flows still degrade or redirect coherently

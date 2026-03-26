@@ -15,4 +15,5 @@
 ## Behavioral Checks
 
 - verify domain actions still emit required side effects where expected
+- verify admin booking-execution submission still records audit state and notification summary coherently
 - verify request-tail and job/outbox behavior remain compatible with scale-to-zero constraints

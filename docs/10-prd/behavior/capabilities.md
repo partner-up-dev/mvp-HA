@@ -40,6 +40,7 @@
 ## 6. 通知与可靠性
 
 - 公众号提醒订阅
+- 预订结果通知
 - 新搭子通知
 - 通知剩余发送次数模型
 - 自动释放未确认槽位
@@ -50,4 +51,5 @@
 - `/contact-support` 到 `/contact-author` 与 `/about` 的导流
 - `/about` 展示仓库与前后端 commit hash，并提供公众号关注弹窗
 - 内部管理端维护 Anchor/Event/POI/Booking Support
+- 内部管理端处理已触发预订的 Anchor 协作、提交平台预订结果并释放无效联系人
 - 产品与运行配置影响用户实际体验

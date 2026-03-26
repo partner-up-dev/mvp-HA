@@ -42,6 +42,8 @@ export const queryKeys = {
     poisByIds: (idsCsv: string) => ["admin", "pois", "by-ids", idsCsv] as const,
     bookingSupport: (eventId: number | null) =>
       ["admin", "booking-support", eventId] as const,
+    bookingExecutionWorkspace: () =>
+      ["admin", "booking-execution", "workspace"] as const,
     anchorWorkspace: () => ["admin", "anchor-workspace"] as const,
   },
   wechat: {

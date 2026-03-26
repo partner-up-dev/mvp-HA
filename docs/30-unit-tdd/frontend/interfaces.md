@@ -15,6 +15,10 @@
 - `/wechat/oauth/callback`
 - `/admin/*`
 
+Notable admin routes include:
+
+- `/admin/booking-execution` for the booking execution console
+
 Notable route behavior:
 
 - `/contact-support` is entered from the “需要帮助” entry and links onward to `/contact-author` and `/about`
@@ -30,6 +34,7 @@ Notable route behavior:
 ## Outbound Interfaces
 
 - backend HTTP APIs through `client` and `adminClient`
+- `adminClient` includes the booking-execution workspace and submit-result surfaces
 - token rotation through `x-access-token`
 - cookie-backed auth flows with `credentials: "include"`
 

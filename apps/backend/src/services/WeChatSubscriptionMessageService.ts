@@ -71,8 +71,19 @@ export interface SendNewPartnerNotificationParams {
   page: string | null;
 }
 
+export interface SendBookingResultNotificationParams {
+  openId: string;
+  activityTitle: string;
+  resourceTitle: string;
+  resultLabel: string;
+  remark: string;
+  page: string | null;
+}
+
 const clipText = (value: string, max: number): string =>
   value.trim().slice(0, max);
+
+type SubscriptionMessageData = Record<string, { value: string }>;
 
 export class WeChatSubscriptionMessageService {
   private configService: ConfigService;
@@ -103,6 +114,50 @@ export class WeChatSubscriptionMessageService {
 
   async getNewPartnerTemplateId(): Promise<string | null> {
     return this.resolveTemplateId("NEW_PARTNER");
+  }
+
+  private async sendSubscribeMessage(input: {
+    kind: SubscriptionTemplateKind;
+    openId: string;
+    page: string | null;
+    data: SubscriptionMessageData;
+  }): Promise<string | number | null> {
+    const { templateId } = await this.getOfficialAccountConfig(input.kind);
+    const accessToken = await this.getAccessToken();
+
+    const url = new URL(
+      "https://api.weixin.qq.com/cgi-bin/message/subscribe/bizsend",
+    );
+    url.searchParams.set("access_token", accessToken);
+
+    const response = await proxyFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        touser: input.openId,
+        template_id: templateId,
+        page: input.page ?? undefined,
+        miniprogram_state: "formal",
+        lang: "zh_CN",
+        data: input.data,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `WeChat subscribe bizsend failed: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const payload = subscribeSendResponseSchema.parse(await response.json());
+    if (payload.errcode !== 0) {
+      throw new WeChatSubscriptionMessageError(
+        `WeChat subscribe bizsend error: ${payload.errmsg ?? "unknown"}`,
+        String(payload.errcode),
+      );
+    }
+
+    return payload.msgid ?? null;
   }
 
   private async isConfigured(kind: SubscriptionTemplateKind): Promise<boolean> {
@@ -202,94 +257,48 @@ export class WeChatSubscriptionMessageService {
   async sendConfirmationReminder(
     params: SendConfirmationReminderParams,
   ): Promise<string | number | null> {
-    const { templateId } = await this.getOfficialAccountConfig(
-      "REMINDER_CONFIRMATION",
-    );
-    const accessToken = await this.getAccessToken();
-
-    const url = new URL(
-      "https://api.weixin.qq.com/cgi-bin/message/subscribe/bizsend",
-    );
-    url.searchParams.set("access_token", accessToken);
-
-    const response = await proxyFetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        touser: params.openId,
-        template_id: templateId,
-        page: params.page ?? undefined,
-        miniprogram_state: "formal",
-        lang: "zh_CN",
-        data: {
-          thing6: { value: clipText(params.orderContent, 20) },
-          character_string12: { value: clipText(params.orderNo, 32) },
-          date9: { value: clipText(params.appointmentAt, 32) },
-          thing7: { value: clipText(params.remark, 20) },
-        },
-      }),
+    return this.sendSubscribeMessage({
+      kind: "REMINDER_CONFIRMATION",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        thing6: { value: clipText(params.orderContent, 20) },
+        character_string12: { value: clipText(params.orderNo, 32) },
+        date9: { value: clipText(params.appointmentAt, 32) },
+        thing7: { value: clipText(params.remark, 20) },
+      },
     });
+  }
 
-    if (!response.ok) {
-      throw new Error(
-        `WeChat subscribe bizsend failed: ${response.status} ${response.statusText}`,
-      );
-    }
-
-    const payload = subscribeSendResponseSchema.parse(await response.json());
-    if (payload.errcode !== 0) {
-      throw new WeChatSubscriptionMessageError(
-        `WeChat subscribe bizsend error: ${payload.errmsg ?? "unknown"}`,
-        String(payload.errcode),
-      );
-    }
-
-    return payload.msgid ?? null;
+  async sendBookingResultNotification(
+    params: SendBookingResultNotificationParams,
+  ): Promise<string | number | null> {
+    return this.sendSubscribeMessage({
+      kind: "BOOKING_RESULT",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        thing1: { value: clipText(params.activityTitle, 20) },
+        thing2: { value: clipText(params.resourceTitle, 20) },
+        thing3: { value: clipText(params.resultLabel, 20) },
+        thing4: { value: clipText(params.remark, 20) },
+      },
+    });
   }
 
   async sendNewPartnerNotification(
     params: SendNewPartnerNotificationParams,
   ): Promise<string | number | null> {
-    const { templateId } = await this.getOfficialAccountConfig("NEW_PARTNER");
-    const accessToken = await this.getAccessToken();
-
-    const url = new URL(
-      "https://api.weixin.qq.com/cgi-bin/message/subscribe/bizsend",
-    );
-    url.searchParams.set("access_token", accessToken);
-
-    const response = await proxyFetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        touser: params.openId,
-        template_id: templateId,
-        page: params.page ?? undefined,
-        miniprogram_state: "formal",
-        lang: "zh_CN",
-        data: {
-          thing1: { value: clipText(params.applicantName, 20) },
-          thing4: { value: clipText(params.teamName, 20) },
-          thing5: { value: clipText(params.tip, 20) },
-          time3: { value: clipText(params.appliedAt, 32) },
-        },
-      }),
+    return this.sendSubscribeMessage({
+      kind: "NEW_PARTNER",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        thing1: { value: clipText(params.applicantName, 20) },
+        thing4: { value: clipText(params.teamName, 20) },
+        thing5: { value: clipText(params.tip, 20) },
+        time3: { value: clipText(params.appliedAt, 32) },
+      },
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `WeChat subscribe bizsend failed: ${response.status} ${response.statusText}`,
-      );
-    }
-
-    const payload = subscribeSendResponseSchema.parse(await response.json());
-    if (payload.errcode !== 0) {
-      throw new WeChatSubscriptionMessageError(
-        `WeChat subscribe bizsend error: ${payload.errmsg ?? "unknown"}`,
-        String(payload.errcode),
-      );
-    }
-
-    return payload.msgid ?? null;
   }
 }
