@@ -15,6 +15,7 @@
         <button
           v-if="isVoiceSupported"
           class="voice-button"
+          :class="{ 'is-recording': isVoiceRecording }"
           type="button"
           :disabled="isSubmitting || isVoiceProcessing"
           :aria-pressed="isVoiceRecording"
@@ -344,6 +345,13 @@ const handleVoiceToggle = async (): Promise<void> => {
 
   &:active:not(:disabled) {
     transform: scale(0.98);
+  }
+
+  &.is-recording {
+    border-style: solid;
+    border-color: var(--sys-color-primary);
+    background: var(--sys-color-primary);
+    color: var(--sys-color-on-primary);
   }
 
   &:disabled {
