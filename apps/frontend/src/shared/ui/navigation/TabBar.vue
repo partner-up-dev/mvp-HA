@@ -13,6 +13,7 @@
     >
       {{ item.label }}
     </button>
+    <slot name="append" />
   </div>
 </template>
 

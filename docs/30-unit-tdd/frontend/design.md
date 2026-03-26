@@ -23,3 +23,9 @@ The frontend is domain-first:
 - route-level WeChat auto-login and pending action resumption
 - TanStack Query for server-state caching
 - domain-owned view composition for PR/event/share/admin/support/user flows
+
+## Anchor Event Page Interaction Rules
+
+- list mode should keep expired batches out of the primary top tab pills
+- list mode should still provide an explicit "expired batches" entry point as a trailing pill that opens a chooser for expired batches
+- card mode demand-card aggregation should only use non-expired batches

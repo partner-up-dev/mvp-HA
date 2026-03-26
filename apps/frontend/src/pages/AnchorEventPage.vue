@@ -186,41 +186,42 @@
 
       <template v-else>
         <div v-if="detail.batches.length > 0" class="batch-section">
-          <div class="batch-tabs-row">
-            <TabBar
-              :items="batchTabs"
-              :model-value="selectedBatchId ?? -1"
-              :aria-label="t('anchorEvent.batchLabel')"
-              @update:model-value="handleBatchTabChange"
-            />
-            <div
-              v-if="expiredBatchOptions.length > 0"
-              class="expired-batch-menu"
-            >
-              <button
-                type="button"
-                class="expired-batch-menu__trigger"
-                :aria-expanded="isExpiredBatchMenuOpen"
-                @click="isExpiredBatchMenuOpen = !isExpiredBatchMenuOpen"
-              >
-                {{ t("anchorEvent.expiredBatches.trigger") }}
-              </button>
+          <TabBar
+            :items="batchTabs"
+            :model-value="selectedBatchId ?? -1"
+            :aria-label="t('anchorEvent.batchLabel')"
+            @update:model-value="handleBatchTabChange"
+          >
+            <template #append>
               <div
-                v-if="isExpiredBatchMenuOpen"
-                class="expired-batch-menu__panel"
+                v-if="expiredBatchOptions.length > 0"
+                class="expired-batch-menu"
               >
                 <button
-                  v-for="option in expiredBatchOptions"
-                  :key="option.batchId"
                   type="button"
-                  class="expired-batch-menu__option"
-                  @click="handleExpiredBatchSelect(option.batchId)"
+                  class="expired-batch-menu__trigger"
+                  :aria-expanded="isExpiredBatchMenuOpen"
+                  @click="isExpiredBatchMenuOpen = !isExpiredBatchMenuOpen"
                 >
-                  {{ option.label }}
+                  {{ t("anchorEvent.expiredBatches.trigger") }}
                 </button>
+                <div
+                  v-if="isExpiredBatchMenuOpen"
+                  class="expired-batch-menu__panel"
+                >
+                  <button
+                    v-for="option in expiredBatchOptions"
+                    :key="option.batchId"
+                    type="button"
+                    class="expired-batch-menu__option"
+                    @click="handleExpiredBatchSelect(option.batchId)"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
+            </template>
+          </TabBar>
 
           <div v-if="selectedBatch" class="batch-content" role="tabpanel">
             <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
@@ -477,6 +478,7 @@ const batchTabs = computed(() =>
 const handleBatchTabChange = (value: string | number) => {
   if (typeof value !== "number") return;
   selectedBatchId.value = value;
+  isExpiredBatchMenuOpen.value = false;
 };
 
 const selectedBatch = computed(
@@ -498,6 +500,10 @@ const handleExpiredBatchSelect = (batchId: number) => {
   selectedBatchId.value = batchId;
   isExpiredBatchMenuOpen.value = false;
 };
+
+watch(viewMode, () => {
+  isExpiredBatchMenuOpen.value = false;
+});
 
 watch(
   sortedBatches,
@@ -1063,14 +1069,9 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   margin-bottom: 1rem;
 }
 
-.batch-tabs-row {
-  position: relative;
-}
-
 .expired-batch-menu {
-  position: absolute;
-  right: 0;
-  top: 0;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .expired-batch-menu__trigger {
@@ -1083,7 +1084,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 
 .expired-batch-menu__panel {
   position: absolute;
-  right: 0;
+  left: 0;
   top: calc(100% + var(--sys-spacing-xs));
   min-width: 180px;
   background: var(--sys-color-surface-container-high);
