@@ -10,14 +10,6 @@
         />
         <div class="nl-actions">
           <button
-            type="button"
-            class="ghost-action"
-            @click="applyExample"
-            :disabled="isSubmitting"
-          >
-            {{ t("nlForm.useExample") }}
-          </button>
-          <button
             v-if="isVoiceSupported"
             type="button"
             class="voice-action"
@@ -185,10 +177,6 @@ const onSubmit = async () => {
   await submitHandler();
 };
 
-const applyExample = () => {
-  setFieldValue("rawText", placeholderText.value);
-};
-
 const handleVoicePressStart = async () => {
   if (!isVoiceSupported.value || isSubmitting.value) return;
   try {
@@ -228,22 +216,8 @@ const handleVoicePressCancel = async () => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--sys-spacing-xs);
-}
-
-.ghost-action {
-  @include mx.pu-font(label-medium);
-  color: var(--sys-color-primary);
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: var(--sys-opacity-disabled);
-    cursor: not-allowed;
-  }
 }
 
 .voice-action {
@@ -261,6 +235,9 @@ const handleVoicePressCancel = async () => {
     transparent
   );
   color: var(--sys-color-on-primary-container);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   cursor: pointer;
   transition:
     background-color 180ms ease,
