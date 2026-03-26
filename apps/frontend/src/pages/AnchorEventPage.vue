@@ -188,10 +188,24 @@
         <div v-if="detail.batches.length > 0" class="batch-section">
           <TabBar
             :items="batchTabs"
-            :model-value="selectedBatchIndex"
+            :model-value="selectedBatchId ?? -1"
             :aria-label="t('anchorEvent.batchLabel')"
             @update:model-value="handleBatchTabChange"
-          />
+          >
+            <template #append>
+              <div
+                v-if="expiredBatchOptions.length > 0"
+                class="expired-batch-menu"
+              >
+                <DropdownSelector
+                  :trigger-label="t('anchorEvent.expiredBatches.trigger')"
+                  :value="selectedExpiredBatchId"
+                  :options="expiredBatchOptions"
+                  @select="handleExpiredBatchSelect"
+                />
+              </div>
+            </template>
+          </TabBar>
 
           <div v-if="selectedBatch" class="batch-content" role="tabpanel">
             <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
@@ -239,6 +253,7 @@ import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
 import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
+import DropdownSelector from "@/shared/ui/forms/DropdownSelector.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
@@ -271,6 +286,11 @@ type LocationOption =
 
 type CardBatchOption = {
   batchId: number;
+  label: string;
+};
+
+type ExpiredBatchOption = {
+  value: number;
   label: string;
 };
 
@@ -322,7 +342,7 @@ const resolveInitialViewMode = (): EventViewMode => {
 };
 
 const viewMode = ref<EventViewMode>(resolveInitialViewMode());
-const selectedBatchIndex = ref(0);
+const selectedBatchId = ref<number | null>(null);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
@@ -401,6 +421,14 @@ const sortedBatches = computed(() => {
   });
 });
 
+const isExpiredBatch = (
+  batch: AnchorEventDetailResponse["batches"][number],
+): boolean => batch.status === "EXPIRED";
+
+const listVisibleBatches = computed(() =>
+  sortedBatches.value.filter((batch) => !isExpiredBatch(batch)),
+);
+
 function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   const [start] = timeWindow;
   if (start) {
@@ -430,32 +458,67 @@ function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
 }
 
 const batchTabs = computed(() =>
-  sortedBatches.value.map((batch, index) => ({
-    key: index,
+  listVisibleBatches.value.map((batch, index) => ({
+    key: batch.id,
     label: formatBatchLabel(batch.timeWindow, index),
   })),
 );
 
 const handleBatchTabChange = (value: string | number) => {
   if (typeof value !== "number") return;
-  selectedBatchIndex.value = value;
+  selectedBatchId.value = value;
 };
 
 const selectedBatch = computed(
-  () => sortedBatches.value[selectedBatchIndex.value] ?? null,
+  () =>
+    sortedBatches.value.find((batch) => batch.id === selectedBatchId.value) ??
+    null,
 );
+
+const expiredBatchOptions = computed<ExpiredBatchOption[]>(() =>
+  sortedBatches.value
+    .filter((batch) => isExpiredBatch(batch))
+    .map((batch, index) => ({
+      value: batch.id,
+      label: formatBatchLabel(batch.timeWindow, index),
+    })),
+);
+
+const selectedExpiredBatchId = computed<number | null>(() => {
+  const current = selectedBatch.value;
+  if (!current || !isExpiredBatch(current)) {
+    return null;
+  }
+
+  return current.id;
+});
+
+
+const handleExpiredBatchSelect = (value: string | number) => {
+  if (typeof value !== "number") {
+    return;
+  }
+
+  selectedBatchId.value = value;
+};
 
 watch(
   sortedBatches,
   (batches) => {
     if (batches.length === 0) {
-      selectedBatchIndex.value = 0;
+      selectedBatchId.value = null;
       return;
     }
 
-    if (selectedBatchIndex.value >= batches.length) {
-      selectedBatchIndex.value = 0;
+    if (selectedBatchId.value !== null) {
+      const matched = batches.some((batch) => batch.id === selectedBatchId.value);
+      if (matched) {
+        return;
+      }
     }
+
+    selectedBatchId.value =
+      listVisibleBatches.value[0]?.id ?? batches[0]?.id ?? null;
   },
   { immediate: true },
 );
@@ -652,7 +715,7 @@ const buildDemandCards = (
 };
 
 const allDemandCards = computed(() => {
-  const batches = sortedBatches.value;
+  const batches = sortedBatches.value.filter((batch) => !isExpiredBatch(batch));
   return buildDemandCards(batches, detail.value?.coverImage ?? null);
 });
 
@@ -1001,6 +1064,16 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 
 .batch-section :deep(.tab-bar) {
   margin-bottom: 1rem;
+}
+
+.expired-batch-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.expired-batch-menu :deep(.dropdown-selector__trigger) {
+  border: 1px dashed var(--sys-color-outline);
+  background: var(--sys-color-surface);
 }
 
 .pr-list {

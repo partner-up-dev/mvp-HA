@@ -1075,6 +1075,9 @@
       "card": "卡片",
       "list": "列表"
     },
+    "expiredBatches": {
+      "trigger": "已过期场次"
+    },
     "card": {
       "batchLabel": "时间批次",
       "stampLike": "详情",
