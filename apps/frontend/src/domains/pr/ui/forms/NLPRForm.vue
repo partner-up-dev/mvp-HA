@@ -18,6 +18,7 @@
             @pointerdown.prevent="handleVoicePressStart"
             @pointerup.prevent="handleVoicePressEnd"
             @pointerleave="handleVoicePressCancel"
+            @pointercancel.prevent="handleVoicePressCancel"
           >
             <span v-if="isVoiceRecording">
               {{ t("nlForm.voiceRecording") }}
@@ -37,7 +38,7 @@
       </div>
     </Field>
 
-    <Button type="submit" :loading="isSubmitting" full-width>
+    <Button type="submit" class="submit-action" :loading="isSubmitting" full-width>
       {{ t("nlForm.submit") }}
     </Button>
 
@@ -177,8 +178,13 @@ const onSubmit = async () => {
   await submitHandler();
 };
 
-const handleVoicePressStart = async () => {
+const handleVoicePressStart = async (event: PointerEvent) => {
   if (!isVoiceSupported.value || isSubmitting.value) return;
+  const target = event.currentTarget;
+  if (target instanceof HTMLElement) {
+    target.setPointerCapture(event.pointerId);
+  }
+
   try {
     await startRecording();
   } catch {
@@ -186,13 +192,21 @@ const handleVoicePressStart = async () => {
   }
 };
 
-const handleVoicePressEnd = async () => {
+const handleVoicePressEnd = async (event: PointerEvent) => {
   if (!isVoiceSupported.value) return;
+  const target = event.currentTarget;
+  if (target instanceof HTMLElement && target.hasPointerCapture(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId);
+  }
   await stopRecording();
 };
 
-const handleVoicePressCancel = async () => {
+const handleVoicePressCancel = async (event: PointerEvent) => {
   if (!isVoiceSupported.value) return;
+  const target = event.currentTarget;
+  if (target instanceof HTMLElement && target.hasPointerCapture(event.pointerId)) {
+    target.releasePointerCapture(event.pointerId);
+  }
   if (isVoiceRecording.value || isVoiceProcessing.value) {
     await stopRecording();
   }
@@ -238,6 +252,7 @@ const handleVoicePressCancel = async () => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  touch-action: none;
   cursor: pointer;
   transition:
     background-color 180ms ease,
@@ -269,6 +284,12 @@ const handleVoicePressCancel = async () => {
     opacity: var(--sys-opacity-disabled);
     cursor: not-allowed;
   }
+}
+
+.submit-action {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .error-message {
