@@ -43,11 +43,13 @@ There is a separate FC deployment for the external job-runner trigger function:
 
 ## Frontend Deployment Truth
 
-The repo contains the frontend build configuration and output shape, but no canonical frontend hosting/deploy workflow is documented in-repo yet.
+The frontend is deployed to Aliyun ESA.
 
 Current durable facts we can state:
 
+- deployment target: Aliyun ESA
+- repo deployment descriptor: `apps/frontend/esa.jsonc`
 - frontend builds to `apps/frontend/dist`
 - backend runtime depends on `FRONTEND_URL` for OAuth/share link generation
 
-The exact frontend hosting platform remains undocumented runtime truth and should be added when the repo becomes the source of truth for it.
+The repo does not currently document a full CI/CD workflow for frontend ESA rollout with the same level of detail as backend FC deploy.

@@ -42,6 +42,20 @@ Separate workflow: `.github/workflows/job-runner-trigger-fc-deploy.yml`
 
 This deploys the trigger function that periodically calls the backend job tick endpoint.
 
+## Frontend Rollout Reality
+
+Current frontend deployment target is Aliyun ESA.
+
+Repo-tracked rollout facts:
+
+- deploy descriptor: `apps/frontend/esa.jsonc`
+- install command: `pnpm install`
+- build command: `pnpm run --filter frontend build`
+- published assets directory: `./dist`
+- not found strategy: SPA fallback
+
+The repo does not currently define a canonical GitHub Actions workflow for frontend ESA deploy.
+
 ## Manual Rollout Reality
 
 Manual backend deployment is supported through Serverless Devs commands, but the canonical rollout path is GitHub Actions.

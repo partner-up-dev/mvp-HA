@@ -132,11 +132,11 @@ These are intentionally **not** part of the first implementation slice, but Phas
 - Decompose `docs/deployment/backend-fc-cd.md` into runtime-truth documents
 - Separate deployment-shaping constraints from runtime operations
 
-### Phase 6 - Task System Follow-up
+### Phase 6 - Task Packet Continuity
 
-- Re-evaluate whether `docs/task` should remain the transient workspace
-- Only consider moving to a different task layout after durable layers are stable
-- This is a separate decision, not an automatic consequence of introducing `00-meta`
+- Keep `docs/task` as the repo task-packet area
+- Do not introduce a new top-level `tasks/` layout
+- Historical `docs/task/*` material may remain as execution history unless a specific cleanup task justifies normalization
 
 ## 7. Change Policy During This Task
 
@@ -175,4 +175,4 @@ After Meta, PRD, Product TDD, and Unit TDD are in place:
 
 - review whether any remaining durable technical truth is still stranded only in package-local AGENTS or legacy docs
 - start the deployment-layer migration into `docs/40-deployment`
-- keep `docs/task` as the transient workspace until the deployment layer is stable enough
+- continue using `docs/task` as the transient task-packet area

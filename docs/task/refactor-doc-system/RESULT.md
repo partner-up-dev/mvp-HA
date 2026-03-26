@@ -24,8 +24,8 @@
 - `docs/task/*` remains the transient task-packet area
 - `docs/plan/*` remains historical planning material
 - historical task/plan files may still mention removed legacy paths as provenance
+- the repo continues to use `docs/task`, not a new top-level `tasks/` layout
 
 ## Remaining Follow-Up
 
-- document frontend hosting/deploy truth once the repo becomes the source of truth for it
 - decide whether old task packets that referenced `docs/product/*` need selective normalization or can remain historical as-is

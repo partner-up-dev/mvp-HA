@@ -8,6 +8,7 @@ Establish `docs/40-deployment/*` as the canonical runtime-truth layer and remove
 
 - create `docs/40-deployment/index.md`, `environments.md`, `rollout.md`, `observability.md`, and `recovery.md`
 - migrate runtime truth out of `docs/deployment/backend-fc-cd.md`
+- document frontend deployment truth as Aliyun ESA
 - update active guidance and code comments to reference `docs/40-deployment/*`
 - delete legacy durable product docs under `docs/product/*`
 - delete legacy durable deployment docs under `docs/deployment/*` after cutover
