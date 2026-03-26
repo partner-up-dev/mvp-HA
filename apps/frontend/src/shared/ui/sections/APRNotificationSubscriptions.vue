@@ -28,41 +28,14 @@
         item.openSubscribeTemplateId &&
         !item.actionDisabled
       "
-      class="open-subscribe-proxy"
+      class="native-action-shell"
     >
-      <button
-        :class="[
-          'action-btn',
-          props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
-        ]"
-        type="button"
-      >
-        {{ item.actionLabel }}
-      </button>
-
       <wx-open-subscribe
-        class="open-subscribe-overlay"
+        class="open-subscribe-native"
         :template="item.openSubscribeTemplateId"
         @success="handleOpenSubscribeSuccess(item.key, $event)"
         @error="handleOpenSubscribeError(item.key, $event)"
-      >
-        <script type="text/wxtag-template" slot="style">
-          <style>
-            .open-subscribe-hit-target {
-              width: 100%;
-              height: 100%;
-              border: 0;
-              margin: 0;
-              padding: 0;
-              background: transparent;
-              cursor: pointer;
-            }
-          </style>
-        </script>
-        <script type="text/wxtag-template">
-          <button class="open-subscribe-hit-target"></button>
-        </script>
-      </wx-open-subscribe>
+      />
     </div>
 
     <button
@@ -165,7 +138,7 @@ const handleOpenSubscribeError = async (
   @include mx.pu-surface-card(outline);
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--sys-spacing-sm);
 }
@@ -192,6 +165,7 @@ const handleOpenSubscribeError = async (
 .action-btn {
   @include mx.pu-rect-action(primary, default);
   @include mx.pu-font(label-large);
+  min-width: 7.5rem;
   border: none;
   cursor: pointer;
 }
@@ -218,29 +192,17 @@ const handleOpenSubscribeError = async (
   color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
 }
 
-.open-subscribe-proxy {
-  position: relative;
+.native-action-shell {
   display: inline-flex;
-  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0 var(--sys-spacing-sm);
+  border-radius: var(--sys-shape-corner-medium);
+  background: var(--sys-color-primary-container);
 }
 
-.open-subscribe-proxy .action-btn {
-  pointer-events: none;
-}
-
-.open-subscribe-overlay {
-  position: absolute;
-  inset: 0;
+.open-subscribe-native {
   display: inline-flex;
-  width: 100%;
-  height: 100%;
-  min-height: 2.5rem;
-}
-
-@media (max-width: 768px) {
-  .subscription-card .action-btn,
-  .subscription-card .open-subscribe-proxy {
-    width: 100%;
-  }
 }
 </style>
