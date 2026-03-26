@@ -19,10 +19,7 @@
           :disabled="isSubmitting || isVoiceProcessing"
           :aria-pressed="isVoiceRecording"
           :aria-label="t('nlForm.voiceAction')"
-          @pointerdown.prevent="handleVoicePressStart"
-          @pointerup.prevent="handleVoicePressEnd"
-          @pointerleave="handleVoicePressCancel"
-          @pointercancel.prevent="handleVoicePressCancel"
+          @click="handleVoiceToggle"
         >
           <span
             v-if="isVoiceRecording"
@@ -196,38 +193,20 @@ const onSubmit = async () => {
   await submitHandler();
 };
 
-const handleVoicePressStart = async (event: PointerEvent) => {
-  if (!isVoiceSupported.value || isSubmitting.value) return;
-  if (isVoiceProcessing.value) return;
-  const target = event.currentTarget;
-  if (target instanceof HTMLElement) {
-    target.setPointerCapture(event.pointerId);
+const handleVoiceToggle = async (): Promise<void> => {
+  if (!isVoiceSupported.value || isSubmitting.value || isVoiceProcessing.value) {
+    return;
+  }
+
+  if (isVoiceRecording.value) {
+    await stopRecording();
+    return;
   }
 
   try {
     await startRecording();
   } catch {
     // Error handled by hook state.
-  }
-};
-
-const handleVoicePressEnd = async (event: PointerEvent) => {
-  if (!isVoiceSupported.value) return;
-  const target = event.currentTarget;
-  if (target instanceof HTMLElement && target.hasPointerCapture(event.pointerId)) {
-    target.releasePointerCapture(event.pointerId);
-  }
-  await stopRecording();
-};
-
-const handleVoicePressCancel = async (event: PointerEvent) => {
-  if (!isVoiceSupported.value) return;
-  const target = event.currentTarget;
-  if (target instanceof HTMLElement && target.hasPointerCapture(event.pointerId)) {
-    target.releasePointerCapture(event.pointerId);
-  }
-  if (isVoiceRecording.value || isVoiceProcessing.value) {
-    await stopRecording();
   }
 };
 </script>
