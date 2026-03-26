@@ -35,8 +35,8 @@ It is intentionally repo-generic. Product-specific terms such as `PartnerRequest
 
 - Meta: global documentation-system rules and ontology. In this repo, this is `docs/00-meta/`.
 - PRD: product intent and behavior. In this repo, this is `docs/10-prd/`.
-- Product TDD: system-level technical realization. This layer is planned but not yet canonical in the current migration state.
-- Unit TDD: unit-local technical realization. This layer is planned but not yet canonical in the current migration state.
+- Product TDD: system-level technical realization. In this repo, this is `docs/20-product-tdd/`.
+- Unit TDD: unit-local technical realization. In this repo, this is `docs/30-unit-tdd/`.
 - Deployment: runtime truth, rollout, and recovery. During the current migration state, runtime truth remains in `docs/deployment/`.
 
 ## Non-Equivalences

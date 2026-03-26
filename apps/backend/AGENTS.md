@@ -48,6 +48,13 @@ src/
 └── index.ts              # Entrypoint, mounts routes, request-tail maintenance, exports AppType
 ```
 
+## Documents
+
+Read following documents when needed and keep them current:
+
+- `docs/20-product-tdd/*.md`
+- `docs/30-unit-tdd/backend/*.md`
+
 ## Development Guidelines
 
 - Entity Layer (src/entities): see `src/entities/AGENTS.md`

@@ -8,8 +8,8 @@ This file defines what should become durable truth, where it should live, and wh
 
 - Documentation-system rules, ontology, read order, and layer semantics -> `docs/00-meta/*`
 - Product drivers, claims, workflows, rules, scope, and derived domain vocabulary -> `docs/10-prd/*`
-- System-level technical decomposition and cross-unit coordination -> future `docs/20-product-tdd/*`
-- Unit-local technical design -> future `docs/30-unit-tdd/*`
+- System-level technical decomposition and cross-unit coordination -> `docs/20-product-tdd/*`
+- Unit-local technical design -> `docs/30-unit-tdd/*`
 - Runtime environments, rollout, observability, and recovery -> current `docs/deployment/*`, later `docs/40-deployment/*`
 - Temporary execution detail, negotiation notes, phased rollout notes, and one-off implementation steps -> `docs/task/*`
 

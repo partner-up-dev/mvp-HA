@@ -171,10 +171,8 @@ These are intentionally **not** part of the first implementation slice, but Phas
 
 ## 10. Immediate Next Step
 
-Implement Phase 1 only:
+After Meta, PRD, Product TDD, and Unit TDD are in place:
 
-- create `docs/00-meta`
-- define the hybrid read/promotion model
-- prepare the PRD migration map
-
-Do not start Product TDD, Unit TDD, Deployment rewrite, or task-system replacement in the same patch.
+- review whether any remaining durable technical truth is still stranded only in package-local AGENTS or legacy docs
+- start the deployment-layer migration into `docs/40-deployment`
+- keep `docs/task` as the transient workspace until the deployment layer is stable enough

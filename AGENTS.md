@@ -13,6 +13,8 @@ Read following documents when needed and keep them current:
 - `docs/00-meta/*.md`
 - `docs/10-prd/index.md`
 - `docs/10-prd/**/*.md`
+- `docs/20-product-tdd/*.md`
+- `docs/30-unit-tdd/**/*.md`
 - `apps/backend/AGENTS.md`
 - `apps/frontend/AGENTS.md`
 
