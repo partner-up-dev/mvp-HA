@@ -16,6 +16,7 @@
 - Bearer access tokens in `Authorization`
 - cookie-backed flows via `credentials: "include"` where WeChat/auth state is involved
 - route params and payloads typed from the backend workspace package
+- admin booking execution uses the same typed RPC path: frontend fetches one admin workspace snapshot, mutates execution or manual-release actions, then invalidates dependent admin caches
 
 ### Backend Internal Coordination
 
@@ -30,6 +31,14 @@
 - WeChat Official Account APIs for OAuth, JS-SDK signature, and subscription messaging
 - WeCom app callbacks for inbound message-driven PR creation
 - LLM provider for natural-language parsing/generation
+
+### Booking Execution Coordination Slice
+
+1. backend derives booking-triggered pending work from Anchor PR state plus support-resource policy
+2. frontend renders the admin workspace without inventing independent booking state
+3. admin submits execution result or manual release intent
+4. backend records audit state, updates dependent booking-contact consequences, and triggers result notifications where eligible
+5. frontend refreshes the workspace and renders the new backend-authored audit timeline
 
 ### Frontend To Browser/Platform APIs
 

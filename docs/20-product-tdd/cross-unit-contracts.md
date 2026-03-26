@@ -38,6 +38,16 @@ User-facing canonical routes include:
 
 Backend route families under `/api/*` must continue to support those surfaces coherently.
 
+Admin booking execution introduces an additional cross-unit contract family:
+
+- frontend admin workspace reads one workspace payload containing `pendingItems` and merged `auditItems`
+- backend provides that workspace through `GET /api/admin/booking-execution/workspace`
+- frontend submits one execution result per Anchor PR
+- backend accepts that through `POST /api/admin/anchor-prs/:id/booking-execution`
+- the contract includes notification summary fields so frontend/admin UX can render fulfillment outcome without recomputing backend state
+
+This is a cross-unit contract first, and the backend/frontend unit docs should inherit it rather than define it independently.
+
 ## 5. Configuration And Metadata Contract
 
 - backend exposes public config values through `/api/config/public/:key`

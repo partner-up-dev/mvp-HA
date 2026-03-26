@@ -51,5 +51,5 @@
 - `/contact-support` 到 `/contact-author` 与 `/about` 的导流
 - `/about` 展示仓库与前后端 commit hash，并提供公众号关注弹窗
 - 内部管理端维护 Anchor/Event/POI/Booking Support
-- 内部管理端通过 `/admin/booking-execution` 处理已触发预订的 Anchor PR、提交平台预订结果并释放无效联系人
+- 内部管理端处理已触发预订的 Anchor 协作、提交平台预订结果并释放无效联系人
 - 产品与运行配置影响用户实际体验
