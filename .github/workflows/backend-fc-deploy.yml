@@ -116,6 +116,7 @@ jobs:
       WECOM_APP_AGENT_ID: ${{ secrets.WECOM_APP_AGENT_ID }}
       WECOM_APP_SECRET: ${{ secrets.WECOM_APP_SECRET }}
       JOB_RUNNER_INTERNAL_TOKEN: ${{ secrets.JOB_RUNNER_INTERNAL_TOKEN }}
+      BACKEND_COMMIT_HASH: ${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
