@@ -29,3 +29,4 @@ The frontend is domain-first:
 - list mode should keep expired batches out of the primary top tab pills
 - list mode should still provide an explicit "expired batches" entry point as a trailing pill that opens a chooser for expired batches
 - card mode demand-card aggregation should only use non-expired batches
+- the expired-batch chooser panel should stay as a minimal reusable component, while the trailing pill trigger remains page-owned

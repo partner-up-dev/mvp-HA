@@ -209,15 +209,10 @@
                   v-if="isExpiredBatchMenuOpen"
                   class="expired-batch-menu__panel"
                 >
-                  <button
-                    v-for="option in expiredBatchOptions"
-                    :key="option.batchId"
-                    type="button"
-                    class="expired-batch-menu__option"
-                    @click="handleExpiredBatchSelect(option.batchId)"
-                  >
-                    {{ option.label }}
-                  </button>
+                  <AnchorEventExpiredBatchSelector
+                    :options="expiredBatchOptions"
+                    @select="handleExpiredBatchSelect"
+                  />
                 </div>
               </div>
             </template>
@@ -269,6 +264,7 @@ import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
 import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
+import AnchorEventExpiredBatchSelector from "@/domains/event/ui/primitives/AnchorEventExpiredBatchSelector.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
@@ -1086,30 +1082,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   position: absolute;
   left: 0;
   top: calc(100% + var(--sys-spacing-xs));
-  min-width: 180px;
-  background: var(--sys-color-surface-container-high);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-md);
-  padding: var(--sys-spacing-xs);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
   z-index: 10;
-}
-
-.expired-batch-menu__option {
-  @include mx.pu-font(label-medium);
-  border: none;
-  background: transparent;
-  text-align: left;
-  color: var(--sys-color-on-surface);
-  border-radius: var(--sys-radius-sm);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  cursor: pointer;
-
-  &:hover {
-    background: var(--sys-color-surface-container-highest);
-  }
 }
 
 .pr-list {
