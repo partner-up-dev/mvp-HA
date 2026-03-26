@@ -15,13 +15,9 @@ Read following documents when needed and keep them current:
 - `docs/10-prd/**/*.md`
 - `docs/20-product-tdd/*.md`
 - `docs/30-unit-tdd/**/*.md`
+- `docs/40-deployment/*.md`
 - `apps/backend/AGENTS.md`
 - `apps/frontend/AGENTS.md`
-
-Transitional sources during the doc-system refactor:
-
-- `docs/product/*` is legacy product material being migrated into `docs/10-prd/*`
-- `docs/deployment/*` remains the runtime/deployment source of truth until its later migration phase
 
 > Documents in `docs/plan` are temporary, don't read or update them.
 >

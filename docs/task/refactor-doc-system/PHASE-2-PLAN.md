@@ -19,17 +19,17 @@ Extend the new durable doc system from product intent into technical realization
 - `apps/frontend/src/ARCHITECTURE.md`
 - backend/frontend package manifests and main entrypoints
 - backend route mount graph and frontend RPC clients
-- `docs/deployment/backend-fc-cd.md` for deployment-shaping constraints only
+- legacy backend deployment docs and workflow files for deployment-shaping constraints only
 
 ## Acceptance Criteria
 
 - a new engineer can identify the current technical units and their authority boundaries without inferring them from folder names alone
 - frontend/backend compile-time and runtime coordination is explicit
 - backend and frontend unit docs explain local design, interfaces, state, operations, and verification
-- deployment procedures remain in `docs/deployment/*`, but system-shaping deployment constraints are captured in Product TDD
+- deployment procedures remain in the deployment layer, but system-shaping deployment constraints are captured in Product TDD
 
 ## Out Of Scope
 
-- full `docs/40-deployment` migration
+- full deployment-layer migration in the same patch
 - historical cleanup of `docs/product/*`, `docs/plan/*`, or old package-local notes
 - code changes beyond documentation and read-order updates

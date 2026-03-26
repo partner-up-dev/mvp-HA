@@ -27,6 +27,7 @@ Read following documents when needed and keep them current:
 
 - `docs/20-product-tdd/*.md`
 - `docs/30-unit-tdd/frontend/*.md`
+- `docs/40-deployment/*.md`
 - Architecture: `src/ARCHITECTURE.md`
 - Vue Component Guideline: See `src/AGENTS.components.md`.
 - Styling governance: `src/styles/TOKEN-GOVERNANCE.md`

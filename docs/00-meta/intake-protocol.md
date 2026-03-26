@@ -79,7 +79,6 @@ Promotion targets:
 During the current doc-system refactor:
 
 - `docs/task/` remains the transient working area
-- `docs/product/*` is legacy product material
 - `docs/10-prd/*` is the target canonical product layer
 - `docs/20-product-tdd/*` and `docs/30-unit-tdd/*` are the canonical technical layers
-- `docs/deployment/*` remains the runtime/deployment source of truth until the deployment layer is migrated
+- `docs/40-deployment/*` is the canonical deployment layer

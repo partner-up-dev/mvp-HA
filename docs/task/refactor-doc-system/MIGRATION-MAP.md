@@ -78,8 +78,7 @@ This file tracks how the legacy product docs map into the new canonical Phase 1 
 - workflow -> `docs/10-prd/behavior/workflows.md`
 - operational reality about time semantics -> `docs/10-prd/_drivers/operational-realities.md`
 
-## Legacy Status After Phase 1
+## Legacy Status
 
-- `docs/product/*` remains in the repo as legacy source material.
-- New durable product updates should target `docs/10-prd/*`.
-- We should only remove or freeze `docs/product/*` after the team is satisfied the new PRD is complete enough to operate from directly.
+- PRD cutover is complete enough that new durable product updates should target `docs/10-prd/*` only.
+- `docs/product/*` can be removed as legacy durable docs after this migration step.

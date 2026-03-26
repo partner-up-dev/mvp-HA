@@ -46,7 +46,7 @@ Use `capabilities.md` as the product surface map, not as the primary source of t
 
 - Upstream from `docs/00-meta/*`: this layer inherits ontology and promotion rules.
 - Downstream to future Product TDD: technical decomposition must realize the claims, workflows, and rules defined here.
-- Sideways to `docs/deployment/*`: runtime realities may constrain the product, but runtime procedures do not belong here.
+- Sideways to `docs/40-deployment/*`: runtime realities may constrain the product, but runtime procedures do not belong here.
 
 ## Common Local Mistakes
 

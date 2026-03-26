@@ -10,12 +10,11 @@ This file defines the current documentation layout, read order, and migration st
 - `docs/10-prd/*`: canonical product intent and behavior
 - `docs/20-product-tdd/*`: canonical system-level technical realization
 - `docs/30-unit-tdd/*`: canonical unit-local technical realization
+- `docs/40-deployment/*`: canonical runtime/deployment truth
 - `apps/backend/AGENTS.md` and `apps/frontend/AGENTS.md`: package-local technical guidance
-- `docs/deployment/*`: current runtime/deployment truth until the deployment layer is migrated
 
 ## Transitional Areas
 
-- `docs/product/*`: legacy product documentation being migrated into `docs/10-prd/*`
 - `docs/task/*`: transient task packets and execution tracking
 - `docs/plan/*`: historical planning material, not a durable layer
 
@@ -69,12 +68,14 @@ Must not contain:
 - API transport internals unless they are user-visible contracts
 - rollout or operational procedures
 
-### `docs/deployment`
+### `docs/40-deployment`
 
-Owns, for now:
+Owns:
 
-- current deployment workflow
-- current runtime procedures and constraints that are not yet migrated
+- environments
+- rollout
+- observability
+- recovery
 
 Must not silently become product or architecture documentation.
 
@@ -100,10 +101,11 @@ Current migration target:
 - establish `docs/10-prd/*`
 - establish `docs/20-product-tdd/*`
 - establish `docs/30-unit-tdd/*`
-- keep runtime/deployment truth in `docs/deployment/*` until the deployment phase
+- establish `docs/40-deployment/*`
 
 Practical rule:
 
 - if a durable product statement has already been migrated into `docs/10-prd/*`, update that file
 - if a durable technical statement has a home in `docs/20-product-tdd/*` or `docs/30-unit-tdd/*`, update that file instead of burying it in package-local notes
+- if a durable runtime or rollout statement exists, update `docs/40-deployment/*`
 - if a durable statement has not yet been migrated, update the active task packet first, then promote it into the right durable layer rather than extending legacy docs

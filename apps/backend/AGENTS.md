@@ -54,6 +54,7 @@ Read following documents when needed and keep them current:
 
 - `docs/20-product-tdd/*.md`
 - `docs/30-unit-tdd/backend/*.md`
+- `docs/40-deployment/*.md`
 
 ## Development Guidelines
 
