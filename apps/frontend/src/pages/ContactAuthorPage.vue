@@ -10,7 +10,7 @@
     />
 
     <ErrorToast
-      v-else-if="publicConfigQuery.error.value"
+      v-if="publicConfigQuery.error.value"
       :message="
         publicConfigQuery.error.value instanceof Error
           ? publicConfigQuery.error.value.message
@@ -19,7 +19,7 @@
       persistent
     />
 
-    <section v-else class="author-content">
+    <section class="author-content">
       <p class="description">{{ t("contactAuthorPage.description") }}</p>
       <div class="qr-frame">
         <img
@@ -45,10 +45,36 @@ import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
+const DEFAULT_AUTHOR_QR_CODE_URL =
+  "https://oss-app.partner-up.cn/5264495b163398842ad04ee5ee42a3df.jpg";
+
 const { t } = useI18n();
 const publicConfigQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.authorWechatQrCode);
 
-const qrCodeUrl = computed(() => publicConfigQuery.data.value?.value ?? null);
+const normalizeHttpUrl = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+
+  try {
+    const parsed = new URL(value.trim());
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+};
+
+const qrCodeUrl = computed(() => {
+  if (
+    publicConfigQuery.isLoading.value ||
+    publicConfigQuery.error.value
+  ) {
+    return DEFAULT_AUTHOR_QR_CODE_URL;
+  }
+
+  return normalizeHttpUrl(publicConfigQuery.data.value?.value) ?? DEFAULT_AUTHOR_QR_CODE_URL;
+});
 
 </script>
 
