@@ -41,6 +41,7 @@ Recommended order:
 6. `domain-structure/*`
 
 Use `capabilities.md` as the product surface map, not as the primary source of truth.
+Treat `_drivers` as upstream truth and `domain-structure` as derived structure that cannot redefine drivers or claims.
 
 ## How This Layer Connects To Adjacent Layers
 

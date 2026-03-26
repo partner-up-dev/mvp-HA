@@ -5,6 +5,7 @@
 `docs/20-product-tdd/` is the canonical system-level technical realization layer.
 
 It explains how the product behavior defined in PRD is realized across technical units, boundaries, contracts, and runtime-shaping constraints.
+Technical units are not the same thing as code containers; this layer makes that mapping explicit.
 
 ## What This Layer Owns
 

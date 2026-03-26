@@ -13,6 +13,12 @@ This file defines the current documentation layout, read order, and migration st
 - `docs/40-deployment/*`: canonical runtime/deployment truth
 - `apps/backend/AGENTS.md` and `apps/frontend/AGENTS.md`: package-local technical guidance
 
+## Kernel + Adapters
+
+- `docs/00-meta/` is the kernel: it must stay intentionally small and globally canonical.
+- each layer `index.md` is a local adapter for how to use that layer.
+- indexes may refine usage, but must not redefine ontology, intake protocol, promotion policy, or global read logic.
+
 ## Transitional Areas
 
 - `docs/task/*`: transient task packets and execution tracking
@@ -27,8 +33,8 @@ Default reading order:
 3. other relevant files under `docs/00-meta/*`
 4. `docs/10-prd/index.md`
 5. the specific PRD document that governs the change
-6. relevant `docs/20-product-tdd/*`
-7. relevant `docs/30-unit-tdd/<unit>/*`
+6. `docs/20-product-tdd/index.md` and relevant `docs/20-product-tdd/*`
+7. `docs/30-unit-tdd/index.md` and relevant `docs/30-unit-tdd/<unit>/*`
 8. relevant package-local technical guidance
 9. active task packet under `docs/task/*`
 10. code and tests
