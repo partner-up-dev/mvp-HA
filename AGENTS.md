@@ -10,18 +10,26 @@ And this repository is a pnpm workspace with following packages implementing Par
 
 Read following documents when needed and keep them current:
 
+- `docs/00-meta/*.md`
+- `docs/10-prd/index.md`
+- `docs/10-prd/**/*.md`
 - `apps/backend/AGENTS.md`
 - `apps/frontend/AGENTS.md`
-- `docs/product/overview.md`
-- `docs/product/features/*.md`
 
-> Documents in `docs/plan`, `docs/task` are temporary, don't read or update them.
+Transitional sources during the doc-system refactor:
+
+- `docs/product/*` is legacy product material being migrated into `docs/10-prd/*`
+- `docs/deployment/*` remains the runtime/deployment source of truth until its later migration phase
+
+> Documents in `docs/plan` are temporary, don't read or update them.
+>
+> Documents in `docs/task` are temporary task packets. Only read or update the active task folder when the current task explicitly uses it.
 
 ### Top-level Glossary
 
 - 搭子请求 (PartnerRequest, PR): 承载搭子活动全生命周期的模型
 
-> Read more in `docs/product/glossary.md`
+> Read more in `docs/10-prd/domain-structure/vocabulary-and-lifecycle.md`
 
 ## Development Workflow
 
