@@ -10,7 +10,7 @@ export const PUBLIC_CONFIG_KEYS = {
   wecomServiceQrCode: "wecom_service_qr_code",
   wecomSupportLinkWechatIn: "wecom_support_link_wechat_in",
   wecomSupportLinkWechatOut: "wecom_support_link_wechat_out",
-  wechatOfficialAccountUsername: "wechat_official_account_username",
+  wechatOfficialAccountQrCode: "wechat_official_account_qr_code",
 } as const;
 
 export type PublicConfigKey =
