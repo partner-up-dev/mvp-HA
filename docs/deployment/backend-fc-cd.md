@@ -134,8 +134,9 @@ The deploy workflow:
 1. Builds and publishes a dedicated FC layer that contains backend production `node_modules`.
 2. Resolves the latest layer ARN (including version suffix) and passes it to `s deploy` via `ALIYUN_FC_NODE_MODULES_LAYER_ARN`.
 3. Runs `s deploy` to update function `LATEST`.
-4. On `master` only: publishes a new FC function version (description = commit SHA).
-5. On `master` only: publishes/updates alias `production` to that version.
+4. Injects `BACKEND_COMMIT_HASH` from `GITHUB_SHA`, so `/api/meta/build` can report backend commit hash in runtime environments without `.git` metadata.
+5. On `master` only: publishes a new FC function version (description = commit SHA).
+6. On `master` only: publishes/updates alias `production` to that version.
 
 So `develop` tracks `LATEST`, while `production` remains pinned to immutable versions promoted from `master`.
 
@@ -203,6 +204,7 @@ DATABASE_URL="$DATABASE_URL_FOR_MIGRATION" s invoke -t apps/backend/fc-db-migrat
    ALIYUN_FC_OSS_BUCKET_PATH=/ \
    ALIYUN_FC_PATH=... \
    DATABASE_URL=... \
+   BACKEND_COMMIT_HASH=... \
    WECHAT_OFFICIAL_ACCOUNT_APP_ID=... \
    WECHAT_OFFICIAL_ACCOUNT_APP_SECRET=... \
    FIXED_IP_HTTP_PROXY=... \
