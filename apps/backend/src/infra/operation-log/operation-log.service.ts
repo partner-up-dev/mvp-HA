@@ -52,6 +52,10 @@ class OperationLogServiceImpl {
   ) {
     return repo.findByAggregate(aggregateType, aggregateId, limit);
   }
+
+  async queryByAction(aggregateType: string, action: string, limit?: number) {
+    return repo.findByAction(aggregateType, action, limit);
+  }
 }
 
 /** Singleton operation log service. */

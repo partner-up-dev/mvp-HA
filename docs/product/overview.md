@@ -18,6 +18,7 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
   - `/admin/login` 用于 admin 使用 UUID + PIN 登录
   - `/admin/anchor-pr` 用于维护 Anchor Event / Batch / Anchor PR
   - `/admin/booking-support` 用于维护预订与资助资源模板与批次覆盖
+  - `/admin/booking-execution` 用于处理已触发预订的 Anchor PR、提交预订结果、释放无效联系人并查看审计记录
   - `/admin/pois` 用于维护全局 POI 库与 POI Gallery
 
 ## 合法使用路径
@@ -48,4 +49,4 @@ PartnerUp MVP-HA 是一个协作效率产品（H-A）：把“群里的一句话
 - `REMINDER_CONFIRMATION` 有剩余次数时会按 `confirm_start` 与 `confirm_end - 30min` 触发服务号订阅通知提醒（模板消息通道保留为兼容兜底）；次数归零后会清理未执行提醒任务。
 - `NEW_PARTNER` 有剩余次数时，当你已加入的 Anchor PR 有新参与者加入会触发服务号订阅通知；次数归零后会清理该用户待执行的新搭子通知任务。
 - 发送链路若返回 `43101`（用户拒收订阅消息），后端会自动将对应通知项次数清零并清理待执行任务，避免重复失败。
-- `BOOKING_RESULT` 当前仅做次数持久化与订阅链路配置，发送链路待后续预订处理控制台接入。
+- `BOOKING_RESULT` 有剩余次数时，管理员在 `/admin/booking-execution` 提交预订结果后，会向当前 Anchor PR 的所有活跃参与者同步发送结果通知。

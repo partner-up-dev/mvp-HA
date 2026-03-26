@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import type { PartnerId, PRId, UserId } from "../../../entities";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
+import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import { cancelWeChatReminderJobsForParticipant } from "../../../infra/notifications";
@@ -11,6 +12,7 @@ import { operationLogService } from "../../../infra/operation-log";
 import { applyAnchorParticipantReleaseEffects } from "../../pr-core/services/anchor-participant-release-effects.service";
 
 const anchorPRRepo = new AnchorPRRepository();
+const bookingContactRepo = new AnchorPRBookingContactRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 
@@ -61,6 +63,7 @@ export async function releaseAdminAnchorPRPartner(input: {
 
   await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
   await cancelWeChatReminderJobsForParticipant(input.prId, slot.userId);
+  const bookingContact = await bookingContactRepo.findByPrId(input.prId);
 
   const { bookingContactCleared, creatorTransferredToUserId } =
     await applyAnchorParticipantReleaseEffects({
@@ -98,6 +101,7 @@ export async function releaseAdminAnchorPRPartner(input: {
       trigger: "admin_manual",
       manual: true,
       reason,
+      bookingContactPhone: bookingContact?.phoneE164 ?? null,
       bookingContactCleared,
       creatorTransferredToUserId,
     },

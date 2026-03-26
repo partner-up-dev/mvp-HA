@@ -24,6 +24,7 @@ import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { poiRoute } from "./controllers/poi.controller";
 import { metaRoute } from "./controllers/meta.controller";
 import { adminAnchorManagementRoute } from "./controllers/admin-anchor-management.controller";
+import { adminBookingExecutionRoute } from "./controllers/admin-booking-execution.controller";
 import { adminBookingSupportRoute } from "./controllers/admin-booking-support.controller";
 import { adminPoiRoute } from "./controllers/admin-poi.controller";
 import { jobRunner } from "./infra/jobs";
@@ -150,6 +151,7 @@ const routes = app
   .route("/api/analytics", analyticsRoute)
   .route("/api/pois", poiRoute)
   .route("/api/admin", adminAnchorManagementRoute)
+  .route("/api/admin", adminBookingExecutionRoute)
   .route("/api/admin", adminBookingSupportRoute)
   .route("/api/admin", adminPoiRoute)
   .route("/internal/jobs", internalJobsRoute);

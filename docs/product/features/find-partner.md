@@ -25,6 +25,7 @@
 - 自然语言创建同样采用“先建草稿、再发布”的前端自动化流程。
 - Community PR 发布接口为 `POST /api/cpr/:id/publish`。
 - 当前版本不提供手动创建 Anchor PR 的页面；Anchor PR 由 Anchor Event / batch 流程生成，并通过 `/apr/:id` 进入详情页。
+- 内部管理端提供 `/admin/booking-execution` 工作台：运营可查看已触发预订但尚未处理的 Anchor PR，选择目标资源提交 `SUCCESS/FAILED` 结果，并在手机号无效时释放当前预订联系人。
 - 发布 `DRAFT` 时，系统会为创建者绑定用户身份并生成/确保用户 PIN（4 位数字）；`user-id` 与 `user-pin` 缓存在前端 localStorage。
 - 会话初始化：进入网页时自动调用 `/api/auth/session`。若已有本地 `user-id/user-pin`，则静默登录；若无凭据则保持匿名，第一次发布搭子请求时自动创建本地账户并登录。
 - 创建成功时系统会按 `min/max` 预创建 `partners` 槽位；对已发布请求会保证“创建者占用一个槽位”。
@@ -75,7 +76,8 @@
 - `NEW_PARTNER` 有剩余次数时，系统会在 Anchor PR 有新参与者加入时，向同 PR 其他活跃参与者发送订阅通知。
 - `NEW_PARTNER` 模板 ID 通过后端配置表 key `wechat.submsg_new_partner_template_id` 读取。
 - 若发送链路返回 `43101`（用户拒收订阅消息），系统会自动将对应通知项次数清零，并清理该用户该通知项的待执行任务。
-- `BOOKING_RESULT` 当前仅支持次数持久化，不触发发送链路。
+- `BOOKING_RESULT` 在 admin 通过 `/admin/booking-execution` 提交结果后触发：会向同 PR 全部活跃参与者发送一次预订结果通知，并按发送成功/失败/跳过回写审计汇总。
+- `/api/admin/booking-execution/workspace` 返回待处理项和审计时间线；审计时间线会合并预订执行记录与 `partner.admin_manual_release` 操作日志，供前端做客户端搜索。
 - 编辑内容弹窗复用同一结构化表单组件并提交更新；`READY` 及之后状态禁止任何 user-facing 内容编辑。
 - 当 `OPEN` 状态 PR 修改时间窗口时，系统会对当前所有活跃参与者执行同一时间冲突校验；若任一参与者发生冲突则拒绝本次修改（`409`，`JOIN_TIME_WINDOW_CONFLICT`）。
 - 创建者编辑规则：JWT `authenticated/service` 角色可直接编辑；JWT `anonymous` 角色需输入用户 PIN，验证成功后会升级 token。
@@ -119,6 +121,7 @@
 - `POST /api/wechat/notifications/subscriptions` 在无有效微信会话时返回 401（或 OAuth 未配置时返回 503）。
 - `POST /api/wechat/notifications/subscriptions` 的 `kind=NEW_PARTNER` 在次数清零时会清理未执行的新搭子通知任务。
 - `POST /api/wechat/notifications/subscriptions` 在微信开放标签场景下：`accept` 增加次数，`reject` 清零次数，`cancel/filter/error` 不变更次数。
+- `POST /api/admin/anchor-prs/:id/booking-execution` 仅允许对已触发预订、且存在平台代订资源的 Anchor PR 提交一次处理结果；`FAILED` 时必须填写原因。
 - 仅 Anchor PR 在 `T-30min` 之后拒绝 join 请求（400）。
 - 仅 Anchor PR 在到达 `T-1h` 且槽位未确认时，会在读取/操作时懒触发自动释放，保证结构状态收敛。
 - Anchor PR 详情页签到仅展示“我已到场”；不再提供“我未到场”提交动作。
