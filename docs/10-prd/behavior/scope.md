@@ -7,7 +7,7 @@
 - 本地账户 + PIN、微信登录/绑定、`/me`、`/pr/mine`
 - 分享链路、微信分享、小红书文案/海报、`spm` 归因
 - Anchor 可靠性闭环：确认、提醒、签到、新搭子通知
-- 联系客服 / 联系作者分流
+- “需要帮助”入口下的客服 / 作者反馈 / 关于页分流
 - 运营端维护 Anchor Event / Batch / Anchor PR、POI、Booking Support
 
 ## 当前明确不在范围内

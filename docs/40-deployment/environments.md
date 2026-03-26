@@ -10,6 +10,7 @@ Current runtime facts:
 - HTTP server listens on port `3000`
 - backend code package is built into `apps/backend/.fc-package`
 - production `node_modules` are delivered through a separate FC layer
+- `BACKEND_COMMIT_HASH` is injected by deploy/runtime config so build metadata remains available without `.git`
 - OSS is mounted at `/mnt/oss`
 - timezone is `Asia/Shanghai`
 

@@ -207,7 +207,7 @@
   "contactAuthorPage": {
     "title": "联系作者",
     "description": "扫码添加团队作者微信，欢迎反馈功能建议或缺陷问题。",
-    "footerEntry": "联系作者（功能建议 / Bug 反馈）",
+    "footerEntry": "需要帮助",
     "qrAlt": "作者微信二维码",
     "qrMissing": "暂未配置作者微信二维码"
   },
@@ -249,7 +249,7 @@
     "backendCommitLabel": "后端 Commit Hash",
     "unknownValue": "未知",
     "backendCommitLoadFailed": "后端 commit hash 加载失败，请稍后重试。",
-    "footerEntry": "关于产品与版本",
+    "footerEntry": "关于",
     "footerNavLabel": "页脚导航"
   },
   "createPage": {
@@ -606,9 +606,6 @@
     "eventStatusLabel": "活动状态",
     "eventDefaultMinPartnersLabel": "默认最少人数",
     "eventDefaultMaxPartnersLabel": "默认最多人数",
-    "eventDefaultConfirmationStartLabel": "默认确认开始（分钟前）",
-    "eventDefaultConfirmationEndLabel": "默认确认截止（分钟前）",
-    "eventDefaultJoinLockLabel": "默认停止加入（分钟前）",
     "eventPoiHint": "POI 库与 Gallery 在「POIs 配置」页面维护；这里维护当前活动引用的 POI ID 列表。",
     "eventLocationPoolLabel": "场地池（每行一个）",
     "eventTimeWindowHint": "时间池由批次自动同步，无需单独编辑。",

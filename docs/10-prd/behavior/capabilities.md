@@ -46,6 +46,8 @@
 
 ## 7. 支持与运营
 
-- 联系客服与联系作者分流
+- “需要帮助”入口驱动的支持分流
+- `/contact-support` 到 `/contact-author` 与 `/about` 的导流
+- `/about` 展示仓库与前后端 commit hash，并提供公众号关注弹窗
 - 内部管理端维护 Anchor/Event/POI/Booking Support
 - 产品与运行配置影响用户实际体验

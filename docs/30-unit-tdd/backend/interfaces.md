@@ -7,6 +7,7 @@
 - auth and user routes under `/api/auth` and `/api/users`
 - PR routes under `/api/pr`, `/api/cpr`, `/api/apr`
 - event, share, upload, config, meta, analytics, POI, WeChat, WeCom, and admin route families
+- `/api/meta/build` exposes repository URL and backend commit hash for runtime-facing product surfaces such as `/about`
 
 ### Internal HTTP
 

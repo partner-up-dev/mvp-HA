@@ -16,14 +16,16 @@ Primary workflow: `.github/workflows/backend-fc-deploy.yml`
 8. resolve latest layer ARN
 9. build backend
 10. package backend function payload
-11. deploy backend FC function
-12. on `master`, publish function version and update `production` alias
+11. inject `BACKEND_COMMIT_HASH` from `GITHUB_SHA`
+12. deploy backend FC function
+13. on `master`, publish function version and update `production` alias
 
 ## Rollout Guarantees
 
 - migrations happen before backend deploy
 - backend deploys run serially through the `backend-fc-deploy` concurrency group
 - layer-only publish is supported via workflow dispatch input
+- runtime build metadata stays available even when the deployed package has no `.git` directory
 
 ## DB Artifact Validation
 

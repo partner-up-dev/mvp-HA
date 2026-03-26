@@ -64,9 +64,6 @@ export class AnchorEventRepository {
         | "timeWindowPool"
         | "defaultMinPartners"
         | "defaultMaxPartners"
-        | "defaultConfirmationStartOffsetMinutes"
-        | "defaultConfirmationEndOffsetMinutes"
-        | "defaultJoinLockOffsetMinutes"
         | "coverImage"
         | "status"
       >

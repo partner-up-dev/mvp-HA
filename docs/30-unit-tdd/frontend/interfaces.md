@@ -15,6 +15,11 @@
 - `/wechat/oauth/callback`
 - `/admin/*`
 
+Notable route behavior:
+
+- `/contact-support` is entered from the “需要帮助” entry and links onward to `/contact-author` and `/about`
+- `/about` reads backend build metadata and can open the official-account QR modal
+
 ### Browser/Platform APIs
 
 - `localStorage`
