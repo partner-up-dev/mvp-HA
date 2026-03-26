@@ -207,7 +207,7 @@
   "contactAuthorPage": {
     "title": "联系作者",
     "description": "扫码添加团队作者微信，欢迎反馈功能建议或缺陷问题。",
-    "footerEntry": "联系作者（功能建议 / Bug 反馈）",
+    "footerEntry": "需要帮助",
     "qrAlt": "作者微信二维码",
     "qrMissing": "暂未配置作者微信二维码"
   },
@@ -249,7 +249,7 @@
     "backendCommitLabel": "后端 Commit Hash",
     "unknownValue": "未知",
     "backendCommitLoadFailed": "后端 commit hash 加载失败，请稍后重试。",
-    "footerEntry": "关于产品与版本",
+    "footerEntry": "关于",
     "footerNavLabel": "页脚导航"
   },
   "createPage": {
