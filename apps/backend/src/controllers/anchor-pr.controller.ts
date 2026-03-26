@@ -10,7 +10,7 @@ import {
   getAnchorPRDetail,
   recommendAlternativeBatches,
 } from "../domains/pr-anchor";
-import { verifyAnchorPRBookingContact } from "../domains/pr-booking-support";
+import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
 import {
   exitPR,
   getPRPartnerProfile,
@@ -38,7 +38,7 @@ import {
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
 const slotCheckInSchema = z.object({
-  didAttend: z.boolean(),
+  didAttend: z.boolean().optional(),
   wouldJoinAgain: z.boolean().nullable().optional(),
 });
 const acceptAlternativeBatchSchema = z.object({
@@ -46,11 +46,11 @@ const acceptAlternativeBatchSchema = z.object({
 });
 const anchorJoinSchema = z
   .object({
-    wechatPhoneCredential: z.string().trim().min(1).optional(),
+    bookingContactPhone: z.string().trim().min(1).optional(),
   })
   .default({});
-const verifyBookingContactSchema = z.object({
-  wechatPhoneCredential: z.string().trim().min(1),
+const updateBookingContactPhoneSchema = z.object({
+  phone: z.string().trim().min(1),
 });
 
 const ensureAnchorPR = async (id: number) => {
@@ -202,11 +202,11 @@ export const anchorPRRoute = app
     zValidator("json", anchorJoinSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { wechatPhoneCredential } = c.req.valid("json");
+      const { bookingContactPhone } = c.req.valid("json");
       await ensureAnchorPR(id);
       const openId = await requireAuthenticatedOpenId(c);
       const result = await joinPR(id, openId, {
-        wechatPhoneCredential: wechatPhoneCredential ?? null,
+        bookingContactPhone: bookingContactPhone ?? null,
       });
       return c.json(result);
     },
@@ -225,19 +225,19 @@ export const anchorPRRoute = app
     const result = await confirmSlot(id, openId);
     return c.json(result);
   })
-  .post(
-    "/:id/booking-contact/verify",
+  .put(
+    "/:id/booking-contact/phone",
     zValidator("param", prIdParamSchema),
-    zValidator("json", verifyBookingContactSchema),
+    zValidator("json", updateBookingContactPhoneSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      const { wechatPhoneCredential } = c.req.valid("json");
+      const { phone } = c.req.valid("json");
       await ensureAnchorPR(id);
       const { userId } = await requireAnchorAuthenticatedIdentity(c);
-      const result = await verifyAnchorPRBookingContact({
+      const result = await updateAnchorPRBookingContactPhone({
         prId: id,
         userId,
-        wechatPhoneCredential,
+        phone,
       });
       return c.json(result);
     },
@@ -251,8 +251,12 @@ export const anchorPRRoute = app
       await ensureAnchorPR(id);
       const { openId } = await requireAnchorAuthenticatedIdentity(c);
       const { didAttend, wouldJoinAgain } = c.req.valid("json");
+      if (didAttend === false) {
+        throw new HTTPException(400, {
+          message: "didAttend=false is no longer supported",
+        });
+      }
       const result = await checkIn(id, openId, {
-        didAttend,
         wouldJoinAgain: wouldJoinAgain ?? null,
       });
       return c.json(result);

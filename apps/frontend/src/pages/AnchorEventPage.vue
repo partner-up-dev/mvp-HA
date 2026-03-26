@@ -15,7 +15,7 @@
       <PageHeader
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
-        @back="goBackToPlaza"
+        :back-fallback-to="{ name: 'event-plaza' }"
       >
         <template #top-actions>
           <div
@@ -51,44 +51,60 @@
         <div v-if="activeDemandCard" class="card-mode">
           <div class="card-stage">
             <div class="card-stage__inner">
-              <article
-                v-if="nextDemandCard"
-                class="card-stack-preview"
-                aria-hidden="true"
-              >
-                <div
-                  v-if="nextDemandCard.coverImage"
-                  class="card-stack-preview__cover"
-                  :style="{
-                    backgroundImage: `url(${nextDemandCard.coverImage})`,
-                  }"
-                />
-                <div
-                  v-else
-                  class="card-stack-preview__cover card-stack-preview__cover--fallback"
-                />
-                <div class="card-stack-preview__content">
-                  <p class="card-stack-preview__time">
-                    {{ nextDemandCard.timeLabel }}
-                  </p>
-                  <p class="card-stack-preview__title">
-                    {{ nextDemandCard.displayLocationName }}
-                  </p>
-                </div>
-              </article>
-
               <AnchorEventDemandCard
-                class="card-stage__front"
-                :display-location-name="activeDemandCard.displayLocationName"
-                :time-label="activeDemandCard.timeLabel"
-                :preference-tags="activeDemandCard.preferenceTags"
-                :cover-image="activeDemandCard.coverImage"
-                :detail-pr-id="activeDemandCard.detailPrId"
-                :pending="isCardRouting"
-                @skip="handleSkipActiveCard"
-                @view-detail="handleViewActiveCardDetail"
+                v-for="(previewCard, previewIndex) in stackPreviewCards"
+                :key="`preview-${previewCard.cardKey}`"
+                class="card-stack-preview"
+                :style="{
+                  zIndex: 2 - previewIndex,
+                  animationDelay: `${70 + previewIndex * 40}ms`,
+                }"
+                :display-location-name="previewCard.displayLocationName"
+                :time-label="previewCard.timeLabel"
+                :preference-tags="previewCard.preferenceTags"
+                :cover-image="previewCard.coverImage"
+                :detail-pr-id="previewCard.detailPrId"
+                :preview="true"
+                :preview-depth="previewIndex + 1"
+                aria-hidden="true"
               />
+
+              <div
+                :key="`front-${activeDemandCard.cardKey}`"
+                class="card-stage__front-shell"
+              >
+                <AnchorEventDemandCard
+                  class="card-stage__front"
+                  :display-location-name="activeDemandCard.displayLocationName"
+                  :time-label="activeDemandCard.timeLabel"
+                  :preference-tags="activeDemandCard.preferenceTags"
+                  :cover-image="activeDemandCard.coverImage"
+                  :detail-pr-id="activeDemandCard.detailPrId"
+                  :pending="isCardRouting"
+                  @skip="handleSkipActiveCard"
+                  @view-detail="handleViewActiveCardDetail"
+                />
+              </div>
             </div>
+          </div>
+
+          <div class="card-mode__actions">
+            <button
+              type="button"
+              class="card-mode__action card-mode__action--skip"
+              :disabled="isCardRouting"
+              @click="handleSkipActiveCard"
+            >
+              {{ t("anchorEvent.card.skipButton") }}
+            </button>
+            <button
+              type="button"
+              class="card-mode__action card-mode__action--detail"
+              :disabled="isCardRouting || activeDemandCard.detailPrId === null"
+              @click="handleViewActiveCardDetail"
+            >
+              {{ t("anchorEvent.card.detailButton") }}
+            </button>
           </div>
 
           <p v-if="cardActionError" class="card-mode__error">
@@ -361,10 +377,6 @@ const createActionErrorMessage = computed(() => {
     null
   );
 });
-
-const goBackToPlaza = () => {
-  router.push({ name: "event-plaza" });
-};
 
 const resolveBatchStartTimestamp = (timeWindow: TimeWindow): number => {
   const [start] = timeWindow;
@@ -653,7 +665,7 @@ const remainingDemandCards = computed(() =>
 );
 
 const activeDemandCard = computed(() => remainingDemandCards.value[0] ?? null);
-const nextDemandCard = computed(() => remainingDemandCards.value[1] ?? null);
+const stackPreviewCards = computed(() => remainingDemandCards.value.slice(1, 3));
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -1037,6 +1049,13 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   min-height: var(--dcs-layout-anchor-card-stage-height);
 }
 
+.card-stage__front-shell {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  animation: card-front-promote 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .card-stage__front {
   z-index: 2;
 }
@@ -1044,47 +1063,26 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 .card-stack-preview {
   position: absolute;
   inset: 0;
-  transform: translateY(14px) scale(0.972);
-  border-radius: var(--dcs-surface-panel-radius-large);
-  overflow: hidden;
-  border: 1px solid var(--sys-color-outline-variant);
-  box-shadow: var(--sys-shadow-2);
-  z-index: 1;
   pointer-events: none;
+  animation: card-preview-reveal 220ms ease-out both;
 }
 
-.card-stack-preview__cover {
-  height: 60%;
-  background-size: cover;
-  background-position: center;
-  filter: saturate(0.85) brightness(0.9);
+@keyframes card-front-promote {
+  from {
+    transform: translateY(14px) scale(0.972);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
 }
 
-.card-stack-preview__cover--fallback {
-  background: linear-gradient(
-    140deg,
-    var(--sys-color-surface-container-high),
-    var(--sys-color-surface-container)
-  );
-}
-
-.card-stack-preview__content {
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med) var(--sys-spacing-med);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-}
-
-.card-stack-preview__time {
-  @include mx.pu-font(label-medium);
-  margin: 0;
-  color: var(--sys-color-on-surface-variant);
-}
-
-.card-stack-preview__title {
-  @include mx.pu-font(title-large);
-  margin: 0;
-  color: var(--sys-color-on-surface);
+@keyframes card-preview-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .card-mode__error {
@@ -1093,6 +1091,37 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   color: var(--sys-color-error);
   padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
   padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+}
+
+.card-mode__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sys-spacing-sm);
+  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
+  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+}
+
+.card-mode__action {
+  @include mx.pu-pill-action(outline-transparent, default);
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.card-mode__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.card-mode__action--detail {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border-color: var(--sys-color-primary);
+}
+
+.card-mode__action--skip {
+  color: var(--sys-color-error);
+  border-color: var(--sys-color-error);
 }
 
 .card-empty {

@@ -7,11 +7,8 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import {
-  AnchorPRRepository,
-  type AnchorPRRecord,
-} from "../../../repositories/AnchorPRRepository";
-import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
+import { countActivePartnersForPR } from "../../pr-core/services/slot-management.service";
 import type {
   AnchorEventId,
   TimeWindowEntry,
@@ -23,11 +20,13 @@ import {
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
 import type { PartnerRequest } from "../../../entities/partner-request";
+import {
+  isActiveVisibleAnchorPRStatus,
+  readVisibleAnchorPRRecordsByBatchId,
+} from "../../pr-core/services/pr-read.service";
 
 const eventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
-const anchorPRRepo = new AnchorPRRepository();
-const partnerRepo = new PartnerRepository();
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -134,15 +133,24 @@ export async function getAnchorEventDetail(
   // Fetch PRs for each batch
   const batchDetails: BatchDetail[] = [];
   for (const batch of batches) {
-    const prs = await anchorPRRepo.findVisibleByBatchId(batch.id);
+    const prs = await readVisibleAnchorPRRecordsByBatchId(
+      batch.id,
+    );
+    const activeUserCountsByLocation = new Map<string, number>();
+    for (const record of prs) {
+      if (record.anchor.locationSource !== "USER") continue;
+      if (!isActiveVisibleAnchorPRStatus(record.root.status)) continue;
+      const location = record.root.location?.trim();
+      if (!location) continue;
+      activeUserCountsByLocation.set(
+        location,
+        (activeUserCountsByLocation.get(location) ?? 0) + 1,
+      );
+    }
+
     const locationOptions: LocationOption[] = [];
     for (const userLocation of userLocationPool) {
-      const activeCount =
-        await anchorPRRepo.countActiveVisibleByBatchAndLocationSource(
-          batch.id,
-          userLocation.id,
-          "USER",
-        );
+      const activeCount = activeUserCountsByLocation.get(userLocation.id) ?? 0;
       const remainingQuota = Math.max(userLocation.perBatchCap - activeCount, 0);
       const disabled = remainingQuota === 0;
       locationOptions.push({
@@ -155,7 +163,7 @@ export async function getAnchorEventDetail(
 
     const detail = toBatchDetail(batch, prs, locationOptions);
     for (const pr of detail.prs) {
-      pr.partnerCount = await partnerRepo.countActiveByPrId(pr.id);
+      pr.partnerCount = await countActivePartnersForPR(pr.id);
     }
     batchDetails.push(detail);
   }
@@ -168,8 +176,8 @@ export async function getAnchorEventDetail(
   // Count occupied slots (PRs that are not expired/closed)
   let occupiedSlots = 0;
   for (const bd of batchDetails) {
-    const activePRs = bd.prs.filter(
-      (pr) => pr.status !== "EXPIRED" && pr.status !== "CLOSED",
+    const activePRs = bd.prs.filter((pr) =>
+      isActiveVisibleAnchorPRStatus(pr.status),
     );
     occupiedSlots += activePRs.filter((pr) =>
       systemLocationPool.includes(pr.location ?? ""),

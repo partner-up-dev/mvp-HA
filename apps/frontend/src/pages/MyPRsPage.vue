@@ -4,7 +4,6 @@
       <PageHeader
         :title="t('myPrsPage.title')"
         :subtitle="t('myPrsPage.description')"
-        @back="goHome"
       />
     </template>
 
@@ -127,10 +126,6 @@ const joinedErrorMessage = computed(() => {
   const error = joinedQuery.error.value;
   return error instanceof Error ? error.message : t("myPrsPage.loadFailed");
 });
-
-const goHome = () => {
-  router.push("/");
-};
 
 const goToPR = (item: PartnerRequestSummary) => {
   router.push(resolvePRSummaryPath(item));

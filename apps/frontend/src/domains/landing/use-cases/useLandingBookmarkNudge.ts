@@ -1,5 +1,5 @@
 import { onMounted, onUnmounted, ref } from "vue";
-import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
+import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
 
 const STORAGE_KEY = "__partner_up_home_bookmark_nudge_seen_date__";
 const TIME_TRIGGER_MS = 5_000;
@@ -79,7 +79,7 @@ export const useLandingBookmarkNudge = () => {
 
   onMounted(() => {
     if (typeof window === "undefined") return;
-    environment.value = isWeChatBrowser() ? "wechat" : "browser";
+    environment.value = isWeChatAbilityEnv() ? "wechat" : "browser";
     window.addEventListener("scroll", maybeShowByBottom, { passive: true });
     window.addEventListener("resize", maybeShowByBottom);
     timerId = window.setTimeout(() => {

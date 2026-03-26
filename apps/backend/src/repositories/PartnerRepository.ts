@@ -13,16 +13,25 @@ import {
   desc,
   eq,
   inArray,
-  isNull,
   sql,
 } from "drizzle-orm";
 
 export type ActiveParticipantSummary = {
   partnerId: PartnerId;
   status: Extract<PartnerStatus, "JOINED" | "CONFIRMED" | "ATTENDED">;
+  userId: UserId;
+  nickname: string | null;
+  avatar: string | null;
+};
+
+export type RosterParticipantSummary = {
+  partnerId: PartnerId;
+  status: PartnerStatus;
   userId: UserId | null;
   nickname: string | null;
   avatar: string | null;
+  releasedAt?: Date | null;
+  releaseReason?: string | null;
 };
 
 export class PartnerRepository {
@@ -67,15 +76,6 @@ export class PartnerRepository {
       .orderBy(desc(partners.id));
   }
 
-  async findFirstReleasedSlot(prId: PRId) {
-    const result = await db
-      .select()
-      .from(partners)
-      .where(and(eq(partners.prId, prId), eq(partners.status, "RELEASED")))
-      .orderBy(asc(partners.id));
-    return result[0] ?? null;
-  }
-
   async listActiveIdsByPrId(prId: PRId): Promise<PartnerId[]> {
     const rows = await db
       .select({ id: partners.id })
@@ -117,6 +117,47 @@ export class PartnerRepository {
       userId: row.userId,
       nickname: row.nickname,
       avatar: row.avatar,
+    }));
+  }
+
+  async listRosterParticipantSummariesByPrId(
+    prId: PRId,
+  ): Promise<RosterParticipantSummary[]> {
+    const rows = await db
+      .select({
+        partnerId: partners.id,
+        status: partners.status,
+        userId: partners.userId,
+        nickname: users.nickname,
+        avatar: users.avatar,
+        releasedAt: partners.releasedAt,
+        releaseReason: partners.releaseReason,
+      })
+      .from(partners)
+      .leftJoin(users, eq(users.id, partners.userId))
+      .where(
+        and(
+          eq(partners.prId, prId),
+          inArray(partners.status, [
+            "JOINED",
+            "CONFIRMED",
+            "ATTENDED",
+            "EXITED",
+            "RELEASED",
+          ]),
+          sql`${partners.userId} is not null`,
+        ),
+      )
+      .orderBy(asc(partners.id));
+
+    return rows.map((row) => ({
+      partnerId: row.partnerId,
+      status: row.status as PartnerStatus,
+      userId: row.userId,
+      nickname: row.nickname,
+      avatar: row.avatar,
+      releasedAt: row.releasedAt,
+      releaseReason: row.releaseReason,
     }));
   }
 
@@ -183,52 +224,54 @@ export class PartnerRepository {
 
   async createSlot(data: {
     prId: PRId;
-    userId?: UserId | null;
-    status?: PartnerStatus;
+    userId: UserId;
+    status: PartnerStatus;
   }) {
     const now = new Date();
-    const nextStatus = data.status ?? "RELEASED";
+    const nextStatus = data.status;
     const result = await db
       .insert(partners)
       .values({
         prId: data.prId,
-        userId: data.userId ?? null,
+        userId: data.userId,
         status: nextStatus,
+        exitedAt: nextStatus === "EXITED" ? now : null,
         confirmedAt: nextStatus === "CONFIRMED" ? now : null,
         releasedAt: nextStatus === "RELEASED" ? now : null,
+        releaseReason: null,
       })
       .returning();
     return result[0] ?? null;
   }
 
-  async createReleasedSlots(prId: PRId, count: number) {
-    if (count <= 0) return;
+  async updateStatus(id: PartnerId, status: PartnerStatus) {
     const now = new Date();
-    const rows: Array<typeof partners.$inferInsert> = Array.from(
-      { length: count },
-      () => ({
-        prId,
-        userId: null,
-        status: "RELEASED",
-        releasedAt: now,
-      }),
-    );
-    await db.insert(partners).values(rows);
+    const result = await db
+      .update(partners)
+      .set({
+        status,
+        exitedAt: status === "EXITED" ? now : null,
+        releasedAt: status === "RELEASED" ? now : null,
+        releaseReason: null,
+      })
+      .where(eq(partners.id, id))
+      .returning();
+    return result[0] ?? null;
   }
 
-  async assignSlot(
+  async reactivateSlot(
     id: PartnerId,
-    userId: UserId,
-    status: Exclude<PartnerStatus, "RELEASED" | "ATTENDED">,
+    status: Extract<PartnerStatus, "JOINED" | "CONFIRMED">,
   ) {
     const now = new Date();
     const result = await db
       .update(partners)
       .set({
-        userId,
         status,
         confirmedAt: status === "CONFIRMED" ? now : null,
+        exitedAt: null,
         releasedAt: null,
+        releaseReason: null,
         attendedAt: null,
         checkInAt: null,
         didAttend: null,
@@ -241,28 +284,6 @@ export class PartnerRepository {
         reimbursementReviewedAt: null,
         reimbursementPaidAt: null,
       })
-      .where(eq(partners.id, id))
-      .returning();
-    return result[0] ?? null;
-  }
-
-  async bindUserIfUnbound(id: PartnerId, userId: UserId) {
-    const result = await db
-      .update(partners)
-      .set({ userId })
-      .where(and(eq(partners.id, id), isNull(partners.userId)))
-      .returning();
-    return result[0] ?? null;
-  }
-
-  async updateStatus(
-    id: PartnerId,
-    status: PartnerStatus,
-    userId?: UserId | null,
-  ) {
-    const result = await db
-      .update(partners)
-      .set({ status, userId })
       .where(eq(partners.id, id))
       .returning();
     return result[0] ?? null;
@@ -281,13 +302,18 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
-  async markReleased(id: PartnerId) {
+  async markReleased(
+    id: PartnerId,
+    options: {
+      releaseReason?: string | null;
+    } = {},
+  ) {
     const now = new Date();
     const result = await db
       .update(partners)
       .set({
         status: "RELEASED",
-        userId: null,
+        exitedAt: null,
         confirmedAt: null,
         attendedAt: null,
         checkInAt: null,
@@ -301,16 +327,31 @@ export class PartnerRepository {
         reimbursementReviewedAt: null,
         reimbursementPaidAt: null,
         releasedAt: now,
+        releaseReason: options.releaseReason ?? null,
       })
       .where(eq(partners.id, id))
       .returning();
     return result[0] ?? null;
   }
 
+  async findReleasedByPrIdAndUserId(prId: PRId, userId: UserId) {
+    const result = await db
+      .select()
+      .from(partners)
+      .where(
+        and(
+          eq(partners.prId, prId),
+          eq(partners.userId, userId),
+          inArray(partners.status, ["RELEASED", "EXITED"]),
+        ),
+      )
+      .orderBy(desc(partners.id));
+    return result[0] ?? null;
+  }
+
   async reportCheckIn(
     id: PartnerId,
     payload: {
-      didAttend: boolean;
       wouldJoinAgain: boolean | null;
     },
   ) {
@@ -318,10 +359,10 @@ export class PartnerRepository {
     const result = await db
       .update(partners)
       .set({
-        status: payload.didAttend ? "ATTENDED" : undefined,
-        attendedAt: payload.didAttend ? now : undefined,
+        status: "ATTENDED",
+        attendedAt: now,
         checkInAt: now,
-        didAttend: payload.didAttend,
+        didAttend: true,
         wouldJoinAgain: payload.wouldJoinAgain,
       })
       .where(eq(partners.id, id))

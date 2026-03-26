@@ -4,7 +4,7 @@
       :title="t('prBookingSupport.title')"
       :subtitle="t('prBookingSupport.subtitle')"
       :back-label="t('prBookingSupport.backToDetail')"
-      @back="handleBackClick"
+      :back-fallback-to="backFallbackTo"
     />
 
     <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
@@ -41,7 +41,10 @@
       </section>
 
       <section
-        v-if="bookingSupportDetail.bookingSupport.bookingContact.required"
+        v-if="
+          bookingSupportDetail.bookingSupport.bookingContact.required &&
+          bookingSupportDetail.bookingSupport.bookingContact.ownerIsCurrentViewer
+        "
         class="card"
       >
         <h2 class="card-title">{{ t("prBookingSupport.bookingContact.title") }}</h2>
@@ -55,25 +58,33 @@
           }}
         </p>
 
-        <button
-          v-if="canVerifyBookingContact"
-          class="request-btn"
-          :disabled="verifyBookingContactMutation.isPending.value"
-          @click="handleVerifyBookingContact"
+        <form
+          v-if="canEditBookingContactPhone"
+          class="phone-form"
+          @submit.prevent="handleUpdateBookingContactPhone"
         >
-          {{
-            verifyBookingContactMutation.isPending.value
-              ? t("prBookingSupport.bookingContact.verifying")
-              : t("prBookingSupport.bookingContact.verifyAction")
-          }}
-        </button>
-        <button
-          v-else-if="showGoWechatLoginAction"
-          class="request-btn"
-          @click="handleGoWechatLogin"
-        >
-          {{ t("prBookingSupport.bookingContact.goWechatLogin") }}
-        </button>
+          <input
+            v-model.trim="bookingContactPhoneInput"
+            class="phone-input"
+            type="tel"
+            inputmode="numeric"
+            maxlength="11"
+            placeholder="请输入 11 位大陆手机号"
+          />
+          <button
+            class="request-btn"
+            type="submit"
+            :disabled="updateBookingContactPhoneMutation.isPending.value"
+          >
+            {{
+              updateBookingContactPhoneMutation.isPending.value
+                ? t("prBookingSupport.bookingContact.verifying")
+                : bookingContact?.state === "VERIFIED"
+                  ? "更新手机号"
+                  : t("prBookingSupport.bookingContact.verifyAction")
+            }}
+          </button>
+        </form>
 
         <p v-if="bookingContactVerifyErrorMessage" class="error-text">
           {{ bookingContactVerifyErrorMessage }}
@@ -230,7 +241,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
@@ -241,23 +252,14 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import {
   useAnchorPRBookingSupport,
   useAnchorReimbursementStatus,
-  useVerifyAnchorPRBookingContact,
+  useUpdateAnchorPRBookingContactPhone,
 } from "@/domains/pr/queries/useAnchorPR";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
-import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
 
 const route = useRoute();
-const router = useRouter();
 const { t, locale } = useI18n();
-
-const handleBackClick = () => {
-  if (id.value !== null) {
-    router.push(anchorPRDetailPath(id.value));
-  }
-};
 
 const id = computed<PRId | null>(() => {
   const rawId = Array.isArray(route.params.id)
@@ -265,6 +267,12 @@ const id = computed<PRId | null>(() => {
     : route.params.id;
   const parsed = Number(rawId);
   return Number.isFinite(parsed) && parsed > 0 ? (parsed as PRId) : null;
+});
+const backFallbackTo = computed(() => {
+  if (id.value !== null) {
+    return anchorPRDetailPath(id.value);
+  }
+  return "/";
 });
 
 const { data, isLoading, error } = useAnchorPRBookingSupport(id);
@@ -274,9 +282,10 @@ const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const wecomQrCodeQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.wecomServiceQrCode);
 const wecomQrCodeUrl = computed(() => wecomQrCodeQuery.data.value?.value ?? null);
 const showWecomQrModal = ref(false);
-const verifyBookingContactMutation = useVerifyAnchorPRBookingContact();
-const { isWeChatEnv, requestPhoneCredential } = useWeChatPhoneCredential();
+const updateBookingContactPhoneMutation = useUpdateAnchorPRBookingContactPhone();
 const bookingContactVerifyErrorMessage = ref<string | null>(null);
+const bookingContactPhoneInput = ref("");
+const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
 
 const showReimbursementSection = computed(() =>
   bookingSupportDetail.value?.bookingSupport.resources.some(
@@ -286,23 +295,12 @@ const showReimbursementSection = computed(() =>
 const bookingContact = computed(
   () => bookingSupportDetail.value?.bookingSupport.bookingContact ?? null,
 );
-const canVerifyBookingContact = computed(
+const canEditBookingContactPhone = computed(
   () =>
     Boolean(
       id.value !== null &&
         bookingContact.value?.required &&
-        bookingContact.value.ownerIsCurrentViewer &&
-        bookingContact.value.state !== "VERIFIED" &&
-        isWeChatEnv.value,
-    ),
-);
-const showGoWechatLoginAction = computed(
-  () =>
-    Boolean(
-      bookingContact.value?.required &&
-        bookingContact.value.ownerIsCurrentViewer &&
-        bookingContact.value.state !== "VERIFIED" &&
-        !isWeChatEnv.value,
+        bookingContact.value.ownerIsCurrentViewer,
     ),
 );
 
@@ -421,32 +419,35 @@ const reimbursementReasonText = (
   return t("prBookingSupport.reimbursement.reasonAlreadyRequested");
 };
 
-const handleGoWechatLogin = () => {
-  if (typeof window === "undefined") return;
-  redirectToWeChatOAuthLogin(window.location.href);
+const validateBookingContactPhoneInput = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "请输入手机号";
+  }
+  if (!CN_MAINLAND_MOBILE_REGEX.test(trimmed)) {
+    return "请输入 11 位大陆手机号";
+  }
+  return null;
 };
 
-const handleVerifyBookingContact = async () => {
-  if (id.value === null || !canVerifyBookingContact.value) return;
+const handleUpdateBookingContactPhone = async () => {
+  if (id.value === null || !canEditBookingContactPhone.value) return;
 
   bookingContactVerifyErrorMessage.value = null;
-  let wechatPhoneCredential: string;
-
-  try {
-    wechatPhoneCredential = await requestPhoneCredential();
-  } catch (error) {
-    bookingContactVerifyErrorMessage.value =
-      error instanceof Error
-        ? error.message
-        : t("prBookingSupport.bookingContact.verifyFailed");
+  const phoneInputError = validateBookingContactPhoneInput(
+    bookingContactPhoneInput.value,
+  );
+  if (phoneInputError) {
+    bookingContactVerifyErrorMessage.value = phoneInputError;
     return;
   }
 
   try {
-    await verifyBookingContactMutation.mutateAsync({
+    await updateBookingContactPhoneMutation.mutateAsync({
       id: id.value,
-      wechatPhoneCredential,
+      phone: bookingContactPhoneInput.value.trim(),
     });
+    bookingContactPhoneInput.value = "";
     bookingContactVerifyErrorMessage.value = null;
   } catch (error) {
     bookingContactVerifyErrorMessage.value =
@@ -593,6 +594,23 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
   margin-top: var(--sys-spacing-sm);
   @include mx.pu-pill-action(solid-primary, small);
   cursor: pointer;
+}
+
+.phone-form {
+  margin-top: var(--sys-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-xs);
+}
+
+.phone-input {
+  width: min(100%, 280px);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  @include mx.pu-font(body-medium);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .reimburse-prompt-card {

@@ -6,7 +6,7 @@
     <template v-else-if="prDetail">
       <PageHeader
         :title="prDetail.title ?? t('prPage.metaFallbackTitle')"
-        @back="goHome"
+        :back-fallback-to="backFallbackTo"
       >
         <template #top-actions>
           <div v-if="isCreator" class="header-quick-actions">
@@ -89,6 +89,10 @@
         </div>
       </section>
 
+      <section v-if="releaseNoticeText" class="section-card released-notice">
+        <p class="released-notice__text">{{ releaseNoticeText }}</p>
+      </section>
+
       <section
         v-for="action in dockActions"
         :key="action.key"
@@ -108,6 +112,9 @@
           {{ action.pending ? action.pendingLabel : action.label }}
         </button>
         <p v-if="action.tip" class="action-tip">{{ action.tip }}</p>
+        <p v-if="action.key === 'JOIN' && releaseNoticeText" class="action-tip">
+          {{ releaseNoticeText }}
+        </p>
       </section>
       <p
         v-if="primaryActionErrorMessage"
@@ -116,14 +123,25 @@
         {{ primaryActionErrorMessage }}
       </p>
 
+      <AnchorPRRecoveryLane
+        v-if="showRecoveryLane"
+        :pr-id="id"
+        :section="prDetail.partnerSection"
+        :accept-alternative-batch-pending="
+          acceptAlternativeBatchMutation.isPending.value
+        "
+        @accept-alternative-batch="handleAcceptAlternativeBatch"
+      />
+
       <WeChatNotificationSubscriptionsCard
         v-if="showNotificationSubscriptionsCard"
         :title="t('prPage.notificationSubscriptions.title')"
-        :items="subscriptionItems"
-        :updating-label="t('prPage.wechatReminder.updating')"
-        outline-profile="surface"
-        @action="handleSubscriptionAction"
-      />
+      >
+        <APRNotificationSubscriptions
+          :updating-label="t('prPage.wechatReminder.updating')"
+          outline-profile="surface"
+        />
+      </WeChatNotificationSubscriptionsCard>
 
       <section class="section-card">
         <h2 class="section-title">分享邀请</h2>
@@ -180,15 +198,6 @@
         <AnchorPRAwarenessLane
           :pr-id="prDetail.id"
           :section="prDetail.partnerSection"
-        />
-
-        <AnchorPRRecoveryLane
-          :pr-id="id"
-          :section="prDetail.partnerSection"
-          :accept-alternative-batch-pending="
-            acceptAlternativeBatchMutation.isPending.value
-          "
-          @accept-alternative-batch="handleAcceptAlternativeBatch"
         />
 
         <section
@@ -289,23 +298,33 @@
         </template>
 
         <template v-else>
-          <p class="modal-text">当前加入需要你先完成预订联系人手机号授权。</p>
-          <div class="modal-actions">
-            <button
-              class="action-btn action-btn--surface"
-              type="button"
-              @click="closeJoinFlowModal"
-            >
-              {{ t("common.cancel") }}
-            </button>
-            <button
-              class="action-btn"
-              type="button"
-              :disabled="joinFlowPending"
-              @click="authorizeBookingContactAndJoin"
-            >
-              {{ joinFlowPending ? t("prPage.joining") : "授权并加入" }}
-            </button>
+          <div class="join-phone-step">
+            <p class="modal-text">当前加入需要你先填写预订联系人手机号。</p>
+            <input
+              v-model.trim="joinFlowPhoneInput"
+              class="modal-phone-input"
+              type="tel"
+              inputmode="numeric"
+              maxlength="11"
+              placeholder="请输入 11 位大陆手机号"
+            />
+            <div class="modal-actions">
+              <button
+                class="action-btn action-btn--surface"
+                type="button"
+                @click="closeJoinFlowModal"
+              >
+                {{ t("common.cancel") }}
+              </button>
+              <button
+                class="action-btn"
+                type="button"
+                :disabled="joinFlowPending"
+                @click="submitJoinFlowPhoneAndJoin"
+              >
+                {{ joinFlowPending ? t("prPage.joining") : "填写并加入" }}
+              </button>
+            </div>
           </div>
         </template>
         <p v-if="joinFlowError" class="action-error">{{ joinFlowError }}</p>
@@ -395,6 +414,7 @@ import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModa
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
+import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -407,7 +427,6 @@ import {
   useAnchorPR,
   useAnchorReimbursementStatus,
   useJoinAnchorPR,
-  useVerifyAnchorPRBookingContact,
   type AnchorPRDetailResponse,
 } from "@/domains/pr/queries/useAnchorPR";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
@@ -430,8 +449,6 @@ import {
 } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/analytics/track";
 import type { ApiError } from "@/shared/api/error";
-import { useWeChatPhoneCredential } from "@/shared/wechat/useWeChatPhoneCredential";
-import { useWeChatNotificationSubscriptionsPanel } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
@@ -440,12 +457,13 @@ import {
 
 type BlockedReason =
   AnchorPRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
+type RosterState =
+  AnchorPRDetailResponse["partnerSection"]["roster"][number]["state"];
 
 type DockActionKey =
   | "JOIN"
   | "CONFIRM"
   | "CHECKIN_ATTENDED"
-  | "CHECKIN_MISSED"
   | "CREATOR_EDIT"
   | "CREATOR_STATUS";
 
@@ -468,28 +486,34 @@ type ViewerState =
 const router = useRouter();
 const { t } = useI18n();
 const id = usePRRouteId();
-const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
-const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
+const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
+const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
 const reimbursementQuery = useAnchorReimbursementStatus(id);
 const prDetail = computed(() => data.value);
+const backFallbackTo = computed(() => {
+  const anchorEventId = prDetail.value?.anchor.anchorEventId ?? null;
+  if (anchorEventId !== null && Number.isFinite(anchorEventId) && anchorEventId > 0) {
+    return `/events/${anchorEventId}`;
+  }
+  return "/";
+});
 const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const joinMutation = useJoinAnchorPR();
-const verifyBookingContactMutation = useVerifyAnchorPRBookingContact();
 const acceptAlternativeBatchMutation = useAcceptAnchorAlternativeBatch();
 const userSessionStore = useUserSessionStore();
-const { requestPhoneCredential } = useWeChatPhoneCredential();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
 const showJoinFlowModal = ref(false);
 const showExitConfirmModal = ref(false);
 const showShareDrawer = ref(false);
-const joinFlowStep = ref<"SUMMARY" | "BOOKING_CONTACT">("SUMMARY");
+const joinFlowStep = ref<"SUMMARY" | "PHONE_INPUT">("SUMMARY");
 const joinFlowPending = ref(false);
 const joinFlowError = ref<string | null>(null);
 const bookingContactActionError = ref<string | null>(null);
+const joinFlowPhoneInput = ref("");
 const exitActionError = ref<string | null>(null);
 const lastPrimaryImpressionKey = ref("");
 
@@ -552,14 +576,6 @@ watch(
   },
 );
 
-const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
-  visibleKinds: [
-    "REMINDER_CONFIRMATION",
-    "BOOKING_RESULT",
-    "NEW_PARTNER",
-  ] as const,
-});
-
 useBodyScrollLock(
   computed(
     () =>
@@ -596,13 +612,38 @@ const participantOverviewText = computed(() => {
   return `${current} 人已加入，最低成团人数 ${min} 人。`;
 });
 
+const isActiveRosterState = (state: RosterState): boolean =>
+  state === "JOINED" || state === "CONFIRMED" || state === "ATTENDED";
+
+const releaseNoticeText = computed(() => {
+  const releasedSlot = prDetail.value?.partnerSection.viewer.releasedSlot ?? null;
+  if (!releasedSlot) return null;
+  if (releasedSlot.state === "EXITED") {
+    return t("prPage.partnerSection.releaseNoticeExit");
+  }
+  const manualReason = releasedSlot.releaseReason?.trim() ?? "";
+  if (manualReason.length > 0) {
+    return `你的名额已由管理员手动释放。原因：${manualReason}`;
+  }
+  return t("prPage.partnerSection.releaseNoticeAuto");
+});
+
+const showRecoveryLane = computed(() => {
+  const viewer = prDetail.value?.partnerSection.viewer;
+  if (!viewer) return false;
+  return !viewer.isParticipant && !viewer.canJoin;
+});
+
+const activeRoster = computed(() =>
+  prDetail.value?.partnerSection.roster.filter((item) =>
+    isActiveRosterState(item.state),
+  ) ?? [],
+);
 const rosterPreview = computed(
-  () => prDetail.value?.partnerSection.roster.slice(0, 4) ?? [],
+  () => activeRoster.value.slice(0, 4),
 );
 const hasMoreRoster = computed(
-  () =>
-    (prDetail.value?.partnerSection.roster.length ?? 0) >
-    rosterPreview.value.length,
+  () => activeRoster.value.length > rosterPreview.value.length,
 );
 
 const bookingSupportSummaryHeadline = computed(() => {
@@ -743,15 +784,6 @@ const dockActions = computed<DockActionItem[]>(() => {
         pending: attendanceActions.checkInPending.value,
         tip: checkInTip,
       },
-      {
-        key: "CHECKIN_MISSED",
-        label: t("prPage.checkInMissed"),
-        pendingLabel: t("prPage.checkingIn"),
-        tone: "secondary",
-        disabled: !viewer.canCheckIn,
-        pending: attendanceActions.checkInPending.value,
-        tip: checkInTip,
-      },
     ];
   }
 
@@ -790,8 +822,6 @@ const showNotificationSubscriptionsCard = computed(() => {
   return section.viewer.isParticipant;
 });
 
-const subscriptionItems = computed(() => notificationSubscriptions.items.value);
-
 const exitBlockedTip = computed(() => {
   const viewer = prDetail.value?.partnerSection.viewer;
   if (!viewer || viewer.canExit) return null;
@@ -805,21 +835,21 @@ const joinFlowNeedsBookingContact = computed(() => {
   );
 });
 
-const requestBookingContactCredential = async (): Promise<string | null> => {
-  try {
-    return await requestPhoneCredential();
-  } catch (error) {
-    bookingContactActionError.value =
-      error instanceof Error
-        ? error.message
-        : t("prPage.bookingContact.verifyFailed");
-    return null;
+const validateJoinFlowPhoneInput = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "请输入手机号";
   }
+  if (!CN_MAINLAND_MOBILE_REGEX.test(trimmed)) {
+    return "请输入 11 位大陆手机号";
+  }
+  return null;
 };
 
 const closeJoinFlowModal = () => {
   showJoinFlowModal.value = false;
   joinFlowStep.value = "SUMMARY";
+  joinFlowPhoneInput.value = "";
   joinFlowPending.value = false;
   joinFlowError.value = null;
 };
@@ -829,16 +859,17 @@ const openJoinFlowModal = () => {
   joinFlowError.value = null;
   joinFlowPending.value = false;
   joinFlowStep.value = "SUMMARY";
+  joinFlowPhoneInput.value = "";
   showJoinFlowModal.value = true;
 };
 
 const finalizeJoinFlow = async (
-  wechatPhoneCredential?: string | null,
+  bookingContactPhone?: string | null,
 ) => {
   joinFlowPending.value = true;
   joinFlowError.value = null;
   bookingContactActionError.value = null;
-  const result = await sharedActions.handleJoin({ wechatPhoneCredential });
+  const result = await sharedActions.handleJoin({ bookingContactPhone });
   joinFlowPending.value = false;
   if (result) {
     closeJoinFlowModal();
@@ -851,58 +882,20 @@ const finalizeJoinFlow = async (
 const continueJoinFlow = async () => {
   if (joinFlowPending.value) return;
   if (joinFlowNeedsBookingContact.value) {
-    joinFlowStep.value = "BOOKING_CONTACT";
+    joinFlowStep.value = "PHONE_INPUT";
     return;
   }
   await finalizeJoinFlow();
 };
 
-const authorizeBookingContactAndJoin = async () => {
+const submitJoinFlowPhoneAndJoin = async () => {
   if (joinFlowPending.value) return;
-  const wechatPhoneCredential = await requestBookingContactCredential();
-  if (!wechatPhoneCredential) {
-    joinFlowError.value =
-      bookingContactActionError.value ??
-      t("prPage.bookingContact.verifyFailed");
+  const phoneInputError = validateJoinFlowPhoneInput(joinFlowPhoneInput.value);
+  if (phoneInputError) {
+    joinFlowError.value = phoneInputError;
     return;
   }
-  await finalizeJoinFlow(wechatPhoneCredential);
-};
-
-const ensureBookingContactVerified = async (): Promise<boolean> => {
-  if (id.value === null) return false;
-
-  const bookingContact = currentBookingContact.value;
-  if (!bookingContact?.required || bookingContact.state === "VERIFIED") {
-    return true;
-  }
-  if (!bookingContact.ownerIsCurrentViewer) {
-    bookingContactActionError.value = t(
-      "prPage.bookingContact.ownerBlockedHint",
-    );
-    return false;
-  }
-
-  const wechatPhoneCredential = await requestBookingContactCredential();
-  if (!wechatPhoneCredential) {
-    return false;
-  }
-
-  try {
-    await verifyBookingContactMutation.mutateAsync({
-      id: id.value,
-      wechatPhoneCredential,
-    });
-    await refetch();
-    bookingContactActionError.value = null;
-    return true;
-  } catch (error) {
-    bookingContactActionError.value =
-      error instanceof Error
-        ? error.message
-        : t("prPage.bookingContact.verifyFailed");
-    return false;
-  }
+  await finalizeJoinFlow(joinFlowPhoneInput.value.trim());
 };
 
 const handleConfirmWithBookingContact = async () => {
@@ -911,25 +904,8 @@ const handleConfirmWithBookingContact = async () => {
   try {
     await attendanceActions.handleConfirmSlot();
   } catch (error) {
-    const apiError = error as ApiError;
-    if (apiError.code === BOOKING_CONTACT_REQUIRED_CODE) {
-      const verified = await ensureBookingContactVerified();
-      if (!verified) {
-        return;
-      }
-      try {
-        await attendanceActions.handleConfirmSlot();
-        bookingContactActionError.value = null;
-      } catch (retryError) {
-        bookingContactActionError.value =
-          retryError instanceof Error
-            ? retryError.message
-            : t("errors.confirmSlotFailed");
-      }
-      return;
-    }
     bookingContactActionError.value =
-      apiError.message ?? t("errors.confirmSlotFailed");
+      error instanceof Error ? error.message : t("errors.confirmSlotFailed");
   }
 };
 
@@ -1024,22 +1000,10 @@ const handleAcceptAlternativeBatch = async (
     await joinMutation.mutateAsync({ id: result.prId as PRId });
   } catch (error) {
     const apiError = error as ApiError;
-    if (apiError.code === BOOKING_CONTACT_OWNER_REQUIRED_CODE) {
-      const wechatPhoneCredential = await requestBookingContactCredential();
-      if (wechatPhoneCredential) {
-        try {
-          await joinMutation.mutateAsync({
-            id: result.prId as PRId,
-            wechatPhoneCredential,
-          });
-          bookingContactActionError.value = null;
-        } catch (retryError) {
-          bookingContactActionError.value =
-            retryError instanceof Error
-              ? retryError.message
-              : t("errors.joinRequestFailed");
-        }
-      }
+    if (apiError.code === BOOKING_CONTACT_PHONE_REQUIRED_CODE) {
+      bookingContactActionError.value = t(
+        "prPage.bookingContact.ownerVerifyBeforeJoin",
+      );
     } else {
       bookingContactActionError.value =
         apiError.message ?? t("errors.joinRequestFailed");
@@ -1071,11 +1035,7 @@ const handleDockAction = async (action: DockActionItem) => {
     return;
   }
   if (action.key === "CHECKIN_ATTENDED") {
-    attendanceActions.prepareCheckIn(true);
-    return;
-  }
-  if (action.key === "CHECKIN_MISSED") {
-    attendanceActions.prepareCheckIn(false);
+    attendanceActions.prepareCheckIn();
     return;
   }
   if (action.key === "CREATOR_EDIT") {
@@ -1083,12 +1043,6 @@ const handleDockAction = async (action: DockActionItem) => {
     return;
   }
   handleOpenCreatorModifyStatus();
-};
-
-const handleSubscriptionAction = async (
-  kind: "REMINDER_CONFIRMATION" | "BOOKING_RESULT" | "NEW_PARTNER",
-) => {
-  await notificationSubscriptions.handleAction(kind);
 };
 
 const requestExitWithConfirm = () => {
@@ -1142,7 +1096,7 @@ function mapDockActionToTrackType(
 ): "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT" | null {
   if (key === "JOIN") return "JOIN";
   if (key === "CONFIRM") return "CONFIRM_SLOT";
-  if (key === "CHECKIN_ATTENDED" || key === "CHECKIN_MISSED") return "CHECK_IN";
+  if (key === "CHECKIN_ATTENDED") return "CHECK_IN";
   return null;
 }
 
@@ -1235,9 +1189,6 @@ const reimbursementReasonText = (
   return t("prBookingSupport.reimbursement.reasonAlreadyRequested");
 };
 
-const goHome = () => {
-  router.push("/");
-};
 </script>
 
 <style lang="scss" scoped>
@@ -1409,30 +1360,16 @@ const goHome = () => {
   margin-top: var(--sys-spacing-sm);
 }
 
-.subscription-card {
-  @include mx.pu-surface-card(outline);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
+.released-notice {
+  background: var(--sys-color-error-container);
+  border-radius: 10px;
 }
 
-.subscription-main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-}
-
-.subscription-title {
+.released-notice__text {
   margin: 0;
-  @include mx.pu-font(label-large);
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-error-container);
 }
-
-.subscription-desc {
-  margin: 0;
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-on-surface-variant);
-}
-
 .context-details {
   margin-top: var(--sys-spacing-lg);
 }
@@ -1446,6 +1383,26 @@ const goHome = () => {
   margin: 0 0 var(--sys-spacing-sm);
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.modal-phone-input {
+  width: 100%;
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  @include mx.pu-font(body-medium);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
+}
+
+.join-phone-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+}
+
+.join-phone-step .modal-text {
+  margin: 0;
 }
 
 .modal-actions {

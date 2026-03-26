@@ -79,7 +79,7 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
-  async setCreatedBy(id: PRId, userId: UserId) {
+  async setCreatedBy(id: PRId, userId: UserId | null) {
     const result = await db
       .update(partnerRequests)
       .set({ createdBy: userId })

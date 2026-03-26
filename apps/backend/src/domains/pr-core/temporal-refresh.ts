@@ -21,12 +21,15 @@ import {
   isActivatableStatus,
   isExpirableStatus,
 } from "./services/status-rules";
-import { recalculatePRStatus } from "./services/slot-management.service";
+import {
+  listActiveParticipantSummariesForPR,
+  recalculatePRStatus,
+} from "./services/slot-management.service";
 import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
 import { operationLogService } from "../../infra/operation-log";
 import { getEffectiveBookingDeadline } from "../pr-booking-support";
-import { resolveBookingContactState } from "../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "./services/anchor-booking-trigger.service";
+import { applyAnchorParticipantReleaseEffects } from "./services/anchor-participant-release-effects.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -201,16 +204,15 @@ async function releaseUnconfirmedSlotsIfNeeded(
   const trigger = await resolveReleaseTrigger(request, resourceBookingDeadlineAt);
   if (!trigger) return;
 
-  const slots = await partnerRepo.findByPrId(request.id);
-  const releasing = slots.filter((slot) => slot.status === "JOINED");
+  const participants = await listActiveParticipantSummariesForPR(request.id);
+  const releasing = participants.filter((slot) => slot.status === "JOINED");
   if (releasing.length === 0) return;
+  const releasedUserIds = releasing.map((slot) => slot.userId);
 
   for (const slot of releasing) {
-    if (slot.userId) {
-      await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
-      await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
-    }
-    await partnerRepo.markReleased(slot.id);
+    await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
+    await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
+    await partnerRepo.markReleased(slot.partnerId);
 
     operationLogService.log({
       actorId: slot.userId,
@@ -218,7 +220,7 @@ async function releaseUnconfirmedSlotsIfNeeded(
       aggregateType: "partner_request",
       aggregateId: String(request.id),
       detail: {
-        partnerId: slot.id,
+        partnerId: slot.partnerId,
         trigger,
       },
     });
@@ -226,9 +228,9 @@ async function releaseUnconfirmedSlotsIfNeeded(
 
   await recalculatePRStatus(request.id);
   if (request.prKind === "ANCHOR") {
-    await resolveBookingContactState({
+    await applyAnchorParticipantReleaseEffects({
       prId: request.id,
-      viewerUserId: null,
+      releasedUserIds,
     });
   }
 }

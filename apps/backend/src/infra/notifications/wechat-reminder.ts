@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PartnerId } from "../../entities/partner";
 import type { PRId, PartnerRequest } from "../../entities/partner-request";
 import {
   reminderTypeSchema,
@@ -7,11 +8,13 @@ import {
 import { userIdSchema, type UserId } from "../../entities/user";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
+import { AnchorPRRepository } from "../../repositories/AnchorPRRepository";
 import { UserRepository } from "../../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../../repositories/UserNotificationOptRepository";
 import { NotificationDeliveryRepository } from "../../repositories/NotificationDeliveryRepository";
 import { getTimeWindowStart } from "../../domains/pr-core/services/time-window.service";
-import { jobRunner, type JobHandlerContext } from "../jobs";
+import { resolveAnchorParticipationPolicy } from "../../domains/pr-core/services/anchor-participation-policy.service";
+import { jobRunner, NO_LATE_TOLERANCE_MS, type JobHandlerContext } from "../jobs";
 import {
   WeChatTemplateMessageError,
   WeChatTemplateMessageService,
@@ -25,6 +28,10 @@ import { env } from "../../lib/env";
 const WECHAT_REMINDER_JOB_TYPE = "wechat.reminder.confirmation";
 const REMINDER_DEDUPE_PREFIX = "wechat-reminder";
 const REMINDER_TYPES: readonly ReminderType[] = ["T_MINUS_24H", "T_MINUS_2H"];
+const CONFIRMATION_END_REMINDER_LEAD_MS = 30 * 60 * 1000;
+const WECHAT_NEW_PARTNER_JOB_TYPE = "wechat.notification.new-partner";
+const NEW_PARTNER_DEDUPE_PREFIX = "wechat-new-partner";
+const NEW_PARTNER_TIP = "有新搭子加入请及时确认";
 
 const reminderJobPayloadSchema = z.object({
   prId: z.coerce.number().int().positive(),
@@ -35,20 +42,27 @@ const reminderJobPayloadSchema = z.object({
 
 type ReminderJobPayload = z.infer<typeof reminderJobPayloadSchema>;
 
+const newPartnerPayloadSchema = z.object({
+  prId: z.coerce.number().int().positive(),
+  recipientUserId: userIdSchema,
+  joinedUserId: userIdSchema,
+  joinedPartnerId: z.coerce.number().int().positive(),
+  joinedAtIso: z.string().datetime(),
+});
+
+type NewPartnerPayload = z.infer<typeof newPartnerPayloadSchema>;
+
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
+const anchorPRRepo = new AnchorPRRepository();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
 const deliveryRepo = new NotificationDeliveryRepository();
 const subscriptionMessageService = new WeChatSubscriptionMessageService();
 const templateService = new WeChatTemplateMessageService();
 
-let handlerRegistered = false;
-
-const reminderOffsetMsByType: Record<ReminderType, number> = {
-  T_MINUS_24H: 24 * 60 * 60 * 1000,
-  T_MINUS_2H: 2 * 60 * 60 * 1000,
-};
+let reminderHandlerRegistered = false;
+let newPartnerHandlerRegistered = false;
 
 const buildReminderDedupeKey = (
   prId: PRId,
@@ -59,13 +73,33 @@ const buildReminderDedupeKey = (
 const buildReminderDedupePrefixForUser = (userId: UserId): string =>
   `${REMINDER_DEDUPE_PREFIX}:${userId}:`;
 
+const buildNewPartnerDedupeKey = (
+  recipientUserId: UserId,
+  prId: PRId,
+  joinedPartnerId: PartnerId,
+): string =>
+  `${NEW_PARTNER_DEDUPE_PREFIX}:${recipientUserId}:${prId}:${joinedPartnerId}`;
+
+const buildNewPartnerDedupePrefixForUser = (userId: UserId): string =>
+  `${NEW_PARTNER_DEDUPE_PREFIX}:${userId}:`;
+
 const getReminderRunAt = (
-  request: PartnerRequest,
+  policy: Pick<
+    ReturnType<typeof resolveAnchorParticipationPolicy>,
+    "confirmationStartAt" | "confirmationEndAt"
+  >,
   reminderType: ReminderType,
 ): Date | null => {
-  const start = getTimeWindowStart(request.time);
-  if (!start) return null;
-  return new Date(start.getTime() - reminderOffsetMsByType[reminderType]);
+  if (reminderType === "T_MINUS_24H") {
+    return policy.confirmationStartAt;
+  }
+
+  if (!policy.confirmationEndAt) {
+    return null;
+  }
+  return new Date(
+    policy.confirmationEndAt.getTime() - CONFIRMATION_END_REMINDER_LEAD_MS,
+  );
 };
 
 const resolvePrUrl = (request: PartnerRequest): string | null => {
@@ -160,7 +194,50 @@ const resolveReminderOrderNo = (
 ): string => `PR-${request.id}-${userId.slice(-6)}`;
 
 const resolveReminderRemark = (reminderType: ReminderType): string =>
-  reminderType === "T_MINUS_24H" ? "活动前24小时提醒" : "活动前2小时提醒";
+  reminderType === "T_MINUS_24H"
+    ? "确认开启提醒"
+    : "确认截止前30分钟提醒";
+
+const resolveTeamName = (request: PartnerRequest): string =>
+  request.title?.trim() || request.type || `PR#${request.id}`;
+
+const resolveApplicantName = (nickname: string | null): string => {
+  const normalized = nickname?.trim();
+  if (!normalized) return "新搭子";
+  return normalized;
+};
+
+const formatAppliedAt = (joinedAtIso: string): string =>
+  new Date(joinedAtIso).toLocaleString("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const classifyNewPartnerError = (
+  error: unknown,
+): { code: string | null; message: string } => {
+  if (error instanceof WeChatSubscriptionMessageError) {
+    return {
+      code: error.errorCode,
+      message: error.message,
+    };
+  }
+  if (error instanceof Error) {
+    return {
+      code: null,
+      message: error.message,
+    };
+  }
+  return {
+    code: null,
+    message: String(error),
+  };
+};
 
 async function handleReminderJob(
   payloadRaw: Record<string, unknown>,
@@ -185,7 +262,11 @@ async function handleReminderJob(
   }
 
   const notificationOpt = await userNotificationOptRepo.findByUserId(user.id);
-  if (!notificationOpt?.wechatReminderOptIn) {
+  const reminderSnapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "REMINDER_CONFIRMATION",
+  );
+  if (!reminderSnapshot.enabled) {
     await recordDelivery({
       jobId: context.jobId,
       payload,
@@ -260,12 +341,14 @@ async function handleReminderJob(
 
   try {
     if (submsgConfigured) {
+      const prPage = resolvePrUrl(request);
       await subscriptionMessageService.sendConfirmationReminder({
         openId: user.openId,
         orderContent: resolveReminderTitle(request),
         orderNo: resolveReminderOrderNo(request, user.id),
         appointmentAt: formatReminderDateField(startAt),
         remark: resolveReminderRemark(payload.reminderType),
+        page: prPage,
       });
     } else {
       await templateService.sendReminderTemplate({
@@ -283,8 +366,24 @@ async function handleReminderJob(
       payload,
       result: "SUCCESS",
     });
+    const consumeResult =
+      await userNotificationOptRepo.consumeOneWechatNotificationCredit(
+        user.id,
+        "REMINDER_CONFIRMATION",
+      );
+    if (consumeResult.consumed && consumeResult.remainingCount <= 0) {
+      await cancelWeChatReminderJobsForUser(user.id);
+    }
   } catch (error) {
     const classified = classifyReminderError(error);
+    if (classified.code === "43101") {
+      await userNotificationOptRepo.clearWechatNotificationCredits(
+        user.id,
+        "REMINDER_CONFIRMATION",
+      );
+      await cancelWeChatReminderJobsForUser(user.id);
+    }
+
     await recordDelivery({
       jobId: context.jobId,
       payload,
@@ -297,27 +396,42 @@ async function handleReminderJob(
 }
 
 export function registerWeChatReminderJobs(): void {
-  if (handlerRegistered) {
+  if (reminderHandlerRegistered) {
     return;
   }
   jobRunner.registerHandler(WECHAT_REMINDER_JOB_TYPE, handleReminderJob);
-  handlerRegistered = true;
+  reminderHandlerRegistered = true;
 }
 
 export async function scheduleWeChatReminderJobsForParticipant(
   request: PartnerRequest,
   userId: UserId,
 ): Promise<void> {
+  if (request.prKind !== "ANCHOR") {
+    return;
+  }
+
+  const anchor = await anchorPRRepo.findByPrId(request.id);
+  if (!anchor) {
+    return;
+  }
+
+  const policy = resolveAnchorParticipationPolicy(anchor, request.time);
+
   const user = await userRepo.findById(userId);
   const notificationOpt = user
     ? await userNotificationOptRepo.findByUserId(userId)
     : null;
-  if (!user || !notificationOpt?.wechatReminderOptIn) {
+  const reminderSnapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "REMINDER_CONFIRMATION",
+  );
+  if (!user || !reminderSnapshot.enabled) {
     return;
   }
 
   for (const reminderType of REMINDER_TYPES) {
-    const runAt = getReminderRunAt(request, reminderType);
+    const runAt = getReminderRunAt(policy, reminderType);
     if (!runAt || runAt.getTime() <= Date.now()) {
       continue;
     }
@@ -325,6 +439,7 @@ export async function scheduleWeChatReminderJobsForParticipant(
     await jobRunner.scheduleOnce({
       jobType: WECHAT_REMINDER_JOB_TYPE,
       runAt,
+      lateToleranceMs: NO_LATE_TOLERANCE_MS,
       dedupeKey: buildReminderDedupeKey(request.id, userId, reminderType),
       payload: {
         prId: request.id,
@@ -370,4 +485,167 @@ export async function rebuildWeChatReminderJobsForUser(
   for (const request of requests) {
     await scheduleWeChatReminderJobsForParticipant(request, userId);
   }
+}
+
+async function handleNewPartnerJob(
+  payloadRaw: Record<string, unknown>,
+): Promise<void> {
+  const parseResult = newPartnerPayloadSchema.safeParse(payloadRaw);
+  if (!parseResult.success) {
+    throw new Error("Invalid new partner notification job payload");
+  }
+  const payload = parseResult.data;
+
+  const recipient = await userRepo.findById(payload.recipientUserId);
+  if (!recipient || recipient.status !== "ACTIVE" || !recipient.openId) {
+    return;
+  }
+
+  const notificationOpt = await userNotificationOptRepo.findByUserId(recipient.id);
+  const snapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "NEW_PARTNER",
+  );
+  if (!snapshot.enabled) {
+    return;
+  }
+
+  const stillParticipant = await partnerRepo.findActiveByPrIdAndUserId(
+    payload.prId,
+    recipient.id,
+  );
+  if (!stillParticipant) {
+    return;
+  }
+
+  const request = await prRepo.findById(payload.prId);
+  if (!request || request.prKind !== "ANCHOR") {
+    return;
+  }
+
+  const configured = await subscriptionMessageService.isNewPartnerConfigured();
+  if (!configured) {
+    return;
+  }
+
+  const joinedUser = await userRepo.findById(payload.joinedUserId);
+  const applicantName = resolveApplicantName(joinedUser?.nickname ?? null);
+  const prPage = resolvePrUrl(request);
+
+  try {
+    await subscriptionMessageService.sendNewPartnerNotification({
+      openId: recipient.openId,
+      applicantName,
+      teamName: resolveTeamName(request),
+      tip: NEW_PARTNER_TIP,
+      appliedAt: formatAppliedAt(payload.joinedAtIso),
+      page: prPage,
+    });
+    const consumeResult =
+      await userNotificationOptRepo.consumeOneWechatNotificationCredit(
+        recipient.id,
+        "NEW_PARTNER",
+      );
+    if (consumeResult.consumed && consumeResult.remainingCount <= 0) {
+      await cancelWeChatNewPartnerJobsForUser(recipient.id);
+    }
+  } catch (error) {
+    const classified = classifyNewPartnerError(error);
+    if (classified.code === "43101") {
+      await userNotificationOptRepo.clearWechatNotificationCredits(
+        recipient.id,
+        "NEW_PARTNER",
+      );
+      await cancelWeChatNewPartnerJobsForUser(recipient.id);
+    }
+
+    throw new Error(
+      classified.code
+        ? `${classified.code}: ${classified.message}`
+        : classified.message,
+    );
+  }
+}
+
+export function registerWeChatNewPartnerJobs(): void {
+  if (newPartnerHandlerRegistered) {
+    return;
+  }
+  jobRunner.registerHandler(WECHAT_NEW_PARTNER_JOB_TYPE, handleNewPartnerJob);
+  newPartnerHandlerRegistered = true;
+}
+
+export async function scheduleWeChatNewPartnerNotificationsForJoin(input: {
+  request: PartnerRequest;
+  joinedUserId: UserId;
+  joinedPartnerId: PartnerId;
+  joinedAt: Date;
+}): Promise<void> {
+  if (input.request.prKind !== "ANCHOR") {
+    return;
+  }
+
+  const configured = await subscriptionMessageService.isNewPartnerConfigured();
+  if (!configured) {
+    return;
+  }
+
+  const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
+    input.request.id,
+  );
+  const recipientUserIds = Array.from(
+    new Set(
+      activeParticipants
+        .map((item) => item.userId)
+        .filter(
+          (userId): userId is UserId =>
+            userId !== null && userId !== input.joinedUserId,
+        ),
+    ),
+  );
+
+  for (const recipientUserId of recipientUserIds) {
+    const recipientUser = await userRepo.findById(recipientUserId);
+    if (!recipientUser || recipientUser.status !== "ACTIVE" || !recipientUser.openId) {
+      continue;
+    }
+
+    const notificationOpt = await userNotificationOptRepo.findByUserId(
+      recipientUserId,
+    );
+    const snapshot = userNotificationOptRepo.getSubscriptionSnapshot(
+      notificationOpt,
+      "NEW_PARTNER",
+    );
+    if (!snapshot.enabled) {
+      continue;
+    }
+
+    await jobRunner.scheduleOnce({
+      jobType: WECHAT_NEW_PARTNER_JOB_TYPE,
+      runAt: new Date(),
+      lateToleranceMs: NO_LATE_TOLERANCE_MS,
+      dedupeKey: buildNewPartnerDedupeKey(
+        recipientUserId,
+        input.request.id,
+        input.joinedPartnerId,
+      ),
+      payload: {
+        prId: input.request.id,
+        recipientUserId,
+        joinedUserId: input.joinedUserId,
+        joinedPartnerId: input.joinedPartnerId,
+        joinedAtIso: input.joinedAt.toISOString(),
+      },
+    });
+  }
+}
+
+export async function cancelWeChatNewPartnerJobsForUser(
+  userId: UserId,
+): Promise<number> {
+  return jobRunner.deletePendingJobsByDedupe({
+    jobType: WECHAT_NEW_PARTNER_JOB_TYPE,
+    dedupeKeyPrefix: buildNewPartnerDedupePrefixForUser(userId),
+  });
 }

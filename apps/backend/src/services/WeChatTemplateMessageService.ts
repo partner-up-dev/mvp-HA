@@ -121,7 +121,9 @@ export class WeChatTemplateMessageService {
     url.searchParams.set("access_token", accessToken);
 
     const reminderLabel =
-      params.reminderType === "T_MINUS_24H" ? "活动前 24 小时提醒" : "活动前 2 小时提醒";
+      params.reminderType === "T_MINUS_24H"
+        ? "确认开启提醒"
+        : "确认截止前 30 分钟提醒";
 
     const response = await proxyFetch(url, {
       method: "POST",
@@ -157,4 +159,3 @@ export class WeChatTemplateMessageService {
     return payload.msgid ?? null;
   }
 }
-

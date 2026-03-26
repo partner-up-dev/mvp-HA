@@ -9,7 +9,9 @@
 ## 流程
 
 - 用户在微信 WebView 打开任意页面（首页、`/cpr/new`、`/cpr/:id`、`/apr/:id` 等）。
-- 前端不再在页面启动阶段做微信登录前置判断；需要微信身份的动作先直连业务 API。
+- 前端在 Anchor 场景路由（`/events/:eventId`、`/apr/:id`、`/apr/:id/booking-support`、`/apr/:id/partners/:partnerId`）中，若检测到匿名会话 + 微信环境，会在当前 tab 内对同一路径自动尝试一次微信登录。
+- 前端使用 `sessionStorage` 记录已自动尝试的 Anchor 路径，避免用户取消授权或授权失败后反复重定向形成死循环。
+- 除上述 Anchor 场景外，仍由需要微信身份的动作先直连业务 API，再根据错误码触发登录。
 - 后端在动作接口上统一判定微信会话；若未登录则返回 `401 + code=WECHAT_AUTH_REQUIRED`（或 OAuth 未配置返回 `503 + code=WECHAT_OAUTH_NOT_CONFIGURED`）。
 - 前端根据接口返回的 `status + error code` 决定是否重定向到 `GET /api/wechat/oauth/login`，并携带当前页面地址作为 `returnTo`。
 - 后端生成并校验 OAuth state（签名 cookie），跳转微信授权地址（`snsapi_userinfo`）；其中 `redirect_uri` 回调域名优先使用 `FRONTEND_URL`（例如 `https://app.partner-up.cn`），路径为前端专用回调页 `/wechat/oauth/callback`。
@@ -39,7 +41,8 @@
 - OAuth state 与会话 token 均为签名数据，不允许明文可篡改。
 - 已登录用户重复进入页面时不会再次触发授权跳转。
 - 未配置微信 OAuth 所需环境变量时，系统不会进入重定向死循环。
-- 未登录重定向逻辑由业务接口错误码触发，非微信环境不会在页面启动阶段主动跳转。
+- Anchor 场景支持页面进入时自动尝试微信登录，但同一路径在当前 tab 只会自动触发一次；非微信环境不会触发该自动跳转。
+- 其他场景未登录重定向逻辑仍由业务接口错误码触发。
 - 基础环境变量为 `WECHAT_OFFICIAL_ACCOUNT_APP_ID`、`WECHAT_OFFICIAL_ACCOUNT_APP_SECRET`、`WECHAT_AUTH_SESSION_SECRET`。
 
 ## 涉及端
@@ -50,6 +53,5 @@
 ## 开发调试约定（非生产）
 
 - 本地开发可开启后端环境变量 `WECHAT_ABILITY_MOCKING_ENABLED=true`，并可通过 `WECHAT_ABILITY_MOCK_OPEN_ID` 指定固定 mock openid。
-- 若前端不在微信 WebView 中调试手机号能力，可额外设置 `VITE_WECHAT_ABILITY_MOCKING_ENABLED=true`，前端会视为微信能力可用并返回随机 mock credential（后端 mock 会解析为固定默认手机号）。
 - 开启后，`GET /api/wechat/oauth/login` 会先重定向到后端 mock 授权地址 `GET /api/wechat/oauth/mock/authorize`，再回到 `GET /api/wechat/oauth/callback` 完成 session cookie 签发（openid 取 `WECHAT_ABILITY_MOCK_OPEN_ID`）。
 - 该能力仅用于非生产调试；生产环境必须保持关闭。

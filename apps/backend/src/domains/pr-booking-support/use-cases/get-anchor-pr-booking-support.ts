@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
 import type { PRStatus } from "../../../entities";
-import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 import { buildBookingSupportPreview } from "../services/build-booking-support-preview";
@@ -12,8 +11,8 @@ import type {
 } from "../../../entities";
 import type { UserId } from "../../../entities/user";
 import { resolveBookingContactState } from "../services/resolve-booking-contact-state";
+import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
 
-const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
 
@@ -65,7 +64,9 @@ export async function getAnchorPRBookingSupport(
   id: PRId,
   viewerUserId: UserId | null = null,
 ): Promise<AnchorPRBookingSupportDetail> {
-  const root = await prRepo.findById(id);
+  const root = await readPartnerRequestById(id, {
+    consistency: "strong",
+  });
   if (!root || root.prKind !== "ANCHOR") {
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }

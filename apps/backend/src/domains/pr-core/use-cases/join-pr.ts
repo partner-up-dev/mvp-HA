@@ -14,7 +14,10 @@ import {
 } from "../services/anchor-participation-policy.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { isJoinableStatus } from "../services/status-rules";
-import { recalculatePRStatus } from "../services/slot-management.service";
+import {
+  countActivePartnersForPR,
+  recalculatePRStatus,
+} from "../services/slot-management.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
@@ -26,10 +29,9 @@ import {
 } from "../../../infra/notifications";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
-import { WeChatPhoneService } from "../../../services/WeChatPhoneService";
 import {
   isBookingContactRequiredForPR,
-  resolveBookingContactState,
+  normalizeMainlandChinaMobilePhone,
 } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
@@ -37,10 +39,8 @@ const partnerRepo = new PartnerRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 const bookingContactRepo = new AnchorPRBookingContactRepository();
-const weChatPhoneService = new WeChatPhoneService();
-const BOOKING_CONTACT_OWNER_REQUIRED_CODE = "BOOKING_CONTACT_OWNER_REQUIRED";
-const BOOKING_CONTACT_REQUIRED_CODE = "BOOKING_CONTACT_REQUIRED";
-const WECHAT_PHONE_VERIFY_FAILED_CODE = "WECHAT_PHONE_VERIFY_FAILED";
+const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
+const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
 type CodedHttpException = HTTPException & {
   code?: string;
@@ -59,7 +59,7 @@ const throwCodedHttpException = (
 };
 
 type JoinPRAsUserOptions = {
-  wechatPhoneCredential?: string | null;
+  bookingContactPhone?: string | null;
 };
 
 export async function joinPRAsUser(
@@ -73,7 +73,7 @@ export async function joinPRAsUser(
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
-  let targetStatus: PartnerStatus = "JOINED";
+  let targetStatus: Extract<PartnerStatus, "JOINED" | "CONFIRMED"> = "JOINED";
   const bookingContactRequired =
     refreshedRequest.prKind === "ANCHOR"
       ? await isBookingContactRequiredForPR(id)
@@ -128,51 +128,37 @@ export async function joinPRAsUser(
     excludePrId: id,
   });
 
-  const activeCount = await partnerRepo.countActiveByPrId(id);
-  let verifiedBookingContact: {
-    phoneE164: string;
-    phoneMasked: string;
-  } | null = null;
+  const activeCount = await countActivePartnersForPR(id);
+  let bookingContactPhoneInput:
+    | {
+        phoneE164: string;
+        phoneMasked: string;
+      }
+    | null = null;
 
   if (refreshedRequest.prKind === "ANCHOR" && bookingContactRequired) {
     const isFirstActiveOwnerJoin = activeCount === 0;
 
     if (isFirstActiveOwnerJoin) {
-      const credential = options.wechatPhoneCredential?.trim() ?? "";
-      if (!credential) {
+      const phone = options.bookingContactPhone?.trim() ?? "";
+      if (!phone) {
         return throwCodedHttpException(
           409,
-          "Cannot join - booking contact owner must verify phone first",
-          BOOKING_CONTACT_OWNER_REQUIRED_CODE,
+          "Cannot join - first active participant must provide booking contact phone",
+          BOOKING_CONTACT_PHONE_REQUIRED_CODE,
         );
       }
 
-      try {
-        verifiedBookingContact =
-          await weChatPhoneService.resolvePhoneFromCredential(credential);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to verify phone with WeChat";
+      const normalizedPhone = normalizeMainlandChinaMobilePhone(phone);
+      if (!normalizedPhone) {
         return throwCodedHttpException(
           400,
-          message,
-          WECHAT_PHONE_VERIFY_FAILED_CODE,
+          "Phone must match mainland China mobile format (11 digits, starts with 1)",
+          BOOKING_CONTACT_PHONE_INVALID_CODE,
         );
       }
-    } else if (targetStatus === "CONFIRMED") {
-      const bookingContactState = await resolveBookingContactState({
-        prId: id,
-        viewerUserId: user.id,
-      });
-      if (bookingContactState.state !== "VERIFIED") {
-        return throwCodedHttpException(
-          409,
-          "Cannot join - booking contact is required before confirmation",
-          BOOKING_CONTACT_REQUIRED_CODE,
-        );
-      }
+
+      bookingContactPhoneInput = normalizedPhone;
     }
   }
 
@@ -184,37 +170,37 @@ export async function joinPRAsUser(
       message: "Cannot join - partner request is full",
     });
   }
-
-  let assignedPartnerId: number;
-  const released = await partnerRepo.findFirstReleasedSlot(id);
-  if (released) {
-    await partnerRepo.assignSlot(released.id, user.id, targetStatus);
-    assignedPartnerId = released.id;
-  } else if (refreshedRequest.maxPartners === null) {
-    const created = await partnerRepo.createSlot({
-      prId: id,
-      userId: user.id,
-      status: targetStatus,
-    });
-    assignedPartnerId = created!.id;
-  } else {
-    throw new HTTPException(400, {
-      message: "Cannot join - partner request is full",
+  const latestHistoricalSlot = await partnerRepo.findReleasedByPrIdAndUserId(
+    id,
+    user.id,
+  );
+  const joinedSlot = latestHistoricalSlot
+    ? await partnerRepo.reactivateSlot(latestHistoricalSlot.id, targetStatus)
+    : await partnerRepo.createSlot({
+        prId: id,
+        userId: user.id,
+        status: targetStatus,
+      });
+  if (!joinedSlot) {
+    throw new HTTPException(500, {
+      message: "Failed to persist join participation record",
     });
   }
+  const assignedPartnerId = joinedSlot.id;
 
   if (
     refreshedRequest.prKind === "ANCHOR" &&
     bookingContactRequired &&
     activeCount === 0 &&
-    verifiedBookingContact
+    bookingContactPhoneInput
   ) {
     await bookingContactRepo.upsertByPrId({
       prId: id,
       ownerPartnerId: assignedPartnerId,
       ownerUserId: user.id,
-      phoneE164: verifiedBookingContact.phoneE164,
-      phoneMasked: verifiedBookingContact.phoneMasked,
+      phoneE164: bookingContactPhoneInput.phoneE164,
+      phoneMasked: bookingContactPhoneInput.phoneMasked,
+      verifiedSource: "PHONE_INPUT_FORM",
     });
   }
 

@@ -13,6 +13,7 @@ import { users, type UserId } from "./user";
 
 export const bookingContactVerifiedSourceSchema = z.enum([
   "WECHAT_SERVICE_ACCOUNT",
+  "PHONE_INPUT_FORM",
 ]);
 
 export type BookingContactVerifiedSource = z.infer<
@@ -37,7 +38,7 @@ export const anchorPRBookingContacts = pgTable("anchor_pr_booking_contacts", {
   verifiedSource: text("verified_source")
     .$type<BookingContactVerifiedSource>()
     .notNull()
-    .default("WECHAT_SERVICE_ACCOUNT"),
+    .default("PHONE_INPUT_FORM"),
   verifiedAt: timestamp("verified_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

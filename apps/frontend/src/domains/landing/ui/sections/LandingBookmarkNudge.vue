@@ -15,11 +15,19 @@
         <span class="i-mdi-close" aria-hidden="true"></span>
       </button>
 
-      <p class="nudge-title">{{ t("home.bookmarkNudge.title") }}</p>
+      <p class="nudge-title">
+        {{
+          isWechatEnv
+            ? t("home.bookmarkNudge.wechatTitle")
+            : t("home.bookmarkNudge.title")
+        }}
+      </p>
       <p class="nudge-hint">
         {{
-          environment === "wechat"
-            ? t("home.bookmarkNudge.wechatHint")
+          isWechatEnv
+            ? t("home.bookmarkNudge.wechatHint", {
+                name: t("home.bookmarkNudge.officialAccountName"),
+              })
             : t("home.bookmarkNudge.browserHint")
         }}
       </p>
@@ -28,45 +36,133 @@
         <button
           class="nudge-action nudge-action--ghost"
           type="button"
-          @click="handleBookmarkHint"
+          :disabled="isWechatEnv && officialAccountQrCodeLoading"
+          @click="handlePrimaryAction"
         >
-          {{ t("home.bookmarkNudge.bookmarkAction") }}
+          {{ primaryActionLabel }}
         </button>
         <button
           class="nudge-action nudge-action--primary"
           type="button"
           @click="handleCopyLink"
         >
-          {{
-            copied
-              ? t("home.bookmarkNudge.copiedAction")
-              : t("home.bookmarkNudge.copyAction")
-          }}
+          {{ secondaryActionLabel }}
         </button>
       </div>
     </aside>
   </Transition>
+
+  <Modal
+    :open="showOfficialAccountQrModal"
+    :title="t('home.bookmarkNudge.followQrModalTitle')"
+    max-width="420px"
+    @close="showOfficialAccountQrModal = false"
+  >
+    <div class="official-account-modal-body">
+      <p class="official-account-modal-description">
+        {{ t("home.bookmarkNudge.followQrModalDescription") }}
+      </p>
+      <img
+        v-if="officialAccountQrCodeUrl"
+        :src="officialAccountQrCodeUrl"
+        :alt="t('home.bookmarkNudge.followQrModalQrAlt')"
+        class="official-account-qr-image"
+      />
+      <p v-else class="official-account-qr-empty">
+        {{ t("home.bookmarkNudge.followQrModalQrMissing") }}
+      </p>
+    </div>
+  </Modal>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useLandingBookmarkNudge } from "@/domains/landing/use-cases/useLandingBookmarkNudge";
 import { trackEvent } from "@/shared/analytics/track";
+import Modal from "@/shared/ui/overlay/Modal.vue";
+import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
+import {
+  PUBLIC_CONFIG_KEYS,
+  usePublicConfig,
+} from "@/shared/config/queries/usePublicConfig";
 
 const { t } = useI18n();
 const { isVisible, triggerDepth, triggerMode, environment, hideForToday } =
   useLandingBookmarkNudge();
 const copied = ref(false);
 const hasTrackedShown = ref(false);
+const showOfficialAccountQrModal = ref(false);
+const isWechatEnv = computed(() => environment.value === "wechat");
+const officialAccountQrCodeQuery = usePublicConfig(
+  PUBLIC_CONFIG_KEYS.wechatOfficialAccountQrCode,
+);
 
-const trackAction = (action: "bookmark_hint" | "copy_link" | "dismiss") => {
+const normalizeHttpUrl = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+};
+
+const officialAccountQrCodeLoading = computed(
+  () => officialAccountQrCodeQuery.isLoading.value,
+);
+const officialAccountQrCodeUrl = computed(() => {
+  if (
+    officialAccountQrCodeQuery.isLoading.value ||
+    officialAccountQrCodeQuery.error.value
+  ) {
+    return null;
+  }
+
+  return normalizeHttpUrl(officialAccountQrCodeQuery.data.value?.value);
+});
+
+type BookmarkNudgeAction =
+  | "bookmark_hint"
+  | "copy_link"
+  | "copy_official_account"
+  | "dismiss"
+  | "follow_official_account";
+
+const trackAction = (action: BookmarkNudgeAction) => {
   trackEvent("home_bookmark_action_click", {
     action,
     environment: environment.value,
   });
 };
+
+const primaryActionLabel = computed(() =>
+  isWechatEnv.value
+    ? t("home.bookmarkNudge.wechatAction")
+    : t("home.bookmarkNudge.bookmarkAction"),
+);
+
+const secondaryActionLabel = computed(() => {
+  if (copied.value) return t("home.bookmarkNudge.copiedAction");
+  return isWechatEnv.value
+    ? t("home.bookmarkNudge.wechatCopyAction")
+    : t("home.bookmarkNudge.copyAction");
+});
+
+const copyTarget = computed(() => {
+  if (isWechatEnv.value) return t("home.bookmarkNudge.officialAccountName");
+  if (typeof window === "undefined") return "";
+  return window.location.href;
+});
+
+const copyActionName = computed<BookmarkNudgeAction>(() =>
+  isWechatEnv.value ? "copy_official_account" : "copy_link",
+);
 
 watch(isVisible, (visible) => {
   if (!visible || hasTrackedShown.value) return;
@@ -83,18 +179,43 @@ const handleBookmarkHint = () => {
   hideForToday();
 };
 
+const handleFollowOfficialAccount = () => {
+  if (!isWechatEnv.value) {
+    handleBookmarkHint();
+    return;
+  }
+
+  trackAction("follow_official_account");
+  showOfficialAccountQrModal.value = true;
+  hideForToday();
+};
+
+const handlePrimaryAction = () => {
+  if (isWechatEnv.value) {
+    handleFollowOfficialAccount();
+    return;
+  }
+  handleBookmarkHint();
+};
+
 const handleCopyLink = async () => {
   if (typeof window === "undefined") return;
   try {
-    await copyToClipboard(window.location.href);
+    const target = copyTarget.value;
+    if (!target) {
+      trackAction(copyActionName.value);
+      hideForToday();
+      return;
+    }
+    await copyToClipboard(target);
     copied.value = true;
-    trackAction("copy_link");
+    trackAction(copyActionName.value);
     window.setTimeout(() => {
       hideForToday();
     }, 400);
   } catch (error) {
     console.warn("Failed to copy home link", error);
-    trackAction("copy_link");
+    trackAction(copyActionName.value);
   }
 };
 
@@ -102,6 +223,8 @@ const handleDismiss = () => {
   trackAction("dismiss");
   hideForToday();
 };
+
+useBodyScrollLock(computed(() => showOfficialAccountQrModal.value));
 </script>
 
 <style lang="scss" scoped>
@@ -186,5 +309,28 @@ const handleDismiss = () => {
 .nudge-fade-leave-to {
   opacity: 0;
   transform: translate(-50%, 0.5rem);
+}
+
+.official-account-modal-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--sys-spacing-sm);
+}
+
+.official-account-modal-description {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.official-account-qr-image {
+  width: min(100%, 260px);
+  border-radius: var(--sys-radius-md);
+}
+
+.official-account-qr-empty {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
 }
 </style>
