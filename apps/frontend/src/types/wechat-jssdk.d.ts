@@ -3,7 +3,11 @@ export {};
 declare global {
   type WeChatJsApiName =
     | "updateAppMessageShareData"
-    | "updateTimelineShareData";
+    | "updateTimelineShareData"
+    | "startRecord"
+    | "stopRecord"
+    | "onVoiceRecordEnd"
+    | "translateVoice";
 
   type WeChatOpenTagName = "wx-open-subscribe";
 
@@ -40,6 +44,24 @@ declare global {
     error: (cb: (error: unknown) => void) => void;
     updateAppMessageShareData: (payload: WeChatShareToChatPayload) => void;
     updateTimelineShareData: (payload: WeChatShareToTimelinePayload) => void;
+    startRecord: (callbacks?: {
+      success?: () => void;
+      fail?: (error: unknown) => void;
+      cancel?: () => void;
+    }) => void;
+    stopRecord: (callbacks?: {
+      success?: (res: { localId: string }) => void;
+      fail?: (error: unknown) => void;
+    }) => void;
+    onVoiceRecordEnd: (callbacks: {
+      complete: (res: { localId: string }) => void;
+    }) => void;
+    translateVoice: (payload: {
+      localId: string;
+      isShowProgressTips?: 0 | 1;
+      success?: (res: { translateResult: string }) => void;
+      fail?: (error: unknown) => void;
+    }) => void;
   };
 
   const wx: WeChatJssdk | undefined;
