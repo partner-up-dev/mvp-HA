@@ -337,7 +337,7 @@ values
     'https://work.weixin.qq.com/kfid/kfc64fa7b5ec8b01916'
   ),
   (
-    'wechat_official_account_username',
+    'wechat_official_account_qr_code',
     ''
   )
 on conflict (key) do update

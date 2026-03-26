@@ -36,9 +36,7 @@
         <button
           class="nudge-action nudge-action--ghost"
           type="button"
-          :disabled="
-            isWechatEnv && (followLoading || officialAccountConfigLoading)
-          "
+          :disabled="isWechatEnv && officialAccountQrCodeLoading"
           @click="handlePrimaryAction"
         >
           {{ primaryActionLabel }}
@@ -53,6 +51,28 @@
       </div>
     </aside>
   </Transition>
+
+  <Modal
+    :open="showOfficialAccountQrModal"
+    :title="t('home.bookmarkNudge.followQrModalTitle')"
+    max-width="420px"
+    @close="showOfficialAccountQrModal = false"
+  >
+    <div class="official-account-modal-body">
+      <p class="official-account-modal-description">
+        {{ t("home.bookmarkNudge.followQrModalDescription") }}
+      </p>
+      <img
+        v-if="officialAccountQrCodeUrl"
+        :src="officialAccountQrCodeUrl"
+        :alt="t('home.bookmarkNudge.followQrModalQrAlt')"
+        class="official-account-qr-image"
+      />
+      <p v-else class="official-account-qr-empty">
+        {{ t("home.bookmarkNudge.followQrModalQrMissing") }}
+      </p>
+    </div>
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -61,21 +81,51 @@ import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useLandingBookmarkNudge } from "@/domains/landing/use-cases/useLandingBookmarkNudge";
 import { trackEvent } from "@/shared/analytics/track";
-import { useWeChatOfficialAccountFollow } from "@/shared/wechat/useWeChatOfficialAccountFollow";
+import Modal from "@/shared/ui/overlay/Modal.vue";
+import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
+import {
+  PUBLIC_CONFIG_KEYS,
+  usePublicConfig,
+} from "@/shared/config/queries/usePublicConfig";
 
 const { t } = useI18n();
 const { isVisible, triggerDepth, triggerMode, environment, hideForToday } =
   useLandingBookmarkNudge();
 const copied = ref(false);
 const hasTrackedShown = ref(false);
-const followLoading = ref(false);
-const {
-  followOfficialAccount,
-  followSchemeUrl,
-  isConfigured: officialAccountConfigured,
-  configLoading: officialAccountConfigLoading,
-} = useWeChatOfficialAccountFollow();
+const showOfficialAccountQrModal = ref(false);
 const isWechatEnv = computed(() => environment.value === "wechat");
+const officialAccountQrCodeQuery = usePublicConfig(
+  PUBLIC_CONFIG_KEYS.wechatOfficialAccountQrCode,
+);
+
+const normalizeHttpUrl = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+};
+
+const officialAccountQrCodeLoading = computed(
+  () => officialAccountQrCodeQuery.isLoading.value,
+);
+const officialAccountQrCodeUrl = computed(() => {
+  if (
+    officialAccountQrCodeQuery.isLoading.value ||
+    officialAccountQrCodeQuery.error.value
+  ) {
+    return null;
+  }
+
+  return normalizeHttpUrl(officialAccountQrCodeQuery.data.value?.value);
+});
 
 type BookmarkNudgeAction =
   | "bookmark_hint"
@@ -129,41 +179,20 @@ const handleBookmarkHint = () => {
   hideForToday();
 };
 
-const handleFollowOfficialAccount = async () => {
+const handleFollowOfficialAccount = () => {
   if (!isWechatEnv.value) {
     handleBookmarkHint();
     return;
   }
 
   trackAction("follow_official_account");
-
-  if (officialAccountConfigLoading.value) {
-    return;
-  }
-
-  if (!officialAccountConfigured.value) {
-    hideForToday();
-    return;
-  }
-
-  try {
-    followLoading.value = true;
-    await followOfficialAccount();
-    hideForToday();
-  } catch (error) {
-    console.warn("Failed to open official account profile", error);
-    if (typeof window !== "undefined" && followSchemeUrl.value) {
-      window.location.href = followSchemeUrl.value;
-    }
-    hideForToday();
-  } finally {
-    followLoading.value = false;
-  }
+  showOfficialAccountQrModal.value = true;
+  hideForToday();
 };
 
-const handlePrimaryAction = async () => {
+const handlePrimaryAction = () => {
   if (isWechatEnv.value) {
-    await handleFollowOfficialAccount();
+    handleFollowOfficialAccount();
     return;
   }
   handleBookmarkHint();
@@ -194,6 +223,8 @@ const handleDismiss = () => {
   trackAction("dismiss");
   hideForToday();
 };
+
+useBodyScrollLock(computed(() => showOfficialAccountQrModal.value));
 </script>
 
 <style lang="scss" scoped>
@@ -278,5 +309,28 @@ const handleDismiss = () => {
 .nudge-fade-leave-to {
   opacity: 0;
   transform: translate(-50%, 0.5rem);
+}
+
+.official-account-modal-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--sys-spacing-sm);
+}
+
+.official-account-modal-description {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.official-account-qr-image {
+  width: min(100%, 260px);
+  border-radius: var(--sys-radius-md);
+}
+
+.official-account-qr-empty {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
 }
 </style>

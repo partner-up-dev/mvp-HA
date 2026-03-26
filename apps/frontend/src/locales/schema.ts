@@ -166,6 +166,10 @@ export interface MessageSchema {
       title: string;
       wechatTitle: string;
       wechatHint: string;
+      followQrModalTitle: string;
+      followQrModalDescription: string;
+      followQrModalQrAlt: string;
+      followQrModalQrMissing: string;
       browserHint: string;
       bookmarkAction: string;
       wechatAction: string;
