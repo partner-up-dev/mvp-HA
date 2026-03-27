@@ -19,6 +19,7 @@
 
 - 浏览 Anchor Event 与批次
 - 从活动页进入 Anchor PR
+- 在活动页的 batch/location 上下文中创建受控 Anchor PR
 - 查看同批次替代推荐
 - 查看预订与资助说明
 

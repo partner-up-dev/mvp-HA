@@ -10,6 +10,8 @@ This task was split into three focused diagnosis tracks plus one synthesis track
 - Track D: synthesis + prioritization
 
 > Note: no fixes are applied in this packet; this is diagnosis-only.
+>
+> Follow-up remediation plan: see `REMEDIATION-PLAN.md` and `MIGRATION-MAP.md`.
 
 ---
 

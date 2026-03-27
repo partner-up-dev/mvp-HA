@@ -26,8 +26,8 @@
 Read following documents when needed and keep them current:
 
 - `docs/20-product-tdd/*.md`
-- `docs/30-unit-tdd/frontend/*.md`
 - `docs/40-deployment/*.md`
+- `docs/30-unit-tdd/<unit>/*.md` only when a named hard-unit doc exists and is relevant
 - Architecture: `src/ARCHITECTURE.md`
 - Vue Component Guideline: See `src/AGENTS.components.md`.
 - Styling governance: `src/styles/TOKEN-GOVERNANCE.md`
@@ -72,9 +72,10 @@ Rules:
 
 ### Live Capabilities
 
-- PartnerRequest 创建: 首页已重构为 Landing（Hero + 活动亮点 + 次级动作），活动区恢复为 `EventHighlights + EventPlazaEntry`（横向活动卡片 + 活动广场入口）；Hero 价值点 item1（“从一句话开始”）支持点击展开首页内联 NL 创建面板（两行布局：NL 输入 + PIN/发送）；`/pr/new` 融合自然语言与结构化创建，结构化模式支持“保存(DRAFT)”与“创建(OPEN)”，并保留 `/pr/new/form` 纯结构化入口。
+- PartnerRequest 创建: 首页已重构为 Landing（Hero + 活动亮点 + 次级动作），活动区恢复为 `EventHighlights + EventPlazaEntry`（横向活动卡片 + 活动广场入口）；Hero 价值点 item1（“从一句话开始”）支持点击展开首页内联 NL 创建面板（两行布局：NL 输入 + PIN/发送）；`/cpr/new` 融合自然语言与结构化创建，结构化模式支持“保存(DRAFT)”与“创建(OPEN)”。
 - PartnerRequest 时间: 自然语言创建时由前端提供 nowIso（UTC）与 nowWeekday（用户本地周几）作为解析参考；结构化创建与编辑复用 `PartnerRequestForm`。
-- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED` 的前端展示与流转。
+- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `LOCKED_TO_START` / `ACTIVE` / `CLOSED` / `EXPIRED` 的前端展示与流转。
+- 活动锚点创建: `/events/:eventId` 支持在 batch/location 上下文中创建受控 Anchor PR；该创建路径是活动页内动作，不是独立通用创建页。
 - 参与与流转: 支持加入/退出交互；达到最小人数自动转为 `READY`，达到最大人数转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。
 - 参与数据模型: 已适配 `minPartners` / `maxPartners` + `partners: partnerId[]`，加入/退出按当前设备 `partnerId` 进行 slot 级交互；后端会将该 `partnerId` 绑定到微信 `openid` 对应用户。
 - 微信登录约束: Community PR 加入会复用本地账户 / PIN 会话并在首次加入时自动创建本地账户；Anchor PR 的加入/退出/确认参与/签到反馈前会检查微信会话，未登录则重定向 OAuth 登录；请求携带 `credentials: include` 以发送会话 cookie。

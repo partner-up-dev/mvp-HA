@@ -9,15 +9,18 @@
 ## 2. 发起与发布规则
 
 - Community PR 的用户发起路径统一为“先创建草稿，再发布”。
-- 当前版本不提供用户手动创建 Anchor PR 的独立入口。
+- 当前版本不提供脱离 Anchor Event/batch/location 上下文的通用 Anchor PR 创建入口。
+- 用户侧 Anchor PR 创建只能发生在活动页内的受控创建路径中，并继续受 batch、location、人数与时序规则约束。
 - 发布 Community PR 时，创建者必须被绑定到某个用户身份，并确保后续可凭 PIN 完成所有权校验。
 
-## 3. 参与与状态规则
+## 3. 生命周期与参与规则
 
+- 对外可见的 `PartnerRequest` 生命周期状态包括 `DRAFT`、`OPEN`、`READY`、`FULL`、`LOCKED_TO_START`、`ACTIVE`、`CLOSED`、`EXPIRED`。
+- `LOCKED_TO_START` 表示协作对象已进入开始前锁定阶段；此时不能再继续加入，但仍可能继续向 `ACTIVE` 推进。
+- PartnerRequest 的状态共同受人数阈值、时间窗口、确认窗口与场景特有规则影响。
+- 已加入的非终态 PR 与目标 PR 时间窗口冲突时，应拒绝新的加入或会占用槽位的创建/发布行为。
 - Community PR 仅提供 `join/exit`。
 - Anchor PR 提供 `join/exit`、确认参与与签到回流。
-- PartnerRequest 的状态与人数阈值、时间窗口、确认窗口共同作用。
-- 已加入的非终态 PR 与目标 PR 时间窗口冲突时，应拒绝新的加入或会占用槽位的发布/创建行为。
 
 ## 4. 身份与鉴权规则
 

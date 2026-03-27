@@ -53,8 +53,8 @@ src/
 Read following documents when needed and keep them current:
 
 - `docs/20-product-tdd/*.md`
-- `docs/30-unit-tdd/backend/*.md`
 - `docs/40-deployment/*.md`
+- `docs/30-unit-tdd/<unit>/*.md` only when a named hard-unit doc exists and is relevant
 
 ## Development Guidelines
 
@@ -98,7 +98,8 @@ Read following documents when needed and keep them current:
 - PartnerRequest 创建: 已拆分为两条 API：`POST /api/pr/natural_language`（自然语言）与 `POST /api/pr`（结构化字段 + 状态）。
 - PartnerRequest 时间: 解析时间窗口支持日期或日期时间（YYYY-MM-DD 或 ISO datetime），并基于 nowIso 与 nowWeekday（可用时）作为当前时间参考。
 - LLM 解析提示词: 解析提示词已拆分到独立文件，并强调仅在用户明确提供时间时才输出时间分量。
-- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`。
+- PartnerRequest 状态: 已实现 `DRAFT` / `OPEN` / `READY` / `FULL` / `LOCKED_TO_START` / `ACTIVE` / `CLOSED` / `EXPIRED`；到期后会在读取时懒触发为 `EXPIRED`，到达预订/开始前锁定窗口时可进入 `LOCKED_TO_START`。
+- Anchor Event 侧受控创建: 支持 `POST /api/events/:eventId/batches/:batchId/anchor-prs`，允许用户在 Anchor Event 的 batch/location 上下文中创建 Anchor PR；这不是脱离活动上下文的通用创建入口。
 - 参与与流转: 支持加入/退出；达到最小人数自动转为 `READY`，达到最大人数自动转为 `FULL`；`READY/FULL` 可手动或按时间窗口自动转为 `ACTIVE`。
 - 参与数据模型: 已迁移为 `minPartners` / `maxPartners` + `partners: partnerId[]`，并新增 `Partner`（含 `status`: `JOINED/CONFIRMED/RELEASED/ATTENDED`）用于 slot 级参与者标识。
 - 用户最小模型: 新增 `users` 表（`openid` 唯一绑定，含 `nickname/sex/avatar` + `ACTIVE/DISABLED`）；Community PR 加入可复用本地用户 / PIN 账户并在首次加入时自动创建本地用户，Anchor PR join/exit/confirm/check-in 依赖 JWT authenticated 会话 + `users.openid` 绑定关系。

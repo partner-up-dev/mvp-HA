@@ -30,9 +30,9 @@ It documents environments, rollout flow, observability-relevant runtime facts, a
 
 ## How This Layer Connects To Adjacent Layers
 
-- Product TDD captures deployment-shaping constraints that affect system design.
+- Product TDD may capture only the cross-unit constraints that shape design.
 - Deployment docs capture the actual runtime and rollout truth.
-- Unit TDD may reference local operational notes, but system rollout/recovery belongs here.
+- Unit TDD, if it exists, may reference local operational notes, but system rollout and recovery belong here.
 
 ## Common Local Mistakes
 
