@@ -161,10 +161,7 @@
               </select>
             </label>
 
-            <p
-              v-if="createActionErrorMessage"
-              class="card-empty__error"
-            >
+            <p v-if="createActionErrorMessage" class="card-empty__error">
               {{ createActionErrorMessage }}
             </p>
 
@@ -437,6 +434,7 @@ const batchTabs = computed(() =>
   sortedBatches.value.map((batch, index) => ({
     key: batch.id,
     label: formatBatchLabel(batch.timeWindow, index),
+    tabClass: isExpiredBatch(batch) ? "tab-bar__tab--expired" : undefined,
   })),
 );
 
@@ -476,7 +474,9 @@ watch(
     }
 
     if (selectedBatchId.value !== null) {
-      const matched = batches.some((batch) => batch.id === selectedBatchId.value);
+      const matched = batches.some(
+        (batch) => batch.id === selectedBatchId.value,
+      );
       if (matched) {
         return;
       }
@@ -692,7 +692,9 @@ const remainingDemandCards = computed(() =>
 );
 
 const activeDemandCard = computed(() => remainingDemandCards.value[0] ?? null);
-const stackPreviewCards = computed(() => remainingDemandCards.value.slice(1, 3));
+const stackPreviewCards = computed(() =>
+  remainingDemandCards.value.slice(1, 3),
+);
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -797,7 +799,8 @@ const createCommunityPRFallback = async ({
   const targetBatch =
     targetBatchId === null
       ? null
-      : sortedBatches.value.find((batch) => batch.id === targetBatchId) ?? null;
+      : (sortedBatches.value.find((batch) => batch.id === targetBatchId) ??
+        null);
 
   const normalizedLocation = locationId?.trim() ?? "";
 

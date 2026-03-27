@@ -1,6 +1,11 @@
 <template>
   <div class="tab-bar">
-    <div class="tab-bar__list" role="tablist" :aria-label="ariaLabel">
+    <div
+      ref="tabListElement"
+      class="tab-bar__list"
+      role="tablist"
+      :aria-label="ariaLabel"
+    >
       <button
         v-for="item in items"
         :key="item.key"
@@ -8,7 +13,10 @@
         type="button"
         role="tab"
         class="tab-bar__tab"
-        :class="{ 'tab-bar__tab--active': modelValue === item.key }"
+        :class="[
+          { 'tab-bar__tab--active': modelValue === item.key },
+          item.tabClass,
+        ]"
         :aria-selected="modelValue === item.key"
         :disabled="item.disabled === true"
         @click="handleSelect(item)"
@@ -21,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, watch, type ComponentPublicInstance } from "vue";
+import { nextTick, ref, watch, type ComponentPublicInstance } from "vue";
 
 type TabBarKey = string | number;
 
@@ -29,6 +37,7 @@ type TabBarItem = {
   key: TabBarKey;
   label: string;
   disabled?: boolean;
+  tabClass?: string;
 };
 
 const props = defineProps<{
@@ -42,6 +51,7 @@ const emit = defineEmits<{
 }>();
 
 const tabButtons = new Map<TabBarKey, HTMLButtonElement>();
+const tabListElement = ref<HTMLDivElement | null>(null);
 
 const setTabButtonRef = (
   key: TabBarKey,
@@ -62,10 +72,21 @@ const handleSelect = (item: TabBarItem) => {
 
 const scrollActiveTabIntoView = async () => {
   await nextTick();
+  const tabList = tabListElement.value;
   const activeTab = tabButtons.get(props.modelValue);
-  activeTab?.scrollIntoView({
-    block: "nearest",
-    inline: "center",
+  if (!tabList || !activeTab) {
+    return;
+  }
+
+  const tabListRect = tabList.getBoundingClientRect();
+  const activeTabRect = activeTab.getBoundingClientRect();
+  const leftDelta = activeTabRect.left - tabListRect.left;
+  const targetLeft = tabList.scrollLeft + leftDelta;
+  const maxScrollLeft = Math.max(0, tabList.scrollWidth - tabList.clientWidth);
+  const clampedTargetLeft = Math.min(Math.max(0, targetLeft), maxScrollLeft);
+
+  tabList.scrollTo({
+    left: clampedTargetLeft,
     behavior: "smooth",
   });
 };
@@ -134,5 +155,10 @@ watch(
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border-color: var(--sys-color-primary);
+}
+
+.tab-bar__tab--expired {
+  border-style: dashed;
+  opacity: 0.96;
 }
 </style>
