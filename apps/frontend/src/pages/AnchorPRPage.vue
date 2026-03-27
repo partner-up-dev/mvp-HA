@@ -142,6 +142,44 @@
         />
       </WeChatNotificationSubscriptionsCard>
 
+      <section class="section-card subsidy-card">
+        <div class="booking-support-entry-card__header">
+          <h2 class="section-title">补贴与报销</h2>
+          <router-link
+            v-if="id !== null"
+            :to="anchorPRBookingSupportPath(id)"
+            class="booking-support-entry-card__action"
+          >
+            {{ t("prPage.bookingSupportEntry.viewAction") }}
+          </router-link>
+        </div>
+        <p class="section-description">
+          {{ t("prPage.bookingSupportEntry.title") }}
+        </p>
+        <p class="section-description">{{ bookingSupportSummaryHeadline }}</p>
+        <p class="section-description">{{ bookingSupportSummaryDeadline }}</p>
+        <p
+          v-for="highlight in bookingSupportHighlights"
+          :key="highlight"
+          class="section-description"
+        >
+          {{ highlight }}
+        </p>
+        <button
+          class="action-btn action-btn--surface"
+          type="button"
+          :disabled="
+            reimbursementButtonDisabled || reimbursementQuery.isLoading.value
+          "
+          @click="goBookingSupport"
+        >
+          {{ reimbursementButtonLabel }}
+        </button>
+        <p v-if="reimbursementDisabledTip" class="action-tip">
+          {{ reimbursementDisabledTip }}
+        </p>
+      </section>
+
       <section class="section-card">
         <h2 class="section-title">分享邀请</h2>
         <button
@@ -155,44 +193,6 @@
 
       <details class="context-details">
         <summary class="context-summary">更多信息</summary>
-
-        <section class="section-card subsidy-card">
-          <div class="booking-support-entry-card__header">
-            <h2 class="section-title">补贴与报销</h2>
-            <router-link
-              v-if="id !== null"
-              :to="anchorPRBookingSupportPath(id)"
-              class="booking-support-entry-card__action"
-            >
-              {{ t("prPage.bookingSupportEntry.viewAction") }}
-            </router-link>
-          </div>
-          <p class="section-description">
-            {{ t("prPage.bookingSupportEntry.title") }}
-          </p>
-          <p class="section-description">{{ bookingSupportSummaryHeadline }}</p>
-          <p class="section-description">{{ bookingSupportSummaryDeadline }}</p>
-          <p
-            v-for="highlight in bookingSupportHighlights"
-            :key="highlight"
-            class="section-description"
-          >
-            {{ highlight }}
-          </p>
-          <button
-            class="action-btn action-btn--surface"
-            type="button"
-            :disabled="
-              reimbursementButtonDisabled || reimbursementQuery.isLoading.value
-            "
-            @click="goBookingSupport"
-          >
-            {{ reimbursementButtonLabel }}
-          </button>
-          <p v-if="reimbursementDisabledTip" class="action-tip">
-            {{ reimbursementDisabledTip }}
-          </p>
-        </section>
 
         <AnchorPRAwarenessLane
           :pr-id="prDetail.id"
