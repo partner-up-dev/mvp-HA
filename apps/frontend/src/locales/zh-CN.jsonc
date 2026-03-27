@@ -346,24 +346,24 @@
     },
     "notificationSubscriptions": {
       "title": "通知订阅",
-      "subscribeOnceAction": "订阅 1 次",
-      "remainingCountWithHint": "剩余通知次数：{count}。{hint}",
+      "subscribeOnceAction": "订阅1次",
+      "remainingCount": "剩余{count}次",
       "openSubscribeUnavailableHint": "当前微信订阅组件不可用，请升级微信后重试。",
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
-          "enabledHint": "你可继续接收确认席位提醒（确认开始和确认截止前 30 分钟）。",
-          "disabledHint": "当前没有可用提醒次数，订阅后可下发 1 次。"
+          "enabledHint": "确认开始和截止前30分钟提醒",
+          "disabledHint": "暂无可用提醒"
         },
         "BOOKING_RESULT": {
           "title": "场地预订结果",
-          "enabledHint": "你可继续接收场地预订结果通知。",
-          "disabledHint": "当前没有可用通知次数，订阅后可下发 1 次。"
+          "enabledHint": "可接收场地预订结果",
+          "disabledHint": "暂无可用通知"
         },
         "NEW_PARTNER": {
           "title": "新搭子",
-          "enabledHint": "你可继续接收新搭子通知（有人加入当前活动会提醒你）。",
-          "disabledHint": "当前没有可用通知次数，订阅后可下发 1 次。",
+          "enabledHint": "有人加入活动时提醒",
+          "disabledHint": "暂无可用通知",
           "unconfiguredHint": "当前环境未配置“新搭子”通知模板。"
         }
       }
