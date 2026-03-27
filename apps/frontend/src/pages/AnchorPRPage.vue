@@ -35,14 +35,13 @@
         </template>
       </PageHeader>
 
-      <section class="section-card event-fit-card">
+      <SurfaceCard as="section" class="section-card event-fit-card">
         <h2 class="section-title">活动信息</h2>
-        <div class="fit-row">
-          <span class="fit-label">{{ t("prCard.location") }}</span>
-          <span class="fit-value">{{
+        <InfoRow :label="t('prCard.location')">
+          {{
             prDetail.core.location ?? t("prPage.partnerSection.notSet")
-          }}</span>
-        </div>
+          }}
+        </InfoRow>
         <button
           v-if="locationGallery.length > 0"
           class="location-gallery-link"
@@ -51,43 +50,43 @@
         >
           {{ t("prCard.viewLocationImages") }}
         </button>
-        <div class="fit-row">
-          <span class="fit-label">{{ t("prCard.time") }}</span>
-          <span class="fit-value">{{ localizedTimeText }}</span>
-        </div>
-        <div class="fit-row fit-row--stack">
-          <span class="fit-label">{{ t("prCard.preferences") }}</span>
-          <div class="fit-tags">
-            <span
+        <InfoRow :label="t('prCard.time')">
+          {{ localizedTimeText }}
+        </InfoRow>
+        <InfoRow :label="t('prCard.preferences')" layout="stack" align="start">
+          <ChipGroup>
+            <Chip
               v-for="item in prDetail.core.preferences"
               :key="item"
-              class="fit-tag"
             >
               {{ item }}
-            </span>
-            <span
-              v-if="prDetail.core.preferences.length === 0"
-              class="fit-empty"
-            >
-              {{ t("prPage.partnerSection.notSet") }}
-            </span>
-          </div>
-        </div>
-        <div class="fit-row fit-row--stack">
-          <span class="fit-label">参与概览</span>
+            </Chip>
+          </ChipGroup>
+          <span
+            v-if="prDetail.core.preferences.length === 0"
+            class="fit-empty"
+          >
+            {{ t("prPage.partnerSection.notSet") }}
+          </span>
+        </InfoRow>
+        <InfoRow label="参与概览" layout="stack" align="start">
           <p class="fit-overview">{{ participantOverviewText }}</p>
-          <div class="roster-chips">
-            <span
+          <ChipGroup>
+            <Chip
               v-for="item in rosterPreview"
               :key="item.partnerId"
-              class="roster-chip"
             >
               {{ item.displayName }}
+            </Chip>
+            <span
+              v-if="hasMoreRoster"
+              class="roster-chip-overflow"
+            >
+              ...
             </span>
-            <span v-if="hasMoreRoster" class="roster-chip">...</span>
-          </div>
-        </div>
-      </section>
+          </ChipGroup>
+        </InfoRow>
+      </SurfaceCard>
 
       <section v-if="releaseNoticeText" class="section-card released-notice">
         <p class="released-notice__text">{{ releaseNoticeText }}</p>
@@ -330,34 +329,20 @@
         <p v-if="joinFlowError" class="action-error">{{ joinFlowError }}</p>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         :open="showExitConfirmModal"
         title="确认退出"
+        message="退出后你的参与名额会被释放，确认继续？"
+        :confirm-label="
+          sharedActions.exitPending.value
+            ? t('prPage.exiting')
+            : t('common.confirm')
+        "
+        confirm-tone="danger"
+        :loading="sharedActions.exitPending.value"
         @close="showExitConfirmModal = false"
-      >
-        <p class="modal-text">退出后你的参与名额会被释放，确认继续？</p>
-        <div class="modal-actions">
-          <button
-            class="action-btn action-btn--surface"
-            type="button"
-            @click="showExitConfirmModal = false"
-          >
-            {{ t("common.cancel") }}
-          </button>
-          <button
-            class="action-btn action-btn--danger"
-            type="button"
-            :disabled="sharedActions.exitPending.value"
-            @click="confirmExit"
-          >
-            {{
-              sharedActions.exitPending.value
-                ? t("prPage.exiting")
-                : t("common.confirm")
-            }}
-          </button>
-        </div>
-      </Modal>
+        @confirm="confirmExit"
+      />
 
       <Modal
         :open="attendanceActions.showCheckInFollowup.value"
@@ -409,7 +394,12 @@ import type { PRId } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import Modal from "@/shared/ui/overlay/Modal.vue";
+import ConfirmDialog from "@/shared/ui/overlay/ConfirmDialog.vue";
 import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
+import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
+import InfoRow from "@/shared/ui/display/InfoRow.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
+import ChipGroup from "@/shared/ui/display/ChipGroup.vue";
 import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModal.vue";
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
@@ -1233,45 +1223,6 @@ const reimbursementReasonText = (
   color: var(--sys-color-on-surface-variant);
 }
 
-.fit-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
-}
-
-.fit-row--stack {
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.fit-label {
-  @include mx.pu-font(label-large);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.fit-value {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface);
-  text-align: right;
-}
-
-.fit-tags,
-.roster-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
-}
-
-.fit-tag,
-.roster-chip {
-  @include mx.pu-font(label-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  border-radius: 999px;
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
-}
-
 .fit-empty {
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
@@ -1280,6 +1231,18 @@ const reimbursementReasonText = (
 .fit-overview {
   margin: 0;
   @include mx.pu-font(body-medium);
+}
+
+.roster-chip-overflow {
+  @include mx.pu-font(label-medium);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--sys-size-medium);
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  border-radius: 999px;
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
 }
 
 .booking-support-entry-card__header {
@@ -1420,15 +1383,6 @@ const reimbursementReasonText = (
 }
 
 @media (max-width: 879px) {
-  .fit-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .fit-value {
-    text-align: left;
-  }
-
   .header-quick-actions {
     flex-wrap: wrap;
     justify-content: flex-end;

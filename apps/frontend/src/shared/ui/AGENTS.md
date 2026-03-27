@@ -1,1 +1,29 @@
 `src/shared/ui` owns true cross-domain UI primitives only.
+
+Use `shared/ui` when all of these are true:
+
+- the component is reusable across multiple screens or domains
+- the API is stable and intentionally narrow
+- the component does not encode domain-specific copy or workflow rules
+- the component can be documented as a primitive instead of a usage pattern
+
+Do not move a component into `shared/ui` just because two pages happen to look similar once. Repetition alone is not enough if the semantics are domain-owned.
+
+## Preferred Primitives
+
+- `actions/Button.vue`: shared button primitive for pill and rect actions; prefer it over page-local button classes.
+- `containers/SurfaceCard.vue`: shared card shell for section, outline, and inset treatments.
+- `forms/FormField.vue`: label + control + hint/error wrapper for plain field rows.
+- `display/InfoRow.vue`: neutral label/value layout for metadata.
+- `display/Chip.vue` and `display/ChipGroup.vue`: lightweight shared tag/group primitives.
+- `feedback/InlineNotice.vue`: inline notice banner for page-level or section-level feedback.
+- `feedback/EmptyState.vue`: empty/not-found shell with optional icon and actions.
+- `overlay/ConfirmDialog.vue`: standard confirm/cancel dialog for simple destructive or blocking confirmations.
+- `identity/Avatar.vue`: generic avatar with image/fallback behavior.
+
+## Reuse Rules
+
+- Prefer composing these primitives in pages and domain sections before creating new page-local shells.
+- If a component needs backend-derived policy logic, workflow branching, or domain vocabulary, keep it in the owning domain and compose shared primitives inside it.
+- If a primitive variant is needed in a third distinct place, extend the shared primitive API instead of cloning the component locally.
+- When extending a primitive API, update `src/AGENTS.components.md` in the same change so the new contract stays discoverable.
