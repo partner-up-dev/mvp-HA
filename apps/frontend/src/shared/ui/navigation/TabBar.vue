@@ -4,6 +4,7 @@
       <button
         v-for="item in items"
         :key="item.key"
+        :ref="(element) => setTabButtonRef(item.key, element)"
         type="button"
         role="tab"
         class="tab-bar__tab"
@@ -20,6 +21,8 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick, watch, type ComponentPublicInstance } from "vue";
+
 type TabBarKey = string | number;
 
 type TabBarItem = {
@@ -28,7 +31,7 @@ type TabBarItem = {
   disabled?: boolean;
 };
 
-defineProps<{
+const props = defineProps<{
   items: TabBarItem[];
   modelValue: TabBarKey;
   ariaLabel?: string;
@@ -38,10 +41,49 @@ const emit = defineEmits<{
   "update:modelValue": [value: TabBarKey];
 }>();
 
+const tabButtons = new Map<TabBarKey, HTMLButtonElement>();
+
+const setTabButtonRef = (
+  key: TabBarKey,
+  element: Element | ComponentPublicInstance | null,
+) => {
+  if (element instanceof HTMLButtonElement) {
+    tabButtons.set(key, element);
+    return;
+  }
+
+  tabButtons.delete(key);
+};
+
 const handleSelect = (item: TabBarItem) => {
   if (item.disabled === true) return;
   emit("update:modelValue", item.key);
 };
+
+const scrollActiveTabIntoView = async () => {
+  await nextTick();
+  const activeTab = tabButtons.get(props.modelValue);
+  activeTab?.scrollIntoView({
+    block: "nearest",
+    inline: "center",
+    behavior: "smooth",
+  });
+};
+
+watch(
+  () => props.modelValue,
+  () => {
+    void scrollActiveTabIntoView();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.items.map((item) => item.key),
+  () => {
+    void scrollActiveTabIntoView();
+  },
+);
 </script>
 
 <style lang="scss" scoped>

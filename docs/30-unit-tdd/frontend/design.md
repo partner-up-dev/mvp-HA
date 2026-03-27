@@ -26,7 +26,7 @@ The frontend is domain-first:
 
 ## Anchor Event Page Interaction Rules
 
-- list mode should keep expired batches out of the primary top tab pills
-- list mode should still provide an explicit "expired batches" entry point as a trailing pill that opens a chooser for expired batches
+- list mode should show all batches in chronological order inside one top tab row
+- initial list-mode selection should prefer the first `OPEN` batch, then fall back to the first non-expired batch, then the first available batch
+- the tab row should scroll the active tab into view when selection changes or initializes
 - card mode demand-card aggregation should only use non-expired batches
-- the chooser should use a shared cross-domain dropdown-selector primitive (value + trigger + items), while the trailing pill container remains page-owned
