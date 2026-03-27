@@ -1,4 +1,5 @@
 export * from "./services/build-booking-support-preview";
+export * from "./services/booking-handling.service";
 export * from "./services/get-effective-booking-deadline";
 export * from "./services/is-booking-contact-required";
 export * from "./services/materialize-pr-support-resources";

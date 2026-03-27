@@ -299,7 +299,9 @@
 
         <template v-else>
           <div class="join-phone-step">
-            <p class="modal-text">当前加入需要你先填写预订联系人手机号。</p>
+            <p class="modal-text">
+              {{ t("prPage.bookingContact.joinFlowPrompt") }}
+            </p>
             <input
               v-model.trim="joinFlowPhoneInput"
               class="modal-phone-input"
@@ -322,7 +324,11 @@
                 :disabled="joinFlowPending"
                 @click="submitJoinFlowPhoneAndJoin"
               >
-                {{ joinFlowPending ? t("prPage.joining") : "填写并加入" }}
+                {{
+                  joinFlowPending
+                    ? t("prPage.joining")
+                    : t("prPage.bookingContact.joinFlowSubmit")
+                }}
               </button>
             </div>
           </div>

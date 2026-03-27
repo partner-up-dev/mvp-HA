@@ -5,6 +5,7 @@ import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPR
 import { AnchorPRBookingExecutionRepository } from "../../../repositories/AnchorPRBookingExecutionRepository";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { isPlatformHandledBookingResource } from "../../pr-booking-support";
 import {
   type BookingResultNotificationSummary,
   sendBookingResultNotifications,
@@ -59,11 +60,7 @@ export async function submitAdminAnchorPRBookingExecution(input: {
   const resources = await prSupportRepo.findByPrId(input.prId);
   const targetResource =
     resources.find((resource) => resource.id === input.targetResourceId) ?? null;
-  if (
-    !targetResource ||
-    !targetResource.bookingRequired ||
-    targetResource.bookingHandledBy !== "PLATFORM"
-  ) {
+  if (!targetResource || !isPlatformHandledBookingResource(targetResource)) {
     throw new HTTPException(400, {
       message: "Target resource is not a platform-handled booking resource",
     });
