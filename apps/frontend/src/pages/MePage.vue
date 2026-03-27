@@ -8,16 +8,11 @@
     </template>
 
     <div class="page-main">
-      <div
+      <InlineNotice
         v-if="bindFeedbackMessage"
-        class="feedback-banner"
-        :class="{
-          'feedback-banner--success': bindFeedbackCode === 'success',
-          'feedback-banner--error': bindFeedbackCode !== 'success',
-        }"
-      >
-        <p>{{ bindFeedbackMessage }}</p>
-      </div>
+        :tone="bindFeedbackCode === 'success' ? 'success' : 'error'"
+        :message="bindFeedbackMessage"
+      />
 
       <ErrorToast v-if="errorMessage" :message="errorMessage" persistent />
 
@@ -28,7 +23,7 @@
         :message="t('mePage.loading')"
       />
 
-      <section class="surface-card">
+      <SurfaceCard gap="md">
         <div class="section-header">
           <div>
             <h2>{{ t("mePage.profile.title") }}</h2>
@@ -47,62 +42,55 @@
         </div>
 
         <div class="profile-panel">
-          <div class="avatar-shell">
-            <img
-              v-if="avatarUrl"
-              :src="avatarUrl"
-              :alt="t('mePage.profile.avatarAlt')"
-              class="avatar-image"
-            />
-            <div v-else class="avatar-fallback">
-              <span>{{ avatarFallbackText }}</span>
-            </div>
-          </div>
+          <Avatar
+            :src="avatarUrl"
+            :alt="t('mePage.profile.avatarAlt')"
+            :name="currentUser?.nickname ?? null"
+            :fallback="avatarFallbackText"
+            size="xl"
+          />
 
           <div class="profile-form">
-            <label class="field">
-              <span class="field__label">{{
-                t("mePage.profile.nicknameLabel")
-              }}</span>
+            <FormField
+              :label="t('mePage.profile.nicknameLabel')"
+              for-id="me-profile-nickname"
+            >
               <input
+                id="me-profile-nickname"
                 v-model="nicknameDraft"
-                class="field__input"
+                class="text-input"
                 type="text"
                 :placeholder="t('mePage.profile.nicknamePlaceholder')"
                 :disabled="!canEditProfile"
                 maxlength="40"
                 @keydown.enter.prevent="handleSaveNickname"
               />
-            </label>
+            </FormField>
 
             <div class="profile-actions">
-              <button
-                class="primary-button"
+              <Button
+                appearance="pill"
+                size="sm"
                 type="button"
                 :disabled="!canSaveNickname"
+                :loading="updateProfileMutation.isPending.value"
                 @click="handleSaveNickname"
               >
-                {{
-                  updateProfileMutation.isPending.value
-                    ? t("mePage.profile.savingNickname")
-                    : t("mePage.profile.saveNickname")
-                }}
-              </button>
+                {{ t("mePage.profile.saveNickname") }}
+              </Button>
 
-              <button
-                class="secondary-button"
+              <Button
+                appearance="pill"
+                tone="outline"
+                size="sm"
                 type="button"
-                :disabled="
-                  !canEditProfile || updateAvatarMutation.isPending.value
-                "
+                :disabled="!canEditProfile || updateAvatarMutation.isPending.value"
+                :loading="updateAvatarMutation.isPending.value"
                 @click="handlePickAvatar"
               >
-                {{
-                  updateAvatarMutation.isPending.value
-                    ? t("mePage.profile.uploadingAvatar")
-                    : t("mePage.profile.changeAvatar")
-                }}
-              </button>
+                {{ t("mePage.profile.changeAvatar") }}
+              </Button>
+
               <input
                 ref="avatarInputRef"
                 class="sr-only"
@@ -113,10 +101,10 @@
             </div>
           </div>
         </div>
-      </section>
+      </SurfaceCard>
 
       <template v-if="!userSessionStore.isAuthenticated">
-        <section class="surface-card">
+        <SurfaceCard gap="md">
           <div class="section-header">
             <div>
               <h2>{{ t("mePage.wechatLogin.title") }}</h2>
@@ -124,22 +112,20 @@
             </div>
           </div>
 
-          <button
+          <Button
             v-if="isWeChatEnv"
-            class="primary-button"
+            appearance="pill"
+            size="sm"
             type="button"
             :disabled="wechatLoginPending"
+            :loading="wechatLoginPending"
             @click="handleStartWeChatLogin"
           >
-            {{
-              wechatLoginPending
-                ? t("mePage.wechatLogin.pending")
-                : t("mePage.wechatLogin.action")
-            }}
-          </button>
-        </section>
+            {{ t("mePage.wechatLogin.action") }}
+          </Button>
+        </SurfaceCard>
 
-        <section class="surface-card">
+        <SurfaceCard gap="md">
           <div class="section-header">
             <div>
               <h2>{{ t("mePage.pinLogin.title") }}</h2>
@@ -148,27 +134,32 @@
           </div>
 
           <div class="pin-login-fields">
-            <label class="field">
-              <span class="field__label">{{
-                t("mePage.pinLogin.userIdLabel")
-              }}</span>
+            <FormField
+              :label="t('mePage.pinLogin.userIdLabel')"
+              for-id="me-login-user-id"
+            >
               <input
+                id="me-login-user-id"
                 v-model="pinLoginDraft.userId"
-                class="field__input"
+                class="text-input"
                 type="text"
                 :placeholder="t('mePage.pinLogin.userIdPlaceholder')"
                 autocomplete="username"
                 @keydown.enter.prevent="handlePinLogin"
               />
-            </label>
+            </FormField>
 
-            <label class="field">
-              <span class="field__label">{{
-                t("mePage.pinLogin.pinLabel")
-              }}</span>
+            <FormField
+              :label="t('mePage.pinLogin.pinLabel')"
+              for-id="me-login-user-pin"
+              :hint="
+                showPinFormatHint ? t('mePage.pinLogin.pinFormatHint') : null
+              "
+            >
               <input
+                id="me-login-user-pin"
                 v-model="pinLoginDraft.userPin"
-                class="field__input"
+                class="text-input"
                 type="password"
                 inputmode="numeric"
                 pattern="[0-9]*"
@@ -177,43 +168,37 @@
                 autocomplete="one-time-code"
                 @keydown.enter.prevent="handlePinLogin"
               />
-              <p v-if="showPinFormatHint" class="field__hint">
-                {{ t("mePage.pinLogin.pinFormatHint") }}
-              </p>
-            </label>
+            </FormField>
           </div>
 
           <div class="profile-actions">
-            <button
-              class="primary-button"
+            <Button
+              appearance="pill"
+              size="sm"
               type="button"
               :disabled="!canSubmitPinLogin"
+              :loading="loginWithPinMutation.isPending.value"
               @click="handlePinLogin"
             >
-              {{
-                loginWithPinMutation.isPending.value
-                  ? t("mePage.pinLogin.pending")
-                  : t("mePage.pinLogin.action")
-              }}
-            </button>
-            <button
-              class="secondary-button"
+              {{ t("mePage.pinLogin.action") }}
+            </Button>
+            <Button
+              appearance="pill"
+              tone="outline"
+              size="sm"
               type="button"
               :disabled="registerLocalAccountMutation.isPending.value"
+              :loading="registerLocalAccountMutation.isPending.value"
               @click="handleRegisterLocalAccount"
             >
-              {{
-                registerLocalAccountMutation.isPending.value
-                  ? t("mePage.register.pending")
-                  : t("mePage.register.action")
-              }}
-            </button>
+              {{ t("mePage.register.action") }}
+            </Button>
           </div>
-        </section>
+        </SurfaceCard>
       </template>
 
       <template v-else>
-        <section class="surface-card">
+        <SurfaceCard gap="md">
           <div class="section-header">
             <div>
               <h2>{{ t("mePage.wechat.title") }}</h2>
@@ -221,10 +206,12 @@
             </div>
           </div>
 
-          <button
-            class="primary-button"
+          <Button
+            appearance="pill"
+            size="sm"
             type="button"
             :disabled="bindActionDisabled"
+            :loading="startWeChatBindMutation.isPending.value"
             @click="handleStartWeChatBind"
           >
             {{
@@ -234,8 +221,8 @@
                   ? t("mePage.wechat.boundAction")
                   : t("mePage.wechat.bindAction")
             }}
-          </button>
-        </section>
+          </Button>
+        </SurfaceCard>
 
         <WeChatNotificationSubscriptionsCard
           :title="t('mePage.reminder.title')"
@@ -246,7 +233,7 @@
           />
         </WeChatNotificationSubscriptionsCard>
 
-        <section class="surface-card">
+        <SurfaceCard gap="md">
           <div class="section-header">
             <div>
               <h2>{{ t("mePage.credentials.title") }}</h2>
@@ -262,8 +249,10 @@
                 }}</span>
                 <code class="credential-value">{{ storedUserIdLabel }}</code>
               </div>
-              <button
-                class="secondary-button"
+              <Button
+                appearance="pill"
+                tone="outline"
+                size="sm"
                 type="button"
                 :disabled="!storedUserId"
                 @click="handleCopyCredential('userId', storedUserId)"
@@ -271,7 +260,7 @@
                 {{
                   copiedField === "userId" ? t("common.copied") : t("common.copy")
                 }}
-              </button>
+              </Button>
             </div>
 
             <div class="credential-item">
@@ -282,8 +271,10 @@
                 <code class="credential-value">{{ displayedUserPin }}</code>
               </div>
               <div class="credential-actions">
-                <button
-                  class="secondary-button"
+                <Button
+                  appearance="pill"
+                  tone="outline"
+                  size="sm"
                   type="button"
                   :disabled="!storedUserPin"
                   @click="pinVisible = !pinVisible"
@@ -293,9 +284,11 @@
                       ? t("mePage.credentials.hidePin")
                       : t("mePage.credentials.showPin")
                   }}
-                </button>
-                <button
-                  class="secondary-button"
+                </Button>
+                <Button
+                  appearance="pill"
+                  tone="outline"
+                  size="sm"
                   type="button"
                   :disabled="!storedUserPin"
                   @click="handleCopyCredential('userPin', storedUserPin)"
@@ -305,11 +298,11 @@
                       ? t("common.copied")
                       : t("common.copy")
                   }}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
-        </section>
+        </SurfaceCard>
 
         <RouterLink class="history-link" :to="{ name: 'pr-mine' }">
           <div class="history-link__copy">
@@ -339,9 +332,14 @@ import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import InlineNotice from "@/shared/ui/feedback/InlineNotice.vue";
 import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
+import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
+import FormField from "@/shared/ui/forms/FormField.vue";
+import Avatar from "@/shared/ui/identity/Avatar.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
@@ -573,7 +571,6 @@ const handleCopyCredential = async (
       error instanceof Error ? error.message : t("common.copyFailed");
   }
 };
-
 </script>
 
 <style scoped lang="scss">
@@ -583,35 +580,8 @@ const handleCopyCredential = async (
   gap: var(--sys-spacing-lg);
 }
 
-.surface-card,
 .history-link {
   @include mx.pu-surface-card(section);
-}
-
-.surface-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-med);
-}
-
-.feedback-banner {
-  border-radius: var(--sys-radius-md);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-
-  p {
-    margin: 0;
-    @include mx.pu-font(body-medium);
-  }
-}
-
-.feedback-banner--success {
-  background: color-mix(in srgb, var(--sys-color-primary) 14%, white);
-  color: var(--sys-color-on-surface);
-}
-
-.feedback-banner--error {
-  background: var(--sys-color-error-container);
-  color: var(--sys-color-on-error-container);
 }
 
 .section-header {
@@ -653,33 +623,7 @@ const handleCopyCredential = async (
   align-items: center;
 }
 
-.avatar-shell,
-.avatar-image,
-.avatar-fallback {
-  width: 5.5rem;
-  height: 5.5rem;
-  border-radius: 999px;
-}
-
-.avatar-image {
-  object-fit: cover;
-  display: block;
-}
-
-.avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-
-  span {
-    @include mx.pu-font(headline-small);
-  }
-}
-
 .profile-form,
-.field,
 .pin-login-fields {
   display: flex;
   flex-direction: column;
@@ -690,19 +634,8 @@ const handleCopyCredential = async (
   gap: var(--sys-spacing-med);
 }
 
-.field__label {
-  @include mx.pu-font(label-large);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.field__input {
+.text-input {
   @include mx.pu-field-shell;
-}
-
-.field__hint {
-  margin: 0;
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .profile-actions,
@@ -710,27 +643,6 @@ const handleCopyCredential = async (
   display: flex;
   flex-wrap: wrap;
   gap: var(--sys-spacing-sm);
-}
-
-.primary-button,
-.secondary-button {
-  @include mx.pu-font(label-large);
-  border: none;
-  cursor: pointer;
-}
-
-.primary-button {
-  @include mx.pu-pill-action(solid-primary, small);
-}
-
-.secondary-button {
-  @include mx.pu-pill-action(outline-transparent, small);
-}
-
-.primary-button:disabled,
-.secondary-button:disabled {
-  cursor: default;
-  opacity: 0.58;
 }
 
 .credential-list {

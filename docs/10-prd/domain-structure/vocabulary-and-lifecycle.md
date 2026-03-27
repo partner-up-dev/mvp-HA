@@ -19,6 +19,8 @@
 - Check-in Signal：Anchor PR 活动后的签到与回流信号。
 - UserNotificationOpts：围绕剩余发送次数建模的用户通知偏好。
 - Booking Support：Anchor PR 相关的预订与资助说明领域。
+- BookingHandledBy：预订责任方语义；`PLATFORM` 表示平台以平台身份直接预订，`PLATFORM_PASSTHROUGH` 表示平台按用户身份穿透代订，`USER` 表示用户自行预订。
+- Booking Contact：仅在 `PLATFORM_PASSTHROUGH` 场景下需要的联系人手机号，用于平台按联系人身份完成代订。
 - POI：活动地点与图库语义载体。
 
 ## PartnerRequest 生命周期

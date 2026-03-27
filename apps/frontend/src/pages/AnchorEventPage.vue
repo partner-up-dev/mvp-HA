@@ -191,21 +191,7 @@
             :model-value="selectedBatchId ?? -1"
             :aria-label="t('anchorEvent.batchLabel')"
             @update:model-value="handleBatchTabChange"
-          >
-            <template #append>
-              <div
-                v-if="expiredBatchOptions.length > 0"
-                class="expired-batch-menu"
-              >
-                <DropdownSelector
-                  :trigger-label="t('anchorEvent.expiredBatches.trigger')"
-                  :value="selectedExpiredBatchId"
-                  :options="expiredBatchOptions"
-                  @select="handleExpiredBatchSelect"
-                />
-              </div>
-            </template>
-          </TabBar>
+          />
 
           <div v-if="selectedBatch" class="batch-content" role="tabpanel">
             <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
@@ -253,7 +239,6 @@ import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
 import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
-import DropdownSelector from "@/shared/ui/forms/DropdownSelector.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
@@ -286,11 +271,6 @@ type LocationOption =
 
 type CardBatchOption = {
   batchId: number;
-  label: string;
-};
-
-type ExpiredBatchOption = {
-  value: number;
   label: string;
 };
 
@@ -425,10 +405,6 @@ const isExpiredBatch = (
   batch: AnchorEventDetailResponse["batches"][number],
 ): boolean => batch.status === "EXPIRED";
 
-const listVisibleBatches = computed(() =>
-  sortedBatches.value.filter((batch) => !isExpiredBatch(batch)),
-);
-
 function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   const [start] = timeWindow;
   if (start) {
@@ -458,7 +434,7 @@ function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
 }
 
 const batchTabs = computed(() =>
-  listVisibleBatches.value.map((batch, index) => ({
+  sortedBatches.value.map((batch, index) => ({
     key: batch.id,
     label: formatBatchLabel(batch.timeWindow, index),
   })),
@@ -475,31 +451,20 @@ const selectedBatch = computed(
     null,
 );
 
-const expiredBatchOptions = computed<ExpiredBatchOption[]>(() =>
-  sortedBatches.value
-    .filter((batch) => isExpiredBatch(batch))
-    .map((batch, index) => ({
-      value: batch.id,
-      label: formatBatchLabel(batch.timeWindow, index),
-    })),
-);
-
-const selectedExpiredBatchId = computed<number | null>(() => {
-  const current = selectedBatch.value;
-  if (!current || !isExpiredBatch(current)) {
-    return null;
+const resolveDefaultBatchId = (
+  batches: AnchorEventDetailResponse["batches"],
+): number | null => {
+  const firstOpenBatch = batches.find((batch) => batch.status === "OPEN");
+  if (firstOpenBatch) {
+    return firstOpenBatch.id;
   }
 
-  return current.id;
-});
-
-
-const handleExpiredBatchSelect = (value: string | number) => {
-  if (typeof value !== "number") {
-    return;
+  const firstNonExpiredBatch = batches.find((batch) => !isExpiredBatch(batch));
+  if (firstNonExpiredBatch) {
+    return firstNonExpiredBatch.id;
   }
 
-  selectedBatchId.value = value;
+  return batches[0]?.id ?? null;
 };
 
 watch(
@@ -517,8 +482,7 @@ watch(
       }
     }
 
-    selectedBatchId.value =
-      listVisibleBatches.value[0]?.id ?? batches[0]?.id ?? null;
+    selectedBatchId.value = resolveDefaultBatchId(batches);
   },
   { immediate: true },
 );
@@ -1064,16 +1028,6 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 
 .batch-section :deep(.tab-bar) {
   margin-bottom: 1rem;
-}
-
-.expired-batch-menu {
-  position: relative;
-  flex-shrink: 0;
-}
-
-.expired-batch-menu :deep(.dropdown-selector__trigger) {
-  border: 1px dashed var(--sys-color-outline);
-  background: var(--sys-color-surface);
 }
 
 .pr-list {
