@@ -45,7 +45,7 @@ Treat `_drivers` as upstream truth and `domain-structure` as derived structure t
 
 ## How This Layer Connects To Adjacent Layers
 
-- Upstream from `docs/00-meta/*`: this layer inherits ontology and promotion rules.
+- Upstream from root `AGENTS.md`: this layer inherits repo-local navigation and owner rules.
 - Downstream to future Product TDD: technical decomposition must realize the claims, workflows, and rules defined here.
 - Sideways to `docs/40-deployment/*`: runtime realities may constrain the product, but runtime procedures do not belong here.
 

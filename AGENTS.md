@@ -10,14 +10,22 @@ And this repository is a pnpm workspace with following packages implementing Par
 
 Read following documents when needed and keep them current:
 
-- `docs/00-meta/*.md`
 - `docs/10-prd/index.md`
 - `docs/10-prd/**/*.md`
 - `docs/20-product-tdd/*.md`
-- `docs/30-unit-tdd/**/*.md`
 - `docs/40-deployment/*.md`
+- `docs/30-unit-tdd/<unit>/*.md` only when a named hard-unit doc exists and is relevant
 - `apps/backend/AGENTS.md`
 - `apps/frontend/AGENTS.md`
+
+Documentation owner rules:
+
+- `AGENTS.md` owns repo-local navigation and doc-layer rules.
+- `docs/10-prd/*` owns product what/why, workflows, rules, and scope.
+- `docs/20-product-tdd/*` owns cross-unit technical truth.
+- `docs/30-unit-tdd/*` exists only for genuinely hard local units.
+- `docs/40-deployment/*` owns runtime and operational truth.
+- Prefer code, tests, schemas, and CI for mechanically enforceable truth.
 
 > Documents in `docs/plan` are temporary, don't read or update them.
 >

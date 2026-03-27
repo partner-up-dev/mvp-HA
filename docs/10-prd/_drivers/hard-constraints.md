@@ -4,7 +4,7 @@
 
 - 产品不是 App、社区或内容平台，而是嵌入现有对话与传播行为中的协作触发器。
 - 当前对外的核心协作对象只有 `PartnerRequest`，且分为 `Community PR` 与 `Anchor PR`。
-- 当前版本不提供手动创建 Anchor PR 的独立入口；Anchor PR 由 Anchor Event 侧流程生成。
+- 当前版本不提供脱离 Anchor Event/batch 上下文的通用 Anchor PR 创建入口；用户侧 Anchor PR 创建只允许发生在 Anchor Event 页面中的 batch/location 选择流程里。
 
 ## 交互与身份约束
 

@@ -2,17 +2,16 @@
 
 ## Role In The System
 
-`docs/30-unit-tdd/` holds unit-local technical realization.
+`docs/30-unit-tdd/` is an optional layer for hard local units only.
 
-Each unit doc explains how one technical unit is structured internally while inheriting cross-unit rules from Product TDD.
+Use it when code plus Product TDD are no longer enough to preserve a fragile local truth. Do not use it as a default package manual.
 
 ## What This Layer Owns
 
-- unit-local design
-- unit-local interfaces
-- unit-local state and data handling
-- unit-local operational rules
-- unit-local verification expectations
+- local invariants that are easy to violate
+- non-obvious local authority or state rules
+- risky interaction or failure semantics inside one hard unit
+- unit-specific verification expectations when they are costly to rediscover
 
 ## What Must Not Appear Here
 
@@ -23,9 +22,13 @@ Each unit doc explains how one technical unit is structured internally while inh
 
 ## How To Read This Layer
 
-1. read `docs/20-product-tdd/index.md` and relevant `docs/20-product-tdd/*` first
-2. open the relevant unit folder
-3. read `README.md`, then `design.md`, then the more specific docs
+1. read `docs/20-product-tdd/index.md` and relevant Product TDD docs first
+2. open a unit folder only if one exists for the exact hard unit you are changing
+
+Current repo state:
+
+- there is no active hard-unit Unit TDD yet
+- broad frontend/backend package folders were intentionally removed as over-broad
 
 ## How This Layer Connects To Adjacent Layers
 
