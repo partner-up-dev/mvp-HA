@@ -301,9 +301,6 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     return t("prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint");
   };
 
-  const resolveRemainingCountText = (count: number): string =>
-    t("prPage.notificationSubscriptions.remainingCount", { count });
-
   const items = computed<NotificationSubscriptionCardItem[]>(() => {
     const result: NotificationSubscriptionCardItem[] = [];
     const payload = query.data.value;
@@ -357,7 +354,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         const itemHint = enabled
           ? resolveItemEnabledHint(kind)
           : resolveItemDisabledHint(kind);
-        description = `${itemHint} · ${resolveRemainingCountText(remainingCount)}`;
+        description = t("prPage.notificationSubscriptions.remainingCountWithHint", {
+          count: remainingCount,
+          hint: itemHint,
+        });
         actionLabel = t("prPage.notificationSubscriptions.subscribeOnceAction");
 
         if (

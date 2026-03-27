@@ -43,23 +43,17 @@
           @success="handleOpenSubscribeSuccess(item.key, $event)"
           @error="handleOpenSubscribeError(item.key, $event)"
         >
-          <script type="text/wxtag-template" slot="style">
-            <style>
-              .open-subscribe-hit-target {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                border: 0;
-                border-radius: 999px;
-                background: transparent;
-                cursor: pointer;
-              }
-            </style>
-          </script>
-          <script type="text/wxtag-template">
-            <button class="open-subscribe-hit-target"></button>
-          </script>
+          <component
+            :is="'script'"
+            type="text/wxtag-template"
+            slot="style"
+            v-html="openSubscribeStyleTemplate"
+          />
+          <component
+            :is="'script'"
+            type="text/wxtag-template"
+            v-html="openSubscribeButtonTemplate"
+          />
         </wx-open-subscribe>
       </div>
 
@@ -159,6 +153,26 @@ const handleOpenSubscribeError = async (
     extractEventDetail(event),
   );
 };
+
+// Safe constant template for WeChat open tag; never interpolate user input.
+const openSubscribeStyleTemplate = `
+<style>
+.open-subscribe-hit-target {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+</style>
+`;
+
+const openSubscribeButtonTemplate = `
+<button class="open-subscribe-hit-target"></button>
+`;
 </script>
 
 <style scoped lang="scss">

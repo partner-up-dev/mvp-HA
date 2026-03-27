@@ -326,7 +326,7 @@ export interface MessageSchema {
     notificationSubscriptions: {
       title: string;
       subscribeOnceAction: string;
-      remainingCount: string;
+      remainingCountWithHint: string;
       openSubscribeUnavailableHint: string;
       items: {
         REMINDER_CONFIRMATION: {

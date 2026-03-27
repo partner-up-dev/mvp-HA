@@ -346,13 +346,13 @@
     },
     "notificationSubscriptions": {
       "title": "通知订阅",
-      "subscribeOnceAction": "订阅1次",
-      "remainingCount": "剩余{count}次",
+      "subscribeOnceAction": "订阅 1 次",
+      "remainingCountWithHint": "{hint} · 剩余 {count} 次",
       "openSubscribeUnavailableHint": "当前微信订阅组件不可用，请升级微信后重试。",
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
-          "enabledHint": "确认开始和截止前30分钟提醒",
+          "enabledHint": "确认开始和截止前 30 分钟提醒",
           "disabledHint": "暂无可用提醒"
         },
         "BOOKING_RESULT": {
