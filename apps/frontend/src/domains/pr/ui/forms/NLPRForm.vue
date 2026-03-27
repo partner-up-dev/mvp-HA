@@ -10,22 +10,13 @@
         />
         <div class="nl-actions">
           <button
-            type="button"
-            class="ghost-action"
-            @click="applyExample"
-            :disabled="isSubmitting"
-          >
-            {{ t("nlForm.useExample") }}
-          </button>
-          <button
             v-if="isVoiceSupported"
             type="button"
             class="voice-action"
             :class="{ 'is-recording': isVoiceRecording }"
-            :disabled="isSubmitting"
-            @pointerdown.prevent="handleVoicePressStart"
-            @pointerup.prevent="handleVoicePressEnd"
-            @pointerleave="handleVoicePressCancel"
+            :disabled="isSubmitting || isVoiceProcessing"
+            :aria-pressed="isVoiceRecording"
+            @click="handleVoiceToggle"
           >
             <span v-if="isVoiceRecording">
               {{ t("nlForm.voiceRecording") }}
@@ -45,7 +36,7 @@
       </div>
     </Field>
 
-    <Button type="submit" :loading="isSubmitting" full-width>
+    <Button type="submit" class="submit-action" :loading="isSubmitting" full-width>
       {{ t("nlForm.submit") }}
     </Button>
 
@@ -185,28 +176,20 @@ const onSubmit = async () => {
   await submitHandler();
 };
 
-const applyExample = () => {
-  setFieldValue("rawText", placeholderText.value);
-};
+const handleVoiceToggle = async (): Promise<void> => {
+  if (!isVoiceSupported.value || isSubmitting.value || isVoiceProcessing.value) {
+    return;
+  }
 
-const handleVoicePressStart = async () => {
-  if (!isVoiceSupported.value || isSubmitting.value) return;
+  if (isVoiceRecording.value) {
+    await stopRecording();
+    return;
+  }
+
   try {
     await startRecording();
   } catch {
     // Error already captured by hook state.
-  }
-};
-
-const handleVoicePressEnd = async () => {
-  if (!isVoiceSupported.value) return;
-  await stopRecording();
-};
-
-const handleVoicePressCancel = async () => {
-  if (!isVoiceSupported.value) return;
-  if (isVoiceRecording.value || isVoiceProcessing.value) {
-    await stopRecording();
   }
 };
 </script>
@@ -228,22 +211,8 @@ const handleVoicePressCancel = async () => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--sys-spacing-xs);
-}
-
-.ghost-action {
-  @include mx.pu-font(label-medium);
-  color: var(--sys-color-primary);
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: var(--sys-opacity-disabled);
-    cursor: not-allowed;
-  }
 }
 
 .voice-action {
@@ -261,6 +230,10 @@ const handleVoicePressCancel = async () => {
     transparent
   );
   color: var(--sys-color-on-primary-container);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
   cursor: pointer;
   transition:
     background-color 180ms ease,
@@ -292,6 +265,12 @@ const handleVoicePressCancel = async () => {
     opacity: var(--sys-opacity-disabled);
     cursor: not-allowed;
   }
+}
+
+.submit-action {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .error-message {

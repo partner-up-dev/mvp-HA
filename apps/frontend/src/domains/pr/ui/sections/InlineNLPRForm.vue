@@ -15,13 +15,12 @@
         <button
           v-if="isVoiceSupported"
           class="voice-button"
+          :class="{ 'is-recording': isVoiceRecording }"
           type="button"
           :disabled="isSubmitting || isVoiceProcessing"
           :aria-pressed="isVoiceRecording"
           :aria-label="t('nlForm.voiceAction')"
-          @pointerdown.prevent="handleVoicePressStart"
-          @pointerup.prevent="handleVoicePressEnd"
-          @pointerleave="handleVoicePressCancel"
+          @click="handleVoiceToggle"
         >
           <span
             v-if="isVoiceRecording"
@@ -52,19 +51,6 @@
           ></span>
         </button>
       </div>
-    <div class="row row--actions">
-      <button
-        type="button"
-        class="ghost-action"
-        :disabled="isSubmitting"
-        @click="applyExample"
-      >
-        {{ t("nlForm.useExample") }}
-      </button>
-      <span v-if="isVoiceSupported" class="voice-hint">{{
-        t("nlForm.voiceHint")
-      }}</span>
-    </div>
     <p v-if="voiceErrorMessage" class="error-message voice-error">
       {{ voiceErrorMessage }}
     </p>
@@ -208,29 +194,20 @@ const onSubmit = async () => {
   await submitHandler();
 };
 
-const applyExample = () => {
-  setFieldValue("rawText", placeholderText.value);
-};
+const handleVoiceToggle = async (): Promise<void> => {
+  if (!isVoiceSupported.value || isSubmitting.value || isVoiceProcessing.value) {
+    return;
+  }
 
-const handleVoicePressStart = async () => {
-  if (!isVoiceSupported.value || isSubmitting.value) return;
-  if (isVoiceProcessing.value) return;
+  if (isVoiceRecording.value) {
+    await stopRecording();
+    return;
+  }
+
   try {
     await startRecording();
   } catch {
     // Error handled by hook state.
-  }
-};
-
-const handleVoicePressEnd = async () => {
-  if (!isVoiceSupported.value) return;
-  await stopRecording();
-};
-
-const handleVoicePressCancel = async () => {
-  if (!isVoiceSupported.value) return;
-  if (isVoiceRecording.value || isVoiceProcessing.value) {
-    await stopRecording();
   }
 };
 </script>
@@ -351,6 +328,10 @@ const handleVoicePressCancel = async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
   cursor: pointer;
   transition:
     opacity 180ms ease,
@@ -366,6 +347,13 @@ const handleVoicePressCancel = async () => {
     transform: scale(0.98);
   }
 
+  &.is-recording {
+    border-style: solid;
+    border-color: var(--sys-color-primary);
+    background: var(--sys-color-primary);
+    color: var(--sys-color-on-primary);
+  }
+
   &:disabled {
     opacity: var(--sys-opacity-disabled);
     cursor: not-allowed;
@@ -374,33 +362,6 @@ const handleVoicePressCancel = async () => {
 
 .voice-icon {
   @include mx.pu-icon(small, true);
-}
-
-.row--actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-spacing-xs);
-  flex-basis: 100%;
-}
-
-.ghost-action {
-  @include mx.pu-font(label-medium);
-  color: var(--sys-color-primary);
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: var(--sys-opacity-disabled);
-    cursor: not-allowed;
-  }
-}
-
-.voice-hint {
-  @include mx.pu-font(label-small);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .error-message {

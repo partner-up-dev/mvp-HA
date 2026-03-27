@@ -939,8 +939,8 @@
     "parsing": "正在解析你的请求...",
     "createFailed": "创建失败",
     "useExample": "用当前示例填充",
-    "voiceAction": "按住语音键说话",
-    "voiceRecording": "录音中…松开发送",
+    "voiceAction": "点击开始语音输入",
+    "voiceRecording": "录音中…再次点击结束",
     "voiceProcessing": "正在转写...",
     "voiceWeChatOnly": "语音输入仅在微信内可用",
     "voicePermissionDenied": "无法获取麦克风权限，请允许录音",
@@ -948,7 +948,7 @@
     "voiceStopFailed": "录音结束失败（{message}）",
     "voiceTranslateFailed": "语音转写失败（{message}）",
     "voiceEmptyResult": "没听清，再试一次吧",
-    "voiceHint": "在微信内按住麦克风键说话，松手自动转文字"
+    "voiceHint": "在微信内点击麦克风键开始录音，再次点击转文字"
   },
   "partnerRequestForm": {
     "title": "标题",
@@ -1074,6 +1074,9 @@
       "ariaLabel": "活动浏览模式",
       "card": "卡片",
       "list": "列表"
+    },
+    "expiredBatches": {
+      "trigger": "已过期场次"
     },
     "card": {
       "batchLabel": "时间批次",
