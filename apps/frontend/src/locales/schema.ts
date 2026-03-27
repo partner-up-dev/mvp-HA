@@ -338,6 +338,7 @@ export interface MessageSchema {
           title: string;
           enabledHint: string;
           disabledHint: string;
+          unconfiguredHint: string;
         };
         NEW_PARTNER: {
           title: string;

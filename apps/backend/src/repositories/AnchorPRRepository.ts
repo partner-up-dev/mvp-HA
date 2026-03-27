@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNotNull, notInArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   anchorPartnerRequests,
@@ -12,6 +12,7 @@ import {
   partnerRequests,
   type PartnerRequest,
   type PRId,
+  type PRStatus,
   type VisibilityStatus,
 } from "../entities/partner-request";
 import type { AnchorPartnerRequest as AnchorPR } from "../entities/anchor-partner-request";
@@ -156,7 +157,9 @@ export class AnchorPRRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
-  async findBookingTriggeredRecords(): Promise<AnchorPRRecord[]> {
+  async findByRootStatuses(statuses: PRStatus[]): Promise<AnchorPRRecord[]> {
+    if (statuses.length === 0) return [];
+
     return db
       .select({
         root: partnerRequests,
@@ -167,8 +170,8 @@ export class AnchorPRRepository {
         partnerRequests,
         eq(partnerRequests.id, anchorPartnerRequests.prId),
       )
-      .where(isNotNull(anchorPartnerRequests.bookingTriggeredAt))
-      .orderBy(desc(anchorPartnerRequests.bookingTriggeredAt));
+      .where(inArray(partnerRequests.status, statuses))
+      .orderBy(desc(partnerRequests.createdAt));
   }
 
   async updateVisibilityStatus(

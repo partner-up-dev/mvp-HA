@@ -62,6 +62,7 @@ Important coordination note:
 
 - Frontend admin workspace reads one workspace payload containing `pendingItems` and merged `auditItems`.
 - Backend provides that workspace through `GET /api/admin/booking-execution/workspace`.
+- `pendingItems` are derived from unresolved Anchor PRs that are in `READY` / `FULL` / `LOCKED_TO_START`, have reached minimum active participants, and still have platform-handled required booking resources; this contract does not depend on confirmed-participant count.
 - Frontend submits one execution result per Anchor PR.
 - Backend accepts that through `POST /api/admin/anchor-prs/:id/booking-execution`.
 - The contract includes notification summary fields so admin UX can render fulfillment outcome without recomputing backend state.

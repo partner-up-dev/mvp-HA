@@ -14,6 +14,23 @@ Current runtime facts:
 - OSS is mounted at `/mnt/oss`
 - timezone is `Asia/Shanghai`
 
+## WeChat Notification Template Sources
+
+Subscription-message template ids for reminder / booking-result / new-partner
+can be supplied from either:
+
+- backend `config` rows:
+  - `wechat.submsg_confirmation_reminder_template_id`
+  - `wechat.submsg_booking_result_template_id`
+  - `wechat.submsg_new_partner_template_id`
+- backend environment variables with the same semantic mapping:
+  - `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`
+  - `WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID`
+  - `WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID`
+
+The `config` table remains the higher-priority source; env vars are operational
+fallbacks when the DB config row is absent.
+
 ## Environment Split
 
 ### `develop`

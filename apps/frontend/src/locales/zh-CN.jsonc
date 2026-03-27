@@ -358,7 +358,8 @@
         "BOOKING_RESULT": {
           "title": "场地预订结果",
           "enabledHint": "可接收场地预订结果",
-          "disabledHint": "暂无可用通知"
+          "disabledHint": "暂无可用通知",
+          "unconfiguredHint": "当前环境未配置“场地预订结果”通知模板。"
         },
         "NEW_PARTNER": {
           "title": "新搭子",

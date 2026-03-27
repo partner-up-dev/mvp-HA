@@ -46,7 +46,7 @@
 
 ## 7. Admin 预订执行
 
-1. 某个 Anchor PR 达到预订触发条件后，系统将其纳入运营待处理列表。
+1. 某个 Anchor PR 处于 `READY` / `FULL` / `LOCKED_TO_START`、已达到最小人数，且存在需要平台代订的资源（`PLATFORM` / `PLATFORM_PASSTHROUGH`）后，系统将其纳入运营待处理列表；该准入不要求参与者已确认。
 2. 运营查看目标 PR 与可执行资源；若资源采用 `PLATFORM_PASSTHROUGH`，还需要查看当前预订联系人手机号。
 3. 运营可选择目标资源并提交成功/失败结果；失败时需要给出原因。
 4. 若 `PLATFORM_PASSTHROUGH` 联系人手机号无效，运营可直接释放当前预订联系人，让新的联系人所有者重新接管流程。

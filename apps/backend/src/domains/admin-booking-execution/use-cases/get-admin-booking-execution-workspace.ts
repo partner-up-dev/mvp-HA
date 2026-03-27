@@ -19,7 +19,9 @@ import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorP
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import {
+  BOOKING_EXECUTION_PENDING_STATUSES,
   getEffectiveBookingDeadline,
+  isBookingExecutionPendingStatus,
   isPlatformHandledBookingResource,
   resolveBookingContactState,
 } from "../../pr-booking-support";
@@ -54,7 +56,7 @@ export type AdminBookingExecutionPendingItem = {
   eventTitle: string | null;
   batchId: number | null;
   batchTimeWindow: [string | null, string | null] | null;
-  bookingTriggeredAt: string;
+  bookingTriggeredAt: string | null;
   effectiveBookingDeadlineAt: string | null;
   eligibleResources: Array<{
     id: number;
@@ -182,10 +184,12 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
     MANUAL_RELEASE_ACTION,
     BOOKING_EXECUTION_LOG_LIMIT,
   );
-  const triggeredRecords = await anchorPRRepo.findBookingTriggeredRecords();
+  const candidateRecords = await anchorPRRepo.findByRootStatuses([
+    ...BOOKING_EXECUTION_PENDING_STATUSES,
+  ]);
 
   const seededContextMap = new Map<PRId, AnchorPRRecord>(
-    triggeredRecords.map((record) => [record.root.id, record]),
+    candidateRecords.map((record) => [record.root.id, record]),
   );
   const contextCache = new Map<PRId, Promise<BookingExecutionContext>>();
   const actorCache = new Map<string, Promise<User | null>>();
@@ -235,8 +239,11 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
   };
 
   const pendingItemsRaw = await Promise.all(
-    triggeredRecords.map(async (record) => {
+    candidateRecords.map(async (record) => {
       if (executedPrIds.has(record.root.id)) {
+        return null;
+      }
+      if (!isBookingExecutionPendingStatus(record.root.status)) {
         return null;
       }
 
@@ -248,6 +255,10 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
 
       const activeParticipants =
         await partnerRepo.listActiveParticipantSummariesByPrId(record.root.id);
+      const minPartners = record.root.minPartners ?? 1;
+      if (activeParticipants.length < minPartners) {
+        return null;
+      }
       const effectiveBookingDeadlineAt = await getEffectiveBookingDeadline(
         record.root.id,
       );
@@ -282,7 +293,7 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
         eventTitle: event?.title ?? null,
         batchId: batch?.id ?? null,
         batchTimeWindow: batch?.timeWindow ?? null,
-        bookingTriggeredAt: record.anchor.bookingTriggeredAt?.toISOString() ?? "",
+        bookingTriggeredAt: toIsoString(record.anchor.bookingTriggeredAt),
         effectiveBookingDeadlineAt: toIsoString(effectiveBookingDeadlineAt),
         eligibleResources: eligibleResources.map((resource) => ({
           id: resource.id,
@@ -310,9 +321,17 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
     (item) => (item ? [item] : []),
   );
   pendingItems.sort((left, right) => {
-    const leftKey = left.effectiveBookingDeadlineAt ?? left.bookingTriggeredAt;
-    const rightKey = right.effectiveBookingDeadlineAt ?? right.bookingTriggeredAt;
-    return leftKey.localeCompare(rightKey);
+    const leftKey =
+      left.effectiveBookingDeadlineAt ?? left.bookingTriggeredAt ?? left.timeWindow[0] ?? "";
+    const rightKey =
+      right.effectiveBookingDeadlineAt ??
+      right.bookingTriggeredAt ??
+      right.timeWindow[0] ??
+      "";
+    if (leftKey !== rightKey) {
+      return leftKey.localeCompare(rightKey);
+    }
+    return left.prId - right.prId;
   });
 
   const executionAuditItems = await Promise.all(

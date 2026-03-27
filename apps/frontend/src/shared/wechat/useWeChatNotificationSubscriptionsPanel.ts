@@ -337,7 +337,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
           description = t("prPage.wechatReminder.unconfiguredHint");
         } else {
           description = t(
-            "prPage.notificationSubscriptions.items.BOOKING_RESULT.disabledHint",
+            "prPage.notificationSubscriptions.items.BOOKING_RESULT.unconfiguredHint",
           );
         }
       } else if (!authenticated) {
