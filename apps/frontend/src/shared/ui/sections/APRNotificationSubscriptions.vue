@@ -202,7 +202,7 @@ const openSubscribeButtonTemplate = `
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--sys-spacing-3xs);
+  gap: var(--sys-spacing-xs);
   min-width: 0;
 }
 
