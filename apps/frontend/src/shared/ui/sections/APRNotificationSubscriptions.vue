@@ -1,16 +1,18 @@
 <template>
-  <article
-    v-for="item in items"
-    :key="item.key"
-    class="subscription-card"
-  >
+  <article v-for="item in items" :key="item.key" class="subscription-card">
     <div class="subscription-head">
-      <p class="subscription-title">{{ item.title }}</p>
+      <div class="subscription-meta">
+        <p class="subscription-title">{{ item.title }}</p>
+        <p class="subscription-desc">{{ item.description }}</p>
+      </div>
+
       <button
         v-if="item.actionKind === 'OPEN_SUBSCRIBE' && item.pending"
         :class="[
           'action-btn',
-          props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
+          props.outlineProfile === 'surface'
+            ? 'action-btn--surface'
+            : 'action-btn--secondary',
         ]"
         type="button"
         disabled
@@ -30,7 +32,9 @@
         <button
           :class="[
             'action-btn',
-            props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
+            props.outlineProfile === 'surface'
+              ? 'action-btn--surface'
+              : 'action-btn--secondary',
           ]"
           type="button"
         >
@@ -61,7 +65,9 @@
         v-else-if="item.actionLabel"
         :class="[
           'action-btn',
-          props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
+          props.outlineProfile === 'surface'
+            ? 'action-btn--surface'
+            : 'action-btn--secondary',
         ]"
         type="button"
         :disabled="item.actionDisabled || item.pending"
@@ -70,8 +76,6 @@
         {{ item.pending ? props.updatingLabel : item.actionLabel }}
       </button>
     </div>
-
-    <p class="subscription-desc">{{ item.description }}</p>
   </article>
 </template>
 
@@ -191,6 +195,15 @@ const openSubscribeButtonTemplate = `
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sys-spacing-xs);
+  width: 100%;
+}
+
+.subscription-meta {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--sys-spacing-3xs);
+  min-width: 0;
 }
 
 .subscription-title {
@@ -211,6 +224,7 @@ const openSubscribeButtonTemplate = `
   border: none;
   border-radius: 999px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .action-btn:disabled {
@@ -231,7 +245,11 @@ const openSubscribeButtonTemplate = `
 .action-btn--secondary:disabled,
 .action-btn--surface:disabled {
   background: transparent;
-  border-color: color-mix(in srgb, var(--sys-color-on-surface) 12%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--sys-color-on-surface) 12%,
+    transparent
+  );
   color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
 }
 
@@ -239,6 +257,7 @@ const openSubscribeButtonTemplate = `
   position: relative;
   display: inline-flex;
   min-height: 2rem;
+  flex-shrink: 0;
 }
 
 .open-subscribe-proxy .action-btn {
@@ -257,11 +276,6 @@ const openSubscribeButtonTemplate = `
 @media (max-width: 768px) {
   .subscription-head {
     gap: var(--sys-spacing-2xs);
-  }
-
-  .subscription-head .action-btn,
-  .subscription-head .open-subscribe-proxy {
-    flex-shrink: 0;
   }
 }
 </style>

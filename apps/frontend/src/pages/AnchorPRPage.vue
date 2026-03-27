@@ -38,9 +38,7 @@
       <SurfaceCard as="section" class="section-card event-fit-card">
         <h2 class="section-title">活动信息</h2>
         <InfoRow :label="t('prCard.location')">
-          {{
-            prDetail.core.location ?? t("prPage.partnerSection.notSet")
-          }}
+          {{ prDetail.core.location ?? t("prPage.partnerSection.notSet") }}
         </InfoRow>
         <button
           v-if="locationGallery.length > 0"
@@ -55,35 +53,21 @@
         </InfoRow>
         <InfoRow :label="t('prCard.preferences')" layout="stack" align="start">
           <ChipGroup>
-            <Chip
-              v-for="item in prDetail.core.preferences"
-              :key="item"
-            >
+            <Chip v-for="item in prDetail.core.preferences" :key="item">
               {{ item }}
             </Chip>
           </ChipGroup>
-          <span
-            v-if="prDetail.core.preferences.length === 0"
-            class="fit-empty"
-          >
+          <span v-if="prDetail.core.preferences.length === 0" class="fit-empty">
             {{ t("prPage.partnerSection.notSet") }}
           </span>
         </InfoRow>
         <InfoRow label="参与概览" layout="stack" align="start">
           <p class="fit-overview">{{ participantOverviewText }}</p>
           <ChipGroup>
-            <Chip
-              v-for="item in rosterPreview"
-              :key="item.partnerId"
-            >
+            <Chip v-for="item in rosterPreview" :key="item.partnerId">
               {{ item.displayName }}
             </Chip>
-            <span
-              v-if="hasMoreRoster"
-              class="roster-chip-overflow"
-            >
-              ...
-            </span>
+            <span v-if="hasMoreRoster" class="roster-chip-overflow"> ... </span>
           </ChipGroup>
         </InfoRow>
       </SurfaceCard>
@@ -153,9 +137,6 @@
             {{ t("prPage.bookingSupportEntry.viewAction") }}
           </router-link>
         </div>
-        <p class="section-description">
-          {{ t("prPage.bookingSupportEntry.title") }}
-        </p>
         <p class="section-description">{{ bookingSupportSummaryHeadline }}</p>
         <p class="section-description">{{ bookingSupportSummaryDeadline }}</p>
         <p
@@ -490,7 +471,11 @@ const reimbursementQuery = useAnchorReimbursementStatus(id);
 const prDetail = computed(() => data.value);
 const backFallbackTo = computed(() => {
   const anchorEventId = prDetail.value?.anchor.anchorEventId ?? null;
-  if (anchorEventId !== null && Number.isFinite(anchorEventId) && anchorEventId > 0) {
+  if (
+    anchorEventId !== null &&
+    Number.isFinite(anchorEventId) &&
+    anchorEventId > 0
+  ) {
     return `/events/${anchorEventId}`;
   }
   return "/";
@@ -612,7 +597,8 @@ const isActiveRosterState = (state: RosterState): boolean =>
   state === "JOINED" || state === "CONFIRMED" || state === "ATTENDED";
 
 const releaseNoticeText = computed(() => {
-  const releasedSlot = prDetail.value?.partnerSection.viewer.releasedSlot ?? null;
+  const releasedSlot =
+    prDetail.value?.partnerSection.viewer.releasedSlot ?? null;
   if (!releasedSlot) return null;
   if (releasedSlot.state === "EXITED") {
     return t("prPage.partnerSection.releaseNoticeExit");
@@ -630,14 +616,13 @@ const showRecoveryLane = computed(() => {
   return !viewer.isParticipant && !viewer.canJoin;
 });
 
-const activeRoster = computed(() =>
-  prDetail.value?.partnerSection.roster.filter((item) =>
-    isActiveRosterState(item.state),
-  ) ?? [],
+const activeRoster = computed(
+  () =>
+    prDetail.value?.partnerSection.roster.filter((item) =>
+      isActiveRosterState(item.state),
+    ) ?? [],
 );
-const rosterPreview = computed(
-  () => activeRoster.value.slice(0, 4),
-);
+const rosterPreview = computed(() => activeRoster.value.slice(0, 4));
 const hasMoreRoster = computed(
   () => activeRoster.value.length > rosterPreview.value.length,
 );
@@ -859,9 +844,7 @@ const openJoinFlowModal = () => {
   showJoinFlowModal.value = true;
 };
 
-const finalizeJoinFlow = async (
-  bookingContactPhone?: string | null,
-) => {
+const finalizeJoinFlow = async (bookingContactPhone?: string | null) => {
   joinFlowPending.value = true;
   joinFlowError.value = null;
   bookingContactActionError.value = null;
@@ -1184,7 +1167,6 @@ const reimbursementReasonText = (
   }
   return t("prBookingSupport.reimbursement.reasonAlreadyRequested");
 };
-
 </script>
 
 <style lang="scss" scoped>
