@@ -354,13 +354,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         const itemHint = enabled
           ? resolveItemEnabledHint(kind)
           : resolveItemDisabledHint(kind);
-        description = t(
-          "prPage.notificationSubscriptions.remainingCountWithHint",
-          {
-            count: remainingCount,
-            hint: itemHint,
-          },
-        );
+        description = t("prPage.notificationSubscriptions.remainingCountWithHint", {
+          count: remainingCount,
+          hint: itemHint,
+        });
         actionLabel = t("prPage.notificationSubscriptions.subscribeOnceAction");
 
         if (
