@@ -195,12 +195,12 @@ const openSubscribeButtonTemplate = `
 
 .subscription-title {
   margin: 0;
-  @include mx.pu-font(label-medium);
+  @include mx.pu-font(label-large);
 }
 
 .subscription-desc {
   margin: 0;
-  @include mx.pu-font(body-small);
+  @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
