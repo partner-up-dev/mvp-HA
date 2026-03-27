@@ -84,7 +84,7 @@
                   </label>
                   <label class="field">
                     <span class="field-label">{{ t("adminBookingSupport.bookingHandledBy") }}</span>
-                    <select v-model="resource.bookingHandledBy" class="field-input"><option :value="null">{{ t("adminBookingSupport.noneOption") }}</option><option value="PLATFORM">PLATFORM</option><option value="USER">USER</option></select>
+                    <select v-model="resource.bookingHandledBy" class="field-input"><option :value="null">{{ t("adminBookingSupport.noneOption") }}</option><option v-for="option in bookingHandledByOptions" :key="option" :value="option">{{ option }}</option></select>
                   </label>
                   <label class="field"><span class="field-label">{{ t("adminBookingSupport.bookingDeadlineRule") }}</span><input v-model="resource.bookingDeadlineRule" class="field-input" /></label>
                   <label class="field"><span class="field-label">{{ t("adminBookingSupport.cancellationPolicy") }}</span><input v-model="resource.cancellationPolicy" class="field-input" /></label>
@@ -140,7 +140,7 @@
                   </label>
                   <label class="field">
                     <span class="field-label">{{ t("adminBookingSupport.bookingHandledBy") }}</span>
-                    <select v-model="override.bookingHandledByOverride" class="field-input"><option :value="null">{{ t("adminBookingSupport.noneOption") }}</option><option value="PLATFORM">PLATFORM</option><option value="USER">USER</option></select>
+                    <select v-model="override.bookingHandledByOverride" class="field-input"><option :value="null">{{ t("adminBookingSupport.noneOption") }}</option><option v-for="option in bookingHandledByOptions" :key="option" :value="option">{{ option }}</option></select>
                   </label>
                   <label class="field"><span class="field-label">{{ t("adminBookingSupport.bookingDeadlineRule") }}</span><input v-model="override.bookingDeadlineRuleOverride" class="field-input" /></label>
                   <label class="field"><span class="field-label">{{ t("adminBookingSupport.cancellationPolicy") }}</span><input v-model="override.cancellationPolicyOverride" class="field-input" /></label>
@@ -220,6 +220,11 @@ const selectedEventIdRaw = ref("");
 const selectedBatchIdRaw = ref("");
 const editableResources = ref<EditableEventResource[]>([]);
 const editableOverrides = ref<EditableBatchOverride[]>([]);
+const bookingHandledByOptions = [
+  "PLATFORM",
+  "PLATFORM_PASSTHROUGH",
+  "USER",
+] as const;
 
 const selectedEventId = computed<number | null>(() => {
   const parsed = Number(selectedEventIdRaw.value);

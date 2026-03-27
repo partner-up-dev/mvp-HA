@@ -1,7 +1,6 @@
 import type {
   AnchorEvent,
   AnchorEventBatch,
-  AnchorPRSupportResource,
   OperationLogRow,
   PRId,
   User,
@@ -21,6 +20,7 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import {
   getEffectiveBookingDeadline,
+  isPlatformHandledBookingResource,
   resolveBookingContactState,
 } from "../../pr-booking-support";
 
@@ -121,9 +121,6 @@ export type AdminBookingExecutionWorkspace = {
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
-
-const isPlatformBookingResource = (resource: AnchorPRSupportResource): boolean =>
-  resource.bookingRequired && resource.bookingHandledBy === "PLATFORM";
 
 const parsePrId = (value: string): PRId | null => {
   const parsed = Number.parseInt(value, 10);
@@ -244,7 +241,7 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
       }
 
       const resources = await prSupportRepo.findByPrId(record.root.id);
-      const eligibleResources = resources.filter(isPlatformBookingResource);
+      const eligibleResources = resources.filter(isPlatformHandledBookingResource);
       if (eligibleResources.length === 0) {
         return null;
       }

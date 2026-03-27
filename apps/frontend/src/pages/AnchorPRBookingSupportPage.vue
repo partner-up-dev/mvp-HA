@@ -258,6 +258,8 @@ import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/use
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
+type BookingHandledBy = "PLATFORM" | "PLATFORM_PASSTHROUGH" | "USER";
+
 const route = useRoute();
 const { t, locale } = useI18n();
 
@@ -367,10 +369,13 @@ const resourceKindText = (
 };
 
 const bookingHandledByText = (
-  handledBy: "PLATFORM" | "USER" | null,
+  handledBy: BookingHandledBy | null,
 ): string => {
   if (handledBy === "PLATFORM") {
     return t("prBookingSupport.resource.handledByPlatform");
+  }
+  if (handledBy === "PLATFORM_PASSTHROUGH") {
+    return t("prBookingSupport.resource.handledByPlatformPassthrough");
   }
   if (handledBy === "USER") {
     return t("prBookingSupport.resource.handledByUser");
@@ -469,6 +474,8 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
     notes.push(t("prBookingSupport.resource.flowNoBooking"));
   } else if (resource.booking.handledBy === "PLATFORM") {
     notes.push(t("prBookingSupport.resource.flowPlatformBooks"));
+  } else if (resource.booking.handledBy === "PLATFORM_PASSTHROUGH") {
+    notes.push(t("prBookingSupport.resource.flowPlatformPassthroughBooks"));
   } else if (resource.booking.handledBy === "USER") {
     notes.push(t("prBookingSupport.resource.flowUserBooks"));
   }
