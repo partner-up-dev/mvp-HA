@@ -16,6 +16,7 @@
 - Styling governance: use direct `sys` tokens first (Material3 style); add `dcs` only for real governed outputs; add recipes only for governed logic or stable shared treatments.
 - Make use of SCSS features.
 - Page layout reuse: Prefer `src/shared/ui/layout/PageScaffold.vue`, `PageScaffoldFlow.vue`, `PageScaffoldCentered.vue`, and `DesktopPageScaffold.vue` for route pages; do not duplicate root safe-area container styles in page files.
+- Shared UI reuse: before adding page-local shells or feedback widgets, check `src/shared/ui/AGENTS.md` and prefer existing primitives such as `SurfaceCard`, `FormField`, `Button`, `InfoRow`, `Chip`, `ChipGroup`, `InlineNotice`, `EmptyState`, `ConfirmDialog`, and `Avatar` when the fit is real.
 - Feature composition boundary: extract reusable feature UI + business logic into dedicated feature components (for example, `APRNotificationSubscriptions`) instead of leaving logic in page files.
 - Container vs feature split: keep container components (for example, `WeChatNotificationSubscriptionsCard`) presentational-only; they should provide layout/shell and should not own feature side effects.
 - Usage-site assembly: pages (for example, `AnchorPRPage`) should assemble container + feature components, and only own page context such as visibility, section placement, and page-level error aggregation.
