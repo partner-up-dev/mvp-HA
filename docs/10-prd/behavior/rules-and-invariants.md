@@ -2,7 +2,7 @@
 
 ## 1. 产品对象与场景规则
 
-- 对外核心协作对象是 `PartnerRequest`。
+- 对外核心搭子请求是 `PartnerRequest`。
 - `PartnerRequest` 当前分为 `Community PR` 与 `Anchor PR` 两类。
 - Community PR 与 Anchor PR 共享参与、时间窗口、人数阈值等底层语义，但页面与规则允许分开演进。
 
@@ -16,7 +16,7 @@
 ## 3. 生命周期与参与规则
 
 - 对外可见的 `PartnerRequest` 生命周期状态包括 `DRAFT`、`OPEN`、`READY`、`FULL`、`LOCKED_TO_START`、`ACTIVE`、`CLOSED`、`EXPIRED`。
-- `LOCKED_TO_START` 表示协作对象已进入开始前锁定阶段；此时不能再继续加入，但仍可能继续向 `ACTIVE` 推进。
+- `LOCKED_TO_START` 表示搭子请求已进入开始前锁定阶段；此时不能再继续加入，但仍可能继续向 `ACTIVE` 推进。
 - PartnerRequest 的状态共同受人数阈值、时间窗口、确认窗口与场景特有规则影响。
 - 已加入的非终态 PR 与目标 PR 时间窗口冲突时，应拒绝新的加入或会占用槽位的创建/发布行为。
 - Community PR 仅提供 `join/exit`。

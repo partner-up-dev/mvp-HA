@@ -10,7 +10,7 @@
 
 关注：
 
-- Community PR / Anchor PR 作为核心协作对象
+- Community PR / Anchor PR 作为核心搭子请求类型
 - 发起、发布、状态、时间窗口、人数阈值
 - 页面进入与再次进入
 
