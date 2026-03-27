@@ -1,18 +1,20 @@
 <template>
-  <div class="tab-bar" role="tablist" :aria-label="ariaLabel">
-    <button
-      v-for="item in items"
-      :key="item.key"
-      type="button"
-      role="tab"
-      class="tab-bar__tab"
-      :class="{ 'tab-bar__tab--active': modelValue === item.key }"
-      :aria-selected="modelValue === item.key"
-      :disabled="item.disabled === true"
-      @click="handleSelect(item)"
-    >
-      {{ item.label }}
-    </button>
+  <div class="tab-bar">
+    <div class="tab-bar__list" role="tablist" :aria-label="ariaLabel">
+      <button
+        v-for="item in items"
+        :key="item.key"
+        type="button"
+        role="tab"
+        class="tab-bar__tab"
+        :class="{ 'tab-bar__tab--active': modelValue === item.key }"
+        :aria-selected="modelValue === item.key"
+        :disabled="item.disabled === true"
+        @click="handleSelect(item)"
+      >
+        {{ item.label }}
+      </button>
+    </div>
     <slot name="append" />
   </div>
 </template>
@@ -46,13 +48,22 @@ const handleSelect = (item: TabBarItem) => {
 .tab-bar {
   display: flex;
   gap: var(--sys-spacing-sm);
+  align-items: flex-start;
+  padding-bottom: var(--sys-spacing-sm);
+  min-width: 0;
+}
+
+.tab-bar__list {
+  display: flex;
+  gap: var(--sys-spacing-sm);
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: var(--sys-spacing-sm);
   scrollbar-width: none;
 }
 
-.tab-bar::-webkit-scrollbar {
+.tab-bar__list::-webkit-scrollbar {
   display: none;
 }
 
