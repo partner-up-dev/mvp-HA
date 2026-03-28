@@ -27,6 +27,34 @@ export class AnchorPRBookingExecutionRepository {
     return result[0] ?? null;
   }
 
+  async deleteById(id: AnchorPRBookingExecution["id"]): Promise<void> {
+    await db
+      .delete(anchorPRBookingExecutions)
+      .where(eq(anchorPRBookingExecutions.id, id));
+  }
+
+  async updateNotificationSummary(
+    id: AnchorPRBookingExecution["id"],
+    summary: {
+      targetCount: number;
+      successCount: number;
+      failureCount: number;
+      skippedCount: number;
+    },
+  ): Promise<AnchorPRBookingExecution | null> {
+    const result = await db
+      .update(anchorPRBookingExecutions)
+      .set({
+        notificationTargetCount: summary.targetCount,
+        notificationSuccessCount: summary.successCount,
+        notificationFailureCount: summary.failureCount,
+        notificationSkippedCount: summary.skippedCount,
+      })
+      .where(eq(anchorPRBookingExecutions.id, id))
+      .returning();
+    return result[0] ?? null;
+  }
+
   async listAll(): Promise<AnchorPRBookingExecution[]> {
     return db
       .select()

@@ -94,10 +94,11 @@ export interface SendNewPartnerNotificationParams {
 
 export interface SendBookingResultNotificationParams {
   openId: string;
-  activityTitle: string;
-  resourceTitle: string;
-  resultLabel: string;
-  remark: string;
+  bookingItem: string;
+  statusLabel: string;
+  activityTime: string;
+  address: string;
+  bookingDetail: string;
   page: string | null;
 }
 
@@ -289,10 +290,11 @@ export class WeChatSubscriptionMessageService {
       openId: params.openId,
       page: params.page,
       data: {
-        thing1: { value: clipText(params.activityTitle, 20) },
-        thing2: { value: clipText(params.resourceTitle, 20) },
-        thing3: { value: clipText(params.resultLabel, 20) },
-        thing4: { value: clipText(params.remark, 20) },
+        thing2: { value: clipText(params.bookingItem, 20) },
+        phrase33: { value: clipText(params.statusLabel, 20) },
+        time24: { value: clipText(params.activityTime, 32) },
+        thing35: { value: clipText(params.address, 20) },
+        thing8: { value: clipText(params.bookingDetail, 20) },
       },
     });
   }

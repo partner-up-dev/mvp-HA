@@ -106,7 +106,7 @@ Read following documents when needed and keep them current:
 - 确认机制（5.2）: 新增 `/api/pr/:id/confirm`；`T-1h` 自动释放未确认 `JOINED` 槽位，`T-1h~T-30min` 加入即自动确认，`T-30min` 后禁止 join。
 - 公众号提醒（5.2）: 新增 `GET/POST /api/wechat/reminders/subscription`；当前仅 Anchor PR 参与会调度 `confirm_start` 与 `confirm_end - 30min` 任务（优先服务号订阅通知 `message/subscribe/bizsend`，模板 ID 优先读取 `config` 表对应 key，缺失时再回退到同语义环境变量；模板消息通道保留兜底），退出/释放/关闭提醒会删除待执行任务，发送结果落库 `notification_deliveries`。
 - 预订执行控制台（Admin）: 新增 `GET /api/admin/booking-execution/workspace` 与 `POST /api/admin/anchor-prs/:id/booking-execution`；后端会基于 `READY/FULL/LOCKED_TO_START + 已达到最小活跃人数 + 平台代订资源` 推导待处理 Anchor PR，记录 append-only 的预订执行审计，并合并 `partner.admin_manual_release` 操作日志供管理端查询。
-- 场地预订结果通知: `BOOKING_RESULT` 现已接入真实发送链路；管理员提交预订结果后，会向同 PR 所有活跃参与者按剩余次数发送服务号订阅通知，成功后消费一次 credit，若返回 `43101` 则自动清零该用户该通知项次数。
+- 场地预订结果通知: `BOOKING_RESULT` 通过 JobRunner 异步发送；管理员提交预订结果后，会为该执行记录创建发送任务，向同 PR 的活跃参与者按剩余次数发送服务号订阅通知，并将逐用户结果落库到 `notification_deliveries`。成功后消费一次 credit，若返回 `43101` 则自动清零该用户该通知项次数。
 - 签到回流（5.3）: 新增 `/api/pr/:id/check-in`，记录 `didAttend` / `wouldJoinAgain`，到场时槽位置为 `ATTENDED`。
 - 分享能力: 提供小红书文案/海报与微信缩略图生成能力，并支持缓存到后端。
 - 公共配置能力: 提供 `/api/config/public/:key` 只读配置查询（当前支持 `author_wechat_qr_code`、`wecom_staff_link`、`wecom_service_qr_code`、`wecom_support_link_wechat_in`、`wecom_support_link_wechat_out`、`wechat_official_account_qr_code`）。

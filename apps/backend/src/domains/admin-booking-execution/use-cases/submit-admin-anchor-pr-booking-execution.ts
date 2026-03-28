@@ -66,14 +66,6 @@ export async function submitAdminAnchorPRBookingExecution(input: {
     });
   }
 
-  const notificationSummary = await sendBookingResultNotifications({
-    prId: input.prId,
-    prTitle:
-      record.root.title?.trim() || record.root.type || `活动 #${record.root.id}`,
-    resourceTitle: targetResource.title,
-    result: input.result,
-    reason: normalizedReason,
-  });
   const bookingContact = await bookingContactRepo.findByPrId(input.prId);
 
   const createdExecution = await bookingExecutionRepo.create({
@@ -84,16 +76,39 @@ export async function submitAdminAnchorPRBookingExecution(input: {
     actorUserId: input.actorUserId,
     result: input.result,
     reason: normalizedReason,
-    notificationTargetCount: notificationSummary.targetCount,
-    notificationSuccessCount: notificationSummary.successCount,
-    notificationFailureCount: notificationSummary.failureCount,
-    notificationSkippedCount: notificationSummary.skippedCount,
+    notificationTargetCount: 0,
+    notificationSuccessCount: 0,
+    notificationFailureCount: 0,
+    notificationSkippedCount: 0,
   });
 
   if (!createdExecution) {
     throw new HTTPException(500, {
       message: "Failed to record booking execution",
     });
+  }
+
+  let notificationSummary: BookingResultNotificationSummary;
+  try {
+    notificationSummary = await sendBookingResultNotifications({
+      executionId: createdExecution.id,
+      prId: input.prId,
+      prTimeWindow: record.root.time,
+      location: record.root.location,
+      resourceTitle: targetResource.title,
+      resourceSummaryText: targetResource.summaryText,
+      resourceDetailRules: [...targetResource.detailRules],
+      result: input.result,
+      reason: normalizedReason,
+    });
+
+    await bookingExecutionRepo.updateNotificationSummary(
+      createdExecution.id,
+      notificationSummary,
+    );
+  } catch (error) {
+    await bookingExecutionRepo.deleteById(createdExecution.id);
+    throw error;
   }
 
   operationLogService.log({

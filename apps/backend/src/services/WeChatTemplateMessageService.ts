@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { env } from "../lib/env";
 import { proxyFetch } from "../lib/proxy-fetch";
-import type { ReminderType } from "../entities/notification-delivery";
+import type { ConfirmationReminderTrigger } from "../entities/notification-delivery";
 
 type OfficialAccountConfig = {
   appId: string;
@@ -43,7 +43,7 @@ let accessTokenCache: TokenCache | null = null;
 
 export interface SendReminderTemplateParams {
   openId: string;
-  reminderType: ReminderType;
+  trigger: ConfirmationReminderTrigger;
   title: string;
   startAtLabel: string;
   location: string | null;
@@ -121,7 +121,7 @@ export class WeChatTemplateMessageService {
     url.searchParams.set("access_token", accessToken);
 
     const reminderLabel =
-      params.reminderType === "T_MINUS_24H"
+      params.trigger === "CONFIRM_START"
         ? "确认开启提醒"
         : "确认截止前 30 分钟提醒";
 

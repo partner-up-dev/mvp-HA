@@ -11,10 +11,16 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { jobs } from "./job";
 import { partnerRequests, type PRId } from "./partner-request";
+import type { WeChatNotificationKind } from "./user-notification-opt";
 import { users, type UserId } from "./user";
 
-export const reminderTypeSchema = z.enum(["T_MINUS_24H", "T_MINUS_2H"]);
-export type ReminderType = z.infer<typeof reminderTypeSchema>;
+export const confirmationReminderTriggerSchema = z.enum([
+  "CONFIRM_START",
+  "CONFIRM_END_MINUS_30M",
+]);
+export type ConfirmationReminderTrigger = z.infer<
+  typeof confirmationReminderTriggerSchema
+>;
 
 export const notificationDeliveryResultSchema = z.enum([
   "SUCCESS",
@@ -40,7 +46,12 @@ export const notificationDeliveries = pgTable(
       .$type<UserId>()
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    reminderType: text("reminder_type").$type<ReminderType>().notNull(),
+    notificationKind: text("notification_kind")
+      .$type<WeChatNotificationKind>()
+      .notNull(),
+    notificationTrigger: text("notification_trigger").$type<
+      ConfirmationReminderTrigger | null
+    >(),
     scheduledAt: timestamp("scheduled_at").notNull(),
     sentAt: timestamp("sent_at"),
     result: text("result")

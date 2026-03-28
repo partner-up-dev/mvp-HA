@@ -1,4 +1,10 @@
 export {
+  registerWeChatBookingResultJobs,
+  scheduleWeChatBookingResultNotifications,
+  resolveBookingResultStatusLabel,
+} from "./wechat-booking-result";
+
+export {
   registerWeChatReminderJobs,
   scheduleWeChatReminderJobsForParticipant,
   cancelWeChatReminderJobsForParticipant,
