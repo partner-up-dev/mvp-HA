@@ -97,6 +97,9 @@ export class WeChatOAuthService {
     authorizeUrl.searchParams.set("appid", appId);
     authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
     authorizeUrl.searchParams.set("response_type", "code");
+    // Proactive auth is intentionally limited to Anchor PR detail and relies on
+    // WeChat-native snsapi_userinfo handling for non-user-initiated redirects.
+    // Keep forcePopup unset unless product explicitly wants forced consent UX.
     authorizeUrl.searchParams.set("scope", "snsapi_userinfo");
     authorizeUrl.searchParams.set("state", state);
 

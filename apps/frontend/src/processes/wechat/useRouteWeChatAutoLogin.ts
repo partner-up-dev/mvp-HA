@@ -4,12 +4,6 @@ import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
 import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
 
-const AUTO_LOGIN_ROUTE_NAMES = new Set([
-  "anchor-event",
-  "anchor-pr",
-  "anchor-pr-booking-support",
-  "anchor-partner-profile",
-]);
 const AUTO_LOGIN_ATTEMPT_STORAGE_KEY =
   "partner_up_wechat_auto_login_attempted_routes";
 
@@ -56,11 +50,10 @@ const clearRouteAttempted = (routeKey: string): void => {
 };
 
 const resolveAutoLoginRouteKey = (
-  routeName: string | symbol | null | undefined,
   routePath: string,
+  wechatAutoLoginPolicy: "route" | "skip" | undefined,
 ): string | null => {
-  if (typeof routeName !== "string") return null;
-  if (!AUTO_LOGIN_ROUTE_NAMES.has(routeName)) return null;
+  if (wechatAutoLoginPolicy !== "route") return null;
   return routePath;
 };
 
@@ -73,7 +66,10 @@ export const useRouteWeChatAutoLogin = () => {
     if (typeof window === "undefined") return;
     if (redirecting.value) return;
 
-    const routeKey = resolveAutoLoginRouteKey(route.name, route.path);
+    const routeKey = resolveAutoLoginRouteKey(
+      route.path,
+      route.meta.wechatAutoLoginPolicy,
+    );
     if (!routeKey) return;
 
     if (userSessionStore.isAuthenticated) {
