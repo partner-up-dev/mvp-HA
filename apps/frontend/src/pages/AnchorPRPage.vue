@@ -178,7 +178,9 @@
               </Button>
             </div>
           </div>
-          <p v-if="exitActionError" class="action-error">{{ exitActionError }}</p>
+          <p v-if="exitActionError" class="action-error">
+            {{ exitActionError }}
+          </p>
         </section>
       </section>
 
@@ -447,10 +449,7 @@ type BlockedReason =
 type RosterState =
   AnchorPRDetailResponse["partnerSection"]["roster"][number]["state"];
 
-type DockActionKey =
-  | "JOIN"
-  | "CONFIRM"
-  | "CHECKIN_ATTENDED";
+type DockActionKey = "JOIN" | "CONFIRM" | "CHECKIN_ATTENDED";
 
 type DockActionItem = {
   key: DockActionKey;
@@ -789,15 +788,14 @@ const showMoreInfoExitArea = computed(() => {
   return !showTopLevelExitAction.value;
 });
 
-const showContextualActionArea = computed(
-  () =>
-    Boolean(
-      releaseNoticeText.value ||
-        primaryBlockedMessage.value ||
-        primaryDockAction.value ||
-        primaryActionErrorMessage.value ||
-        showRecoveryLane.value,
-    ),
+const showContextualActionArea = computed(() =>
+  Boolean(
+    releaseNoticeText.value ||
+    primaryBlockedMessage.value ||
+    primaryDockAction.value ||
+    primaryActionErrorMessage.value ||
+    showRecoveryLane.value,
+  ),
 );
 
 watch(
@@ -1390,7 +1388,7 @@ function buttonToneForAction(
   flex-direction: column;
 }
 
-@media (max-width: 879px) {
+@media (max-width: 375px) {
   .header-quick-actions {
     flex-wrap: wrap;
     justify-content: flex-end;
