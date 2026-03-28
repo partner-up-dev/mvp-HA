@@ -34,6 +34,7 @@ import {
 } from "./infra/analytics";
 import { processOutboxBatch } from "./infra/events";
 import {
+  registerWeChatBookingResultJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatReminderJobs,
 } from "./infra/notifications";
@@ -43,6 +44,7 @@ import { withTimeout } from "./lib/with-timeout";
 const app = new Hono();
 registerWeChatReminderJobs();
 registerWeChatNewPartnerJobs();
+registerWeChatBookingResultJobs();
 registerAnalyticsAggregationJobs();
 void bootstrapAnalyticsAggregationJobs().catch((error) => {
   console.error(
