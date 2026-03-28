@@ -14,7 +14,11 @@ import { UserNotificationOptRepository } from "../../repositories/UserNotificati
 import { NotificationDeliveryRepository } from "../../repositories/NotificationDeliveryRepository";
 import { getTimeWindowStart } from "../../domains/pr-core/services/time-window.service";
 import { resolveAnchorParticipationPolicy } from "../../domains/pr-core/services/anchor-participation-policy.service";
-import { jobRunner, NO_LATE_TOLERANCE_MS, type JobHandlerContext } from "../jobs";
+import {
+  jobRunner,
+  NO_LATE_TOLERANCE_MS,
+  type JobHandlerContext,
+} from "../jobs";
 import {
   WeChatTemplateMessageError,
   WeChatTemplateMessageService,
@@ -30,7 +34,7 @@ const REMINDER_DEDUPE_PREFIX = "wechat-reminder";
 const CONFIRMATION_END_REMINDER_LEAD_MS = 30 * 60 * 1000;
 const WECHAT_NEW_PARTNER_JOB_TYPE = "wechat.notification.new-partner";
 const NEW_PARTNER_DEDUPE_PREFIX = "wechat-new-partner";
-const NEW_PARTNER_TIP = "有新搭子加入请及时确认";
+const NEW_PARTNER_TIP = "有新搭子加入";
 
 const CONFIRMATION_REMINDER_TRIGGERS: readonly ConfirmationReminderTrigger[] = [
   "CONFIRM_START",
@@ -72,8 +76,7 @@ const buildReminderDedupeKey = (
   prId: PRId,
   userId: UserId,
   trigger: ConfirmationReminderTrigger,
-): string =>
-  `${REMINDER_DEDUPE_PREFIX}:${userId}:${prId}:${trigger}`;
+): string => `${REMINDER_DEDUPE_PREFIX}:${userId}:${prId}:${trigger}`;
 
 const buildReminderDedupePrefixForUser = (userId: UserId): string =>
   `${REMINDER_DEDUPE_PREFIX}:${userId}:`;
@@ -113,9 +116,7 @@ const resolvePrUrl = (request: PartnerRequest): string | null => {
   try {
     const url = new URL(frontendUrl);
     url.pathname =
-      request.prKind === "ANCHOR"
-        ? `/apr/${request.id}`
-        : `/cpr/${request.id}`;
+      request.prKind === "ANCHOR" ? `/apr/${request.id}` : `/cpr/${request.id}`;
     url.search = "";
     url.hash = "";
     return url.toString();
@@ -201,8 +202,8 @@ const resolveReminderOrderNo = (
 
 const resolveReminderRemark = (trigger: ConfirmationReminderTrigger): string =>
   trigger === "CONFIRM_START"
-    ? "确认开启提醒"
-    : "确认截止前30分钟提醒";
+    ? "请尽快确认参与活动，超时您的席位将被释放"
+    : "请尽快前往确认参与活动，还有30分钟就要截止了";
 
 const resolveTeamName = (request: PartnerRequest): string =>
   request.title?.trim() || request.type || `PR#${request.id}`;
@@ -507,7 +508,9 @@ async function handleNewPartnerJob(
     return;
   }
 
-  const notificationOpt = await userNotificationOptRepo.findByUserId(recipient.id);
+  const notificationOpt = await userNotificationOptRepo.findByUserId(
+    recipient.id,
+  );
   const snapshot = userNotificationOptRepo.getSubscriptionSnapshot(
     notificationOpt,
     "NEW_PARTNER",
@@ -596,9 +599,8 @@ export async function scheduleWeChatNewPartnerNotificationsForJoin(input: {
     return;
   }
 
-  const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
-    input.request.id,
-  );
+  const activeParticipants =
+    await partnerRepo.listActiveParticipantSummariesByPrId(input.request.id);
   const recipientUserIds = Array.from(
     new Set(
       activeParticipants
@@ -612,13 +614,16 @@ export async function scheduleWeChatNewPartnerNotificationsForJoin(input: {
 
   for (const recipientUserId of recipientUserIds) {
     const recipientUser = await userRepo.findById(recipientUserId);
-    if (!recipientUser || recipientUser.status !== "ACTIVE" || !recipientUser.openId) {
+    if (
+      !recipientUser ||
+      recipientUser.status !== "ACTIVE" ||
+      !recipientUser.openId
+    ) {
       continue;
     }
 
-    const notificationOpt = await userNotificationOptRepo.findByUserId(
-      recipientUserId,
-    );
+    const notificationOpt =
+      await userNotificationOptRepo.findByUserId(recipientUserId);
     const snapshot = userNotificationOptRepo.getSubscriptionSnapshot(
       notificationOpt,
       "NEW_PARTNER",
