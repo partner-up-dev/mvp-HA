@@ -38,6 +38,16 @@ type GeneratedCaption = {
   posterUrl?: string;
 };
 
+class PosterDownloadError extends Error {
+  status: number;
+
+  constructor(status: number) {
+    super(`Poster download failed with status ${status}`);
+    this.name = "PosterDownloadError";
+    this.status = status;
+  }
+}
+
 const isRemoteUrl = (url: string): boolean =>
   url.startsWith("https://") || url.startsWith("http://");
 
@@ -94,6 +104,39 @@ export const useShareToXiaohongshu = ({
     window.setTimeout(() => {
       copyState.value = "idle";
     }, 2000);
+  };
+
+  const revokeBlobUrl = (url: string | null | undefined): void => {
+    if (url?.startsWith("blob:")) {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const invalidateCurrentPoster = (): void => {
+    const currentEntry = generatedCaptions.value.get(captionCounter.value);
+    const currentEntryPosterUrl = currentEntry?.posterUrl ?? null;
+
+    revokeBlobUrl(
+      currentEntryPosterUrl && currentEntryPosterUrl !== posterUrl.value
+        ? currentEntryPosterUrl
+        : null,
+    );
+    revokeBlobUrl(posterUrl.value);
+
+    if (currentEntry?.posterUrl) {
+      delete currentEntry.posterUrl;
+    }
+
+    posterUrl.value = null;
+  };
+
+  const fetchPosterBlob = async (url: string): Promise<Blob> => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new PosterDownloadError(response.status);
+    }
+
+    return response.blob();
   };
 
   const generatePosterForCurrentCaption = async (): Promise<void> => {
@@ -193,7 +236,6 @@ export const useShareToXiaohongshu = ({
         const initialCaption: GeneratedCaption = {
           caption: cached.caption,
           posterStylePrompt: cached.posterStylePrompt,
-          posterUrl: cached.posterUrl,
         };
         caption.value = initialCaption;
         generatedCaptions.value.set(captionCounter.value, initialCaption);
@@ -267,7 +309,7 @@ export const useShareToXiaohongshu = ({
 
   const handlePosterLoadError = async (): Promise<void> => {
     console.warn("Poster image failed to load, regenerating...");
-    posterUrl.value = null;
+    invalidateCurrentPoster();
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 100);
     });
@@ -309,8 +351,26 @@ export const useShareToXiaohongshu = ({
     }
 
     try {
-      const response = await fetch(posterUrl.value);
-      const blob = await response.blob();
+      let blob: Blob;
+
+      try {
+        blob = await fetchPosterBlob(posterUrl.value);
+      } catch (error) {
+        if (!(error instanceof PosterDownloadError) || error.status !== 404) {
+          throw error;
+        }
+
+        console.warn("Poster URL returned 404 during download, regenerating...");
+        invalidateCurrentPoster();
+        await generatePosterForCurrentCaption();
+
+        if (!posterUrl.value) {
+          throw error;
+        }
+
+        blob = await fetchPosterBlob(posterUrl.value);
+      }
+
       downloadBlob(blob, generatePosterFilename());
     } catch (error) {
       console.error("Failed to download poster:", error);
