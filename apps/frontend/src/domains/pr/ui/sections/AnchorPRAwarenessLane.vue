@@ -1,5 +1,5 @@
 <template>
-  <section class="lane-card">
+  <section class="awareness-lane">
     <header class="lane-header">
       <h2 class="lane-title">
         {{ t("prPage.partnerSection.rosterBoardTitle") }}
@@ -246,9 +246,7 @@ const rosterAvatarFallback = (displayName: string): string => {
 </script>
 
 <style lang="scss" scoped>
-.lane-card {
-  margin-top: var(--sys-spacing-lg);
-  @include mx.pu-surface-card(section);
+.awareness-lane {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
@@ -276,7 +274,10 @@ const rosterAvatarFallback = (displayName: string): string => {
 .roster-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+}
+
+.roster-list > * + * {
+  border-top: 1px solid var(--sys-color-outline-variant);
 }
 
 .roster-list--history {
@@ -311,7 +312,8 @@ const rosterAvatarFallback = (displayName: string): string => {
 }
 
 .roster-history {
-  @include mx.pu-surface-card(outline);
+  padding-top: var(--sys-spacing-sm);
+  border-top: 1px solid var(--sys-color-outline-variant);
 }
 
 .roster-history__summary {
@@ -333,11 +335,11 @@ const rosterAvatarFallback = (displayName: string): string => {
 }
 
 .roster-item {
-  @include mx.pu-surface-card(outline);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-sm) 0;
 }
 
 .roster-main {
@@ -362,18 +364,13 @@ const rosterAvatarFallback = (displayName: string): string => {
 .roster-link {
   text-decoration: none;
   color: inherit;
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease;
+  transition: background-color 160ms ease;
 
   &:hover {
-    transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--sys-color-primary) 40%, transparent);
     background: color-mix(
       in srgb,
       var(--sys-color-primary) 6%,
-      var(--sys-color-surface-container-lowest)
+      transparent
     );
   }
 
@@ -413,10 +410,7 @@ const rosterAvatarFallback = (displayName: string): string => {
 .roster-tag,
 .roster-state {
   @include mx.pu-font(label-small);
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .roster-state {
