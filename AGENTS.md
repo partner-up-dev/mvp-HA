@@ -1,6 +1,6 @@
 ﻿# AGENTS.md of PartnerUp MVP
 
-PartnerUp is a platform helping user find their partners effectively and safely.
+PartnerUp is a platform helping user find their 搭子 effectively and safely.
 And this repository is a pnpm workspace with following packages implementing PartnerUp MVP:
 
 - `apps/backend`

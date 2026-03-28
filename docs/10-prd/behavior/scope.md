@@ -2,7 +2,7 @@
 
 ## 当前范围内
 
-- Community PR 与 Anchor PR 两类协作对象
+- Community PR 与 Anchor PR 两类搭子请求
 - 首页探索、活动页浏览、Community PR 发起、PR 详情页参与
 - 本地账户 + PIN、微信登录/绑定、`/me`、`/pr/mine`
 - 分享链路、微信分享、小红书文案/海报、`spm` 归因

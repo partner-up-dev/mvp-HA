@@ -4,7 +4,7 @@
 
 - H-A MVP：协作效率产品假设的最小验证版本。
 - 协作触发器：嵌入对话与行为中的轻量协作承载方式。
-- PartnerRequest（搭子请求）：一次性协作单元，可被加入并自然结束。
+- PartnerRequest（搭子请求）：一次性搭子请求对象，可被加入并自然结束。
 - Community PR：社区场景搭子请求，对外页面为 `/cpr/:id`。
 - Anchor PR：活动锚点场景搭子请求，对外页面为 `/apr/:id`，可扩展到 `/apr/:id/booking-support`。
 - Partner：Community PR 与 Anchor PR 共用的参与槽位机制。
