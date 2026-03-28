@@ -73,6 +73,7 @@ const routes: RouteRecordRaw[] = [
     component: AnchorPRPage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "route",
     },
   },
   {
@@ -81,6 +82,7 @@ const routes: RouteRecordRaw[] = [
     component: UserProfilePage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
     },
   },
   {
@@ -89,6 +91,7 @@ const routes: RouteRecordRaw[] = [
     component: AnchorPRBookingSupportPage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
     },
   },
   {
@@ -181,6 +184,7 @@ const routes: RouteRecordRaw[] = [
     component: AnchorEventPage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
     },
   },
   {
