@@ -30,6 +30,7 @@
       <RouterLink
         class="hero-action hero-action--secondary"
         :to="{ name: 'community-pr-create' }"
+        @click="handleSecondaryClick"
       >
         {{ t("home.landing.heroSecondaryAction") }}
         <span class="i-mdi-arrow-right" />
@@ -58,7 +59,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 
 const { t } = useI18n();
 const emit = defineEmits<{
@@ -188,6 +189,13 @@ const startHeroAnimation = () => {
 const handlePrimaryClick = () => {
   trackEvent("home_hero_primary_click", {
     target: "event-plaza",
+  });
+};
+
+const handleSecondaryClick = () => {
+  trackEvent("home_create_entry_click", {
+    source: "hero_secondary",
+    target: "community-pr-create",
   });
 };
 

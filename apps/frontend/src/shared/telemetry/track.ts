@@ -3,9 +3,9 @@ import type {
   AnalyticsPayload,
   CanonicalAnalyticsEventName,
   LegacyAnalyticsEventName,
-} from "@/shared/analytics/events";
-import { LEGACY_ANALYTICS_EVENT_NAME_MAP } from "@/shared/analytics/events";
-import { resolveCurrentSpmAttribution } from "@/shared/analytics/spm-attribution";
+} from "@/shared/telemetry/events";
+import { LEGACY_ANALYTICS_EVENT_NAME_MAP } from "@/shared/telemetry/events";
+import { resolveCurrentSpmAttribution } from "@/shared/telemetry/spm-attribution";
 import { sanitizeSpmValue } from "@/shared/url/spm";
 import { client } from "@/lib/rpc";
 
@@ -193,7 +193,7 @@ const flushPendingEvents = async (): Promise<void> => {
   flushInFlight = true;
   const batch = pendingQueue.splice(0, FLUSH_BATCH_SIZE);
   try {
-    const response = await client.api.analytics.events.$post({
+    const response = await client.api.telemetry.events.$post({
       json: {
         events: batch,
       },

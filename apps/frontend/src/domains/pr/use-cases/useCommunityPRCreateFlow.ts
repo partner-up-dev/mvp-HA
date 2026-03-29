@@ -6,7 +6,7 @@ import {
   usePublishCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 import { communityPRDetailPath } from "@/domains/pr/routing/routes";
 import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";

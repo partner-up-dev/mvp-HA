@@ -18,6 +18,7 @@ export type CanonicalAnalyticsEventName =
   | "home_event_all_click"
   | "home_event_highlight_click"
   | "home_event_plaza_entry_click"
+  | "home_create_entry_click"
   | "home_bookmark_nudge_shown"
   | "home_bookmark_action_click"
   | "anchor_pr_primary_cta_impression"
@@ -121,6 +122,10 @@ type CanonicalAnalyticsPayloadMap = {
   };
   home_event_plaza_entry_click: PRContextPayload & {
     source: "landing";
+  };
+  home_create_entry_click: PRContextPayload & {
+    source: "hero_secondary" | "fallback_section";
+    target: "community-pr-create";
   };
   home_bookmark_nudge_shown: PRContextPayload & {
     triggerDepthPercent: number;

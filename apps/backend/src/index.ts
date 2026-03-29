@@ -151,6 +151,7 @@ const routes = app
   .route("/api/config", configRoute)
   .route("/api/meta", metaRoute)
   .route("/api/analytics", analyticsRoute)
+  .route("/api/telemetry", analyticsRoute)
   .route("/api/pois", poiRoute)
   .route("/api/admin", adminAnchorManagementRoute)
   .route("/api/admin", adminBookingExecutionRoute)

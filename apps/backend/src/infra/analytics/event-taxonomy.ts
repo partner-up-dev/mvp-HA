@@ -16,6 +16,7 @@ export const canonicalAnalyticsEventTypes = [
   "home_event_all_click",
   "home_event_highlight_click",
   "home_event_plaza_entry_click",
+  "home_create_entry_click",
   "home_bookmark_nudge_shown",
   "home_bookmark_action_click",
   "anchor_pr_primary_cta_impression",
