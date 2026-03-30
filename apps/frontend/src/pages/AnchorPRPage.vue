@@ -436,7 +436,7 @@ import {
   formatLocalDateTimeValue,
   formatLocalDateTimeWindow,
 } from "@/shared/datetime/formatLocalDateTime";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 import type { ApiError } from "@/shared/api/error";
 import {
   clearPendingWeChatAction,

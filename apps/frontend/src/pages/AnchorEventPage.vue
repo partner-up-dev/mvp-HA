@@ -252,7 +252,7 @@ import {
   communityPRDetailPath,
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
-import { resolveCurrentSpmAttribution } from "@/shared/analytics/spm-attribution";
+import { resolveCurrentSpmAttribution } from "@/shared/telemetry/spm-attribution";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 import type { ApiError } from "@/shared/api/error";
 import {

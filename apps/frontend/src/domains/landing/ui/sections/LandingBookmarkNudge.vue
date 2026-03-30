@@ -63,7 +63,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useLandingBookmarkNudge } from "@/domains/landing/use-cases/useLandingBookmarkNudge";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 import OfficialAccountQrModal from "@/shared/wechat/OfficialAccountQrModal.vue";
 import { useWeChatOfficialAccountQrCode } from "@/shared/wechat/useWeChatOfficialAccountQrCode";
 
@@ -180,18 +180,20 @@ const handleDismiss = () => {
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(var(--sys-spacing-med) + var(--pu-safe-bottom));
-  width: min(
-    100% - (var(--sys-spacing-med) * 2),
-    var(--dcs-layout-bookmark-nudge-max-width)
+  width: min(100% - (var(--sys-spacing-med) * 2), 24rem);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-surface-container-low) 92%,
+    transparent
   );
-  background: var(--sys-color-surface-container-low);
-  border: 1px solid var(--sys-color-outline-variant);
+  border: 1px solid color-mix(in srgb, var(--sys-color-outline) 54%, transparent);
   border-radius: var(--sys-radius-med);
   padding: var(--sys-spacing-med);
   z-index: 20;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-sm);
+  backdrop-filter: blur(12px);
   @include mx.pu-elevation(4);
 }
 
@@ -209,19 +211,22 @@ const handleDismiss = () => {
 }
 
 .nudge-title {
-  @include mx.pu-font(title-small);
+  @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface);
+  margin: 0;
 }
 
 .nudge-hint {
-  @include mx.pu-font(body-medium);
+  @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
+  margin: 0;
 }
 
 .nudge-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: var(--sys-spacing-xs);
   margin-top: var(--sys-spacing-xs);
 }
@@ -256,6 +261,26 @@ const handleDismiss = () => {
 .nudge-fade-leave-to {
   opacity: 0;
   transform: translate(-50%, 0.5rem);
+}
+
+@media (max-width: 768px) {
+  .nudge-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .nudge-action--ghost,
+  .nudge-action--primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudge-fade-enter-active,
+  .nudge-fade-leave-active {
+    transition: none !important;
+  }
 }
 
 </style>

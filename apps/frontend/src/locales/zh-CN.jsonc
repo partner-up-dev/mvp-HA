@@ -51,47 +51,19 @@
         "item3": "无需登录即可加入"
       },
       "highlightsTitle": "线下活动",
-      "highlightsSubtitle": "我们举办了一系列线下活动，从羽毛球到茶话会；特别提供场地、饮品补贴。",
-      "highlightsEmpty": "活动正在上新中，先去活动广场逛逛",
-      "highlightsLoadFailed": "活动加载失败，请稍后重试",
-      "highlightsOpenPlaza": "进入活动广场",
-      "plazaEntryTitle": "大家都在找什么搭子",
-      "plazaEntryDescription": "按活动浏览，看看现在有什么可加入。",
-      "plazaEntryAction": "所有活动",
+      "highlightsBridge": "我们举办了一系列活动，从羽毛球到茶话会，更有场地、饮品等补贴，期待您和您的搭子加入",
+      "highlightsCueFixedTime": "固定时间",
+      "highlightsCueFixedLocation": "预设地点",
+      "highlightsCueSubsidy": "享平台补贴",
+      "highlightsStatEvents": "当前 {count} 条活动线",
+      "highlightsStatLocations": "覆盖 {count} 个场地",
+      "highlightsEmpty": "活动正在更新中，先去活动广场看看",
+      "highlightsLoadFailed": "活动暂时加载失败，但你仍然可以去活动广场看看",
+      "highlightsOpenPlaza": "去活动广场",
+      "plazaEntryDescription": "在活动广场看我们举办的所有线下活动。",
+      "plazaEntryAction": "去活动广场",
       "eventCampaigns": {
-        "gatewayAction": "去活动广场看全部活动",
-        "badminton": {
-          "kicker": "羽毛球",
-          "title": "下课就能开打",
-          "description": "不用组熟人局，来了就能上场。",
-          "ctaWithLocation": "就在{location}",
-          "fallbackLocation": "校园球馆",
-          "imagePlaceholder": "羽毛球活动图占位"
-        },
-        "running": {
-          "kicker": "慢跑",
-          "titleWithLocation": "{location}，慢慢跑",
-          "description": "不拼速度，先把第一圈跑起来。",
-          "ctaWithTime": "就{time}",
-          "ctaFallback": "看慢跑场次",
-          "fallbackLocation": "学校操场",
-          "imagePlaceholder": "慢跑活动图占位"
-        },
-        "teaTalk": {
-          "kicker": "茶话会",
-          "title": "喝杯茶，认识新同学",
-          "description": "按兴趣匹配，奶茶我们包。",
-          "ctaWithLocation": "就在{location}",
-          "fallbackLocation": "校园奶茶店",
-          "imagePlaceholder": "茶话会活动图占位"
-        },
-        "speaking": {
-          "kicker": "口语练习",
-          "title": "先开口，再进步",
-          "description": "不求完美发音，先把表达说出来。",
-          "cta": "看口语练习场次",
-          "imagePlaceholder": "口语练习活动图占位"
-        }
+        "gatewayAction": "去活动广场看全部活动"
       },
       "eventUnitCopy": {
         "proofWithCount": "已有 {count} 人这周在找搭子",
@@ -150,11 +122,11 @@
         "focusActionFallback": "转去广场继续筛",
         "allEntryKicker": "全部活动入口"
       },
-      "secondaryActionsTitle": "发起活动",
-      "secondaryActionsHint": "如果你已经有想法，可以立即创建活动，或查看你自己的活动记录。",
-      "secondaryCreateTitle": "30 秒发起你的搭子",
-      "secondaryCreateDescription": "填写核心信息，立即生成可加入、可传播的活动页面。",
-      "secondaryCreateAction": "立即发起",
+      "secondaryActionsTitle": "没有合适的？",
+      "secondaryActionsHint": "用自然语言告诉我们你想找什么搭子并一键生成海报，不需要注册",
+      "secondaryCreateTitle": "找你想找的",
+      "secondaryCreateDescription": "把你的搭子需求发出来，生成专属海报并追踪加入情况",
+      "secondaryCreateAction": "找搭子",
       "secondaryMineTitle": "进入我的中心",
       "secondaryMineDescription": "绑定微信、查看本地 PIN 和用户 ID，并进入我的活动记录。",
       "secondaryMineAction": "打开我的页面",
@@ -165,15 +137,15 @@
       "footerNavMine": "我的"
     },
     "bookmarkNudge": {
-      "title": "先收藏这个页面",
+      "title": "需要时再回来",
       "wechatTitle": "关注搭一把公众号",
       "wechatHint": "关注{name}公众号，活动更新、报名入口都会在微信里提醒你。",
       "followQrModalTitle": "关注搭一把公众号",
       "followQrModalDescription": "请使用微信扫码关注公众号。",
       "followQrModalQrAlt": "搭一把公众号二维码",
       "followQrModalQrMissing": "公众号二维码暂未配置，请稍后再试。",
-      "browserHint": "将本站加入浏览器书签，随时回来找搭子。",
-      "bookmarkAction": "我知道了",
+      "browserHint": "把首页加入浏览器书签，等你想找搭子时可以直接回来。",
+      "bookmarkAction": "知道了",
       "wechatAction": "关注公众号",
       "copyAction": "复制首页链接",
       "wechatCopyAction": "复制公众号名称",
@@ -1065,7 +1037,10 @@
   "eventPlaza": {
     "title": "活动广场",
     "subtitle": "探索附近的活动场次",
+    "locationLeadSingle": "先看 {location}",
+    "locationLeadWithMore": "先看 {location}，另有 {count} 个场地",
     "locationCount": "{count} 个场地可选",
+    "openEventAction": "查看场次",
     "noEvents": "暂无活动",
     "loadFailed": "加载活动列表失败"
   },

@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { copyToClipboard } from "@/lib/clipboard";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 import { parsePRIdFromPathname } from "@/domains/pr/routing/routes";
 import {
   buildProductShareUrl,

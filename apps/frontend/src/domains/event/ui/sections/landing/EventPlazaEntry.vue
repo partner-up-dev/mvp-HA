@@ -5,21 +5,25 @@
     :class="{ 'is-in-view': isInView }"
     :aria-label="t('home.landing.plazaEntryAction')"
   >
-    <RouterLink
-      class="plaza-link"
-      :class="{ 'is-in-view': isInView, 'is-pressed': isPressed }"
+    <p
+      class="plaza-text"
+      :class="{ 'is-in-view': isInView }"
       :style="itemMotionStyle(1)"
+    >
+      <span class="plaza-description">
+        {{ t("home.landing.plazaEntryDescription") }}
+      </span>
+    </p>
+
+    <RouterLink
+      class="plaza-action-link"
+      :class="{ 'is-in-view': isInView }"
+      :style="itemMotionStyle(2)"
       :to="{ name: 'event-plaza' }"
       @click="handleClick"
-      @pointerdown="onPointerDown"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerCancel"
-      @pointerleave="onPointerLeave"
     >
-      <span class="plaza-action">
-        {{ t("home.landing.plazaEntryAction") }}
-        <span class="plaza-action-icon i-mdi:arrow-right" aria-hidden="true" />
-      </span>
+      {{ t("home.landing.plazaEntryAction") }}
+      <span class="plaza-action-icon i-mdi:arrow-right" aria-hidden="true" />
     </RouterLink>
   </section>
 </template>
@@ -28,8 +32,7 @@
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useInViewStagger } from "@/shared/motion/useInViewStagger";
-import { usePressFeedback } from "@/shared/motion/usePressFeedback";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 
 const { t } = useI18n();
 const {
@@ -40,13 +43,6 @@ const {
   threshold: 0.25,
   rootMargin: "0px 0px -10% 0px",
 });
-const {
-  isPressed,
-  onPointerDown,
-  onPointerUp,
-  onPointerCancel,
-  onPointerLeave,
-} = usePressFeedback();
 
 const handleClick = () => {
   trackEvent("home_event_all_click", {
@@ -62,25 +58,36 @@ const handleClick = () => {
 .plaza-entry {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sys-spacing-xs);
 }
 
-.plaza-link {
+.plaza-text,
+.plaza-action-link {
   @include mx.pu-motion-enter(0.66rem);
-  @include mx.pu-motion-pressable(0.992);
-  @include mx.pu-motion-ripple-base();
-  text-decoration: none;
+}
+
+.plaza-text {
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface-variant);
+  margin: 0;
+  max-width: 42ch;
+}
+
+.plaza-description {
+  @include mx.pu-font(label-large);
+}
+
+.plaza-action-link {
+  @include mx.pu-font(body-medium);
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
-
+  color: var(--sys-color-secondary);
+  text-decoration: none;
   transition:
-    opacity 180ms ease,
-    transform 180ms ease,
-    background-color 180ms ease;
-
-  &:active {
-    opacity: 0.72;
-  }
+    color 180ms ease,
+    transform 180ms ease;
 
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
@@ -88,24 +95,17 @@ const handleClick = () => {
   }
 }
 
-.plaza-action {
-  @include mx.pu-font(body-large);
-  display: inline-flex;
-  align-items: center;
-  color: var(--sys-color-secondary);
-
-  .plaza-action-icon {
-    margin-left: var(--sys-spacing-xs);
-    display: inline-block;
-    vertical-align: middle;
-    @include mx.pu-icon(medium);
-  }
+.plaza-action-icon {
+  margin-left: var(--sys-spacing-xs);
+  display: inline-block;
+  vertical-align: middle;
+  @include mx.pu-icon(medium);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .plaza-link:hover {
+  .plaza-action-link:hover {
     transform: translateX(2px);
-    background: color-mix(in srgb, var(--sys-color-primary) 5%, transparent);
+    color: var(--sys-color-primary);
   }
 }
 </style>

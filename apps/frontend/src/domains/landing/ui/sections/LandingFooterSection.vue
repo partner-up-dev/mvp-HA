@@ -48,20 +48,8 @@ const { t } = useI18n();
 
 const footerNavLinks = computed(() => [
   {
-    routeName: "event-plaza",
-    label: t("eventPlaza.title"),
-  },
-  {
-    routeName: "community-pr-create",
-    label: t("createPage.title"),
-  },
-  {
     routeName: "me",
     label: t("home.landing.footerNavMine"),
-  },
-  {
-    routeName: "pr-mine",
-    label: t("myPrsPage.title"),
   },
   {
     routeName: "contact-support",

@@ -1,5 +1,5 @@
 import { computed, ref, watchEffect, type ComputedRef } from "vue";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 import { parsePRIdFromPathname } from "@/domains/pr/routing/routes";
 
 export type ShareMethodId = "WEB_SHARE" | "XIAOHONGSHU" | "WECHAT_CHAT";

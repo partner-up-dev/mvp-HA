@@ -2,7 +2,7 @@ import { computed, type ComputedRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 import {
   useExitAnchorPR,
   useJoinAnchorPR,

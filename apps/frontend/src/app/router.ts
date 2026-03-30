@@ -3,8 +3,8 @@ import {
   createWebHistory,
   type RouteRecordRaw,
 } from "vue-router";
-import { trackEvent } from "@/shared/analytics/track";
-import { captureSpmAttributionFromUrl } from "@/shared/analytics/spm-attribution";
+import { trackEvent } from "@/shared/telemetry/track";
+import { captureSpmAttributionFromUrl } from "@/shared/telemetry/spm-attribution";
 import HomePage from "@/pages/HomePage.vue";
 import MePage from "@/pages/MePage.vue";
 import MyPRsPage from "@/pages/MyPRsPage.vue";
