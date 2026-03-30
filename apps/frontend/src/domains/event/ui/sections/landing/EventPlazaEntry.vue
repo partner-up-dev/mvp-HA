@@ -10,8 +10,6 @@
       :class="{ 'is-in-view': isInView }"
       :style="itemMotionStyle(1)"
     >
-      <span class="plaza-kicker">{{ t("home.landing.plazaEntryKicker") }}</span>
-      <span class="plaza-title">{{ t("home.landing.plazaEntryTitle") }}</span>
       <span class="plaza-description">
         {{ t("home.landing.plazaEntryDescription") }}
       </span>
@@ -76,23 +74,13 @@ const handleClick = () => {
   max-width: 42ch;
 }
 
-.plaza-kicker {
-  @include mx.pu-font(label-medium);
-  color: var(--sys-color-secondary);
-  margin-right: var(--sys-spacing-xs);
-}
-
-.plaza-title {
-  color: var(--sys-color-on-surface);
-  margin-right: var(--sys-spacing-xs);
-}
-
 .plaza-description {
-  color: inherit;
+  @include mx.pu-font(label-large);
 }
 
 .plaza-action-link {
   @include mx.pu-font(body-medium);
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   color: var(--sys-color-secondary);

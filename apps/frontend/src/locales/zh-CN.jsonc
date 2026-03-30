@@ -60,10 +60,8 @@
       "highlightsEmpty": "活动正在更新中，先去活动广场看看",
       "highlightsLoadFailed": "活动暂时加载失败，但你仍然可以去活动广场看看",
       "highlightsOpenPlaza": "去活动广场",
-      "plazaEntryKicker": "不止这些",
-      "plazaEntryTitle": "我们举办的所有类型的活动",
-      "plazaEntryDescription": "去活动广场看全部现成活动，再按时间、地点找到更合适的一场。",
-      "plazaEntryAction": "去活动广场继续看",
+      "plazaEntryDescription": "在活动广场看我们举办的所有线下活动。",
+      "plazaEntryAction": "去活动广场",
       "eventCampaigns": {
         "gatewayAction": "去活动广场看全部活动"
       },
