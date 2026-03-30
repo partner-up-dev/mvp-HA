@@ -50,56 +50,22 @@
         "item2": "一键分享微信、小红书",
         "item3": "无需登录即可加入"
       },
-      "highlightsEyebrow": "先加入一场现成活动",
-      "highlightsTitle": "先看看现在能参加什么",
-      "highlightsSubtitle": "先从固定时间、固定地点的现成活动开始，挑一场你现在就能继续往下看的。",
-      "highlightsBridge": "加入一场现成活动，就是开始使用搭一把最快的一步。",
+      "highlightsTitle": "线下活动",
+      "highlightsBridge": "我们举办了一系列活动，从羽毛球到茶话会，更有场地、饮品等补贴，期待您和您的搭子加入",
       "highlightsCueFixedTime": "固定时间",
-      "highlightsCueFixedLocation": "固定地点",
-      "highlightsCueJoinFirst": "先加入，再认识",
+      "highlightsCueFixedLocation": "预设地点",
+      "highlightsCueSubsidy": "享平台补贴",
       "highlightsStatEvents": "当前 {count} 条活动线",
       "highlightsStatLocations": "覆盖 {count} 个场地",
-      "highlightsEmpty": "现成活动正在更新中，先去活动广场看看",
-      "highlightsLoadFailed": "活动暂时加载失败，但你仍然可以先去活动广场看看",
+      "highlightsEmpty": "活动正在更新中，先去活动广场看看",
+      "highlightsLoadFailed": "活动暂时加载失败，但你仍然可以去活动广场看看",
       "highlightsOpenPlaza": "去活动广场",
-      "plazaEntryKicker": "不止这几条",
-      "plazaEntryTitle": "继续按活动挑一场",
+      "plazaEntryKicker": "不止这些",
+      "plazaEntryTitle": "我们举办的所有类型的活动",
       "plazaEntryDescription": "去活动广场看全部现成活动，再按时间、地点找到更合适的一场。",
       "plazaEntryAction": "去活动广场继续看",
       "eventCampaigns": {
-        "gatewayAction": "去活动广场看全部活动",
-        "badminton": {
-          "kicker": "羽毛球",
-          "title": "下课就能开打",
-          "description": "不用组熟人局，来了就能上场。",
-          "ctaWithLocation": "就在{location}",
-          "fallbackLocation": "校园球馆",
-          "imagePlaceholder": "羽毛球活动图占位"
-        },
-        "running": {
-          "kicker": "慢跑",
-          "titleWithLocation": "{location}，慢慢跑",
-          "description": "不拼速度，先把第一圈跑起来。",
-          "ctaWithTime": "就{time}",
-          "ctaFallback": "看慢跑场次",
-          "fallbackLocation": "学校操场",
-          "imagePlaceholder": "慢跑活动图占位"
-        },
-        "teaTalk": {
-          "kicker": "茶话会",
-          "title": "喝杯茶，认识新同学",
-          "description": "按兴趣匹配，奶茶我们包。",
-          "ctaWithLocation": "就在{location}",
-          "fallbackLocation": "校园奶茶店",
-          "imagePlaceholder": "茶话会活动图占位"
-        },
-        "speaking": {
-          "kicker": "口语练习",
-          "title": "先开口，再进步",
-          "description": "不求完美发音，先把表达说出来。",
-          "cta": "看口语练习场次",
-          "imagePlaceholder": "口语练习活动图占位"
-        }
+        "gatewayAction": "去活动广场看全部活动"
       },
       "eventUnitCopy": {
         "proofWithCount": "已有 {count} 人这周在找搭子",
@@ -159,10 +125,10 @@
         "allEntryKicker": "全部活动入口"
       },
       "secondaryActionsTitle": "没有合适的？",
-      "secondaryActionsHint": "如果现在的活动或已有请求都不适合你，就直接发起你想找的搭子。",
-      "secondaryCreateTitle": "发起你想找的搭子",
-      "secondaryCreateDescription": "把你的明确需求发出来，生成可被分享、可被加入的搭子请求。",
-      "secondaryCreateAction": "去发起",
+      "secondaryActionsHint": "用自然语言告诉我们你想找什么搭子并一键生成海报，不需要注册",
+      "secondaryCreateTitle": "找你想找的",
+      "secondaryCreateDescription": "把你的搭子需求发出来，生成专属海报并追踪加入情况",
+      "secondaryCreateAction": "找搭子",
       "secondaryMineTitle": "进入我的中心",
       "secondaryMineDescription": "绑定微信、查看本地 PIN 和用户 ID，并进入我的活动记录。",
       "secondaryMineAction": "打开我的页面",
@@ -1076,7 +1042,7 @@
     "locationLeadSingle": "先看 {location}",
     "locationLeadWithMore": "先看 {location}，另有 {count} 个场地",
     "locationCount": "{count} 个场地可选",
-    "openEventAction": "查看可加入场次",
+    "openEventAction": "查看场次",
     "noEvents": "暂无活动",
     "loadFailed": "加载活动列表失败"
   },

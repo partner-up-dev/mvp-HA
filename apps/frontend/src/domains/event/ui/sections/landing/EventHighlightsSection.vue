@@ -10,35 +10,10 @@
       :class="{ 'is-in-view': isInView }"
       :style="itemMotionStyle(0)"
     >
-      <ChipGroup
-        v-if="showLiveSignals"
-        class="highlights-signals"
-        gap="sm"
-      >
-        <Chip tone="primary" size="sm">
-          {{ t("home.landing.highlightsEyebrow") }}
-        </Chip>
-        <Chip tone="surface" size="sm">
-          {{ t("home.landing.highlightsStatEvents", { count: liveEventCount }) }}
-        </Chip>
-        <Chip v-if="liveLocationCount > 0" tone="surface" size="sm">
-          {{
-            t("home.landing.highlightsStatLocations", {
-              count: liveLocationCount,
-            })
-          }}
-        </Chip>
-      </ChipGroup>
-      <Chip v-else class="highlights-eyebrow" tone="primary" size="sm">
-        {{ t("home.landing.highlightsEyebrow") }}
-      </Chip>
       <h2 id="home-highlights-title">
         {{ t("home.landing.highlightsTitle") }}
       </h2>
-      <p>{{ t("home.landing.highlightsSubtitle") }}</p>
-      <p class="highlights-bridge">
-        {{ t("home.landing.highlightsBridge") }}
-      </p>
+
       <ChipGroup class="highlights-trust-cues" gap="sm">
         <Chip tone="outline" size="sm">
           {{ t("home.landing.highlightsCueFixedTime") }}
@@ -47,9 +22,13 @@
           {{ t("home.landing.highlightsCueFixedLocation") }}
         </Chip>
         <Chip tone="outline" size="sm">
-          {{ t("home.landing.highlightsCueJoinFirst") }}
+          {{ t("home.landing.highlightsCueSubsidy") }}
         </Chip>
       </ChipGroup>
+
+      <p class="highlights-bridge">
+        {{ t("home.landing.highlightsBridge") }}
+      </p>
     </header>
 
     <p
@@ -126,33 +105,6 @@ const { data: events, isLoading, isError } = useAnchorEvents();
 const highlightEvents = computed(() =>
   (events.value ?? []).slice(0, MAX_HIGHLIGHT_COUNT),
 );
-const liveEventCount = computed(() => (events.value ?? []).length);
-const liveLocationCount = computed(() => {
-  const locations = new Set<string>();
-
-  for (const event of events.value ?? []) {
-    const locationPool = Array.isArray(event.locationPool)
-      ? event.locationPool
-      : [];
-    for (const location of locationPool) {
-      if (typeof location !== "string") {
-        continue;
-      }
-
-      const normalizedLocation = location.trim();
-      if (!normalizedLocation) {
-        continue;
-      }
-
-      locations.add(normalizedLocation);
-    }
-  }
-
-  return locations.size;
-});
-const showLiveSignals = computed(
-  () => !isLoading.value && !isError.value && liveEventCount.value > 0,
-);
 
 const hasTrackedSectionImpression = ref(false);
 const pressedCardIndex = ref<number | null>(null);
@@ -224,14 +176,6 @@ watchEffect(() => {
     color: var(--sys-color-on-surface-variant);
     margin: 0;
   }
-}
-
-.highlights-signals {
-  align-items: center;
-}
-
-.highlights-eyebrow {
-  width: fit-content;
 }
 
 .highlights-bridge {
@@ -324,7 +268,6 @@ watchEffect(() => {
   @include mx.pu-motion-pressable(0.988);
   @include mx.pu-motion-ripple-base();
   min-height: 100%;
-  display: block;
   transition:
     transform 180ms ease,
     box-shadow 180ms ease;

@@ -24,24 +24,45 @@
     </div>
 
     <div class="event-info">
-      <div class="event-kicker-row">
-        <span class="event-kicker">{{ event.type }}</span>
-        <span v-if="primaryLocation" class="event-scene">
-          {{ primaryLocation }}
-        </span>
+      <div
+        v-if="availableLocations.length > 0"
+        class="event-available-locations-stack"
+      >
+        <div
+          ref="availableLocationsMeasureRef"
+          class="event-available-locations-measure"
+          aria-hidden="true"
+        >
+          <span
+            v-for="(location, index) in availableLocations"
+            :key="`measure-${location}`"
+            :ref="(element) => setMeasurePillRef(index, element)"
+            class="event-available-location-pill"
+          >
+            {{ location }}
+          </span>
+        </div>
+
+        <div
+          v-if="
+            visibleAvailableLocations.length > 0 || !hasMeasuredAvailableLocations
+          "
+          class="event-available-locations-row"
+          :class="{ 'is-ready': hasMeasuredAvailableLocations }"
+        >
+          <span
+            v-for="location in visibleAvailableLocations"
+            :key="location"
+            class="event-available-location-pill"
+          >
+            {{ location }}
+          </span>
+        </div>
       </div>
       <h3 class="event-title">{{ event.title }}</h3>
       <p v-if="event.description" class="event-desc">
         {{ event.description }}
       </p>
-      <div class="event-meta">
-        <span v-if="locationLead" class="event-location-summary">
-          {{ locationLead }}
-        </span>
-        <span>
-          {{ t("eventPlaza.locationCount", { count: event.locationCount }) }}
-        </span>
-      </div>
       <span class="event-cta">
         {{ t("eventPlaza.openEventAction") }}
         <span class="event-cta-icon i-mdi:arrow-right" aria-hidden="true" />
@@ -51,7 +72,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import type { AnchorEventListItem } from "@/domains/event/model/types";
@@ -61,6 +90,7 @@ interface EventCardProps {
 }
 
 const props = defineProps<EventCardProps>();
+const MAX_AVAILABLE_LOCATION_PILLS = 3;
 
 const emit = defineEmits<{
   click: [eventId: number];
@@ -103,10 +133,13 @@ const readRecordValue = (value: unknown, key: string): unknown => {
 };
 
 const coverImage = computed(() => normalizeImageUrl(props.event.coverImage));
-const primaryLocation = computed(() => {
+const availableLocations = computed(() => {
   if (!Array.isArray(props.event.locationPool)) {
-    return null;
+    return [];
   }
+
+  const uniqueLocations: string[] = [];
+  const locationSet = new Set<string>();
 
   for (const location of props.event.locationPool) {
     if (typeof location !== "string") {
@@ -114,32 +147,70 @@ const primaryLocation = computed(() => {
     }
 
     const normalizedLocation = location.trim();
-    if (!normalizedLocation) {
+    if (!normalizedLocation || locationSet.has(normalizedLocation)) {
       continue;
     }
 
-    return normalizedLocation;
+    locationSet.add(normalizedLocation);
+    uniqueLocations.push(normalizedLocation);
+
+    if (uniqueLocations.length >= MAX_AVAILABLE_LOCATION_PILLS) {
+      break;
+    }
   }
 
-  return null;
+  return uniqueLocations;
 });
-const additionalLocationCount = computed(() =>
-  Math.max(props.event.locationCount - (primaryLocation.value ? 1 : 0), 0),
+const availableLocationsMeasureRef = ref<HTMLElement | null>(null);
+const availableLocationMeasurePillRefs = ref<(HTMLElement | null)[]>([]);
+const visibleAvailableLocationCount = ref(0);
+const hasMeasuredAvailableLocations = ref(false);
+const visibleAvailableLocations = computed(() =>
+  availableLocations.value.slice(0, visibleAvailableLocationCount.value),
 );
-const locationLead = computed(() => {
-  if (!primaryLocation.value) {
-    return null;
+
+const setMeasurePillRef = (index: number, element: unknown): void => {
+  availableLocationMeasurePillRefs.value[index] =
+    element instanceof HTMLElement ? element : null;
+};
+
+const syncVisibleAvailableLocations = (): void => {
+  const measureRow = availableLocationsMeasureRef.value;
+
+  if (!measureRow) {
+    visibleAvailableLocationCount.value = 0;
+    hasMeasuredAvailableLocations.value = true;
+    return;
   }
 
-  return additionalLocationCount.value > 0
-    ? t("eventPlaza.locationLeadWithMore", {
-        location: primaryLocation.value,
-        count: additionalLocationCount.value,
-      })
-    : t("eventPlaza.locationLeadSingle", {
-        location: primaryLocation.value,
-      });
-});
+  const rowWidth = measureRow.clientWidth;
+  let fitCount = 0;
+
+  for (const pill of availableLocationMeasurePillRefs.value.slice(
+    0,
+    availableLocations.value.length,
+  )) {
+    if (!pill) {
+      break;
+    }
+
+    const pillRightEdge = pill.offsetLeft + pill.offsetWidth;
+    if (pillRightEdge > rowWidth) {
+      break;
+    }
+
+    fitCount += 1;
+  }
+
+  visibleAvailableLocationCount.value = fitCount;
+  hasMeasuredAvailableLocations.value = true;
+};
+
+const scheduleVisibleAvailableLocationSync = async (): Promise<void> => {
+  hasMeasuredAvailableLocations.value = false;
+  await nextTick();
+  syncVisibleAvailableLocations();
+};
 
 const poisGallery = computed(() => {
   const pois = readRecordValue(props.event, "pois");
@@ -160,7 +231,9 @@ const poisGallery = computed(() => {
 
 const poisGalleryCoverImage = computed(() => poisGallery.value[0] ?? null);
 
-const fallbackGallery = computed(() => normalizeGallery(props.event.fallbackGallery));
+const fallbackGallery = computed(() =>
+  normalizeGallery(props.event.fallbackGallery),
+);
 
 const fallbackIndex = ref(0);
 const activeFallbackImage = computed(() => {
@@ -180,7 +253,20 @@ watch(fallbackGallery, () => {
   fallbackIndex.value = 0;
 });
 
+watch(
+  availableLocations,
+  () => {
+    availableLocationMeasurePillRefs.value = [];
+    visibleAvailableLocationCount.value = 0;
+    void scheduleVisibleAvailableLocationSync();
+  },
+  {
+    immediate: true,
+  },
+);
+
 let fallbackTimerId: number | null = null;
+let availableLocationsResizeObserver: ResizeObserver | null = null;
 
 const clearFallbackTimer = () => {
   if (fallbackTimerId !== null) {
@@ -214,7 +300,37 @@ watchEffect((onCleanup) => {
   });
 });
 
+watch(availableLocationsMeasureRef, (measureRow) => {
+  if (availableLocationsResizeObserver) {
+    availableLocationsResizeObserver.disconnect();
+    if (measureRow) {
+      availableLocationsResizeObserver.observe(measureRow);
+    }
+  }
+
+  if (measureRow) {
+    void scheduleVisibleAvailableLocationSync();
+  } else {
+    visibleAvailableLocationCount.value = 0;
+  }
+});
+
+onMounted(() => {
+  if (typeof ResizeObserver !== "undefined") {
+    availableLocationsResizeObserver = new ResizeObserver(() => {
+      void scheduleVisibleAvailableLocationSync();
+    });
+
+    if (availableLocationsMeasureRef.value) {
+      availableLocationsResizeObserver.observe(availableLocationsMeasureRef.value);
+    }
+  }
+
+  void scheduleVisibleAvailableLocationSync();
+});
+
 onBeforeUnmount(() => {
+  availableLocationsResizeObserver?.disconnect();
   clearFallbackTimer();
 });
 
@@ -230,7 +346,8 @@ const handleClick = () => {
   min-height: 100%;
   overflow: hidden;
   border-radius: var(--sys-radius-lg);
-  border: 1px solid color-mix(in srgb, var(--sys-color-outline) 48%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--sys-color-outline) 48%, transparent);
   background: var(--sys-color-surface-container);
   text-decoration: none;
   color: inherit;
@@ -238,7 +355,7 @@ const handleClick = () => {
     transform 180ms ease,
     border-color 180ms ease,
     box-shadow 180ms ease;
-  @include mx.pu-elevation(1);
+  @include mx.pu-elevation(3);
 
   &:active {
     transform: scale(0.985);
@@ -274,29 +391,49 @@ const handleClick = () => {
   padding: var(--sys-spacing-med);
 }
 
-.event-kicker-row {
+.event-available-locations-stack {
+  position: relative;
+}
+
+.event-available-locations-row,
+.event-available-locations-measure {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--sys-spacing-xs);
+  min-height: var(--sys-size-small);
+  overflow: hidden;
 }
 
-.event-kicker {
-  @include mx.pu-font(label-medium);
-  color: var(--sys-color-secondary);
+.event-available-locations-row {
+  visibility: hidden;
+
+  &.is-ready {
+    visibility: visible;
+  }
 }
 
-.event-scene {
+.event-available-locations-measure {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.event-available-location-pill {
   @include mx.pu-font(label-small);
   display: inline-flex;
   align-items: center;
   min-height: var(--sys-size-small);
-  max-width: 100%;
   padding: 0 calc(var(--sys-spacing-sm) - 2px);
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--sys-color-outline) 46%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--sys-color-outline) 46%, transparent);
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface-variant);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .event-title {
@@ -316,18 +453,6 @@ const handleClick = () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   overflow-wrap: anywhere;
-}
-
-.event-meta {
-  @include mx.pu-font(label-medium);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.event-location-summary {
-  color: var(--sys-color-on-surface);
 }
 
 .event-cta {
