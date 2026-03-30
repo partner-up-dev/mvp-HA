@@ -217,8 +217,6 @@ const handleClick = () => {
   min-height: 100%;
   overflow: hidden;
   border-radius: var(--sys-radius-lg);
-  border: 1px solid
-    color-mix(in srgb, var(--sys-color-outline) 48%, transparent);
   background: var(--sys-color-surface-container);
   text-decoration: none;
   color: inherit;
@@ -267,9 +265,9 @@ const handleClick = () => {
 }
 
 :deep(.event-available-location-pill) {
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface-variant);
-  border-color: color-mix(in srgb, var(--sys-color-outline) 46%, transparent);
+  background: var(--sys-color-surface-container-high) !important;
+  color: var(--sys-color-on-surface-variant) !important;
+  border-color: var(--sys-color-outline-variant) !important;
 }
 
 .event-title {
