@@ -24,41 +24,16 @@
     </div>
 
     <div class="event-info">
-      <div
+      <FitChipGroup
         v-if="availableLocations.length > 0"
-        class="event-available-locations-stack"
-      >
-        <div
-          ref="availableLocationsMeasureRef"
-          class="event-available-locations-measure"
-          aria-hidden="true"
-        >
-          <span
-            v-for="(location, index) in availableLocations"
-            :key="`measure-${location}`"
-            :ref="(element) => setMeasurePillRef(index, element)"
-            class="event-available-location-pill"
-          >
-            {{ location }}
-          </span>
-        </div>
-
-        <div
-          v-if="
-            visibleAvailableLocations.length > 0 || !hasMeasuredAvailableLocations
-          "
-          class="event-available-locations-row"
-          :class="{ 'is-ready': hasMeasuredAvailableLocations }"
-        >
-          <span
-            v-for="location in visibleAvailableLocations"
-            :key="location"
-            class="event-available-location-pill"
-          >
-            {{ location }}
-          </span>
-        </div>
-      </div>
+        class="event-available-locations-row"
+        :items="availableLocations"
+        :max-items="MAX_AVAILABLE_LOCATION_PILLS"
+        gap="xs"
+        tone="surface"
+        size="sm"
+        chip-class="event-available-location-pill"
+      />
       <h3 class="event-title">{{ event.title }}</h3>
       <p v-if="event.description" class="event-desc">
         {{ event.description }}
@@ -72,18 +47,11 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-  watchEffect,
-} from "vue";
+import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import type { AnchorEventListItem } from "@/domains/event/model/types";
+import FitChipGroup from "@/shared/ui/display/FitChipGroup.vue";
 
 interface EventCardProps {
   event: AnchorEventListItem;
@@ -153,64 +121,10 @@ const availableLocations = computed(() => {
 
     locationSet.add(normalizedLocation);
     uniqueLocations.push(normalizedLocation);
-
-    if (uniqueLocations.length >= MAX_AVAILABLE_LOCATION_PILLS) {
-      break;
-    }
   }
 
   return uniqueLocations;
 });
-const availableLocationsMeasureRef = ref<HTMLElement | null>(null);
-const availableLocationMeasurePillRefs = ref<(HTMLElement | null)[]>([]);
-const visibleAvailableLocationCount = ref(0);
-const hasMeasuredAvailableLocations = ref(false);
-const visibleAvailableLocations = computed(() =>
-  availableLocations.value.slice(0, visibleAvailableLocationCount.value),
-);
-
-const setMeasurePillRef = (index: number, element: unknown): void => {
-  availableLocationMeasurePillRefs.value[index] =
-    element instanceof HTMLElement ? element : null;
-};
-
-const syncVisibleAvailableLocations = (): void => {
-  const measureRow = availableLocationsMeasureRef.value;
-
-  if (!measureRow) {
-    visibleAvailableLocationCount.value = 0;
-    hasMeasuredAvailableLocations.value = true;
-    return;
-  }
-
-  const rowWidth = measureRow.clientWidth;
-  let fitCount = 0;
-
-  for (const pill of availableLocationMeasurePillRefs.value.slice(
-    0,
-    availableLocations.value.length,
-  )) {
-    if (!pill) {
-      break;
-    }
-
-    const pillRightEdge = pill.offsetLeft + pill.offsetWidth;
-    if (pillRightEdge > rowWidth) {
-      break;
-    }
-
-    fitCount += 1;
-  }
-
-  visibleAvailableLocationCount.value = fitCount;
-  hasMeasuredAvailableLocations.value = true;
-};
-
-const scheduleVisibleAvailableLocationSync = async (): Promise<void> => {
-  hasMeasuredAvailableLocations.value = false;
-  await nextTick();
-  syncVisibleAvailableLocations();
-};
 
 const poisGallery = computed(() => {
   const pois = readRecordValue(props.event, "pois");
@@ -253,20 +167,7 @@ watch(fallbackGallery, () => {
   fallbackIndex.value = 0;
 });
 
-watch(
-  availableLocations,
-  () => {
-    availableLocationMeasurePillRefs.value = [];
-    visibleAvailableLocationCount.value = 0;
-    void scheduleVisibleAvailableLocationSync();
-  },
-  {
-    immediate: true,
-  },
-);
-
 let fallbackTimerId: number | null = null;
-let availableLocationsResizeObserver: ResizeObserver | null = null;
 
 const clearFallbackTimer = () => {
   if (fallbackTimerId !== null) {
@@ -300,37 +201,7 @@ watchEffect((onCleanup) => {
   });
 });
 
-watch(availableLocationsMeasureRef, (measureRow) => {
-  if (availableLocationsResizeObserver) {
-    availableLocationsResizeObserver.disconnect();
-    if (measureRow) {
-      availableLocationsResizeObserver.observe(measureRow);
-    }
-  }
-
-  if (measureRow) {
-    void scheduleVisibleAvailableLocationSync();
-  } else {
-    visibleAvailableLocationCount.value = 0;
-  }
-});
-
-onMounted(() => {
-  if (typeof ResizeObserver !== "undefined") {
-    availableLocationsResizeObserver = new ResizeObserver(() => {
-      void scheduleVisibleAvailableLocationSync();
-    });
-
-    if (availableLocationsMeasureRef.value) {
-      availableLocationsResizeObserver.observe(availableLocationsMeasureRef.value);
-    }
-  }
-
-  void scheduleVisibleAvailableLocationSync();
-});
-
 onBeforeUnmount(() => {
-  availableLocationsResizeObserver?.disconnect();
   clearFallbackTimer();
 });
 
@@ -391,49 +262,14 @@ const handleClick = () => {
   padding: var(--sys-spacing-med);
 }
 
-.event-available-locations-stack {
-  position: relative;
-}
-
-.event-available-locations-row,
-.event-available-locations-measure {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--sys-spacing-xs);
-  min-height: var(--sys-size-small);
-  overflow: hidden;
-}
-
 .event-available-locations-row {
-  visibility: hidden;
-
-  &.is-ready {
-    visibility: visible;
-  }
-}
-
-.event-available-locations-measure {
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 100%;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.event-available-location-pill {
-  @include mx.pu-font(label-small);
-  display: inline-flex;
-  align-items: center;
   min-height: var(--sys-size-small);
-  padding: 0 calc(var(--sys-spacing-sm) - 2px);
-  border-radius: 999px;
-  border: 1px solid
-    color-mix(in srgb, var(--sys-color-outline) 46%, transparent);
+}
+
+:deep(.event-available-location-pill) {
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface-variant);
-  white-space: nowrap;
-  flex-shrink: 0;
+  border-color: color-mix(in srgb, var(--sys-color-outline) 46%, transparent);
 }
 
 .event-title {
