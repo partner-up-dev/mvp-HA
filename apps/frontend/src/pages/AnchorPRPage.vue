@@ -1,5 +1,5 @@
 <template>
-  <PageScaffold class="anchor-pr-page">
+  <PageScaffold class="anchor-pr-page" data-page="anchor-pr-detail">
     <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
@@ -7,6 +7,7 @@
       <PageHeader
         :title="prDetail.title ?? t('prPage.metaFallbackTitle')"
         :back-fallback-to="backFallbackTo"
+        data-region="summary"
       >
         <template #top-actions>
           <div v-if="isCreator" class="header-quick-actions">
@@ -45,9 +46,14 @@
         :has-more-roster="hasMoreRoster"
         :location-gallery-available="locationGallery.length > 0"
         @view-location-gallery="showLocationGalleryModal = true"
+        data-region="summary"
       />
 
-      <section v-if="showContextualActionArea" class="contextual-area">
+      <section
+        v-if="showContextualActionArea"
+        class="contextual-area"
+        data-region="actions"
+      >
         <InlineNotice
           v-if="releaseNoticeText"
           tone="warning"
@@ -132,7 +138,7 @@
           </div>
         </section>
 
-        <section class="utility-row">
+        <section class="utility-row" data-region="share">
           <div class="utility-row__main">
             <div class="utility-row__content">
               <h2 class="utility-row__title">分享邀请</h2>
@@ -148,7 +154,11 @@
           </div>
         </section>
 
-        <section v-if="showInlineReminderSubscriptions" class="utility-row">
+        <section
+          v-if="showInlineReminderSubscriptions"
+          class="utility-row"
+          data-region="reliability"
+        >
           <div class="utility-row__content utility-row__content--stack">
             <h2 class="utility-row__title">
               {{ t("prPage.notificationSubscriptions.title") }}
@@ -383,7 +393,7 @@
       </Modal>
     </template>
 
-    <ContactSupportFooter />
+    <ContactSupportFooter data-region="support" />
   </PageScaffold>
 </template>
 

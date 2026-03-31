@@ -1,18 +1,22 @@
 <template>
-  <div class="home-page">
+  <div class="home-page" data-page="landing">
     <main class="home-flow">
-      <section class="home-section home-section--hero">
+      <section class="home-section home-section--hero" data-region="hero">
         <LandingHeroSection @reveal-values="handleHeroValuesReveal" />
         <LandingValuePropsSection
           class="hero-values"
           :start-reveal="shouldRevealHeroValues"
+          data-region="value-props"
         />
       </section>
 
       <section class="home-section home-section--event">
         <div class="section-paper section-paper--event">
-          <EventHighlightsSection class="event-canvas event-canvas--breakout" />
-          <EventPlazaEntry />
+          <EventHighlightsSection
+            class="event-canvas event-canvas--breakout"
+            data-region="event-highlights"
+          />
+          <EventPlazaEntry data-region="event-plaza" />
         </div>
       </section>
 
@@ -43,9 +47,9 @@
       </section>
     </main>
 
-    <LandingFooterSection />
+    <LandingFooterSection data-region="footer" />
 
-    <LandingBookmarkNudge />
+    <LandingBookmarkNudge data-region="bookmark-nudge" />
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 <template>
-  <PageScaffold class="anchor-event-page">
+  <PageScaffold class="anchor-event-page" data-page="event-detail">
     <div v-if="isLoading" class="loading-state">
       {{ t("common.loading") }}
     </div>
@@ -16,12 +16,14 @@
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
         :back-fallback-to="{ name: 'event-plaza' }"
+        data-region="event-header"
       >
         <template #top-actions>
           <div
             class="view-mode-switch"
             role="group"
             :aria-label="t('anchorEvent.viewMode.ariaLabel')"
+            data-region="view-mode"
           >
             <button
               type="button"
@@ -48,7 +50,11 @@
       </PageHeader>
 
       <template v-if="viewMode === 'CARD'">
-        <div v-if="activeDemandCard" class="card-mode">
+        <div
+          v-if="activeDemandCard"
+          class="card-mode"
+          data-region="anchor-pr-list"
+        >
           <div class="card-stage">
             <div class="card-stage__inner">
               <AnchorEventDemandCard
@@ -120,7 +126,7 @@
             {{ t("anchorEvent.card.emptySubtitle") }}
           </p>
 
-          <div class="card-empty__create">
+          <div class="card-empty__create" data-region="create-anchor-pr">
             <label
               v-if="cardCreateBatchOptions.length > 0"
               class="card-empty__field"
@@ -194,7 +200,7 @@
             <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
               {{ t("anchorEvent.noPRsInBatch") }}
             </div>
-            <div class="pr-list">
+            <div class="pr-list" data-region="anchor-pr-list">
               <AnchorEventPRCard
                 v-for="pr in selectedBatch.prs"
                 :key="pr.id"
@@ -206,6 +212,7 @@
                 :pending="isCreatePending"
                 :error-message="createActionErrorMessage"
                 @create="handleCreateInList"
+                data-region="create-anchor-pr"
               />
             </div>
           </div>
@@ -216,7 +223,11 @@
         </div>
       </template>
 
-      <div v-if="detail.exhausted" class="exhausted-banner">
+      <div
+        v-if="detail.exhausted"
+        class="exhausted-banner"
+        data-region="exhausted-banner"
+      >
         <p class="exhausted-text">{{ t("anchorEvent.exhausted") }}</p>
         <p class="exhausted-hint">{{ t("anchorEvent.subscribeHint") }}</p>
         <router-link :to="{ name: 'event-plaza' }" class="discover-btn">

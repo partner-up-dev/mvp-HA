@@ -28,6 +28,8 @@ This layer exists because the product is realized by at least two meaningful uni
 3. `cross-unit-contracts.md`
 4. `claim-realization-matrix.md`
 
+If the change is reference-sensitive, read `docs/15-alignment/README.md` and `docs/15-alignment/ui-map.yaml` first.
+
 Read only the files needed for the change at hand.
 
 ## How This Layer Connects To Adjacent Layers

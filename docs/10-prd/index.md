@@ -40,6 +40,8 @@ Recommended order:
 5. `behavior/scope.md`
 6. `domain-structure/*`
 
+If the change is reference-sensitive, read `docs/15-alignment/README.md` and `docs/15-alignment/ui-map.yaml` first.
+
 Use `capabilities.md` as the product surface map, not as the primary source of truth.
 Treat `_drivers` as upstream truth and `domain-structure` as derived structure that cannot redefine drivers or claims.
 
