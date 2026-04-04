@@ -1,0 +1,68 @@
+# Rollout
+
+## Backend CI/CD Flow
+
+Primary workflow: `.github/workflows/backend-fc-deploy.yml`
+
+### Standard deploy path
+
+1. checkout
+2. install workspace dependencies
+3. lint backend migration/seed artifacts
+4. build FC migration bundle
+5. deploy FC migration function
+6. invoke migration function
+7. prepare or publish backend `node_modules` layer when needed
+8. resolve latest layer ARN
+9. build backend
+10. package backend function payload
+11. inject `BACKEND_COMMIT_HASH` from `GITHUB_SHA`
+12. deploy backend FC function
+13. on `master`, publish function version and update `production` alias
+
+## Rollout Guarantees
+
+- migrations happen before backend deploy
+- backend deploys run serially through the `backend-fc-deploy` concurrency group
+- layer-only publish is supported via workflow dispatch input
+- runtime build metadata stays available even when the deployed package has no `.git` directory
+
+## DB Artifact Validation
+
+PR validation workflow: `.github/workflows/backend-db-validate.yml`
+
+This workflow:
+
+1. installs dependencies
+2. runs `pnpm --filter @partner-up-dev/backend db:lint`
+3. regenerates Drizzle SQL artifacts
+4. fails on artifact drift under `apps/backend/drizzle` and `apps/backend/drizzle/meta`
+
+## Job Runner Trigger Rollout
+
+Separate workflow: `.github/workflows/job-runner-trigger-fc-deploy.yml`
+
+This deploys the trigger function that periodically calls the backend job tick endpoint.
+
+## Frontend Rollout Reality
+
+Current frontend deployment target is Aliyun ESA.
+
+Repo-tracked rollout facts:
+
+- deploy descriptor: `apps/frontend/esa.jsonc`
+- install command: `pnpm install`
+- build command: `pnpm run --filter frontend build`
+- published assets directory: `./dist`
+- not found strategy: SPA fallback
+
+The repo does not currently define a canonical GitHub Actions workflow for frontend ESA deploy.
+
+## Manual Rollout Reality
+
+Manual backend deployment is supported through Serverless Devs commands, but the canonical rollout path is GitHub Actions.
+
+If manual deploy is used:
+
+- migration function deployment/invocation must still happen before backend app deploy
+- layer publishing and latest layer ARN resolution must remain consistent with the FC function deploy

@@ -55,7 +55,7 @@ export interface AnchorPRAutoCreatedPayload {
 
 export interface AnchorPRBookingTriggeredPayload {
   prId: number;
-  confirmedPartnerCount: number;
+  activePartnerCount: number;
   bookingTriggeredAt: string;
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <PageScaffold class="pr-page">
+  <PageScaffold class="pr-page" data-page="community-pr-detail">
     <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
@@ -9,6 +9,7 @@
         :status="prDetail.status"
         :created-at-label="formatDate(prDetail.createdAt)"
         @back="goHome"
+        data-region="summary"
       />
 
       <section v-if="prDetail.status === 'DRAFT'" class="surface-card">
@@ -49,6 +50,7 @@
         :preferences="prDetail.core.preferences"
         :notes="prDetail.core.notes"
         :raw-text="prDetail.rawText"
+        data-region="summary"
       >
         <template #location-extra>
           <button
@@ -71,6 +73,7 @@
         :join-error-message="sharedActions.joinErrorMessage.value"
         @join="handleJoin"
         @exit="sharedActions.handleExit"
+        data-region="participants"
       />
 
       <CommunityPRActionsBar
@@ -85,6 +88,7 @@
         :exit-pending="false"
         @edit-content="showEditModal = true"
         @modify-status="showModifyModal = true"
+        data-region="actions"
       />
 
       <PRShareSection
@@ -93,6 +97,7 @@
         :share-url="shareUrl"
         :spm-route-key="spmRouteKey"
         :pr-data="prShareData"
+        data-region="share"
       />
 
       <EditPRContentModal
@@ -120,7 +125,7 @@
       />
     </template>
 
-    <ContactSupportFooter />
+    <ContactSupportFooter data-region="support" />
   </PageScaffold>
 </template>
 

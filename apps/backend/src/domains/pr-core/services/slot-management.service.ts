@@ -19,32 +19,6 @@ const partnerRepo = new PartnerRepository();
 const prRepo = new PartnerRequestRepository();
 
 // ---------------------------------------------------------------------------
-// Bounds validation
-// ---------------------------------------------------------------------------
-
-export function assertPartnerBoundsValid(
-  minPartners: number | null,
-  maxPartners: number | null,
-  currentParticipants: number,
-): void {
-  if (
-    minPartners !== null &&
-    maxPartners !== null &&
-    minPartners > maxPartners
-  ) {
-    throw new HTTPException(400, {
-      message: "Invalid partner bounds - minPartners cannot exceed maxPartners",
-    });
-  }
-  if (maxPartners !== null && maxPartners < currentParticipants) {
-    throw new HTTPException(400, {
-      message:
-        "Invalid partner bounds - maxPartners cannot be smaller than current participants",
-    });
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Slot lifecycle
 // ---------------------------------------------------------------------------
 

@@ -1,8 +1,8 @@
 /**
  * Analytics ingestion controller (INFRA-04).
  *
- * POST /api/analytics/events — accepts a batch of typed analytics events
- * from the frontend tracking SDK.
+ * POST /api/analytics/events — legacy analytics ingest path.
+ * POST /api/telemetry/events — current ingest path used by the frontend.
  */
 
 import { Hono } from "hono";

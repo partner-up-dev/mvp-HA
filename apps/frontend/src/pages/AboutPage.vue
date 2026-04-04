@@ -45,6 +45,24 @@
         </div>
       </dl>
 
+      <section class="about-item about-item--wechat-follow">
+        <h2>{{ t("home.bookmarkNudge.wechatTitle") }}</h2>
+        <p>
+          {{
+            t("home.bookmarkNudge.wechatHint", {
+              name: t("home.bookmarkNudge.officialAccountName"),
+            })
+          }}
+        </p>
+        <button
+          class="wechat-follow-action"
+          type="button"
+          @click="showOfficialAccountQrModal = true"
+        >
+          {{ t("home.bookmarkNudge.wechatAction") }}
+        </button>
+      </section>
+
       <p
         v-if="backendBuildMetadataQuery.error.value"
         class="fetch-warning"
@@ -53,19 +71,26 @@
         {{ t("aboutPage.backendCommitLoadFailed") }}
       </p>
     </section>
+
+    <OfficialAccountQrModal
+      :open="showOfficialAccountQrModal"
+      @close="showOfficialAccountQrModal = false"
+    />
   </PageScaffoldCentered>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 import { frontendBuildInfo } from "@/shared/meta/build-info";
 import { useBackendBuildMetadata } from "@/shared/meta/queries/useBackendBuildMetadata";
+import OfficialAccountQrModal from "@/shared/wechat/OfficialAccountQrModal.vue";
 
 const { t } = useI18n();
 const backendBuildMetadataQuery = useBackendBuildMetadata();
+const showOfficialAccountQrModal = ref(false);
 
 const repositoryUrl = computed(
   () => backendBuildMetadataQuery.data.value?.repositoryUrl ?? frontendBuildInfo.repositoryUrl,
@@ -126,6 +151,26 @@ const backendCommitHash = computed(() => {
     background: var(--sys-color-surface-container-low);
     color: var(--sys-color-on-surface);
   }
+}
+
+.about-item--wechat-follow {
+  h2 {
+    @include mx.pu-font(title-small);
+    margin: 0;
+    color: var(--sys-color-on-surface);
+  }
+
+  p {
+    @include mx.pu-font(body-medium);
+    margin: 0;
+    color: var(--sys-color-on-surface-variant);
+  }
+}
+
+.wechat-follow-action {
+  @include mx.pu-font(label-large);
+  @include mx.pu-pill-action(solid-primary);
+  width: fit-content;
 }
 
 .repo-link {

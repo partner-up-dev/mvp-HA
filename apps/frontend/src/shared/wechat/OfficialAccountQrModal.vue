@@ -1,0 +1,69 @@
+<template>
+  <Modal
+    :open="open"
+    :title="t('home.bookmarkNudge.followQrModalTitle')"
+    max-width="420px"
+    @close="emit('close')"
+  >
+    <div class="official-account-modal-body">
+      <p class="official-account-modal-description">
+        {{ t("home.bookmarkNudge.followQrModalDescription") }}
+      </p>
+      <img
+        v-if="officialAccountQrCodeUrl"
+        :src="officialAccountQrCodeUrl"
+        :alt="t('home.bookmarkNudge.followQrModalQrAlt')"
+        class="official-account-qr-image"
+      />
+      <p v-else class="official-account-qr-empty">
+        {{ t("home.bookmarkNudge.followQrModalQrMissing") }}
+      </p>
+    </div>
+  </Modal>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
+import Modal from "@/shared/ui/overlay/Modal.vue";
+import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
+import { useWeChatOfficialAccountQrCode } from "@/shared/wechat/useWeChatOfficialAccountQrCode";
+
+interface Props {
+  open: boolean;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<{
+  close: [];
+}>();
+const { t } = useI18n();
+const { officialAccountQrCodeUrl } = useWeChatOfficialAccountQrCode();
+
+useBodyScrollLock(computed(() => props.open));
+</script>
+
+<style lang="scss" scoped>
+.official-account-modal-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--sys-spacing-sm);
+}
+
+.official-account-modal-description {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.official-account-qr-image {
+  width: min(100%, 260px);
+  border-radius: var(--sys-radius-md);
+}
+
+.official-account-qr-empty {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+</style>

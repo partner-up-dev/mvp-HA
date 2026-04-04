@@ -2,15 +2,19 @@ import { HTTPException } from "hono/http-exception";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
+import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
-import { isBookingDeadlineReached } from "./time-window.service";
-import { getEffectiveBookingDeadline } from "../../pr-booking-support";
+import {
+  isBookingExecutionPendingStatus,
+  isPlatformHandledBookingResource,
+} from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const partnerRepo = new PartnerRepository();
+const prSupportRepo = new AnchorPRSupportResourceRepository();
 
 export async function syncAnchorBookingTriggeredState(prId: PRId): Promise<void> {
   const request = await prRepo.findById(prId);
@@ -32,18 +36,16 @@ export async function syncAnchorBookingTriggeredState(prId: PRId): Promise<void>
     slot.status === "CONFIRMED" ||
     slot.status === "ATTENDED",
   );
-  const confirmedSlots = activeSlots.filter(
-    (slot) => slot.status === "CONFIRMED" || slot.status === "ATTENDED",
-  );
-
+  const resources = await prSupportRepo.findByPrId(prId);
   const minPartners = request.minPartners ?? 1;
-  const hasEnoughConfirmed = confirmedSlots.length >= minPartners;
-  const allActiveConfirmed =
-    activeSlots.length > 0 && confirmedSlots.length === activeSlots.length;
+  const hasEnoughActive = activeSlots.length >= minPartners;
+  const hasPlatformHandledResource = resources.some(
+    isPlatformHandledBookingResource,
+  );
   const shouldTrigger =
-    hasEnoughConfirmed &&
-    allActiveConfirmed &&
-    !isBookingDeadlineReached(await getEffectiveBookingDeadline(prId));
+    hasEnoughActive &&
+    hasPlatformHandledResource &&
+    isBookingExecutionPendingStatus(request.status);
 
   if (shouldTrigger) {
     if (anchor.bookingTriggeredAt) {
@@ -59,7 +61,7 @@ export async function syncAnchorBookingTriggeredState(prId: PRId): Promise<void>
       String(prId),
       {
         prId,
-        confirmedPartnerCount: confirmedSlots.length,
+        activePartnerCount: activeSlots.length,
         bookingTriggeredAt: triggeredAt.toISOString(),
       },
     );
@@ -71,7 +73,7 @@ export async function syncAnchorBookingTriggeredState(prId: PRId): Promise<void>
       aggregateType: "partner_request",
       aggregateId: String(prId),
       detail: {
-        confirmedPartnerCount: confirmedSlots.length,
+        activePartnerCount: activeSlots.length,
         bookingTriggeredAt: triggeredAt.toISOString(),
       },
     });

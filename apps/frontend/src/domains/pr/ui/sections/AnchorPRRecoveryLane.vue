@@ -1,50 +1,52 @@
 <template>
-  <section v-if="hasContent" ref="recoveryRoot" class="lane-card">
+  <section v-if="hasContent" ref="recoveryRoot" class="recovery-lane">
     <section
       v-if="section.fallbacks.sameBatchAlternatives.length > 0"
-      class="recovery-panel"
+      class="recovery-group"
     >
-      <header class="recovery-panel-header">
-        <h2 class="recovery-panel-title">{{ t("prPage.sameBatch.title") }}</h2>
+      <header class="recovery-group__header">
+        <h2 class="recovery-group__title">{{ t("prPage.sameBatch.title") }}</h2>
+        <p class="recovery-group__note">{{ t("prPage.sameBatch.subtitle") }}</p>
       </header>
-      <p class="recovery-panel-note">{{ t("prPage.sameBatch.subtitle") }}</p>
 
       <div class="recovery-links">
         <router-link
           v-for="item in section.fallbacks.sameBatchAlternatives"
           :key="item.id"
           :to="anchorPRDetailPath(item.id)"
-          class="recovery-link-card"
+          class="recovery-link-row"
           @click="handleSameBatchClick(item.id)"
         >
-          <span>{{ item.location }}</span>
-          <span class="recovery-link-meta">{{ t(`prStatus.${item.status}`) }}</span>
+          <span class="recovery-link-row__location">{{ item.location }}</span>
+          <span class="recovery-link-row__meta">{{ t(`prStatus.${item.status}`) }}</span>
         </router-link>
       </div>
     </section>
 
     <section
       v-if="section.fallbacks.alternativeBatches.length > 0"
-      class="recovery-panel"
+      class="recovery-group"
     >
-      <header class="recovery-panel-header">
-        <h2 class="recovery-panel-title">
+      <header class="recovery-group__header">
+        <h2 class="recovery-group__title">
           {{ t("prPage.alternativeBatch.title") }}
         </h2>
+        <p class="recovery-group__note">
+          {{ t("prPage.alternativeBatch.subtitle") }}
+        </p>
       </header>
-      <p class="recovery-panel-note">{{ t("prPage.alternativeBatch.subtitle") }}</p>
 
       <div class="recovery-alternatives">
         <article
           v-for="item in section.fallbacks.alternativeBatches"
           :key="`${item.timeWindow[0]}-${item.timeWindow[1]}`"
-          class="recovery-alt-item"
+          class="recovery-alt-row"
         >
-          <div class="recovery-alt-meta">
+          <div class="recovery-alt-row__meta">
             <strong>{{
               formatWindow(item.timeWindow[0], item.timeWindow[1])
             }}</strong>
-            <span class="recovery-panel-note">{{ item.location }}</span>
+            <span class="recovery-group__note">{{ item.location }}</span>
           </div>
           <button
             class="recovery-primary-btn"
@@ -65,7 +67,7 @@ import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
 
 type AnchorPartnerSection = AnchorPRDetailResponse["partnerSection"];
 type TimeWindow = [string | null, string | null];
@@ -133,35 +135,32 @@ const handleAcceptAlternativeBatch = (targetTimeWindow: TimeWindow) => {
 </script>
 
 <style lang="scss" scoped>
-.lane-card {
-  margin-top: var(--sys-spacing-lg);
+.recovery-lane {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-lg);
 }
 
-.recovery-panel {
-  @include mx.pu-surface-card(section);
+.recovery-group {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
 }
 
-.recovery-panel-header {
+.recovery-group__header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
+  flex-direction: column;
+  gap: var(--sys-spacing-2xs);
 }
 
-.recovery-panel-title {
+.recovery-group__title {
   margin: 0;
-  @include mx.pu-font(title-medium);
+  @include mx.pu-font(title-small);
 }
 
-.recovery-panel-note {
+.recovery-group__note {
   margin: 0;
-  @include mx.pu-font(body-medium);
+  @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
 }
 
@@ -169,35 +168,37 @@ const handleAcceptAlternativeBatch = (targetTimeWindow: TimeWindow) => {
 .recovery-alternatives {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
 }
 
-.recovery-link-card,
-.recovery-alt-item {
-  @include mx.pu-surface-card(outline);
+.recovery-link-row,
+.recovery-alt-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-sm) 0;
+  border-top: 1px solid var(--sys-color-outline-variant);
 }
 
-.recovery-link-card {
+.recovery-link-row {
   text-decoration: none;
   color: inherit;
 }
 
-.recovery-link-meta {
-  @include mx.pu-font(label-small);
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--sys-color-secondary-container);
-  color: var(--sys-color-on-secondary-container);
+.recovery-link-row__location {
+  @include mx.pu-font(body-medium);
 }
 
-.recovery-alt-meta {
+.recovery-link-row__meta {
+  @include mx.pu-font(label-small);
+  color: var(--sys-color-on-surface-variant);
+  text-align: right;
+}
+
+.recovery-alt-row__meta {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-2xs);
   min-width: 0;
 }
 
@@ -209,9 +210,13 @@ const handleAcceptAlternativeBatch = (targetTimeWindow: TimeWindow) => {
 }
 
 @media (max-width: 879px) {
-  .recovery-alt-item {
+  .recovery-alt-row {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .recovery-link-row {
+    align-items: flex-start;
   }
 }
 </style>

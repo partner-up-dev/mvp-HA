@@ -7,12 +7,12 @@ import type {
 } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import {
-  assertPartnerBoundsValid,
   countActivePartnersForPR,
   listActiveParticipantSummariesForPR,
   syncSlotCapacity,
   recalculatePRStatus,
 } from "../services/slot-management.service";
+import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
@@ -50,7 +50,7 @@ export async function updatePRContent(
     refreshedRequest.time[0] !== fields.time[0] ||
     refreshedRequest.time[1] !== fields.time[1];
   const currentParticipants = await countActivePartnersForPR(id);
-  assertPartnerBoundsValid(
+  assertManualPartnerBoundsValid(
     fields.minPartners,
     fields.maxPartners,
     currentParticipants,

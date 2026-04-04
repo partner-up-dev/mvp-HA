@@ -57,19 +57,6 @@ const adminAnchorEventInputSchema = z.object({
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
   coverImage: z.string().trim().nullable(),
   status: anchorEventStatusSchema,
-}).superRefine((value, context) => {
-  const { defaultMinPartners, defaultMaxPartners } = value;
-  if (
-    defaultMinPartners !== null &&
-    defaultMaxPartners !== null &&
-    defaultMinPartners > defaultMaxPartners
-  ) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["defaultMinPartners"],
-      message: "defaultMinPartners cannot exceed defaultMaxPartners",
-    });
-  }
 });
 
 const adminAnchorBatchInputSchema = z.object({

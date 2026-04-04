@@ -48,10 +48,7 @@ export async function refreshTemporalStatus(
       ? await getEffectiveBookingDeadline(request.id)
       : null;
 
-  await releaseUnconfirmedSlotsIfNeeded(
-    request,
-    effectiveBookingDeadlineAt,
-  );
+  await releaseUnconfirmedSlotsIfNeeded(request);
   const afterRelease = await prRepo.findById(request.id);
   const normalized = afterRelease ?? request;
 
@@ -156,22 +153,25 @@ async function expireIfUnderMinAfterBookingDeadline(
   if (!isBookingDeadlineReached(resourceBookingDeadlineAt)) return;
 
   const slots = await partnerRepo.findByPrId(request.id);
-  const confirmedCount = slots.filter(
-    (slot) => slot.status === "CONFIRMED" || slot.status === "ATTENDED",
+  const activeCount = slots.filter(
+    (slot) =>
+      slot.status === "JOINED" ||
+      slot.status === "CONFIRMED" ||
+      slot.status === "ATTENDED",
   ).length;
   const minPartners = request.minPartners ?? 1;
-  if (confirmedCount >= minPartners) return;
+  if (activeCount >= minPartners) return;
 
   const updated = await prRepo.updateStatus(request.id, "EXPIRED");
   if (!updated || updated.status !== "EXPIRED") return;
 
   operationLogService.log({
     actorId: null,
-    action: "pr.status.expired_under_min_confirmed",
+    action: "pr.status.expired_under_min_active",
     aggregateType: "partner_request",
     aggregateId: String(request.id),
     detail: {
-      confirmedCount,
+      activeCount,
       minPartners,
       resourceBookingDeadlineAt: resourceBookingDeadlineAt?.toISOString() ?? null,
       trigger: "booking_deadline",
@@ -181,13 +181,9 @@ async function expireIfUnderMinAfterBookingDeadline(
 
 async function resolveReleaseTrigger(
   request: PartnerRequest,
-  resourceBookingDeadlineAt: Date | null,
-): Promise<"booking_deadline" | "confirmation_end" | null> {
+): Promise<"confirmation_end" | null> {
   if (request.prKind !== "ANCHOR") {
     return null;
-  }
-  if (isBookingDeadlineReached(resourceBookingDeadlineAt)) {
-    return "booking_deadline";
   }
 
   const anchor = await anchorPRRepo.findByPrId(request.id);
@@ -199,9 +195,8 @@ async function resolveReleaseTrigger(
 
 async function releaseUnconfirmedSlotsIfNeeded(
   request: PartnerRequest,
-  resourceBookingDeadlineAt: Date | null,
 ): Promise<void> {
-  const trigger = await resolveReleaseTrigger(request, resourceBookingDeadlineAt);
+  const trigger = await resolveReleaseTrigger(request);
   if (!trigger) return;
 
   const participants = await listActiveParticipantSummariesForPR(request.id);

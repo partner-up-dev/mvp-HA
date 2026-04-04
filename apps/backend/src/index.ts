@@ -24,6 +24,7 @@ import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { poiRoute } from "./controllers/poi.controller";
 import { metaRoute } from "./controllers/meta.controller";
 import { adminAnchorManagementRoute } from "./controllers/admin-anchor-management.controller";
+import { adminBookingExecutionRoute } from "./controllers/admin-booking-execution.controller";
 import { adminBookingSupportRoute } from "./controllers/admin-booking-support.controller";
 import { adminPoiRoute } from "./controllers/admin-poi.controller";
 import { jobRunner } from "./infra/jobs";
@@ -33,6 +34,7 @@ import {
 } from "./infra/analytics";
 import { processOutboxBatch } from "./infra/events";
 import {
+  registerWeChatBookingResultJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatReminderJobs,
 } from "./infra/notifications";
@@ -42,6 +44,7 @@ import { withTimeout } from "./lib/with-timeout";
 const app = new Hono();
 registerWeChatReminderJobs();
 registerWeChatNewPartnerJobs();
+registerWeChatBookingResultJobs();
 registerAnalyticsAggregationJobs();
 void bootstrapAnalyticsAggregationJobs().catch((error) => {
   console.error(
@@ -148,8 +151,10 @@ const routes = app
   .route("/api/config", configRoute)
   .route("/api/meta", metaRoute)
   .route("/api/analytics", analyticsRoute)
+  .route("/api/telemetry", analyticsRoute)
   .route("/api/pois", poiRoute)
   .route("/api/admin", adminAnchorManagementRoute)
+  .route("/api/admin", adminBookingExecutionRoute)
   .route("/api/admin", adminBookingSupportRoute)
   .route("/api/admin", adminPoiRoute)
   .route("/internal/jobs", internalJobsRoute);

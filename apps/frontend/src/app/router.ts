@@ -3,8 +3,8 @@ import {
   createWebHistory,
   type RouteRecordRaw,
 } from "vue-router";
-import { trackEvent } from "@/shared/analytics/track";
-import { captureSpmAttributionFromUrl } from "@/shared/analytics/spm-attribution";
+import { trackEvent } from "@/shared/telemetry/track";
+import { captureSpmAttributionFromUrl } from "@/shared/telemetry/spm-attribution";
 import HomePage from "@/pages/HomePage.vue";
 import MePage from "@/pages/MePage.vue";
 import MyPRsPage from "@/pages/MyPRsPage.vue";
@@ -16,6 +16,7 @@ import AnchorPRBookingSupportPage from "@/pages/AnchorPRBookingSupportPage.vue";
 import AdminLoginPage from "@/pages/AdminLoginPage.vue";
 import AdminAnchorPRPage from "@/pages/AdminAnchorPRPage.vue";
 import AdminBookingSupportPage from "@/pages/AdminBookingSupportPage.vue";
+import AdminBookingExecutionPage from "@/pages/AdminBookingExecutionPage.vue";
 import AdminPoisPage from "@/pages/AdminPoisPage.vue";
 import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
@@ -72,6 +73,7 @@ const routes: RouteRecordRaw[] = [
     component: AnchorPRPage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "route",
     },
   },
   {
@@ -80,6 +82,7 @@ const routes: RouteRecordRaw[] = [
     component: UserProfilePage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
     },
   },
   {
@@ -88,6 +91,7 @@ const routes: RouteRecordRaw[] = [
     component: AnchorPRBookingSupportPage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
     },
   },
   {
@@ -111,6 +115,15 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/booking-support",
     name: "admin-booking-support",
     component: AdminBookingSupportPage,
+    meta: {
+      wechatSharePolicy: "route",
+      requiresAdminAuth: true,
+    },
+  },
+  {
+    path: "/admin/booking-execution",
+    name: "admin-booking-execution",
+    component: AdminBookingExecutionPage,
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,
@@ -171,6 +184,7 @@ const routes: RouteRecordRaw[] = [
     component: AnchorEventPage,
     meta: {
       wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
     },
   },
   {

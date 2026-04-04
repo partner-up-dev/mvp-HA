@@ -40,6 +40,10 @@ const WECHAT_SDK_URL = "https://res.wx.qq.com/open/js/jweixin-1.6.0.js";
 const DEFAULT_JS_API_LIST: ReadonlyArray<WeChatJsApiName> = [
   "updateAppMessageShareData",
   "updateTimelineShareData",
+  "startRecord",
+  "stopRecord",
+  "onVoiceRecordEnd",
+  "translateVoice",
 ];
 
 const isWeChatSdkAvailable = (): boolean =>

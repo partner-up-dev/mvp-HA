@@ -1,82 +1,81 @@
 <template>
-  <article
-    v-for="item in items"
-    :key="item.key"
-    class="subscription-card"
-  >
-    <div class="subscription-main">
-      <p class="subscription-title">{{ item.title }}</p>
-      <p class="subscription-desc">{{ item.description }}</p>
-    </div>
+  <article v-for="item in items" :key="item.key" class="subscription-card">
+    <div class="subscription-head">
+      <div class="subscription-meta">
+        <p class="subscription-title">{{ item.title }}</p>
+        <p class="subscription-desc">{{ item.description }}</p>
+      </div>
 
-    <button
-      v-if="item.actionKind === 'OPEN_SUBSCRIBE' && item.pending"
-      :class="[
-        'action-btn',
-        props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
-      ]"
-      type="button"
-      disabled
-    >
-      {{ props.updatingLabel }}
-    </button>
-
-    <div
-      v-else-if="
-        item.actionKind === 'OPEN_SUBSCRIBE' &&
-        item.actionLabel &&
-        item.openSubscribeTemplateId &&
-        !item.actionDisabled
-      "
-      class="open-subscribe-proxy"
-    >
       <button
+        v-if="item.actionKind === 'OPEN_SUBSCRIBE' && item.pending"
         :class="[
           'action-btn',
-          props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
+          props.outlineProfile === 'surface'
+            ? 'action-btn--surface'
+            : 'action-btn--secondary',
         ]"
         type="button"
+        disabled
       >
-        {{ item.actionLabel }}
+        {{ props.updatingLabel }}
       </button>
 
-      <wx-open-subscribe
-        class="open-subscribe-overlay"
-        :template="item.openSubscribeTemplateId"
-        @success="handleOpenSubscribeSuccess(item.key, $event)"
-        @error="handleOpenSubscribeError(item.key, $event)"
+      <div
+        v-else-if="
+          item.actionKind === 'OPEN_SUBSCRIBE' &&
+          item.actionLabel &&
+          item.openSubscribeTemplateId &&
+          !item.actionDisabled
+        "
+        class="open-subscribe-proxy"
       >
-        <script type="text/wxtag-template" slot="style">
-          <style>
-            .open-subscribe-hit-target {
-              width: 100%;
-              height: 100%;
-              border: 0;
-              margin: 0;
-              padding: 0;
-              background: transparent;
-              cursor: pointer;
-            }
-          </style>
-        </script>
-        <script type="text/wxtag-template">
-          <button class="open-subscribe-hit-target"></button>
-        </script>
-      </wx-open-subscribe>
-    </div>
+        <button
+          :class="[
+            'action-btn',
+            props.outlineProfile === 'surface'
+              ? 'action-btn--surface'
+              : 'action-btn--secondary',
+          ]"
+          type="button"
+        >
+          {{ item.actionLabel }}
+        </button>
 
-    <button
-      v-else-if="item.actionLabel"
-      :class="[
-        'action-btn',
-        props.outlineProfile === 'surface' ? 'action-btn--surface' : 'action-btn--secondary',
-      ]"
-      type="button"
-      :disabled="item.actionDisabled || item.pending"
-      @click="handleAction(item.key)"
-    >
-      {{ item.pending ? props.updatingLabel : item.actionLabel }}
-    </button>
+        <wx-open-subscribe
+          class="open-subscribe-overlay"
+          :template="item.openSubscribeTemplateId"
+          @success="handleOpenSubscribeSuccess(item.key, $event)"
+          @error="handleOpenSubscribeError(item.key, $event)"
+        >
+          <component
+            :is="'script'"
+            type="text/wxtag-template"
+            slot="style"
+            v-html="openSubscribeStyleTemplate"
+          />
+          <component
+            :is="'script'"
+            type="text/wxtag-template"
+            v-html="openSubscribeButtonTemplate"
+          />
+        </wx-open-subscribe>
+      </div>
+
+      <button
+        v-else-if="item.actionLabel"
+        :class="[
+          'action-btn',
+          props.outlineProfile === 'surface'
+            ? 'action-btn--surface'
+            : 'action-btn--secondary',
+        ]"
+        type="button"
+        :disabled="item.actionDisabled || item.pending"
+        @click="handleAction(item.key)"
+      >
+        {{ item.pending ? props.updatingLabel : item.actionLabel }}
+      </button>
+    </div>
   </article>
 </template>
 
@@ -158,21 +157,50 @@ const handleOpenSubscribeError = async (
     extractEventDetail(event),
   );
 };
+
+// Safe constant template for WeChat open tag; never interpolate user input.
+const openSubscribeStyleTemplate = `
+<style>
+.open-subscribe-hit-target {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+</style>
+`;
+
+const openSubscribeButtonTemplate = `
+<button class="open-subscribe-hit-target"></button>
+`;
 </script>
 
 <style scoped lang="scss">
 .subscription-card {
-  @include mx.pu-surface-card(outline);
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  flex-direction: column;
+  gap: var(--sys-spacing-2xs);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.subscription-main {
+.subscription-head {
   display: flex;
-  flex: 1 1 16rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sys-spacing-xs);
+  width: 100%;
+}
+
+.subscription-meta {
+  display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--sys-spacing-xs);
   min-width: 0;
@@ -185,15 +213,18 @@ const handleOpenSubscribeError = async (
 
 .subscription-desc {
   margin: 0;
-  @include mx.pu-font(body-small);
+  @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
 .action-btn {
-  @include mx.pu-rect-action(primary, default);
-  @include mx.pu-font(label-large);
+  @include mx.pu-font(label-medium);
+  min-height: 2rem;
+  padding: 0 var(--sys-spacing-sm);
   border: none;
+  border-radius: 999px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .action-btn:disabled {
@@ -204,24 +235,29 @@ const handleOpenSubscribeError = async (
 }
 
 .action-btn--secondary {
-  @include mx.pu-rect-action(outline-primary, default);
+  @include mx.pu-rect-action(outline-primary, compact);
 }
 
 .action-btn--surface {
-  @include mx.pu-rect-action(outline, default);
+  @include mx.pu-rect-action(outline, compact);
 }
 
 .action-btn--secondary:disabled,
 .action-btn--surface:disabled {
   background: transparent;
-  border-color: color-mix(in srgb, var(--sys-color-on-surface) 12%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--sys-color-on-surface) 12%,
+    transparent
+  );
   color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
 }
 
 .open-subscribe-proxy {
   position: relative;
   display: inline-flex;
-  min-height: 2.5rem;
+  min-height: 2rem;
+  flex-shrink: 0;
 }
 
 .open-subscribe-proxy .action-btn {
@@ -234,13 +270,12 @@ const handleOpenSubscribeError = async (
   display: inline-flex;
   width: 100%;
   height: 100%;
-  min-height: 2.5rem;
+  min-height: 2rem;
 }
 
 @media (max-width: 768px) {
-  .subscription-card .action-btn,
-  .subscription-card .open-subscribe-proxy {
-    width: 100%;
+  .subscription-head {
+    gap: var(--sys-spacing-2xs);
   }
 }
 </style>

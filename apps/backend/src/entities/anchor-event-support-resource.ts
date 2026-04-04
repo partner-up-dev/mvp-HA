@@ -22,7 +22,11 @@ export const supportResourceKindSchema = z.enum([
 ]);
 export type SupportResourceKind = z.infer<typeof supportResourceKindSchema>;
 
-export const bookingHandledBySchema = z.enum(["PLATFORM", "USER"]);
+export const bookingHandledBySchema = z.enum([
+  "PLATFORM",
+  "PLATFORM_PASSTHROUGH",
+  "USER",
+]);
 export type BookingHandledBy = z.infer<typeof bookingHandledBySchema>;
 
 export const supportSettlementModeSchema = z.enum([

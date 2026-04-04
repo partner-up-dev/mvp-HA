@@ -66,7 +66,7 @@
                     v-model.number="eventForm.defaultMinPartners"
                     class="field-input"
                     type="number"
-                    min="0"
+                    min="2"
                   />
                 </label>
                 <label class="field">
@@ -77,10 +77,13 @@
                     v-model.number="eventForm.defaultMaxPartners"
                     class="field-input"
                     type="number"
-                    min="0"
+                    min="2"
                   />
                 </label>
               </div>
+              <p v-if="eventBoundsValidationMessage" class="error-message">
+                {{ eventBoundsValidationMessage }}
+              </p>
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventLocationPoolLabel") }}</span><textarea v-model="eventForm.systemLocationPoolText" class="field-input field-textarea"></textarea></label>
               <label class="field">
                 <span class="field-label">用户可创建地点池（每行: 地点ID,上限）</span>
@@ -88,7 +91,7 @@
               </label>
               <p class="hint">{{ t("adminAnchorPR.eventPoiHint") }}</p>
               <p class="hint">{{ t("adminAnchorPR.eventTimeWindowHint") }}</p>
-              <button class="primary-btn" type="button" :disabled="createEventMutation.isPending.value || updateEventMutation.isPending.value" @click="handleSaveEvent">
+              <button class="primary-btn" type="button" :disabled="createEventMutation.isPending.value || updateEventMutation.isPending.value || Boolean(eventBoundsValidationMessage)" @click="handleSaveEvent">
                 {{ (createEventMutation.isPending.value || updateEventMutation.isPending.value) ? t("adminAnchorPR.saving") : (isCreatingEvent ? t("adminAnchorPR.createEventAction") : t("adminAnchorPR.saveEventAction")) }}
               </button>
             </div>
@@ -171,9 +174,12 @@
                 </select>
               </label>
               <div class="grid-2">
-                <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMinPartnersLabel") }}</span><input v-model.number="prForm.minPartners" class="field-input" type="number" :disabled="!canEditPRContent" /></label>
-                <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMaxPartnersLabel") }}</span><input v-model.number="prForm.maxPartners" class="field-input" type="number" :disabled="!canEditPRContent" /></label>
+                <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMinPartnersLabel") }}</span><input v-model.number="prForm.minPartners" class="field-input" type="number" min="2" :disabled="!canEditPRContent" /></label>
+                <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMaxPartnersLabel") }}</span><input v-model.number="prForm.maxPartners" class="field-input" type="number" min="2" :disabled="!canEditPRContent" /></label>
               </div>
+              <p v-if="prBoundsValidationMessage" class="error-message">
+                {{ prBoundsValidationMessage }}
+              </p>
               <TimelinePolicyPicker
                 v-model="prPolicyValue"
                 :title="t('adminAnchorPR.participationPolicyTitle')"
@@ -210,13 +216,19 @@
                 {{ t("adminAnchorPR.bookingTriggeredAtLabel", { dateTime: formatDateTime(selectedPR.bookingTriggeredAt) }) }}
               </p>
               <p v-if="!canEditPRContent" class="hint">{{ t("adminAnchorPR.anchorPRContentLockedHint") }}</p>
-              <button class="primary-btn" type="button" :disabled="isSavingPR || (isCreatingPR && !hasLocationOptions) || Boolean(policyValidationMessage)" @click="handleSavePR">
+              <button class="primary-btn" type="button" :disabled="isSavingPR || (isCreatingPR && !hasLocationOptions) || Boolean(policyValidationMessage) || ((isCreatingPR || canEditPRContent) && Boolean(prBoundsValidationMessage))" @click="handleSavePR">
                 {{ isSavingPR ? t("adminAnchorPR.saving") : (isCreatingPR ? t("adminAnchorPR.createAnchorPRAction") : t("adminAnchorPR.saveAnchorPRAction")) }}
               </button>
             </div>
           </div>
         </section>
       </template>
+
+      <ErrorToast
+        v-if="mutationErrorMessage"
+        :message="mutationErrorMessage"
+        @close="resetMutationErrors"
+      />
     </div>
   </DesktopPageScaffold>
 </template>
@@ -246,6 +258,7 @@ import {
   formatLocalDateTimeWindowLabel,
 } from "@/shared/datetime/formatLocalDateTime";
 import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
+import { validateManualPartnerBounds } from "@/lib/validation";
 
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
@@ -255,16 +268,19 @@ type EventForm = { title: string; type: string; description: string; coverImage:
 type BatchForm = { start: string; end: string; status: "OPEN" | "FULL" | "EXPIRED" };
 type PRForm = { title: string; type: string; location: string; minPartners: number | null; maxPartners: number | null; confirmationStartOffsetMinutes: number; confirmationEndOffsetMinutes: number; joinLockOffsetMinutes: number; preferencesText: string; notes: string; status: "OPEN" | "READY" | "ACTIVE" | "CLOSED"; visibilityStatus: "VISIBLE" | "HIDDEN" };
 
-const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", status: "ACTIVE", defaultMinPartners: null, defaultMaxPartners: null, systemLocationPoolText: "", userLocationPoolText: "" });
+const resolveDefaultMinPartners = (value: number | null | undefined): number =>
+  typeof value === "number" && Number.isInteger(value) && value >= 2 ? value : 2;
+
+const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", status: "ACTIVE", defaultMinPartners: 2, defaultMaxPartners: null, systemLocationPoolText: "", userLocationPoolText: "" });
 const emptyBatchForm = (): BatchForm => ({ start: "", end: "", status: "OPEN" });
-const emptyPRForm = (location = "", type = ""): PRForm => ({ title: "", type, location, minPartners: null, maxPartners: null, confirmationStartOffsetMinutes: 120, confirmationEndOffsetMinutes: 30, joinLockOffsetMinutes: 30, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
-const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", status: event.status as EventForm["status"], defaultMinPartners: event.defaultMinPartners ?? null, defaultMaxPartners: event.defaultMaxPartners ?? null, systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
+const emptyPRForm = (location = "", type = "", minPartners = 2): PRForm => ({ title: "", type, location, minPartners, maxPartners: null, confirmationStartOffsetMinutes: 120, confirmationEndOffsetMinutes: 30, joinLockOffsetMinutes: 30, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
+const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", status: event.status as EventForm["status"], defaultMinPartners: resolveDefaultMinPartners(event.defaultMinPartners), defaultMaxPartners: event.defaultMaxPartners ?? null, systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
 const toBatchForm = (batch: BatchRecord): BatchForm => ({ start: batch.timeWindow[0] ?? "", end: batch.timeWindow[1] ?? "", status: batch.status as BatchForm["status"] });
 const toPRForm = (pr: PRRecord): PRForm => ({
   title: pr.title ?? "",
   type: pr.type,
   location: pr.location ?? "",
-  minPartners: pr.minPartners,
+  minPartners: resolveDefaultMinPartners(pr.minPartners),
   maxPartners: pr.maxPartners,
   confirmationStartOffsetMinutes: pr.confirmationStartOffsetMinutes,
   confirmationEndOffsetMinutes: pr.confirmationEndOffsetMinutes,
@@ -360,6 +376,29 @@ const formatWindow = (windowValue: [string | null, string | null]) =>
   formatLocalDateTimeWindowLabel(windowValue, {}, "?");
 const formatDateTime = (value: string | null) =>
   formatLocalDateTimeValue(value) ?? "-";
+const eventBoundsValidationMessage = computed(() =>
+  validateManualPartnerBounds(
+    normalizeNullableNonNegativeInteger(eventForm.value.defaultMinPartners),
+    normalizeNullableNonNegativeInteger(eventForm.value.defaultMaxPartners),
+  ),
+);
+const prBoundsValidationMessage = computed(() =>
+  validateManualPartnerBounds(
+    normalizeNullableNonNegativeInteger(prForm.value.minPartners),
+    normalizeNullableNonNegativeInteger(prForm.value.maxPartners),
+  ),
+);
+const mutationErrorMessage = computed(() =>
+  createEventMutation.error.value?.message ||
+  updateEventMutation.error.value?.message ||
+  createBatchMutation.error.value?.message ||
+  updateBatchMutation.error.value?.message ||
+  createPRMutation.error.value?.message ||
+  updatePRContentMutation.error.value?.message ||
+  updatePRStatusMutation.error.value?.message ||
+  updatePRVisibilityMutation.error.value?.message ||
+  null,
+);
 
 const prPolicyValue = computed({
   get: () => ({
@@ -431,25 +470,36 @@ watch([selectedEvent, isCreatingEvent], ([event, creating]) => {
   if (!event.batches.some((batch) => String(batch.id) === selectedBatchIdRaw.value)) selectedBatchIdRaw.value = event.batches[0] ? String(event.batches[0].id) : "";
 }, { immediate: true });
 watch([selectedBatch, isCreatingBatch, selectedEvent], ([batch, creating, event]) => {
-  if (creating) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
-  if (!batch || !event) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
+  if (creating) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
+  if (!batch || !event) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
   batchForm.value = toBatchForm(batch);
   if (!batch.prs.some((pr) => String(pr.prId) === selectedPRIdRaw.value)) selectedPRIdRaw.value = batch.prs[0] ? String(batch.prs[0].prId) : "";
 }, { immediate: true });
 watch([selectedPR, isCreatingPR, selectedEvent], ([pr, creating, event]) => {
-  if (creating) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
-  if (!pr || !event) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? ""); return; }
+  if (creating) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
+  if (!pr || !event) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
   prForm.value = { ...toPRForm(pr), location: pr.location ?? firstEventLocation(event), type: pr.type };
 }, { immediate: true });
 
 const prepareNewEvent = () => { isCreatingEvent.value = true; isCreatingBatch.value = false; isCreatingPR.value = false; selectedEventIdRaw.value = ""; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; eventForm.value = emptyEventForm(); batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(); };
 const selectEvent = (eventId: number) => { isCreatingEvent.value = false; isCreatingBatch.value = false; isCreatingPR.value = false; selectedEventIdRaw.value = String(eventId); };
-const prepareNewBatch = () => { if (!selectedEvent.value) return; isCreatingBatch.value = true; isCreatingPR.value = false; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type); };
+const prepareNewBatch = () => { if (!selectedEvent.value) return; isCreatingBatch.value = true; isCreatingPR.value = false; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type, resolveDefaultMinPartners(selectedEvent.value.defaultMinPartners)); };
 const selectBatch = (batchId: number) => { isCreatingBatch.value = false; isCreatingPR.value = false; selectedBatchIdRaw.value = String(batchId); };
-const prepareNewPR = () => { if (!selectedEvent.value || selectedBatchId.value === null) return; isCreatingPR.value = true; selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type); };
+const prepareNewPR = () => { if (!selectedEvent.value || selectedBatchId.value === null) return; isCreatingPR.value = true; selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type, resolveDefaultMinPartners(selectedEvent.value.defaultMinPartners)); };
 const selectPR = (prId: number) => { isCreatingPR.value = false; selectedPRIdRaw.value = String(prId); };
+const resetMutationErrors = () => {
+  createEventMutation.reset();
+  updateEventMutation.reset();
+  createBatchMutation.reset();
+  updateBatchMutation.reset();
+  createPRMutation.reset();
+  updatePRContentMutation.reset();
+  updatePRStatusMutation.reset();
+  updatePRVisibilityMutation.reset();
+};
 
 const handleSaveEvent = async () => {
+  if (eventBoundsValidationMessage.value) return;
   const input = {
     title: eventForm.value.title.trim(),
     type: eventForm.value.type.trim(),
@@ -465,65 +515,82 @@ const handleSaveEvent = async () => {
     coverImage: eventForm.value.coverImage.trim() || null,
     status: eventForm.value.status,
   };
-  const result = isCreatingEvent.value || selectedEventId.value === null
-    ? await createEventMutation.mutateAsync(input)
-    : await updateEventMutation.mutateAsync({ eventId: selectedEventId.value, input });
-  isCreatingEvent.value = false;
-  selectedEventIdRaw.value = String(result.id);
+  try {
+    const result = isCreatingEvent.value || selectedEventId.value === null
+      ? await createEventMutation.mutateAsync(input)
+      : await updateEventMutation.mutateAsync({ eventId: selectedEventId.value, input });
+    isCreatingEvent.value = false;
+    selectedEventIdRaw.value = String(result.id);
+  } catch {
+    // Mutation state already drives the page-level error toast.
+  }
 };
 const handleSaveBatch = async () => {
   if (selectedEventId.value === null) return;
   const input = { timeWindow: [batchForm.value.start.trim() || null, batchForm.value.end.trim() || null] as [string | null, string | null], status: batchForm.value.status };
-  const result = isCreatingBatch.value || selectedBatchId.value === null
-    ? await createBatchMutation.mutateAsync({ eventId: selectedEventId.value, input })
-    : await updateBatchMutation.mutateAsync({ batchId: selectedBatchId.value, input });
-  isCreatingBatch.value = false;
-  selectedBatchIdRaw.value = String(result.id);
+  try {
+    const result = isCreatingBatch.value || selectedBatchId.value === null
+      ? await createBatchMutation.mutateAsync({ eventId: selectedEventId.value, input })
+      : await updateBatchMutation.mutateAsync({ batchId: selectedBatchId.value, input });
+    isCreatingBatch.value = false;
+    selectedBatchIdRaw.value = String(result.id);
+  } catch {
+    // Mutation state already drives the page-level error toast.
+  }
 };
 const handleSavePR = async () => {
   if (!selectedEvent.value || !hasLocationOptions.value || selectedBatchId.value === null) return;
+  if ((isCreatingPR.value || canEditPRContent.value) && prBoundsValidationMessage.value) return;
   if (isCreatingPR.value || selectedPRId.value === null || selectedBatch.value === null) {
-    const result = await createPRMutation.mutateAsync({
-      batchId: selectedBatchId.value,
-      input: {
-        title: prForm.value.title.trim() || null,
-        type: prForm.value.type.trim() || null,
-        location: prForm.value.location,
-        minPartners: prForm.value.minPartners,
-        maxPartners: prForm.value.maxPartners,
-        confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
-        confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
-        joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
-        preferences: normalizeComma(prForm.value.preferencesText),
-        notes: prForm.value.notes.trim() || null,
-      },
-    });
-    isCreatingPR.value = false;
-    selectedPRIdRaw.value = String(result.root.id);
+    try {
+      const result = await createPRMutation.mutateAsync({
+        batchId: selectedBatchId.value,
+        input: {
+          title: prForm.value.title.trim() || null,
+          type: prForm.value.type.trim() || null,
+          location: prForm.value.location,
+          minPartners: prForm.value.minPartners,
+          maxPartners: prForm.value.maxPartners,
+          confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
+          confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
+          joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
+          preferences: normalizeComma(prForm.value.preferencesText),
+          notes: prForm.value.notes.trim() || null,
+        },
+      });
+      isCreatingPR.value = false;
+      selectedPRIdRaw.value = String(result.root.id);
+    } catch {
+      // Mutation state already drives the page-level error toast.
+    }
     return;
   }
-  if (canEditPRContent.value) {
-    await updatePRContentMutation.mutateAsync({
-      prId: selectedPRId.value,
-      input: {
-        title: prForm.value.title.trim() || null,
-        type: prForm.value.type.trim(),
-        location: prForm.value.location,
-        minPartners: prForm.value.minPartners,
-        maxPartners: prForm.value.maxPartners,
-        confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
-        confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
-        joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
-        preferences: normalizeComma(prForm.value.preferencesText),
-        notes: prForm.value.notes.trim() || null,
-      },
-    });
-  }
-  if (selectedPR.value && prForm.value.status !== selectedPR.value.status) {
-    await updatePRStatusMutation.mutateAsync({ prId: selectedPRId.value, input: { status: prForm.value.status } });
-  }
-  if (selectedPR.value && prForm.value.visibilityStatus !== selectedPR.value.visibilityStatus) {
-    await updatePRVisibilityMutation.mutateAsync({ prId: selectedPRId.value, input: { visibilityStatus: prForm.value.visibilityStatus } });
+  try {
+    if (canEditPRContent.value) {
+      await updatePRContentMutation.mutateAsync({
+        prId: selectedPRId.value,
+        input: {
+          title: prForm.value.title.trim() || null,
+          type: prForm.value.type.trim(),
+          location: prForm.value.location,
+          minPartners: prForm.value.minPartners,
+          maxPartners: prForm.value.maxPartners,
+          confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
+          confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
+          joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
+          preferences: normalizeComma(prForm.value.preferencesText),
+          notes: prForm.value.notes.trim() || null,
+        },
+      });
+    }
+    if (selectedPR.value && prForm.value.status !== selectedPR.value.status) {
+      await updatePRStatusMutation.mutateAsync({ prId: selectedPRId.value, input: { status: prForm.value.status } });
+    }
+    if (selectedPR.value && prForm.value.visibilityStatus !== selectedPR.value.visibilityStatus) {
+      await updatePRVisibilityMutation.mutateAsync({ prId: selectedPRId.value, input: { visibilityStatus: prForm.value.visibilityStatus } });
+    }
+  } catch {
+    // Mutation state already drives the page-level error toast.
   }
 };
 </script>
@@ -574,6 +641,12 @@ const handleSavePR = async () => {
   margin: 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.error-message {
+  margin: 0;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-error);
 }
 
 .section-header {

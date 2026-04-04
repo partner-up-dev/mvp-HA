@@ -4,6 +4,8 @@ import { computed, type Ref } from "vue";
 import { adminClient } from "@/lib/admin-rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
+type BookingHandledBy = "PLATFORM" | "PLATFORM_PASSTHROUGH" | "USER";
+
 export type AdminBookingSupportConfigResponse = InferResponseType<
   (typeof adminClient.api.admin.events)[":eventId"]["booking-support-resources"]["$get"]
 >;
@@ -23,7 +25,7 @@ export type EventSupportResourceInput = {
   appliesToAllLocations: boolean;
   locationIds: string[];
   bookingRequired: boolean;
-  bookingHandledBy: "PLATFORM" | "USER" | null;
+  bookingHandledBy: BookingHandledBy | null;
   bookingDeadlineRule: string | null;
   bookingLocksParticipant: boolean;
   cancellationPolicy: string | null;
@@ -42,7 +44,7 @@ export type BatchSupportOverrideInput = {
   titleOverride?: string | null;
   resourceKindOverride?: "VENUE" | "ITEM" | "SERVICE" | "OTHER" | null;
   bookingRequiredOverride?: boolean | null;
-  bookingHandledByOverride?: "PLATFORM" | "USER" | null;
+  bookingHandledByOverride?: BookingHandledBy | null;
   bookingDeadlineRuleOverride?: string | null;
   bookingLocksParticipantOverride?: boolean | null;
   cancellationPolicyOverride?: string | null;

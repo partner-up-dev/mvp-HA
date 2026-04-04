@@ -1,0 +1,46 @@
+version: 0.1
+scope: hot-surfaces
+notes:
+  - Partial map; expand only when repeated drift appears.
+pages:
+  - id: landing
+    route: /
+    regions:
+      - id: hero
+      - id: value-props
+      - id: event-highlights
+      - id: event-plaza
+      - id: footer
+      - id: bookmark-nudge
+      - id: secondary-actions
+  - id: community-pr-create
+    route: /cpr/new
+    regions:
+      - id: mode-switch
+      - id: create-form
+      - id: actions
+      - id: support
+  - id: community-pr-detail
+    route: /cpr/:id
+    regions:
+      - id: summary
+      - id: participants
+      - id: actions
+      - id: share
+      - id: support
+  - id: anchor-pr-detail
+    route: /apr/:id
+    regions:
+      - id: summary
+      - id: actions
+      - id: reliability
+      - id: share
+      - id: support
+  - id: event-detail
+    route: /events/:eventId
+    regions:
+      - id: event-header
+      - id: view-mode
+      - id: anchor-pr-list
+      - id: create-anchor-pr
+      - id: exhausted-banner

@@ -87,9 +87,14 @@
       </div>
     </Modal>
 
-    <RouterLink class="author-link" :to="{ name: 'contact-author' }">
-      {{ t("contactSupportPage.authorEntry") }}
-    </RouterLink>
+    <nav class="support-entry-links" :aria-label="t('aboutPage.footerNavLabel')">
+      <RouterLink class="support-entry-link" :to="{ name: 'contact-author' }">
+        {{ t("contactSupportPage.authorEntry") }}
+      </RouterLink>
+      <RouterLink class="support-entry-link" :to="{ name: 'about' }">
+        {{ t("aboutPage.title") }}
+      </RouterLink>
+    </nav>
   </PageScaffoldCentered>
 </template>
 
@@ -307,7 +312,15 @@ const betaGroupQrCodeUrl = computed(() => {
   color: var(--sys-color-on-surface-variant);
 }
 
-.author-link {
+.support-entry-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--sys-spacing-sm) var(--sys-spacing-med);
+}
+
+.support-entry-link {
   @include mx.pu-font(label-large);
   color: var(--sys-color-secondary);
   text-decoration: none;
@@ -332,8 +345,8 @@ const betaGroupQrCodeUrl = computed(() => {
     grid-template-columns: 1fr;
   }
 
-  .author-link {
-    text-align: center;
+  .support-entry-links {
+    justify-content: center;
   }
 
   .contact-action {

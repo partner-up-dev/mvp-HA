@@ -337,7 +337,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
           description = t("prPage.wechatReminder.unconfiguredHint");
         } else {
           description = t(
-            "prPage.notificationSubscriptions.items.BOOKING_RESULT.disabledHint",
+            "prPage.notificationSubscriptions.items.BOOKING_RESULT.unconfiguredHint",
           );
         }
       } else if (!authenticated) {
@@ -354,13 +354,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         const itemHint = enabled
           ? resolveItemEnabledHint(kind)
           : resolveItemDisabledHint(kind);
-        description = t(
-          "prPage.notificationSubscriptions.remainingCountWithHint",
-          {
-            count: remainingCount,
-            hint: itemHint,
-          },
-        );
+        description = t("prPage.notificationSubscriptions.remainingCountWithHint", {
+          count: remainingCount,
+          hint: itemHint,
+        });
         actionLabel = t("prPage.notificationSubscriptions.subscribeOnceAction");
 
         if (

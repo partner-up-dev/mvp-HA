@@ -13,6 +13,27 @@
           autocomplete="off"
         />
         <button
+          v-if="isVoiceSupported"
+          class="voice-button"
+          :class="{ 'is-recording': isVoiceRecording }"
+          type="button"
+          :disabled="isSubmitting || isVoiceProcessing"
+          :aria-pressed="isVoiceRecording"
+          :aria-label="t('nlForm.voiceAction')"
+          @click="handleVoiceToggle"
+        >
+          <span
+            v-if="isVoiceRecording"
+            class="i-mdi-microphone-off-outline voice-icon"
+            aria-hidden="true"
+          ></span>
+          <span
+            v-else
+            class="i-mdi-microphone-outline voice-icon"
+            aria-hidden="true"
+          ></span>
+        </button>
+        <button
           class="send-button"
           type="submit"
           :disabled="isSubmitting"
@@ -30,12 +51,16 @@
           ></span>
         </button>
       </div>
-      <span
-        v-if="errors.length"
-        class="error-message"
-        style="flex-basis: 100%"
-        >{{ errors[0] }}</span
-      >
+    <p v-if="voiceErrorMessage" class="error-message voice-error">
+      {{ voiceErrorMessage }}
+    </p>
+    <span
+      v-if="errors.length"
+      class="error-message"
+      style="flex-basis: 100%"
+    >
+      {{ errors[0] }}
+    </span>
     </Field>
 
     <ErrorToast
@@ -50,7 +75,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
+import { storeToRefs } from "pinia";
 import { Field, useForm } from "vee-validate";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -64,6 +90,8 @@ import {
 import { communityPRDetailPath } from "@/domains/pr/routing/routes";
 import { useLandingRotatingTopic } from "@/domains/landing/use-cases/useLandingRotatingTopic";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
+import { useNaturalLanguageDraftStore } from "@/domains/pr/use-cases/useNaturalLanguageDraft";
+import { useWeChatVoiceInput } from "@/shared/wechat/useWeChatVoiceInput";
 
 const getLocalWeekdayLabel = (date: Date): string => {
   return new Intl.DateTimeFormat(undefined, {
@@ -77,6 +105,8 @@ const userSessionStore = useUserSessionStore();
 const createMutation = useCreateCommunityPRFromNaturalLanguage();
 const publishMutation = usePublishCommunityPR();
 const { rotatingTopicExample } = useLandingRotatingTopic();
+const draftStore = useNaturalLanguageDraftStore();
+const { rawText: draftRawText } = storeToRefs(draftStore);
 const placeholderText = computed(() =>
   t("prInput.placeholder", { example: rotatingTopicExample.value }),
 );
@@ -90,14 +120,49 @@ const submitErrorMessage = computed(
     t("nlForm.createFailed"),
 );
 
-const { handleSubmit } = useForm({
+const mergeVoiceTranscript = (text: string): void => {
+  const current = (values.rawText ?? "").trim();
+  const merged = current.length > 0 ? `${current} ${text}` : text;
+  setFieldValue("rawText", merged);
+};
+
+const {
+  isSupported: isVoiceSupported,
+  isRecording: isVoiceRecording,
+  isProcessing: isVoiceProcessing,
+  errorMessage: voiceErrorMessage,
+  startRecording,
+  stopRecording,
+  resetError: resetVoiceError,
+} = useWeChatVoiceInput({
+  onTranscript: mergeVoiceTranscript,
+});
+
+const { handleSubmit, values, setFieldValue, resetForm } = useForm({
   validationSchema: createNaturalLanguagePRValidationSchema,
   initialValues: {
-    rawText: "",
+    rawText: draftRawText.value,
   },
 });
 
-const onSubmit = handleSubmit(async (values) => {
+watch(
+  () => values.rawText,
+  (value) => {
+    draftStore.setRawText(value ?? "");
+  },
+  { immediate: true },
+);
+
+const resolveRawText = (): string => {
+  const trimmed = (values.rawText ?? "").trim();
+  if (trimmed.length > 0) {
+    return values.rawText ?? "";
+  }
+
+  return placeholderText.value;
+};
+
+const submitHandler = handleSubmit(async (values) => {
   await ensureAuthSessionBootstrapped();
 
   const now = new Date();
@@ -113,7 +178,38 @@ const onSubmit = handleSubmit(async (values) => {
   }
 
   await router.push(`${communityPRDetailPath(draft.id)}?entry=create`);
+  draftStore.clear();
+  resetForm({
+    values: { rawText: "" },
+  });
 });
+
+const onSubmit = async () => {
+  resetVoiceError();
+  const resolvedText = resolveRawText();
+  if (resolvedText !== values.rawText) {
+    setFieldValue("rawText", resolvedText);
+  }
+
+  await submitHandler();
+};
+
+const handleVoiceToggle = async (): Promise<void> => {
+  if (!isVoiceSupported.value || isSubmitting.value || isVoiceProcessing.value) {
+    return;
+  }
+
+  if (isVoiceRecording.value) {
+    await stopRecording();
+    return;
+  }
+
+  try {
+    await startRecording();
+  } catch {
+    // Error handled by hook state.
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -217,9 +313,64 @@ const onSubmit = handleSubmit(async (values) => {
   animation: spin 800ms linear infinite;
 }
 
+.voice-button {
+  @include mx.pu-font(label-large);
+  min-width: var(--sys-size-large);
+  height: var(--sys-size-large);
+  border: 1px dashed var(--sys-color-primary);
+  border-radius: var(--sys-radius-sm);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-primary-container) 68%,
+    transparent
+  );
+  color: var(--sys-color-on-primary-container);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+  cursor: pointer;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.92;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &.is-recording {
+    border-style: solid;
+    border-color: var(--sys-color-primary);
+    background: var(--sys-color-primary);
+    color: var(--sys-color-on-primary);
+  }
+
+  &:disabled {
+    opacity: var(--sys-opacity-disabled);
+    cursor: not-allowed;
+  }
+}
+
+.voice-icon {
+  @include mx.pu-icon(small, true);
+}
+
 .error-message {
   @include mx.pu-font(label-medium);
   color: var(--sys-color-error);
+}
+
+.voice-error {
+  margin: 0;
 }
 
 @media (max-width: 768px) {

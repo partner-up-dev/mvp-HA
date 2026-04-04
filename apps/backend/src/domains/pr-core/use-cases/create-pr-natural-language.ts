@@ -6,9 +6,9 @@ import type {
 } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import {
-  assertPartnerBoundsValid,
   initializeSlotsForPR,
 } from "../services/slot-management.service";
+import { normalizeAutomaticPartnerBounds } from "../services/partner-bounds.service";
 import {
   resolveDraftCreator,
   type CreatorIdentityInput,
@@ -32,7 +32,11 @@ export async function createPRFromNaturalLanguage(
   creatorIdentity: CreatorIdentityInput,
 ): Promise<CreatePRFromNLResult> {
   const fields = await aiService.parseRequest(rawText, nowIso, nowWeekday);
-  assertPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
+  const partnerBounds = normalizeAutomaticPartnerBounds(
+    fields.minPartners,
+    fields.maxPartners,
+    0,
+  );
 
   const creator = await resolveDraftCreator(creatorIdentity);
   const createdBy = creator?.id ?? null;
@@ -42,8 +46,8 @@ export async function createPRFromNaturalLanguage(
     type: fields.type,
     time: fields.time,
     location: fields.location,
-    minPartners: fields.minPartners,
-    maxPartners: fields.maxPartners,
+    minPartners: partnerBounds.minPartners,
+    maxPartners: partnerBounds.maxPartners,
     preferences: fields.preferences,
     notes: fields.notes,
     status: "DRAFT",

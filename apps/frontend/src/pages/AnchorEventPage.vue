@@ -1,5 +1,5 @@
 <template>
-  <PageScaffold class="anchor-event-page">
+  <PageScaffold class="anchor-event-page" data-page="event-detail">
     <div v-if="isLoading" class="loading-state">
       {{ t("common.loading") }}
     </div>
@@ -16,12 +16,14 @@
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
         :back-fallback-to="{ name: 'event-plaza' }"
+        data-region="event-header"
       >
         <template #top-actions>
           <div
             class="view-mode-switch"
             role="group"
             :aria-label="t('anchorEvent.viewMode.ariaLabel')"
+            data-region="view-mode"
           >
             <button
               type="button"
@@ -48,7 +50,11 @@
       </PageHeader>
 
       <template v-if="viewMode === 'CARD'">
-        <div v-if="activeDemandCard" class="card-mode">
+        <div
+          v-if="activeDemandCard"
+          class="card-mode"
+          data-region="anchor-pr-list"
+        >
           <div class="card-stage">
             <div class="card-stage__inner">
               <AnchorEventDemandCard
@@ -120,7 +126,7 @@
             {{ t("anchorEvent.card.emptySubtitle") }}
           </p>
 
-          <div class="card-empty__create">
+          <div class="card-empty__create" data-region="create-anchor-pr">
             <label
               v-if="cardCreateBatchOptions.length > 0"
               class="card-empty__field"
@@ -161,10 +167,7 @@
               </select>
             </label>
 
-            <p
-              v-if="createActionErrorMessage"
-              class="card-empty__error"
-            >
+            <p v-if="createActionErrorMessage" class="card-empty__error">
               {{ createActionErrorMessage }}
             </p>
 
@@ -188,7 +191,7 @@
         <div v-if="detail.batches.length > 0" class="batch-section">
           <TabBar
             :items="batchTabs"
-            :model-value="selectedBatchIndex"
+            :model-value="selectedBatchId ?? -1"
             :aria-label="t('anchorEvent.batchLabel')"
             @update:model-value="handleBatchTabChange"
           />
@@ -197,7 +200,7 @@
             <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
               {{ t("anchorEvent.noPRsInBatch") }}
             </div>
-            <div class="pr-list">
+            <div class="pr-list" data-region="anchor-pr-list">
               <AnchorEventPRCard
                 v-for="pr in selectedBatch.prs"
                 :key="pr.id"
@@ -209,6 +212,7 @@
                 :pending="isCreatePending"
                 :error-message="createActionErrorMessage"
                 @create="handleCreateInList"
+                data-region="create-anchor-pr"
               />
             </div>
           </div>
@@ -219,7 +223,11 @@
         </div>
       </template>
 
-      <div v-if="detail.exhausted" class="exhausted-banner">
+      <div
+        v-if="detail.exhausted"
+        class="exhausted-banner"
+        data-region="exhausted-banner"
+      >
         <p class="exhausted-text">{{ t("anchorEvent.exhausted") }}</p>
         <p class="exhausted-hint">{{ t("anchorEvent.subscribeHint") }}</p>
         <router-link :to="{ name: 'event-plaza' }" class="discover-btn">
@@ -255,7 +263,7 @@ import {
   communityPRDetailPath,
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
-import { resolveCurrentSpmAttribution } from "@/shared/analytics/spm-attribution";
+import { resolveCurrentSpmAttribution } from "@/shared/telemetry/spm-attribution";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 import type { ApiError } from "@/shared/api/error";
 import {
@@ -322,7 +330,7 @@ const resolveInitialViewMode = (): EventViewMode => {
 };
 
 const viewMode = ref<EventViewMode>(resolveInitialViewMode());
-const selectedBatchIndex = ref(0);
+const selectedBatchId = ref<number | null>(null);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
@@ -401,6 +409,10 @@ const sortedBatches = computed(() => {
   });
 });
 
+const isExpiredBatch = (
+  batch: AnchorEventDetailResponse["batches"][number],
+): boolean => batch.status === "EXPIRED";
+
 function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   const [start] = timeWindow;
   if (start) {
@@ -431,31 +443,57 @@ function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
 
 const batchTabs = computed(() =>
   sortedBatches.value.map((batch, index) => ({
-    key: index,
+    key: batch.id,
     label: formatBatchLabel(batch.timeWindow, index),
+    tabClass: isExpiredBatch(batch) ? "tab-bar__tab--expired" : undefined,
   })),
 );
 
 const handleBatchTabChange = (value: string | number) => {
   if (typeof value !== "number") return;
-  selectedBatchIndex.value = value;
+  selectedBatchId.value = value;
 };
 
 const selectedBatch = computed(
-  () => sortedBatches.value[selectedBatchIndex.value] ?? null,
+  () =>
+    sortedBatches.value.find((batch) => batch.id === selectedBatchId.value) ??
+    null,
 );
+
+const resolveDefaultBatchId = (
+  batches: AnchorEventDetailResponse["batches"],
+): number | null => {
+  const firstOpenBatch = batches.find((batch) => batch.status === "OPEN");
+  if (firstOpenBatch) {
+    return firstOpenBatch.id;
+  }
+
+  const firstNonExpiredBatch = batches.find((batch) => !isExpiredBatch(batch));
+  if (firstNonExpiredBatch) {
+    return firstNonExpiredBatch.id;
+  }
+
+  return batches[0]?.id ?? null;
+};
 
 watch(
   sortedBatches,
   (batches) => {
     if (batches.length === 0) {
-      selectedBatchIndex.value = 0;
+      selectedBatchId.value = null;
       return;
     }
 
-    if (selectedBatchIndex.value >= batches.length) {
-      selectedBatchIndex.value = 0;
+    if (selectedBatchId.value !== null) {
+      const matched = batches.some(
+        (batch) => batch.id === selectedBatchId.value,
+      );
+      if (matched) {
+        return;
+      }
     }
+
+    selectedBatchId.value = resolveDefaultBatchId(batches);
   },
   { immediate: true },
 );
@@ -652,7 +690,7 @@ const buildDemandCards = (
 };
 
 const allDemandCards = computed(() => {
-  const batches = sortedBatches.value;
+  const batches = sortedBatches.value.filter((batch) => !isExpiredBatch(batch));
   return buildDemandCards(batches, detail.value?.coverImage ?? null);
 });
 
@@ -665,7 +703,9 @@ const remainingDemandCards = computed(() =>
 );
 
 const activeDemandCard = computed(() => remainingDemandCards.value[0] ?? null);
-const stackPreviewCards = computed(() => remainingDemandCards.value.slice(1, 3));
+const stackPreviewCards = computed(() =>
+  remainingDemandCards.value.slice(1, 3),
+);
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -770,7 +810,8 @@ const createCommunityPRFallback = async ({
   const targetBatch =
     targetBatchId === null
       ? null
-      : sortedBatches.value.find((batch) => batch.id === targetBatchId) ?? null;
+      : (sortedBatches.value.find((batch) => batch.id === targetBatchId) ??
+        null);
 
   const normalizedLocation = locationId?.trim() ?? "";
 
@@ -780,7 +821,7 @@ const createCommunityPRFallback = async ({
       type: event.type,
       time: targetBatch?.timeWindow ?? [null, null],
       location: normalizedLocation.length > 0 ? normalizedLocation : null,
-      minPartners: null,
+      minPartners: 2,
       maxPartners: null,
       partners: [],
       budget: null,

@@ -1,31 +1,46 @@
 <template>
-  <div class="tab-bar" role="tablist" :aria-label="ariaLabel">
-    <button
-      v-for="item in items"
-      :key="item.key"
-      type="button"
-      role="tab"
-      class="tab-bar__tab"
-      :class="{ 'tab-bar__tab--active': modelValue === item.key }"
-      :aria-selected="modelValue === item.key"
-      :disabled="item.disabled === true"
-      @click="handleSelect(item)"
+  <div class="tab-bar">
+    <div
+      ref="tabListElement"
+      class="tab-bar__list"
+      role="tablist"
+      :aria-label="ariaLabel"
     >
-      {{ item.label }}
-    </button>
+      <button
+        v-for="item in items"
+        :key="item.key"
+        :ref="(element) => setTabButtonRef(item.key, element)"
+        type="button"
+        role="tab"
+        class="tab-bar__tab"
+        :class="[
+          { 'tab-bar__tab--active': modelValue === item.key },
+          item.tabClass,
+        ]"
+        :aria-selected="modelValue === item.key"
+        :disabled="item.disabled === true"
+        @click="handleSelect(item)"
+      >
+        {{ item.label }}
+      </button>
+    </div>
+    <slot name="append" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { nextTick, ref, watch, type ComponentPublicInstance } from "vue";
+
 type TabBarKey = string | number;
 
 type TabBarItem = {
   key: TabBarKey;
   label: string;
   disabled?: boolean;
+  tabClass?: string;
 };
 
-defineProps<{
+const props = defineProps<{
   items: TabBarItem[];
   modelValue: TabBarKey;
   ariaLabel?: string;
@@ -35,23 +50,83 @@ const emit = defineEmits<{
   "update:modelValue": [value: TabBarKey];
 }>();
 
+const tabButtons = new Map<TabBarKey, HTMLButtonElement>();
+const tabListElement = ref<HTMLDivElement | null>(null);
+
+const setTabButtonRef = (
+  key: TabBarKey,
+  element: Element | ComponentPublicInstance | null,
+) => {
+  if (element instanceof HTMLButtonElement) {
+    tabButtons.set(key, element);
+    return;
+  }
+
+  tabButtons.delete(key);
+};
+
 const handleSelect = (item: TabBarItem) => {
   if (item.disabled === true) return;
   emit("update:modelValue", item.key);
 };
+
+const scrollActiveTabIntoView = async () => {
+  await nextTick();
+  const tabList = tabListElement.value;
+  const activeTab = tabButtons.get(props.modelValue);
+  if (!tabList || !activeTab) {
+    return;
+  }
+
+  const tabListRect = tabList.getBoundingClientRect();
+  const activeTabRect = activeTab.getBoundingClientRect();
+  const leftDelta = activeTabRect.left - tabListRect.left;
+  const targetLeft = tabList.scrollLeft + leftDelta;
+  const maxScrollLeft = Math.max(0, tabList.scrollWidth - tabList.clientWidth);
+  const clampedTargetLeft = Math.min(Math.max(0, targetLeft), maxScrollLeft);
+
+  tabList.scrollTo({
+    left: clampedTargetLeft,
+    behavior: "smooth",
+  });
+};
+
+watch(
+  () => props.modelValue,
+  () => {
+    void scrollActiveTabIntoView();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.items.map((item) => item.key),
+  () => {
+    void scrollActiveTabIntoView();
+  },
+);
 </script>
 
 <style lang="scss" scoped>
 .tab-bar {
   display: flex;
   gap: var(--sys-spacing-sm);
+  align-items: flex-start;
+  padding-bottom: var(--sys-spacing-sm);
+  min-width: 0;
+}
+
+.tab-bar__list {
+  display: flex;
+  gap: var(--sys-spacing-sm);
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: var(--sys-spacing-sm);
   scrollbar-width: none;
 }
 
-.tab-bar::-webkit-scrollbar {
+.tab-bar__list::-webkit-scrollbar {
   display: none;
 }
 
@@ -80,5 +155,10 @@ const handleSelect = (item: TabBarItem) => {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border-color: var(--sys-color-primary);
+}
+
+.tab-bar__tab--expired {
+  border-style: dashed;
+  opacity: 0.96;
 }
 </style>

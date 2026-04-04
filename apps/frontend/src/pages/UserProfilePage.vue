@@ -13,10 +13,13 @@
       :message="t('userProfilePage.loading')"
     />
 
-    <section v-else-if="isNotFound" class="surface-card">
-      <h2 class="section-title">{{ t("userProfilePage.notFoundTitle") }}</h2>
-      <p class="section-copy">{{ t("userProfilePage.notFoundDescription") }}</p>
-    </section>
+    <EmptyState
+      v-else-if="isNotFound"
+      :title="t('userProfilePage.notFoundTitle')"
+      :description="t('userProfilePage.notFoundDescription')"
+      icon="i-mdi-account-off-outline"
+      tone="outline"
+    />
 
     <ErrorToast
       v-else-if="errorMessage"
@@ -24,7 +27,7 @@
       persistent
     />
 
-    <section v-else-if="profile" class="surface-card">
+    <SurfaceCard v-else-if="profile" gap="md">
       <div
         v-if="profile.isCurrentLocalUser"
         class="profile-actions"
@@ -35,22 +38,21 @@
       </div>
 
       <div class="profile-row">
-        <img
-          v-if="profile.avatarUrl"
+        <Avatar
           :src="profile.avatarUrl"
           :alt="t('userProfilePage.avatarAlt', { name: displayName })"
-          class="avatar-image"
+          :name="displayName"
+          :fallback="avatarFallbackText"
+          size="lg"
+          bordered
         />
-        <div v-else class="avatar-fallback" aria-hidden="true">
-          <span>{{ avatarFallbackText }}</span>
-        </div>
 
         <div class="profile-copy">
           <span class="nickname-label">{{ t("userProfilePage.nicknameLabel") }}</span>
           <strong class="nickname-value">{{ displayName }}</strong>
         </div>
       </div>
-    </section>
+    </SurfaceCard>
 
     <template #footer>
       <ContactSupportFooter />
@@ -67,6 +69,9 @@ import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import EmptyState from "@/shared/ui/feedback/EmptyState.vue";
+import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
+import Avatar from "@/shared/ui/identity/Avatar.vue";
 import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
 import {
   anchorPRDetailPath,
@@ -96,7 +101,11 @@ const scenario = computed<PRPartnerProfileScenario | null>(() => {
 const prId = computed(() => parsePositiveInt(route.params.id));
 const partnerId = computed(() => parsePositiveInt(route.params.partnerId));
 
-const { data, isLoading, error } = usePRPartnerProfile(scenario, prId, partnerId);
+const { data, isLoading, error } = usePRPartnerProfile(
+  scenario,
+  prId,
+  partnerId,
+);
 const profile = computed(() => data.value ?? null);
 
 const subtitle = computed(() => {
@@ -151,30 +160,6 @@ const backFallbackTo = computed(() => {
 </script>
 
 <style scoped lang="scss">
-.surface-card {
-  @include mx.pu-surface-card(section);
-}
-
-.surface-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.section-title,
-.section-copy {
-  margin: 0;
-}
-
-.section-title {
-  @include mx.pu-font(title-medium);
-}
-
-.section-copy {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
-}
-
 .profile-actions {
   display: flex;
   justify-content: flex-end;
@@ -194,32 +179,6 @@ const backFallbackTo = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--sys-spacing-med);
-}
-
-.avatar-image,
-.avatar-fallback {
-  width: 4.75rem;
-  height: 4.75rem;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.avatar-image {
-  display: block;
-  object-fit: cover;
-}
-
-.avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-  border: 1px solid var(--sys-color-outline-variant);
-
-  span {
-    @include mx.pu-font(title-large);
-  }
 }
 
 .profile-copy {

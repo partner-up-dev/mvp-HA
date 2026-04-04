@@ -1,4 +1,4 @@
-import { and, desc, eq, notInArray, count } from "drizzle-orm";
+import { and, count, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   anchorPartnerRequests,
@@ -12,6 +12,7 @@ import {
   partnerRequests,
   type PartnerRequest,
   type PRId,
+  type PRStatus,
   type VisibilityStatus,
 } from "../entities/partner-request";
 import type { AnchorPartnerRequest as AnchorPR } from "../entities/anchor-partner-request";
@@ -153,6 +154,23 @@ export class AnchorPRRepository {
       .from(anchorPartnerRequests)
       .innerJoin(partnerRequests, eq(partnerRequests.id, anchorPartnerRequests.prId))
       .where(eq(anchorPartnerRequests.anchorEventId, anchorEventId))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
+  async findByRootStatuses(statuses: PRStatus[]): Promise<AnchorPRRecord[]> {
+    if (statuses.length === 0) return [];
+
+    return db
+      .select({
+        root: partnerRequests,
+        anchor: anchorPartnerRequests,
+      })
+      .from(anchorPartnerRequests)
+      .innerJoin(
+        partnerRequests,
+        eq(partnerRequests.id, anchorPartnerRequests.prId),
+      )
+      .where(inArray(partnerRequests.status, statuses))
       .orderBy(desc(partnerRequests.createdAt));
   }
 

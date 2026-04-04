@@ -22,6 +22,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@partner-up-dev/backend": [
+        "../backend/src/index.ts"
       ]
     }
   },

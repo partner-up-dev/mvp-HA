@@ -13,7 +13,22 @@
       <h2 id="home-highlights-title">
         {{ t("home.landing.highlightsTitle") }}
       </h2>
-      <p>{{ t("home.landing.highlightsSubtitle") }}</p>
+
+      <ChipGroup class="highlights-trust-cues" gap="sm">
+        <Chip tone="outline" size="sm">
+          {{ t("home.landing.highlightsCueFixedTime") }}
+        </Chip>
+        <Chip tone="outline" size="sm">
+          {{ t("home.landing.highlightsCueFixedLocation") }}
+        </Chip>
+        <Chip tone="outline" size="sm">
+          {{ t("home.landing.highlightsCueSubsidy") }}
+        </Chip>
+      </ChipGroup>
+
+      <p class="highlights-bridge">
+        {{ t("home.landing.highlightsBridge") }}
+      </p>
     </header>
 
     <p
@@ -24,22 +39,20 @@
     >
       {{ t("common.loading") }}
     </p>
-    <p
-      v-else-if="isError"
-      class="state-text state-text--error"
-      :class="{ 'is-in-view': isInView }"
-      :style="itemMotionStyle(1)"
-    >
-      {{ t("home.landing.highlightsLoadFailed") }}
-    </p>
     <div
-      v-else-if="highlightEvents.length === 0"
-      class="empty-state"
+      v-else-if="isError || highlightEvents.length === 0"
+      class="fallback-state"
       :class="{ 'is-in-view': isInView }"
       :style="itemMotionStyle(1)"
     >
-      <p class="state-text">{{ t("home.landing.highlightsEmpty") }}</p>
-      <RouterLink class="empty-action" :to="{ name: 'event-plaza' }">
+      <p class="state-text" :class="{ 'state-text--error': isError }">
+        {{
+          isError
+            ? t("home.landing.highlightsLoadFailed")
+            : t("home.landing.highlightsEmpty")
+        }}
+      </p>
+      <RouterLink class="fallback-action" :to="{ name: 'event-plaza' }">
         {{ t("home.landing.highlightsOpenPlaza") }}
       </RouterLink>
     </div>
@@ -79,7 +92,9 @@ import { RouterLink } from "vue-router";
 import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
 import { useInViewStagger } from "@/shared/motion/useInViewStagger";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
-import { trackEvent } from "@/shared/analytics/track";
+import { trackEvent } from "@/shared/telemetry/track";
+import Chip from "@/shared/ui/display/Chip.vue";
+import ChipGroup from "@/shared/ui/display/ChipGroup.vue";
 
 const MAX_HIGHLIGHT_COUNT = 4;
 
@@ -163,14 +178,24 @@ watchEffect(() => {
   }
 }
 
+.highlights-bridge {
+  @include mx.pu-font(body-large);
+  color: var(--sys-color-on-surface);
+  max-width: 36ch;
+}
+
+.highlights-trust-cues {
+  align-items: center;
+}
+
 .state-text,
-.empty-state,
+.fallback-state,
 .highlights-list {
   @include mx.pu-motion-enter(0.65rem);
 }
 
 .state-text,
-.empty-state {
+.fallback-state {
   position: relative;
   z-index: 1;
 }
@@ -184,18 +209,22 @@ watchEffect(() => {
   color: var(--sys-color-error);
 }
 
-.empty-state {
+.fallback-state {
   padding: var(--sys-spacing-sm) 0;
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
+  align-items: flex-start;
 }
 
-.empty-action {
+.fallback-action {
   @include mx.pu-font(label-large);
   width: fit-content;
   text-decoration: none;
   color: var(--sys-color-primary);
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 
 .highlights-list {
@@ -239,7 +268,6 @@ watchEffect(() => {
   @include mx.pu-motion-pressable(0.988);
   @include mx.pu-motion-ripple-base();
   min-height: 100%;
-  display: block;
   transition:
     transform 180ms ease,
     box-shadow 180ms ease;

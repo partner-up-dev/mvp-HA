@@ -2,8 +2,10 @@ import { onMounted, onUnmounted, ref } from "vue";
 import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
 
 const STORAGE_KEY = "__partner_up_home_bookmark_nudge_seen_date__";
-const TIME_TRIGGER_MS = 5_000;
-const BOTTOM_THRESHOLD_PX = 24;
+const TIME_TRIGGER_MS = 14_000;
+const BOTTOM_THRESHOLD_PX = 80;
+const MIN_TIME_TRIGGER_DEPTH_PERCENT = 24;
+const MIN_BOTTOM_TRIGGER_DEPTH_PERCENT = 55;
 
 type BookmarkNudgeEnvironment = "wechat" | "browser";
 type BookmarkNudgeTrigger = "time" | "bottom";
@@ -41,12 +43,13 @@ export const useLandingBookmarkNudge = () => {
   const triggerMode = ref<BookmarkNudgeTrigger>("time");
   const environment = ref<BookmarkNudgeEnvironment>("browser");
   let timerId: number | null = null;
+  let pendingTimeTrigger = false;
 
   const getScrollDepthPercent = (): number => {
     if (typeof window === "undefined") return 0;
     const scrollableHeight =
       document.documentElement.scrollHeight - window.innerHeight;
-    if (scrollableHeight <= 0) return 0;
+    if (scrollableHeight <= 0) return 100;
     const depth = window.scrollY / scrollableHeight;
     return Math.max(0, Math.min(100, Math.round(depth * 100)));
   };
@@ -59,9 +62,35 @@ export const useLandingBookmarkNudge = () => {
     isVisible.value = true;
   };
 
+  const canShowByTime = (): boolean =>
+    getScrollDepthPercent() >= MIN_TIME_TRIGGER_DEPTH_PERCENT;
+
+  const maybeShowByTime = (): void => {
+    if (typeof window === "undefined") return;
+    if (isVisible.value || hasSeenToday()) return;
+
+    if (canShowByTime()) {
+      pendingTimeTrigger = false;
+      showNudge("time");
+      return;
+    }
+
+    pendingTimeTrigger = true;
+  };
+
+  const maybeFlushPendingTimeTrigger = (): void => {
+    if (!pendingTimeTrigger) return;
+    if (isVisible.value || hasSeenToday()) return;
+    if (!canShowByTime()) return;
+
+    pendingTimeTrigger = false;
+    showNudge("time");
+  };
+
   const maybeShowByBottom = (): void => {
     if (typeof window === "undefined") return;
     if (isVisible.value || hasSeenToday()) return;
+    if (getScrollDepthPercent() < MIN_BOTTOM_TRIGGER_DEPTH_PERCENT) return;
     const scrollableHeight =
       document.documentElement.scrollHeight - window.innerHeight;
     if (scrollableHeight <= 0) return;
@@ -73,24 +102,30 @@ export const useLandingBookmarkNudge = () => {
   };
 
   const hideForToday = (): void => {
+    pendingTimeTrigger = false;
     markSeenToday();
     isVisible.value = false;
+  };
+
+  const handleScrollOrResize = (): void => {
+    maybeFlushPendingTimeTrigger();
+    maybeShowByBottom();
   };
 
   onMounted(() => {
     if (typeof window === "undefined") return;
     environment.value = isWeChatAbilityEnv() ? "wechat" : "browser";
-    window.addEventListener("scroll", maybeShowByBottom, { passive: true });
-    window.addEventListener("resize", maybeShowByBottom);
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true });
+    window.addEventListener("resize", handleScrollOrResize);
     timerId = window.setTimeout(() => {
-      showNudge("time");
+      maybeShowByTime();
     }, TIME_TRIGGER_MS);
   });
 
   onUnmounted(() => {
     if (typeof window === "undefined") return;
-    window.removeEventListener("scroll", maybeShowByBottom);
-    window.removeEventListener("resize", maybeShowByBottom);
+    window.removeEventListener("scroll", handleScrollOrResize);
+    window.removeEventListener("resize", handleScrollOrResize);
     if (timerId !== null) {
       window.clearTimeout(timerId);
       timerId = null;

@@ -1,5 +1,5 @@
 <template>
-  <PageScaffoldFlow class="create-page">
+  <PageScaffoldFlow class="create-page" data-page="community-pr-create">
     <template #header>
       <PRCreateHeader @back="goHome" />
     </template>
@@ -10,9 +10,14 @@
         :model-value="activeMode"
         :aria-label="t('createPage.modeSwitchAria')"
         @update:model-value="handleModeChange"
+        data-region="mode-switch"
       />
 
-      <section v-show="activeMode === 'nl'" class="mode-panel">
+      <section
+        v-show="activeMode === 'nl'"
+        class="mode-panel"
+        data-region="create-form"
+      >
         <header class="mode-panel-header">
           <h2>{{ t("createPage.nlModeTitle") }}</h2>
           <p>{{ t("createPage.nlModeDescription") }}</p>
@@ -21,7 +26,11 @@
         <NLPRForm />
       </section>
 
-      <section v-show="activeMode === 'form'" class="mode-panel">
+      <section
+        v-show="activeMode === 'form'"
+        class="mode-panel"
+        data-region="create-form"
+      >
         <header class="mode-panel-header">
           <h2>{{ t("createPage.formModeTitle") }}</h2>
           <p>{{ t("createPage.formModeDescription") }}</p>
@@ -36,18 +45,20 @@
     </div>
 
     <template #actions>
-      <PRCreateFooterActions
-        v-if="activeMode === 'form'"
-        :pending="
-          createMutation.isPending.value || publishMutation.isPending.value
-        "
-        :pending-status="pendingStatus"
-        @submit-as="submitAs"
-      />
+      <div data-region="actions">
+        <PRCreateFooterActions
+          v-if="activeMode === 'form'"
+          :pending="
+            createMutation.isPending.value || publishMutation.isPending.value
+          "
+          :pending-status="pendingStatus"
+          @submit-as="submitAs"
+        />
+      </div>
     </template>
 
     <template #footer>
-      <ContactSupportFooter />
+      <ContactSupportFooter data-region="support" />
     </template>
 
     <ErrorToast

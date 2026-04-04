@@ -12,6 +12,7 @@ import { anchorEventBatches } from "../../../entities/anchor-event-batch";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partnerRequests } from "../../../entities/partner-request";
 import { materializePRSupportResources } from "../../pr-booking-support";
+import { normalizeAutomaticPartnerBounds } from "../services/partner-bounds.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -88,6 +89,11 @@ export async function acceptAlternativeBatch(
       message: "Target time window is not available in this anchor event",
     });
   }
+  const partnerBounds = normalizeAutomaticPartnerBounds(
+    source.minPartners,
+    source.maxPartners,
+    0,
+  );
 
   const txResult = await db.transaction(async (tx) => {
     const batchRows = await tx
@@ -143,8 +149,8 @@ export async function acceptAlternativeBatch(
           time: targetTimeWindow,
           location: sourceLocation,
           status: "OPEN",
-          minPartners: source.minPartners,
-          maxPartners: source.maxPartners,
+          minPartners: partnerBounds.minPartners,
+          maxPartners: partnerBounds.maxPartners,
           preferences: source.preferences,
           notes: source.notes,
           prKind: "ANCHOR",

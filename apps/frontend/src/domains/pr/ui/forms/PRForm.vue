@@ -57,9 +57,13 @@
           <input
             :value="minPartnersInput"
             type="number"
+            min="2"
             :placeholder="t('partnerRequestForm.minPartnersPlaceholder')"
             @input="onMinPartnersInput"
           />
+          <span v-if="errors['fields.minPartners']" class="error-message">
+            {{ errors["fields.minPartners"] }}
+          </span>
         </div>
 
         <div class="form-field">
@@ -67,9 +71,13 @@
           <input
             :value="maxPartnersInput"
             type="number"
+            min="2"
             :placeholder="t('partnerRequestForm.maxPartnersPlaceholder')"
             @input="onMaxPartnersInput"
           />
+          <span v-if="errors['fields.maxPartners']" class="error-message">
+            {{ errors["fields.maxPartners"] }}
+          </span>
         </div>
 
         <div v-if="showBudgetField" class="form-field">

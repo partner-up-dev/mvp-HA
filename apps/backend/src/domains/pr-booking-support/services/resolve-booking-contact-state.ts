@@ -30,14 +30,26 @@ export const resolveBookingContactState = async (params: {
   const supportResources =
     params.supportResources ?? (await prSupportRepo.findByPrId(params.prId));
   const required = isBookingContactRequiredFromResources(supportResources);
-
-  const owner = await resolveBookingContactOwner(params.prId);
   let contact = await bookingContactRepo.findByPrId(params.prId);
 
   if (!required && contact) {
     await bookingContactRepo.deleteByPrId(params.prId);
     contact = null;
   }
+
+  if (!required) {
+    return {
+      required: false,
+      state: "NOT_REQUIRED",
+      ownerPartnerId: null,
+      ownerIsCurrentViewer: false,
+      maskedPhone: null,
+      verifiedAt: null,
+      deadlineAt: null,
+    };
+  }
+
+  const owner = await resolveBookingContactOwner(params.prId);
 
   if (
     contact &&
