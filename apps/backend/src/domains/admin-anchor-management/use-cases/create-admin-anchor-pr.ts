@@ -10,8 +10,8 @@ import {
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
-import { resolveAnchorPartnerBoundsFromEvent } from "../../anchor-event/services/anchor-partner-bounds";
 import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr-core/services/pr-read.service";
+import { assertManualPartnerBoundsValid } from "../../pr-core/services/partner-bounds.service";
 import type {
   AnchorPartnerRequest,
   AnchorEventBatchId,
@@ -87,17 +87,7 @@ export async function createAdminAnchorPR(
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
-
-  const partnerBounds = resolveAnchorPartnerBoundsFromEvent({
-    defaults: {
-      defaultMinPartners: event.defaultMinPartners ?? null,
-      defaultMaxPartners: event.defaultMaxPartners ?? null,
-    },
-    override: {
-      minPartners: input.minPartners,
-      maxPartners: input.maxPartners,
-    },
-  });
+  assertManualPartnerBoundsValid(input.minPartners, input.maxPartners, 0);
 
   const createdRoot = await prRepo.create({
     title: input.title,
@@ -105,8 +95,8 @@ export async function createAdminAnchorPR(
     time: batch.timeWindow,
     location: input.location,
     status: "OPEN",
-    minPartners: partnerBounds.minPartners,
-    maxPartners: partnerBounds.maxPartners,
+    minPartners: input.minPartners,
+    maxPartners: input.maxPartners,
     preferences: input.preferences,
     notes: input.notes,
     prKind: "ANCHOR",

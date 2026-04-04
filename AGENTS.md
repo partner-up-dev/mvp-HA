@@ -136,6 +136,7 @@ Agent action:
 
 - No any.
 - Prefer async/await over raw Promise chains.
+- Enforce data correctness at system boundary.
 
 ## Top-Level Glossary
 

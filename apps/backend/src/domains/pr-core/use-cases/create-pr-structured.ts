@@ -4,10 +4,8 @@ import type {
   PartnerRequestFields,
 } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import {
-  assertPartnerBoundsValid,
-  initializeSlotsForPR,
-} from "../services/slot-management.service";
+import { initializeSlotsForPR } from "../services/slot-management.service";
+import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import {
   resolveDraftCreator,
   type CreatorIdentityInput,
@@ -37,7 +35,7 @@ export async function createPRFromStructured(
   fields: PartnerRequestFields,
   creatorIdentity: CreatorIdentityInput,
 ): Promise<CreatePRResult> {
-  assertPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
+  assertManualPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
 
   const creator = await resolveDraftCreator(creatorIdentity);
   const createdBy = creator?.id ?? null;

@@ -889,6 +889,8 @@ export interface MessageSchema {
     typeRequired: string;
     naturalLanguageRequired: string;
     naturalLanguageWordLimit: string;
+    minPartnersAtLeastTwo: string;
+    maxPartnersMustBeAtLeastMinPartners: string;
   };
   errors: {
     createRequestFailed: string;

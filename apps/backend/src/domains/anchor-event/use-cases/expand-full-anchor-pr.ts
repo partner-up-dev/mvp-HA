@@ -15,6 +15,7 @@ import {
   readVisibleAnchorPRRecordsByBatchId,
   readVisibleAnchorPRRecordsByBatchIdAndLocation,
 } from "../../pr-core/services/pr-read.service";
+import { normalizeAutomaticPartnerBounds } from "../../pr-core/services/partner-bounds.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -96,6 +97,11 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   ) {
     return;
   }
+  const partnerBounds = normalizeAutomaticPartnerBounds(
+    fullPR.root.minPartners,
+    fullPR.root.maxPartners,
+    0,
+  );
 
   const createdRoot = await prRepo.create({
     title: fullPR.root.title,
@@ -103,8 +109,8 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     time: fullPR.root.time,
     location: targetLocation,
     status: "OPEN",
-    minPartners: fullPR.root.minPartners,
-    maxPartners: fullPR.root.maxPartners,
+    minPartners: partnerBounds.minPartners,
+    maxPartners: partnerBounds.maxPartners,
     preferences: fullPR.root.preferences,
     notes: fullPR.root.notes,
     prKind: "ANCHOR",

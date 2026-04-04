@@ -979,7 +979,9 @@
     "pinMustBeFourDigits": "PIN 必须是 4 位数字",
     "typeRequired": "类型不能为空",
     "naturalLanguageRequired": "请输入你的请求",
-    "naturalLanguageWordLimit": "自然语言输入不能超过 50 个词"
+    "naturalLanguageWordLimit": "自然语言输入不能超过 50 个词",
+    "minPartnersAtLeastTwo": "最少两个搭子",
+    "maxPartnersMustBeAtLeastMinPartners": "最多必须大于等于最少"
   },
   "errors": {
     "createRequestFailed": "创建请求失败",

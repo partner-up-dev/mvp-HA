@@ -821,7 +821,7 @@ const createCommunityPRFallback = async ({
       type: event.type,
       time: targetBatch?.timeWindow ?? [null, null],
       location: normalizedLocation.length > 0 ? normalizedLocation : null,
-      minPartners: null,
+      minPartners: 2,
       maxPartners: null,
       partners: [],
       budget: null,

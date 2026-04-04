@@ -5,6 +5,7 @@ import type {
   SystemLocationEntry,
   UserLocationEntry,
 } from "../../../entities";
+import { assertManualPartnerBoundsValid } from "../../pr-core/services/partner-bounds.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 
@@ -23,6 +24,12 @@ export interface CreateAdminAnchorEventInput {
 export async function createAdminAnchorEvent(
   input: CreateAdminAnchorEventInput,
 ): Promise<AnchorEvent> {
+  assertManualPartnerBoundsValid(
+    input.defaultMinPartners,
+    input.defaultMaxPartners,
+    0,
+  );
+
   return await anchorEventRepo.create({
     title: input.title,
     type: input.type,

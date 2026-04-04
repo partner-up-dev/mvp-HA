@@ -1,4 +1,4 @@
-import { assertPartnerBoundsValid } from "../../pr-core/services/slot-management.service";
+import { normalizeAutomaticPartnerBounds } from "../../pr-core/services/partner-bounds.service";
 
 type EventPartnerBoundsDefaults = {
   defaultMinPartners: number | null;
@@ -17,7 +17,7 @@ export const resolveAnchorPartnerBoundsFromEvent = ({
   defaults,
   override = null,
 }: ResolveAnchorPartnerBoundsInput): {
-  minPartners: number | null;
+  minPartners: number;
   maxPartners: number | null;
 } => {
   const minPartners =
@@ -29,11 +29,5 @@ export const resolveAnchorPartnerBoundsFromEvent = ({
       ? override.maxPartners
       : defaults.defaultMaxPartners;
 
-  assertPartnerBoundsValid(minPartners, maxPartners, 0);
-
-  return {
-    minPartners,
-    maxPartners,
-  };
+  return normalizeAutomaticPartnerBounds(minPartners, maxPartners, 0);
 };
-

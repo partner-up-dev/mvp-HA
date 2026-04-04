@@ -18,6 +18,8 @@
 - 对外可见的 `PartnerRequest` 生命周期状态包括 `DRAFT`、`OPEN`、`READY`、`FULL`、`LOCKED_TO_START`、`ACTIVE`、`CLOSED`、`EXPIRED`。
 - `LOCKED_TO_START` 表示搭子请求已进入开始前锁定阶段；此时不能再继续加入，但仍可能继续向 `ACTIVE` 推进。
 - PartnerRequest 的状态共同受人数阈值、时间窗口、确认窗口与场景特有规则影响。
+- `PartnerRequest.minPartners` 必须是整数且 `>= 2`；若 `maxPartners` 非空，则必须满足 `maxPartners >= minPartners`。
+- 自动创建路径在未得到有效 `minPartners` 时，必须落到 `2`；手动输入路径必须明确拒绝空值、`0`、`1` 与任何违反上下界关系的输入。
 - 已加入的非终态 PR 与目标 PR 时间窗口冲突时，应拒绝新的加入或会占用槽位的创建/发布行为。
 - Community PR 仅提供 `join/exit`。
 - Anchor PR 提供 `join/exit`、确认参与与签到回流。

@@ -15,6 +15,8 @@ Contract implication:
 
 - Backend owns `PartnerRequestStatus` and legal state transitions.
 - Frontend renders and branches on the shared visible status set: `DRAFT`, `OPEN`, `READY`, `FULL`, `LOCKED_TO_START`, `ACTIVE`, `CLOSED`, `EXPIRED`.
+- Backend owns the persisted partner-bounds invariant: manual PR writes must reject `minPartners < 2` or missing `minPartners`; system-generated create paths may default missing/invalid `minPartners` to `2` before persistence.
+- Legacy invalid partner-bound data is repaired through forward-only data migrations before deploy; frontend and backend reads do not introduce separate normalization policy.
 - If the status set or lock/join semantics change, backend runtime, frontend UX, and the PRD lifecycle description must move together.
 
 ## 3. Session Contract
@@ -28,6 +30,7 @@ Contract implication:
 
 - Backend global errors resolve to JSON with at least `{ error }` and optionally `{ code }`.
 - Frontend interprets status plus optional `code` to drive UX for auth-required flows, join failures, booking failures, and create-path fallbacks.
+- For shared partner-bounds validation failures, backend and frontend should converge on one user-facing Chinese message rather than surfacing route-specific copies.
 
 ## 5. Stable Route And Flow Contract
 

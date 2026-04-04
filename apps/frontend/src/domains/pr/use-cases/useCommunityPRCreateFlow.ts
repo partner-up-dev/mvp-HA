@@ -30,7 +30,7 @@ const buildInitialFields = (topic: string | null): CommunityPRFormFields => ({
   type: topic ?? "",
   time: [null, null],
   location: null,
-  minPartners: null,
+  minPartners: 2,
   maxPartners: null,
   partners: [],
   budget: null,
