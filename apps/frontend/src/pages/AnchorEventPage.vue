@@ -1,5 +1,11 @@
 <template>
-  <PageScaffold class="anchor-event-page" data-page="event-detail">
+  <PageScaffold
+    :class="[
+      'anchor-event-page',
+      { 'anchor-event-page--card-active': isCardStageActive },
+    ]"
+    data-page="event-detail"
+  >
     <div v-if="isLoading" class="loading-state">
       {{ t("common.loading") }}
     </div>
@@ -13,6 +19,7 @@
 
     <template v-else-if="detail">
       <PageHeader
+        class="anchor-event-page__header"
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
         :back-fallback-to="{ name: 'event-plaza' }"
@@ -726,6 +733,9 @@ const activeDemandCard = computed(() => remainingDemandCards.value[0] ?? null);
 const stackPreviewCards = computed(() =>
   remainingDemandCards.value.slice(1, 3),
 );
+const isCardStageActive = computed(
+  () => viewMode.value === "CARD" && activeDemandCard.value !== null,
+);
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -1056,6 +1066,18 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 </script>
 
 <style lang="scss" scoped>
+.anchor-event-page--card-active {
+  display: flex;
+  flex-direction: column;
+}
+
+.anchor-event-page__header,
+.card-mode__actions,
+.card-mode__error,
+.exhausted-banner {
+  flex-shrink: 0;
+}
+
 .batch-section {
   margin-bottom: 1rem;
 }
@@ -1100,14 +1122,29 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   margin-right: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-right)));
 }
 
+.anchor-event-page--card-active .card-mode {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .card-stage {
   padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
   padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
 }
 
+.anchor-event-page--card-active .card-stage {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .card-stage__inner {
   position: relative;
-  min-height: var(--dcs-layout-anchor-card-stage-height);
+}
+
+.anchor-event-page--card-active .card-stage__inner {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .card-stage__front-shell {
