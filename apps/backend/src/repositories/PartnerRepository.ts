@@ -212,6 +212,28 @@ export class PartnerRepository {
     return result[0]?.count ?? 0;
   }
 
+  async countActiveByPrIds(prIds: PRId[]): Promise<Map<PRId, number>> {
+    if (prIds.length === 0) {
+      return new Map<PRId, number>();
+    }
+
+    const rows = await db
+      .select({
+        prId: partners.prId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(partners)
+      .where(
+        and(
+          inArray(partners.prId, prIds),
+          inArray(partners.status, ["JOINED", "CONFIRMED", "ATTENDED"]),
+        ),
+      )
+      .groupBy(partners.prId);
+
+    return new Map(rows.map((row) => [row.prId, row.count]));
+  }
+
   async countTotalByPrId(prId: PRId): Promise<number> {
     const result = await db
       .select({

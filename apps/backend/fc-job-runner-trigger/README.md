@@ -1,7 +1,15 @@
 # job-runner-trigger (Aliyun FC Timer Function)
 
 This function is used as a timer-triggered bridge for serverless scheduling.
-It sends `POST` requests to backend `/internal/jobs/tick` endpoints.
+It sends `POST` requests to backend maintenance tick endpoints.
+
+Current recommended target:
+
+- `/internal/maintenance/tick`
+
+Legacy compatibility target:
+
+- `/internal/jobs/tick` (jobs only)
 
 ## File
 
@@ -13,7 +21,7 @@ It sends `POST` requests to backend `/internal/jobs/tick` endpoints.
 - `JOB_RUNNER_TICK_URL` (required)
   Comma-separated target URLs.
   Example:
-  `https://env-a.example.com/internal/jobs/tick,https://env-b.example.com/internal/jobs/tick`
+  `https://env-a.example.com/internal/maintenance/tick,https://env-b.example.com/internal/maintenance/tick`
 - `JOB_RUNNER_INTERNAL_TOKEN` (required)
   Sent via header `x-internal-token`.
 - `JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS` (optional)

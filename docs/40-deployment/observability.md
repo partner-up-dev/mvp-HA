@@ -11,7 +11,8 @@
 ### Backend Health And Runtime Paths
 
 - `/health` exposes basic HTTP health and job-runner status
-- `/internal/jobs/tick` is the operational entrypoint for due-job execution
+- `/internal/maintenance/tick` is the operational entrypoint for outbox + due-job execution
+- `/internal/jobs/tick` remains available as a jobs-only compatibility path
 
 ### Persisted Operational Signals
 

@@ -93,6 +93,18 @@ const envSchema = z.object({
     .positive()
     .default(1),
 
+  // External maintenance outbox tick budget.
+  OUTBOX_TICK_BATCH_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1_000),
+  OUTBOX_TICK_MAX_BATCHES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(5),
+
   PORT: z.coerce.number().default(3000),
 });
 

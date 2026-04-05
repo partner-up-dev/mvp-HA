@@ -21,6 +21,7 @@ import { configRoute } from "./controllers/config.controller";
 import { analyticsRoute } from "./controllers/analytics.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalJobsRoute } from "./controllers/internal-jobs.controller";
+import { internalMaintenanceRoute } from "./controllers/internal-maintenance.controller";
 import { poiRoute } from "./controllers/poi.controller";
 import { metaRoute } from "./controllers/meta.controller";
 import { adminAnchorManagementRoute } from "./controllers/admin-anchor-management.controller";
@@ -32,12 +33,12 @@ import {
   bootstrapAnalyticsAggregationJobs,
   registerAnalyticsAggregationJobs,
 } from "./infra/analytics";
-import { processOutboxBatch } from "./infra/events";
 import {
   registerWeChatBookingResultJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatReminderJobs,
 } from "./infra/notifications";
+import { drainOutboxBatches } from "./infra/maintenance";
 import { env } from "./lib/env";
 import { withTimeout } from "./lib/with-timeout";
 
@@ -81,40 +82,7 @@ app.use("*", async (c, next) => {
       return;
     }
 
-    try {
-      for (let i = 0; i < env.OUTBOX_REQUEST_DRAIN_MAX_BATCHES; i += 1) {
-        const processed = await withTimeout(
-          processOutboxBatch(),
-          env.OUTBOX_REQUEST_DRAIN_TIMEOUT_MS,
-          "Request-tail outbox drain timed out",
-        );
-        if (processed === 0) break;
-      }
-    } catch (error) {
-      console.error("[RequestTail] outbox drain failed", error);
-    }
-
-    if (Date.now() < nextRequestTailJobTickAtMs) {
-      return;
-    }
-    nextRequestTailJobTickAtMs =
-      Date.now() + env.REQUEST_TAIL_JOB_TICK_MIN_INTERVAL_MS;
-
-    try {
-      await withTimeout(
-        jobRunner.runDueJobs({
-          source: "request-tail",
-          batchSize: env.JOB_RUNNER_CLAIM_BATCH_SIZE,
-          maxBatches: env.REQUEST_TAIL_JOB_TICK_MAX_BATCHES,
-          budgetMs: env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
-          leaseMs: env.JOB_RUNNER_LEASE_MS,
-        }),
-        env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
-        "Request-tail job tick timed out",
-      );
-    } catch (error) {
-      console.error("[RequestTail] job tick failed", error);
-    }
+    kickRequestTailMaintenance();
   }
 });
 
@@ -157,7 +125,8 @@ const routes = app
   .route("/api/admin", adminBookingExecutionRoute)
   .route("/api/admin", adminBookingSupportRoute)
   .route("/api/admin", adminPoiRoute)
-  .route("/internal/jobs", internalJobsRoute);
+  .route("/internal/jobs", internalJobsRoute)
+  .route("/internal/maintenance", internalMaintenanceRoute);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok", jobs: jobRunner.status() }));
@@ -166,6 +135,54 @@ app.get("/health", (c) => c.json({ status: "ok", jobs: jobRunner.status() }));
 export type AppType = typeof routes;
 
 let nextRequestTailJobTickAtMs = 0;
+let requestTailMaintenanceInFlight: Promise<void> | null = null;
+
+const kickRequestTailMaintenance = (): void => {
+  if (requestTailMaintenanceInFlight) {
+    return;
+  }
+
+  requestTailMaintenanceInFlight = runRequestTailMaintenance()
+    .catch((error) => {
+      console.error("[RequestTail] maintenance failed", error);
+    })
+    .finally(() => {
+      requestTailMaintenanceInFlight = null;
+    });
+};
+
+const runRequestTailMaintenance = async (): Promise<void> => {
+  const outboxSummary = await drainOutboxBatches({
+    maxBatches: env.OUTBOX_REQUEST_DRAIN_MAX_BATCHES,
+    batchTimeoutMs: env.OUTBOX_REQUEST_DRAIN_TIMEOUT_MS,
+    timeoutMessage: "Request-tail outbox drain timed out",
+  });
+  if (outboxSummary.error) {
+    console.error("[RequestTail] outbox drain failed", outboxSummary.error);
+  }
+
+  if (Date.now() < nextRequestTailJobTickAtMs) {
+    return;
+  }
+  nextRequestTailJobTickAtMs =
+    Date.now() + env.REQUEST_TAIL_JOB_TICK_MIN_INTERVAL_MS;
+
+  try {
+    await withTimeout(
+      jobRunner.runDueJobs({
+        source: "request-tail",
+        batchSize: env.JOB_RUNNER_CLAIM_BATCH_SIZE,
+        maxBatches: env.REQUEST_TAIL_JOB_TICK_MAX_BATCHES,
+        budgetMs: env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
+        leaseMs: env.JOB_RUNNER_LEASE_MS,
+      }),
+      env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
+      "Request-tail job tick timed out",
+    );
+  } catch (error) {
+    console.error("[RequestTail] job tick failed", error);
+  }
+};
 
 // Export types for frontend use
 export type {
