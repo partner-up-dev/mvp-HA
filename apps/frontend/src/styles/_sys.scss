@@ -20,12 +20,12 @@ $light: (
     secondary: fn.map-deep-get(ref.$color, secondary, 80),
     secondary-container: fn.map-deep-get(ref.$color, secondary, 40),
     on-secondary: fn.map-deep-get(ref.$color, secondary, 100),
-    on-secondary-container: #151E0B,
+    on-secondary-container: #151e0b,
     // Tertiary colors
     tertiary: fn.map-deep-get(ref.$color, tertiary, 80),
     tertiary-container: fn.map-deep-get(ref.$color, tertiary, 40),
     on-tertiary: fn.map-deep-get(ref.$color, tertiary, 100),
-    on-tertiary-container: #00201E,
+    on-tertiary-container: #00201e,
     // Error colors
     error: fn.map-deep-get(ref.$color, error, 80),
     error-container: fn.map-deep-get(ref.$color, error, 40),
@@ -37,7 +37,7 @@ $light: (
     // Surface colors
     surface: fn.map-deep-get(ref.$color, surface, 30),
     surface-container: fn.map-deep-get(ref.$color, surface, 50),
-    surface-container-high: #E8E9DE,
+    surface-container-high: #e8e9de,
     surface-container-low: fn.map-deep-get(ref.$color, neutral, 96),
     surface-container-lowest: fn.map-deep-get(ref.$color, neutral, 100),
     surface-container-highest: fn.map-deep-get(ref.$color, neutral, 90),
@@ -88,10 +88,10 @@ $dark: (
     // Surface colors
     surface: fn.map-deep-get(ref.$color, surface, 80),
     surface-container: fn.map-deep-get(ref.$color, surface, 80),
-    surface-container-high: fn.map-deep-get(ref.$color, surface, 70),
-    surface-container-low: fn.map-deep-get(ref.$color, surface, 90),
-    surface-container-lowest: fn.map-deep-get(ref.$color, surface, 100),
-    surface-container-highest: fn.map-deep-get(ref.$color, surface, 60),
+    surface-container-high: fn.map-deep-get(ref.$color, surface, 90),
+    surface-container-low: fn.map-deep-get(ref.$color, surface, 70),
+    surface-container-lowest: fn.map-deep-get(ref.$color, surface, 60),
+    surface-container-highest: fn.map-deep-get(ref.$color, surface, 100),
     on-surface: fn.map-deep-get(ref.$color, surface, 20),
     on-surface-container: fn.map-deep-get(ref.$color, surface, 20),
     on-surface-variant: fn.map-deep-get(ref.$color, neutral-variant, 20),
