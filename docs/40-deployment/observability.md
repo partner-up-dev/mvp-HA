@@ -34,5 +34,6 @@
 - no in-repo BI/dashboard documentation for analytics aggregates
 - no dedicated management UI yet for operation logs
 - no documented centralized alerting policy in the repo
+- `/internal/maintenance/tick` only avoids overlap inside one warm backend process today; cross-instance maintenance overlap is still possible until a DB-global coordination mechanism is added
 
 Those gaps are real and should remain explicit rather than implied away.

@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 import { and, eq, inArray, like, sql } from "drizzle-orm";
 import { jobs } from "../../entities/job";
 import { db } from "../../lib/db";
+import { toErrorMessage } from "../../lib/error-message";
+import { applyLocalStatementTimeout } from "../../lib/pg-timeouts";
 
 const TICK_LOCK_NAMESPACE = 2_147_483_001;
 const TICK_LOCK_KEY = 1;
@@ -43,6 +45,7 @@ export interface RunDueJobsOptions {
   maxBatches?: number;
   budgetMs?: number;
   leaseMs?: number;
+  claimStatementTimeoutMs?: number;
 }
 
 export interface RunDueJobsSummary {
@@ -104,9 +107,6 @@ interface ClaimedJobRow extends Record<string, unknown> {
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
-
-const toErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 const isUniqueViolation = (error: unknown): boolean => {
   if (!isObjectRecord(error)) return false;
@@ -231,6 +231,10 @@ class JobRunnerImpl {
     const maxBatches = positiveOr(options.maxBatches, DEFAULT_MAX_BATCHES);
     const budgetMs = positiveOr(options.budgetMs, DEFAULT_BUDGET_MS);
     const leaseMs = positiveOr(options.leaseMs, DEFAULT_LEASE_MS);
+    const claimStatementTimeoutMs = positiveOr(
+      options.claimStatementTimeoutMs,
+      budgetMs,
+    );
     const startedAt = Date.now();
 
     const summary: RunDueJobsSummary = {
@@ -256,7 +260,11 @@ class JobRunnerImpl {
           break;
         }
 
-        const claim = await this.claimDueBatch(batchSize, leaseMs);
+        const claim = await this.claimDueBatch(
+          batchSize,
+          leaseMs,
+          claimStatementTimeoutMs,
+        );
         summary.missed += claim.missed;
 
         if (claim.lockSkipped) {
@@ -339,8 +347,11 @@ class JobRunnerImpl {
   private async claimDueBatch(
     batchSize: number,
     leaseMs: number,
+    statementTimeoutMs?: number,
   ): Promise<ClaimBatchResult> {
     return db.transaction(async (tx) => {
+      await applyLocalStatementTimeout(tx, statementTimeoutMs);
+
       const lockRows = await tx.execute<{ locked: boolean }>(
         sql`select pg_try_advisory_xact_lock(${TICK_LOCK_NAMESPACE}, ${TICK_LOCK_KEY}) as locked`,
       );
