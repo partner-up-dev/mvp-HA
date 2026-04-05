@@ -25,9 +25,7 @@
       <p class="nudge-hint">
         {{
           isWechatEnv
-            ? t("home.bookmarkNudge.wechatHint", {
-                name: t("home.bookmarkNudge.officialAccountName"),
-              })
+            ? t("home.bookmarkNudge.wechatHint")
             : t("home.bookmarkNudge.browserHint")
         }}
       </p>
@@ -186,7 +184,8 @@ const handleDismiss = () => {
     var(--sys-color-surface-container-low) 92%,
     transparent
   );
-  border: 1px solid color-mix(in srgb, var(--sys-color-outline) 54%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--sys-color-outline) 54%, transparent);
   border-radius: var(--sys-radius-med);
   padding: var(--sys-spacing-med);
   z-index: 20;
@@ -282,5 +281,4 @@ const handleDismiss = () => {
     transition: none !important;
   }
 }
-
 </style>

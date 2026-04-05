@@ -48,11 +48,7 @@
       <section class="about-item about-item--wechat-follow">
         <h2>{{ t("home.bookmarkNudge.wechatTitle") }}</h2>
         <p>
-          {{
-            t("home.bookmarkNudge.wechatHint", {
-              name: t("home.bookmarkNudge.officialAccountName"),
-            })
-          }}
+          {{ t("home.bookmarkNudge.wechatHint") }}
         </p>
         <button
           class="wechat-follow-action"
@@ -93,7 +89,9 @@ const backendBuildMetadataQuery = useBackendBuildMetadata();
 const showOfficialAccountQrModal = ref(false);
 
 const repositoryUrl = computed(
-  () => backendBuildMetadataQuery.data.value?.repositoryUrl ?? frontendBuildInfo.repositoryUrl,
+  () =>
+    backendBuildMetadataQuery.data.value?.repositoryUrl ??
+    frontendBuildInfo.repositoryUrl,
 );
 
 const frontendCommitHash = computed(() => frontendBuildInfo.frontendCommitHash);
@@ -108,7 +106,6 @@ const backendCommitHash = computed(() => {
     t("aboutPage.unknownValue")
   );
 });
-
 </script>
 
 <style scoped lang="scss">
