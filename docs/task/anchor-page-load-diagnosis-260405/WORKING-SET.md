@@ -345,3 +345,133 @@ Interpretation:
 - local improvement is visible but not dramatic because local maintenance workload is usually empty
 - the key architectural gain is that response time is no longer coupled to request-tail outbox/job execution budget
 - under real serverless latency and non-empty maintenance work, this decoupling should matter more than local empty-backlog measurements suggest
+
+## Additional Maintenance Tick Findings
+
+### 1. `/internal/maintenance/tick` can reproduce intermittent `500` locally
+
+Sequential local `POST /internal/maintenance/tick` calls reproduced mixed outcomes:
+
+- some requests returned `200`
+- some requests returned `500`
+- slow failing samples reached about `12s - 16s`
+
+One captured failing body showed:
+
+- `outbox.timedOut = true`
+- `outbox.error = "External maintenance outbox tick timed out"`
+- total request duration around `15.6s`
+
+This is important because the configured outbox batch timeout is only `1000ms`, yet the actual request can still run far longer.
+
+### 2. Current timeout wrapper does not cancel the underlying DB work
+
+`withTimeout()` uses `Promise.race()` and rejects after the budget, but it does not cancel the database query underneath.
+
+Implication:
+
+- a timed-out outbox batch can keep running in the background
+- the maintenance request can still remain busy much longer than the configured timeout
+- follow-up work in the same request can be delayed by the still-running DB operation
+
+### 3. Maintenance endpoint currently has inconsistent failure signaling
+
+Captured local `200` responses sometimes still contained:
+
+- `outbox.stoppedReason = "ERROR"`
+- `jobs = null`
+- `jobsError = ""`
+
+The controller currently decides `500` via truthy checks on `summary.outbox.error` / `summary.jobsError`.
+
+Implication:
+
+- real failures with empty-string messages can be reported as `200`
+- monitoring based only on status code can undercount some failure cases
+- the endpoint summary is more trustworthy than the HTTP status under the current implementation
+
+### 4. Local environment became DB-unhealthy later in the session
+
+Later local backend stderr showed repeated:
+
+- `ECONNREFUSED 127.0.0.1:5436`
+
+After that point, normal DB-backed routes such as `/api/events/1` and `/api/apr/12` also returned `500`, so any maintenance failure samples collected after that DB outage are not suitable for judging the endpoint's steady-state production behavior.
+
+This means the useful local evidence is:
+
+- maintenance tick instability was already reproduced before the local DB outage
+- later all-route failures indicate an additional local environment problem, not a maintenance-endpoint-only bug
+
+### 5. FC logs point more strongly to outbox-side latency than jobs-side latency
+
+Observed production/staging-style backend logs:
+
+- multiple `/internal/maintenance/tick` requests returned `500` at about `1s`
+- rare slower failures reached about `9s`
+- occasional healthy runs still returned `200` in about `57ms`
+
+Inference:
+
+- the repeated `500 1s` pattern aligns almost exactly with `OUTBOX_TICK_BATCH_TIMEOUT_MS = 1000`
+- the healthy `200 57ms` path is consistent with an empty or fast outbox tick
+- the rare `500 9s` path is consistent with timeout not cancelling the underlying DB work, so some requests keep paying extra tail time after the logical timeout
+
+### 6. Outbox scan path currently has no supporting index, unlike jobs
+
+Current schema state:
+
+- `jobs` has explicit indexes for its claim path
+- `outbox_events` currently has no secondary index for `status = 'PENDING' order by id asc`
+
+This matters because `processOutboxBatch()` claims rows via:
+
+- `where status = 'PENDING'`
+- `order by id asc`
+- `for update skip locked`
+- `limit ...`
+
+Inference:
+
+- as `outbox_events` accumulates completed rows, the pending-row claim query can become increasingly expensive
+- in FC + VPC DB conditions, this makes the current `1000ms` timeout especially likely to trip
+- missing outbox index is now a primary root-cause candidate for the repeated `500 1s` maintenance failures
+
+## Implemented Follow-Up Patch
+
+### A. Added a partial index for the outbox pending-claim path
+
+Implemented:
+
+- schema-level partial index on `outbox_events(id) where status = 'PENDING'`
+- forward migration `0015_outbox_pending_claim_idx.sql`
+
+Expected effect:
+
+- shrink the scan cost for the worker claim query
+- reduce the chance that maintenance tick spends most of its budget finding pending rows
+- specifically target the observed `500 1s` pattern without changing outbox semantics
+
+### B. External maintenance tick now skips when another tick is already in flight in the same process
+
+Implemented:
+
+- module-level in-flight guard for external maintenance tick execution
+- `/internal/maintenance/tick` now returns a skip summary instead of starting overlapping work in the same backend process
+
+Expected effect:
+
+- reduce self-amplified overlap from repeated timer or retry hits landing on the same warm instance
+- avoid stacking multiple expensive outbox scans inside one process
+
+Current validation boundary:
+
+- backend build passed
+- `db:lint` passed with the new migration
+- local runtime did not naturally reproduce an `IN_FLIGHT` skip response because the current local maintenance path was failing too quickly to create a stable overlap window
+
+Residual risks still not solved by this patch:
+
+- JS timeout still does not cancel the underlying DB query
+- maintenance endpoint failure signaling still relies on truthy string checks
+- cross-instance overlap is still possible because the new skip is process-local rather than DB-global

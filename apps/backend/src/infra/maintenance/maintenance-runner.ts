@@ -21,8 +21,21 @@ export interface MaintenanceTickSummary {
   durationMs: number;
 }
 
+export interface SkippedMaintenanceTickSummary {
+  source: "external-trigger";
+  skipped: true;
+  skipReason: "IN_FLIGHT";
+  durationMs: number;
+}
+
+export type ExternalMaintenanceTickResult =
+  | MaintenanceTickSummary
+  | SkippedMaintenanceTickSummary;
+
 const toErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
+
+let externalMaintenanceTickInFlight: Promise<MaintenanceTickSummary> | null = null;
 
 export async function drainOutboxBatches({
   maxBatches,
@@ -116,4 +129,21 @@ export async function runExternalMaintenanceTick(): Promise<MaintenanceTickSumma
     jobsError,
     durationMs: Date.now() - startedAt,
   };
+}
+
+export async function runExternalMaintenanceTickOrSkip(): Promise<ExternalMaintenanceTickResult> {
+  if (externalMaintenanceTickInFlight) {
+    return {
+      source: "external-trigger",
+      skipped: true,
+      skipReason: "IN_FLIGHT",
+      durationMs: 0,
+    };
+  }
+
+  externalMaintenanceTickInFlight = runExternalMaintenanceTick().finally(() => {
+    externalMaintenanceTickInFlight = null;
+  });
+
+  return externalMaintenanceTickInFlight;
 }

@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { env } from "../lib/env";
-import { runExternalMaintenanceTick } from "../infra/maintenance";
+import { runExternalMaintenanceTickOrSkip } from "../infra/maintenance";
 
 const app = new Hono();
 
@@ -26,7 +26,11 @@ export const internalMaintenanceRoute = app.post(
       throw new HTTPException(401, { message: "Unauthorized" });
     }
 
-    const summary = await runExternalMaintenanceTick();
+    const summary = await runExternalMaintenanceTickOrSkip();
+    if ("skipped" in summary) {
+      return c.json(summary);
+    }
+
     if (summary.outbox.error || summary.jobsError) {
       return c.json(summary, 500);
     }
