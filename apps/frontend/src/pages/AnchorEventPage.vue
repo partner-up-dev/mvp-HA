@@ -1,5 +1,11 @@
 <template>
-  <PageScaffold class="anchor-event-page" data-page="event-detail">
+  <PageScaffold
+    :class="[
+      'anchor-event-page',
+      { 'anchor-event-page--card-active': isCardStageActive },
+    ]"
+    data-page="event-detail"
+  >
     <div v-if="isLoading" class="loading-state">
       {{ t("common.loading") }}
     </div>
@@ -13,6 +19,7 @@
 
     <template v-else-if="detail">
       <PageHeader
+        class="anchor-event-page__header"
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
         :back-fallback-to="{ name: 'event-plaza' }"
@@ -263,7 +270,6 @@ import {
   communityPRDetailPath,
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
-import { resolveCurrentSpmAttribution } from "@/shared/telemetry/spm-attribution";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 import type { ApiError } from "@/shared/api/error";
 import {
@@ -302,34 +308,47 @@ type DemandCardViewModel = {
   coverImage: string | null;
 };
 
-const CARD_MODE_SPM_ALLOWLIST = [
-  "anchor_event.card",
-  "event.card",
-  "qr.anchor_event_card",
-  "gfss26319",
-] as const;
-
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-const matchesCardModeSpm = (spm: string | undefined): boolean => {
-  if (!spm) {
-    return false;
+const normalizeQueryViewMode = (value: string): EventViewMode | null => {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "card") {
+    return "CARD";
+  }
+  if (normalized === "list") {
+    return "LIST";
+  }
+  return null;
+};
+
+const resolveQueryViewMode = (value: unknown): EventViewMode | null => {
+  if (typeof value === "string") {
+    return normalizeQueryViewMode(value);
+  }
+  if (!Array.isArray(value)) {
+    return null;
   }
 
-  const normalized = spm.trim().toLowerCase();
-  return CARD_MODE_SPM_ALLOWLIST.some(
-    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}.`),
-  );
+  for (const item of value) {
+    if (typeof item !== "string") {
+      continue;
+    }
+
+    const normalized = normalizeQueryViewMode(item);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return null;
 };
 
-const resolveInitialViewMode = (): EventViewMode => {
-  const currentSpm = resolveCurrentSpmAttribution();
-  return matchesCardModeSpm(currentSpm) ? "CARD" : "LIST";
-};
+const resolveInitialViewMode = (): EventViewMode =>
+  resolveQueryViewMode(route.query.mode) ?? "LIST";
 
-const viewMode = ref<EventViewMode>(resolveInitialViewMode());
+const viewMode = ref<EventViewMode>("LIST");
 const selectedBatchId = ref<number | null>(null);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
@@ -343,6 +362,14 @@ const eventId = computed(() => {
   const num = Number(raw);
   return Number.isFinite(num) && num > 0 ? num : null;
 });
+
+watch(
+  [eventId, () => route.query.mode],
+  () => {
+    viewMode.value = resolveInitialViewMode();
+  },
+  { immediate: true },
+);
 
 const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
 const createUserAnchorPRMutation = useCreateUserAnchorPR();
@@ -706,6 +733,9 @@ const activeDemandCard = computed(() => remainingDemandCards.value[0] ?? null);
 const stackPreviewCards = computed(() =>
   remainingDemandCards.value.slice(1, 3),
 );
+const isCardStageActive = computed(
+  () => viewMode.value === "CARD" && activeDemandCard.value !== null,
+);
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -1036,6 +1066,18 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 </script>
 
 <style lang="scss" scoped>
+.anchor-event-page--card-active {
+  display: flex;
+  flex-direction: column;
+}
+
+.anchor-event-page__header,
+.card-mode__actions,
+.card-mode__error,
+.exhausted-banner {
+  flex-shrink: 0;
+}
+
 .batch-section {
   margin-bottom: 1rem;
 }
@@ -1080,14 +1122,29 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   margin-right: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-right)));
 }
 
+.anchor-event-page--card-active .card-mode {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .card-stage {
   padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
   padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
 }
 
+.anchor-event-page--card-active .card-stage {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .card-stage__inner {
   position: relative;
-  min-height: var(--dcs-layout-anchor-card-stage-height);
+}
+
+.anchor-event-page--card-active .card-stage__inner {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .card-stage__front-shell {

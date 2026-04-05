@@ -522,7 +522,7 @@ watch(() => props.pending, (isPending) => {
 }
 
 .demand-card__cover {
-  min-height: var(--dcs-layout-anchor-card-cover-height);
+  min-height: clamp(220px, calc(var(--pu-vh) * 0.34), 420px);
   background-size: cover;
   background-position: center;
   display: flex;
@@ -556,6 +556,7 @@ watch(() => props.pending, (isPending) => {
   flex-direction: column;
   gap: var(--sys-spacing-med);
   flex: 1;
+  min-height: 0;
   justify-content: space-between;
 }
 

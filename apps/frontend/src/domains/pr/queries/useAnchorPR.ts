@@ -485,7 +485,13 @@ export const useAcceptAnchorAlternativeBatch = () => {
   });
 };
 
-export const useAnchorReimbursementStatus = (id: Ref<PRId | null>) => {
+export const useAnchorReimbursementStatus = (
+  id: Ref<PRId | null>,
+  queryEnabled?: Ref<boolean>,
+) => {
+  const enabled = computed(
+    () => id.value !== null && (queryEnabled?.value ?? true),
+  );
   const queryKey = computed(() =>
     queryKeys.anchorPR.reimbursementStatus(id.value),
   );
@@ -522,7 +528,7 @@ export const useAnchorReimbursementStatus = (id: Ref<PRId | null>) => {
 
       return await res.json();
     },
-    enabled: () => id.value !== null,
+    enabled: () => enabled.value,
   });
 };
 

@@ -2,6 +2,7 @@
   <Transition name="nudge-fade">
     <aside
       v-if="isVisible"
+      v-bind="attrs"
       class="bookmark-nudge"
       role="status"
       aria-live="polite"
@@ -25,9 +26,7 @@
       <p class="nudge-hint">
         {{
           isWechatEnv
-            ? t("home.bookmarkNudge.wechatHint", {
-                name: t("home.bookmarkNudge.officialAccountName"),
-              })
+            ? t("home.bookmarkNudge.wechatHint")
             : t("home.bookmarkNudge.browserHint")
         }}
       </p>
@@ -59,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, useAttrs, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { copyToClipboard } from "@/lib/clipboard";
 import { useLandingBookmarkNudge } from "@/domains/landing/use-cases/useLandingBookmarkNudge";
@@ -67,7 +66,12 @@ import { trackEvent } from "@/shared/telemetry/track";
 import OfficialAccountQrModal from "@/shared/wechat/OfficialAccountQrModal.vue";
 import { useWeChatOfficialAccountQrCode } from "@/shared/wechat/useWeChatOfficialAccountQrCode";
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const { t } = useI18n();
+const attrs = useAttrs();
 const { isVisible, triggerDepth, triggerMode, environment, hideForToday } =
   useLandingBookmarkNudge();
 const copied = ref(false);
@@ -186,7 +190,8 @@ const handleDismiss = () => {
     var(--sys-color-surface-container-low) 92%,
     transparent
   );
-  border: 1px solid color-mix(in srgb, var(--sys-color-outline) 54%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--sys-color-outline) 54%, transparent);
   border-radius: var(--sys-radius-med);
   padding: var(--sys-spacing-med);
   z-index: 20;
@@ -211,13 +216,13 @@ const handleDismiss = () => {
 }
 
 .nudge-title {
-  @include mx.pu-font(label-large);
+  @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface);
   margin: 0;
 }
 
 .nudge-hint {
-  @include mx.pu-font(body-small);
+  @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
   margin: 0;
 }
@@ -282,5 +287,4 @@ const handleDismiss = () => {
     transition: none !important;
   }
 }
-
 </style>

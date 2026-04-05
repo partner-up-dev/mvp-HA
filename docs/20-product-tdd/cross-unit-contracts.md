@@ -60,6 +60,8 @@ Stable user-facing route families that materially affect coordination include:
 Important coordination note:
 
 - user-managed Anchor PR creation is event-scoped: frontend starts it from `/events/:eventId`, backend realizes it through `POST /api/events/:eventId/batches/:batchId/anchor-prs`, and the system does not expose a generic standalone Anchor PR create route
+- `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`
+- that `mode` query is a frontend route-state hint for initial rendering only in the current version; switching modes in-page does not rewrite the URL, and `spm` remains attribution-only rather than a UI-mode switch
 
 ## 6. Admin Booking Execution Contract
 

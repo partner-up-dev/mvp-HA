@@ -88,7 +88,7 @@ import {
   usePublishCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
 import { communityPRDetailPath } from "@/domains/pr/routing/routes";
-import { useLandingRotatingTopic } from "@/domains/landing/use-cases/useLandingRotatingTopic";
+import { useLandingTypewriterPlaceholder } from "@/domains/landing/use-cases/useLandingTypewriterPlaceholder";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useNaturalLanguageDraftStore } from "@/domains/pr/use-cases/useNaturalLanguageDraft";
 import { useWeChatVoiceInput } from "@/shared/wechat/useWeChatVoiceInput";
@@ -104,11 +104,14 @@ const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
 const createMutation = useCreateCommunityPRFromNaturalLanguage();
 const publishMutation = usePublishCommunityPR();
-const { rotatingTopicExample } = useLandingRotatingTopic();
+const { activeExampleText, typedExampleText } = useLandingTypewriterPlaceholder();
 const draftStore = useNaturalLanguageDraftStore();
 const { rawText: draftRawText } = storeToRefs(draftStore);
 const placeholderText = computed(() =>
-  t("prInput.placeholder", { example: rotatingTopicExample.value }),
+  t("prInput.placeholder", { example: typedExampleText.value }),
+);
+const resolvedPlaceholderText = computed(() =>
+  t("prInput.placeholder", { example: activeExampleText.value }),
 );
 const isSubmitting = computed(
   () => createMutation.isPending.value || publishMutation.isPending.value,
@@ -159,7 +162,7 @@ const resolveRawText = (): string => {
     return values.rawText ?? "";
   }
 
-  return placeholderText.value;
+  return resolvedPlaceholderText.value;
 };
 
 const submitHandler = handleSubmit(async (values) => {

@@ -19,7 +19,7 @@ resources:
       handler: job-runner-trigger.handler
       role: ${vars.roleArn}
       disableOndemand: false
-      description: "Timer trigger: invoke backend /internal/jobs/tick"
+      description: "Timer trigger: invoke backend maintenance tick"
       timeout: 30
       diskSize: 512
       memorySize: 128

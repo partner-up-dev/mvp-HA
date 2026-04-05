@@ -138,8 +138,8 @@
     },
     "bookmarkNudge": {
       "title": "需要时再回来",
-      "wechatTitle": "关注搭一把公众号",
-      "wechatHint": "关注{name}公众号，活动更新、报名入口都会在微信里提醒你。",
+      "wechatTitle": "关注公众号",
+      "wechatHint": "获得活动、新搭子等通知，并从菜单栏中随时回来",
       "followQrModalTitle": "关注搭一把公众号",
       "followQrModalDescription": "请使用微信扫码关注公众号。",
       "followQrModalQrAlt": "搭一把公众号二维码",

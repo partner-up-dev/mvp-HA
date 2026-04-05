@@ -207,7 +207,7 @@ h2.is-visible {
 
 .value-icon {
   @include mx.pu-icon(small, true);
-  color: var(--sys-color-secondary);
+  color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
 }
 
@@ -219,7 +219,7 @@ h2.is-visible {
 .value-arrow {
   @include mx.pu-icon(medium, true);
   margin-left: auto;
-  color: var(--sys-color-primary);
+  color: var(--sys-color-on-primary-container);
   transition: transform 220ms ease;
 }
 

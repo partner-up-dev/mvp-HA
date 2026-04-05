@@ -482,9 +482,16 @@ const { t } = useI18n();
 const id = usePRRouteId();
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
+const userSessionStore = useUserSessionStore();
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
-const reimbursementQuery = useAnchorReimbursementStatus(id);
+const shouldLoadReimbursementStatus = computed(
+  () => userSessionStore.isAuthenticated,
+);
+const reimbursementQuery = useAnchorReimbursementStatus(
+  id,
+  shouldLoadReimbursementStatus,
+);
 const prDetail = computed(() => data.value);
 const backFallbackTo = computed(() => {
   const anchorEventId = prDetail.value?.anchor.anchorEventId ?? null;
@@ -500,7 +507,6 @@ const backFallbackTo = computed(() => {
 const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const joinMutation = useJoinAnchorPR();
 const acceptAlternativeBatchMutation = useAcceptAnchorAlternativeBatch();
-const userSessionStore = useUserSessionStore();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);

@@ -8,7 +8,7 @@ import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
-import { countActivePartnersForPR } from "../../pr-core/services/slot-management.service";
+import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
   AnchorEventId,
   TimeWindowEntry,
@@ -27,6 +27,7 @@ import {
 
 const eventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
+const partnerRepo = new PartnerRepository();
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -132,6 +133,7 @@ export async function getAnchorEventDetail(
 
   // Fetch PRs for each batch
   const batchDetails: BatchDetail[] = [];
+  const allPRIds: number[] = [];
   for (const batch of batches) {
     const prs = await readVisibleAnchorPRRecordsByBatchId(
       batch.id,
@@ -162,10 +164,15 @@ export async function getAnchorEventDetail(
     }
 
     const detail = toBatchDetail(batch, prs, locationOptions);
-    for (const pr of detail.prs) {
-      pr.partnerCount = await countActivePartnersForPR(pr.id);
-    }
+    allPRIds.push(...detail.prs.map((pr) => pr.id));
     batchDetails.push(detail);
+  }
+
+  const activePartnerCounts = await partnerRepo.countActiveByPrIds(allPRIds);
+  for (const batchDetail of batchDetails) {
+    for (const pr of batchDetail.prs) {
+      pr.partnerCount = activePartnerCounts.get(pr.id) ?? 0;
+    }
   }
 
   // Check exhaustion: all location × timeWindow combos are occupied (have a non-expired PR)
