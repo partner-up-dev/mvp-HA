@@ -175,6 +175,7 @@ const runRequestTailMaintenance = async (): Promise<void> => {
         maxBatches: env.REQUEST_TAIL_JOB_TICK_MAX_BATCHES,
         budgetMs: env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
         leaseMs: env.JOB_RUNNER_LEASE_MS,
+        claimStatementTimeoutMs: env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
       }),
       env.REQUEST_TAIL_JOB_TICK_BUDGET_MS,
       "Request-tail job tick timed out",

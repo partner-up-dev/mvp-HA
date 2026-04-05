@@ -1,7 +1,9 @@
 import { processOutboxBatch } from "../events";
 import { jobRunner, type RunDueJobsSummary } from "../jobs";
 import { env } from "../../lib/env";
+import { toErrorMessage } from "../../lib/error-message";
 import { TimeoutError, withTimeout } from "../../lib/with-timeout";
+import { isStatementTimeoutError } from "../../lib/pg-timeouts";
 
 export interface OutboxDrainSummary {
   attemptedBatches: number;
@@ -32,9 +34,6 @@ export type ExternalMaintenanceTickResult =
   | MaintenanceTickSummary
   | SkippedMaintenanceTickSummary;
 
-const toErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
 let externalMaintenanceTickInFlight: Promise<MaintenanceTickSummary> | null = null;
 
 export async function drainOutboxBatches({
@@ -56,7 +55,7 @@ export async function drainOutboxBatches({
 
     try {
       const processed = await withTimeout(
-        processOutboxBatch(),
+        processOutboxBatch({ statementTimeoutMs: batchTimeoutMs }),
         batchTimeoutMs,
         timeoutMessage,
       );
@@ -81,7 +80,8 @@ export async function drainOutboxBatches({
         processedBatches,
         processedEvents,
         stoppedReason: "ERROR",
-        timedOut: error instanceof TimeoutError,
+        timedOut:
+          error instanceof TimeoutError || isStatementTimeoutError(error),
         error: toErrorMessage(error),
         durationMs: Date.now() - startedAt,
       };
@@ -117,6 +117,7 @@ export async function runExternalMaintenanceTick(): Promise<MaintenanceTickSumma
       maxBatches: env.JOB_RUNNER_MAX_BATCHES_PER_TICK,
       budgetMs: env.JOB_RUNNER_TICK_BUDGET_MS,
       leaseMs: env.JOB_RUNNER_LEASE_MS,
+      claimStatementTimeoutMs: env.JOB_RUNNER_TICK_BUDGET_MS,
     });
   } catch (error) {
     jobsError = toErrorMessage(error);

@@ -475,3 +475,55 @@ Residual risks still not solved by this patch:
 - JS timeout still does not cancel the underlying DB query
 - maintenance endpoint failure signaling still relies on truthy string checks
 - cross-instance overlap is still possible because the new skip is process-local rather than DB-global
+
+## Implemented DB Timeout Hardening
+
+### A. Claim transactions now apply PostgreSQL `statement_timeout`
+
+Implemented:
+
+- outbox claim transaction now runs with local `statement_timeout`
+- job claim transaction now runs with local `statement_timeout`
+- timeout classification now treats PostgreSQL statement-timeout failures as timed-out maintenance work
+
+Reasoning:
+
+- the previous JS timeout only rejected the promise and did not stop the underlying SQL
+- moving timeout into PostgreSQL gives the database a chance to actually cancel heavy claim statements
+
+### B. DB connect timeout is now bounded at client creation
+
+Implemented:
+
+- backend DB client now uses explicit `connect_timeout`
+- validated through env schema as `DB_CONNECT_TIMEOUT_SECONDS`
+
+Reasoning:
+
+- `statement_timeout` only applies after a connection is established
+- the observed rare `8s - 9s` maintenance tails can also come from slow or failed DB connection establishment
+- bounding connect timeout is necessary to keep maintenance failure latency predictable when the DB is unreachable
+
+### C. Maintenance failure signaling is now structurally correct
+
+Implemented:
+
+- error-message formatting now expands nested `AggregateError` details instead of collapsing to empty string
+- `/internal/maintenance/tick` now returns `500` whenever outbox stopped with `ERROR`, even if the textual message would otherwise have been falsy
+
+Observed local result after this change when DB was unavailable:
+
+- `/internal/maintenance/tick` returned `500` in about `7ms`
+- response body explicitly included:
+  - `outbox.stoppedReason = "ERROR"`
+  - `outbox.error = "connect ECONNREFUSED ::1:5436 | connect ECONNREFUSED 127.0.0.1:5436"`
+
+Interpretation:
+
+- maintenance endpoint now fails fast and reports the actual DB connectivity problem
+- the previous misleading `200 + empty error string` behavior is removed
+
+Current remaining gap:
+
+- `/internal/jobs/tick` still returns generic `500` via the global error handler rather than a structured summary when DB acquisition fails
+- cross-instance maintenance overlap is still not prevented at the DB-global level
