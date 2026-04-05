@@ -5,6 +5,7 @@
 
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../lib/db";
+import { applyLocalStatementTimeout } from "../../lib/pg-timeouts";
 import { outboxEvents } from "../../entities/outbox-event";
 import type { DomainEventType } from "./event-types";
 
@@ -54,34 +55,40 @@ const asPayload = (value: unknown): Record<string, unknown> => {
 const asDate = (value: Date | string): Date =>
   value instanceof Date ? value : new Date(value);
 
-async function claimOutboxBatch(limit: number): Promise<ClaimedOutboxRow[]> {
+async function claimOutboxBatch(
+  limit: number,
+  statementTimeoutMs?: number,
+): Promise<ClaimedOutboxRow[]> {
   const claimed = await db.transaction(async (tx) =>
-    tx.execute<ClaimedOutboxRow>(sql`
-      with picked as (
-        select o.id
-        from outbox_events o
-        where o.status = 'PENDING'
-        order by o.id asc
-        for update skip locked
-        limit ${limit}
-      )
-      update outbox_events o
-      set
-        status = 'PROCESSING',
-        attempts = o.attempts + 1,
-        last_attempted_at = now()
-      from picked, domain_events d
-      where o.id = picked.id
-        and d.id = o.event_id
-      returning
-        o.id as outbox_id,
-        o.attempts,
-        d.type,
-        d.aggregate_type,
-        d.aggregate_id,
-        d.payload,
-        d.occurred_at
-    `),
+    (async () => {
+      await applyLocalStatementTimeout(tx, statementTimeoutMs);
+      return tx.execute<ClaimedOutboxRow>(sql`
+        with picked as (
+          select o.id
+          from outbox_events o
+          where o.status = 'PENDING'
+          order by o.id asc
+          for update skip locked
+          limit ${limit}
+        )
+        update outbox_events o
+        set
+          status = 'PROCESSING',
+          attempts = o.attempts + 1,
+          last_attempted_at = now()
+        from picked, domain_events d
+        where o.id = picked.id
+          and d.id = o.event_id
+        returning
+          o.id as outbox_id,
+          o.attempts,
+          d.type,
+          d.aggregate_type,
+          d.aggregate_id,
+          d.payload,
+          d.occurred_at
+      `);
+    })(),
   );
   return claimed;
 }
@@ -90,8 +97,13 @@ async function claimOutboxBatch(limit: number): Promise<ClaimedOutboxRow[]> {
  * Process one batch of pending outbox events.
  * Returns the number of events processed in this tick.
  */
-export async function processOutboxBatch(): Promise<number> {
-  const claimed = await claimOutboxBatch(BATCH_SIZE);
+export async function processOutboxBatch(options?: {
+  statementTimeoutMs?: number;
+}): Promise<number> {
+  const claimed = await claimOutboxBatch(
+    BATCH_SIZE,
+    options?.statementTimeoutMs,
+  );
 
   let processed = 0;
   for (const row of claimed) {
