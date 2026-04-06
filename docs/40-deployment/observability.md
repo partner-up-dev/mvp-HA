@@ -12,7 +12,6 @@
 
 - `/health` exposes basic HTTP health and job-runner status
 - `/internal/maintenance/tick` is the operational entrypoint for outbox + due-job execution
-- `/internal/jobs/tick` remains available as a jobs-only compatibility path
 
 ### Persisted Operational Signals
 

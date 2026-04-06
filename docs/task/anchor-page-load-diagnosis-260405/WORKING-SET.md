@@ -527,3 +527,39 @@ Current remaining gap:
 
 - `/internal/jobs/tick` still returns generic `500` via the global error handler rather than a structured summary when DB acquisition fails
 - cross-instance maintenance overlap is still not prevented at the DB-global level
+
+## Latest Decision Update
+
+### 1. `/internal/jobs/tick` compatibility has been removed
+
+Current runtime truth:
+
+- external maintenance is now standardized on `/internal/maintenance/tick`
+- `/internal/jobs/tick` is no longer mounted
+- `/health` remains the supported lightweight status surface for job-runner state
+
+Reasoning:
+
+- keeping both internal tick endpoints no longer adds useful flexibility
+- it increases runtime/documentation surface area without improving recovery behavior
+
+### 2. External maintenance tick now uses a longer overall maintenance budget
+
+Current runtime truth:
+
+- request-tail maintenance remains short-budget and non-blocking for user-facing requests
+- external `/internal/maintenance/tick` now uses a larger overall budget instead of the previous very short outbox budget
+- budget exhaustion is treated as partial progress rather than an application error
+
+Reasoning:
+
+- user-facing latency protection belongs on request-tail, not on the explicit maintenance endpoint
+- the original `1s` outbox timeout was too aggressive for FC + VPC DB conditions and caused spurious maintenance failures
+- explicit maintenance is allowed to run longer as long as it stays within FC trigger/backend timeout envelopes
+
+Operational alignment:
+
+- FC backend timeout: `60s`
+- FC trigger timeout: `30s`
+- trigger-side request timeout default was raised from `20s` to `25s`
+- backend maintenance budget is now bounded explicitly so app-level timeout behavior stays inside the trigger envelope
