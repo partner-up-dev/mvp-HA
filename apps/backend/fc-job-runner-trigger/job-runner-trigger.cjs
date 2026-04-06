@@ -61,7 +61,7 @@ exports.handler = async function handler() {
   const token = readRequiredEnv("JOB_RUNNER_INTERNAL_TOKEN");
   const requestTimeoutMs = parsePositiveInt(
     process.env.JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS,
-    20_000,
+    25_000,
   );
 
   const settled = await Promise.allSettled(

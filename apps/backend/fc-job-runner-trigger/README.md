@@ -3,13 +3,7 @@
 This function is used as a timer-triggered bridge for serverless scheduling.
 It sends `POST` requests to backend maintenance tick endpoints.
 
-Current recommended target:
-
 - `/internal/maintenance/tick`
-
-Legacy compatibility target:
-
-- `/internal/jobs/tick` (jobs only)
 
 ## File
 
@@ -25,7 +19,7 @@ Legacy compatibility target:
 - `JOB_RUNNER_INTERNAL_TOKEN` (required)
   Sent via header `x-internal-token`.
 - `JOB_RUNNER_TRIGGER_REQUEST_TIMEOUT_MS` (optional)
-  Per-request timeout in milliseconds. Default: `20000`.
+  Per-request timeout in milliseconds. Default: `25000`.
 
 ## Runtime Behavior
 
