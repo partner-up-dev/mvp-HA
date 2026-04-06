@@ -125,14 +125,6 @@ export async function drainOutboxBatches({
 export async function runExternalMaintenanceTick(): Promise<MaintenanceTickSummary> {
   const startedAt = Date.now();
   const maintenanceBudgetMs = env.MAINTENANCE_TICK_BUDGET_MS;
-  const outbox = await drainOutboxBatches({
-    maxBatches: env.OUTBOX_TICK_MAX_BATCHES,
-    batchTimeoutMs: env.OUTBOX_TICK_BATCH_TIMEOUT_MS,
-    timeoutMessage: "External maintenance outbox tick timed out",
-    overallBudgetMs: maintenanceBudgetMs,
-    useJsTimeout: false,
-  });
-
   let jobs: RunDueJobsSummary | null = null;
   let jobsError: string | null = null;
   const remainingJobBudgetMs = Math.max(
@@ -154,6 +146,18 @@ export async function runExternalMaintenanceTick(): Promise<MaintenanceTickSumma
       jobsError = toErrorMessage(error);
     }
   }
+
+  const remainingOutboxBudgetMs = Math.max(
+    0,
+    startedAt + maintenanceBudgetMs - Date.now(),
+  );
+  const outbox = await drainOutboxBatches({
+    maxBatches: env.OUTBOX_TICK_MAX_BATCHES,
+    batchTimeoutMs: env.OUTBOX_TICK_BATCH_TIMEOUT_MS,
+    timeoutMessage: "External maintenance outbox tick timed out",
+    overallBudgetMs: remainingOutboxBudgetMs,
+    useJsTimeout: false,
+  });
 
   return {
     source: "external-trigger",

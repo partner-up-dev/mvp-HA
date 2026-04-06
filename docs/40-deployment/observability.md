@@ -12,6 +12,7 @@
 
 - `/health` exposes basic HTTP health and job-runner status
 - `/internal/maintenance/tick` is the operational entrypoint for outbox + due-job execution
+- within external maintenance budget, due-job execution is prioritized before outbox drain; request-tail maintenance remains separate and short-budgeted
 
 ### Persisted Operational Signals
 

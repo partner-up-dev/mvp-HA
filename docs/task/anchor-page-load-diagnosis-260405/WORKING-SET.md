@@ -549,11 +549,13 @@ Current runtime truth:
 
 - request-tail maintenance remains short-budget and non-blocking for user-facing requests
 - external `/internal/maintenance/tick` now uses a larger overall budget instead of the previous very short outbox budget
+- within that external maintenance budget, jobs are executed before outbox drain
 - budget exhaustion is treated as partial progress rather than an application error
 
 Reasoning:
 
 - user-facing latency protection belongs on request-tail, not on the explicit maintenance endpoint
+- job execution is more operationally important because it drives user-visible notification delivery, while outbox work is lower-priority observability-side work
 - the original `1s` outbox timeout was too aggressive for FC + VPC DB conditions and caused spurious maintenance failures
 - explicit maintenance is allowed to run longer as long as it stays within FC trigger/backend timeout envelopes
 
