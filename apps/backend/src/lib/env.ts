@@ -68,6 +68,11 @@ const envSchema = z.object({
     .default(3),
   JOB_RUNNER_TICK_BUDGET_MS: z.coerce.number().int().positive().default(3_000),
   JOB_RUNNER_LEASE_MS: z.coerce.number().int().positive().default(60_000),
+  MAINTENANCE_TICK_BUDGET_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(25_000),
 
   // Request-tail best-effort job tick (compensates coarse external scheduler).
   REQUEST_TAIL_JOB_TICK_BUDGET_MS: z.coerce
@@ -103,12 +108,12 @@ const envSchema = z.object({
     .number()
     .int()
     .positive()
-    .default(1_000),
+    .default(10_000),
   OUTBOX_TICK_MAX_BATCHES: z.coerce
     .number()
     .int()
     .positive()
-    .default(5),
+    .default(50),
 
   PORT: z.coerce.number().default(3000),
 });

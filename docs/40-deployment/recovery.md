@@ -24,5 +24,5 @@
 ## Operational Recovery Entry Points
 
 - rerun GitHub Actions deploy after fixing forward state
-- use the job-runner trigger or internal tick path to resume due work
+- use the job-runner trigger or `/internal/maintenance/tick` to resume due work
 - inspect persisted logs/events/deliveries before assuming user-facing state has converged

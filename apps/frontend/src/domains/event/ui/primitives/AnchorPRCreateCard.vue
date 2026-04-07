@@ -39,6 +39,8 @@
             : t("anchorEvent.createCard.createAction")
         }}
       </button>
+
+      <AnchorEventBetaGroupEntry class="create-card__beta-group" />
     </div>
   </ExpandableCard>
 </template>
@@ -46,6 +48,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import AnchorEventBetaGroupEntry from "@/domains/event/ui/primitives/AnchorEventBetaGroupEntry.vue";
 import ExpandableCard from "@/shared/ui/containers/ExpandableCard.vue";
 
 type LocationOption = {
@@ -159,5 +162,9 @@ const emitCreate = () => {
 .create-card__action:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.create-card__beta-group {
+  margin-top: var(--sys-spacing-xs);
 }
 </style>

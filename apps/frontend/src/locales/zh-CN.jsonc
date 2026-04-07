@@ -1070,6 +1070,8 @@
     },
     "exhausted": "该活动所有场次已满",
     "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
+    "betaGroupHintSuffix": "，及时获得活动上新消息",
+    "betaGroupAction": "加入内测群",
     "discoverOthers": "发现其他活动",
     "createCard": {
       "title": "其它地点？",

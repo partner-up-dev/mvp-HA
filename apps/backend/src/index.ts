@@ -20,7 +20,6 @@ import { wecomRoute } from "./controllers/wecom.controller";
 import { configRoute } from "./controllers/config.controller";
 import { analyticsRoute } from "./controllers/analytics.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
-import { internalJobsRoute } from "./controllers/internal-jobs.controller";
 import { internalMaintenanceRoute } from "./controllers/internal-maintenance.controller";
 import { poiRoute } from "./controllers/poi.controller";
 import { metaRoute } from "./controllers/meta.controller";
@@ -125,7 +124,6 @@ const routes = app
   .route("/api/admin", adminBookingExecutionRoute)
   .route("/api/admin", adminBookingSupportRoute)
   .route("/api/admin", adminPoiRoute)
-  .route("/internal/jobs", internalJobsRoute)
   .route("/internal/maintenance", internalMaintenanceRoute);
 
 // Health check
