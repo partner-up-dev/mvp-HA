@@ -59,6 +59,9 @@
 - SDK init 完成後會 replay current share card
 - route orchestrator 在 `pageshow` / `visibilitychange` 會強制 replay 當前 descriptor
 - descriptor apply 改為 queue/flush 模型，避免 fallback 晚到覆寫 base/enriched
+- `useWeChatShare` 新增 runtime-level operation queue，讓 `wx.config`、share replay、share apply 進入同一條序列
+- JS SDK capability 改為 union 模型；`openTagList` 不再被後續 share config 清空
+- config callback 現在帶 init attempt fencing，避免舊的 `wx.ready` / `wx.error` 回調污染新一輪 config 狀態
 
 ### 6. Observability
 
@@ -74,6 +77,23 @@
 - `share_replay_triggered`
 
 frontend / backend telemetry taxonomy 已同步更新。
+
+## Additional Log-Proven Fix
+
+在後續真機日誌中，`Anchor PR Page` 被證實存在同頁兩次 `wx.config`：
+
+- 一次帶 `openTagList`
+- 一次不帶 `openTagList`
+
+後者會覆蓋前者，說明 JS SDK config 在 runtime 層仍有多 owner。
+
+本回合已補上：
+
+1. 單一 runtime queue
+2. capability union
+3. share apply/config 原子化
+
+因此現在不再依賴「哪個模組晚一點呼叫 `initWeChatSdk()`」來決定最終可用能力集合。
 
 ## Verification
 

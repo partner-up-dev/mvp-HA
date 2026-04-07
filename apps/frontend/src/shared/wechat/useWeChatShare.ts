@@ -51,6 +51,14 @@ type WeChatSdkRequest = {
   openTagList: WeChatOpenTagName[];
 };
 
+type WeChatSdkConfigState = {
+  epoch: number;
+  url: string;
+  configKey: string;
+  jsApiList: WeChatJsApiName[];
+  openTagList: WeChatOpenTagName[];
+};
+
 const stripHash = (rawUrl: string): string => {
   try {
     const url = new URL(rawUrl);
@@ -75,15 +83,19 @@ const isWeChatSdkAvailable = (): boolean =>
   typeof window !== "undefined" && typeof wx !== "undefined";
 
 let sdkLoadPromise: Promise<void> | null = null;
-let initPromise: Promise<void> | null = null;
-let pendingInitKey: string | null = null;
+let currentInitAttemptId = 0;
+let runtimeOperationQueue: Promise<void> = Promise.resolve();
 
 const isInitializingRef = ref(false);
 const isReadyRef = ref(false);
 const initErrorRef = ref<string | null>(null);
 const configuredUrlRef = ref<string | null>(null);
 const configuredConfigKeyRef = ref<string | null>(null);
+const configuredEpochRef = ref(0);
 const lastShareCardRef = ref<ShareCardData | null>(null);
+
+const desiredJsApiSet = new Set<WeChatJsApiName>(DEFAULT_JS_API_LIST);
+const desiredOpenTagSet = new Set<WeChatOpenTagName>();
 
 const normalizeJsApiList = (
   jsApiList: ReadonlyArray<WeChatJsApiName> | undefined,
@@ -98,6 +110,64 @@ const isRequestConfigured = (request: WeChatSdkRequest): boolean =>
   isReadyRef.value &&
   configuredUrlRef.value === request.url &&
   configuredConfigKeyRef.value === request.configKey;
+
+const registerDesiredCapabilities = (
+  options: InitWeChatSdkOptions,
+): Pick<WeChatSdkRequest, "jsApiList" | "openTagList"> => {
+  for (const apiName of normalizeJsApiList(options.jsApiList)) {
+    desiredJsApiSet.add(apiName);
+  }
+
+  for (const tagName of normalizeOpenTagList(options.openTagList)) {
+    desiredOpenTagSet.add(tagName);
+  }
+
+  return {
+    jsApiList: Array.from(desiredJsApiSet).sort(),
+    openTagList: Array.from(desiredOpenTagSet).sort(),
+  };
+};
+
+const buildWeChatSdkRequest = (
+  options: InitWeChatSdkOptions,
+): WeChatSdkRequest => {
+  const currentUrl = stripHash(options.signatureUrl ?? window.location.href);
+  const desiredCapabilities = registerDesiredCapabilities(options);
+  const configKey = JSON.stringify({
+    jsApiList: desiredCapabilities.jsApiList,
+    openTagList: desiredCapabilities.openTagList,
+  });
+
+  return {
+    url: currentUrl,
+    configKey,
+    jsApiList: desiredCapabilities.jsApiList,
+    openTagList: desiredCapabilities.openTagList,
+  };
+};
+
+const readCurrentConfigState = (): WeChatSdkConfigState | null => {
+  if (
+    !configuredUrlRef.value ||
+    !configuredConfigKeyRef.value ||
+    configuredEpochRef.value === 0
+  ) {
+    return null;
+  }
+
+  const configSnapshot = JSON.parse(configuredConfigKeyRef.value) as {
+    jsApiList?: WeChatJsApiName[];
+    openTagList?: WeChatOpenTagName[];
+  };
+
+  return {
+    epoch: configuredEpochRef.value,
+    url: configuredUrlRef.value,
+    configKey: configuredConfigKeyRef.value,
+    jsApiList: configSnapshot.jsApiList ?? [],
+    openTagList: configSnapshot.openTagList ?? [],
+  };
+};
 
 const formatWeChatError = (error: unknown): string => {
   if (error instanceof Error) return error.message;
@@ -241,6 +311,17 @@ const loadWeChatSdk = async (): Promise<void> => {
 };
 
 export const useWeChatShare = () => {
+  const enqueueRuntimeOperation = async <T>(
+    operation: () => Promise<T>,
+  ): Promise<T> => {
+    const result = runtimeOperationQueue.then(operation);
+    runtimeOperationQueue = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return await result;
+  };
+
   const applyWeChatShareCardData = async (data: ShareCardData): Promise<void> => {
     const link = stripHash(data.link);
 
@@ -265,7 +346,7 @@ export const useWeChatShare = () => {
     ]);
   };
 
-  const replayWeChatShareCard = async (
+  const replayWeChatShareCardInternal = async (
     requestedSignatureUrl?: string,
     trigger: "manual" | "sdk_ready" = "manual",
   ): Promise<void> => {
@@ -293,93 +374,76 @@ export const useWeChatShare = () => {
     await applyWeChatShareCardData(current);
   };
 
-  const initWeChatSdk = async (
+  const ensureWeChatSdkConfigured = async (
     options: InitWeChatSdkOptions = {},
-  ): Promise<void> => {
-    if (!isWeChatBrowser()) return;
+  ): Promise<WeChatSdkConfigState | null> => {
+    if (!isWeChatBrowser()) return null;
 
-    const currentUrl = stripHash(options.signatureUrl ?? window.location.href);
-    const requestedJsApiList = normalizeJsApiList(options.jsApiList);
-    const requestedOpenTagList = normalizeOpenTagList(options.openTagList);
-    const requestedConfigKey = JSON.stringify({
-      jsApiList: requestedJsApiList,
-      openTagList: requestedOpenTagList,
-    });
-
-    const request: WeChatSdkRequest = {
-      url: currentUrl,
-      configKey: requestedConfigKey,
-      jsApiList: requestedJsApiList,
-      openTagList: requestedOpenTagList,
-    };
-    const requestKey = `${request.url}|${request.configKey}`;
+    const request = buildWeChatSdkRequest(options);
 
     if (isRequestConfigured(request)) {
-      return;
+      return readCurrentConfigState();
     }
 
-    while (initPromise) {
-      if (pendingInitKey === requestKey) {
-        return await initPromise;
+    const initAttemptId = ++currentInitAttemptId;
+    isInitializingRef.value = true;
+    initErrorRef.value = null;
+
+    try {
+      await loadWeChatSdk();
+
+      if (!isWeChatSdkAvailable()) {
+        throw new Error(i18n.global.t("errors.wechatSdkNotLoaded"));
       }
 
-      try {
-        await initPromise;
-      } catch {
-        // Continue and allow the current request to retry initialization.
+      const res = await client.api.wechat["jssdk-signature"].$get({
+        query: { url: request.url },
+      });
+
+      if (!res.ok) {
+        const payload = (await res.json()) as { error?: string };
+        throw new Error(payload.error ?? i18n.global.t("errors.wechatInitFailed"));
       }
 
-      if (isRequestConfigured(request)) {
-        return;
-      }
-    }
+      const signature = (await res.json()) as WeChatSignatureResponse;
 
-    pendingInitKey = requestKey;
-    initPromise = (async () => {
-      isInitializingRef.value = true;
-      initErrorRef.value = null;
+      await new Promise<void>((resolve, reject) => {
+        let settled = false;
 
-      try {
-        await loadWeChatSdk();
+        const settle = (callback: () => void): void => {
+          if (settled) return;
+          settled = true;
+          callback();
+        };
 
-        if (!isWeChatSdkAvailable()) {
-          throw new Error(i18n.global.t("errors.wechatSdkNotLoaded"));
-        }
+        const timeoutId = window.setTimeout(() => {
+          if (currentInitAttemptId !== initAttemptId) return;
+          settle(() =>
+            reject(new Error(i18n.global.t("errors.wechatInitTimeout"))),
+          );
+        }, 8000);
 
-        const res = await client.api.wechat["jssdk-signature"].$get({
-          query: { url: request.url },
+        wx?.config({
+          debug: false,
+          appId: signature.appId,
+          timestamp: signature.timestamp,
+          nonceStr: signature.nonceStr,
+          signature: signature.signature,
+          jsApiList: request.jsApiList,
+          openTagList: request.openTagList,
         });
 
-        if (!res.ok) {
-          const payload = (await res.json()) as { error?: string };
-          throw new Error(
-            payload.error ?? i18n.global.t("errors.wechatInitFailed"),
-          );
-        }
-
-        const signature = (await res.json()) as WeChatSignatureResponse;
-
-        await new Promise<void>((resolve, reject) => {
-          wx?.config({
-            debug: false,
-            appId: signature.appId,
-            timestamp: signature.timestamp,
-            nonceStr: signature.nonceStr,
-            signature: signature.signature,
-            jsApiList: request.jsApiList,
-            openTagList: request.openTagList,
-          });
-
-          const timeoutId = window.setTimeout(() => {
-            reject(new Error(i18n.global.t("errors.wechatInitTimeout")));
-          }, 8000);
-
-          wx?.ready(() => {
+        wx?.ready(() => {
+          if (currentInitAttemptId !== initAttemptId) return;
+          settle(() => {
             window.clearTimeout(timeoutId);
             resolve();
           });
+        });
 
-          wx?.error((error) => {
+        wx?.error((error) => {
+          if (currentInitAttemptId !== initAttemptId) return;
+          settle(() => {
             window.clearTimeout(timeoutId);
             reject(
               new Error(
@@ -393,42 +457,65 @@ export const useWeChatShare = () => {
             );
           });
         });
+      });
 
-        isReadyRef.value = true;
-        configuredUrlRef.value = request.url;
-        configuredConfigKeyRef.value = request.configKey;
+      isReadyRef.value = true;
+      configuredEpochRef.value += 1;
+      configuredUrlRef.value = request.url;
+      configuredConfigKeyRef.value = request.configKey;
 
-        if (options.replayShareCard !== false) {
-          await replayWeChatShareCard(request.url, "sdk_ready");
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : i18n.global.t("errors.initializeFailed");
-        initErrorRef.value = message;
-        isReadyRef.value = false;
-        configuredUrlRef.value = null;
-        configuredConfigKeyRef.value = null;
-        throw new Error(message);
-      } finally {
-        isInitializingRef.value = false;
-        pendingInitKey = null;
-        initPromise = null;
+      const configState = readCurrentConfigState();
+      if (!configState) {
+        throw new Error(i18n.global.t("errors.wechatInitFailed"));
       }
-    })();
 
-    return await initPromise;
+      if (options.replayShareCard !== false) {
+        await replayWeChatShareCardInternal(request.url, "sdk_ready");
+      }
+
+      return configState;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : i18n.global.t("errors.initializeFailed");
+      initErrorRef.value = message;
+      isReadyRef.value = false;
+      configuredUrlRef.value = null;
+      configuredConfigKeyRef.value = null;
+      throw new Error(message);
+    } finally {
+      isInitializingRef.value = false;
+    }
+  };
+
+  const initWeChatSdk = async (
+    options: InitWeChatSdkOptions = {},
+  ): Promise<void> => {
+    await enqueueRuntimeOperation(async () => {
+      await ensureWeChatSdkConfigured(options);
+    });
+  };
+
+  const replayWeChatShareCard = async (
+    requestedSignatureUrl?: string,
+    trigger: "manual" | "sdk_ready" = "manual",
+  ): Promise<void> => {
+    await enqueueRuntimeOperation(async () => {
+      await replayWeChatShareCardInternal(requestedSignatureUrl, trigger);
+    });
   };
 
   const setWeChatShareCard = async (data: ShareCardData): Promise<void> => {
     if (!isWeChatBrowser()) return;
-    lastShareCardRef.value = data;
-    await initWeChatSdk({
-      signatureUrl: data.signatureUrl,
-      replayShareCard: false,
+    await enqueueRuntimeOperation(async () => {
+      lastShareCardRef.value = data;
+      await ensureWeChatSdkConfigured({
+        signatureUrl: data.signatureUrl,
+        replayShareCard: false,
+      });
+      await applyWeChatShareCardData(data);
     });
-    await applyWeChatShareCardData(data);
   };
 
   return {
