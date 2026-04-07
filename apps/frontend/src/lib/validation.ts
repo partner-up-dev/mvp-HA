@@ -31,43 +31,53 @@ export const validateManualPartnerBounds = (
   return null;
 };
 
-const fieldsSchema: z.ZodType<PRFormFields> = z
-  .object({
-    title: z.string().optional(),
-    type: z.string().min(1, i18n.global.t("validation.typeRequired")),
-    time: z.tuple([
-      isoDateOrDateTimeSchema.nullable(),
-      isoDateOrDateTimeSchema.nullable(),
-    ]),
-    location: z.string().nullable(),
-    minPartners: z.number().int().nonnegative().nullable(),
-    maxPartners: z.number().int().nonnegative().nullable(),
-    partners: z.array(z.number().int().positive()),
-    budget: z.string().nullable().optional(),
-    preferences: z.array(z.string()),
-    notes: z.string().nullable(),
-  })
-  .superRefine((value, context) => {
-    if (value.minPartners === null || value.minPartners < 2) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["minPartners"],
-        message: getMinPartnersAtLeastTwoMessage(),
-      });
-    }
-    if (
-      value.minPartners !== null &&
-      value.minPartners >= 2 &&
-      value.maxPartners !== null &&
-      value.maxPartners < value.minPartners
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["maxPartners"],
-        message: getMaxPartnersAtLeastMinPartnersMessage(),
-      });
-    }
-  });
+type PartnerRequestFormSchemaOptions = {
+  validateTime?: boolean;
+};
+
+const buildTimeSchema = (validateTime: boolean) =>
+  z.tuple([
+    (validateTime ? isoDateOrDateTimeSchema : z.string()).nullable(),
+    (validateTime ? isoDateOrDateTimeSchema : z.string()).nullable(),
+  ]);
+
+const buildFieldsSchema = ({
+  validateTime = true,
+}: PartnerRequestFormSchemaOptions = {}): z.ZodType<PRFormFields> =>
+  z
+    .object({
+      title: z.string().optional(),
+      type: z.string().min(1, i18n.global.t("validation.typeRequired")),
+      time: buildTimeSchema(validateTime),
+      location: z.string().nullable(),
+      minPartners: z.number().int().nonnegative().nullable(),
+      maxPartners: z.number().int().nonnegative().nullable(),
+      partners: z.array(z.number().int().positive()),
+      budget: z.string().nullable().optional(),
+      preferences: z.array(z.string()),
+      notes: z.string().nullable(),
+    })
+    .superRefine((value, context) => {
+      if (value.minPartners === null || value.minPartners < 2) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["minPartners"],
+          message: getMinPartnersAtLeastTwoMessage(),
+        });
+      }
+      if (
+        value.minPartners !== null &&
+        value.minPartners >= 2 &&
+        value.maxPartners !== null &&
+        value.maxPartners < value.minPartners
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["maxPartners"],
+          message: getMaxPartnersAtLeastMinPartnersMessage(),
+        });
+      }
+    });
 
 export const createNaturalLanguagePRSchema = z
   .object({
@@ -85,12 +95,21 @@ export const createNaturalLanguagePRValidationSchema = toTypedSchema(
   createNaturalLanguagePRSchema,
 );
 
-export const partnerRequestFormSchema = z.object({
-  fields: fieldsSchema,
-});
+export const buildPartnerRequestFormSchema = (
+  options: PartnerRequestFormSchemaOptions = {},
+) =>
+  z.object({
+    fields: buildFieldsSchema(options),
+  });
 
-export const partnerRequestFormValidationSchema = toTypedSchema(
-  partnerRequestFormSchema,
+export const partnerRequestFormSchema = buildPartnerRequestFormSchema();
+
+export const buildPartnerRequestFormValidationSchema = (
+  options: PartnerRequestFormSchemaOptions = {},
+) =>
+  toTypedSchema(buildPartnerRequestFormSchema(options));
+
+export const partnerRequestFormValidationSchema = buildPartnerRequestFormValidationSchema(
 );
 
 export type CreateNaturalLanguagePRInput = z.infer<

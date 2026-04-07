@@ -41,7 +41,7 @@
 
     <Transition name="advanced-fields">
       <div v-if="isAdvancedOpen" class="advanced-section">
-        <DateTimeRangePicker v-model="timeModel" />
+        <DateTimeRangePicker v-if="showTimeField" v-model="timeModel" />
 
         <div class="form-field">
           <label>{{ t("partnerRequestForm.location") }}</label>
@@ -135,7 +135,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useForm } from "vee-validate";
 import type { PartnerRequestFormInput } from "@/lib/validation";
-import { partnerRequestFormValidationSchema } from "@/lib/validation";
+import { buildPartnerRequestFormValidationSchema } from "@/lib/validation";
 import DateTimeRangePicker from "@/domains/pr/ui/forms/DateTimeRangePicker.vue";
 import type { PRFormFields } from "@/domains/pr/model/types";
 import { clonePRFields, parseNullableNumber } from "@/domains/pr/model/form";
@@ -144,9 +144,11 @@ const props = withDefaults(
   defineProps<{
     initialFields: PRFormFields;
     showBudgetField?: boolean;
+    showTimeField?: boolean;
   }>(),
   {
     showBudgetField: true,
+    showTimeField: true,
   },
 );
 const { t } = useI18n();
@@ -164,7 +166,11 @@ const {
   setFieldValue,
   meta,
 } = useForm<PartnerRequestFormInput>({
-  validationSchema: partnerRequestFormValidationSchema,
+  validationSchema: computed(() =>
+    buildPartnerRequestFormValidationSchema({
+      validateTime: props.showTimeField,
+    }),
+  ),
   initialValues: {
     fields: clonePRFields(props.initialFields),
   },

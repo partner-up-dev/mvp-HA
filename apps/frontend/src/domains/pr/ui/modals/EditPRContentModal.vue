@@ -9,6 +9,7 @@
       ref="formRef"
       :initial-fields="initialFields"
       :show-budget-field="scenario === 'COMMUNITY'"
+      :show-time-field="scenario === 'COMMUNITY'"
       @submit="handleSubmit"
     />
 
