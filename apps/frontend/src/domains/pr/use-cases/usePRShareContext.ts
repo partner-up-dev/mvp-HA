@@ -15,8 +15,9 @@ type UsePRShareContextOptions = {
 export const usePRShareContext = ({ id, pr }: UsePRShareContextOptions) => {
   const shareUrl = computed(() => {
     if (typeof window === "undefined") return "";
+    const canonicalPath = pr.value?.share.canonical.canonicalPath;
     return normalizePublicUrl({
-      rawUrl: window.location.href,
+      rawUrl: canonicalPath ?? window.location.href,
       baseHref: window.location.href,
     });
   });
@@ -39,6 +40,7 @@ export const usePRShareContext = ({ id, pr }: UsePRShareContextOptions) => {
       partners: pr.value.core.partners,
       preferences: pr.value.core.preferences,
       notes: pr.value.core.notes,
+      canonicalShare: pr.value.share.canonical,
       xiaohongshuPoster: pr.value.share.xiaohongshuPoster ?? null,
       wechatThumbnail: pr.value.share.wechatThumbnail ?? null,
     };
@@ -55,7 +57,10 @@ export const usePRShareContext = ({ id, pr }: UsePRShareContextOptions) => {
   });
 
   const canRenderShare = computed(
-    () => id.value !== null && prShareData.value !== null,
+    () =>
+      id.value !== null &&
+      prShareData.value !== null &&
+      pr.value?.id === id.value,
   );
 
   return {

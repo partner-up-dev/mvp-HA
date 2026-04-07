@@ -431,11 +431,13 @@ import {
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import { usePRDetailHead } from "@/domains/pr/use-cases/usePRDetailHead";
+import { usePRRouteShareDescriptor } from "@/domains/pr/use-cases/usePRRouteShareDescriptor";
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { useAnchorAttendanceActions } from "@/domains/pr/use-cases/useAnchorAttendanceActions";
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
+import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import {
   anchorPRDetailPath,
   anchorPRBookingSupportPath,
@@ -597,7 +599,13 @@ const { shareUrl, spmRouteKey, prShareData } = usePRShareContext({
   id,
   pr: prDetail,
 });
+const routeShareDescriptor = usePRRouteShareDescriptor({
+  id,
+  pr: prDetail,
+  spmRouteKey,
+});
 usePRDetailHead({ pr: prDetail, shareUrl });
+useRouteShareDescriptorRegistration(routeShareDescriptor);
 
 const localizedTime = computed<[string | null, string | null]>(() =>
   formatLocalDateTimeWindow(prDetail.value?.core.time ?? [null, null]),

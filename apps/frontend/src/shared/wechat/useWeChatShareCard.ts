@@ -6,6 +6,11 @@ type WeChatShareCardInput = {
   desc?: string | null;
   link?: string | null;
   imgUrl?: string | null;
+  signatureUrl?: string | null;
+  routeSessionId?: string | null;
+  entityKey?: string | null;
+  revision?: string | null;
+  phase?: "FALLBACK" | "BASE" | "ENRICHED" | null;
 };
 
 const normalizeText = (raw: string | null | undefined): string =>
@@ -22,7 +27,12 @@ const resolveDefaultImageUrl = (): string => {
 };
 
 export const useWeChatShareCard = () => {
-  const { initWeChatSdk, initError, setWeChatShareCard } = useWeChatShare();
+  const {
+    initWeChatSdk,
+    initError,
+    replayWeChatShareCard,
+    setWeChatShareCard,
+  } = useWeChatShare();
 
   const updateWeChatShareCard = async (
     input: WeChatShareCardInput,
@@ -34,12 +44,18 @@ export const useWeChatShareCard = () => {
       desc: normalizeText(input.desc) || i18n.global.t("home.subtitle"),
       link: normalizeText(input.link) || resolveDefaultLink(),
       imgUrl: normalizeText(input.imgUrl) || resolveDefaultImageUrl(),
+      signatureUrl: normalizeText(input.signatureUrl) || resolveDefaultLink(),
+      routeSessionId: normalizeText(input.routeSessionId) || undefined,
+      entityKey: normalizeText(input.entityKey) || undefined,
+      revision: normalizeText(input.revision) || undefined,
+      phase: input.phase ?? undefined,
     });
   };
 
   return {
     initWeChatSdk,
     initError,
+    replayWeChatShareCard,
     updateWeChatShareCard,
   };
 };

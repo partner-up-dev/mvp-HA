@@ -1,5 +1,7 @@
 import { computed, ref } from "vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
+import type { PRKind } from "@/shared/telemetry/events";
+import { trackEvent } from "@/shared/telemetry/track";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 
@@ -10,13 +12,36 @@ type WeChatSignatureResponse = {
   signature: string;
 };
 
+type ShareCardPhase = "FALLBACK" | "BASE" | "ENRICHED";
+
+type ShareCardTelemetryMeta = {
+  routeSessionId?: string;
+  entityKey?: string | null;
+  revision?: string;
+  phase?: ShareCardPhase;
+};
+
+type ShareCardTelemetryPayload = {
+  routeSessionId?: string;
+  entityKey?: string | null;
+  revision?: string;
+  prId?: number;
+  prKind?: PRKind;
+  phase?: ShareCardPhase;
+};
+
 type ShareCardData = Pick<
   WeChatShareToChatPayload,
   "title" | "desc" | "link" | "imgUrl"
->;
+> & {
+  signatureUrl: string;
+} & ShareCardTelemetryMeta;
+
 type InitWeChatSdkOptions = {
   jsApiList?: ReadonlyArray<WeChatJsApiName>;
   openTagList?: ReadonlyArray<WeChatOpenTagName>;
+  signatureUrl?: string;
+  replayShareCard?: boolean;
 };
 
 type WeChatSdkRequest = {
@@ -58,6 +83,7 @@ const isReadyRef = ref(false);
 const initErrorRef = ref<string | null>(null);
 const configuredUrlRef = ref<string | null>(null);
 const configuredConfigKeyRef = ref<string | null>(null);
+const lastShareCardRef = ref<ShareCardData | null>(null);
 
 const normalizeJsApiList = (
   jsApiList: ReadonlyArray<WeChatJsApiName> | undefined,
@@ -85,6 +111,39 @@ const formatWeChatError = (error: unknown): string => {
   }
 
   return i18n.global.t("common.operationFailed");
+};
+
+const toShareCardTelemetryPayload = (
+  data: ShareCardData,
+): ShareCardTelemetryPayload => {
+  const payload: ShareCardTelemetryPayload = {};
+
+  if (data.routeSessionId) {
+    payload.routeSessionId = data.routeSessionId;
+  }
+
+  if (data.entityKey) {
+    payload.entityKey = data.entityKey;
+    const [rawKind, rawPrId] = data.entityKey.split(":");
+    if (rawKind === "ANCHOR" || rawKind === "COMMUNITY") {
+      payload.prKind = rawKind;
+    }
+
+    const prId = Number(rawPrId);
+    if (Number.isInteger(prId) && prId > 0) {
+      payload.prId = prId;
+    }
+  }
+
+  if (data.revision) {
+    payload.revision = data.revision;
+  }
+
+  if (data.phase) {
+    payload.phase = data.phase;
+  }
+
+  return payload;
 };
 
 const invokeWeChatShareApi = async (
@@ -182,12 +241,64 @@ const loadWeChatSdk = async (): Promise<void> => {
 };
 
 export const useWeChatShare = () => {
+  const applyWeChatShareCardData = async (data: ShareCardData): Promise<void> => {
+    const link = stripHash(data.link);
+
+    await Promise.all([
+      invokeWeChatShareApi("updateAppMessageShareData", (callbacks) => {
+        wx?.updateAppMessageShareData({
+          title: data.title,
+          desc: data.desc,
+          link,
+          imgUrl: data.imgUrl,
+          ...callbacks,
+        });
+      }),
+      invokeWeChatShareApi("updateTimelineShareData", (callbacks) => {
+        wx?.updateTimelineShareData({
+          title: data.title,
+          link,
+          imgUrl: data.imgUrl,
+          ...callbacks,
+        });
+      }),
+    ]);
+  };
+
+  const replayWeChatShareCard = async (
+    requestedSignatureUrl?: string,
+    trigger: "manual" | "sdk_ready" = "manual",
+  ): Promise<void> => {
+    if (!isWeChatBrowser()) return;
+
+    const current = lastShareCardRef.value;
+    if (!current) return;
+
+    if (
+      requestedSignatureUrl &&
+      stripHash(current.signatureUrl) !== stripHash(requestedSignatureUrl)
+    ) {
+      return;
+    }
+
+    if (trigger === "sdk_ready" && current.phase) {
+      trackEvent("share_replay_triggered", {
+        ...toShareCardTelemetryPayload(current),
+        routeSessionId: current.routeSessionId ?? "unknown",
+        phase: current.phase,
+        trigger: "sdk_ready",
+      });
+    }
+
+    await applyWeChatShareCardData(current);
+  };
+
   const initWeChatSdk = async (
     options: InitWeChatSdkOptions = {},
   ): Promise<void> => {
     if (!isWeChatBrowser()) return;
 
-    const currentUrl = stripHash(window.location.href);
+    const currentUrl = stripHash(options.signatureUrl ?? window.location.href);
     const requestedJsApiList = normalizeJsApiList(options.jsApiList);
     const requestedOpenTagList = normalizeOpenTagList(options.openTagList);
     const requestedConfigKey = JSON.stringify({
@@ -286,6 +397,10 @@ export const useWeChatShare = () => {
         isReadyRef.value = true;
         configuredUrlRef.value = request.url;
         configuredConfigKeyRef.value = request.configKey;
+
+        if (options.replayShareCard !== false) {
+          await replayWeChatShareCard(request.url, "sdk_ready");
+        }
       } catch (error) {
         const message =
           error instanceof Error
@@ -308,29 +423,12 @@ export const useWeChatShare = () => {
 
   const setWeChatShareCard = async (data: ShareCardData): Promise<void> => {
     if (!isWeChatBrowser()) return;
-    await initWeChatSdk();
-
-    const link = stripHash(data.link);
-
-    await Promise.all([
-      invokeWeChatShareApi("updateAppMessageShareData", (callbacks) => {
-        wx?.updateAppMessageShareData({
-          title: data.title,
-          desc: data.desc,
-          link,
-          imgUrl: data.imgUrl,
-          ...callbacks,
-        });
-      }),
-      invokeWeChatShareApi("updateTimelineShareData", (callbacks) => {
-        wx?.updateTimelineShareData({
-          title: data.title,
-          link,
-          imgUrl: data.imgUrl,
-          ...callbacks,
-        });
-      }),
-    ]);
+    lastShareCardRef.value = data;
+    await initWeChatSdk({
+      signatureUrl: data.signatureUrl,
+      replayShareCard: false,
+    });
+    await applyWeChatShareCardData(data);
   };
 
   return {
@@ -339,6 +437,7 @@ export const useWeChatShare = () => {
     isReady: computed(() => isReadyRef.value),
     initError: computed(() => initErrorRef.value),
     initWeChatSdk,
+    replayWeChatShareCard,
     setWeChatShareCard,
   };
 };

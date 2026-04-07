@@ -159,6 +159,8 @@ import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
+import { usePRRouteShareDescriptor } from "@/domains/pr/use-cases/usePRRouteShareDescriptor";
+import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import type { CommunityPRFormFields } from "@/domains/pr/model/types";
 import type { JoinCommunityPRResponse } from "@/domains/pr/queries/useCommunityPR";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
@@ -269,7 +271,13 @@ const { shareUrl, spmRouteKey, prShareData } = usePRShareContext({
   id,
   pr: prDetail,
 });
+const routeShareDescriptor = usePRRouteShareDescriptor({
+  id,
+  pr: prDetail,
+  spmRouteKey,
+});
 usePRDetailHead({ pr: prDetail, shareUrl });
+useRouteShareDescriptorRegistration(routeShareDescriptor);
 
 const formatDate = (dateStr: string) =>
   formatLocalDateTimeValue(dateStr) ?? dateStr;

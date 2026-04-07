@@ -11,6 +11,14 @@ export type CanonicalAnalyticsEventName =
   | "share_link_native_success"
   | "share_link_copy_success"
   | "share_link_failed"
+  | "share_session_started"
+  | "share_descriptor_submitted"
+  | "share_descriptor_discarded_stale"
+  | "share_apply_fallback_success"
+  | "share_apply_base_success"
+  | "share_apply_enriched_success"
+  | "share_apply_failed"
+  | "share_replay_triggered"
   | "home_hero_primary_click"
   | "home_event_section_impression"
   | "home_event_card_impression"
@@ -55,6 +63,14 @@ type PRContextPayload = {
   spm?: string;
 };
 
+type ShareRoutePhase = "FALLBACK" | "BASE" | "ENRICHED";
+
+type ShareLifecyclePayload = PRContextPayload & {
+  routeSessionId: string;
+  entityKey?: string | null;
+  revision?: string;
+};
+
 type CanonicalAnalyticsPayloadMap = {
   page_view: PRContextPayload & {
     page: string;
@@ -90,6 +106,35 @@ type CanonicalAnalyticsPayloadMap = {
   share_link_failed: PRContextPayload & {
     url: string;
     stage: "native" | "copy";
+  };
+  share_session_started: ShareLifecyclePayload & {
+    hasFallback: boolean;
+  };
+  share_descriptor_submitted: ShareLifecyclePayload & {
+    phase: ShareRoutePhase;
+  };
+  share_descriptor_discarded_stale: ShareLifecyclePayload & {
+    phase: ShareRoutePhase;
+    reason: "session_mismatch" | "phase_regression";
+    currentRouteSessionId?: string | null;
+  };
+  share_apply_fallback_success: ShareLifecyclePayload & {
+    phase: "FALLBACK";
+  };
+  share_apply_base_success: ShareLifecyclePayload & {
+    phase: "BASE";
+  };
+  share_apply_enriched_success: ShareLifecyclePayload & {
+    phase: "ENRICHED";
+  };
+  share_apply_failed: ShareLifecyclePayload & {
+    phase: ShareRoutePhase;
+    stage: "apply";
+    message: string;
+  };
+  share_replay_triggered: ShareLifecyclePayload & {
+    phase: ShareRoutePhase;
+    trigger: "pageshow" | "visibilitychange" | "manual" | "sdk_ready";
   };
   home_hero_primary_click: PRContextPayload & {
     target: "event-plaza";

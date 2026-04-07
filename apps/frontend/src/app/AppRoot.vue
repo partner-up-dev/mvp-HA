@@ -6,11 +6,11 @@
 import { RouterView } from "vue-router";
 import { useAuthSessionBootstrap } from "@/processes/auth/useAuthSessionBootstrap";
 import { useRouteWeChatAutoLogin } from "@/processes/wechat/useRouteWeChatAutoLogin";
-import { useRouteWeChatShare } from "@/processes/wechat/useRouteWeChatShare";
+import { useRouteShareOrchestrator } from "@/domains/share/use-cases/useRouteShareOrchestrator";
 
 useAuthSessionBootstrap();
 useRouteWeChatAutoLogin();
-useRouteWeChatShare();
+useRouteShareOrchestrator();
 </script>
 
 <style lang="scss">

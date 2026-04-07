@@ -22,6 +22,10 @@ import {
   readPartnerRequestById,
   readVisibleAnchorPRRecordsByBatchId,
 } from "../../pr-core/services/pr-read.service";
+import {
+  buildPRCanonicalShareMetadata,
+  type PRCanonicalShareMetadata,
+} from "../../pr-core/services/pr-share-metadata.service";
 
 const anchorPRRepo = new AnchorPRRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
@@ -55,6 +59,7 @@ export type AnchorPRDetail = {
     notes: string | null;
   };
   share: {
+    canonical: PRCanonicalShareMetadata;
     xiaohongshuPoster?: {
       caption: string;
       posterStylePrompt: string;
@@ -124,6 +129,7 @@ export async function getAnchorPRDetail(
       ? (await resolveUserByOpenId(viewerOpenId)).id
       : viewerIdentity?.userId ?? null;
   const publicPR = await toPublicPR(request, viewerUserId);
+  const canonicalShare = buildPRCanonicalShareMetadata(publicPR);
   const anchor = await anchorPRRepo.findByPrId(id);
   if (!anchor) {
     throw new HTTPException(500, {
@@ -188,6 +194,7 @@ export async function getAnchorPRDetail(
       notes: publicPR.notes,
     },
     share: {
+      canonical: canonicalShare,
       xiaohongshuPoster: publicPR.xiaohongshuPoster
         ? {
             ...publicPR.xiaohongshuPoster,

@@ -78,7 +78,23 @@ Important coordination note:
 - Backend exposes build metadata through `/api/meta/build`.
 - Frontend relies on those endpoints to avoid hardcoding operationally managed values.
 
-## 8. Coordination And Failure Assumptions
+## 8. Share Descriptor Contract
+
+- Entity-backed public detail routes such as `/api/cpr/:id` and `/api/apr/:id` provide canonical share metadata inside the detail payload.
+- Canonical share metadata includes stable route-owned fields required for base share correctness:
+  - title
+  - description
+  - canonical path
+  - default image path
+  - revision token
+- Frontend treats that metadata as the source for base share descriptors rather than recomputing a separate share truth in page-local code.
+- Rich descriptions, thumbnails, and posters remain optional enhancements; failure to produce them must not remove or invalidate the base share descriptor.
+- WeChat share coordination distinguishes:
+  - the signature URL used to initialize JS-SDK for the current route
+  - the target URL that will actually be shared outward
+- Frontend owns the route-scoped active share session and replay behavior, but it must do so using backend-provided canonical share metadata for entity truth.
+
+## 9. Coordination And Failure Assumptions
 
 - The primary coordination path is browser route -> frontend process/UI -> typed backend API -> backend persistence and side effects -> frontend cache/UI refresh.
 - Rules that affect eligibility, status, timing, or identity must coordinate through backend-owned contracts; frontend may optimize UX but not invent new domain truth.
