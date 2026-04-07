@@ -65,27 +65,10 @@
       </div>
     </section>
 
-    <Modal
+    <BetaGroupQrModal
       :open="showBetaGroupModal"
-      :title="t('contactSupportPage.betaGroupModalTitle')"
-      max-width="420px"
       @close="showBetaGroupModal = false"
-    >
-      <div class="beta-group-modal-body">
-        <p class="beta-group-modal-description">
-          {{ t("contactSupportPage.betaGroupModalDescription") }}
-        </p>
-        <img
-          v-if="betaGroupQrCodeUrl"
-          :src="betaGroupQrCodeUrl"
-          :alt="t('contactSupportPage.betaGroupQrAlt')"
-          class="beta-group-qr-image"
-        />
-        <p v-else class="beta-group-qr-empty">
-          {{ t("contactSupportPage.betaGroupQrMissing") }}
-        </p>
-      </div>
-    </Modal>
+    />
 
     <nav class="support-entry-links" :aria-label="t('aboutPage.footerNavLabel')">
       <RouterLink class="support-entry-link" :to="{ name: 'contact-author' }">
@@ -104,7 +87,7 @@ import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
-import Modal from "@/shared/ui/overlay/Modal.vue";
+import BetaGroupQrModal from "@/shared/wechat/BetaGroupQrModal.vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
@@ -124,7 +107,6 @@ const supportLinkWechatOutQuery = usePublicConfig(
   PUBLIC_CONFIG_KEYS.wecomSupportLinkWechatOut,
 );
 const staffLinkQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.wecomStaffLink);
-const betaGroupQrCodeQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.wechatBetaGroupQrCode);
 
 const normalizeHttpUrl = (value: string | null | undefined): string | null => {
   if (!value) return null;
@@ -188,14 +170,6 @@ const staffLink = computed(() => {
     staffLinkQuery.data.value?.value,
     DEFAULT_STAFF_LINK,
   );
-});
-
-const betaGroupQrCodeUrl = computed(() => {
-  if (betaGroupQrCodeQuery.isLoading.value || betaGroupQrCodeQuery.error.value) {
-    return null;
-  }
-
-  return normalizeHttpUrl(betaGroupQrCodeQuery.data.value?.value);
 });
 </script>
 
@@ -287,29 +261,6 @@ const betaGroupQrCodeUrl = computed(() => {
 
 .contact-action--beta-group {
   @include mx.pu-pill-action(outline-transparent);
-}
-
-.beta-group-modal-body {
-  display: grid;
-  justify-items: center;
-  gap: var(--sys-spacing-sm);
-}
-
-.beta-group-modal-description {
-  @include mx.pu-font(body-medium);
-  margin: 0;
-  color: var(--sys-color-on-surface-variant);
-}
-
-.beta-group-qr-image {
-  width: min(100%, 260px);
-  border-radius: var(--sys-radius-md);
-}
-
-.beta-group-qr-empty {
-  @include mx.pu-font(body-medium);
-  margin: 0;
-  color: var(--sys-color-on-surface-variant);
 }
 
 .support-entry-links {

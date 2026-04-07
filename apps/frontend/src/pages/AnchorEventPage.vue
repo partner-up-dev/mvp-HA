@@ -190,6 +190,8 @@
                   : t("anchorEvent.createCard.createAction")
               }}
             </button>
+
+            <AnchorEventBetaGroupEntry class="card-empty__beta-group" />
           </div>
         </div>
       </template>
@@ -253,6 +255,7 @@ import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
 import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
+import AnchorEventBetaGroupEntry from "@/domains/event/ui/primitives/AnchorEventBetaGroupEntry.vue";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
@@ -1281,6 +1284,10 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 .card-empty__action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.card-empty__beta-group {
+  margin-top: var(--sys-spacing-xs);
 }
 
 .exhausted-banner {
