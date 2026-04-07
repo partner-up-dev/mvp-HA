@@ -56,7 +56,7 @@ const routes: RouteRecordRaw[] = [
     name: "community-pr",
     component: CommunityPRPage,
     meta: {
-      wechatSharePolicy: "skip",
+      wechatSharePolicy: "route",
     },
   },
   {
@@ -72,7 +72,7 @@ const routes: RouteRecordRaw[] = [
     name: "anchor-pr",
     component: AnchorPRPage,
     meta: {
-      wechatSharePolicy: "skip",
+      wechatSharePolicy: "route",
       wechatAutoLoginPolicy: "route",
     },
   },

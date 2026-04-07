@@ -1,7 +1,16 @@
 <template>
   <footer class="contact-support-footer">
-    <nav class="contact-support-nav" :aria-label="t('aboutPage.footerNavLabel')">
-      <RouterLink class="contact-support-link" :to="{ name: 'contact-support' }">
+    <nav
+      class="contact-support-nav"
+      :aria-label="t('aboutPage.footerNavLabel')"
+    >
+      <RouterLink class="contact-support-link" :to="{ name: 'me' }">
+        {{ t("home.landing.footerNavMine") }}
+      </RouterLink>
+      <RouterLink
+        class="contact-support-link"
+        :to="{ name: 'contact-support' }"
+      >
         {{ t("contactAuthorPage.footerEntry") }}
       </RouterLink>
       <RouterLink class="contact-support-link" :to="{ name: 'about' }">

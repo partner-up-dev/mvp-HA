@@ -43,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import { toRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRShareProps } from "@/domains/share/model/types";
 import { useShareToWechatChat } from "@/domains/share/use-cases/wechat/useShareToWechatChat";
@@ -62,10 +63,10 @@ const {
   handleGenerateAndUpdate,
   handleThumbnailLoadError,
 } = useShareToWechatChat({
-  prId: props.prId,
-  shareUrl: props.shareUrl,
-  spmRouteKey: props.spmRouteKey,
-  prData: props.prData,
+  prId: toRef(props, "prId"),
+  shareUrl: toRef(props, "shareUrl"),
+  spmRouteKey: toRef(props, "spmRouteKey"),
+  prData: toRef(props, "prData"),
   t,
 });
 </script>

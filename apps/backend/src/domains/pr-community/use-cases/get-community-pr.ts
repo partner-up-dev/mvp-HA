@@ -7,6 +7,10 @@ import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.servic
 import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import { buildCommunityPartnerSection, type PartnerSectionView } from "../../pr-core/services/partner-section-view.service";
 import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
+import {
+  buildPRCanonicalShareMetadata,
+  type PRCanonicalShareMetadata,
+} from "../../pr-core/services/pr-share-metadata.service";
 
 const communityPRRepo = new CommunityPRRepository();
 const partnerRepo = new PartnerRepository();
@@ -35,6 +39,7 @@ export type CommunityPRDetail = {
     notes: string | null;
   };
   share: {
+    canonical: PRCanonicalShareMetadata;
     xiaohongshuPoster?: {
       caption: string;
       posterStylePrompt: string;
@@ -78,6 +83,7 @@ export async function getCommunityPRDetail(
       ? (await resolveUserByOpenId(viewerIdentity.openId)).id
       : null);
   const publicPR = await toPublicPR(request, viewerUserId);
+  const canonicalShare = buildPRCanonicalShareMetadata(publicPR);
   const community = await communityPRRepo.findByPrId(id);
   if (!community) {
     throw new HTTPException(500, {
@@ -109,6 +115,7 @@ export async function getCommunityPRDetail(
       notes: publicPR.notes,
     },
     share: {
+      canonical: canonicalShare,
       xiaohongshuPoster: publicPR.xiaohongshuPoster
         ? {
             ...publicPR.xiaohongshuPoster,

@@ -26,6 +26,7 @@ These shape runtime behavior but remain backend-owned.
 - TanStack Query caches of backend data
 - route-local UI state
 - local and session storage for session tokens, user id/pin, admin tokens, pending WeChat actions, bookmark nudges, analytics session id, and `spm`
+- active route-share session state, currently selected share descriptor, and replay bookkeeping for WeChat/browser share flows
 
 This state improves UX and continuity but does not define product truth.
 
@@ -45,6 +46,7 @@ The frontend is authoritative for:
 - browser-side storage and pending-action continuity
 - capability detection and fallback UX
 - client-side caching and invalidation strategy
+- active route-scoped share orchestration and replay of the current share descriptor
 
 The frontend must not recreate or override backend domain rules as independent truth.
 
