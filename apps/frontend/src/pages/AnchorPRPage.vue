@@ -41,6 +41,7 @@
         :location="prDetail.core.location ?? null"
         :time-text="localizedTimeText"
         :preferences="prDetail.core.preferences"
+        :notes="prDetail.core.notes ?? null"
         :participant-overview-text="participantOverviewText"
         :roster-preview="rosterPreview"
         :has-more-roster="hasMoreRoster"

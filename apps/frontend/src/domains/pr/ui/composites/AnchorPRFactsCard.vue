@@ -42,10 +42,20 @@
         {{ t("prPage.partnerSection.rosterCurrentEmpty") }}
       </span>
     </InfoRow>
+
+    <InfoRow
+      v-if="normalizedNotes"
+      :label="t('prCard.notes')"
+      layout="stack"
+      align="start"
+    >
+      <p class="facts-notes">{{ normalizedNotes }}</p>
+    </InfoRow>
   </SurfaceCard>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import InfoRow from "@/shared/ui/display/InfoRow.vue";
@@ -55,7 +65,14 @@ import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
 
 type RosterPreviewItem = AnchorPRDetailResponse["partnerSection"]["roster"][number];
 
-defineProps<{
+defineEmits<{
+  "view-location-gallery": [];
+}>();
+
+const { t } = useI18n();
+
+const props = defineProps<{
+  notes: string | null;
   location: string | null;
   timeText: string;
   preferences: string[];
@@ -65,11 +82,10 @@ defineProps<{
   locationGalleryAvailable?: boolean;
 }>();
 
-defineEmits<{
-  "view-location-gallery": [];
-}>();
-
-const { t } = useI18n();
+const normalizedNotes = computed(() => {
+  const trimmed = props.notes?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : null;
+});
 </script>
 
 <style scoped lang="scss">
@@ -90,6 +106,14 @@ const { t } = useI18n();
 .facts-overview {
   margin: 0;
   @include mx.pu-font(body-medium);
+}
+
+.facts-notes {
+  margin: 0;
+  @include mx.pu-font(body-medium);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .roster-chip-overflow {
