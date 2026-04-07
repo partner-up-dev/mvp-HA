@@ -274,6 +274,10 @@ import {
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
+import {
+  pickRandomPoiGalleryImage,
+  toPoiGalleryMap,
+} from "@/domains/event/model/poi-gallery";
 import type { ApiError } from "@/shared/api/error";
 import {
   clearPendingWeChatAction,
@@ -549,20 +553,7 @@ const allPoiIdsCsv = computed(() => {
 
 const { data: eventPois } = usePoisByIds(allPoiIdsCsv);
 
-const poiCoverById = computed(() => {
-  const map = new Map<string, string>();
-
-  for (const poi of eventPois.value ?? []) {
-    const cover = poi.gallery
-      .map((url) => url.trim())
-      .find((url) => url.length > 0);
-    if (cover) {
-      map.set(poi.id, cover);
-    }
-  }
-
-  return map;
-});
+const poiGalleryById = computed(() => toPoiGalleryMap(eventPois.value ?? []));
 
 const resolveCoverImage = (location: string | null): string | null => {
   if (!location) {
@@ -574,7 +565,9 @@ const resolveCoverImage = (location: string | null): string | null => {
     return null;
   }
 
-  return poiCoverById.value.get(normalized) ?? null;
+  return pickRandomPoiGalleryImage(
+    poiGalleryById.value.get(normalized) ?? [],
+  );
 };
 
 const normalizeFingerprint = (value: string): string | null => {
