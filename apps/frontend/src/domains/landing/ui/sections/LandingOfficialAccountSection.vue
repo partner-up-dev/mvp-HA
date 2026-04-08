@@ -4,6 +4,7 @@
       appearance="rect"
       tone="outline"
       size="md"
+      full-width
       @click="showOfficialAccountQrModal = true"
     >
       {{ t("home.landing.officialAccountAction") }}
@@ -36,6 +37,7 @@ const showOfficialAccountQrModal = ref(false);
   flex-direction: column;
   align-items: flex-start;
   gap: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-sm);
   padding-top: var(--sys-spacing-md);
   border-top: 1px dashed
     color-mix(in srgb, var(--sys-color-outline) 44%, transparent);
