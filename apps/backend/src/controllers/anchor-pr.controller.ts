@@ -23,6 +23,7 @@ import { PartnerRequestRepository } from "../repositories/PartnerRequestReposito
 import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mutation-auth.service";
 import { HTTPException } from "hono/http-exception";
 import {
+  anchorUpdateContentSchema,
   prIdParamSchema,
   prPartnerProfileParamSchema,
   requireAnchorAuthenticatedIdentity,
@@ -31,7 +32,6 @@ import {
   resolveAvatarUrl,
   tryReadAnchorAuthenticatedIdentity,
   getAuthenticatedUserId,
-  updateContentSchema,
   updateStatusSchema,
 } from "./pr-controller.shared";
 
@@ -165,7 +165,7 @@ export const anchorPRRoute = app
   .patch(
     "/:id/content",
     zValidator("param", prIdParamSchema),
-    zValidator("json", updateContentSchema),
+    zValidator("json", anchorUpdateContentSchema),
     async (c) => {
       const { id } = c.req.valid("param");
       await ensureAnchorPR(id);
@@ -182,7 +182,15 @@ export const anchorPRRoute = app
         c.set("auth", creatorAuth.upgradedAuth);
       }
 
-      const result = await updatePRContent(id, fields, creatorAuth.actorUserId);
+      const result = await updatePRContent(
+        id,
+        {
+          ...fields,
+          time: creatorAuth.request.time,
+          budget: null,
+        },
+        creatorAuth.actorUserId,
+      );
       return c.json({
         ...result,
         auth: creatorAuth.upgradedAuth

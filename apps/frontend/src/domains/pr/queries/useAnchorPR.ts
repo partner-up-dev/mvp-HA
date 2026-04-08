@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, type Ref } from "vue";
 import type { InferResponseType } from "hono";
 import type {
-  PartnerRequestFields,
   PRId,
   PRStatusManual,
 } from "@partner-up-dev/backend";
@@ -537,15 +536,13 @@ export const useUpdateAnchorPRContent = () => {
 
   return useMutation({
     mutationFn: async ({ id, fields, pin }: AnchorPRUpdateContentInput) => {
-      const requestFields: PartnerRequestFields = {
+      const requestFields = {
         title: fields.title,
         type: fields.type,
-        time: [fields.time[0], fields.time[1]],
         location: fields.location,
         minPartners: fields.minPartners,
         maxPartners: fields.maxPartners,
         partners: [...fields.partners],
-        budget: null,
         preferences: [...fields.preferences],
         notes: fields.notes,
       };

@@ -451,6 +451,10 @@ const isExpiredBatch = (
   batch: AnchorEventDetailResponse["batches"][number],
 ): boolean => batch.status === "EXPIRED";
 
+const nonExpiredSortedBatches = computed(() =>
+  sortedBatches.value.filter((batch) => !isExpiredBatch(batch)),
+);
+
 function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   const [start] = timeWindow;
   if (start) {
@@ -729,8 +733,10 @@ const buildDemandCards = (
 };
 
 const allDemandCards = computed(() => {
-  const batches = sortedBatches.value.filter((batch) => !isExpiredBatch(batch));
-  return buildDemandCards(batches, detail.value?.coverImage ?? null);
+  return buildDemandCards(
+    nonExpiredSortedBatches.value,
+    detail.value?.coverImage ?? null,
+  );
 });
 
 const processedCardKeySet = computed(() => new Set(processedCardKeys.value));
@@ -988,24 +994,24 @@ const handleCreateInList = async (locationId: string | null) => {
 };
 
 const cardCreateBatchOptions = computed<CardBatchOption[]>(() =>
-  sortedBatches.value.map((batch, index) => ({
+  nonExpiredSortedBatches.value.map((batch, index) => ({
     batchId: batch.id,
     label: formatBatchLabel(batch.timeWindow, index),
   })),
 );
 
 const resolveFirstCreatableBatchId = (): number | null => {
-  for (const batch of sortedBatches.value) {
+  for (const batch of nonExpiredSortedBatches.value) {
     if (batch.locationOptions.some((option) => !option.disabled)) {
       return batch.id;
     }
   }
 
-  return sortedBatches.value[0]?.id ?? null;
+  return nonExpiredSortedBatches.value[0]?.id ?? null;
 };
 
 watch(
-  sortedBatches,
+  nonExpiredSortedBatches,
   (batches) => {
     if (batches.length === 0) {
       cardCreateBatchId.value = null;
@@ -1030,7 +1036,7 @@ const cardCreateBatch = computed(() => {
     return null;
   }
 
-  return sortedBatches.value.find((batch) => batch.id === id) ?? null;
+  return nonExpiredSortedBatches.value.find((batch) => batch.id === id) ?? null;
 });
 
 const cardCreateLocationOptions = computed<LocationOption[]>(() => {
