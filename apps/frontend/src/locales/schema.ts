@@ -161,6 +161,10 @@ export interface MessageSchema {
       secondaryCreateTitle: string;
       secondaryCreateDescription: string;
       secondaryCreateAction: string;
+      officialAccountEyebrow: string;
+      officialAccountTitle: string;
+      officialAccountDescription: string;
+      officialAccountAction: string;
       secondaryMineTitle: string;
       secondaryMineDescription: string;
       secondaryMineAction: string;
@@ -172,20 +176,18 @@ export interface MessageSchema {
     };
     bookmarkNudge: {
       title: string;
-      wechatTitle: string;
-      wechatHint: string;
+      hint: string;
+      webQrAction: string;
+      officialAccountQrAction: string;
+      webQrModalTitle: string;
+      webQrModalDescription: string;
+      webQrModalQrAlt: string;
+      webQrModalQrMissing: string;
       followQrModalTitle: string;
       followQrModalDescription: string;
       followQrModalQrAlt: string;
       followQrModalQrMissing: string;
-      browserHint: string;
-      bookmarkAction: string;
-      wechatAction: string;
-      copyAction: string;
-      wechatCopyAction: string;
-      copiedAction: string;
       dismissAction: string;
-      officialAccountName: string;
     };
     topics: {
       movie: {

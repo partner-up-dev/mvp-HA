@@ -16,41 +16,32 @@
         <span class="i-mdi-close" aria-hidden="true"></span>
       </button>
 
-      <p class="nudge-title">
-        {{
-          isWechatEnv
-            ? t("home.bookmarkNudge.wechatTitle")
-            : t("home.bookmarkNudge.title")
-        }}
-      </p>
-      <p class="nudge-hint">
-        {{
-          isWechatEnv
-            ? t("home.bookmarkNudge.wechatHint")
-            : t("home.bookmarkNudge.browserHint")
-        }}
-      </p>
+      <p class="nudge-title">{{ t("home.bookmarkNudge.title") }}</p>
+      <p class="nudge-hint">{{ t("home.bookmarkNudge.hint") }}</p>
 
       <div class="nudge-actions">
         <button
           class="nudge-action nudge-action--ghost"
           type="button"
-          :disabled="isWechatEnv && officialAccountQrCodeLoading"
-          @click="handlePrimaryAction"
+          @click="handleOpenWebQr"
         >
-          {{ primaryActionLabel }}
+          {{ t("home.bookmarkNudge.webQrAction") }}
         </button>
         <button
           class="nudge-action nudge-action--primary"
           type="button"
-          @click="handleCopyLink"
+          @click="handleOpenOfficialAccountQr"
         >
-          {{ secondaryActionLabel }}
+          {{ t("home.bookmarkNudge.officialAccountQrAction") }}
         </button>
       </div>
     </aside>
   </Transition>
 
+  <LandingWebPageQrModal
+    :open="showWebPageQrModal"
+    @close="showWebPageQrModal = false"
+  />
   <OfficialAccountQrModal
     :open="showOfficialAccountQrModal"
     @close="showOfficialAccountQrModal = false"
@@ -58,13 +49,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useAttrs, watch } from "vue";
+import { ref, useAttrs, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { copyToClipboard } from "@/lib/clipboard";
 import { useLandingBookmarkNudge } from "@/domains/landing/use-cases/useLandingBookmarkNudge";
 import { trackEvent } from "@/shared/telemetry/track";
 import OfficialAccountQrModal from "@/shared/wechat/OfficialAccountQrModal.vue";
-import { useWeChatOfficialAccountQrCode } from "@/shared/wechat/useWeChatOfficialAccountQrCode";
+import LandingWebPageQrModal from "@/domains/landing/ui/sections/LandingWebPageQrModal.vue";
 
 defineOptions({
   inheritAttrs: false,
@@ -74,18 +64,14 @@ const { t } = useI18n();
 const attrs = useAttrs();
 const { isVisible, triggerDepth, triggerMode, environment, hideForToday } =
   useLandingBookmarkNudge();
-const copied = ref(false);
 const hasTrackedShown = ref(false);
+const showWebPageQrModal = ref(false);
 const showOfficialAccountQrModal = ref(false);
-const isWechatEnv = computed(() => environment.value === "wechat");
-const { officialAccountQrCodeLoading } = useWeChatOfficialAccountQrCode();
 
 type BookmarkNudgeAction =
-  | "bookmark_hint"
-  | "copy_link"
-  | "copy_official_account"
-  | "dismiss"
-  | "follow_official_account";
+  | "open_web_page_qr"
+  | "open_official_account_qr"
+  | "dismiss";
 
 const trackAction = (action: BookmarkNudgeAction) => {
   trackEvent("home_bookmark_action_click", {
@@ -93,29 +79,6 @@ const trackAction = (action: BookmarkNudgeAction) => {
     environment: environment.value,
   });
 };
-
-const primaryActionLabel = computed(() =>
-  isWechatEnv.value
-    ? t("home.bookmarkNudge.wechatAction")
-    : t("home.bookmarkNudge.bookmarkAction"),
-);
-
-const secondaryActionLabel = computed(() => {
-  if (copied.value) return t("home.bookmarkNudge.copiedAction");
-  return isWechatEnv.value
-    ? t("home.bookmarkNudge.wechatCopyAction")
-    : t("home.bookmarkNudge.copyAction");
-});
-
-const copyTarget = computed(() => {
-  if (isWechatEnv.value) return t("home.bookmarkNudge.officialAccountName");
-  if (typeof window === "undefined") return "";
-  return window.location.href;
-});
-
-const copyActionName = computed<BookmarkNudgeAction>(() =>
-  isWechatEnv.value ? "copy_official_account" : "copy_link",
-);
 
 watch(isVisible, (visible) => {
   if (!visible || hasTrackedShown.value) return;
@@ -127,49 +90,16 @@ watch(isVisible, (visible) => {
   });
 });
 
-const handleBookmarkHint = () => {
-  trackAction("bookmark_hint");
+const handleOpenWebQr = () => {
+  trackAction("open_web_page_qr");
+  showWebPageQrModal.value = true;
   hideForToday();
 };
 
-const handleFollowOfficialAccount = () => {
-  if (!isWechatEnv.value) {
-    handleBookmarkHint();
-    return;
-  }
-
-  trackAction("follow_official_account");
+const handleOpenOfficialAccountQr = () => {
+  trackAction("open_official_account_qr");
   showOfficialAccountQrModal.value = true;
   hideForToday();
-};
-
-const handlePrimaryAction = () => {
-  if (isWechatEnv.value) {
-    handleFollowOfficialAccount();
-    return;
-  }
-  handleBookmarkHint();
-};
-
-const handleCopyLink = async () => {
-  if (typeof window === "undefined") return;
-  try {
-    const target = copyTarget.value;
-    if (!target) {
-      trackAction(copyActionName.value);
-      hideForToday();
-      return;
-    }
-    await copyToClipboard(target);
-    copied.value = true;
-    trackAction(copyActionName.value);
-    window.setTimeout(() => {
-      hideForToday();
-    }, 400);
-  } catch (error) {
-    console.warn("Failed to copy home link", error);
-    trackAction(copyActionName.value);
-  }
 };
 
 const handleDismiss = () => {

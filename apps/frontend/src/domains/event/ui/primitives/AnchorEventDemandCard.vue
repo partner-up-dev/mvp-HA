@@ -43,7 +43,10 @@
       <section class="demand-card__primary">
         <h2 class="demand-card__location">{{ displayLocationName }}</h2>
         <p class="demand-card__time">{{ timeLabel }}</p>
-        <div v-if="preferenceTags.length > 0" class="demand-card__preference-list">
+        <div
+          v-if="preferenceTags.length > 0"
+          class="demand-card__preference-list"
+        >
           <span
             v-for="tag in preferenceTags"
             :key="tag"
@@ -206,7 +209,8 @@ const cardStyle = computed(() => {
   return {
     transformOrigin: transformOrigin.value,
     transform: `translateX(${translateX.value}px) rotate(${rotationDeg.value}deg) scale(${scale})`,
-    transition: swipePhase.value === "dragging" ? "none" : settleTransition.value,
+    transition:
+      swipePhase.value === "dragging" ? "none" : settleTransition.value,
   };
 });
 
@@ -339,17 +343,11 @@ const resolveSwipeAction = (
   const isFastDetailGesture =
     velocityX >= FLICK_VELOCITY_THRESHOLD && offsetX >= FLICK_MIN_DISTANCE;
 
-  if (
-    offsetX <= -swipeThreshold.value ||
-    isFastSkipGesture
-  ) {
+  if (offsetX <= -swipeThreshold.value || isFastSkipGesture) {
     return "skip";
   }
 
-  if (
-    offsetX >= swipeThreshold.value ||
-    isFastDetailGesture
-  ) {
+  if (offsetX >= swipeThreshold.value || isFastDetailGesture) {
     return "view-detail";
   }
 
@@ -455,11 +453,14 @@ watch(
   },
 );
 
-watch(() => props.pending, (isPending) => {
-  if (isPending && activePointer.value !== null) {
-    startRebound();
-  }
-});
+watch(
+  () => props.pending,
+  (isPending) => {
+    if (isPending && activePointer.value !== null) {
+      startRebound();
+    }
+  },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -537,12 +538,11 @@ watch(() => props.pending, (isPending) => {
 }
 
 .demand-card__cover--fallback {
-  background:
-    linear-gradient(
-      135deg,
-      var(--sys-color-surface-container-high),
-      var(--sys-color-surface-container)
-    );
+  background: linear-gradient(
+    135deg,
+    var(--sys-color-surface-container-high),
+    var(--sys-color-surface-container)
+  );
 }
 
 .demand-card__time-badge {
@@ -604,8 +604,6 @@ watch(() => props.pending, (isPending) => {
   @include mx.pu-font(body-medium);
   margin: 0;
   color: var(--sys-color-on-surface-variant);
-  font-style: italic;
   white-space: pre-wrap;
 }
-
 </style>

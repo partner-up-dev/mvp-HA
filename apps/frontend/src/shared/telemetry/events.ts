@@ -179,11 +179,9 @@ type CanonicalAnalyticsPayloadMap = {
   };
   home_bookmark_action_click: PRContextPayload & {
     action:
-      | "bookmark_hint"
-      | "copy_link"
-      | "copy_official_account"
-      | "dismiss"
-      | "follow_official_account";
+      | "open_web_page_qr"
+      | "open_official_account_qr"
+      | "dismiss";
     environment: "wechat" | "browser";
   };
   anchor_pr_primary_cta_impression: PRContextPayload & {

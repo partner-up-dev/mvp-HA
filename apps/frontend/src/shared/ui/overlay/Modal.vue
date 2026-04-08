@@ -1,12 +1,14 @@
 <template>
-  <div v-if="open" class="modal-overlay" @click.self="handleClose">
-    <div class="modal" :style="{ maxWidth }">
-      <slot name="header">
-        <h3 v-if="title" class="modal-title">{{ title }}</h3>
-      </slot>
-      <slot />
+  <Teleport to="body">
+    <div v-if="open" class="modal-overlay" @click.self="handleClose">
+      <div class="modal" :style="{ maxWidth }">
+        <slot name="header">
+          <h3 v-if="title" class="modal-title">{{ title }}</h3>
+        </slot>
+        <slot />
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

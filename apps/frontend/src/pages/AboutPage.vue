@@ -46,16 +46,16 @@
       </dl>
 
       <section class="about-item about-item--wechat-follow">
-        <h2>{{ t("home.bookmarkNudge.wechatTitle") }}</h2>
+        <h2>{{ t("home.landing.officialAccountTitle") }}</h2>
         <p>
-          {{ t("home.bookmarkNudge.wechatHint") }}
+          {{ t("home.landing.officialAccountDescription") }}
         </p>
         <button
           class="wechat-follow-action"
           type="button"
           @click="showOfficialAccountQrModal = true"
         >
-          {{ t("home.bookmarkNudge.wechatAction") }}
+          {{ t("home.landing.officialAccountAction") }}
         </button>
       </section>
 
