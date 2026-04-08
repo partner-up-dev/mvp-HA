@@ -24,6 +24,7 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { expandFullAnchorPR } from "../../anchor-event";
 import {
+  scheduleWeChatActivityStartReminderJobForParticipant,
   scheduleWeChatNewPartnerNotificationsForJoin,
   scheduleWeChatReminderJobsForParticipant,
 } from "../../../infra/notifications";
@@ -118,6 +119,7 @@ export async function joinPRAsUser(
     }
     if (latest.prKind === "ANCHOR") {
       await scheduleWeChatReminderJobsForParticipant(latest, user.id);
+      await scheduleWeChatActivityStartReminderJobForParticipant(latest, user.id);
     }
     return toPublicPR(latest, user.id);
   }
@@ -257,6 +259,7 @@ export async function joinPRAsUser(
       joinedAt: new Date(),
     });
     await scheduleWeChatReminderJobsForParticipant(latest, user.id);
+    await scheduleWeChatActivityStartReminderJobForParticipant(latest, user.id);
   }
   return toPublicPR(latest, user.id);
 }

@@ -31,6 +31,8 @@ const subscribeSendResponseSchema = z.object({
 
 const CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID =
   "wechat.submsg_confirmation_reminder_template_id";
+const CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID =
+  "wechat.submsg_activity_start_reminder_template_id";
 const CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID =
   "wechat.submsg_booking_result_template_id";
 const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
@@ -38,13 +40,16 @@ const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
 
 type SubscriptionTemplateKind =
   | "REMINDER_CONFIRMATION"
+  | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
   | "NEW_PARTNER";
 
 const resolveTemplateConfigKey = (kind: SubscriptionTemplateKind): string =>
   kind === "REMINDER_CONFIRMATION"
     ? CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
-    : kind === "BOOKING_RESULT"
+    : kind === "ACTIVITY_START_REMINDER"
+      ? CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
+      : kind === "BOOKING_RESULT"
       ? CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
       : CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID;
 
@@ -54,7 +59,9 @@ const resolveTemplateEnvFallback = (
   const value =
     kind === "REMINDER_CONFIRMATION"
       ? env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
-      : kind === "BOOKING_RESULT"
+      : kind === "ACTIVITY_START_REMINDER"
+        ? env.WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
+        : kind === "BOOKING_RESULT"
         ? env.WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
         : env.WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID;
 
@@ -92,6 +99,15 @@ export interface SendNewPartnerNotificationParams {
   page: string | null;
 }
 
+export interface SendActivityStartReminderParams {
+  openId: string;
+  activityName: string;
+  startAt: string;
+  location: string;
+  remark: string;
+  page: string | null;
+}
+
 export interface SendBookingResultNotificationParams {
   openId: string;
   bookingItem: string;
@@ -118,6 +134,10 @@ export class WeChatSubscriptionMessageService {
     return this.isConfigured("REMINDER_CONFIRMATION");
   }
 
+  async isActivityStartReminderConfigured(): Promise<boolean> {
+    return this.isConfigured("ACTIVITY_START_REMINDER");
+  }
+
   async isBookingResultConfigured(): Promise<boolean> {
     return this.isConfigured("BOOKING_RESULT");
   }
@@ -128,6 +148,10 @@ export class WeChatSubscriptionMessageService {
 
   async getConfirmationReminderTemplateId(): Promise<string | null> {
     return this.resolveTemplateId("REMINDER_CONFIRMATION");
+  }
+
+  async getActivityStartReminderTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("ACTIVITY_START_REMINDER");
   }
 
   async getBookingResultTemplateId(): Promise<string | null> {
@@ -277,6 +301,22 @@ export class WeChatSubscriptionMessageService {
         thing6: { value: clipText(params.orderContent, 20) },
         character_string12: { value: clipText(params.orderNo, 32) },
         date9: { value: clipText(params.appointmentAt, 32) },
+        thing7: { value: clipText(params.remark, 20) },
+      },
+    });
+  }
+
+  async sendActivityStartReminder(
+    params: SendActivityStartReminderParams,
+  ): Promise<string | number | null> {
+    return this.sendSubscribeMessage({
+      kind: "ACTIVITY_START_REMINDER",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        thing1: { value: clipText(params.activityName, 20) },
+        date5: { value: clipText(params.startAt, 32) },
+        thing8: { value: clipText(params.location, 20) },
         thing7: { value: clipText(params.remark, 20) },
       },
     });

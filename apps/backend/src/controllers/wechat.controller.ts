@@ -30,8 +30,10 @@ import {
   readAnonymousSessionCookie,
 } from "../auth/anonymous-session";
 import {
+  cancelWeChatActivityStartReminderJobsForUser,
   cancelWeChatNewPartnerJobsForUser,
   cancelWeChatReminderJobsForUser,
+  rebuildWeChatActivityStartReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
 import type { User, UserId } from "../entities/user";
@@ -121,6 +123,10 @@ const buildNotificationChannelState = async (): Promise<{
     NotificationSubscriptionState,
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
+  activityStartReminder: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
   bookingResult: Pick<
     NotificationSubscriptionState,
     "configured" | "requiresOpenSubscribe" | "templateId"
@@ -130,20 +136,27 @@ const buildNotificationChannelState = async (): Promise<{
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
 }> => {
-  const [reminderTemplateId, bookingResultTemplateId, newPartnerTemplateId] =
-    await Promise.all([
+  const [
+    reminderTemplateId,
+    activityStartReminderTemplateId,
+    bookingResultTemplateId,
+    newPartnerTemplateId,
+  ] = await Promise.all([
       subscriptionMessageService.getConfirmationReminderTemplateId(),
+      subscriptionMessageService.getActivityStartReminderTemplateId(),
       subscriptionMessageService.getBookingResultTemplateId(),
       subscriptionMessageService.getNewPartnerTemplateId(),
     ]);
 
   const [
     reminderSubmsgConfigured,
+    activityStartReminderSubmsgConfigured,
     bookingResultSubmsgConfigured,
     newPartnerSubmsgConfigured,
   ] =
     await Promise.all([
       subscriptionMessageService.isConfirmationReminderConfigured(),
+      subscriptionMessageService.isActivityStartReminderConfigured(),
       subscriptionMessageService.isBookingResultConfigured(),
       subscriptionMessageService.isNewPartnerConfigured(),
     ]);
@@ -155,6 +168,13 @@ const buildNotificationChannelState = async (): Promise<{
       requiresOpenSubscribe:
         reminderSubmsgConfigured && Boolean(reminderTemplateId),
       templateId: reminderTemplateId,
+    },
+    activityStartReminder: {
+      configured: activityStartReminderSubmsgConfigured,
+      requiresOpenSubscribe:
+        activityStartReminderSubmsgConfigured &&
+        Boolean(activityStartReminderTemplateId),
+      templateId: activityStartReminderTemplateId,
     },
     bookingResult: {
       configured: bookingResultSubmsgConfigured,
@@ -186,6 +206,15 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
         configured: channels.reminder.configured,
         requiresOpenSubscribe: channels.reminder.requiresOpenSubscribe,
         templateId: channels.reminder.templateId,
+      },
+      ACTIVITY_START_REMINDER: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.activityStartReminder.configured,
+        requiresOpenSubscribe:
+          channels.activityStartReminder.requiresOpenSubscribe,
+        templateId: channels.activityStartReminder.templateId,
       },
       BOOKING_RESULT: {
         enabled: false,
@@ -226,6 +255,10 @@ const buildAuthenticatedSubscriptionsResponse = async (
     notificationOpt,
     "BOOKING_RESULT",
   );
+  const activityStartReminder = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "ACTIVITY_START_REMINDER",
+  );
   const newPartner = userNotificationOptRepo.getSubscriptionSnapshot(
     notificationOpt,
     "NEW_PARTNER",
@@ -243,6 +276,17 @@ const buildAuthenticatedSubscriptionsResponse = async (
         configured: channels.reminder.configured,
         requiresOpenSubscribe: channels.reminder.requiresOpenSubscribe,
         templateId: channels.reminder.templateId,
+      },
+      ACTIVITY_START_REMINDER: {
+        enabled: activityStartReminder.enabled,
+        optInAt: activityStartReminder.optInAt
+          ? activityStartReminder.optInAt.toISOString()
+          : null,
+        remainingCount: activityStartReminder.remainingCount,
+        configured: channels.activityStartReminder.configured,
+        requiresOpenSubscribe:
+          channels.activityStartReminder.requiresOpenSubscribe,
+        templateId: channels.activityStartReminder.templateId,
       },
       BOOKING_RESULT: {
         enabled: bookingResult.enabled,
@@ -278,6 +322,17 @@ const applyNotificationSubscriptionSideEffects = async (
     }
     if (previousRemainingCount <= 0 && nextRemainingCount > 0) {
       await rebuildWeChatReminderJobsForUser(userId);
+      return 0;
+    }
+    return 0;
+  }
+
+  if (kind === "ACTIVITY_START_REMINDER") {
+    if (nextRemainingCount <= 0) {
+      return cancelWeChatActivityStartReminderJobsForUser(userId);
+    }
+    if (previousRemainingCount <= 0 && nextRemainingCount > 0) {
+      await rebuildWeChatActivityStartReminderJobsForUser(userId);
       return 0;
     }
     return 0;

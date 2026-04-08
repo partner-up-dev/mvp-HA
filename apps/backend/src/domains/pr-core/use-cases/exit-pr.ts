@@ -15,7 +15,10 @@ import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
-import { cancelWeChatReminderJobsForParticipant } from "../../../infra/notifications";
+import {
+  cancelWeChatActivityStartReminderJobsForParticipant,
+  cancelWeChatReminderJobsForParticipant,
+} from "../../../infra/notifications";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 import { resolveBookingContactState } from "../../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
@@ -75,6 +78,7 @@ export async function exitPRByUserId(
   await userReliabilityRepo.applyDelta(userId, { released: 1 });
   if (refreshedRequest.prKind === "ANCHOR") {
     await cancelWeChatReminderJobsForParticipant(id, userId);
+    await cancelWeChatActivityStartReminderJobsForParticipant(id, userId);
     await resolveBookingContactState({
       prId: id,
       viewerUserId: userId,

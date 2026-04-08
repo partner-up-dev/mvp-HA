@@ -31,6 +31,10 @@ const envSchema = z.object({
     .string()
     .min(1)
     .optional(),
+  WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID: z
+    .string()
+    .min(1)
+    .optional(),
   WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID: z.string().min(1).optional(),
   WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID: z.string().min(1).optional(),
   FIXED_IP_HTTP_PROXY: z.string().url().optional(),

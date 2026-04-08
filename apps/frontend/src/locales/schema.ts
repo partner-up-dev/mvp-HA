@@ -343,6 +343,12 @@ export interface MessageSchema {
           enabledHint: string;
           disabledHint: string;
         };
+        ACTIVITY_START_REMINDER: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
         BOOKING_RESULT: {
           title: string;
           enabledHint: string;

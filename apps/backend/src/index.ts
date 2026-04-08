@@ -33,6 +33,7 @@ import {
   registerAnalyticsAggregationJobs,
 } from "./infra/analytics";
 import {
+  registerWeChatActivityStartReminderJobs,
   registerWeChatBookingResultJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatReminderJobs,
@@ -43,6 +44,7 @@ import { withTimeout } from "./lib/with-timeout";
 
 const app = new Hono();
 registerWeChatReminderJobs();
+registerWeChatActivityStartReminderJobs();
 registerWeChatNewPartnerJobs();
 registerWeChatBookingResultJobs();
 registerAnalyticsAggregationJobs();

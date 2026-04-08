@@ -4,7 +4,10 @@ import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
-import { cancelWeChatReminderJobsForParticipant } from "../../../infra/notifications";
+import {
+  cancelWeChatActivityStartReminderJobsForParticipant,
+  cancelWeChatReminderJobsForParticipant,
+} from "../../../infra/notifications";
 import { recalculatePRStatus } from "../../pr-core/services/slot-management.service";
 import { syncAnchorBookingTriggeredState } from "../../pr-core/services/anchor-booking-trigger.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
@@ -63,6 +66,10 @@ export async function releaseAdminAnchorPRPartner(input: {
 
   await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
   await cancelWeChatReminderJobsForParticipant(input.prId, slot.userId);
+  await cancelWeChatActivityStartReminderJobsForParticipant(
+    input.prId,
+    slot.userId,
+  );
   const bookingContact = await bookingContactRepo.findByPrId(input.prId);
 
   const { bookingContactCleared, creatorTransferredToUserId } =

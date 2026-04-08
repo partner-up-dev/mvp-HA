@@ -328,6 +328,12 @@
           "enabledHint": "确认开始和截止前 30 分钟提醒",
           "disabledHint": "暂无可用提醒"
         },
+        "ACTIVITY_START_REMINDER": {
+          "title": "活动开始提醒",
+          "enabledHint": "活动开始前 20 分钟提醒",
+          "disabledHint": "暂无可用通知",
+          "unconfiguredHint": "当前环境未配置“活动开始提醒”通知模板。"
+        },
         "BOOKING_RESULT": {
           "title": "场地预订结果",
           "enabledHint": "可接收场地预订结果",
