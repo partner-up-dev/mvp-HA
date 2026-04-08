@@ -46,10 +46,6 @@
       </dl>
 
       <section class="about-item about-item--wechat-follow">
-        <h2>{{ t("home.landing.officialAccountTitle") }}</h2>
-        <p>
-          {{ t("home.landing.officialAccountDescription") }}
-        </p>
         <button
           class="wechat-follow-action"
           type="button"
