@@ -24,7 +24,7 @@
         >
           <span
             v-if="isVoiceRecording"
-            class="i-mdi-microphone-off-outline voice-icon"
+            class="i-mdi-microphone voice-icon"
             aria-hidden="true"
           ></span>
           <span
@@ -39,11 +39,7 @@
           :disabled="isSubmitting"
           :aria-label="t('nlForm.submit')"
         >
-          <span
-            v-if="isSubmitting"
-            class="spinner"
-            aria-hidden="true"
-          ></span>
+          <span v-if="isSubmitting" class="spinner" aria-hidden="true"></span>
           <span
             v-else
             class="i-mdi-send-outline send-icon"
@@ -51,16 +47,12 @@
           ></span>
         </button>
       </div>
-    <p v-if="voiceErrorMessage" class="error-message voice-error">
-      {{ voiceErrorMessage }}
-    </p>
-    <span
-      v-if="errors.length"
-      class="error-message"
-      style="flex-basis: 100%"
-    >
-      {{ errors[0] }}
-    </span>
+      <p v-if="voiceErrorMessage" class="error-message voice-error">
+        {{ voiceErrorMessage }}
+      </p>
+      <span v-if="errors.length" class="error-message" style="flex-basis: 100%">
+        {{ errors[0] }}
+      </span>
     </Field>
 
     <ErrorToast
@@ -104,7 +96,8 @@ const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
 const createMutation = useCreateCommunityPRFromNaturalLanguage();
 const publishMutation = usePublishCommunityPR();
-const { activeExampleText, typedExampleText } = useLandingTypewriterPlaceholder();
+const { activeExampleText, typedExampleText } =
+  useLandingTypewriterPlaceholder();
 const draftStore = useNaturalLanguageDraftStore();
 const { rawText: draftRawText } = storeToRefs(draftStore);
 const placeholderText = computed(() =>
@@ -198,7 +191,11 @@ const onSubmit = async () => {
 };
 
 const handleVoiceToggle = async (): Promise<void> => {
-  if (!isVoiceSupported.value || isSubmitting.value || isVoiceProcessing.value) {
+  if (
+    !isVoiceSupported.value ||
+    isSubmitting.value ||
+    isVoiceProcessing.value
+  ) {
     return;
   }
 

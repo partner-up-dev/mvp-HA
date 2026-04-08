@@ -271,7 +271,7 @@ const handleClick = () => {
 }
 
 .event-title {
-  @include mx.pu-font(title-large);
+  @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface);
   margin: 0;
   text-wrap: balance;
@@ -279,7 +279,7 @@ const handleClick = () => {
 }
 
 .event-desc {
-  @include mx.pu-font(body-medium);
+  @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
   margin: 0;
   display: -webkit-box;
@@ -290,7 +290,7 @@ const handleClick = () => {
 }
 
 .event-cta {
-  @include mx.pu-font(label-large);
+  @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
   gap: var(--sys-spacing-xs);
