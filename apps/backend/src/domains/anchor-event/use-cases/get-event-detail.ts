@@ -39,6 +39,7 @@ export interface AnchorPRSummary {
   type: string;
   location: string | null;
   preferences: string[];
+  notes: string | null;
   time: [string | null, string | null];
   status: string;
   minPartners: number | null;
@@ -90,6 +91,7 @@ function toPRSummary(record: AnchorPRRecord): AnchorPRSummary {
     type: pr.type,
     location: pr.location,
     preferences: Array.isArray(pr.preferences) ? pr.preferences : [],
+    notes: pr.notes,
     time: pr.time,
     status: pr.status,
     minPartners: pr.minPartners,
