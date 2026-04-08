@@ -161,10 +161,9 @@ export interface MessageSchema {
       secondaryCreateTitle: string;
       secondaryCreateDescription: string;
       secondaryCreateAction: string;
-      officialAccountEyebrow: string;
-      officialAccountTitle: string;
-      officialAccountDescription: string;
+      wechatAccessDescription: string;
       officialAccountAction: string;
+      webPageQrAction: string;
       secondaryMineTitle: string;
       secondaryMineDescription: string;
       secondaryMineAction: string;
