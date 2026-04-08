@@ -75,6 +75,7 @@
                 :display-location-name="previewCard.displayLocationName"
                 :time-label="previewCard.timeLabel"
                 :preference-tags="previewCard.preferenceTags"
+                :notes="previewCard.notes"
                 :cover-image="previewCard.coverImage"
                 :detail-pr-id="previewCard.detailPrId"
                 :preview="true"
@@ -91,6 +92,7 @@
                   :display-location-name="activeDemandCard.displayLocationName"
                   :time-label="activeDemandCard.timeLabel"
                   :preference-tags="activeDemandCard.preferenceTags"
+                  :notes="activeDemandCard.notes"
                   :cover-image="activeDemandCard.coverImage"
                   :detail-pr-id="activeDemandCard.detailPrId"
                   :pending="isCardRouting"
@@ -299,6 +301,7 @@ type DemandCardCandidate = {
   prId: number;
   status: string;
   createdAt: string;
+  notes: string | null;
 };
 
 type DemandCardViewModel = {
@@ -310,6 +313,7 @@ type DemandCardViewModel = {
   displayLocationName: string;
   preferenceFingerprint: string | null;
   preferenceTags: string[];
+  notes: string | null;
   candidates: DemandCardCandidate[];
   detailPrId: number | null;
   coverImage: string | null;
@@ -580,6 +584,11 @@ const normalizePreferenceTag = (value: string): string | null => {
   return normalized.length > 0 ? normalized : null;
 };
 
+const normalizeCardNotes = (value: string | null | undefined): string | null => {
+  const normalized = value?.trim() ?? "";
+  return normalized.length > 0 ? normalized : null;
+};
+
 const resolvePreferenceTags = (values: string[]): string[] => {
   const seen = new Set<string>();
   const tags: string[] = [];
@@ -648,6 +657,7 @@ const buildDemandCards = (
         prId: pr.id,
         status: pr.status,
         createdAt: pr.createdAt,
+        notes: normalizeCardNotes(pr.notes),
       };
 
       const existing = cardMap.get(cardKey);
@@ -665,6 +675,7 @@ const buildDemandCards = (
         displayLocationName: location,
         preferenceFingerprint,
         preferenceTags,
+        notes: candidate.notes,
         candidates: [candidate],
         detailPrId: pr.id,
         coverImage: null,
@@ -690,11 +701,16 @@ const buildDemandCards = (
 
       return left.prId - right.prId;
     });
+    const representativeCandidate =
+      sortedCandidates.find((candidate) => candidate.notes !== null) ??
+      sortedCandidates[0] ??
+      null;
 
     return {
       ...card,
       candidates: sortedCandidates,
-      detailPrId: sortedCandidates[0]?.prId ?? null,
+      notes: representativeCandidate?.notes ?? null,
+      detailPrId: representativeCandidate?.prId ?? null,
     };
   });
 

@@ -43,12 +43,6 @@
       <section class="demand-card__primary">
         <h2 class="demand-card__location">{{ displayLocationName }}</h2>
         <p class="demand-card__time">{{ timeLabel }}</p>
-      </section>
-
-      <section class="demand-card__preferences" aria-live="polite">
-        <p class="demand-card__preferences-title">
-          {{ t("anchorEvent.card.preferenceTitle") }}
-        </p>
         <div v-if="preferenceTags.length > 0" class="demand-card__preference-list">
           <span
             v-for="tag in preferenceTags"
@@ -58,11 +52,10 @@
             {{ tag }}
           </span>
         </div>
-        <p v-else class="demand-card__preference-empty">
-          {{ t("anchorEvent.card.preferenceEmpty") }}
+        <p v-if="displayNotes" class="demand-card__notes">
+          {{ displayNotes }}
         </p>
       </section>
-
     </div>
   </article>
 </template>
@@ -114,6 +107,7 @@ const props = withDefaults(
     displayLocationName: string;
     timeLabel: string;
     preferenceTags: string[];
+    notes?: string | null;
     coverImage?: string | null;
     detailPrId?: number | null;
     pending?: boolean;
@@ -121,6 +115,7 @@ const props = withDefaults(
     previewDepth?: number;
   }>(),
   {
+    notes: null,
     coverImage: null,
     detailPrId: null,
     pending: false,
@@ -149,6 +144,10 @@ const isDragging = computed(() => swipePhase.value === "dragging");
 const isPendingState = computed(
   () => (!props.preview && props.pending) || swipePhase.value === "exiting",
 );
+const displayNotes = computed(() => {
+  const normalized = props.notes?.trim() ?? "";
+  return normalized.length > 0 ? normalized : null;
+});
 const isInteractionLocked = computed(
   () =>
     props.preview ||
@@ -442,7 +441,13 @@ watch(
 );
 
 watch(
-  () => [props.displayLocationName, props.timeLabel, props.detailPrId],
+  () => [
+    props.displayLocationName,
+    props.timeLabel,
+    props.detailPrId,
+    props.notes,
+    props.preferenceTags.join("|"),
+  ],
   () => {
     if (swipePhase.value !== "idle") {
       resetCardState();
@@ -557,7 +562,6 @@ watch(() => props.pending, (isPending) => {
   gap: var(--sys-spacing-med);
   flex: 1;
   min-height: 0;
-  justify-content: space-between;
 }
 
 .demand-card__primary {
@@ -579,18 +583,6 @@ watch(() => props.pending, (isPending) => {
   color: var(--sys-color-primary);
 }
 
-.demand-card__preferences {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.demand-card__preferences-title {
-  @include mx.pu-font(label-large);
-  margin: 0;
-  color: var(--sys-color-on-surface-variant);
-}
-
 .demand-card__preference-list {
   display: flex;
   flex-wrap: wrap;
@@ -608,10 +600,12 @@ watch(() => props.pending, (isPending) => {
   color: var(--sys-color-on-surface);
 }
 
-.demand-card__preference-empty {
+.demand-card__notes {
   @include mx.pu-font(body-medium);
   margin: 0;
   color: var(--sys-color-on-surface-variant);
+  font-style: italic;
+  white-space: pre-wrap;
 }
 
 </style>
