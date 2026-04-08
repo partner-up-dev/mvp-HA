@@ -72,6 +72,19 @@ export const updateContentSchema = z.object({
     .optional(),
 });
 
+export const anchorUpdateContentFieldsSchema = partnerRequestFieldsSchema.omit({
+  time: true,
+  budget: true,
+});
+
+export const anchorUpdateContentSchema = z.object({
+  fields: anchorUpdateContentFieldsSchema,
+  pin: z
+    .string()
+    .regex(/^\d{4}$/, "PIN must be 4 digits")
+    .optional(),
+});
+
 export const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });

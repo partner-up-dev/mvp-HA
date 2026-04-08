@@ -221,3 +221,36 @@ Changed files:
 Verification completed:
 
 - `pnpm --filter @partner-up-dev/frontend build`
+
+## Follow-Up Finding After Hotfix
+
+The frontend-only hotfix removed the disabled button state, but it did not fully restore successful Anchor content editing.
+
+New confirmed failure path:
+
+1. Anchor content modal can now submit.
+2. `useUpdateAnchorPRContent()` still sends `fields.time` to `/api/apr/:id/content`.
+3. Backend `updateContentSchema` still validates `fields` with the full `partnerRequestFieldsSchema`.
+4. That backend schema still requires `time` entries to satisfy:
+   - `YYYY-MM-DD`
+   - strict `z.string().datetime()` values
+5. Existing Anchor PR rows can still carry batch-derived time strings outside that backend-standard format.
+6. The request is therefore rejected by backend validation before the controller use-case runs.
+
+Relevant code:
+
+- `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
+- `apps/backend/src/entities/partner-request.ts`
+- `apps/backend/src/controllers/pr-controller.shared.ts`
+
+Implication:
+
+- the previous hotfix solved the frontend gating symptom only
+- the actual urgent production fix still needs one more Anchor-specific boundary change:
+  - either normalize outgoing Anchor `time` to backend contract before submit
+  - or stop requiring/sending mutable `time` in the Anchor content update route
+
+Preferred immediate direction remains:
+
+- Anchor content edit should not be a time-editing flow
+- so the cleaner fix is to align the request contract with that rule instead of keeping full shared time validation in the Anchor content mutation path
