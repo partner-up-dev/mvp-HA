@@ -317,6 +317,10 @@ values
     'https://oss-app.partner-up.cn/5264495b163398842ad04ee5ee42a3df.jpg'
   ),
   (
+    'home_page_wechat_qr_code',
+    'https://oss-app.partner-up.cn/support/8f52443c-5546-4f1a-8f7d-035d929bde10.png'
+  ),
+  (
     'wechat_beta_group_qr_code',
     'https://oss-app.partner-up.cn/5264495b163398842ad04ee5ee42a3df.jpg'
   ),

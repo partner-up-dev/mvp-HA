@@ -43,6 +43,7 @@
               ></span>
             </span>
           </RouterLink>
+          <LandingOfficialAccountSection />
         </div>
       </section>
     </main>
@@ -63,6 +64,7 @@ import EventHighlightsSection from "@/domains/event/ui/sections/landing/EventHig
 import EventPlazaEntry from "@/domains/event/ui/sections/landing/EventPlazaEntry.vue";
 import LandingBookmarkNudge from "@/domains/landing/ui/sections/LandingBookmarkNudge.vue";
 import LandingFooterSection from "@/domains/landing/ui/sections/LandingFooterSection.vue";
+import LandingOfficialAccountSection from "@/domains/landing/ui/sections/LandingOfficialAccountSection.vue";
 import { trackEvent } from "@/shared/telemetry/track";
 
 const HOME_SCROLL_SNAP_CLASS = "home-scroll-snap";

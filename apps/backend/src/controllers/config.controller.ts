@@ -9,6 +9,7 @@ const configService = new ConfigService();
 const publicConfigParamSchema = z.object({
   key: z.enum([
     "author_wechat_qr_code",
+    "home_page_wechat_qr_code",
     "wechat_beta_group_qr_code",
     "wecom_staff_link",
     "wecom_service_qr_code",
