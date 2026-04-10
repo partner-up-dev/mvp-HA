@@ -1,60 +1,60 @@
-# 核心工作流
+# Core Workflows
 
-## 1. 从首页发起 Community PR
+## 1. Create a Community PR from Home
 
-1. 用户进入首页，先理解产品并浏览活动亮点或活动广场入口。
-2. 用户可点击价值点“从一句话开始”展开轻量自然语言输入，也可进入 `/cpr/new`。
-3. 系统先创建 `DRAFT`，再在发起动作中完成发布。
-4. 发布时为创建者认领身份并确保本地 PIN 能力。
-5. 结果是一个可被分享和回访的 Community PR。
+1. The user lands on home and first understands the product through hero, value, or event-entry surfaces.
+2. The user either expands the lightweight "start from one sentence" path or enters `/cpr/new`.
+3. The system creates a `DRAFT` first and publishes during the creation flow.
+4. During publish, the system assigns creator ownership and preserves local PIN continuity.
+5. The result is a `Community PR` that can be shared and revisited.
 
-## 2. 通过链接进入并加入 PR
+## 2. Enter Through a Link and Join a PR
 
-1. 用户打开 `/cpr/:id` 或 `/apr/:id`。
-2. 用户阅读搭子请求信息、当前人数、状态与参与名单。
-3. Community PR 走本地账户 + PIN 加入路径；Anchor PR 走更严格的 authenticated + 微信绑定路径。
-4. 系统在加入前检查时间窗口冲突、状态、人数与场景规则。
-5. 成功后用户进入该搭子请求的后续流转。
+1. The user opens `/cpr/:id` or `/apr/:id`.
+2. The user reads the request details, current count, visible status, and participant list.
+3. `Community PR` uses local account plus PIN for joining; `Anchor PR` uses authenticated session plus WeChat binding.
+4. Before join, the system checks time-window conflict, state, capacity, and scenario rules.
+5. If join succeeds, the user enters the downstream progression of that collaboration object.
 
-## 3. 从活动浏览进入 Anchor 协作
+## 3. Enter Anchor Collaboration Through Event Browsing
 
-1. 用户浏览 `/events` 或 `/events/:eventId`。
-2. 用户可从批次列表或卡片模式进入某个现有 Anchor PR；`/events/:eventId` 可通过查询参数 `mode=card|list` 控制进入页面时的初始显示模式。
-3. 若当前批次/地点没有合适的 Anchor PR，且该位置仍允许创建，用户可在活动页内发起一个受控 Anchor PR。
-4. 用户可继续加入、查看替代推荐、或查看预订与资助信息。
-5. Anchor 场景围绕时间窗口与可靠性闭环继续推进确认、提醒与签到。
+1. The user browses `/events` or `/events/:eventId`.
+2. The user enters an existing `Anchor PR` from batch or card context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint.
+3. If the current batch or location does not have a suitable `Anchor PR` and creation is still allowed, the user can create one through the controlled event-page flow.
+4. The user may then join, inspect alternatives, or view booking-support information.
+5. `Anchor PR` continues through timing and reliability loops such as confirmation, reminders, and check-in.
 
-## 4. 回访与历史进入
+## 4. Revisit and History Entry
 
-1. 用户再次打开网页时，系统优先恢复已有会话。
-2. 用户可从 `/me` 查看当前资料、绑定、通知与本地凭据。
-3. 用户可从 `/pr/mine` 查看“我创建的 / 我加入的”历史列表并再次进入对应 PR。
+1. When the user returns, the system restores existing session continuity when possible.
+2. The user can inspect profile, binding, notifications, and local credentials through `/me`.
+3. The user can revisit created and joined history through `/pr/mine`.
 
-## 5. 分享与传播
+## 5. Share and Distribution
 
-1. 用户在 PR 页面或支持页面触发分享。
-2. 系统根据场景提供公开链接、微信分享、小红书内容等能力。
-3. 分享链接附带 `spm` 归因，用于后续传播链路识别。
-4. 新访客通过链接重新进入对应页面并继续协作。
+1. The user triggers sharing from a PR page or support-related page.
+2. The system provides the available share method for that scenario, such as public link, WeChat share, or Xiaohongshu output.
+3. Share links may carry `spm` attribution.
+4. New visitors re-enter the corresponding route and continue the collaboration path.
 
-## 6. Anchor 可靠性闭环
+## 6. Anchor Reliability Loop
 
-1. 用户加入 Anchor PR。
-2. 系统根据确认窗口决定是否立即确认、是否允许继续加入、是否释放未确认槽位。
-3. 若用户对相关通知拥有剩余发送次数，系统按规则调度提醒、新搭子通知与后续预订结果通知。
-4. 用户可在活动后提交签到反馈，形成可靠性回流。
+1. The user joins an `Anchor PR`.
+2. The system decides whether immediate confirmation is required, whether additional joining is still allowed, and whether unconfirmed slots must be released.
+3. If the user still has relevant notification quota, the system may schedule reminder, new-partner, or booking-result notifications.
+4. After the event, the user may submit check-in feedback and contribute to the reliability loop.
 
-## 7. Admin 预订执行
+## 7. Admin Booking Execution
 
-1. 某个 Anchor PR 处于 `READY` / `FULL` / `LOCKED_TO_START`、已达到最小人数，且存在需要平台代订的资源（`PLATFORM` / `PLATFORM_PASSTHROUGH`）后，系统将其纳入运营待处理列表；该准入不要求参与者已确认。
-2. 运营查看目标 PR 与可执行资源；若资源采用 `PLATFORM_PASSTHROUGH`，还需要查看当前预订联系人手机号。
-3. 运营可选择目标资源并提交成功/失败结果；失败时需要给出原因。
-4. 若 `PLATFORM_PASSTHROUGH` 联系人手机号无效，运营可直接释放当前预订联系人，让新的联系人所有者重新接管流程。
-5. 系统记录执行审计，并在条件满足时向活跃参与者发送预订结果通知。
+1. When an `Anchor PR` is in `READY`, `FULL`, or `LOCKED_TO_START`, has reached minimum active participants, and still requires platform-handled booking resources (`PLATFORM` or `PLATFORM_PASSTHROUGH`), the system admits it into the operator pending workspace.
+2. The operator reviews the target PR and executable resources. If the resource uses `PLATFORM_PASSTHROUGH`, the operator also reviews the current booking-contact phone number.
+3. The operator submits a success or failure result, and failure requires a reason.
+4. If the current booking-contact phone number is invalid under `PLATFORM_PASSTHROUGH`, the operator can release that contact so a new owner can take over the flow.
+5. The system records auditable execution results and notifies current active participants when the conditions are met.
 
-## 8. 客服、反馈与运营支持
+## 8. Support, Feedback, and Operator Support
 
-1. 用户从首页或页脚的“需要帮助”入口进入 `/contact-support`。
-2. 用户根据目的分流到客服、作者反馈或内测群二维码。
-3. 用户也可从该页底部进入 `/about`，查看产品、仓库、前后端 commit hash，并打开公众号二维码弹窗。
-4. 运营端通过管理页面维护活动、POI、预订与资助等能力，支撑前述工作流持续可用。
+1. The user enters `/contact-support` from home or footer-level support entrypoints.
+2. The user is routed toward support, author feedback, or beta-group QR code based on need.
+3. The user can also reach `/about` from that path, inspect product and repository metadata, and open the official-account QR modal.
+4. Operator pages maintain event, POI, booking-support, and related capabilities so the above workflows remain operable.

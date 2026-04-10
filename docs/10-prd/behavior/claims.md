@@ -1,49 +1,86 @@
-# 产品主张
+# Product Claims
 
-## 1. 从一句话到可加入搭子请求
+## Claim 1. A One-Sentence Intent Can Become a Joinable Collaboration Object
 
-产品主张：用户可以把一句自然语言意图冻结成一个可被分享、可被加入、可自然结束的 `PartnerRequest`。
+- Claim Intent: let a user freeze a natural-language collaboration intent into a stable `PartnerRequest` that other people can understand, join, and revisit.
+- Evaluation Dimensions:
+  - creation friction stays low
+  - the created object remains stable enough to share
+  - a recipient can understand what action to take
+- Evidence Expectation:
+  - users can create a `Community PR` from lightweight input
+  - shared routes remain legible and actionable on revisit
+- Source Rationale:
+  - `../_drivers/market-and-user-pressures.md`
+  - `../_drivers/business-and-service-objectives.md`
+- Realization Pointers:
+  - `../../20-product-tdd/claim-realization-matrix.md`
+  - `../../20-product-tdd/cross-unit-contracts.md`
 
-这条主张要求：
+## Claim 2. Community and Anchor Collaboration Must Evolve by Scenario, Not by Forced Page Unification
 
-- 发起门槛足够低
-- 结果对象足够稳定
-- 被分享者能直接理解并行动
+- Claim Intent: preserve shared collaboration semantics without forcing `Community PR` and `Anchor PR` into one page grammar.
+- Evaluation Dimensions:
+  - scenario-specific fields and actions can diverge
+  - shared semantics such as participation and timing remain legible
+  - event-anchored collaboration can add stronger reliability and booking semantics
+- Evidence Expectation:
+  - route families and workflows remain clearly distinct
+  - `Anchor PR` can support confirmation, check-in, and booking-related flows without collapsing into the `Community PR` surface
+- Source Rationale:
+  - `../_drivers/business-and-service-objectives.md`
+  - `../_drivers/hard-constraints.md`
+- Realization Pointers:
+  - `../../20-product-tdd/claim-realization-matrix.md`
+  - `../../20-product-tdd/cross-unit-contracts.md`
 
-## 2. 搭子请求必须区分场景，而不是强行统一页面
+## Claim 3. Collaboration Must Support Distribution, Revisit, and Re-Entry
 
-产品主张：Community PR 与 Anchor PR 共享搭子请求底层语义，但页面、字段与关键规则可以按场景独立演进。
+- Claim Intent: treat `PartnerRequest` as a reusable collaboration object rather than a disposable form submission.
+- Evaluation Dimensions:
+  - link sharing remains a first-class path
+  - revisit and re-entry remain available through home, event, history, and shared routes
+  - attribution can flow through the revisit path
+- Evidence Expectation:
+  - public detail routes remain stable
+  - share outputs continue to route new visitors back into collaboration
+- Source Rationale:
+  - `../_drivers/market-and-user-pressures.md`
+  - `../_drivers/hard-constraints.md`
+- Realization Pointers:
+  - `../../20-product-tdd/claim-realization-matrix.md`
+  - `../../20-product-tdd/cross-unit-contracts.md`
 
-这条主张要求：
+## Claim 4. Collaboration Needs a Minimum Trust Loop
 
-- 社区型搭子请求与活动型搭子请求不能被同一页面语义硬绑
-- Anchor 场景可引入更强的确认、签到、提醒与预订支持
+- Claim Intent: help users judge whether collaboration is still credible, not just whether it was created.
+- Evaluation Dimensions:
+  - formed and full states remain clear
+  - confirmation and check-in loops reinforce reliability in `Anchor PR`
+  - notification semantics model real send opportunities rather than a generic toggle
+- Evidence Expectation:
+  - `Anchor PR` exposes confirmation, reminder, and check-in behavior
+  - fulfillment-related notifications and reliability feedback remain user-visible where relevant
+- Source Rationale:
+  - `../_drivers/market-and-user-pressures.md`
+  - `../_drivers/operational-realities.md`
+- Realization Pointers:
+  - `../../20-product-tdd/claim-realization-matrix.md`
+  - `../../20-product-tdd/system-state-and-authority.md`
 
-## 3. 协作要能传播、回访与再次进入
+## Claim 5. Identity Should Support Collaboration Instead of Blocking It Up Front
 
-产品主张：PartnerRequest 不是一次提交后即消失的表单，而是一个可通过链接传播、可回访、可再次进入的搭子请求。
-
-这条主张要求：
-
-- 链接分享是产品的一等路径
-- 首页、活动页、历史列表、分享回流都应服务于再进入
-
-## 4. 协作需要最低限度的可信度闭环
-
-产品主张：产品不仅帮助用户“找到人”，也帮助用户判断协作是否仍然可信。
-
-这条主张要求：
-
-- 成团与满员状态明确
-- Anchor 场景有确认窗口与签到回流
-- 通知订阅不只是开关，而是围绕真实发送机会建模
-
-## 5. 身份应服务于协作，而不是先于协作
-
-产品主张：身份体系应尽量在不阻断协作起步的前提下逐步建立。
-
-这条主张要求：
-
-- 允许匿名浏览
-- 允许本地账户 + PIN 作为轻身份基础
-- 在需要更强可信度的场景再引入微信绑定与 authenticated 会话要求
+- Claim Intent: let collaboration start lightly and strengthen identity only when the scenario requires more trust.
+- Evaluation Dimensions:
+  - anonymous browsing is allowed
+  - local account plus PIN can support lightweight ownership and revisit
+  - stronger identity requirements appear only in stronger-trust scenarios
+- Evidence Expectation:
+  - `Community PR` remains compatible with local account plus PIN
+  - key `Anchor PR` actions remain gated by authenticated session plus WeChat binding
+- Source Rationale:
+  - `../_drivers/market-and-user-pressures.md`
+  - `../_drivers/hard-constraints.md`
+- Realization Pointers:
+  - `../../20-product-tdd/claim-realization-matrix.md`
+  - `../../20-product-tdd/cross-unit-contracts.md`

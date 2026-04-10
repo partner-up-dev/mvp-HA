@@ -55,6 +55,7 @@
   - the repo still carries a local `docs/_svc_v91.md` snapshot
   - local `src/**/AGENTS.md` usage is already present and partially aligned with SVC v9.7's local-context layer
   - active doc content is more drifted than a pure structure scan suggested: root and package AGENTS are still v9.1-shaped, alignment docs are pre-substrate, and some backend local AGENTS still describe older service-centric ownership
+  - the active durable docs were not consistently English; before this slice, PRD and several local AGENTS still used Chinese outside glossary ownership
 - decisions made:
   - use `tasks/align-svc-97/` immediately as the active exploration container because the user requested it and because SVC v9.7 makes `tasks/` canonical
   - keep this packet read-only with respect to durable truth until the migration route is explicit
@@ -63,3 +64,4 @@
   - baseline, gap map, plan, and legacy inventory were created for the next Solidify slice
   - Phase 1 implemented root `AGENTS.md` rewrite and created `docs/00-meta/` with typed routes, mode SOPs, and a minimal concept dictionary
   - Phase 2 updated package `AGENTS.md` files to use `docs/00-meta/` plus `tasks/`, and corrected backend local controller/service guidance to stop endorsing the older service-centric default
+  - the PRD tree was rewritten into English, `docs/10-prd/glossary.md` was introduced, `vocabulary-and-lifecycle.md` was removed, and the active-doc language rule now holds except for Chinese glossary terms

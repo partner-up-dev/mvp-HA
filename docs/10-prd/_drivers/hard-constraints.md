@@ -1,25 +1,25 @@
-# 硬约束
+# Hard Constraints
 
-## 产品形态约束
+## Product Shape Constraints
 
-- 产品不是 App、社区或内容平台，而是嵌入现有对话与传播行为中的协作触发器。
-- 当前对外的核心搭子请求只有 `PartnerRequest`，且分为 `Community PR` 与 `Anchor PR`。
-- 当前版本不提供脱离 Anchor Event/batch 上下文的通用 Anchor PR 创建入口；用户侧 Anchor PR 创建只允许发生在 Anchor Event 页面中的 batch/location 选择流程里。
+- The product is not an app, a community, or a content platform. It is a collaboration trigger embedded into existing conversation and sharing behavior.
+- The core external collaboration object is `PartnerRequest`, currently split into `Community PR` and `Anchor PR`.
+- The current version does not provide a generic Anchor PR creation entrypoint outside Anchor Event and batch context. User-created Anchor PRs are restricted to the controlled event-page flow.
 
-## 交互与身份约束
+## Interaction And Identity Constraints
 
-- Community PR 与 Anchor PR 的参与机制共享底层语义，但页面与业务规则必须允许分开演进。
-- Community PR 的加入/退出依赖本地账户 + PIN 机制。
-- Anchor PR 的关键参与动作必须满足本地 authenticated 会话 + 已绑定微信 openid。
-- 当前版本主要面向 H5 与微信相关环境，不以原生 App 作为前提。
+- `Community PR` and `Anchor PR` share underlying participation semantics, but their pages and business rules must be allowed to diverge.
+- `Community PR` join and exit flows depend on local account plus PIN.
+- Key `Anchor PR` participation actions require an authenticated local session plus a bound WeChat `openid`.
+- The current version primarily targets H5 and WeChat-related environments rather than a native app.
 
-## 冷启动与传播约束
+## Cold-Start And Distribution Constraints
 
-- 发起路径必须允许“从一句话开始”，不能把首次发起前置为复杂注册流程。
-- 分享是主传播路径之一，因此公开链接、微信分享、小红书分享都属于当前产品形态的一部分。
+- The creation path must support "start from one sentence" and cannot force a heavy registration flow ahead of first collaboration.
+- Sharing is a primary distribution path, so public links, WeChat sharing, and Xiaohongshu share outputs all belong to the current product shape.
 
-## 当前范围约束
+## Current Scope Constraints
 
-- 当前只启用 `zh-CN` 单语。
-- 预订结果通知能力仍受微信环境、运营执行与用户剩余订阅次数共同约束。
-- 小红书当前仅支持生成文案与海报，不支持平台内直发。
+- The current product experience is single-language and `zh-CN` only.
+- Booking-result notifications remain constrained by WeChat environment, operator execution, and user subscription quota.
+- Xiaohongshu currently supports generated captions and posters, but not in-platform direct publish.

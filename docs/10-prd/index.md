@@ -10,6 +10,7 @@ This layer defines:
 - what durable user-visible behavior must hold
 - what rules and scope boundaries future implementation must honor
 - what derived domain structure helps keep the product intelligible
+- what business terms must stay stable across product discussions
 
 ## What This Layer Owns
 
@@ -19,36 +20,39 @@ This layer defines:
 - workflows
 - user-visible rules and invariants
 - scope boundaries
-- derived domain vocabulary and lifecycle
+- business glossary
+- derived domain structure
 
 ## What Must Not Appear Here
 
-- workspace/package decomposition
+- workspace or package decomposition
 - module ownership layout
-- internal controller/service/repository structure
+- internal controller / service / repository structure
 - rollout procedures and deployment runbooks
 - task-local implementation sequencing
+- framework ontology that belongs in `docs/00-meta/`
 
 ## How To Read This Layer
 
 Recommended order:
 
-1. `_drivers/*` for upstream pressure
-2. `behavior/claims.md`
-3. `behavior/workflows.md`
-4. `behavior/rules-and-invariants.md`
-5. `behavior/scope.md`
-6. `domain-structure/*`
+1. `glossary.md` when business language is relevant
+2. `_drivers/*` for upstream pressure
+3. `behavior/claims.md`
+4. `behavior/workflows.md`
+5. `behavior/rules-and-invariants.md`
+6. `behavior/scope.md`
+7. `domain-structure/*`
 
 If the change is reference-sensitive, read `docs/15-alignment/README.md` and `docs/15-alignment/ui-map.yaml` first.
 
-Use `capabilities.md` as the product surface map, not as the primary source of truth.
-Treat `_drivers` as upstream truth and `domain-structure` as derived structure that cannot redefine drivers or claims.
+Use `behavior/capabilities.md` as the product surface map, not as the primary source of truth.
+Treat `_drivers` as upstream truth and `domain-structure` as derived structure that must not redefine drivers or claims.
 
 ## How This Layer Connects To Adjacent Layers
 
-- Upstream from root `AGENTS.md`: this layer inherits repo-local navigation and owner rules.
-- Downstream to future Product TDD: technical decomposition must realize the claims, workflows, and rules defined here.
+- Upstream from root `AGENTS.md` and `docs/00-meta/*`: this layer is the primary owner for `Intent` inputs.
+- Downstream to Product TDD: technical decomposition must realize the claims, workflows, and rules defined here.
 - Sideways to `docs/40-deployment/*`: runtime realities may constrain the product, but runtime procedures do not belong here.
 
 ## Common Local Mistakes
@@ -56,4 +60,5 @@ Treat `_drivers` as upstream truth and `domain-structure` as derived structure t
 - starting from architecture instead of product pressure
 - treating page structure as the same thing as product capability
 - mixing current implementation detail into durable product rules
-- letting derived domain vocabulary silently redefine product drivers or claims
+- letting derived domain structure silently redefine product drivers or claims
+- storing business vocabulary outside `glossary.md`

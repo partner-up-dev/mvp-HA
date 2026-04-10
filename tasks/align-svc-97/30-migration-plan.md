@@ -93,6 +93,10 @@ Verification:
 
 ## Phase 3 - PRD Vocabulary Ownership Fix
 
+Status:
+
+- completed, expanded to include English rewrite and PRD purity cleanup
+
 Target:
 
 - `docs/10-prd/glossary.md`

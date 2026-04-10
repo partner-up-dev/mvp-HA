@@ -1,36 +1,36 @@
-# 市场与用户压力
+# Market And User Pressures
 
-## 1. 协作常常起于一句话，但很难自然落地
+## 1. Collaboration Often Starts as One Sentence but Rarely Lands Cleanly
 
-用户真实的协作意图常常先出现在群聊、私聊、朋友圈或线下沟通里。
+Real collaboration intent often first appears in chat groups, private messages, social posts, or offline conversation.
 
-问题不在于“表达意愿”，而在于后续协作缺少一个足够轻量、可被加入、可自然结束的承载体。
+The problem is not expressing willingness. The problem is that the follow-up collaboration lacks a lightweight carrier that can be joined, shared, and concluded naturally.
 
-## 2. 现有形态要么太重，要么太散
+## 2. Existing Options Are Either Too Heavy or Too Fragmented
 
-- 群消息太散，后续加入与状态变化不可追踪
-- 社区/论坛太重，会把一次性协作意图误导成长期内容运营
-- 表单/活动工具过于结构化，不适合作为“从一句话开始”的第一承载层
+- group chat is too fragmented; later participation and state changes are hard to track
+- forums and communities are too heavy for one-off collaboration
+- form and event tools are too structured to serve as the first carrier for "start from one sentence"
 
-用户需要的不是新的大平台，而是一个能嵌入既有对话与传播行为的协作触发器。
+Users do not need another large platform. They need a collaboration trigger that fits inside existing conversation and sharing behavior.
 
-## 3. 冷启动阶段必须降低发起与加入门槛
+## 3. Cold Start Requires Low Friction for Creation and Joining
 
-MVP 阶段的关键不是覆盖全部场景，而是验证：
+At the MVP stage, the key question is not whether every scenario is covered. The key questions are:
 
-- 用户是否愿意把一句自然语言冻结为可加入对象
-- 其他人是否愿意通过链接加入
-- 这种搭子请求是否值得继续工程化
+- will users freeze a natural-language intent into a joinable object
+- will other users join through a link
+- is that object worth further productization
 
-这要求产品在发起、传播、回访、再次加入等关键链路上足够轻。
+This requires the product to stay lightweight across creation, distribution, revisit, and re-entry paths.
 
-## 4. 协作不仅要发生，还要更可信
+## 4. Collaboration Must Be More Trustworthy, Not Merely Possible
 
-搭子协作的阻力来自不确定性：
+The resistance to collaboration comes from uncertainty:
 
-- 对方是否真的会来
-- 人数是否够成团
-- 是否会临时退出
-- 是否有提醒、确认、签到等可靠性闭环
+- whether the other party will really show up
+- whether the group will reach viable size
+- whether participants will drop out late
+- whether reminders, confirmations, and check-in loops exist
 
-因此产品不仅要让协作发生，还要提升协作过程的可预期性与安全感。
+The product therefore has to improve predictability and confidence, not just enable collaboration to happen once.

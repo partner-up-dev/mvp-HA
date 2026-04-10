@@ -1,56 +1,87 @@
-# 规则与不变量
+# Rules And Invariants
 
-## 1. 产品对象与场景规则
+## 1. Product Object And Scenario Rules
 
-- 对外核心搭子请求是 `PartnerRequest`。
-- `PartnerRequest` 当前分为 `Community PR` 与 `Anchor PR` 两类。
-- Community PR 与 Anchor PR 共享参与、时间窗口、人数阈值等底层语义，但页面与规则允许分开演进。
+- The core external collaboration object is `PartnerRequest`.
+- `PartnerRequest` currently exists as `Community PR` and `Anchor PR`.
+- `Community PR` and `Anchor PR` share base semantics such as participation, time windows, and partner thresholds, but their pages and rules may evolve separately.
 
-## 2. 发起与发布规则
+## 2. Creation And Publish Rules
 
-- Community PR 的用户发起路径统一为“先创建草稿，再发布”。
-- 当前版本不提供脱离 Anchor Event/batch/location 上下文的通用 Anchor PR 创建入口。
-- 用户侧 Anchor PR 创建只能发生在活动页内的受控创建路径中，并继续受 batch、location、人数与时序规则约束。
-- 发布 Community PR 时，创建者必须被绑定到某个用户身份，并确保后续可凭 PIN 完成所有权校验。
+- The `Community PR` user creation path is always draft-first, then publish.
+- The current version does not expose a generic `Anchor PR` creation entrypoint outside Anchor Event, batch, and location context.
+- User-created `Anchor PR` may only happen inside the controlled event-page creation path and remains constrained by batch, location, partner, and timing rules.
+- Publishing a `Community PR` must bind the creator to a user identity and preserve later ownership checks through PIN.
 
-## 3. 生命周期与参与规则
+## 3. Lifecycle And Participation Rules
 
-- 对外可见的 `PartnerRequest` 生命周期状态包括 `DRAFT`、`OPEN`、`READY`、`FULL`、`LOCKED_TO_START`、`ACTIVE`、`CLOSED`、`EXPIRED`。
-- `LOCKED_TO_START` 表示搭子请求已进入开始前锁定阶段；此时不能再继续加入，但仍可能继续向 `ACTIVE` 推进。
-- PartnerRequest 的状态共同受人数阈值、时间窗口、确认窗口与场景特有规则影响。
-- `PartnerRequest.minPartners` 必须是整数且 `>= 2`；若 `maxPartners` 非空，则必须满足 `maxPartners >= minPartners`。
-- 自动创建路径在未得到有效 `minPartners` 时，必须落到 `2`；手动输入路径必须明确拒绝空值、`0`、`1` 与任何违反上下界关系的输入。
-- 已加入的非终态 PR 与目标 PR 时间窗口冲突时，应拒绝新的加入或会占用槽位的创建/发布行为。
-- Community PR 仅提供 `join/exit`。
-- Anchor PR 提供 `join/exit`、确认参与与签到回流。
+- The visible `PartnerRequest` status set is `DRAFT`, `OPEN`, `READY`, `FULL`, `LOCKED_TO_START`, `ACTIVE`, `CLOSED`, and `EXPIRED`.
+- `LOCKED_TO_START` means the collaboration object has entered the pre-start lock window; joining is no longer allowed, but progression toward `ACTIVE` may still continue.
+- `PartnerRequest` state is jointly shaped by partner thresholds, time windows, confirmation windows, and scenario-specific rules.
+- `PartnerRequest.minPartners` must be an integer and `>= 2`. If `maxPartners` is present, it must satisfy `maxPartners >= minPartners`.
+- Auto-created paths must fall back to `2` when a valid `minPartners` is unavailable. Manual input paths must reject empty value, `0`, `1`, and invalid bounds.
+- If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
+- `Community PR` supports `join` and `exit` only.
+- `Anchor PR` supports `join`, `exit`, confirmation, and check-in feedback.
 
-## 4. 身份与鉴权规则
+### Status Semantics
 
-- 浏览不强制先登录。
-- Community PR 的加入/退出依赖本地账户 + PIN 机制。
-- Anchor PR 的关键参与动作必须满足本地 authenticated 会话 + 用户已绑定微信 openid。
-- 用户身份体系服务于协作，不应把复杂登录前置为所有路径的门槛。
+| Status | Meaning | Join Semantics |
+| --- | --- | --- |
+| `DRAFT` | unpublished draft held by the creator | not joinable |
+| `OPEN` | published and not yet formed | joinable |
+| `READY` | minimum viable group reached and waiting to start | joinable until blocked by other rules |
+| `FULL` | maximum partner count reached | not joinable |
+| `LOCKED_TO_START` | pre-start lock window | not joinable |
+| `ACTIVE` | in progress | normally no longer accepts new joins |
+| `CLOSED` | explicitly concluded | not joinable |
+| `EXPIRED` | ended because the time window elapsed | not joinable |
 
-## 5. 可靠性规则
+`Anchor PR` may additionally pass through confirmation-window, reminder, new-partner, and check-in loops.
 
-- Anchor PR 存在确认窗口：未确认槽位会在规则窗口内被释放，过晚则禁止加入。
-- Anchor PR 的签到回流默认不是强制动作，但未签到应被视为未知而非自动“未到场”。
-- 通知订阅按剩余发送次数建模，而不是简单开关。
-- 仅 `PLATFORM_PASSTHROUGH` 预订要求首位联系人提供手机号；普通 `PLATFORM` 预订不应额外要求用户手机号。
-- 平台代订履约待处理的准入以 `READY` / `FULL` / `LOCKED_TO_START` 且已达到最小人数为准，不以参与者是否 `CONFIRMED` 为前提。
-- booking deadline 到达时，可依据活跃参与者是否仍达到最小人数决定是否失效；不应仅因参与者尚未确认就自动释放或判定未成团。
-- 当 Anchor 场景进入平台代订履约阶段时，运营处理结果必须可审计，并且结果通知应面向当前活跃参与者而不是只面向联系人所有者。
-- 运营侧对无效预订联系人执行人工释放时，释放动作与其对预订联系人归属的影响必须进入同一审计语义。
+### Participation Lifecycle Semantics
 
-## 6. 传播与回访规则
+1. A slot starts as joinable.
+2. A user joins and becomes active.
+3. In `Anchor PR`, the participant may enter confirmation semantics.
+4. The participant may exit, be released, or complete check-in.
+5. Once no longer active, the participant must not be treated as a current participant.
 
-- PR 页面应可通过公开链接再次进入。
-- 分享链路可附带 `spm` 归因参数，并在当前浏览器会话中延续。
-- 首页、活动页、个人中心与历史列表都应服务于回访和再次进入。
+## 4. Identity And Authentication Rules
 
-## 7. 资料与支持规则
+- Browsing does not require upfront login.
+- `Community PR` join and exit depend on local account plus PIN.
+- Key `Anchor PR` participation actions require an authenticated local session plus a bound WeChat `openid`.
+- Identity should support collaboration instead of becoming the initial gate for every path.
 
-- 参与者资料页是只读页，不承担编辑职责。
-- “需要帮助”入口必须把客服、作者反馈、关于页导流明确分开。
-- `/about` 中展示的构建元信息必须可被当前运行环境解释，不能依赖浏览器端本地仓库状态。
-- 运营配置对用户链路可见时，属于产品行为的一部分，不能被视为纯内部实现细节。
+### User Relationship Progression
+
+1. anonymous browse
+2. local account creation or recovery
+3. authenticated session continuity
+4. optional WeChat binding
+5. participation in higher-trust `Anchor PR` flows when required
+
+## 5. Reliability Rules
+
+- `Anchor PR` has a confirmation window. Unconfirmed slots may be released inside that window, and late joining may be blocked.
+- Check-in feedback is not mandatory by default; absence of check-in should remain "unknown" rather than auto-converted into "did not attend".
+- Notification subscription is modeled by remaining send quota, not by a simple toggle.
+- Only `PLATFORM_PASSTHROUGH` booking requires the first booking-contact owner to provide a phone number. Standard `PLATFORM` booking must not add that requirement.
+- The platform-handled booking pending workspace admits PRs that are in `READY`, `FULL`, or `LOCKED_TO_START` and still meet minimum active-participant count. It does not require participants to be `CONFIRMED`.
+- When the booking deadline is reached, invalidation may depend on whether active participants still meet minimum viable count. Lack of confirmation alone must not auto-release the group or mark it unformed.
+- Once `Anchor PR` enters the platform booking fulfillment stage, operator results must be auditable and notification results must target current active participants rather than only the booking-contact owner.
+- Manual operator release of an invalid booking contact must be recorded in the same audit semantics as the ownership effect of that release.
+
+## 6. Distribution And Revisit Rules
+
+- PR pages must remain re-enterable through public links.
+- Share links may carry `spm` attribution and continue through the current browser session.
+- Home, event pages, personal center, and history list all support revisit and re-entry.
+
+## 7. Profile And Support Rules
+
+- Participant profile pages are read-only and do not own editing behavior.
+- The "Need Help" path must keep support, author feedback, and about-page routing distinct.
+- Build metadata shown in `/about` must be interpretable in the current runtime and must not depend on a local git checkout inside the browser environment.
+- Operator-managed configuration counts as product behavior whenever it changes a user-visible path.
