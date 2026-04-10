@@ -57,7 +57,6 @@ Read only what is needed for the current work and keep durable docs current.
 - `docs/30-unit-tdd/`: open only when a named hard-unit doc exists and is relevant.
 - `docs/40-deployment/`: runtime, rollout, observability, and recovery truth.
 - `tasks/`: active entropy buffer for non-trivial work. Every non-trivial task packet should record `Objective & Hypothesis`, `Guardrails Touched`, and `Verification`.
-- `docs/task/`: legacy pre-v9.7 task history. Do not extend or rely on it for active navigation unless a migration task explicitly targets it.
 - `apps/backend/AGENTS.md`, `apps/frontend/AGENTS.md`, and nearer `**/AGENTS.md`: local constraints are additive and should be checked before edits in that subtree.
 
 ## Operating Model

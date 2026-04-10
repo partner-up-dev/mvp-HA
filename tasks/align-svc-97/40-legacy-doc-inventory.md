@@ -23,7 +23,7 @@ Notes:
 
 ## B. High-Confidence Direct-Delete Candidate
 
-These can be deleted directly.
+These were deleted in Phase 5.
 
 - `docs/_svc_v91.md`
 
@@ -46,10 +46,9 @@ Why they are sensitive:
 - they contain prior justifications for keeping `docs/task/`
 - they still explain how the current repo shape happened
 
-Recommended treatment:
+Outcome:
 
-- direct delete is acceptable for this task because the user explicitly deprioritized preserving historical task provenance
-- rewrite any active references first, then remove the folders
+- direct delete was executed after active references were rewritten
 
 ## D. Broader Historical Task Packets
 
@@ -63,8 +62,8 @@ Most of these are implementation history rather than active truth. They should r
 Recommended rule:
 
 - new work goes to `tasks/`
-- old `docs/task/` packets are deletion candidates, not archival candidates
-- do not normalize them; remove them after active references are cleaned
+- the old `docs/task/` packets were removed rather than archived
+- no normalization work was spent on historical packets before deletion
 
 ## E. Known Old-Path Residue
 

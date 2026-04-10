@@ -117,6 +117,10 @@ Verification:
 
 ## Phase 4 - Alignment Pack to Alignment Substrate Rewrite
 
+Status:
+
+- completed
+
 Target:
 
 - `docs/15-alignment/README.md`
@@ -137,6 +141,7 @@ Actions:
   - protocol
 - replace the current short change-request template with a state-diff / blast-radius / verification-oriented template
 - decide whether `ui-map.yaml` should survive as a justified partial aid or be reduced further in favor of stable-anchor guidance
+  - decision: keep it as a minimal hot-surface aid for now
 
 Verification:
 
@@ -144,6 +149,10 @@ Verification:
 - the request template captures `from -> to`, blast radius, and verification contract
 
 ## Phase 5 - Legacy Doc Cleanup
+
+Status:
+
+- completed
 
 Target:
 
@@ -190,10 +199,11 @@ Validation methods:
   - `docs/10-prd/index.md`
   - `docs/15-alignment/README.md`
 
-## Open Decisions for Later Solidify
+## Open Decisions For Later Solidify
 
-1. Should `docs/15-alignment/ui-map.yaml` stay as a partial surface map, or should it be cut back in favor of stable-anchor rules only?
-2. Should `docs/10-prd/domain-structure/vocabulary-and-lifecycle.md` keep only lifecycle semantics, or should it disappear after the glossary split?
+No phase-blocking open decision remains from the original v9.7 alignment route.
+
+`ui-map.yaml` was retained in minimal form, and `vocabulary-and-lifecycle.md` was removed after glossary ownership and lifecycle semantics were redistributed.
 
 ## Recommended Next Execute Slice
 

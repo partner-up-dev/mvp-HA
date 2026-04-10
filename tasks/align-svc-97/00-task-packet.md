@@ -65,3 +65,5 @@
   - Phase 1 implemented root `AGENTS.md` rewrite and created `docs/00-meta/` with typed routes, mode SOPs, and a minimal concept dictionary
   - Phase 2 updated package `AGENTS.md` files to use `docs/00-meta/` plus `tasks/`, and corrected backend local controller/service guidance to stop endorsing the older service-centric default
   - the PRD tree was rewritten into English, `docs/10-prd/glossary.md` was introduced, `vocabulary-and-lifecycle.md` was removed, and the active-doc language rule now holds except for Chinese glossary terms
+  - Phase 4 rewrote `docs/15-alignment/*` into the v9.7 Alignment Substrate model and retained `ui-map.yaml` as a minimal hot-surface aid
+  - Phase 5 removed the stale local framework snapshot and deleted the historical `docs/task/` corpus after active docs stopped depending on it

@@ -84,21 +84,17 @@ This matches the SVC v9.7 file-shape guidance much better.
 
 ## Remaining PRD-Adjacent Gaps
 
-These are still open after the rewrite:
+After Phase 4 and Phase 5, the earlier repo-level blockers around alignment naming and legacy task history are no longer active blockers for PRD alignment.
 
-1. `docs/15-alignment/*` is still pre-v9.7 and still framed as `Alignment Pack`.
-2. `docs/20-product-tdd/index.md` and some neighboring active docs still reference the older alignment naming and surrounding model.
-3. Legacy `docs/task/*` still exists physically, even though active guidance no longer routes there.
-4. `docs/_svc_v91.md` still exists physically and still competes with the live external v9.7 framework source.
+The main remaining PRD-adjacent work, if needed later, is smaller:
+
+1. decide whether `docs/20-product-tdd/index.md` should be tightened further to reference the substrate terminology more explicitly
+2. decide whether the PRD claim format should become even more explicit about measurable evidence in a future cleanup slice
 
 ## Current Judgment
 
 PRD alignment is now materially better and no longer one of the highest-drift active layers.
 
-The main remaining repo-level blockers are:
+The highest-value PRD realignment work has already been completed.
 
-- alignment substrate rewrite
-- stale framework mirror deletion
-- legacy task-packet deletion
-
-That means the next highest-value slice should move from PRD into alignment and cleanup rather than staying stuck on product-layer rewrite.
+The repo-level cleanup focus has now shifted away from PRD and into whatever active durable-layer polish remains after the alignment and legacy-doc removal steps.

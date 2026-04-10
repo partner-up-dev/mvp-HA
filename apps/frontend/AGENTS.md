@@ -19,7 +19,6 @@ Read the smallest useful set and keep durable docs current:
 - Runtime and rollout truth: `docs/40-deployment/*.md`
 - `docs/30-unit-tdd/<unit>/*.md` only when a named hard-unit doc exists and is relevant
 - Active task packets and temporary reasoning: `tasks/*`
-- Legacy pre-v9.7 task history: `docs/task/*` is read only when a migration or cleanup task explicitly needs it
 - Architecture: `src/ARCHITECTURE.md`
 - Vue component guideline: `src/AGENTS.components.md`
 - Styling governance: `src/styles/TOKEN-GOVERNANCE.md`
