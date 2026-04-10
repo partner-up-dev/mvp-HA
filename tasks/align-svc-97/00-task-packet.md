@@ -62,3 +62,4 @@
 - final outcome:
   - baseline, gap map, plan, and legacy inventory were created for the next Solidify slice
   - Phase 1 implemented root `AGENTS.md` rewrite and created `docs/00-meta/` with typed routes, mode SOPs, and a minimal concept dictionary
+  - Phase 2 updated package `AGENTS.md` files to use `docs/00-meta/` plus `tasks/`, and corrected backend local controller/service guidance to stop endorsing the older service-centric default
