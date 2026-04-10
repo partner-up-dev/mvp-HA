@@ -1,144 +1,126 @@
-﻿# AGENTS.md of PartnerUp MVP
+# AGENTS.md of PartnerUp MVP
 
-PartnerUp helps users find their partner (搭子) effectively and safely.
+PartnerUp helps users find a partner (da zi) effectively and safely.
+
 This repository is a pnpm workspace with two product units:
 
-- apps/backend
-- apps/frontend
+- `apps/backend`
+- `apps/frontend`
 
-## Source Of Truth Map
+## Repository Layout
 
-- AGENTS.md: local operating rules and execution protocol.
-- docs/15-alignment/*: coordination artifacts for reference-sensitive changes.
-- docs/10-prd/*: product what/why, claims, workflows, rules, scope, glossary.
-- docs/20-product-tdd/*: cross-unit technical truth and contracts.
-- docs/30-unit-tdd/*: hard local units only, when needed.
-- docs/40-deployment/*: runtime, rollout, and operational truth.
-- Code, tests, schemas, and CI own mechanically enforceable truth.
+```text
+/
+|-- AGENTS.md
+|-- apps/
+|   |-- backend/
+|   `-- frontend/
+|-- docs/
+|   |-- 00-meta/
+|   |-- 10-prd/
+|   |-- 15-alignment/
+|   |-- 20-product-tdd/
+|   |-- 30-unit-tdd/
+|   `-- 40-deployment/
+|-- tasks/
+`-- scripts/
+```
 
-### Read Strategy
+## Technical Overview
 
-Read only what is needed for the change:
+- Monorepo: pnpm workspace
+- Backend: Hono + Drizzle ORM + Postgres-oriented schema / migration workflow
+- Frontend: Vue 3 + Vite + TanStack Vue Query + Hono RPC client
+- Durable product and technical truth live under `docs/`
+- Volatile work, diagnosis, and temporary reasoning live under `tasks/`
 
-1. This file.
-2. If reference-sensitive, docs/15-alignment/README.md and ui-map.yaml.
-3. Relevant PRD/Product TDD/Deployment docs.
-4. Unit TDD only when a named hard-unit doc exists and is relevant.
-5. Package operating guides: apps/backend/AGENTS.md, apps/frontend/AGENTS.md.
+## Minimal Cheat Sheet
 
-### Temporary-doc rules
+- Unit: a logical technical boundary; not the same thing as a folder.
+- PRD (`docs/10-prd/`): owns product intent, observable behavior, and business vocabulary.
+- Alignment Substrate (`docs/15-alignment/`): optional coordination grammar for risky or ambiguous mutation.
+- Product TDD (`docs/20-product-tdd/`): owns cross-unit technical contracts and topology.
+- Unit TDD (`docs/30-unit-tdd/`): owns hard local unit design only when code and Product TDD are not enough.
+- Local Context (`**/AGENTS.md`): owns tactical hazards and recurrence tripwires nearest to code.
+- Deployment (`docs/40-deployment/`): owns runtime, rollout, observability, and recovery truth.
+- Tasks (`tasks/`): owns exploration, diagnosis, plans, artifacts, and temporary reasoning.
 
-- docs/plan is temporary. Do not read or update it.
-- docs/task is temporary task packets. Read/update only the active task folder when the current task explicitly uses it.
+## Documentation
 
-### Promotion And Demotion
+Read only what is needed for the current work and keep durable docs current.
 
-Promotion test (promote only when most are true):
+- `docs/00-meta/`: typed input routes, mode SOPs, and framework concepts.
+- `docs/00-meta/concepts.md`: load only when boundary language or owner terminology is unclear.
+- `docs/10-prd/`: product what/why, user-visible workflows, rules, scope, and business vocabulary.
+- `docs/15-alignment/`: load only when MVT is not enough to constrain mutation safely.
+- `docs/20-product-tdd/`: cross-unit technical realization and authority boundaries.
+- `docs/30-unit-tdd/`: open only when a named hard-unit doc exists and is relevant.
+- `docs/40-deployment/`: runtime, rollout, observability, and recovery truth.
+- `tasks/`: active entropy buffer for non-trivial work. Every non-trivial task packet should record `Objective & Hypothesis`, `Guardrails Touched`, and `Verification`.
+- `docs/task/`: legacy pre-v9.7 task history. Do not extend or rely on it for active navigation unless a migration task explicitly targets it.
+- `apps/backend/AGENTS.md`, `apps/frontend/AGENTS.md`, and nearer `**/AGENTS.md`: local constraints are additive and should be checked before edits in that subtree.
 
-1. The truth is stable across more than one task.
-2. It matters beyond the current implementation step.
-3. Rediscovering it later would be risky or expensive.
-4. It is not better enforced in code/tests/CI/runtime checks.
-5. It has a clear durable owner layer.
+## Operating Model
 
-Durable destination rules:
+1. Classify the incoming request as `Intent`, `Constraint`, `Reality`, or `Artifact`.
+2. Identify the durable owner and blast radius before choosing how to work.
+3. For non-trivial work, open or update a task packet under `tasks/`.
+4. Choose the active mode for the current slice: `Explore`, `Solidify`, `Execute`, or `Diagnose`.
+5. Load only the route doc, mode SOP, and governing anchors needed for that slice.
+6. Expand into alignment substrate fields only when references, boundaries, state, evidence, or blast radius are still ambiguous.
+7. Execute with explicit verification.
+8. Re-enter a different mode if evidence or clarity changes.
+9. Promote only stable truths after verification.
 
-- Product what/why, claims, workflows, and domain semantics -> docs/10-prd/*
-- Cross-unit technical truth and contracts -> docs/20-product-tdd/*
-- Hard local unit complexity truth -> docs/30-unit-tdd/unit-name/*
-- Runtime/ops truth -> docs/40-deployment/*
-- Mechanically enforceable truth -> code/tests/schemas/CI/runtime guards
-- Volatile reasoning, plans, and temporary decisions -> docs/task/*
+### Typed Input Guide
 
-Demotion rule:
+- `Intent`: the business wants new behavior, scope, or policy. Update PRD first.
+- `Constraint`: product behavior stays the same, but technical, dependency, or environment boundaries changed. Update Product TDD or Unit TDD.
+- `Reality`: observed runtime behavior diverges from expectation. Gather evidence first, then fix and add recurrence guards if needed.
+- `Artifact`: the requested deliverable is a bounded script, analysis, migration helper, or one-off output. Keep it tactical unless reuse is proven.
 
-- Simplify, merge, or remove durable docs that no longer answer expensive questions.
+### Mode Guide
 
-## Alignment And Execution Protocol
+- `Explore`: map unknowns, alternatives, and assumptions.
+- `Solidify`: restate findings into explicit claims, contracts, or decisions.
+- `Execute`: implement a clear, verified change.
+- `Diagnose`: investigate mismatches between expected and observed reality.
 
-Alignment pack status:
+Mode guidance:
 
-- docs/15-alignment is enabled in this repo.
-- Read docs/15-alignment/README.md and ui-map.yaml for target naming and scope anchors.
+- do not assume one task equals one mode
+- switch modes when evidence or clarity changes
+- mode selection never overrides durable ownership
 
-Pre-execution restatement protocol (required for risky or ambiguous edits):
+## Impact Handshake
 
-1. Target: exact thing being changed.
-2. Target path or anchor.
-3. Frontend anchor format: page > region > block > element > state.
-4. Backend anchor format: bounded_context > service > module > endpoint > behavior.
-5. Docs anchor format: document > section > subsection > block.
-6. State/context assumptions.
-7. Operation type (for example: restyle, reorder, rewrite-copy, extract-component, change-state-transition, refactor).
-8. Scope: in-scope and out-of-scope boundaries.
-9. Invariants: what must remain unchanged.
-10. Likely affected files.
-11. Uncertainty needing confirmation.
+Before mutating durable truth after alignment expansion, or when blast radius is not obviously local, pause and restate:
 
-Execution rule:
+- Address and Object: what exact files, anchors, or symbols will change
+- State Diff: `From -> To`
+- Blast Radius Forecast: what downstream files, modules, or surfaces could be affected
+- Invariants Check: what must remain unchanged
+- Verification: what concrete proof will bound side effects
 
-- If restatement cannot be completed with confidence, stop and clarify before editing.
-- For trivial single-file non-ambiguous edits, concise restatement is acceptable.
+If evidence is missing or the durable owner is still unclear, return to `Explore` or `Diagnose` instead of guessing.
 
-Task-first guardrail:
+## Negotiation Triggers
 
-- Do not update PRD/TDD directly from a single vague feature prompt.
-- Exploration-first requests stay in docs/task/ until Mode B confirms promotion.
+Pause and ask for human confirmation when:
 
-Dynamic execution protocol (v9.1):
-
-- Before editing, assess prompt volatility/ambiguity and select one mode.
-- If volatility is unclear, default to Mode A first.
-
-### Mode A: Exploration (high volatility)
-
-Trigger:
-
-- Vague idea, fuzzy requirement, or open-ended problem.
-
-Agent action:
-
-1. Do not modify docs/10-prd/*, docs/20-product-tdd/*, docs/40-deployment/*, or production code.
-2. Keep exploration in docs/task/task-name/ only (create or reuse an active task folder).
-3. Use Q&A and option exploration to deduce requirements and constraints.
-
-### Mode B: Solidification (from volatility to stable truth)
-
-Trigger:
-
-- Mode A converges, or user provides clear but not-yet-recorded product/technical rules.
-
-Agent action:
-
-1. Classify new truths into PRD vs Product TDD ownership.
-2. Run the pre-execution restatement protocol with explicit doc/code impact.
-3. Get user confirmation, then update durable docs before coding.
-
-### Mode C: Execution (low volatility)
-
-Trigger:
-
-- Specific localized implementation task or clear bug fix.
-
-Agent action:
-
-1. Read only relevant docs for the target change.
-2. Run the pre-execution restatement protocol to lock scope/invariants.
-3. After user confirmation, implement tests and code.
-4. Ask whether the related task packet can be archived or deleted after completion.
+- the requested change conflicts with an existing product claim or technical contract
+- blast radius crosses multiple durable owners and the correct owner is unclear
+- a shortcut would damage maintainability, readability, simplicity, or an explicit guardrail
+- evidence is insufficient for a bug fix or architectural decision
 
 ## Development Workflow
 
-- Use GitHub CLI (gh) for GitHub operations and issue template workflows.
+- Use GitHub CLI (`gh`) for GitHub operations and issue workflows.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
+- Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.
 
 ## Coding Guidelines
 
-- No any.
-- Prefer async/await over raw Promise chains.
-- Enforce data correctness at system boundary.
-
-## Top-Level Glossary
-
-- 搭子请求 (PartnerRequest, PR): model carrying the full lifecycle of partner activities.
-- Reference: docs/10-prd/domain-structure/vocabulary-and-lifecycle.md
+- No `any`.
+- Prefer `async` / `await` over raw Promise chains.
+- Enforce data correctness at system boundaries.
