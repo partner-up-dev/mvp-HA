@@ -1,5 +1,11 @@
 # Current Baseline Before SVC v9.7 Alignment
 
+Validation status:
+
+- Historical snapshot captured before Phases 1-5.
+- Do not treat this file as current active repo truth.
+- Current post-cleanup validation lives in `50-validation-sweep.md`.
+
 ## 1. Repo Shape
 
 Current top-level shape:

@@ -67,3 +67,4 @@
   - the PRD tree was rewritten into English, `docs/10-prd/glossary.md` was introduced, `vocabulary-and-lifecycle.md` was removed, and the active-doc language rule now holds except for Chinese glossary terms
   - Phase 4 rewrote `docs/15-alignment/*` into the v9.7 Alignment Substrate model and retained `ui-map.yaml` as a minimal hot-surface aid
   - Phase 5 removed the stale local framework snapshot and deleted the historical `docs/task/` corpus after active docs stopped depending on it
+  - Phase 6 validation is recorded in `50-validation-sweep.md`; no active SVC v9.7 blocker was found in the checked docs

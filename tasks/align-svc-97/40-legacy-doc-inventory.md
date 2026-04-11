@@ -1,5 +1,10 @@
 # Legacy Doc Inventory for SVC v9.7 Alignment
 
+Validation status:
+
+- Historical cleanup inventory captured before Phases 4-5.
+- Deletion outcomes are recorded in this file, but current post-cleanup validation lives in `50-validation-sweep.md`.
+
 ## Purpose
 
 This inventory separates "rewrite" and "delete" candidates so the cleanup phase does not collapse everything into one risky action.

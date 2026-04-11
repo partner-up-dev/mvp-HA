@@ -181,6 +181,14 @@ Verification:
 
 ## Phase 6 - Validation Sweep
 
+Status:
+
+- completed
+
+Output:
+
+- `50-validation-sweep.md`
+
 Validation methods:
 
 - repo-wide search for:
@@ -207,8 +215,9 @@ No phase-blocking open decision remains from the original v9.7 alignment route.
 
 ## Recommended Next Execute Slice
 
-If the user approves the route, the next high-value slice is:
+The main migration route is complete. Any next slice should be a narrow follow-up based on a concrete defect or newly discovered drift, not another broad migration pass.
 
-1. Phase 1 front-door / filesystem cutover
-2. Phase 2 package guidance update
-3. the smallest Phase 5 cleanup needed to stop active reading drift
+Possible follow-up:
+
+1. turn the validation scans into a lightweight script if repeated SVC audits become common
+2. perform a product-behavior review against code, which is separate from this documentation-structure sweep

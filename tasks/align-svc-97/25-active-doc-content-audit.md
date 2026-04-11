@@ -1,5 +1,11 @@
 # Active Doc Content Audit
 
+Validation status:
+
+- Historical content audit captured before Phases 1-5.
+- The findings below explain why the migration was needed; they are not current active repo truth.
+- Current post-cleanup validation lives in `50-validation-sweep.md`.
+
 ## Purpose
 
 This audit focuses on active durable entry points and local guidance, not on historical task packets. The goal is to determine whether the repo merely has old filenames or whether the actual content model still differs materially from SVC v9.7.

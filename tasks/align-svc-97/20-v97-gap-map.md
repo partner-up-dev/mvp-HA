@@ -1,5 +1,11 @@
 # Gap Map - Current Repo vs SVC v9.7
 
+Validation status:
+
+- Historical gap map captured before Phases 1-5.
+- Completed items are not restated here to preserve the original audit trail.
+- Current post-cleanup validation lives in `50-validation-sweep.md`.
+
 ## Summary
 
 The repo is not missing the SVC shape entirely. The main gap is that it carries a mixed stack of v8 / v9.1 / local transitional decisions, while SVC v9.7 expects a sharper front door, a restored meta layer, canonical `tasks/`, and a stronger alignment substrate grammar.
