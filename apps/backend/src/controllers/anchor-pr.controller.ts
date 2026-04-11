@@ -9,6 +9,7 @@ import {
   getAnchorPRBookingSupport,
   getAnchorPRDetail,
   recommendAlternativeBatches,
+  searchAnchorPRs,
 } from "../domains/pr-anchor";
 import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
 import {
@@ -37,6 +38,22 @@ import {
 
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
+const isoDateSearchParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const anchorPRSearchQuerySchema = z.object({
+  eventId: z.coerce.number().int().positive(),
+  date: z.preprocess(
+    (value) => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        return [value];
+      }
+      return [];
+    },
+    z.array(isoDateSearchParamSchema).min(1).max(28),
+  ),
+});
 const slotCheckInSchema = z.object({
   didAttend: z.boolean().optional(),
   wouldJoinAgain: z.boolean().nullable().optional(),
@@ -63,6 +80,14 @@ const ensureAnchorPR = async (id: number) => {
 
 export const anchorPRRoute = app
   .use("*", authMiddleware)
+  .get("/search", zValidator("query", anchorPRSearchQuerySchema), async (c) => {
+    const { eventId, date } = c.req.valid("query");
+    const result = await searchAnchorPRs({
+      eventId,
+      dates: date,
+    });
+    return c.json(result);
+  })
   .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     const identity = await tryReadAnchorAuthenticatedIdentity(c);

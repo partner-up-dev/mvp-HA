@@ -9,6 +9,7 @@ import {
   type AnchorPRRecord,
 } from "../../../repositories/AnchorPRRepository";
 import type { AnchorLocationSource } from "../../../entities/anchor-partner-request";
+import type { AnchorEventId } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
 import type { PRId, PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -97,6 +98,14 @@ export async function readVisibleAnchorPRRecordsByBatchId(
   options: { consistency?: PRReadConsistency } = {},
 ): Promise<AnchorPRRecord[]> {
   const records = await anchorPRRepo.findVisibleByBatchId(batchId);
+  return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
+}
+
+export async function readVisibleAnchorPRRecordsByAnchorEventId(
+  anchorEventId: AnchorEventId,
+  options: { consistency?: PRReadConsistency } = {},
+): Promise<AnchorPRRecord[]> {
+  const records = await anchorPRRepo.findVisibleByAnchorEventId(anchorEventId);
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 

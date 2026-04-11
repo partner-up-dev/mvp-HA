@@ -84,6 +84,7 @@ Prohibited:
 - `shared/ui/actions/Button.vue`: Shared button primitive. Prefer it over page-local button classes; use `appearance="pill"` for compact CTA clusters and `appearance="rect"` for dialogs or block actions. Keep `tone` choices narrow (`primary`, `outline`, `secondary`, `surface`, `danger`, `ghost`).
 - `shared/ui/containers/SurfaceCard.vue`: Standard card shell for reusable section, inset, and outline surfaces. Use it instead of re-declaring `pu-surface-card(...)` in pages when the wrapper itself is a reusable primitive.
 - `shared/ui/forms/FormField.vue`: Label + control + hint/error wrapper for plain form rows. It does not own the input shell; pair it with native controls or existing form primitives that already style the control.
+- `shared/ui/forms/ProductLocalDateCalendarPicker.vue`: Product-local date-key calendar grid for visible-window multi-select flows. Keep search policy such as defaults, fallback, and allowed-date derivation in the owning page or domain component.
 - `shared/ui/display/InfoRow.vue`: Generic label/value row with inline or stacked layout. Use it for neutral metadata presentation, not domain-specific timeline or status logic.
 - `shared/ui/display/Chip.vue` and `shared/ui/display/ChipGroup.vue`: Neutral tokenized chips for tags, lightweight roster labels, and compact metadata groups. Do not move domain semantics like PR status into these when a domain badge already exists.
 - `shared/ui/display/FitChipGroup.vue`: Single-line chip row that measures available width and only shows whole chips that fully fit. Prefer it when chip text must stay complete and overflow should hide entire chips rather than truncate them.
@@ -92,6 +93,7 @@ Prohibited:
 - `shared/ui/overlay/ConfirmDialog.vue`: Standard confirm/cancel dialog built on `Modal` and `Button`. Use it for straightforward confirmation flows instead of rebuilding modal actions per page.
 - `shared/ui/identity/Avatar.vue`: Shared avatar with image and fallback initial. Prefer it over per-page avatar fallback markup when the need is generic identity display.
 - `shared/ui/overlay/Modal.vue`: Generic modal primitive. Add scroll locking with `useBodyScrollLock(computed(() => open.value))` in the parent when needed.
+- `domains/event/ui/composites/AnchorEventRadioCardCarousel.vue`: Event-domain carousel selector that centers and enlarges the selected Anchor Event card while keeping event-card content reuse local to the event domain.
 - `domains/pr/ui/forms/DateTimeRangePicker.vue`: Standalone time-window picker for start/end date-time.
 - `domains/pr/ui/forms/PRForm.vue`: Structured PR create/edit form using `src/lib/validation`.
 - `domains/share/ui/composites/PRShareCarousel.vue`: Share-method carousel host.

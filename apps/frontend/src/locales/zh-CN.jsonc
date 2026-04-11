@@ -1046,12 +1046,56 @@
   "eventPlaza": {
     "title": "活动广场",
     "subtitle": "探索附近的活动场次",
+    "searchAction": "搜索",
     "locationLeadSingle": "先看 {location}",
     "locationLeadWithMore": "先看 {location}，另有 {count} 个场地",
     "locationCount": "{count} 个场地可选",
     "openEventAction": "查看场次",
     "noEvents": "暂无活动",
     "loadFailed": "加载活动列表失败"
+  },
+  "anchorPRSearch": {
+    "title": "找搭子",
+    "resultTitle": "检索结果",
+    "resultSubtitleFallback": "按活动和日期查看可加入的搭子结果",
+    "drawerTitle": "修改条件",
+    "loadEventsFailed": "加载活动列表失败",
+    "loadEventsFailedHint": "暂时无法获取可选活动，请稍后重试。",
+    "loadFailed": "加载活动搭子结果失败",
+    "loadFailedHint": "当前结果暂时不可用，请调整条件或稍后重试。",
+    "emptyEventsTitle": "当前没有可搜索的活动",
+    "emptyEventsDescription": "等活动开放后，再回来按日期找搭子。",
+    "emptyResultTitle": "没有找到匹配结果",
+    "emptyResultDescription": "试试换一个活动，或调整可参加日期。",
+    "resultSummary": "找到 {count} 个可加入的活动搭子",
+    "redirectingSingleResult": "正在打开唯一匹配的活动搭子...",
+    "actions": {
+      "backHome": "返回首页",
+      "search": "检索",
+      "modifyCriteria": "修改条件",
+      "applyCriteria": "应用",
+      "goEventPlaza": "去活动广场看看"
+    },
+    "form": {
+      "eventTitle": "什么活动",
+      "dateTitle": "什么时候",
+      "todayMarker": "今",
+      "weekdays": {
+        "mon": "一",
+        "tue": "二",
+        "wed": "三",
+        "thu": "四",
+        "fri": "五",
+        "sat": "六",
+        "sun": "日"
+      }
+    },
+    "resultCard": {
+      "unknownTime": "时间待确认",
+      "unknownLocation": "地点待确认",
+      "partnerCountWithMax": "{current}/{max} 人",
+      "partnerCountWithoutMax": "{current} 人"
+    }
   },
   "anchorEvent": {
     "backToPlaza": "活动广场",

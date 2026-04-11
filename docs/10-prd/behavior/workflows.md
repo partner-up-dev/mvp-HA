@@ -16,13 +16,16 @@
 4. Before join, the system checks time-window conflict, state, capacity, and scenario rules.
 5. If join succeeds, the user enters the downstream progression of that collaboration object.
 
-## 3. Enter Anchor Collaboration Through Event Browsing
+## 3. Enter Anchor Collaboration Through Event Browsing And Search
 
-1. The user browses `/events` or `/events/:eventId`.
-2. The user enters an existing `Anchor PR` from batch or card context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint.
-3. If the current batch or location does not have a suitable `Anchor PR` and creation is still allowed, the user can create one through the controlled event-page flow.
-4. The user may then join, inspect alternatives, or view booking-support information.
-5. `Anchor PR` continues through timing and reliability loops such as confirmation, reminders, and check-in.
+1. The user browses `/events`, `/events/:eventId`, or enters `/events/search`.
+2. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `Anchor PR` results.
+3. Search results remain anchored to the chosen `Anchor Event`; result cards identify candidate `Anchor PRs` by time, location, visible status, and participant count rather than repeating the already-known event context.
+4. If the search has exactly one result, the system may route directly to that `/apr/:id`; otherwise, the user chooses one result from the list.
+5. The user enters an existing `Anchor PR` from batch, card, or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint.
+6. If the current batch or location does not have a suitable `Anchor PR` and creation is still allowed, the user can create one through the controlled event-page flow.
+7. The user may then join, inspect alternatives, or view booking-support information.
+8. `Anchor PR` continues through timing and reliability loops such as confirmation, reminders, and check-in.
 
 ## 4. Revisit and History Entry
 

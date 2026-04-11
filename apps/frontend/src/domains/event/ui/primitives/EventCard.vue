@@ -1,7 +1,13 @@
 <template>
-  <RouterLink
+  <component
+    :is="rootComponent"
+    v-bind="rootProps"
     class="event-card"
-    :to="{ name: 'anchor-event', params: { eventId: event.id } }"
+    :class="{
+      'event-card--select': isSelectMode,
+      'event-card--selected': isSelectMode && props.selected,
+      'event-card--disabled': isSelectMode && props.disabled,
+    }"
     @click="handleClick"
   >
     <div
@@ -38,12 +44,12 @@
       <p v-if="event.description" class="event-desc">
         {{ event.description }}
       </p>
-      <span class="event-cta">
+      <span v-if="!isSelectMode" class="event-cta">
         {{ t("eventPlaza.openEventAction") }}
         <span class="event-cta-icon i-mdi:arrow-right" aria-hidden="true" />
       </span>
     </div>
-  </RouterLink>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -55,9 +61,16 @@ import FitChipGroup from "@/shared/ui/display/FitChipGroup.vue";
 
 interface EventCardProps {
   event: AnchorEventListItem;
+  mode?: "link" | "select";
+  selected?: boolean;
+  disabled?: boolean;
 }
 
-const props = defineProps<EventCardProps>();
+const props = withDefaults(defineProps<EventCardProps>(), {
+  mode: "link",
+  selected: false,
+  disabled: false,
+});
 const MAX_AVAILABLE_LOCATION_PILLS = 3;
 
 const emit = defineEmits<{
@@ -65,6 +78,19 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const isSelectMode = computed(() => props.mode === "select");
+const rootComponent = computed(() => (isSelectMode.value ? "button" : RouterLink));
+const rootProps = computed<Record<string, unknown>>(() =>
+  isSelectMode.value
+    ? {
+        type: "button",
+        disabled: props.disabled,
+        "aria-pressed": props.selected,
+      }
+    : {
+        to: { name: "anchor-event", params: { eventId: props.event.id } },
+      },
+);
 
 const normalizeImageUrl = (value: unknown): string | null => {
   if (typeof value !== "string") {
@@ -216,14 +242,20 @@ const handleClick = () => {
   flex-direction: column;
   min-height: 100%;
   overflow: hidden;
+  width: 100%;
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: var(--sys-radius-lg);
   background: var(--sys-color-surface-container);
   text-decoration: none;
   color: inherit;
+  text-align: left;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    opacity 180ms ease;
   @include mx.pu-elevation(3);
 
   &:active {
@@ -234,6 +266,26 @@ const handleClick = () => {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: 2px;
   }
+}
+
+.event-card--select {
+  cursor: pointer;
+  appearance: none;
+}
+
+.event-card--selected {
+  border-color: var(--sys-color-primary);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-primary-container) 32%,
+    var(--sys-color-surface-container)
+  );
+  @include mx.pu-elevation(4);
+}
+
+.event-card--disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
 }
 
 .event-cover {

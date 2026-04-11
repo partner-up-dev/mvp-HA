@@ -22,6 +22,7 @@ import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
 import ContactSupportPage from "@/pages/ContactSupportPage.vue";
 import AboutPage from "@/pages/AboutPage.vue";
 import EventPlazaPage from "@/pages/EventPlazaPage.vue";
+import AnchorPRSearchPage from "@/pages/AnchorPRSearchPage.vue";
 import AnchorEventPage from "@/pages/AnchorEventPage.vue";
 import WeChatOAuthCallbackPage from "@/pages/WeChatOAuthCallbackPage.vue";
 import { getStoredAdminHasAccess } from "@/domains/admin/model/admin-session-storage";
@@ -174,6 +175,14 @@ const routes: RouteRecordRaw[] = [
     path: "/events",
     name: "event-plaza",
     component: EventPlazaPage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/events/search",
+    name: "anchor-pr-search",
+    component: AnchorPRSearchPage,
     meta: {
       wechatSharePolicy: "route",
     },

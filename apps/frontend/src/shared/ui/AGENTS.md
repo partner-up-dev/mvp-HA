@@ -14,6 +14,7 @@ Do not move a component into `shared/ui` just because two pages happen to look s
 - `actions/Button.vue`: shared button primitive for pill and rect actions; prefer it over page-local button classes.
 - `containers/SurfaceCard.vue`: shared card shell for section, outline, and inset treatments.
 - `forms/FormField.vue`: label + control + hint/error wrapper for plain field rows.
+- `forms/ProductLocalDateCalendarPicker.vue`: product-local date-key calendar grid for fixed-window multi-select flows; keep date-window policy in the owning page or domain.
 - `display/InfoRow.vue`: neutral label/value layout for metadata.
 - `display/Chip.vue` and `display/ChipGroup.vue`: lightweight shared tag/group primitives.
 - `feedback/InlineNotice.vue`: inline notice banner for page-level or section-level feedback.

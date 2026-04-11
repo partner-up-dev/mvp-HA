@@ -14,6 +14,29 @@ export type ComparableTimeWindowRange = {
   end: Date;
 };
 
+const ISO_DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const PRODUCT_TIME_ZONE = "Asia/Shanghai";
+const productLocalDateFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: PRODUCT_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+const formatProductLocalDateKey = (date: Date): string => {
+  let year = "";
+  let month = "";
+  let day = "";
+
+  for (const part of productLocalDateFormatter.formatToParts(date)) {
+    if (part.type === "year") year = part.value;
+    if (part.type === "month") month = part.value;
+    if (part.type === "day") day = part.value;
+  }
+
+  return `${year}-${month}-${day}`;
+};
+
 // ---------------------------------------------------------------------------
 // Parsing helpers
 // ---------------------------------------------------------------------------
@@ -21,11 +44,38 @@ export type ComparableTimeWindowRange = {
 export function parseTimeWindowDate(value: string | null): Date | null {
   if (!value) return null;
 
-  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const isDateOnly = ISO_DATE_ONLY_PATTERN.test(value);
   const normalized = isDateOnly ? `${value}T00:00:00` : value;
   const parsed = new Date(normalized);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed;
+}
+
+export function getProductLocalDateKey(
+  value: Date | string | null | undefined,
+): string | null {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return formatProductLocalDateKey(value);
+  }
+
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (ISO_DATE_ONLY_PATTERN.test(normalized)) {
+    return normalized;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return formatProductLocalDateKey(parsed);
+}
+
+export function getProductLocalDateKeyForTimeWindowStart(
+  timeWindow: TimeWindow,
+): string | null {
+  return getProductLocalDateKey(timeWindow[0]);
 }
 
 // ---------------------------------------------------------------------------
