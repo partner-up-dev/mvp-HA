@@ -88,7 +88,12 @@ Result:
 
 ## Findings
 
-No active SVC v9.7 alignment blockers were found in the checked active docs.
+One content-level owner-boundary issue was found and fixed after the first sweep pass.
+
+- `docs/20-product-tdd/claim-realization-matrix.md` previously listed `Anchor booking fulfillment needs auditable return flow` as a PRD claim even though `docs/10-prd/behavior/claims.md` did not own that claim.
+- The matrix now separates `PRD claim` from `Realization focus`, and the booking fulfillment audit loop is recorded as a realization slice under `Collaboration needs a minimum trust loop`.
+
+No remaining active SVC v9.7 alignment blockers were found in the checked active docs.
 
 Historical references to `docs/task`, `_svc_v91.md`, `Alignment Pack`, `v9.1`, and `vocabulary-and-lifecycle.md` remain inside earlier files in this task packet. They are acceptable because they document the pre-migration state and are not active routing or durable truth.
 
