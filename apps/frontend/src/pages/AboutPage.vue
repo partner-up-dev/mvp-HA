@@ -28,16 +28,12 @@
             </a>
             <span v-else>{{ t("aboutPage.unknownValue") }}</span>
           </dd>
-        </div>
-
-        <div class="about-item">
+          <div class="h-2" />
           <dt>{{ t("aboutPage.frontendCommitLabel") }}</dt>
           <dd>
             <code>{{ frontendCommitHash }}</code>
           </dd>
-        </div>
-
-        <div class="about-item">
+          <div class="h-2" />
           <dt>{{ t("aboutPage.backendCommitLabel") }}</dt>
           <dd>
             <code>{{ backendCommitHash }}</code>
@@ -47,13 +43,10 @@
 
       <section
         id="beta-groups"
-        class="about-beta-groups"
+        class="about-beta-groups about-item"
         :aria-label="t('aboutPage.betaGroupsSectionTitle')"
       >
         <div class="about-beta-groups__header">
-          <p class="about-beta-groups__kicker">
-            {{ t("aboutPage.betaGroupsKicker") }}
-          </p>
           <h2>{{ t("aboutPage.betaGroupsTitle") }}</h2>
           <p>{{ t("aboutPage.betaGroupsDescription") }}</p>
         </div>
@@ -94,9 +87,7 @@
             </button>
           </div>
         </div>
-      </section>
 
-      <section class="about-item about-item--wechat-follow">
         <button
           class="wechat-follow-action"
           type="button"
@@ -165,8 +156,9 @@ const selectedBetaGroupEventId = ref<number | null>(null);
 const activeEvents = computed(() => anchorEventsQuery.data.value ?? []);
 const selectedBetaGroupEvent = computed(
   () =>
-    activeEvents.value.find((event) => event.id === selectedBetaGroupEventId.value) ??
-    null,
+    activeEvents.value.find(
+      (event) => event.id === selectedBetaGroupEventId.value,
+    ) ?? null,
 );
 const selectedBetaGroupModalTitle = computed(() => {
   const title = selectedBetaGroupEvent.value?.title ?? "";
@@ -195,7 +187,9 @@ const selectedBetaGroupQrAlt = computed(() =>
     eventTitle: selectedBetaGroupEvent.value?.title ?? "",
   }),
 );
-const betaGroupModalOpen = computed(() => selectedBetaGroupEvent.value !== null);
+const betaGroupModalOpen = computed(
+  () => selectedBetaGroupEvent.value !== null,
+);
 
 useBodyScrollLock(betaGroupModalOpen);
 
@@ -269,20 +263,6 @@ const backendCommitHash = computed(() => {
   }
 }
 
-.about-item--wechat-follow {
-  h2 {
-    @include mx.pu-font(title-small);
-    margin: 0;
-    color: var(--sys-color-on-surface);
-  }
-
-  p {
-    @include mx.pu-font(body-medium);
-    margin: 0;
-    color: var(--sys-color-on-surface-variant);
-  }
-}
-
 .about-beta-groups {
   display: grid;
   gap: var(--sys-spacing-sm);
@@ -325,7 +305,6 @@ const backendCommitHash = computed(() => {
 }
 
 .about-beta-groups-card {
-  @include mx.pu-surface-card(section);
   display: grid;
   padding: 0;
 }
@@ -336,7 +315,7 @@ const backendCommitHash = computed(() => {
   align-items: center;
   gap: var(--sys-spacing-sm);
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-sm) 0;
 }
 
 .about-beta-groups-row + .about-beta-groups-row {

@@ -223,7 +223,7 @@
   },
   "aboutPage": {
     "title": "关于",
-    "description": "查看产品与版本信息。",
+    "description": "关于本软件的基础信息以及“搭一把”。",
     "sectionTitle": "版本信息",
     "productNameLabel": "产品名称",
     "repositoryLabel": "代码仓库",
@@ -232,9 +232,8 @@
     "unknownValue": "未知",
     "backendCommitLoadFailed": "后端 commit hash 加载失败，请稍后重试。",
     "betaGroupsSectionTitle": "活动内测群",
-    "betaGroupsKicker": "活动内测群",
-    "betaGroupsTitle": "选择要加入的活动",
-    "betaGroupsDescription": "每个活动有自己的群，用来请求新场次、获取补贴、联系你的搭子。",
+    "betaGroupsTitle": "活动内测群",
+    "betaGroupsDescription": "在群内请求新场次、获取补贴、联系你的搭子并获得官方的帮助。",
     "betaGroupsLoading": "正在加载活动内测群...",
     "betaGroupsLoadFailed": "活动内测群加载失败，请稍后重试。",
     "betaGroupsEmpty": "当前没有开放中的活动内测群。",
@@ -370,10 +369,10 @@
           "unconfiguredHint": "当前环境未配置“新搭子”通知模板。"
         },
         "PR_MESSAGE": {
-          "title": "PR 留言",
+          "title": "留言",
           "enabledHint": "有新留言时提醒",
           "disabledHint": "暂无可用通知",
-          "unconfiguredHint": "当前环境未配置“PR 留言”通知模板。"
+          "unconfiguredHint": "当前环境未配置“留言”通知模板。"
         }
       }
     },
