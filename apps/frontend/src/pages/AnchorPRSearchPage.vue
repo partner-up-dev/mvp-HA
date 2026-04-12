@@ -57,7 +57,7 @@
         :events="availableEvents"
       />
 
-      <div class="anchor-pr-search-page__footer-actions">
+      <div class="anchor-pr-search-page__footer-actions mt-4">
         <Button tone="outline" block @click="goHome">
           {{ t("anchorPRSearch.actions.backHome") }}
         </Button>
@@ -203,10 +203,7 @@ const availableEvents = computed<AnchorEventListItem[]>(
 );
 
 const todayDateKey = getTodayProductLocalDateKey();
-const defaultDateKeys = listProductLocalDateKeysFrom(
-  todayDateKey,
-  3,
-);
+const defaultDateKeys = listProductLocalDateKeysFrom(todayDateKey, 3);
 const calendarWindowStartDateKey =
   getProductLocalWeekStartDateKey(todayDateKey) ?? todayDateKey;
 const allowedDateKeys = listProductLocalDateKeysFrom(

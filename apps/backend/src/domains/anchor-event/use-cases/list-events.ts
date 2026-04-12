@@ -115,7 +115,10 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   }
 
   const needNormalizedFallback = pois.length < locationLabels.length;
-  const poisByNormalizedId = new Map<string, Array<{ id: string; gallery: string[] }>>();
+  const poisByNormalizedId = new Map<
+    string,
+    Array<{ id: string; gallery: string[] }>
+  >();
   if (needNormalizedFallback) {
     const allPois = await poiRepo.listAll();
     for (const poi of allPois) {
@@ -135,7 +138,10 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
 
   return events.map((event) => {
     const locationPool = getLocationLabels(event);
-    const matchedPoisById = new Map<string, { id: string; gallery: string[] }>();
+    const matchedPoisById = new Map<
+      string,
+      { id: string; gallery: string[] }
+    >();
     const fallbackGallerySet = new Set<string>();
 
     for (const label of locationPool) {

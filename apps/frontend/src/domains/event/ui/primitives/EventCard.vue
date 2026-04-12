@@ -79,14 +79,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const isSelectMode = computed(() => props.mode === "select");
-const rootComponent = computed(() => (isSelectMode.value ? "button" : RouterLink));
+const rootComponent = computed(() => (isSelectMode.value ? "div" : RouterLink));
 const rootProps = computed<Record<string, unknown>>(() =>
   isSelectMode.value
-    ? {
-        type: "button",
-        disabled: props.disabled,
-        "aria-pressed": props.selected,
-      }
+    ? {}
     : {
         to: { name: "anchor-event", params: { eventId: props.event.id } },
       },
@@ -258,7 +254,7 @@ const handleClick = () => {
     opacity 180ms ease;
   @include mx.pu-elevation(3);
 
-  &:active {
+  &:active:not(.event-card--select) {
     transform: scale(0.985);
   }
 
@@ -269,17 +265,10 @@ const handleClick = () => {
 }
 
 .event-card--select {
-  cursor: pointer;
-  appearance: none;
+  cursor: inherit;
 }
 
 .event-card--selected {
-  border-color: var(--sys-color-primary);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) 32%,
-    var(--sys-color-surface-container)
-  );
   @include mx.pu-elevation(4);
 }
 
@@ -290,7 +279,7 @@ const handleClick = () => {
 
 .event-cover {
   width: 100%;
-  height: 148px;
+  height: 130px;
   background-size: cover;
   background-position: center;
 
