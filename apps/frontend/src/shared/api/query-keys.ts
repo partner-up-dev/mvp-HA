@@ -16,6 +16,7 @@ export const queryKeys = {
   },
   anchorPR: {
     detail: (id: PRId | null) => ["anchor-pr", "detail", id] as const,
+    messages: (id: PRId | null) => ["anchor-pr", "messages", id] as const,
     bookingSupport: (id: PRId | null) =>
       ["anchor-pr", "booking-support", id] as const,
     alternativeBatches: (id: PRId | null) =>

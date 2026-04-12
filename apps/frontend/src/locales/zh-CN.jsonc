@@ -339,8 +339,27 @@
           "enabledHint": "有人加入活动时提醒",
           "disabledHint": "暂无可用通知",
           "unconfiguredHint": "当前环境未配置“新搭子”通知模板。"
+        },
+        "PR_MESSAGE": {
+          "title": "PR 留言",
+          "enabledHint": "有新留言时提醒",
+          "disabledHint": "暂无可用通知",
+          "unconfiguredHint": "当前环境未配置“PR 留言”通知模板。"
         }
       }
+    },
+    "messageThread": {
+      "title": "活动留言",
+      "subtitle": "和当前参与者围绕本次活动做异步沟通。",
+      "nonRealtimeHint": "这是非即时留言区，不提供在线状态、输入中或已读回执。",
+      "emptyTitle": "还没有留言",
+      "emptyDescription": "可以先留一句集合说明、补充事项或临时变更。",
+      "inputLabel": "发送留言",
+      "inputHint": "仅支持文本，单条最长 1000 字。",
+      "inputPlaceholder": "例如：我会晚到 10 分钟，大家先在入口处集合。",
+      "submitAction": "发送留言",
+      "submittingAction": "发送中...",
+      "authorFallback": "搭子"
     },
     "partnerSection": {
       "title": "参与",

@@ -139,6 +139,14 @@
           </div>
         </section>
 
+        <section
+          v-if="showMessageThread && id !== null"
+          class="utility-row utility-row--message-thread"
+          data-region="reliability"
+        >
+          <AnchorPRMessageThread :pr-id="id" />
+        </section>
+
         <section class="utility-row" data-region="share">
           <div class="utility-row__main">
             <div class="utility-row__content">
@@ -421,6 +429,7 @@ import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
 import AnchorPRAwarenessLane from "@/domains/pr/ui/sections/AnchorPRAwarenessLane.vue";
 import AnchorPRRecoveryLane from "@/domains/pr/ui/sections/AnchorPRRecoveryLane.vue";
+import AnchorPRMessageThread from "@/domains/pr/ui/sections/AnchorPRMessageThread.vue";
 import AnchorPRFactsCard from "@/domains/pr/ui/composites/AnchorPRFactsCard.vue";
 import {
   useAcceptAnchorAlternativeBatch,
@@ -790,6 +799,10 @@ const isActiveOrLater = computed(() => {
 
 const showInlineReminderSubscriptions = computed(
   () => showReminderSubscriptions.value && !isActiveOrLater.value,
+);
+
+const showMessageThread = computed(
+  () => prDetail.value?.partnerSection.viewer.isParticipant ?? false,
 );
 
 const showReminderSubscriptionsInMoreInfo = computed(

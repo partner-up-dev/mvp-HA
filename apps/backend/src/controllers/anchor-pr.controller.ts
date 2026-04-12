@@ -12,9 +12,12 @@ import {
 } from "../domains/pr-anchor";
 import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
 import {
+  advancePRMessageReadMarker,
   exitPR,
+  createPRMessage,
   getPRPartnerProfile,
   joinPR,
+  listPRMessages,
   updatePRContent,
   updatePRStatus,
 } from "../domains/pr-core";
@@ -24,6 +27,8 @@ import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mu
 import { HTTPException } from "hono/http-exception";
 import {
   anchorUpdateContentSchema,
+  prMessageCreateSchema,
+  prMessageReadMarkerSchema,
   prIdParamSchema,
   prPartnerProfileParamSchema,
   requireAnchorAuthenticatedIdentity,
@@ -86,6 +91,74 @@ export const anchorPRRoute = app
         ...profile,
         avatarUrl: resolveAvatarUrl(c.req.url, profile.avatarUrl),
       });
+    },
+  )
+  .get(
+    "/:id/messages",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await ensureAnchorPR(id);
+      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await listPRMessages(id, userId);
+
+      return c.json({
+        ...result,
+        items: result.items.map((item) => ({
+          ...item,
+          author: {
+            ...item.author,
+            avatarUrl: resolveAvatarUrl(c.req.url, item.author.avatarUrl),
+          },
+        })),
+      });
+    },
+  )
+  .post(
+    "/:id/messages",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", prMessageCreateSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { body } = c.req.valid("json");
+      await ensureAnchorPR(id);
+      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await createPRMessage({
+        prId: id,
+        authorUserId: userId,
+        body,
+      });
+
+      return c.json({
+        ...result,
+        message: {
+          ...result.message,
+          author: {
+            ...result.message.author,
+            avatarUrl: resolveAvatarUrl(
+              c.req.url,
+              result.message.author.avatarUrl,
+            ),
+          },
+        },
+      });
+    },
+  )
+  .post(
+    "/:id/messages/read-marker",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", prMessageReadMarkerSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { lastReadMessageId } = c.req.valid("json");
+      await ensureAnchorPR(id);
+      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await advancePRMessageReadMarker({
+        prId: id,
+        userId,
+        lastReadMessageId,
+      });
+      return c.json(result);
     },
   )
   .get(

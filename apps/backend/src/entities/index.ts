@@ -11,6 +11,8 @@ export * from "./partner";
 export * from "./user";
 export * from "./user-reliability";
 export * from "./user-notification-opt";
+export * from "./pr-message";
+export * from "./pr-message-inbox-state";
 export * from "./domain-event";
 export * from "./outbox-event";
 export * from "./operation-log";

@@ -7,6 +7,7 @@ import {
   partnerRequestFieldsSchema,
   prStatusManualSchema,
 } from "../entities/partner-request";
+import { prMessageBodySchema } from "../entities/pr-message";
 import type { UserId } from "../entities/user";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
 import { issueUserAuth } from "../auth/middleware";
@@ -92,6 +93,14 @@ export const prIdParamSchema = z.object({
 export const prPartnerProfileParamSchema = z.object({
   id: z.coerce.number().int().positive(),
   partnerId: z.coerce.number().int().positive(),
+});
+
+export const prMessageCreateSchema = z.object({
+  body: prMessageBodySchema,
+});
+
+export const prMessageReadMarkerSchema = z.object({
+  lastReadMessageId: z.coerce.number().int().positive(),
 });
 
 export const resolveAvatarUrl = (

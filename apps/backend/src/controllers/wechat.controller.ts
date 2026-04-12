@@ -31,6 +31,7 @@ import {
 } from "../auth/anonymous-session";
 import {
   cancelWeChatNewPartnerJobsForUser,
+  cancelWeChatPRMessageJobsForUser,
   cancelWeChatReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
@@ -129,23 +130,35 @@ const buildNotificationChannelState = async (): Promise<{
     NotificationSubscriptionState,
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
+  prMessage: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
 }> => {
-  const [reminderTemplateId, bookingResultTemplateId, newPartnerTemplateId] =
+  const [
+    reminderTemplateId,
+    bookingResultTemplateId,
+    newPartnerTemplateId,
+    prMessageTemplateId,
+  ] =
     await Promise.all([
       subscriptionMessageService.getConfirmationReminderTemplateId(),
       subscriptionMessageService.getBookingResultTemplateId(),
       subscriptionMessageService.getNewPartnerTemplateId(),
+      subscriptionMessageService.getPRMessageTemplateId(),
     ]);
 
   const [
     reminderSubmsgConfigured,
     bookingResultSubmsgConfigured,
     newPartnerSubmsgConfigured,
+    prMessageSubmsgConfigured,
   ] =
     await Promise.all([
       subscriptionMessageService.isConfirmationReminderConfigured(),
       subscriptionMessageService.isBookingResultConfigured(),
       subscriptionMessageService.isNewPartnerConfigured(),
+      subscriptionMessageService.isPRMessageConfigured(),
     ]);
 
   return {
@@ -167,6 +180,12 @@ const buildNotificationChannelState = async (): Promise<{
       requiresOpenSubscribe:
         newPartnerSubmsgConfigured && Boolean(newPartnerTemplateId),
       templateId: newPartnerTemplateId,
+    },
+    prMessage: {
+      configured: prMessageSubmsgConfigured,
+      requiresOpenSubscribe:
+        prMessageSubmsgConfigured && Boolean(prMessageTemplateId),
+      templateId: prMessageTemplateId,
     },
   };
 };
@@ -203,6 +222,14 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
         requiresOpenSubscribe: channels.newPartner.requiresOpenSubscribe,
         templateId: channels.newPartner.templateId,
       },
+      PR_MESSAGE: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.prMessage.configured,
+        requiresOpenSubscribe: channels.prMessage.requiresOpenSubscribe,
+        templateId: channels.prMessage.templateId,
+      },
     },
   };
 };
@@ -229,6 +256,10 @@ const buildAuthenticatedSubscriptionsResponse = async (
   const newPartner = userNotificationOptRepo.getSubscriptionSnapshot(
     notificationOpt,
     "NEW_PARTNER",
+  );
+  const prMessage = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "PR_MESSAGE",
   );
 
   return {
@@ -262,6 +293,14 @@ const buildAuthenticatedSubscriptionsResponse = async (
         requiresOpenSubscribe: channels.newPartner.requiresOpenSubscribe,
         templateId: channels.newPartner.templateId,
       },
+      PR_MESSAGE: {
+        enabled: prMessage.enabled,
+        optInAt: prMessage.optInAt ? prMessage.optInAt.toISOString() : null,
+        remainingCount: prMessage.remainingCount,
+        configured: channels.prMessage.configured,
+        requiresOpenSubscribe: channels.prMessage.requiresOpenSubscribe,
+        templateId: channels.prMessage.templateId,
+      },
     },
   };
 };
@@ -285,6 +324,10 @@ const applyNotificationSubscriptionSideEffects = async (
 
   if (kind === "NEW_PARTNER" && nextRemainingCount <= 0) {
     return cancelWeChatNewPartnerJobsForUser(userId);
+  }
+
+  if (kind === "PR_MESSAGE" && nextRemainingCount <= 0) {
+    return cancelWeChatPRMessageJobsForUser(userId);
   }
 
   return 0;

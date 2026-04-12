@@ -33,6 +33,7 @@ const envSchema = z.object({
     .optional(),
   WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID: z.string().min(1).optional(),
   WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID: z.string().min(1).optional(),
+  WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID: z.string().min(1).optional(),
   FIXED_IP_HTTP_PROXY: z.string().url().optional(),
 
   // WeCom (Enterprise WeChat) self-built app

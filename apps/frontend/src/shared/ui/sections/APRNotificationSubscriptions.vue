@@ -94,7 +94,12 @@ const props = withDefaults(
   }>(),
   {
     visibleKinds: () =>
-      ["REMINDER_CONFIRMATION", "BOOKING_RESULT", "NEW_PARTNER"] as const,
+      [
+        "REMINDER_CONFIRMATION",
+        "BOOKING_RESULT",
+        "NEW_PARTNER",
+        "PR_MESSAGE",
+      ] as const,
     outlineProfile: "primary",
   },
 );

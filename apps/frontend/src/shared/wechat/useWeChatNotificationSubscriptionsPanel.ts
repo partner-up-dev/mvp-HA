@@ -15,7 +15,8 @@ import { useWeChatShare } from "@/shared/wechat/useWeChatShare";
 export type WeChatNotificationKind =
   | "REMINDER_CONFIRMATION"
   | "BOOKING_RESULT"
-  | "NEW_PARTNER";
+  | "NEW_PARTNER"
+  | "PR_MESSAGE";
 
 type NotificationActionKind =
   | "ADD_ONE"
@@ -270,7 +271,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (kind === "BOOKING_RESULT") {
       return t("prPage.notificationSubscriptions.items.BOOKING_RESULT.title");
     }
-    return t("prPage.notificationSubscriptions.items.NEW_PARTNER.title");
+    if (kind === "NEW_PARTNER") {
+      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.title");
+    }
+    return t("prPage.notificationSubscriptions.items.PR_MESSAGE.title");
   };
 
   const resolveItemEnabledHint = (kind: WeChatNotificationKind): string => {
@@ -284,7 +288,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         "prPage.notificationSubscriptions.items.BOOKING_RESULT.enabledHint",
       );
     }
-    return t("prPage.notificationSubscriptions.items.NEW_PARTNER.enabledHint");
+    if (kind === "NEW_PARTNER") {
+      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.enabledHint");
+    }
+    return t("prPage.notificationSubscriptions.items.PR_MESSAGE.enabledHint");
   };
 
   const resolveItemDisabledHint = (kind: WeChatNotificationKind): string => {
@@ -298,7 +305,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         "prPage.notificationSubscriptions.items.BOOKING_RESULT.disabledHint",
       );
     }
-    return t("prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint");
+    if (kind === "NEW_PARTNER") {
+      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint");
+    }
+    return t("prPage.notificationSubscriptions.items.PR_MESSAGE.disabledHint");
   };
 
   const items = computed<NotificationSubscriptionCardItem[]>(() => {
@@ -332,6 +342,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         if (kind === "NEW_PARTNER") {
           description = t(
             "prPage.notificationSubscriptions.items.NEW_PARTNER.unconfiguredHint",
+          );
+        } else if (kind === "PR_MESSAGE") {
+          description = t(
+            "prPage.notificationSubscriptions.items.PR_MESSAGE.unconfiguredHint",
           );
         } else if (kind === "REMINDER_CONFIRMATION") {
           description = t("prPage.wechatReminder.unconfiguredHint");
