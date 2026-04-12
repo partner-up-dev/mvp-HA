@@ -12,7 +12,8 @@ import {
   WeChatSubscriptionMessageError,
   WeChatSubscriptionMessageService,
 } from "../../services/WeChatSubscriptionMessageService";
-import { jobRunner, NO_LATE_TOLERANCE_MS, type JobHandlerContext } from "../jobs";
+import { jobRunner, type JobHandlerContext } from "../jobs";
+import { prMessageSchedulePolicy } from "./job-schedule-policy";
 
 const WECHAT_PR_MESSAGE_JOB_TYPE = "wechat.notification.pr-message";
 const PR_MESSAGE_DEDUPE_PREFIX = "wechat-pr-message";
@@ -303,7 +304,7 @@ export async function scheduleWeChatPRMessageNotification(input: {
   await jobRunner.scheduleOnce({
     jobType: WECHAT_PR_MESSAGE_JOB_TYPE,
     runAt: new Date(),
-    lateToleranceMs: NO_LATE_TOLERANCE_MS,
+    ...prMessageSchedulePolicy,
     dedupeKey: buildPRMessageDedupeKey(
       input.recipientUserId,
       input.request.id,

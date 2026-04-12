@@ -17,6 +17,7 @@
 ### Persisted Operational Signals
 
 - `operation_logs` records domain action audit trail
+- `jobs` records persisted scheduling semantics, including bucket resolution and early/late tolerance units
 - `notification_deliveries` records notification send outcomes
 - `domain_events` and `outbox_events` provide event-side-effect traceability
 - analytics event ingestion and aggregate tables provide product/flow telemetry
@@ -25,7 +26,7 @@
 
 - migration failure before deploy
 - outbox drain failures in request-tail logs
-- job runner tick failures or backlog growth
+- job runner tick failures, backlog growth, or unexpected `MISSED` accumulation caused by bucket timing policy
 - notification delivery failures, especially repeated rejection/error patterns
 - OAuth/config-related failures in WeChat-dependent flows
 

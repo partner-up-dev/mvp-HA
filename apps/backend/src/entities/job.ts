@@ -35,6 +35,11 @@ export const jobs = pgTable(
     runAt: timestamp("run_at").notNull(),
     earlyToleranceMs: integer("early_tolerance_ms").notNull().default(0),
     lateToleranceMs: integer("late_tolerance_ms").notNull().default(0),
+    // Transitional bucket-based scheduling fields. Legacy millisecond columns stay
+    // in place during rollout so old and new runtimes can overlap safely.
+    resolutionMs: integer("resolution_ms"),
+    earlyToleranceUnits: integer("early_tolerance_units"),
+    lateToleranceUnits: integer("late_tolerance_units"),
     attempts: integer("attempts").notNull().default(0),
     maxAttempts: integer("max_attempts").notNull().default(5),
     leaseUntil: timestamp("lease_until"),

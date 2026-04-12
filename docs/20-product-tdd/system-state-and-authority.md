@@ -17,7 +17,7 @@ This is the source of truth for product behavior.
 ## Backend-Derived Operational State
 
 - outbox backlog and event-processing progress
-- job leases, retries, and due-job claims
+- job leases, retries, due-job claims, and bucket-based scheduling semantics carried by `run_at`, `resolution_ms`, `early_tolerance_units`, and `late_tolerance_units`
 - notification send attempts and cleanup state
 
 These shape runtime behavior but remain backend-owned.

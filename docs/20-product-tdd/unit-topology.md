@@ -57,6 +57,7 @@ These are subsystem clusters inside the two units, not independent top-level uni
 ## System-Shaping Constraints
 
 - Scale-to-zero backend runtime means delayed work must rely on DB-backed jobs and externally triggerable ticks rather than long-lived in-memory schedulers.
+- Job scheduling semantics are backend-infra owned: JobRunner persists bucket timing attributes on each job record and decides due/missed status centrally; notification modules only supply per-type timing policy.
 - The monorepo shares backend exports with the frontend at compile time, so some contract drift is intentionally caught by types even though runtime interaction still happens over HTTP.
 - Data evolution is forward-only, which constrains how backend state contracts may change over time.
 - WeChat and browser-environment differences materially shape which user flows are available and how the units coordinate them.

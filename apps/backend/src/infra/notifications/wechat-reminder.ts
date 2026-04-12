@@ -16,9 +16,12 @@ import { getTimeWindowStart } from "../../domains/pr-core/services/time-window.s
 import { resolveAnchorParticipationPolicy } from "../../domains/pr-core/services/anchor-participation-policy.service";
 import {
   jobRunner,
-  NO_LATE_TOLERANCE_MS,
   type JobHandlerContext,
 } from "../jobs";
+import {
+  confirmationReminderSchedulePolicy,
+  newPartnerSchedulePolicy,
+} from "./job-schedule-policy";
 import {
   WeChatTemplateMessageError,
   WeChatTemplateMessageService,
@@ -446,7 +449,7 @@ export async function scheduleWeChatReminderJobsForParticipant(
     await jobRunner.scheduleOnce({
       jobType: WECHAT_REMINDER_JOB_TYPE,
       runAt,
-      lateToleranceMs: NO_LATE_TOLERANCE_MS,
+      ...confirmationReminderSchedulePolicy,
       dedupeKey: buildReminderDedupeKey(request.id, userId, trigger),
       payload: {
         prId: request.id,
@@ -635,7 +638,7 @@ export async function scheduleWeChatNewPartnerNotificationsForJoin(input: {
     await jobRunner.scheduleOnce({
       jobType: WECHAT_NEW_PARTNER_JOB_TYPE,
       runAt: new Date(),
-      lateToleranceMs: NO_LATE_TOLERANCE_MS,
+      ...newPartnerSchedulePolicy,
       dedupeKey: buildNewPartnerDedupeKey(
         recipientUserId,
         input.request.id,

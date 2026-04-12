@@ -14,7 +14,8 @@ import {
   WeChatSubscriptionMessageError,
   WeChatSubscriptionMessageService,
 } from "../../services/WeChatSubscriptionMessageService";
-import { jobRunner, NO_LATE_TOLERANCE_MS, type JobHandlerContext } from "../jobs";
+import { jobRunner, type JobHandlerContext } from "../jobs";
+import { bookingResultSchedulePolicy } from "./job-schedule-policy";
 
 const WECHAT_BOOKING_RESULT_JOB_TYPE = "wechat.notification.booking-result";
 
@@ -285,7 +286,7 @@ export async function scheduleWeChatBookingResultNotifications(input: {
   await jobRunner.scheduleOnce({
     jobType: WECHAT_BOOKING_RESULT_JOB_TYPE,
     runAt: scheduledAt,
-    lateToleranceMs: NO_LATE_TOLERANCE_MS,
+    ...bookingResultSchedulePolicy,
     dedupeKey: buildBookingResultDedupeKey(input.executionId),
     payload: {
       executionId: input.executionId,

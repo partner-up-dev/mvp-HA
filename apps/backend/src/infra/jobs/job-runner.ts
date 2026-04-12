@@ -4,13 +4,15 @@ import { jobs } from "../../entities/job";
 import { db } from "../../lib/db";
 import { toErrorMessage } from "../../lib/error-message";
 import { applyLocalStatementTimeout } from "../../lib/pg-timeouts";
+import {
+  LEGACY_NO_LATE_TOLERANCE_MS,
+  LEGACY_RESOLUTION_MS,
+  NO_LATE_TOLERANCE_UNITS,
+  resolveScheduleTiming,
+} from "./schedule-timing";
 
 const TICK_LOCK_NAMESPACE = 2_147_483_001;
 const TICK_LOCK_KEY = 1;
-const DEFAULT_EARLY_TOLERANCE_MS = 15 * 60 * 1000;
-const DEFAULT_LATE_TOLERANCE_MS = 15 * 60 * 1000;
-// Sentinel value used to disable late tolerance checks for a job.
-export const NO_LATE_TOLERANCE_MS = -1;
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_BATCH_SIZE = 20;
 const DEFAULT_MAX_BATCHES = 3;
@@ -26,9 +28,10 @@ const BASE_RETRY_DELAY_MS = 30_000;
 export interface ScheduleOnceConfig {
   jobType: string;
   runAt: Date;
+  resolutionMs: number;
   payload?: Record<string, unknown>;
-  earlyToleranceMs?: number;
-  lateToleranceMs?: number;
+  earlyToleranceUnits?: number;
+  lateToleranceUnits?: number;
   maxAttempts?: number;
   dedupeKey?: string | null;
 }
@@ -113,23 +116,11 @@ const isUniqueViolation = (error: unknown): boolean => {
   return error.code === "23505";
 };
 
-const nonNegativeOr = (value: number | undefined, fallback: number): number => {
-  if (value === undefined) return fallback;
-  if (!Number.isFinite(value) || value < 0) return fallback;
-  return Math.floor(value);
-};
-
 const positiveOr = (value: number | undefined, fallback: number): number => {
   if (value === undefined) return fallback;
   if (!Number.isFinite(value) || value <= 0) return fallback;
   return Math.floor(value);
 };
-
-// Allow the sentinel to bypass the nonNegativeOr validation.
-const resolveLateToleranceMs = (value: number | undefined): number =>
-  value === NO_LATE_TOLERANCE_MS
-    ? NO_LATE_TOLERANCE_MS
-    : nonNegativeOr(value, DEFAULT_LATE_TOLERANCE_MS);
 
 const toDate = (value: Date | string): Date => {
   if (value instanceof Date) return value;
@@ -187,11 +178,7 @@ class JobRunnerImpl {
 
   async scheduleOnce(config: ScheduleOnceConfig): Promise<ScheduleOnceResult> {
     const payload = config.payload ?? {};
-    const earlyToleranceMs = nonNegativeOr(
-      config.earlyToleranceMs,
-      DEFAULT_EARLY_TOLERANCE_MS,
-    );
-    const lateToleranceMs = resolveLateToleranceMs(config.lateToleranceMs);
+    const timing = resolveScheduleTiming(config);
     const maxAttempts = Math.max(
       1,
       positiveOr(config.maxAttempts, DEFAULT_MAX_ATTEMPTS),
@@ -205,8 +192,11 @@ class JobRunnerImpl {
           payload,
           status: "PENDING",
           runAt: config.runAt,
-          earlyToleranceMs,
-          lateToleranceMs,
+          earlyToleranceMs: timing.legacyEarlyToleranceMs,
+          lateToleranceMs: timing.legacyLateToleranceMs,
+          resolutionMs: timing.resolutionMs,
+          earlyToleranceUnits: timing.earlyToleranceUnits,
+          lateToleranceUnits: timing.lateToleranceUnits,
           maxAttempts,
           dedupeKey: config.dedupeKey ?? null,
         })
@@ -349,6 +339,24 @@ class JobRunnerImpl {
     leaseMs: number,
     statementTimeoutMs?: number,
   ): Promise<ClaimBatchResult> {
+    const effectiveResolutionMsSql = sql`coalesce(resolution_ms, ${LEGACY_RESOLUTION_MS})`;
+    const effectiveEarlyToleranceUnitsSql =
+      sql`coalesce(early_tolerance_units, greatest(early_tolerance_ms, 0))`;
+    const effectiveLateToleranceUnitsSql = sql`
+      coalesce(
+        late_tolerance_units,
+        case
+          when late_tolerance_ms = ${LEGACY_NO_LATE_TOLERANCE_MS}
+            then ${NO_LATE_TOLERANCE_UNITS}
+          else greatest(late_tolerance_ms, 0)
+        end
+      )
+    `;
+    const dueBucketSql =
+      sql`floor(extract(epoch from run_at) * 1000.0 / ${effectiveResolutionMsSql})`;
+    const nowBucketSql =
+      sql`floor(extract(epoch from now()) * 1000.0 / ${effectiveResolutionMsSql})`;
+
     return db.transaction(async (tx) => {
       await applyLocalStatementTimeout(tx, statementTimeoutMs);
 
@@ -384,8 +392,8 @@ class JobRunnerImpl {
           updated_at = now(),
           last_error = coalesce(last_error, 'Missed tolerance window')
         where status in ('PENDING', 'RETRY')
-          and late_tolerance_ms <> ${NO_LATE_TOLERANCE_MS}
-          and run_at + (late_tolerance_ms * interval '1 millisecond') < now()
+          and ${effectiveLateToleranceUnitsSql} <> ${NO_LATE_TOLERANCE_UNITS}
+          and ${nowBucketSql} > ${dueBucketSql} + ${effectiveLateToleranceUnitsSql}
         returning id
       `);
 
@@ -395,10 +403,10 @@ class JobRunnerImpl {
           from jobs
           where status in ('PENDING', 'RETRY')
             and (lease_until is null or lease_until < now())
-            and now() >= run_at - (early_tolerance_ms * interval '1 millisecond')
+            and ${nowBucketSql} >= ${dueBucketSql} - ${effectiveEarlyToleranceUnitsSql}
             and (
-              late_tolerance_ms = ${NO_LATE_TOLERANCE_MS}
-              or now() <= run_at + (late_tolerance_ms * interval '1 millisecond')
+              ${effectiveLateToleranceUnitsSql} = ${NO_LATE_TOLERANCE_UNITS}
+              or ${nowBucketSql} <= ${dueBucketSql} + ${effectiveLateToleranceUnitsSql}
             )
           order by run_at asc, id asc
           for update skip locked

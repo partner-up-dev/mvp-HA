@@ -9,9 +9,9 @@ import { NotificationDeliveryRepository } from "../../repositories/NotificationD
 import { getTimeWindowStart } from "../../domains/pr-core/services/time-window.service";
 import {
   jobRunner,
-  NO_LATE_TOLERANCE_MS,
   type JobHandlerContext,
 } from "../jobs";
+import { activityStartReminderSchedulePolicy } from "./job-schedule-policy";
 import {
   WeChatSubscriptionMessageError,
   WeChatSubscriptionMessageService,
@@ -329,7 +329,7 @@ export async function scheduleWeChatActivityStartReminderJobForParticipant(
   await jobRunner.scheduleOnce({
     jobType: WECHAT_ACTIVITY_START_REMINDER_JOB_TYPE,
     runAt,
-    lateToleranceMs: NO_LATE_TOLERANCE_MS,
+    ...activityStartReminderSchedulePolicy,
     dedupeKey: buildActivityStartReminderDedupeKey(request.id, userId),
     payload: {
       prId: request.id,
