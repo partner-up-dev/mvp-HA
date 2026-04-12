@@ -148,12 +148,12 @@ const buildNotificationChannelState = async (): Promise<{
     newPartnerTemplateId,
     prMessageTemplateId,
   ] = await Promise.all([
-      subscriptionMessageService.getConfirmationReminderTemplateId(),
-      subscriptionMessageService.getActivityStartReminderTemplateId(),
-      subscriptionMessageService.getBookingResultTemplateId(),
-      subscriptionMessageService.getNewPartnerTemplateId(),
-      subscriptionMessageService.getPRMessageTemplateId(),
-    ]);
+    subscriptionMessageService.getConfirmationReminderTemplateId(),
+    subscriptionMessageService.getActivityStartReminderTemplateId(),
+    subscriptionMessageService.getBookingResultTemplateId(),
+    subscriptionMessageService.getNewPartnerTemplateId(),
+    subscriptionMessageService.getPRMessageTemplateId(),
+  ]);
 
   const [
     reminderSubmsgConfigured,
@@ -161,19 +161,19 @@ const buildNotificationChannelState = async (): Promise<{
     bookingResultSubmsgConfigured,
     newPartnerSubmsgConfigured,
     prMessageSubmsgConfigured,
-  ] =
-    await Promise.all([
-      subscriptionMessageService.isConfirmationReminderConfigured(),
-      subscriptionMessageService.isActivityStartReminderConfigured(),
-      subscriptionMessageService.isBookingResultConfigured(),
-      subscriptionMessageService.isNewPartnerConfigured(),
-      subscriptionMessageService.isPRMessageConfigured(),
-    ]);
+  ] = await Promise.all([
+    subscriptionMessageService.isConfirmationReminderConfigured(),
+    subscriptionMessageService.isActivityStartReminderConfigured(),
+    subscriptionMessageService.isBookingResultConfigured(),
+    subscriptionMessageService.isNewPartnerConfigured(),
+    subscriptionMessageService.isPRMessageConfigured(),
+  ]);
 
   return {
     reminder: {
       configured:
-        reminderSubmsgConfigured || templateMessageService.isReminderConfigured(),
+        reminderSubmsgConfigured ||
+        templateMessageService.isReminderConfigured(),
       requiresOpenSubscribe:
         reminderSubmsgConfigured && Boolean(reminderTemplateId),
       templateId: reminderTemplateId,
@@ -572,12 +572,29 @@ const resolveMockOAuthAuthorizeUrl = (c: Context, state: string): string => {
   return authorizeUrl.toString();
 };
 
-const resolveMockOAuthCallbackUrl = (c: Context, state: string): string => {
-  const callbackUrl = new URL(c.req.url);
-  callbackUrl.pathname = callbackUrl.pathname.replace(
-    /\/oauth\/mock\/authorize$/,
-    "/oauth/callback",
-  );
+const resolveMockOAuthCallbackUrl = (
+  c: Context,
+  state: string,
+  returnTo: string | null,
+): string => {
+  let callbackUrl: URL;
+
+  try {
+    if (returnTo) {
+      const parsedReturnTo = new URL(returnTo);
+      if (isHttpProtocol(parsedReturnTo.protocol)) {
+        callbackUrl = parsedReturnTo;
+      } else {
+        callbackUrl = new URL(resolveFallbackReturnTo(c));
+      }
+    } else {
+      callbackUrl = new URL(resolveFallbackReturnTo(c));
+    }
+  } catch {
+    callbackUrl = new URL(resolveFallbackReturnTo(c));
+  }
+
+  callbackUrl.pathname = "/wechat/oauth/callback";
   callbackUrl.search = "";
   callbackUrl.searchParams.set("state", state);
   callbackUrl.searchParams.set("code", OAUTH_MOCK_CODE);
@@ -948,7 +965,33 @@ export const wechatRoute = app
       }
 
       const { state } = c.req.valid("query");
-      return c.redirect(resolveMockOAuthCallbackUrl(c, state), 302);
+      const sessionSecret = resolveOAuthSessionSecret();
+      const statePayload = sessionSecret
+        ? ((await readSignedCookiePayload(
+            c,
+            resolveOAuthStateCookieName(state),
+            sessionSecret,
+            oauthStateCookiePayloadSchema,
+          )) ??
+          (await readSignedCookiePayload(
+            c,
+            OAUTH_STATE_COOKIE_NAME,
+            sessionSecret,
+            oauthStateCookiePayloadSchema,
+          )))
+        : null;
+
+      const returnToFromState =
+        statePayload &&
+        statePayload.nonce === state &&
+        statePayload.expiresAtMs > nowMs()
+          ? statePayload.returnTo
+          : null;
+
+      return c.redirect(
+        resolveMockOAuthCallbackUrl(c, state, returnToFromState),
+        302,
+      );
     },
   )
   .get(
@@ -972,7 +1015,7 @@ export const wechatRoute = app
         auth.role === "anonymous" || !sessionUserId ? null : sessionUserId;
       const anonymousUserId =
         auth.role === "anonymous"
-          ? sessionUserId ?? (await readAnonymousSessionCookie(c))
+          ? (sessionUserId ?? (await readAnonymousSessionCookie(c)))
           : null;
 
       if (isWeChatAbilityMockingEnabled()) {
@@ -1228,7 +1271,8 @@ export const wechatRoute = app
           (statePayload.anonymousUserId as UserId | null) ??
           readSessionUserId(c);
         if (bindCandidateUserId) {
-          const bindCandidateUser = await userRepo.findById(bindCandidateUserId);
+          const bindCandidateUser =
+            await userRepo.findById(bindCandidateUserId);
           if (
             bindCandidateUser &&
             bindCandidateUser.status === "ACTIVE" &&
@@ -1250,7 +1294,10 @@ export const wechatRoute = app
             }
 
             if (boundCandidate && boundCandidate.status === "ACTIVE") {
-              const authPayload = await issueOAuthCallbackAuth(c, boundCandidate);
+              const authPayload = await issueOAuthCallbackAuth(
+                c,
+                boundCandidate,
+              );
               clearAnonymousSessionCookie(c);
               clearOAuthStateCookieByNonce(c, state);
               clearOAuthStateCookie(c);
@@ -1268,7 +1315,8 @@ export const wechatRoute = app
           sex: profile?.sex ?? null,
           avatar: profile?.avatar ?? null,
         });
-        const resolvedUser = createdUser ?? (await userRepo.findByOpenId(loginOpenId));
+        const resolvedUser =
+          createdUser ?? (await userRepo.findByOpenId(loginOpenId));
         if (!resolvedUser || resolvedUser.status !== "ACTIVE") {
           throw new Error("Failed to create user for WeChat OAuth login");
         }
