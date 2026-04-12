@@ -159,6 +159,6 @@ watch(
 
 .tab-bar__tab--expired {
   border-style: dashed;
-  opacity: 0.96;
+  opacity: 0.6; // TODO replace with design token
 }
 </style>

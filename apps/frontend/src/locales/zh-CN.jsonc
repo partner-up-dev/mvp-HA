@@ -22,14 +22,14 @@
   },
   "wechatMiniProgramWebView": {
     "title": "请用微信扫一扫打开网页",
-    "description": "当前在微信小程序内，无法使用公众号 JS-SDK 的这项能力。",
-    "instruction": "保存此二维码，使用微信扫一扫打开方可【{operation}】。",
+    "description": "无法在小程序中完成网页版的分享能力。",
+    "instruction": "保存此二维码，使用微信扫一扫打开方可{operation}。",
     "qrAlt": "当前网页二维码",
     "qrGenerating": "正在生成二维码...",
     "qrFailed": "二维码生成失败，请复制链接后在微信内打开。",
     "copyLinkAction": "复制当前链接",
     "operations": {
-      "wechatShare": "设置微信分享",
+      "wechatShare": "进行微信群聊/朋友圈分享",
       "openSubscribe": "订阅通知"
     }
   },

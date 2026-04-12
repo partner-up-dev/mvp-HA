@@ -23,6 +23,7 @@ type UseShareToWechatChatOptions = {
   spmRouteKey: MaybeRef<ShareSpmRouteKey>;
   prData: MaybeRef<PRShareData>;
   t: Translate;
+  disabled?: MaybeRef<boolean>;
 };
 
 const truncateShareText = (value: string): string => {
@@ -63,6 +64,7 @@ export const useShareToWechatChat = ({
   spmRouteKey,
   prData,
   t,
+  disabled = false,
 }: UseShareToWechatChatOptions) => {
   const styleIndex = ref(0);
   const errorMessage = ref<string | null>(null);
@@ -78,6 +80,7 @@ export const useShareToWechatChat = ({
   const currentShareUrl = computed(() => unref(shareUrl));
   const currentSpmRouteKey = computed(() => unref(spmRouteKey));
   const currentPrData = computed(() => unref(prData));
+  const disabledRef = computed(() => Boolean(unref(disabled)));
   const routeShareSessionId = useCurrentRouteShareSessionId();
 
   const {
@@ -398,6 +401,7 @@ export const useShareToWechatChat = ({
   };
 
   const handleGenerateAndUpdate = async (): Promise<void> => {
+    if (disabledRef.value) return;
     if (!routeShareSessionId.value) return;
     await handleGenerateAndUpdateInternal(
       scopeVersion.value,
@@ -417,9 +421,12 @@ export const useShareToWechatChat = ({
         currentPrData.value.canonicalShare.revision,
         currentPrData.value.wechatThumbnail?.posterUrl ?? null,
         routeShareSessionId.value,
+        disabledRef.value,
       ] as const,
     () => {
       resetCurrentScopeState();
+
+      if (disabledRef.value) return;
 
       const routeSessionAtStart = routeShareSessionId.value;
       if (!routeSessionAtStart) return;

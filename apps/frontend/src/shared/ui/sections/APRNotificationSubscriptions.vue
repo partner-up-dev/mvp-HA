@@ -62,6 +62,24 @@
       </div>
 
       <button
+        v-else-if="
+          item.actionKind === 'SHOW_MINIPROGRAM_WEBVIEW_NOTICE' &&
+          item.actionLabel
+        "
+        :class="[
+          'action-btn',
+          props.outlineProfile === 'surface'
+            ? 'action-btn--surface'
+            : 'action-btn--secondary',
+        ]"
+        type="button"
+        :disabled="item.actionDisabled || item.pending"
+        @click="showMiniProgramWebViewNotice = true"
+      >
+        {{ item.actionLabel }}
+      </button>
+
+      <button
         v-else-if="item.actionLabel"
         :class="[
           'action-btn',
@@ -77,14 +95,24 @@
       </button>
     </div>
   </article>
+
+  <WeChatMiniProgramJssdkNoticeModal
+    :open="showMiniProgramWebViewNotice"
+    :operation-label="
+      t('wechatMiniProgramWebView.operations.openSubscribe')
+    "
+    @close="showMiniProgramWebViewNotice = false"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   useWeChatNotificationSubscriptionsPanel,
   type WeChatNotificationKind,
 } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
+import WeChatMiniProgramJssdkNoticeModal from "@/shared/wechat/WeChatMiniProgramJssdkNoticeModal.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -104,6 +132,7 @@ const props = withDefaults(
     outlineProfile: "primary",
   },
 );
+const { t } = useI18n();
 
 const emit = defineEmits<{
   "error-change": [error: Error | null];
@@ -112,6 +141,7 @@ const emit = defineEmits<{
 const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
   visibleKinds: props.visibleKinds,
 });
+const showMiniProgramWebViewNotice = ref(false);
 
 const items = computed(() => notificationSubscriptions.items.value);
 

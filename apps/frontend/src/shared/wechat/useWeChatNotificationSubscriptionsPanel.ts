@@ -10,6 +10,7 @@ import {
 } from "@/shared/wechat/ability-mocking";
 import { useWeChatNotificationSubscriptions } from "@/shared/wechat/queries/useWeChatNotificationSubscriptions";
 import { useUpdateWeChatNotificationSubscription } from "@/shared/wechat/queries/useUpdateWeChatNotificationSubscription";
+import { useWeChatMiniProgramWebView } from "@/shared/wechat/useWeChatMiniProgramWebView";
 import { useWeChatShare } from "@/shared/wechat/useWeChatShare";
 
 export type WeChatNotificationKind =
@@ -22,6 +23,7 @@ export type WeChatNotificationKind =
 type NotificationActionKind =
   | "ADD_ONE"
   | "OPEN_SUBSCRIBE"
+  | "SHOW_MINIPROGRAM_WEBVIEW_NOTICE"
   | "LOGIN"
   | "BIND"
   | null;
@@ -55,6 +57,8 @@ export const useWeChatNotificationSubscriptionsPanel = ({
   const query = useWeChatNotificationSubscriptions();
   const mutation = useUpdateWeChatNotificationSubscription();
   const { initWeChatSdk } = useWeChatShare();
+  const { isMiniProgramWebView: detectedMiniProgramWebView } =
+    useWeChatMiniProgramWebView();
   const openSubscribeReady = ref<boolean>(isWeChatAbilityMockingEnabled());
   const openSubscribePreparing = ref(false);
   const openSubscribeError = ref<string | null>(null);
@@ -63,6 +67,9 @@ export const useWeChatNotificationSubscriptionsPanel = ({
 
   const isWeChatEnv = computed(() =>
     typeof navigator === "undefined" ? false : isWeChatAbilityEnv(),
+  );
+  const isMiniProgramWebView = computed(() =>
+    isWeChatAbilityMockingEnabled() ? false : detectedMiniProgramWebView.value,
   );
 
   const ensureOpenSubscribeReady = async (): Promise<boolean> => {
@@ -73,6 +80,13 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     }
     if (!isWeChatEnv.value) {
       openSubscribeReady.value = false;
+      return false;
+    }
+    if (isMiniProgramWebView.value) {
+      openSubscribeReady.value = false;
+      openSubscribeError.value = t(
+        "prPage.notificationSubscriptions.miniProgramWebViewHint",
+      );
       return false;
     }
     if (openSubscribeReady.value) {
@@ -112,6 +126,9 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (!isWeChatEnv.value) {
       return;
     }
+    if (isMiniProgramWebView.value) {
+      return;
+    }
 
     const payload = query.data.value;
     if (!payload?.configured || !payload.authenticated || !payload.wechatBound) {
@@ -128,7 +145,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       );
     });
 
-    if (!needsOpenSubscribe || openSubscribeReady.value || openSubscribePreparing.value) {
+    if (
+      !needsOpenSubscribe ||
+      openSubscribeReady.value ||
+      openSubscribePreparing.value
+    ) {
       return;
     }
 
@@ -354,6 +375,13 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         description = t("prPage.wechatReminder.unconfiguredHint");
       } else if (!isWeChatEnv.value) {
         description = t("prPage.wechatReminder.nonWechatHint");
+      } else if (isMiniProgramWebView.value) {
+        description = t(
+          "prPage.notificationSubscriptions.miniProgramWebViewHint",
+        );
+        actionLabel = t("prPage.notificationSubscriptions.openInWechatAction");
+        actionKind = "SHOW_MINIPROGRAM_WEBVIEW_NOTICE";
+        actionDisabled = false;
       } else if (!kindConfigured) {
         if (kind === "NEW_PARTNER") {
           description = t(
@@ -388,16 +416,16 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         const itemHint = enabled
           ? resolveItemEnabledHint(kind)
           : resolveItemDisabledHint(kind);
-        description = t("prPage.notificationSubscriptions.remainingCountWithHint", {
-          count: remainingCount,
-          hint: itemHint,
-        });
+        description = t(
+          "prPage.notificationSubscriptions.remainingCountWithHint",
+          {
+            count: remainingCount,
+            hint: itemHint,
+          },
+        );
         actionLabel = t("prPage.notificationSubscriptions.subscribeOnceAction");
 
-        if (
-          requiresOpenSubscribe &&
-          !isWeChatAbilityMockingEnabled()
-        ) {
+        if (requiresOpenSubscribe && !isWeChatAbilityMockingEnabled()) {
           actionKind = "OPEN_SUBSCRIBE";
           openSubscribeTemplateId = openSubscribeReady.value ? templateId : null;
           actionDisabled = pending || !templateId;
@@ -433,6 +461,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
 
   return {
     isWeChatEnv,
+    isMiniProgramWebView,
     items,
     query,
     mutation,

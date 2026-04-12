@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
+import { isWeChatMiniProgramWebView } from "@/shared/browser/isWeChatMiniProgramWebView";
 import type { PRKind } from "@/shared/telemetry/events";
 import { trackEvent } from "@/shared/telemetry/track";
 import { client } from "@/lib/rpc";
@@ -350,7 +351,7 @@ export const useWeChatShare = () => {
     requestedSignatureUrl?: string,
     trigger: "manual" | "sdk_ready" = "manual",
   ): Promise<void> => {
-    if (!isWeChatBrowser()) return;
+    if (!isWeChatBrowser() || isWeChatMiniProgramWebView()) return;
 
     const current = lastShareCardRef.value;
     if (!current) return;
@@ -377,7 +378,7 @@ export const useWeChatShare = () => {
   const ensureWeChatSdkConfigured = async (
     options: InitWeChatSdkOptions = {},
   ): Promise<WeChatSdkConfigState | null> => {
-    if (!isWeChatBrowser()) return null;
+    if (!isWeChatBrowser() || isWeChatMiniProgramWebView()) return null;
 
     const request = buildWeChatSdkRequest(options);
 
@@ -507,7 +508,7 @@ export const useWeChatShare = () => {
   };
 
   const setWeChatShareCard = async (data: ShareCardData): Promise<void> => {
-    if (!isWeChatBrowser()) return;
+    if (!isWeChatBrowser() || isWeChatMiniProgramWebView()) return;
     await enqueueRuntimeOperation(async () => {
       lastShareCardRef.value = data;
       await ensureWeChatSdkConfigured({
