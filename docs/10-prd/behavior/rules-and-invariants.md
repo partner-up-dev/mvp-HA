@@ -88,5 +88,6 @@
 
 - Participant profile pages are read-only and do not own editing behavior.
 - The "Need Help" path must keep support, author feedback, and about-page routing distinct.
+- Event-specific beta groups are support and activity-coordination entrypoints. They may help users request new sessions, get booking/subsidy support, or coordinate activity context, but they do not replace the backend-owned PR messaging visibility and participant rules.
 - Build metadata shown in `/about` must be interpretable in the current runtime and must not depend on a local git checkout inside the browser environment.
 - Operator-managed configuration counts as product behavior whenever it changes a user-visible path.

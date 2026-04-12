@@ -19,6 +19,19 @@ export interface MessageSchema {
     copyFailed: string;
     operationFailed: string;
   };
+  wechatMiniProgramWebView: {
+    title: string;
+    description: string;
+    instruction: string;
+    qrAlt: string;
+    qrGenerating: string;
+    qrFailed: string;
+    copyLinkAction: string;
+    operations: {
+      wechatShare: string;
+      openSubscribe: string;
+    };
+  };
   status: {
     draft: string;
     open: string;
@@ -236,10 +249,6 @@ export interface MessageSchema {
     betaGroupTitle: string;
     betaGroupDescription: string;
     betaGroupAction: string;
-    betaGroupModalTitle: string;
-    betaGroupModalDescription: string;
-    betaGroupQrAlt: string;
-    betaGroupQrMissing: string;
     authorEntry: string;
     useCases: {
       employee: string;
@@ -256,6 +265,18 @@ export interface MessageSchema {
     backendCommitLabel: string;
     unknownValue: string;
     backendCommitLoadFailed: string;
+    betaGroupsSectionTitle: string;
+    betaGroupsKicker: string;
+    betaGroupsTitle: string;
+    betaGroupsDescription: string;
+    betaGroupsLoading: string;
+    betaGroupsLoadFailed: string;
+    betaGroupsEmpty: string;
+    betaGroupLinkAction: string;
+    betaGroupModalTitle: string;
+    betaGroupModalDescription: string;
+    betaGroupQrAlt: string;
+    betaGroupQrMissing: string;
     footerEntry: string;
     footerNavLabel: string;
   };
@@ -337,6 +358,8 @@ export interface MessageSchema {
       subscribeOnceAction: string;
       remainingCountWithHint: string;
       openSubscribeUnavailableHint: string;
+      miniProgramWebViewHint: string;
+      openInWechatAction: string;
       items: {
         REMINDER_CONFIRMATION: {
           title: string;
@@ -591,6 +614,8 @@ export interface MessageSchema {
       generating: string;
       guidanceLine1: string;
       guidanceLine2: string;
+      miniProgramWebViewHint: string;
+      openInWechatAction: string;
       switchStyle: string;
       defaultShareTitle: string;
       pageDescriptionHome: string;
@@ -788,6 +813,7 @@ export interface MessageSchema {
     eventTypeLabel: string;
     eventDescriptionLabel: string;
     eventCoverImageLabel: string;
+    eventBetaGroupQrCodeLabel: string;
     eventStatusLabel: string;
     eventDefaultMinPartnersLabel: string;
     eventDefaultMaxPartnersLabel: string;

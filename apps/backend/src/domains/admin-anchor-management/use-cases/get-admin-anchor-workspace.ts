@@ -50,6 +50,7 @@ export type AdminAnchorEventSummary = {
   defaultMaxPartners: number | null;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
+  betaGroupQrCode: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -136,6 +137,7 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
             )
           : [],
         coverImage: event.coverImage,
+        betaGroupQrCode: event.betaGroupQrCode,
         status: event.status,
         createdAt: event.createdAt.toISOString(),
         updatedAt: event.updatedAt.toISOString(),

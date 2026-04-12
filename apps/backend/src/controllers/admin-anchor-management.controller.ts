@@ -56,6 +56,7 @@ const adminAnchorEventInputSchema = z.object({
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
   coverImage: z.string().trim().nullable(),
+  betaGroupQrCode: z.string().trim().nullable(),
   status: anchorEventStatusSchema,
 });
 
@@ -120,6 +121,7 @@ export const adminAnchorManagementRoute = app
         ),
         userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
         coverImage: payload.coverImage || null,
+        betaGroupQrCode: payload.betaGroupQrCode || null,
       });
       return c.json(result);
     },
@@ -139,6 +141,7 @@ export const adminAnchorManagementRoute = app
         ),
         userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
         coverImage: payload.coverImage || null,
+        betaGroupQrCode: payload.betaGroupQrCode || null,
       });
       return c.json(result);
     },

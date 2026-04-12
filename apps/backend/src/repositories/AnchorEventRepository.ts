@@ -65,6 +65,7 @@ export class AnchorEventRepository {
         | "defaultMinPartners"
         | "defaultMaxPartners"
         | "coverImage"
+        | "betaGroupQrCode"
         | "status"
       >
     >,

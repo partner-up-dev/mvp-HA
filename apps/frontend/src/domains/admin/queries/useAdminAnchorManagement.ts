@@ -69,6 +69,7 @@ export type AdminAnchorEventInput = {
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   coverImage: string | null;
+  betaGroupQrCode: string | null;
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 

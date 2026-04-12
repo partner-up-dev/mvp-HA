@@ -7,6 +7,7 @@ insert into anchor_events (
   user_location_pool,
   time_window_pool,
   cover_image,
+  beta_group_qr_code,
   status,
   created_at,
   updated_at
@@ -21,6 +22,7 @@ values
     $$[]$$::jsonb,
     $$[["2026-03-10T17:00:00+08:00", "2026-03-10T18:00:00+08:00"], ["2026-03-11T17:00:00+08:00", "2026-03-11T18:00:00+08:00"]]$$::jsonb,
     null,
+    null,
     'ACTIVE',
     '2026-03-01 12:34:35.909573'::timestamp,
     '2026-03-01 12:34:35.909573'::timestamp
@@ -33,6 +35,7 @@ values
     $$["图书馆自习区A桌", "图书馆自习区B桌"]$$::jsonb,
     $$[]$$::jsonb,
     $$[["2026-03-12T19:00:00+08:00", "2026-03-12T21:00:00+08:00"], ["2026-03-13T19:00:00+08:00", "2026-03-13T21:00:00+08:00"]]$$::jsonb,
+    null,
     null,
     'ACTIVE',
     '2026-03-02 07:50:32.101177'::timestamp,
@@ -47,6 +50,7 @@ set
   user_location_pool = excluded.user_location_pool,
   time_window_pool = excluded.time_window_pool,
   cover_image = excluded.cover_image,
+  beta_group_qr_code = excluded.beta_group_qr_code,
   status = excluded.status,
   created_at = excluded.created_at,
   updated_at = excluded.updated_at;
@@ -319,10 +323,6 @@ values
   (
     'home_page_wechat_qr_code',
     'https://oss-app.partner-up.cn/support/8f52443c-5546-4f1a-8f7d-035d929bde10.png'
-  ),
-  (
-    'wechat_beta_group_qr_code',
-    'https://oss-app.partner-up.cn/5264495b163398842ad04ee5ee42a3df.jpg'
   ),
   (
     'wecom_staff_link',

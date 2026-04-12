@@ -72,6 +72,7 @@ export interface AnchorEventDetail {
   userLocationPool: UserLocationEntry[];
   timeWindowPool: TimeWindowEntry[];
   coverImage: string | null;
+  betaGroupQrCode: string | null;
   status: string;
   batches: BatchDetail[];
   /** True when all time-window × location combos are occupied */
@@ -210,6 +211,7 @@ export async function getAnchorEventDetail(
       ? event.timeWindowPool
       : [],
     coverImage: event.coverImage,
+    betaGroupQrCode: event.betaGroupQrCode,
     status: event.status,
     batches: batchDetails,
     exhausted,

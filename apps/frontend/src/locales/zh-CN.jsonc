@@ -20,6 +20,19 @@
     "copyFailed": "复制失败",
     "operationFailed": "操作失败"
   },
+  "wechatMiniProgramWebView": {
+    "title": "请用微信扫一扫打开网页",
+    "description": "当前在微信小程序内，无法使用公众号 JS-SDK 的这项能力。",
+    "instruction": "保存此二维码，使用微信扫一扫打开方可【{operation}】。",
+    "qrAlt": "当前网页二维码",
+    "qrGenerating": "正在生成二维码...",
+    "qrFailed": "二维码生成失败，请复制链接后在微信内打开。",
+    "copyLinkAction": "复制当前链接",
+    "operations": {
+      "wechatShare": "设置微信分享",
+      "openSubscribe": "订阅通知"
+    }
+  },
   "status": {
     "draft": "草稿",
     "open": "找人中",
@@ -199,13 +212,9 @@
     "supportDescription": "投诉、使用问题、功能建议等。",
     "supportAction": "联系平台客服",
     "betaGroupBadge": "内测群",
-    "betaGroupTitle": "加入微信内测群",
-    "betaGroupDescription": "获取内测动态与优先体验机会。",
-    "betaGroupAction": "查看群二维码",
-    "betaGroupModalTitle": "微信内测群",
-    "betaGroupModalDescription": "请使用微信扫码加入内测群。",
-    "betaGroupQrAlt": "微信内测群二维码",
-    "betaGroupQrMissing": "暂未配置内测群二维码",
+    "betaGroupTitle": "加入活动内测群",
+    "betaGroupDescription": "按活动选择对应群，用来请求新场次、获取补贴、联系搭子。",
+    "betaGroupAction": "选择活动内测群",
     "authorEntry": "产品建议或 Bug 反馈？联系作者",
     "useCases": {
       "staff": "报销 / 转账问题 -> 联系企业微信员工",
@@ -222,6 +231,18 @@
     "backendCommitLabel": "后端 Commit Hash",
     "unknownValue": "未知",
     "backendCommitLoadFailed": "后端 commit hash 加载失败，请稍后重试。",
+    "betaGroupsSectionTitle": "活动内测群",
+    "betaGroupsKicker": "活动内测群",
+    "betaGroupsTitle": "选择要加入的活动",
+    "betaGroupsDescription": "每个活动有自己的群，用来请求新场次、获取补贴、联系你的搭子。",
+    "betaGroupsLoading": "正在加载活动内测群...",
+    "betaGroupsLoadFailed": "活动内测群加载失败，请稍后重试。",
+    "betaGroupsEmpty": "当前没有开放中的活动内测群。",
+    "betaGroupLinkAction": "查看二维码",
+    "betaGroupModalTitle": "{eventTitle} 内测群",
+    "betaGroupModalDescription": "请使用微信扫码加入该活动内测群。",
+    "betaGroupQrAlt": "{eventTitle} 内测群二维码",
+    "betaGroupQrMissing": "该活动暂未配置内测群二维码。",
     "footerEntry": "关于",
     "footerNavLabel": "页脚导航"
   },
@@ -322,6 +343,8 @@
       "subscribeOnceAction": "订阅 1 次",
       "remainingCountWithHint": "{hint} · 剩余 {count} 次",
       "openSubscribeUnavailableHint": "当前微信订阅组件不可用，请升级微信后重试。",
+      "miniProgramWebViewHint": "当前在微信小程序内，无法使用订阅通知组件。",
+      "openInWechatAction": "用微信扫一扫打开",
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
@@ -607,6 +630,7 @@
     "eventTypeLabel": "活动类型",
     "eventDescriptionLabel": "活动描述",
     "eventCoverImageLabel": "封面图 URL",
+    "eventBetaGroupQrCodeLabel": "内测群二维码 URL",
     "eventStatusLabel": "活动状态",
     "eventDefaultMinPartnersLabel": "默认最少人数",
     "eventDefaultMaxPartnersLabel": "默认最多人数",
@@ -898,6 +922,8 @@
       "generating": "生成中...",
       "guidanceLine1": "请点击微信右上角“...”",
       "guidanceLine2": "选择“发送给朋友”或“分享到朋友圈”",
+      "miniProgramWebViewHint": "当前在微信小程序内，无法设置微信分享卡片。",
+      "openInWechatAction": "用微信扫一扫打开",
       "switchStyle": "换一个",
       "defaultShareTitle": "搭一把 - 轻松安全找搭子",
       "pageDescriptionHome": "一键把群聊里的搭子需求变成可加入的页面，马上发起一次真实协作。",
@@ -1140,8 +1166,14 @@
     },
     "exhausted": "该活动所有场次已满",
     "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
-    "betaGroupHintSuffix": "，及时获得活动上新消息",
-    "betaGroupAction": "加入内测群",
+    "betaGroupCard": {
+      "kicker": "活动内测群",
+      "description": "加入内测群，申请场次、获取补贴、联系搭子们以及更多。",
+      "expandAction": "查看二维码",
+      "collapseAction": "收起二维码",
+      "qrAlt": "{eventTitle} 内测群二维码",
+      "qrMissing": "该活动暂未配置内测群二维码。"
+    },
     "discoverOthers": "发现其他活动",
     "createCard": {
       "title": "其它地点？",

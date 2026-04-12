@@ -127,74 +127,82 @@
           </p>
         </div>
 
-        <div v-else class="card-empty">
-          <p class="card-empty__title">
-            {{ t("anchorEvent.card.emptyTitle") }}
-          </p>
-          <p class="card-empty__subtitle">
-            {{ t("anchorEvent.card.emptySubtitle") }}
-          </p>
-
-          <div class="card-empty__create" data-region="create-anchor-pr">
-            <label
-              v-if="cardCreateBatchOptions.length > 0"
-              class="card-empty__field"
-            >
-              <span class="card-empty__label">{{
-                t("anchorEvent.card.batchLabel")
-              }}</span>
-              <select
-                v-model.number="cardCreateBatchId"
-                class="card-empty__input"
-              >
-                <option
-                  v-for="option in cardCreateBatchOptions"
-                  :key="option.batchId"
-                  :value="option.batchId"
-                >
-                  {{ option.label }}
-                </option>
-              </select>
-            </label>
-
-            <label
-              v-if="cardCreateBatchOptions.length > 0"
-              class="card-empty__field"
-            >
-              <span class="card-empty__label">{{
-                t("anchorEvent.createCard.locationLabel")
-              }}</span>
-              <select v-model="cardCreateLocationId" class="card-empty__input">
-                <option
-                  v-for="option in cardCreateLocationOptions"
-                  :key="option.locationId"
-                  :value="option.locationId"
-                  :disabled="option.disabled"
-                >
-                  {{ formatLocationOptionLabel(option) }}
-                </option>
-              </select>
-            </label>
-
-            <p v-if="createActionErrorMessage" class="card-empty__error">
-              {{ createActionErrorMessage }}
+        <div v-else class="card-empty-stack">
+          <div class="card-empty">
+            <p class="card-empty__title">
+              {{ t("anchorEvent.card.emptyTitle") }}
+            </p>
+            <p class="card-empty__subtitle">
+              {{ t("anchorEvent.card.emptySubtitle") }}
             </p>
 
-            <button
-              type="button"
-              class="card-empty__action"
-              :disabled="isCreatePending"
-              @click="handleCreateFromCardEmpty"
-            >
-              {{
-                isCreatePending
-                  ? t("anchorEvent.createCard.creatingAction")
-                  : t("anchorEvent.createCard.createAction")
-              }}
-            </button>
+            <div class="card-empty__create" data-region="create-anchor-pr">
+              <label
+                v-if="cardCreateBatchOptions.length > 0"
+                class="card-empty__field"
+              >
+                <span class="card-empty__label">{{
+                  t("anchorEvent.card.batchLabel")
+                }}</span>
+                <select
+                  v-model.number="cardCreateBatchId"
+                  class="card-empty__input"
+                >
+                  <option
+                    v-for="option in cardCreateBatchOptions"
+                    :key="option.batchId"
+                    :value="option.batchId"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+              </label>
 
-            <AnchorEventBetaGroupEntry class="card-empty__beta-group" />
+              <label
+                v-if="cardCreateBatchOptions.length > 0"
+                class="card-empty__field"
+              >
+                <span class="card-empty__label">{{
+                  t("anchorEvent.createCard.locationLabel")
+                }}</span>
+                <select v-model="cardCreateLocationId" class="card-empty__input">
+                  <option
+                    v-for="option in cardCreateLocationOptions"
+                    :key="option.locationId"
+                    :value="option.locationId"
+                    :disabled="option.disabled"
+                  >
+                    {{ formatLocationOptionLabel(option) }}
+                  </option>
+                </select>
+              </label>
+
+              <p v-if="createActionErrorMessage" class="card-empty__error">
+                {{ createActionErrorMessage }}
+              </p>
+
+              <button
+                type="button"
+                class="card-empty__action"
+                :disabled="isCreatePending"
+                @click="handleCreateFromCardEmpty"
+              >
+                {{
+                  isCreatePending
+                    ? t("anchorEvent.createCard.creatingAction")
+                    : t("anchorEvent.createCard.createAction")
+                }}
+              </button>
+            </div>
           </div>
+
+          <AnchorEventBetaGroupCard
+            :event-id="detail.id"
+            :event-title="detail.title"
+            :qr-code-url="detail.betaGroupQrCode"
+            :default-expanded="true"
+            variant="card"
+          />
         </div>
       </template>
 
@@ -208,22 +216,32 @@
           />
 
           <div v-if="selectedBatch" class="batch-content" role="tabpanel">
-            <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
-              {{ t("anchorEvent.noPRsInBatch") }}
-            </div>
             <div class="pr-list" data-region="anchor-pr-list">
+              <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
+                {{ t("anchorEvent.noPRsInBatch") }}
+              </div>
               <AnchorEventPRCard
                 v-for="pr in selectedBatch.prs"
                 :key="pr.id"
                 :pr="pr"
                 :cover-image="resolveCoverImage(pr.location)"
               />
+            </div>
+
+            <div class="batch-action-cards">
               <AnchorPRCreateCard
                 :location-options="selectedBatch.locationOptions"
                 :pending="isCreatePending"
                 :error-message="createActionErrorMessage"
                 @create="handleCreateInList"
                 data-region="create-anchor-pr"
+              />
+              <AnchorEventBetaGroupCard
+                :event-id="detail.id"
+                :event-title="detail.title"
+                :qr-code-url="detail.betaGroupQrCode"
+                :default-expanded="false"
+                variant="list"
               />
             </div>
           </div>
@@ -233,7 +251,6 @@
           {{ t("anchorEvent.noBatches") }}
         </div>
       </template>
-
       <div
         v-if="detail.exhausted"
         class="exhausted-banner"
@@ -257,7 +274,7 @@ import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
 import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
-import AnchorEventBetaGroupEntry from "@/domains/event/ui/primitives/AnchorEventBetaGroupEntry.vue";
+import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
@@ -1084,7 +1101,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 </script>
 
 <style lang="scss" scoped>
-.anchor-event-page--card-active {
+.anchor-event-page {
   display: flex;
   flex-direction: column;
 }
@@ -1097,6 +1114,10 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 }
 
 .batch-section {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   margin-bottom: 1rem;
 }
 
@@ -1108,6 +1129,21 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.batch-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.batch-action-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+  margin-top: auto;
+  padding-top: var(--sys-spacing-med);
 }
 
 .view-mode-switch {
@@ -1240,6 +1276,12 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   border-color: var(--sys-color-error);
 }
 
+.card-empty-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+}
+
 .card-empty {
   padding: 1rem;
   border-radius: var(--sys-radius-lg);
@@ -1299,10 +1341,6 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 .card-empty__action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.card-empty__beta-group {
-  margin-top: var(--sys-spacing-xs);
 }
 
 .exhausted-banner {

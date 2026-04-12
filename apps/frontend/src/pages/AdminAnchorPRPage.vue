@@ -49,6 +49,7 @@
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventTypeLabel") }}</span><input v-model="eventForm.type" class="field-input" /></label>
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventDescriptionLabel") }}</span><textarea v-model="eventForm.description" class="field-input field-textarea"></textarea></label>
               <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventCoverImageLabel") }}</span><input v-model="eventForm.coverImage" class="field-input" /></label>
+              <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventBetaGroupQrCodeLabel") }}</span><input v-model="eventForm.betaGroupQrCode" class="field-input" /></label>
               <label class="field">
                 <span class="field-label">{{ t("adminAnchorPR.eventStatusLabel") }}</span>
                 <select v-model="eventForm.status" class="field-input">
@@ -264,17 +265,17 @@ type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
 type BatchRecord = EventRecord["batches"][number];
 type PRRecord = BatchRecord["prs"][number];
-type EventForm = { title: string; type: string; description: string; coverImage: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; defaultMinPartners: number | null; defaultMaxPartners: number | null; systemLocationPoolText: string; userLocationPoolText: string };
+type EventForm = { title: string; type: string; description: string; coverImage: string; betaGroupQrCode: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; defaultMinPartners: number | null; defaultMaxPartners: number | null; systemLocationPoolText: string; userLocationPoolText: string };
 type BatchForm = { start: string; end: string; status: "OPEN" | "FULL" | "EXPIRED" };
 type PRForm = { title: string; type: string; location: string; minPartners: number | null; maxPartners: number | null; confirmationStartOffsetMinutes: number; confirmationEndOffsetMinutes: number; joinLockOffsetMinutes: number; preferencesText: string; notes: string; status: "OPEN" | "READY" | "ACTIVE" | "CLOSED"; visibilityStatus: "VISIBLE" | "HIDDEN" };
 
 const resolveDefaultMinPartners = (value: number | null | undefined): number =>
   typeof value === "number" && Number.isInteger(value) && value >= 2 ? value : 2;
 
-const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", status: "ACTIVE", defaultMinPartners: 2, defaultMaxPartners: null, systemLocationPoolText: "", userLocationPoolText: "" });
+const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", betaGroupQrCode: "", status: "ACTIVE", defaultMinPartners: 2, defaultMaxPartners: null, systemLocationPoolText: "", userLocationPoolText: "" });
 const emptyBatchForm = (): BatchForm => ({ start: "", end: "", status: "OPEN" });
 const emptyPRForm = (location = "", type = "", minPartners = 2): PRForm => ({ title: "", type, location, minPartners, maxPartners: null, confirmationStartOffsetMinutes: 120, confirmationEndOffsetMinutes: 30, joinLockOffsetMinutes: 30, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
-const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", status: event.status as EventForm["status"], defaultMinPartners: resolveDefaultMinPartners(event.defaultMinPartners), defaultMaxPartners: event.defaultMaxPartners ?? null, systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
+const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", betaGroupQrCode: event.betaGroupQrCode ?? "", status: event.status as EventForm["status"], defaultMinPartners: resolveDefaultMinPartners(event.defaultMinPartners), defaultMaxPartners: event.defaultMaxPartners ?? null, systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
 const toBatchForm = (batch: BatchRecord): BatchForm => ({ start: batch.timeWindow[0] ?? "", end: batch.timeWindow[1] ?? "", status: batch.status as BatchForm["status"] });
 const toPRForm = (pr: PRRecord): PRForm => ({
   title: pr.title ?? "",
@@ -513,6 +514,7 @@ const handleSaveEvent = async () => {
       eventForm.value.defaultMaxPartners,
     ),
     coverImage: eventForm.value.coverImage.trim() || null,
+    betaGroupQrCode: eventForm.value.betaGroupQrCode.trim() || null,
     status: eventForm.value.status,
   };
   try {

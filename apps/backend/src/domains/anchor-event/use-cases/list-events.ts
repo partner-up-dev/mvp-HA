@@ -19,6 +19,7 @@ export interface AnchorEventSummary {
   type: string;
   description: string | null;
   coverImage: string | null;
+  betaGroupQrCode: string | null;
   locationCount: number;
   locationPool: string[];
   pois: Array<{
@@ -65,6 +66,7 @@ function toSummary(
     type: e.type,
     description: e.description,
     coverImage: e.coverImage,
+    betaGroupQrCode: e.betaGroupQrCode,
     locationCount: locationPool.length,
     locationPool,
     pois,

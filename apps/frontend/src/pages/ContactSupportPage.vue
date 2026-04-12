@@ -55,20 +55,14 @@
           <p>{{ t("contactSupportPage.betaGroupDescription") }}</p>
         </div>
 
-        <button
+        <RouterLink
           class="contact-action contact-action--beta-group"
-          type="button"
-          @click="showBetaGroupModal = true"
+          :to="{ name: 'about', hash: '#beta-groups' }"
         >
           {{ t("contactSupportPage.betaGroupAction") }}
-        </button>
+        </RouterLink>
       </div>
     </section>
-
-    <BetaGroupQrModal
-      :open="showBetaGroupModal"
-      @close="showBetaGroupModal = false"
-    />
 
     <nav class="support-entry-links" :aria-label="t('aboutPage.footerNavLabel')">
       <RouterLink class="support-entry-link" :to="{ name: 'contact-author' }">
@@ -82,12 +76,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
-import BetaGroupQrModal from "@/shared/wechat/BetaGroupQrModal.vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
@@ -98,7 +91,6 @@ const DEFAULT_SUPPORT_LINK_WECHAT_OUT =
 const DEFAULT_STAFF_LINK = "https://work.weixin.qq.com/ca/cawcdeaeb65ab3d47f";
 
 const { t } = useI18n();
-const showBetaGroupModal = ref(false);
 
 const supportLinkWechatInQuery = usePublicConfig(
   PUBLIC_CONFIG_KEYS.wecomSupportLinkWechatIn,

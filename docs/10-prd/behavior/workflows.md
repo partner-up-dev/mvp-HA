@@ -23,9 +23,10 @@
 3. Search results remain anchored to the chosen `Anchor Event`; result cards identify candidate `Anchor PRs` by time, location, visible status, and participant count rather than repeating the already-known event context.
 4. If the search has exactly one result, the system may route directly to that `/apr/:id`; otherwise, the user chooses one result from the list.
 5. The user enters an existing `Anchor PR` from batch, card, or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint.
-6. If the current batch or location does not have a suitable `Anchor PR` and creation is still allowed, the user can create one through the controlled event-page flow.
-7. The user may then join, inspect alternatives, or view booking-support information.
-8. `Anchor PR` continues through timing and reliability loops such as confirmation, reminders, and check-in.
+6. The Anchor Event page exposes that event's beta-group entry as an independent card. List mode defaults the card to a collapsed kicker and description; card mode defaults it to an expanded state with the QR code. The group is for event-specific support such as requesting new sessions, getting booking/subsidy support, and coordinating activity context.
+7. If the current batch or location does not have a suitable `Anchor PR` and creation is still allowed, the user can create one through the controlled event-page flow.
+8. The user may then join, inspect alternatives, or view booking-support information.
+9. `Anchor PR` continues through timing and reliability loops such as confirmation, reminders, and check-in.
 
 ## 4. Revisit and History Entry
 
@@ -66,6 +67,6 @@
 ## 9. Support, Feedback, and Operator Support
 
 1. The user enters `/contact-support` from home or footer-level support entrypoints.
-2. The user is routed toward support, author feedback, or beta-group QR code based on need.
-3. The user can also reach `/about` from that path, inspect product and repository metadata, and open the official-account QR modal.
+2. The user is routed toward support, author feedback, or event-specific beta-group selection based on need.
+3. The user can also reach `/about` from that path, inspect product and repository metadata, choose which active activity beta group to join, and open the official-account QR modal.
 4. Operator pages maintain event, POI, booking-support, and related capabilities so the above workflows remain operable.
