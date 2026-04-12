@@ -77,6 +77,13 @@ export class UserNotificationOptRepository {
         remainingCount: opt.wechatBookingResultRemainingCount,
       };
     }
+    if (kind === "PR_MESSAGE") {
+      return {
+        enabled: opt.wechatPrMessageRemainingCount > 0,
+        optInAt: opt.wechatPrMessageOptInAt,
+        remainingCount: opt.wechatPrMessageRemainingCount,
+      };
+    }
     return {
       enabled: opt.wechatNewPartnerRemainingCount > 0,
       optInAt: opt.wechatNewPartnerOptInAt,
@@ -164,6 +171,29 @@ export class UserNotificationOptRepository {
             wechatBookingResultRemainingCount: normalizedCount,
             wechatBookingResultOptIn: enabled,
             wechatBookingResultOptInAt: optInAt,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
+    if (kind === "PR_MESSAGE") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatPrMessageRemainingCount: normalizedCount,
+          wechatPrMessageOptIn: enabled,
+          wechatPrMessageOptInAt: optInAt,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatPrMessageRemainingCount: normalizedCount,
+            wechatPrMessageOptIn: enabled,
+            wechatPrMessageOptInAt: optInAt,
             updatedAt: now,
           },
         })
@@ -261,6 +291,29 @@ export class UserNotificationOptRepository {
             wechatBookingResultRemainingCount: sql`${userNotificationOpts.wechatBookingResultRemainingCount} + 1`,
             wechatBookingResultOptIn: true,
             wechatBookingResultOptInAt: now,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
+    if (kind === "PR_MESSAGE") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatPrMessageRemainingCount: 1,
+          wechatPrMessageOptIn: true,
+          wechatPrMessageOptInAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatPrMessageRemainingCount: sql`${userNotificationOpts.wechatPrMessageRemainingCount} + 1`,
+            wechatPrMessageOptIn: true,
+            wechatPrMessageOptInAt: now,
             updatedAt: now,
           },
         })
@@ -371,6 +424,30 @@ export class UserNotificationOptRepository {
       return {
         consumed: row !== null,
         remainingCount: row?.wechatBookingResultRemainingCount ?? 0,
+        row,
+      };
+    }
+
+    if (kind === "PR_MESSAGE") {
+      const result = await db
+        .update(userNotificationOpts)
+        .set({
+          wechatPrMessageRemainingCount: sql`${userNotificationOpts.wechatPrMessageRemainingCount} - 1`,
+          wechatPrMessageOptIn: sql`(${userNotificationOpts.wechatPrMessageRemainingCount} - 1) > 0`,
+          wechatPrMessageOptInAt: sql`case when (${userNotificationOpts.wechatPrMessageRemainingCount} - 1) > 0 then ${userNotificationOpts.wechatPrMessageOptInAt} else null end`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(userNotificationOpts.userId, userId),
+            gt(userNotificationOpts.wechatPrMessageRemainingCount, 0),
+          ),
+        )
+        .returning();
+      const row = result[0] ?? null;
+      return {
+        consumed: row !== null,
+        remainingCount: row?.wechatPrMessageRemainingCount ?? 0,
         row,
       };
     }

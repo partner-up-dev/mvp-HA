@@ -5,6 +5,7 @@
 - The core external collaboration object is `PartnerRequest`.
 - `PartnerRequest` currently exists as `Community PR` and `Anchor PR`.
 - `Community PR` and `Anchor PR` share base semantics such as participation, time windows, and partner thresholds, but their pages and rules may evolve separately.
+- PR messaging semantics span both `Community PR` and `Anchor PR`, but the current frontend entry is exposed only in `Anchor PR`.
 
 ## 2. Creation And Publish Rules
 
@@ -23,6 +24,7 @@
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
 - `Community PR` supports `join` and `exit` only.
 - `Anchor PR` supports `join`, `exit`, confirmation, and check-in feedback.
+- PR messages are visible only to current active participants; users who exit or are released must no longer see that PR's message thread.
 
 ### Status Semantics
 
@@ -66,7 +68,10 @@
 
 - `Anchor PR` has a confirmation window. Unconfirmed slots may be released inside that window, and late joining may be blocked.
 - Check-in feedback is not mandatory by default; absence of check-in should remain "unknown" rather than auto-converted into "did not attend".
+- PR messaging is a non-realtime coordination layer and must not introduce chat-room semantics such as presence, typing, or read receipts.
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
+- PR message notifications are limited to at most one send per `PR / recipient / unread wave`.
+- Before a PR message notification is sent, the system must re-validate that the recipient is still a current active participant of that PR.
 - Only `PLATFORM_PASSTHROUGH` booking requires the first booking-contact owner to provide a phone number. Standard `PLATFORM` booking must not add that requirement.
 - The platform-handled booking pending workspace admits PRs that are in `READY`, `FULL`, or `LOCKED_TO_START` and still meet minimum active-participant count. It does not require participants to be `CONFIRMED`.
 - When the booking deadline is reached, invalidation may depend on whether active participants still meet minimum viable count. Lack of confirmation alone must not auto-release the group or mark it unformed.

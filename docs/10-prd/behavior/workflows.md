@@ -40,14 +40,22 @@
 3. Share links may carry `spm` attribution.
 4. New visitors re-enter the corresponding route and continue the collaboration path.
 
-## 6. Anchor Reliability Loop
+## 6. Non-Realtime PR Messaging
+
+1. A current active participant enters a PR detail page and reviews the current collaboration context. In the current rollout, the frontend message entry is exposed on `/apr/:id`.
+2. A current active participant can post plain-text messages inside the PR to coordinate meetup details, timing changes, or other collaboration context.
+3. The system persists those messages inside the corresponding `PartnerRequest` context rather than forcing participants into an external chat tool.
+4. If other current active participants still have remaining notification quota, the system triggers message notifications under the rule of at most one send per `PR / recipient / unread wave`.
+5. After another participant revisits that PR and catches up on the unread wave, a later wave may trigger a new notification.
+
+## 7. Anchor Reliability Loop
 
 1. The user joins an `Anchor PR`.
 2. The system decides whether immediate confirmation is required, whether additional joining is still allowed, and whether unconfirmed slots must be released.
 3. If the user still has relevant notification quota, the system may schedule reminder, new-partner, or booking-result notifications.
 4. After the event, the user may submit check-in feedback and contribute to the reliability loop.
 
-## 7. Admin Booking Execution
+## 8. Admin Booking Execution
 
 1. When an `Anchor PR` is in `READY`, `FULL`, or `LOCKED_TO_START`, has reached minimum active participants, and still requires platform-handled booking resources (`PLATFORM` or `PLATFORM_PASSTHROUGH`), the system admits it into the operator pending workspace.
 2. The operator reviews the target PR and executable resources. If the resource uses `PLATFORM_PASSTHROUGH`, the operator also reviews the current booking-contact phone number.
@@ -55,7 +63,7 @@
 4. If the current booking-contact phone number is invalid under `PLATFORM_PASSTHROUGH`, the operator can release that contact so a new owner can take over the flow.
 5. The system records auditable execution results and notifies current active participants when the conditions are met.
 
-## 8. Support, Feedback, and Operator Support
+## 9. Support, Feedback, and Operator Support
 
 1. The user enters `/contact-support` from home or footer-level support entrypoints.
 2. The user is routed toward support, author feedback, or beta-group QR code based on need.

@@ -12,7 +12,8 @@ type WeChatNotificationKind =
   | "REMINDER_CONFIRMATION"
   | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
-  | "NEW_PARTNER";
+  | "NEW_PARTNER"
+  | "PR_MESSAGE";
 
 type WeChatNotificationAction = "ADD_ONE" | "CLEAR";
 

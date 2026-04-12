@@ -23,3 +23,9 @@ export {
   scheduleWeChatNewPartnerNotificationsForJoin,
   cancelWeChatNewPartnerJobsForUser,
 } from "./wechat-reminder";
+
+export {
+  registerWeChatPRMessageJobs,
+  scheduleWeChatPRMessageNotification,
+  cancelWeChatPRMessageJobsForUser,
+} from "./wechat-pr-message";

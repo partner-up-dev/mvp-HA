@@ -11,6 +11,7 @@
 
 - join and exit `Community PR`
 - join and exit `Anchor PR`
+- post and read non-realtime PR messages
 - confirm participation in `Anchor PR`
 - submit `Anchor PR` check-in feedback
 - progress status based on partner thresholds and time windows
@@ -43,6 +44,7 @@
 - support subscription reminders
 - notify booking results
 - notify new-partner events
+- notify new PR messages
 - model remaining send quota
 - release unconfirmed slots when rules require it
 

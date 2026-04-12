@@ -99,6 +99,7 @@ const props = withDefaults(
         "ACTIVITY_START_REMINDER",
         "BOOKING_RESULT",
         "NEW_PARTNER",
+        "PR_MESSAGE",
       ] as const,
     outlineProfile: "primary",
   },

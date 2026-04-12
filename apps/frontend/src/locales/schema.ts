@@ -361,7 +361,26 @@ export interface MessageSchema {
           disabledHint: string;
           unconfiguredHint: string;
         };
+        PR_MESSAGE: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
       };
+    };
+    messageThread: {
+      title: string;
+      subtitle: string;
+      nonRealtimeHint: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      inputLabel: string;
+      inputHint: string;
+      inputPlaceholder: string;
+      submitAction: string;
+      submittingAction: string;
+      authorFallback: string;
     };
     partnerSection: {
       title: string;

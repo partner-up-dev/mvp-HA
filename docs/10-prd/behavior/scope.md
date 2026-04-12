@@ -6,6 +6,7 @@
 - home exploration, event browsing, `Community PR` creation, and PR detail participation
 - local account plus PIN, WeChat login / binding, `/me`, and `/pr/mine`
 - distribution paths, WeChat share, Xiaohongshu caption / poster output, and `spm` attribution
+- non-realtime PR messaging and message notifications, with the current frontend entry exposed only in `Anchor PR`
 - `Anchor PR` reliability loop: confirmation, reminders, check-in, and new-partner notifications
 - `Anchor PR` booking fulfillment result notifications and operator execution audit
 - support routing through "Need Help", author feedback, and about-page entry

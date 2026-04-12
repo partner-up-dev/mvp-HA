@@ -6,6 +6,7 @@ Persisted in Postgres via backend entities and repositories:
 
 - PartnerRequest and scene-specific PR records
 - partner slots and participation state
+- PR messages and per-user PR message inbox state
 - users, user notification options, and user reliability
 - anchor events, batches, POIs, support resources, booking contacts, and booking execution records
 - config, operation logs, domain events, outbox events, jobs, and notification deliveries
@@ -25,6 +26,7 @@ These shape runtime behavior but remain backend-owned.
 
 - TanStack Query caches of backend data
 - route-local UI state
+- local message composer drafts and thread expansion/collapse state
 - local and session storage for session tokens, user id/pin, admin tokens, pending WeChat actions, bookmark nudges, analytics session id, and `spm`
 - active route-share session state, currently selected share descriptor, and replay bookkeeping for WeChat/browser share flows
 
@@ -35,6 +37,7 @@ This state improves UX and continuity but does not define product truth.
 The backend is authoritative for:
 
 - PartnerRequest and partner-slot state
+- PR message visibility, read-marker progression, and notification wave gating
 - identity binding, session verification, and role semantics
 - event, POI, booking-support, and admin-managed configuration state
 - domain events, notifications, analytics persistence, and operation logs

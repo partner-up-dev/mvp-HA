@@ -18,6 +18,7 @@ export const queryKeys = {
     detail: (id: PRId | null) => ["anchor-pr", "detail", id] as const,
     search: (eventId: number | null, dates: string[]) =>
       ["anchor-pr", "search", eventId, ...dates] as const,
+    messages: (id: PRId | null) => ["anchor-pr", "messages", id] as const,
     bookingSupport: (id: PRId | null) =>
       ["anchor-pr", "booking-support", id] as const,
     alternativeBatches: (id: PRId | null) =>
