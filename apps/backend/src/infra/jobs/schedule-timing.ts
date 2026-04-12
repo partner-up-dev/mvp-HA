@@ -1,10 +1,8 @@
 const DEFAULT_RESOLUTION_MS = 1_000;
 const DEFAULT_EARLY_TOLERANCE_UNITS = 0;
 const DEFAULT_LATE_TOLERANCE_UNITS = 0;
-export const LEGACY_NO_LATE_TOLERANCE_MS = -1;
 const MAX_DB_INTEGER = 2_147_483_647;
 
-export const LEGACY_RESOLUTION_MS = 1;
 export const NO_LATE_TOLERANCE_UNITS = -1;
 
 export interface ScheduleTimingConfig {
@@ -17,8 +15,6 @@ export interface ResolvedScheduleTiming {
   resolutionMs: number;
   earlyToleranceUnits: number;
   lateToleranceUnits: number;
-  legacyEarlyToleranceMs: number;
-  legacyLateToleranceMs: number;
 }
 
 const nonNegativeOr = (value: number | undefined, fallback: number): number => {
@@ -38,16 +34,11 @@ const resolveLateToleranceUnits = (value: number | undefined): number =>
     ? NO_LATE_TOLERANCE_UNITS
     : nonNegativeOr(value, DEFAULT_LATE_TOLERANCE_UNITS);
 
-const unitsToLegacyMs = (
-  resolutionMs: number,
-  units: number,
-  label: string,
-): number => {
-  const result = resolutionMs * units;
-  if (!Number.isSafeInteger(result) || result > MAX_DB_INTEGER) {
-    throw new Error(`${label} exceeds legacy integer storage limit`);
+const ensureDbInteger = (value: number, label: string): number => {
+  if (value > MAX_DB_INTEGER) {
+    throw new Error(`${label} exceeds integer storage limit`);
   }
-  return result;
+  return value;
 };
 
 export const getBucketStartMs = (
@@ -63,32 +54,29 @@ export const getBucketIndex = (
 export const resolveScheduleTiming = (
   config: ScheduleTimingConfig,
 ): ResolvedScheduleTiming => {
-  const resolutionMs = positiveOr(config.resolutionMs, DEFAULT_RESOLUTION_MS);
-  const earlyToleranceUnits = nonNegativeOr(
-    config.earlyToleranceUnits,
-    DEFAULT_EARLY_TOLERANCE_UNITS,
+  const resolutionMs = ensureDbInteger(
+    positiveOr(config.resolutionMs, DEFAULT_RESOLUTION_MS),
+    "resolutionMs",
   );
-  const lateToleranceUnits = resolveLateToleranceUnits(
+  const earlyToleranceUnits = ensureDbInteger(
+    nonNegativeOr(
+      config.earlyToleranceUnits,
+      DEFAULT_EARLY_TOLERANCE_UNITS,
+    ),
+    "earlyToleranceUnits",
+  );
+  const lateToleranceUnitsRaw = resolveLateToleranceUnits(
     config.lateToleranceUnits,
   );
+  const lateToleranceUnits =
+    lateToleranceUnitsRaw === NO_LATE_TOLERANCE_UNITS
+      ? NO_LATE_TOLERANCE_UNITS
+      : ensureDbInteger(lateToleranceUnitsRaw, "lateToleranceUnits");
 
   return {
     resolutionMs,
     earlyToleranceUnits,
     lateToleranceUnits,
-    legacyEarlyToleranceMs: unitsToLegacyMs(
-      resolutionMs,
-      earlyToleranceUnits,
-      "earlyToleranceUnits",
-    ),
-    legacyLateToleranceMs:
-      lateToleranceUnits === NO_LATE_TOLERANCE_UNITS
-        ? LEGACY_NO_LATE_TOLERANCE_MS
-        : unitsToLegacyMs(
-            resolutionMs,
-            lateToleranceUnits,
-            "lateToleranceUnits",
-          ),
   };
 };
 

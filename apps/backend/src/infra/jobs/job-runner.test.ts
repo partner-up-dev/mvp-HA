@@ -20,7 +20,7 @@ test("getBucketStartMs aligns timestamps to the current resolution bucket", () =
   );
 });
 
-test("resolveScheduleTiming converts bucket tolerances back to legacy millisecond fields", () => {
+test("resolveScheduleTiming returns canonical bucket-based timing fields", () => {
   const resolved = resolveScheduleTiming({
     resolutionMs: 5 * 60 * 1_000,
     earlyToleranceUnits: 3,
@@ -31,9 +31,17 @@ test("resolveScheduleTiming converts bucket tolerances back to legacy millisecon
     resolutionMs: 5 * 60 * 1_000,
     earlyToleranceUnits: 3,
     lateToleranceUnits: NO_LATE_TOLERANCE_UNITS,
-    legacyEarlyToleranceMs: 15 * 60 * 1_000,
-    legacyLateToleranceMs: -1,
   });
+});
+
+test("resolveScheduleTiming rejects values that exceed integer storage", () => {
+  assert.throws(
+    () =>
+      resolveScheduleTiming({
+        resolutionMs: 2_147_483_648,
+      }),
+    /resolutionMs exceeds integer storage limit/,
+  );
 });
 
 test("getClaimWindowBounds uses the full due bucket when tolerances are zero", () => {

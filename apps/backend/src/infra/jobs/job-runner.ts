@@ -5,8 +5,6 @@ import { db } from "../../lib/db";
 import { toErrorMessage } from "../../lib/error-message";
 import { applyLocalStatementTimeout } from "../../lib/pg-timeouts";
 import {
-  LEGACY_NO_LATE_TOLERANCE_MS,
-  LEGACY_RESOLUTION_MS,
   NO_LATE_TOLERANCE_UNITS,
   resolveScheduleTiming,
 } from "./schedule-timing";
@@ -192,8 +190,6 @@ class JobRunnerImpl {
           payload,
           status: "PENDING",
           runAt: config.runAt,
-          earlyToleranceMs: timing.legacyEarlyToleranceMs,
-          lateToleranceMs: timing.legacyLateToleranceMs,
           resolutionMs: timing.resolutionMs,
           earlyToleranceUnits: timing.earlyToleranceUnits,
           lateToleranceUnits: timing.lateToleranceUnits,
@@ -339,23 +335,10 @@ class JobRunnerImpl {
     leaseMs: number,
     statementTimeoutMs?: number,
   ): Promise<ClaimBatchResult> {
-    const effectiveResolutionMsSql = sql`coalesce(resolution_ms, ${LEGACY_RESOLUTION_MS})`;
-    const effectiveEarlyToleranceUnitsSql =
-      sql`coalesce(early_tolerance_units, greatest(early_tolerance_ms, 0))`;
-    const effectiveLateToleranceUnitsSql = sql`
-      coalesce(
-        late_tolerance_units,
-        case
-          when late_tolerance_ms = ${LEGACY_NO_LATE_TOLERANCE_MS}
-            then ${NO_LATE_TOLERANCE_UNITS}
-          else greatest(late_tolerance_ms, 0)
-        end
-      )
-    `;
     const dueBucketSql =
-      sql`floor(extract(epoch from run_at) * 1000.0 / ${effectiveResolutionMsSql})`;
+      sql`floor(extract(epoch from run_at) * 1000.0 / resolution_ms)`;
     const nowBucketSql =
-      sql`floor(extract(epoch from now()) * 1000.0 / ${effectiveResolutionMsSql})`;
+      sql`floor(extract(epoch from now()) * 1000.0 / resolution_ms)`;
 
     return db.transaction(async (tx) => {
       await applyLocalStatementTimeout(tx, statementTimeoutMs);
@@ -392,8 +375,8 @@ class JobRunnerImpl {
           updated_at = now(),
           last_error = coalesce(last_error, 'Missed tolerance window')
         where status in ('PENDING', 'RETRY')
-          and ${effectiveLateToleranceUnitsSql} <> ${NO_LATE_TOLERANCE_UNITS}
-          and ${nowBucketSql} > ${dueBucketSql} + ${effectiveLateToleranceUnitsSql}
+          and late_tolerance_units <> ${NO_LATE_TOLERANCE_UNITS}
+          and ${nowBucketSql} > ${dueBucketSql} + late_tolerance_units
         returning id
       `);
 
@@ -403,10 +386,10 @@ class JobRunnerImpl {
           from jobs
           where status in ('PENDING', 'RETRY')
             and (lease_until is null or lease_until < now())
-            and ${nowBucketSql} >= ${dueBucketSql} - ${effectiveEarlyToleranceUnitsSql}
+            and ${nowBucketSql} >= ${dueBucketSql} - early_tolerance_units
             and (
-              ${effectiveLateToleranceUnitsSql} = ${NO_LATE_TOLERANCE_UNITS}
-              or ${nowBucketSql} <= ${dueBucketSql} + ${effectiveLateToleranceUnitsSql}
+              late_tolerance_units = ${NO_LATE_TOLERANCE_UNITS}
+              or ${nowBucketSql} <= ${dueBucketSql} + late_tolerance_units
             )
           order by run_at asc, id asc
           for update skip locked

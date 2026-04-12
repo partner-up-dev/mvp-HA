@@ -2531,19 +2531,19 @@
           "name": "resolution_ms",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "early_tolerance_units": {
           "name": "early_tolerance_units",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "late_tolerance_units": {
           "name": "late_tolerance_units",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "attempts": {
           "name": "attempts",

@@ -33,13 +33,12 @@ export const jobs = pgTable(
       .default(sql`'{}'::jsonb`),
     status: text("status").$type<JobStatus>().notNull().default("PENDING"),
     runAt: timestamp("run_at").notNull(),
+    // Legacy rollout columns stay in schema until the later contract/drop slice.
     earlyToleranceMs: integer("early_tolerance_ms").notNull().default(0),
     lateToleranceMs: integer("late_tolerance_ms").notNull().default(0),
-    // Transitional bucket-based scheduling fields. Legacy millisecond columns stay
-    // in place during rollout so old and new runtimes can overlap safely.
-    resolutionMs: integer("resolution_ms"),
-    earlyToleranceUnits: integer("early_tolerance_units"),
-    lateToleranceUnits: integer("late_tolerance_units"),
+    resolutionMs: integer("resolution_ms").notNull(),
+    earlyToleranceUnits: integer("early_tolerance_units").notNull(),
+    lateToleranceUnits: integer("late_tolerance_units").notNull(),
     attempts: integer("attempts").notNull().default(0),
     maxAttempts: integer("max_attempts").notNull().default(5),
     leaseUntil: timestamp("lease_until"),
