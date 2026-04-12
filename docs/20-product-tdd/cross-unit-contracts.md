@@ -94,7 +94,32 @@ Important coordination note:
   - the target URL that will actually be shared outward
 - Frontend owns the route-scoped active share session and replay behavior, but it must do so using backend-provided canonical share metadata for entity truth.
 
-## 9. Coordination And Failure Assumptions
+## 9. PR Messaging Contract
+
+- Backend owns persisted `PRMessage` items and one backend-authoritative `PRMessageInboxState` per `prId + userId`.
+- `PRMessage` is a PR-scoped plain-text message item authored by one user inside one `PartnerRequest` thread.
+- `PRMessageInboxState` is the cross-unit marker state used to answer two separate questions without frontend-owned inference:
+  - the viewer's read marker for that PR thread
+  - whether the current unread message wave has already consumed one `PR_MESSAGE` notification opportunity for that recipient
+- Frontend rollout is currently Anchor-only, but the contract is PR-generic. The system should not hardcode message entities, notification naming, or persistence semantics as Anchor-only truth.
+- Route/API shape should follow the existing scene-specific route families instead of introducing a third generic user-facing family. The Anchor rollout therefore depends on:
+  - `GET /api/apr/:id/messages`
+  - `POST /api/apr/:id/messages`
+  - `POST /api/apr/:id/messages/read-marker`
+- If Community frontend rollout starts later, it should use the parallel `/api/cpr/:id/messages*` shape with the same payload and response semantics rather than inventing a separate message contract.
+- `GET /api/apr/:id/messages` returns the visible message list plus thread-level viewer state needed for UI assembly and explicit read-marker advancement. That response should be sufficient for frontend to render:
+  - ordered message items
+  - whether the current viewer can post
+  - the latest visible message marker
+  - the viewer's current read marker or an equivalent unread summary
+- `POST /api/apr/:id/messages` accepts one plain-text message payload, rejects non-participants, persists the new message, and returns the created item plus refreshed thread viewer state.
+- `POST /api/apr/:id/messages/read-marker` advances the viewer's read marker idempotently after the thread is actually shown. Read-marker advancement should be explicit rather than piggybacked on list fetch, so prefetching or hidden loads do not silently clear an unread wave.
+- Message visibility, message creation, and read-marker advancement all reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread.
+- Backend notification fan-out evaluates all current active participants except the author. A `PR_MESSAGE` notification is eligible only when the recipient has available credits and no existing unread wave for the same PR.
+- Asynchronous notification execution must revalidate recipient participation and eligibility before delivery instead of assuming the API-time participant set is still valid.
+- Frontend owns only page placement, thread rendering, composer input, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
+
+## 10. Coordination And Failure Assumptions
 
 - The primary coordination path is browser route -> frontend process/UI -> typed backend API -> backend persistence and side effects -> frontend cache/UI refresh.
 - Rules that affect eligibility, status, timing, or identity must coordinate through backend-owned contracts; frontend may optimize UX but not invent new domain truth.

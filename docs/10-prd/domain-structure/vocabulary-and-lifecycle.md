@@ -13,6 +13,7 @@
 ## 关键辅助词汇
 
 - PartnerRequestStatus：搭子请求生命周期状态集合。
+- PR Message：围绕单个 `PartnerRequest` 的非即时留言载体。
 - Time Window：搭子请求的开始/结束时间语义。
 - Capacity：最小/最大人数阈值。
 - Confirmation Window：Anchor PR 特有的确认时序窗口。
