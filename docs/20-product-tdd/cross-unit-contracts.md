@@ -62,7 +62,7 @@ Important coordination note:
 
 - user-managed Anchor PR creation is event-scoped: frontend starts it from `/events/:eventId`, backend realizes it through `POST /api/events/:eventId/batches/:batchId/anchor-prs`, and the system does not expose a generic standalone Anchor PR create route
 - `/events/search` is an Anchor PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
-- `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; it does not own Anchor PR search results
+- `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative and may vary between requests for exposure balancing, so frontend should treat it as opaque display policy instead of hardcoded ranking truth; it does not own Anchor PR search results
 - `GET /api/apr/search` is the Anchor PR search read contract; it queries by active `Anchor Event` id plus repeated local-date values and returns matching visible actionable Anchor PR candidates
 - if Anchor PR search has exactly one result, frontend may replace-route to that `/apr/:id` while avoiding a browser-back auto-redirect loop
 - `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`

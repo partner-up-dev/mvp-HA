@@ -18,7 +18,7 @@
 
 ## 3. Enter Anchor Collaboration Through Event Browsing And Search
 
-1. The user browses `/events`, `/events/:eventId`, or enters `/events/search`.
+1. The user browses `/events`, `/events/:eventId`, or enters `/events/search`; event-card order on these entry surfaces is non-ranking and may vary between requests to keep exposure balanced.
 2. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `Anchor PR` results.
 3. Search results remain anchored to the chosen `Anchor Event`; result cards identify candidate `Anchor PRs` by time, location, visible status, and participant count rather than repeating the already-known event context.
 4. If the search has exactly one result, the system may route directly to that `/apr/:id`; otherwise, the user chooses one result from the list.
