@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -193,6 +193,20 @@ type DemandCardViewModel = {
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+
+const CARD_OVERFLOW_GUARD_CLASS = "anchor-event-card-overflow-guard";
+
+const syncCardOverflowGuard = (enabled: boolean) => {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.documentElement.classList.toggle(
+    CARD_OVERFLOW_GUARD_CLASS,
+    enabled,
+  );
+  document.body.classList.toggle(CARD_OVERFLOW_GUARD_CLASS, enabled);
+};
 
 const normalizeQueryViewMode = (value: string): EventViewMode | null => {
   const normalized = value.trim().toLowerCase();
@@ -703,10 +717,20 @@ watch(activeDemandCard, () => {
   resetCardSwipePreview();
 });
 
-watch(isCardStageActive, (isActive) => {
-  if (!isActive) {
-    resetCardSwipePreview();
-  }
+watch(
+  isCardStageActive,
+  (isActive) => {
+    syncCardOverflowGuard(isActive);
+
+    if (!isActive) {
+      resetCardSwipePreview();
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  syncCardOverflowGuard(false);
 });
 
 const markCardProcessed = (cardKey: string) => {
@@ -1046,6 +1070,11 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 </script>
 
 <style lang="scss" scoped>
+:global(html.anchor-event-card-overflow-guard),
+:global(body.anchor-event-card-overflow-guard) {
+  overflow-x: clip;
+}
+
 .anchor-event-page {
   display: flex;
   flex-direction: column;
