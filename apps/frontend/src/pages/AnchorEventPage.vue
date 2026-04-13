@@ -38,7 +38,7 @@
               :class="{
                 'view-mode-switch__button--active': viewMode === 'CARD',
               }"
-              @click="viewMode = 'CARD'"
+              @click="handleSwitchViewMode('CARD')"
             >
               {{ t("anchorEvent.viewMode.card") }}
             </button>
@@ -48,7 +48,7 @@
               :class="{
                 'view-mode-switch__button--active': viewMode === 'LIST',
               }"
-              @click="viewMode = 'LIST'"
+              @click="handleSwitchViewMode('LIST')"
             >
               {{ t("anchorEvent.viewMode.list") }}
             </button>
@@ -86,6 +86,7 @@
               <div
                 :key="`front-${activeDemandCard.cardKey}`"
                 class="card-stage__front-shell"
+                @pointerdown="handleCardUserInteraction"
               >
                 <AnchorEventDemandCard
                   class="card-stage__front"
@@ -100,6 +101,17 @@
                   @view-detail="handleViewActiveCardDetail"
                 />
               </div>
+
+              <transition name="card-swipe-hint">
+                <p
+                  v-if="showCardSwipeHintToast"
+                  class="card-mode__swipe-hint-toast"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {{ t("anchorEvent.card.swipeHintToast") }}
+                </p>
+              </transition>
             </div>
           </div>
 
@@ -285,7 +297,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -355,6 +367,9 @@ type DemandCardViewModel = {
   coverImage: string | null;
 };
 
+const CARD_SWIPE_HINT_DELAY_MS = 3000;
+const CARD_SWIPE_HINT_DURATION_MS = 1800;
+
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
@@ -400,6 +415,12 @@ const selectedBatchId = ref<number | null>(null);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
+const hasCardUserInteraction = ref(false);
+const hasShownCardSwipeHintToast = ref(false);
+const showCardSwipeHintToast = ref(false);
+
+let cardSwipeHintDelayTimer: ReturnType<typeof setTimeout> | null = null;
+let cardSwipeHintHideTimer: ReturnType<typeof setTimeout> | null = null;
 
 const cardCreateBatchId = ref<number | null>(null);
 const cardCreateLocationId = ref("");
@@ -410,6 +431,42 @@ const eventId = computed(() => {
   return Number.isFinite(num) && num > 0 ? num : null;
 });
 
+const clearCardSwipeHintTimers = () => {
+  if (cardSwipeHintDelayTimer !== null) {
+    clearTimeout(cardSwipeHintDelayTimer);
+    cardSwipeHintDelayTimer = null;
+  }
+
+  if (cardSwipeHintHideTimer !== null) {
+    clearTimeout(cardSwipeHintHideTimer);
+    cardSwipeHintHideTimer = null;
+  }
+};
+
+const hideCardSwipeHintToast = () => {
+  showCardSwipeHintToast.value = false;
+
+  if (cardSwipeHintHideTimer !== null) {
+    clearTimeout(cardSwipeHintHideTimer);
+    cardSwipeHintHideTimer = null;
+  }
+};
+
+const handleCardUserInteraction = () => {
+  hasCardUserInteraction.value = true;
+  hideCardSwipeHintToast();
+  clearCardSwipeHintTimers();
+};
+
+const handleSwitchViewMode = (mode: EventViewMode) => {
+  if (viewMode.value === mode) {
+    return;
+  }
+
+  handleCardUserInteraction();
+  viewMode.value = mode;
+};
+
 watch(
   [eventId, () => route.query.mode],
   () => {
@@ -417,6 +474,13 @@ watch(
   },
   { immediate: true },
 );
+
+watch(eventId, () => {
+  hasCardUserInteraction.value = false;
+  hasShownCardSwipeHintToast.value = false;
+  showCardSwipeHintToast.value = false;
+  clearCardSwipeHintTimers();
+});
 
 const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
 const createUserAnchorPRMutation = useCreateUserAnchorPR();
@@ -803,6 +867,42 @@ const stackPreviewCards = computed(() =>
 const isCardStageActive = computed(
   () => viewMode.value === "CARD" && activeDemandCard.value !== null,
 );
+const shouldArmCardSwipeHint = computed(
+  () =>
+    isCardStageActive.value &&
+    !isCardRouting.value &&
+    !hasCardUserInteraction.value &&
+    !hasShownCardSwipeHintToast.value,
+);
+
+watch(
+  shouldArmCardSwipeHint,
+  (shouldArm) => {
+    clearCardSwipeHintTimers();
+
+    if (!shouldArm) {
+      hideCardSwipeHintToast();
+      return;
+    }
+
+    cardSwipeHintDelayTimer = setTimeout(() => {
+      cardSwipeHintDelayTimer = null;
+
+      if (!shouldArmCardSwipeHint.value) {
+        return;
+      }
+
+      showCardSwipeHintToast.value = true;
+      hasShownCardSwipeHintToast.value = true;
+
+      cardSwipeHintHideTimer = setTimeout(() => {
+        showCardSwipeHintToast.value = false;
+        cardSwipeHintHideTimer = null;
+      }, CARD_SWIPE_HINT_DURATION_MS);
+    }, CARD_SWIPE_HINT_DELAY_MS);
+  },
+  { immediate: true },
+);
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -817,6 +917,8 @@ const markCardProcessed = (cardKey: string) => {
 };
 
 const handleSkipActiveCard = () => {
+  handleCardUserInteraction();
+
   const card = activeDemandCard.value;
   if (!card) {
     return;
@@ -827,6 +929,8 @@ const handleSkipActiveCard = () => {
 };
 
 const handleViewActiveCardDetail = async () => {
+  handleCardUserInteraction();
+
   const card = activeDemandCard.value;
   if (!card || card.detailPrId === null) {
     return;
@@ -1032,6 +1136,10 @@ watch(
 
 onMounted(() => {
   void attemptPendingCreateReplay();
+});
+
+onBeforeUnmount(() => {
+  clearCardSwipeHintTimers();
 });
 
 const handleCreateInList = async (locationId: string | null) => {
@@ -1255,6 +1363,38 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   inset: 0;
   pointer-events: none;
   animation: card-preview-reveal 220ms ease-out both;
+}
+
+.card-mode__swipe-hint-toast {
+  @include mx.pu-font(label-large);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-med);
+  border-radius: 999px;
+  border: 1px solid var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface);
+  box-shadow: var(--sys-shadow-2);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.card-swipe-hint-enter-active,
+.card-swipe-hint-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.card-swipe-hint-enter-from,
+.card-swipe-hint-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -46%);
 }
 
 @keyframes card-front-promote {

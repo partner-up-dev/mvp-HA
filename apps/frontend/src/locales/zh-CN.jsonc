@@ -1174,6 +1174,8 @@
     },
     "card": {
       "batchLabel": "时间批次",
+      "stampLike": "详情",
+      "stampNope": "跳过",
       "preferenceTitle": "偏好",
       "preferenceEmpty": "暂无额外偏好要求",
       "skipButton": "跳过",
@@ -1186,7 +1188,7 @@
     "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
     "betaGroupCard": {
       "kicker": "活动内测群",
-      "description": "加入内测群，申请场次、获取补贴、联系搭子们以及更多。",
+      "description": "加入内测群，申请场次、获取补贴、联系搭子",
       "expandAction": "查看二维码",
       "collapseAction": "收起二维码",
       "qrAlt": "{eventTitle} 内测群二维码",

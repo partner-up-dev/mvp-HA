@@ -33,15 +33,14 @@
       class="demand-card__cover"
       :style="{ backgroundImage: `url(${coverImage})` }"
     >
-      <span class="demand-card__time-badge">{{ timeLabel }}</span>
+      <span class="demand-card__location-badge">{{ displayLocationName }}</span>
     </div>
     <div v-else class="demand-card__cover demand-card__cover--fallback">
-      <span class="demand-card__time-badge">{{ timeLabel }}</span>
+      <span class="demand-card__location-badge">{{ displayLocationName }}</span>
     </div>
 
     <div class="demand-card__content">
       <section class="demand-card__primary">
-        <h2 class="demand-card__location">{{ displayLocationName }}</h2>
         <p class="demand-card__time">{{ timeLabel }}</p>
         <div
           v-if="preferenceTags.length > 0"
@@ -545,14 +544,16 @@ watch(
   );
 }
 
-.demand-card__time-badge {
-  @include mx.pu-font(label-large);
+.demand-card__location-badge {
+  @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
   padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
   border-radius: 999px;
-  background: var(--sys-color-surface);
+  background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface);
+  border: 1px solid var(--sys-color-outline-variant);
+  backdrop-filter: blur(4px);
 }
 
 .demand-card__content {
@@ -570,17 +571,10 @@ watch(
   gap: var(--sys-spacing-xs);
 }
 
-.demand-card__location {
-  @include mx.pu-font(headline-medium);
+.demand-card__time {
+  @include mx.pu-font(title-medium);
   margin: 0;
   color: var(--sys-color-on-surface);
-  line-height: 1.1;
-}
-
-.demand-card__time {
-  @include mx.pu-font(title-large);
-  margin: 0;
-  color: var(--sys-color-primary);
 }
 
 .demand-card__preference-list {

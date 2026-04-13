@@ -546,6 +546,8 @@ export interface MessageSchema {
     };
     card: {
       batchLabel: string;
+      stampLike: string;
+      stampNope: string;
       preferenceTitle: string;
       preferenceEmpty: string;
       skipButton: string;
