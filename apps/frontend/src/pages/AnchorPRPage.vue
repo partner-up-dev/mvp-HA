@@ -418,10 +418,7 @@ import {
 } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import type { AnchorPRFormFields } from "@/domains/pr/model/types";
-import {
-  formatLocalDateTimeValue,
-  formatLocalDateTimeWindow,
-} from "@/shared/datetime/formatLocalDateTime";
+import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/telemetry/track";
 import type { ApiError } from "@/shared/api/error";
 import {
@@ -458,7 +455,90 @@ const { t } = useI18n();
 const id = usePRRouteId();
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const FACTS_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})\s(.+)$/;
 const userSessionStore = useUserSessionStore();
+
+const extractFactsTimeDatePart = (formatted: string | null): string | null => {
+  if (!formatted) {
+    return null;
+  }
+
+  const matched = formatted.match(FACTS_TIME_PATTERN);
+  if (!matched) {
+    return null;
+  }
+
+  return `${matched[1]}-${matched[2]}-${matched[3]}`;
+};
+
+const resolveRelativeDayLabelByDate = (
+  year: number,
+  month: number,
+  day: number,
+): "今天" | "明天" | "后天" | null => {
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return null;
+  }
+
+  const today = new Date();
+  const todayStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const targetStart = new Date(year, month - 1, day);
+  if (Number.isNaN(targetStart.getTime())) {
+    return null;
+  }
+
+  const diffDays = Math.round(
+    (targetStart.getTime() - todayStart.getTime()) / DAY_IN_MS,
+  );
+  if (diffDays === 0) {
+    return "今天";
+  }
+
+  if (diffDays === 1) {
+    return "明天";
+  }
+
+  if (diffDays === 2) {
+    return "后天";
+  }
+
+  return null;
+};
+
+const formatFactsTimePoint = (
+  formatted: string | null,
+  includeRelativeDayLabel: boolean,
+): string | null => {
+  if (!formatted || !includeRelativeDayLabel) {
+    return formatted;
+  }
+
+  const matched = formatted.match(FACTS_TIME_PATTERN);
+  if (!matched) {
+    return formatted;
+  }
+
+  const year = Number(matched[1]);
+  const month = Number(matched[2]);
+  const day = Number(matched[3]);
+  const timePart = matched[4];
+  const relativeDayLabel = resolveRelativeDayLabelByDate(year, month, day);
+  if (!relativeDayLabel) {
+    return formatted;
+  }
+
+  const datePart = `${matched[1]}-${matched[2]}-${matched[3]}`;
+  return `${datePart} (${relativeDayLabel}) ${timePart}`;
+};
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
 const prDetail = computed(() => data.value);
@@ -577,11 +657,16 @@ const routeShareDescriptor = usePRRouteShareDescriptor({
 usePRDetailHead({ pr: prDetail, shareUrl });
 useRouteShareDescriptorRegistration(routeShareDescriptor);
 
-const localizedTime = computed<[string | null, string | null]>(() =>
-  formatLocalDateTimeWindow(prDetail.value?.core.time ?? [null, null]),
-);
 const localizedTimeText = computed(() => {
-  const [start, end] = localizedTime.value;
+  const [startRaw, endRaw] = prDetail.value?.core.time ?? [null, null];
+  const startBase = formatLocalDateTimeValue(startRaw);
+  const endBase = formatLocalDateTimeValue(endRaw);
+  const sameDay =
+    extractFactsTimeDatePart(startBase) !== null &&
+    extractFactsTimeDatePart(startBase) === extractFactsTimeDatePart(endBase);
+  const start = formatFactsTimePoint(startBase, true);
+  const end = formatFactsTimePoint(endBase, !sameDay);
+
   if (start && end) return `${start} - ${end}`;
   return start ?? end ?? t("prPage.partnerSection.notSet");
 });

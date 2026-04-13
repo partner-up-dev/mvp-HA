@@ -1,6 +1,10 @@
 <template>
   <div class="inline-notice" :class="`inline-notice--${tone}`" :role="role">
-    <span class="inline-notice__icon" :class="iconClass" aria-hidden="true"></span>
+    <span
+      class="inline-notice__icon"
+      :class="iconClass"
+      aria-hidden="true"
+    ></span>
 
     <div class="inline-notice__content">
       <p v-if="title" class="inline-notice__title">{{ title }}</p>
@@ -72,11 +76,11 @@ const iconClass = computed(() => {
   gap: var(--sys-spacing-sm);
   align-items: start;
   border-radius: var(--sys-radius-md);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-sm);
 }
 
 .inline-notice--info {
-  background: var(--sys-color-surface-container-high);
+  background: var(--sys-color-surface-container);
   color: var(--sys-color-on-surface);
 }
 

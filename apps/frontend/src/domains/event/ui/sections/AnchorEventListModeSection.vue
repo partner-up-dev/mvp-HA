@@ -118,7 +118,7 @@ const handleCreateInList = (locationId: string | null) => {
 
 .batch-description {
   margin: 0 0 0.75rem;
-  @include mx.pu-font(body-small);
+  @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
 }
 
