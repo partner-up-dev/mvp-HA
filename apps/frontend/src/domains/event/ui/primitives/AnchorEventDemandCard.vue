@@ -36,7 +36,9 @@
       <span class="demand-card__location-badge">{{ displayLocationName }}</span>
     </div>
     <div v-else class="demand-card__cover demand-card__cover--fallback">
-      <span class="demand-card__location-badge">{{ displayLocationName }}</span>
+      <span class="demand-card__fallback-location">{{
+        displayLocationName
+      }}</span>
     </div>
 
     <div class="demand-card__content">
@@ -537,11 +539,18 @@ watch(
 }
 
 .demand-card__cover--fallback {
-  background: linear-gradient(
-    135deg,
-    var(--sys-color-surface-container-high),
-    var(--sys-color-surface-container)
-  );
+  align-items: center;
+  justify-content: center;
+  background: var(--sys-color-primary-container);
+  padding: var(--sys-spacing-med);
+}
+
+.demand-card__fallback-location {
+  @include mx.pu-font(title-large);
+  margin: 0;
+  color: var(--sys-color-on-primary-container);
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .demand-card__location-badge {

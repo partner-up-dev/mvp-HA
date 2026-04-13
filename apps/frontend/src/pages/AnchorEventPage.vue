@@ -1340,6 +1340,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 
 .card-stage__inner {
   position: relative;
+  --card-stage-vertical-inset: 6%;
 }
 
 .anchor-event-page--card-active .card-stage__inner {
@@ -1349,7 +1350,10 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 
 .card-stage__front-shell {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: var(--card-stage-vertical-inset);
+  bottom: var(--card-stage-vertical-inset);
   z-index: 3;
   animation: card-front-promote 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1360,7 +1364,10 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 
 .card-stack-preview {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: var(--card-stage-vertical-inset);
+  bottom: var(--card-stage-vertical-inset);
   pointer-events: none;
   animation: card-preview-reveal 220ms ease-out both;
 }
