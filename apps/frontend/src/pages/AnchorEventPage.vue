@@ -165,7 +165,10 @@
                 <span class="card-empty__label">{{
                   t("anchorEvent.createCard.locationLabel")
                 }}</span>
-                <select v-model="cardCreateLocationId" class="card-empty__input">
+                <select
+                  v-model="cardCreateLocationId"
+                  class="card-empty__input"
+                >
                   <option
                     v-for="option in cardCreateLocationOptions"
                     :key="option.locationId"
@@ -619,9 +622,7 @@ const resolveCoverImage = (location: string | null): string | null => {
     return null;
   }
 
-  return pickRandomPoiGalleryImage(
-    poiGalleryById.value.get(normalized) ?? [],
-  );
+  return pickRandomPoiGalleryImage(poiGalleryById.value.get(normalized) ?? []);
 };
 
 const normalizeFingerprint = (value: string): string | null => {
@@ -634,7 +635,9 @@ const normalizePreferenceTag = (value: string): string | null => {
   return normalized.length > 0 ? normalized : null;
 };
 
-const normalizeCardNotes = (value: string | null | undefined): string | null => {
+const normalizeCardNotes = (
+  value: string | null | undefined,
+): string | null => {
   const normalized = value?.trim() ?? "";
   return normalized.length > 0 ? normalized : null;
 };
@@ -1151,7 +1154,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 }
 
 .batch-section :deep(.tab-bar) {
-  margin-bottom: 1rem;
+  margin-bottom: 0.4rem;
 }
 
 .batch-description {

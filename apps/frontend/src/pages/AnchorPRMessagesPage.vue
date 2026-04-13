@@ -1,0 +1,46 @@
+<template>
+  <PageScaffold class="anchor-pr-messages-page" data-page="anchor-pr-messages">
+    <PageHeader
+      :title="t('prPage.messagePage.title')"
+      :subtitle="t('prPage.messagePage.subtitle')"
+      :back-label="t('prPage.messagePage.backToDetail')"
+      :back-fallback-to="backFallbackTo"
+    />
+
+    <ErrorToast
+      v-if="id === null"
+      :message="t('errors.missingPartnerRequestId')"
+      persistent
+    />
+
+    <AnchorPRMessageThread v-else :pr-id="id" :show-header="false" />
+
+    <ContactSupportFooter data-region="support" />
+  </PageScaffold>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
+import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
+import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import AnchorPRMessageThread from "@/domains/pr/ui/sections/AnchorPRMessageThread.vue";
+import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
+
+const { t } = useI18n();
+const id = usePRRouteId();
+
+const backFallbackTo = computed(() => {
+  if (id.value === null) return "/";
+  return anchorPRDetailPath(id.value);
+});
+</script>
+
+<style scoped lang="scss">
+.anchor-pr-messages-page {
+  min-width: 0;
+}
+</style>

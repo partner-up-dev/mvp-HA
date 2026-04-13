@@ -112,7 +112,6 @@ watch(
   display: flex;
   gap: var(--sys-spacing-sm);
   align-items: flex-start;
-  padding-bottom: var(--sys-spacing-sm);
   min-width: 0;
 }
 
