@@ -88,15 +88,45 @@ const fonts = {
     "font-weight": 200,
     "line-height": "48px",
   },
+  "headline-medium": {
+    "font-size": "28px",
+    "font-weight": 200,
+    "line-height": "42px",
+  },
+  "headline-small": {
+    "font-size": "24px",
+    "font-weight": 200,
+    "line-height": "36px",
+  },
   "title-large": {
     "font-size": "22px",
     "font-weight": 400,
     "line-height": "32px",
   },
+  "title-medium": {
+    "font-size": "18px",
+    "font-weight": 400,
+    "line-height": "24px",
+  },
+  "title-small": {
+    "font-size": "16px",
+    "font-weight": 400,
+    "line-height": "22px",
+  },
   "body-large": {
     "font-size": "16px",
     "font-weight": 400,
     "line-height": "24px",
+  },
+  "body-medium": {
+    "font-size": "14px",
+    "font-weight": 400,
+    "line-height": "20px",
+  },
+  "body-small": {
+    "font-size": "12px",
+    "font-weight": 400,
+    "line-height": "16px",
   },
   "label-large": {
     "font-size": "14px",

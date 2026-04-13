@@ -90,14 +90,14 @@
   @if $profile == default {
     width: 100%;
     padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-    border-radius: var(--sys-radius-med);
+    border-radius: var(--sys-radius-sm);
     border: 1px solid fn.sys-var(color, outline-variant);
     color: fn.sys-var(color, on-surface);
     background: fn.sys-var(color, surface);
   } @else if $profile == compact-surface {
     width: 100%;
     padding: var(--sys-spacing-sm);
-    border-radius: var(--sys-radius-med);
+    border-radius: var(--sys-radius-sm);
     border: 1px solid fn.sys-var(color, outline-variant);
     background: fn.sys-var(color, surface);
     color: fn.sys-var(color, on-surface);
