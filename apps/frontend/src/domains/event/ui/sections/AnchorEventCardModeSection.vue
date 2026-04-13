@@ -1,18 +1,56 @@
 <template>
   <div v-if="activeDemandCard" class="card-mode" data-region="anchor-pr-list">
     <div class="card-stage">
-      <div class="card-stage__edge-glow" aria-hidden="true">
+      <div class="card-stage__label-rail" aria-hidden="true">
         <span
-          class="card-stage__edge-glow-side card-stage__edge-glow-side--left"
-          :style="leftEdgeGlowStyle"
-        />
+          class="card-stage__projection-label card-stage__projection-label--left"
+          :style="leftPromptStyle"
+        >
+          {{ t("anchorEvent.card.swipeSkipHint") }}
+        </span>
         <span
-          class="card-stage__edge-glow-side card-stage__edge-glow-side--right"
-          :style="rightEdgeGlowStyle"
-        />
+          class="card-stage__projection-label card-stage__projection-label--right"
+          :style="rightPromptStyle"
+        >
+          {{ t("anchorEvent.card.swipeDetailHint") }}
+        </span>
       </div>
 
       <div class="card-stage__inner">
+        <div
+          class="card-stage__projection-layer card-stage__projection-layer--underlay"
+          aria-hidden="true"
+        >
+          <span
+            class="card-stage__projection-side card-stage__projection-side--left"
+            :style="leftProjectionShellStyle"
+          >
+            <span
+              class="card-stage__projection-light"
+              :style="leftProjectionLightStyle"
+            >
+              <span class="card-stage__projection-source" />
+              <span class="card-stage__projection-bloom" />
+              <span class="card-stage__projection-rim" />
+              <span class="card-stage__projection-spill" />
+            </span>
+          </span>
+          <span
+            class="card-stage__projection-side card-stage__projection-side--right"
+            :style="rightProjectionShellStyle"
+          >
+            <span
+              class="card-stage__projection-light"
+              :style="rightProjectionLightStyle"
+            >
+              <span class="card-stage__projection-source" />
+              <span class="card-stage__projection-bloom" />
+              <span class="card-stage__projection-rim" />
+              <span class="card-stage__projection-spill" />
+            </span>
+          </span>
+        </div>
+
         <AnchorEventDemandCard
           v-for="(previewCard, previewIndex) in stackPreviewCards"
           :key="`preview-${previewCard.cardKey}`"
@@ -32,7 +70,7 @@
           aria-hidden="true"
         />
 
-        <div class="card-stage__front-shell" @pointerdown="emitUserInteraction">
+        <div class="card-stage__front-shell">
           <AnchorEventDemandCard
             class="card-stage__front"
             :display-location-name="activeDemandCard.displayLocationName"
@@ -47,17 +85,6 @@
             @view-detail="emitViewActiveCardDetail"
           />
         </div>
-
-        <transition name="card-swipe-hint">
-          <p
-            v-if="showCardSwipeHintToast"
-            class="card-mode__swipe-hint-toast"
-            role="status"
-            aria-live="polite"
-          >
-            {{ t("anchorEvent.card.swipeHintToast") }}
-          </p>
-        </transition>
       </div>
     </div>
 
@@ -176,10 +203,17 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
+import {
+  DEMAND_CARD_EXIT_TIMING,
+  DEMAND_CARD_REBOUND_TIMING,
+  clampDemandCardSwipePreviewIntensity,
+  type DemandCardSwipePreviewState,
+} from "@/domains/event/ui/demand-card-swipe-feedback";
 
 type DemandCardViewModel = {
   cardKey: string;
@@ -202,14 +236,12 @@ type CardCreateLocationOption = {
   disabled: boolean;
 };
 
-defineProps<{
+const props = defineProps<{
   activeDemandCard: DemandCardViewModel | null;
   stackPreviewCards: DemandCardViewModel[];
   isCardRouting: boolean;
   cardActionError: string | null;
-  showCardSwipeHintToast: boolean;
-  leftEdgeGlowStyle: Record<string, string | number>;
-  rightEdgeGlowStyle: Record<string, string | number>;
+  swipePreviewState: DemandCardSwipePreviewState;
   cardCreateBatchOptions: CardBatchOption[];
   cardCreateBatchId: number | null;
   cardCreateLocationId: string;
@@ -222,8 +254,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "user-interaction": [];
-  "swipe-preview": [intensity: number];
+  "swipe-preview": [previewState: DemandCardSwipePreviewState];
   "skip-active-card": [];
   "view-active-card-detail": [];
   "update:cardCreateBatchId": [value: number | null];
@@ -233,12 +264,129 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const emitUserInteraction = () => {
-  emit("user-interaction");
+const swipePreviewIntensity = computed(() =>
+  clampDemandCardSwipePreviewIntensity(props.swipePreviewState.intensity),
+);
+const swipePreviewPhase = computed(() => props.swipePreviewState.phase);
+const swipePreviewAnchorCorner = computed(
+  () => props.swipePreviewState.anchorCorner,
+);
+const swipePreviewMagnitude = computed(() =>
+  Math.min(Math.abs(swipePreviewIntensity.value), 1),
+);
+const easeOutCurve = (value: number, power: number) => {
+  const clamped = Math.min(Math.max(value, 0), 1);
+  return 1 - Math.pow(1 - clamped, power);
+};
+const promptStrength = computed(() =>
+  easeOutCurve(swipePreviewMagnitude.value, 2.18),
+);
+const projectionActivation = computed(() => {
+  const magnitude = swipePreviewMagnitude.value;
+  if (magnitude <= 0.02) {
+    return 0;
+  }
+
+  return easeOutCurve((magnitude - 0.02) / 0.98, 2.26);
+});
+const projectionSpread = computed(() =>
+  easeOutCurve(swipePreviewMagnitude.value, 1.72),
+);
+const projectionThresholdTension = computed(() => {
+  const magnitude = swipePreviewMagnitude.value;
+  if (magnitude <= 0.72) {
+    return 0;
+  }
+
+  return Math.pow((magnitude - 0.72) / 0.28, 1.55);
+});
+const projectionCornerSlot = computed<"top" | "bottom">(() => {
+  return swipePreviewAnchorCorner.value ?? "top";
+});
+
+const feedbackTransition = computed(() => {
+  switch (swipePreviewPhase.value) {
+    case "dragging":
+      return "none";
+    case "exiting":
+      return `opacity ${DEMAND_CARD_EXIT_TIMING}, transform ${DEMAND_CARD_EXIT_TIMING}`;
+    case "rebounding":
+      return `opacity ${DEMAND_CARD_REBOUND_TIMING}, transform ${DEMAND_CARD_REBOUND_TIMING}`;
+    default:
+      return "opacity 180ms ease-out, transform 180ms ease-out";
+  }
+});
+
+const buildPromptStyle = (direction: "left" | "right") => {
+  const active =
+    direction === "left"
+      ? swipePreviewIntensity.value < 0
+      : swipePreviewIntensity.value > 0;
+  const strength = active ? promptStrength.value : 0;
+
+  return {
+    opacity: strength * 0.96,
+    transform: `translate3d(0, ${16 - strength * 16}px, 0) scale(${0.96 + strength * 0.08})`,
+    transition: feedbackTransition.value,
+  };
 };
 
-const emitSwipePreview = (intensity: number) => {
-  emit("swipe-preview", intensity);
+const buildProjectionShellStyle = (direction: "left" | "right") => {
+  const slotY = projectionCornerSlot.value === "top" ? "23%" : "77%";
+  const horizontalOffset = direction === "left" ? "-74%" : "74%";
+
+  return {
+    top: slotY,
+    transform: `translate3d(${horizontalOffset}, -50%, 0)`,
+    transition: feedbackTransition.value,
+  };
+};
+
+const buildProjectionLightStyle = (direction: "left" | "right") => {
+  const active =
+    direction === "left"
+      ? swipePreviewIntensity.value < 0
+      : swipePreviewIntensity.value > 0;
+  const activation = active ? projectionActivation.value : 0;
+  const spread = active ? projectionSpread.value : 0;
+  const thresholdTension = active ? projectionThresholdTension.value : 0;
+  const scaleX = 1.2 + spread * 1.28 + thresholdTension * 0.62;
+  const scaleY = 0.98 + spread * 0.88 + thresholdTension * 0.36;
+  const opacity = activation * 0.84 + thresholdTension * 0.12;
+  const sourceOpacity = 0.18 + activation * 0.42 + thresholdTension * 0.18;
+  const bloomOpacity = 0.14 + activation * 0.58 + thresholdTension * 0.22;
+  const rimOpacity = activation * 0.16 + thresholdTension * 0.44;
+  const spillOpacity = activation * 0.24 + thresholdTension * 0.46;
+  const tilt = direction === "left" ? "-6deg" : "6deg";
+
+  return {
+    opacity,
+    transform: `scale(${scaleX}, ${scaleY}) rotate(${tilt})`,
+    transition: feedbackTransition.value,
+    "--card-stage-projection-source-opacity": sourceOpacity.toString(),
+    "--card-stage-projection-bloom-opacity": bloomOpacity.toString(),
+    "--card-stage-projection-rim-opacity": rimOpacity.toString(),
+    "--card-stage-projection-spill-opacity": spillOpacity.toString(),
+  };
+};
+
+const leftPromptStyle = computed(() => buildPromptStyle("left"));
+const rightPromptStyle = computed(() => buildPromptStyle("right"));
+const leftProjectionShellStyle = computed(() =>
+  buildProjectionShellStyle("left"),
+);
+const rightProjectionShellStyle = computed(() =>
+  buildProjectionShellStyle("right"),
+);
+const leftProjectionLightStyle = computed(() =>
+  buildProjectionLightStyle("left"),
+);
+const rightProjectionLightStyle = computed(() =>
+  buildProjectionLightStyle("right"),
+);
+
+const emitSwipePreview = (previewState: DemandCardSwipePreviewState) => {
+  emit("swipe-preview", previewState);
 };
 
 const emitSkipActiveCard = () => {
@@ -291,18 +439,52 @@ const handleCardCreateLocationChange = (event: Event) => {
 
 .card-stage {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   flex: 1 1 auto;
   min-height: 0;
-  --card-stage-vertical-inset: 6%;
+  --card-stage-top-inset: 2%;
+  --card-stage-bottom-inset: 10%;
+  --card-stage-label-gap: calc(var(--sys-spacing-sm) + 12px);
+  --card-stage-page-width: min(100vw, var(--dcs-layout-page-max-width));
+  --card-stage-card-width: calc(
+    var(--card-stage-page-width) - (var(--sys-spacing-med) * 2) -
+      var(--pu-safe-left) - var(--pu-safe-right)
+  );
+  isolation: isolate;
   padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
   padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+}
+
+.card-stage__projection-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  inline-size: 100vw;
+  transform: translateX(-50%);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.card-stage__projection-layer--underlay {
+  z-index: 1;
+}
+
+.card-stage__label-rail {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  column-gap: var(--sys-spacing-sm);
+  padding-block-end: var(--card-stage-label-gap);
+  pointer-events: none;
 }
 
 .card-stage__inner {
   position: relative;
   z-index: 2;
-  flex: 1 1 auto;
   min-height: 0;
 }
 
@@ -310,8 +492,8 @@ const handleCardCreateLocationChange = (event: Event) => {
   position: absolute;
   left: 0;
   right: 0;
-  top: var(--card-stage-vertical-inset);
-  bottom: var(--card-stage-vertical-inset);
+  top: var(--card-stage-top-inset);
+  bottom: var(--card-stage-bottom-inset);
   z-index: 3;
   animation: card-front-promote 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -324,88 +506,169 @@ const handleCardCreateLocationChange = (event: Event) => {
   position: absolute;
   left: 0;
   right: 0;
-  top: var(--card-stage-vertical-inset);
-  bottom: var(--card-stage-vertical-inset);
+  top: var(--card-stage-top-inset);
+  bottom: var(--card-stage-bottom-inset);
   pointer-events: none;
   animation: card-preview-reveal 220ms ease-out both;
 }
 
-.card-stage__edge-glow {
+.card-stage__projection-side {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-left)));
-  right: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-right)));
-  z-index: 1;
-  pointer-events: none;
+  inline-size: 46vw;
+  block-size: 46vh;
+  min-inline-size: 18rem;
+  max-inline-size: 28rem;
+  min-block-size: 22rem;
+  max-block-size: 34rem;
+  will-change: transform, opacity;
 }
 
-.card-stage__edge-glow-side {
-  position: absolute;
-  top: var(--card-stage-vertical-inset);
-  bottom: var(--card-stage-vertical-inset);
-  inline-size: 26%;
-  min-inline-size: 96px;
-  max-inline-size: 220px;
-  opacity: 0;
-  border-radius: 999px;
-  filter: blur(42px);
-  will-change: opacity, transform;
-  transition:
-    opacity 120ms linear,
-    transform 120ms ease-out;
-}
-
-.card-stage__edge-glow-side--left {
+.card-stage__projection-side--left {
   left: 0;
-  transform-origin: left center;
+}
+
+.card-stage__projection-side--right {
+  right: 0;
+}
+
+.card-stage__projection-label {
+  @include mx.pu-font(title-medium);
+  position: relative;
+  margin: 0;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.card-stage__projection-label--left {
+  justify-self: start;
+  color: var(--sys-color-error);
+  text-shadow:
+    0 0 18px rgb(from var(--sys-color-error) r g b / 0.42),
+    0 0 38px rgb(from var(--sys-color-error) r g b / 0.2);
+}
+
+.card-stage__projection-label--right {
+  justify-self: end;
+  color: var(--sys-color-primary);
+  text-align: end;
+  text-shadow:
+    0 0 18px rgb(from var(--sys-color-primary) r g b / 0.42),
+    0 0 38px rgb(from var(--sys-color-primary) r g b / 0.2);
+}
+
+.card-stage__projection-light {
+  position: absolute;
+  inset: 16% 0 0;
+  opacity: 0;
+  mix-blend-mode: screen;
+  will-change: opacity, transform;
+}
+
+.card-stage__projection-source,
+.card-stage__projection-bloom,
+.card-stage__projection-rim,
+.card-stage__projection-spill {
+  position: absolute;
+  border-radius: 999px;
+}
+
+.card-stage__projection-source {
+  inset: 18% 12% 18% 12%;
+  opacity: var(--card-stage-projection-source-opacity, 0);
+  filter: blur(34px);
+}
+
+.card-stage__projection-bloom {
+  inset: -4%;
+  opacity: var(--card-stage-projection-bloom-opacity, 0);
+  filter: blur(108px);
+}
+
+.card-stage__projection-rim {
+  top: 24%;
+  bottom: 18%;
+  inline-size: 48%;
+  opacity: var(--card-stage-projection-rim-opacity, 0);
+  filter: blur(48px);
+}
+
+.card-stage__projection-spill {
+  top: 12%;
+  bottom: 10%;
+  inline-size: 124%;
+  opacity: var(--card-stage-projection-spill-opacity, 0);
+  filter: blur(84px);
+}
+
+.card-stage__projection-side--left .card-stage__projection-source {
+  background: radial-gradient(
+    ellipse at 14% 50%,
+    var(--sys-color-error) 0%,
+    transparent 72%
+  );
+}
+
+.card-stage__projection-side--left .card-stage__projection-bloom {
+  background: radial-gradient(
+    ellipse at 10% 50%,
+    var(--sys-color-error) 0%,
+    transparent 84%
+  );
+}
+
+.card-stage__projection-side--left .card-stage__projection-rim {
+  inset-inline-start: 4%;
   background: linear-gradient(
     90deg,
     var(--sys-color-error) 0%,
-    transparent 78%
+    transparent 100%
   );
 }
 
-.card-stage__edge-glow-side--right {
-  right: 0;
-  transform-origin: right center;
+.card-stage__projection-side--left .card-stage__projection-spill {
+  inset-inline-start: -40%;
+  background: linear-gradient(
+    90deg,
+    var(--sys-color-error) 0%,
+    transparent 100%
+  );
+}
+
+.card-stage__projection-side--right .card-stage__projection-source {
+  background: radial-gradient(
+    ellipse at 86% 50%,
+    var(--sys-color-primary) 0%,
+    transparent 72%
+  );
+}
+
+.card-stage__projection-side--right .card-stage__projection-bloom {
+  background: radial-gradient(
+    ellipse at 90% 50%,
+    var(--sys-color-primary) 0%,
+    transparent 84%
+  );
+}
+
+.card-stage__projection-side--right .card-stage__projection-rim {
+  inset-inline-end: 4%;
   background: linear-gradient(
     270deg,
     var(--sys-color-primary) 0%,
-    transparent 78%
+    transparent 100%
   );
 }
 
-.card-mode__swipe-hint-toast {
-  @include mx.pu-font(label-large);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 4;
-  transform: translate(-50%, -50%);
-  margin: 0;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-med);
-  border-radius: 999px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface);
-  box-shadow: var(--sys-shadow-2);
-  backdrop-filter: blur(4px);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.card-swipe-hint-enter-active,
-.card-swipe-hint-leave-active {
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
-}
-
-.card-swipe-hint-enter-from,
-.card-swipe-hint-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -46%);
+.card-stage__projection-side--right .card-stage__projection-spill {
+  inset-inline-end: -40%;
+  background: linear-gradient(
+    270deg,
+    var(--sys-color-primary) 0%,
+    transparent 100%
+  );
 }
 
 @keyframes card-front-promote {

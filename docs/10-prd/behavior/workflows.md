@@ -24,7 +24,7 @@
 2. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `Anchor PR` results.
 3. Search results remain anchored to the chosen `Anchor Event`; result cards identify candidate `Anchor PRs` by time, location, visible status, and participant count rather than repeating the already-known event context.
 4. If the search has exactly one result, the system may route directly to that `/apr/:id`; otherwise, the user chooses one result from the list.
-5. The user enters an existing `Anchor PR` from batch, card, or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint.
+5. The user enters an existing `Anchor PR` from batch, card, or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint. Card-mode drag feedback should reveal directional skip versus detail cues in exposed stage space instead of covering the card body with opaque action stamps.
 6. The Anchor Event page exposes that event's beta-group entry as an independent card. List mode defaults the card to a collapsed kicker and description; card mode defaults it to an expanded state with the QR code. The group is for event-specific support such as requesting new sessions, getting booking/subsidy support, and coordinating activity context.
 7. If the current batch or location does not have a suitable `Anchor PR` and creation is still allowed, the user can create one through the controlled event-page flow.
 8. The current Anchor Event and downstream Anchor PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-anchored collaboration journey entirely.

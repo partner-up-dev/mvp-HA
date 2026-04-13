@@ -62,9 +62,7 @@
           :stack-preview-cards="stackPreviewCards"
           :is-card-routing="isCardRouting"
           :card-action-error="cardActionError"
-          :show-card-swipe-hint-toast="showCardSwipeHintToast"
-          :left-edge-glow-style="leftEdgeGlowStyle"
-          :right-edge-glow-style="rightEdgeGlowStyle"
+          :swipe-preview-state="cardSwipePreviewState"
           :card-create-batch-options="cardCreateBatchOptions"
           :card-create-batch-id="cardCreateBatchId"
           :card-create-location-id="cardCreateLocationId"
@@ -74,7 +72,6 @@
           :event-id="detail.id"
           :event-title="detail.title"
           :event-beta-group-qr-code="detail.betaGroupQrCode"
-          @user-interaction="handleCardUserInteraction"
           @swipe-preview="handleCardSwipePreview"
           @skip-active-card="handleSkipActiveCard"
           @view-active-card-detail="handleViewActiveCardDetail"
@@ -116,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -148,6 +145,11 @@ import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
 } from "@/processes/wechat/pending-wechat-action";
+import {
+  clampDemandCardSwipePreviewIntensity,
+  createIdleDemandCardSwipePreviewState,
+  type DemandCardSwipePreviewState,
+} from "@/domains/event/ui/demand-card-swipe-feedback";
 
 type EventViewMode = "LIST" | "CARD";
 type TimeWindow = [string | null, string | null];
@@ -187,9 +189,6 @@ type DemandCardViewModel = {
   detailPrId: number | null;
   coverImage: string | null;
 };
-
-const CARD_SWIPE_HINT_DELAY_MS = 3000;
-const CARD_SWIPE_HINT_DURATION_MS = 1800;
 
 const route = useRoute();
 const router = useRouter();
@@ -236,13 +235,9 @@ const selectedBatchId = ref<number | null>(null);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
-const hasCardUserInteraction = ref(false);
-const hasShownCardSwipeHintToast = ref(false);
-const showCardSwipeHintToast = ref(false);
-const cardSwipePreviewIntensity = ref(0);
-
-let cardSwipeHintDelayTimer: ReturnType<typeof setTimeout> | null = null;
-let cardSwipeHintHideTimer: ReturnType<typeof setTimeout> | null = null;
+const cardSwipePreviewState = ref<DemandCardSwipePreviewState>(
+  createIdleDemandCardSwipePreviewState(),
+);
 
 const cardCreateBatchId = ref<number | null>(null);
 const cardCreateLocationId = ref("");
@@ -253,43 +248,17 @@ const eventId = computed(() => {
   return Number.isFinite(num) && num > 0 ? num : null;
 });
 
-const clampSwipePreviewIntensity = (value: number): number =>
-  Math.max(Math.min(value, 1), -1);
-
 const resetCardSwipePreview = () => {
-  cardSwipePreviewIntensity.value = 0;
+  cardSwipePreviewState.value = createIdleDemandCardSwipePreviewState();
 };
 
-const handleCardSwipePreview = (intensity: number) => {
-  cardSwipePreviewIntensity.value = clampSwipePreviewIntensity(intensity);
-};
-
-const clearCardSwipeHintTimers = () => {
-  if (cardSwipeHintDelayTimer !== null) {
-    clearTimeout(cardSwipeHintDelayTimer);
-    cardSwipeHintDelayTimer = null;
-  }
-
-  if (cardSwipeHintHideTimer !== null) {
-    clearTimeout(cardSwipeHintHideTimer);
-    cardSwipeHintHideTimer = null;
-  }
-};
-
-const hideCardSwipeHintToast = () => {
-  showCardSwipeHintToast.value = false;
-
-  if (cardSwipeHintHideTimer !== null) {
-    clearTimeout(cardSwipeHintHideTimer);
-    cardSwipeHintHideTimer = null;
-  }
-};
-
-const handleCardUserInteraction = () => {
-  hasCardUserInteraction.value = true;
-  hideCardSwipeHintToast();
-  clearCardSwipeHintTimers();
-  resetCardSwipePreview();
+const handleCardSwipePreview = (previewState: DemandCardSwipePreviewState) => {
+  cardSwipePreviewState.value = {
+    intensity: clampDemandCardSwipePreviewIntensity(previewState.intensity),
+    phase: previewState.phase,
+    anchorViewportY: previewState.anchorViewportY,
+    anchorCorner: previewState.anchorCorner,
+  };
 };
 
 const handleSwitchViewMode = (mode: EventViewMode) => {
@@ -297,7 +266,7 @@ const handleSwitchViewMode = (mode: EventViewMode) => {
     return;
   }
 
-  handleCardUserInteraction();
+  resetCardSwipePreview();
   viewMode.value = mode;
 };
 
@@ -310,11 +279,7 @@ watch(
 );
 
 watch(eventId, () => {
-  hasCardUserInteraction.value = false;
-  hasShownCardSwipeHintToast.value = false;
-  showCardSwipeHintToast.value = false;
   resetCardSwipePreview();
-  clearCardSwipeHintTimers();
 });
 
 const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
@@ -390,6 +355,37 @@ const nonExpiredSortedBatches = computed(() =>
   sortedBatches.value.filter((batch) => !isExpiredBatch(batch)),
 );
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const resolveRelativeDayLabel = (
+  date: Date,
+): "今天" | "明天" | "后天" | null => {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetStart = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+  const diffDays = Math.round(
+    (targetStart.getTime() - todayStart.getTime()) / MS_PER_DAY,
+  );
+
+  if (diffDays === 0) {
+    return "今天";
+  }
+
+  if (diffDays === 1) {
+    return "明天";
+  }
+
+  if (diffDays === 2) {
+    return "后天";
+  }
+
+  return null;
+};
+
 function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   const [start] = timeWindow;
   if (start) {
@@ -399,11 +395,15 @@ function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
         return `${t("anchorEvent.batchLabel")} ${index + 1}`;
       }
 
-      const datePart = date.toLocaleDateString("zh-CN", {
-        month: "short",
-        day: "numeric",
-        weekday: "short",
-      });
+      const relativeDayLabel = resolveRelativeDayLabel(date);
+      const datePart = relativeDayLabel
+        ? `${date.getMonth() + 1}月${date.getDate()}日(${relativeDayLabel})`
+        : `${date.getMonth() + 1}月${date.getDate()}日${date.toLocaleDateString(
+            "zh-CN",
+            {
+              weekday: "short",
+            },
+          )}`;
       const timePart = date.toLocaleTimeString("zh-CN", {
         hour: "2-digit",
         minute: "2-digit",
@@ -697,72 +697,6 @@ const stackPreviewCards = computed(() =>
 const isCardStageActive = computed(
   () => viewMode.value === "CARD" && activeDemandCard.value !== null,
 );
-const swipePreviewMagnitude = computed(() =>
-  Math.min(Math.abs(cardSwipePreviewIntensity.value), 1),
-);
-const swipeGlowStrength = computed(() =>
-  Math.pow(swipePreviewMagnitude.value, 1.6),
-);
-const leftEdgeGlowOpacity = computed(() =>
-  cardSwipePreviewIntensity.value < 0 ? swipeGlowStrength.value * 0.88 : 0,
-);
-const rightEdgeGlowOpacity = computed(() =>
-  cardSwipePreviewIntensity.value > 0 ? swipeGlowStrength.value * 0.88 : 0,
-);
-const leftEdgeGlowScale = computed(() =>
-  cardSwipePreviewIntensity.value < 0
-    ? 0.74 + swipeGlowStrength.value * 0.44
-    : 0.74,
-);
-const rightEdgeGlowScale = computed(() =>
-  cardSwipePreviewIntensity.value > 0
-    ? 0.74 + swipeGlowStrength.value * 0.44
-    : 0.74,
-);
-const leftEdgeGlowStyle = computed(() => ({
-  opacity: leftEdgeGlowOpacity.value,
-  transform: `scaleX(${leftEdgeGlowScale.value})`,
-}));
-const rightEdgeGlowStyle = computed(() => ({
-  opacity: rightEdgeGlowOpacity.value,
-  transform: `scaleX(${rightEdgeGlowScale.value})`,
-}));
-const shouldArmCardSwipeHint = computed(
-  () =>
-    isCardStageActive.value &&
-    !isCardRouting.value &&
-    !hasCardUserInteraction.value &&
-    !hasShownCardSwipeHintToast.value,
-);
-
-watch(
-  shouldArmCardSwipeHint,
-  (shouldArm) => {
-    clearCardSwipeHintTimers();
-
-    if (!shouldArm) {
-      hideCardSwipeHintToast();
-      return;
-    }
-
-    cardSwipeHintDelayTimer = setTimeout(() => {
-      cardSwipeHintDelayTimer = null;
-
-      if (!shouldArmCardSwipeHint.value) {
-        return;
-      }
-
-      showCardSwipeHintToast.value = true;
-      hasShownCardSwipeHintToast.value = true;
-
-      cardSwipeHintHideTimer = setTimeout(() => {
-        showCardSwipeHintToast.value = false;
-        cardSwipeHintHideTimer = null;
-      }, CARD_SWIPE_HINT_DURATION_MS);
-    }, CARD_SWIPE_HINT_DELAY_MS);
-  },
-  { immediate: true },
-);
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
@@ -784,25 +718,23 @@ const markCardProcessed = (cardKey: string) => {
 };
 
 const handleSkipActiveCard = () => {
-  handleCardUserInteraction();
-
   const card = activeDemandCard.value;
   if (!card) {
     return;
   }
 
+  resetCardSwipePreview();
   markCardProcessed(card.cardKey);
   cardActionError.value = null;
 };
 
 const handleViewActiveCardDetail = async () => {
-  handleCardUserInteraction();
-
   const card = activeDemandCard.value;
   if (!card || card.detailPrId === null) {
     return;
   }
 
+  resetCardSwipePreview();
   cardActionError.value = null;
   isCardRouting.value = true;
   try {
@@ -1003,10 +935,6 @@ watch(
 
 onMounted(() => {
   void attemptPendingCreateReplay();
-});
-
-onBeforeUnmount(() => {
-  clearCardSwipeHintTimers();
 });
 
 const handleCreateInList = async (locationId: string | null) => {

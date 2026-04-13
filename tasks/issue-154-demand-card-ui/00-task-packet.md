@@ -36,3 +36,105 @@
   - rewired `AnchorEventPage.vue` to assemble the two sections and keep page-level state/effects only
 - Verification:
   - `pnpm --filter @partner-up-dev/frontend build`
+
+## Follow-up Slice: Edge Projection And Negative-Space Prompts
+
+- Objective & Hypothesis: Replace the half-way card-stage glow with directional prompts plus top-layer edge projection that reads as ambient light on the moving card surface. Hypothesis: stage-owned prompt and projection layers, driven by shared swipe preview phase, will feel clearer and stay synchronized during drag, rebound, and exit.
+- Guardrails Touched:
+  - `docs/10-prd/behavior/workflows.md`
+  - `apps/frontend/src/domains/event/ui/demand-card-swipe-feedback.ts`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventDemandCard.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+  - `apps/frontend/src/locales/zh-CN.jsonc`
+  - `apps/frontend/src/locales/schema.ts`
+- Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `pnpm --filter @partner-up-dev/frontend lint:tokens`
+- Verification Outcome:
+  - Passed: `pnpm --filter @partner-up-dev/frontend build`
+  - Token lint currently reports 42 findings outside baseline, all in pre-existing unrelated files; no touched file from this slice remains in the lint output.
+
+## Follow-up Slice: Edge-Anchored Point Light
+
+- Objective & Hypothesis: Refine edge glow from a fixed vertical side wash into a point-light source sampled from the initial drag touch Y, then keep that source anchored at the screen edge while intensity and spread evolve non-linearly with swipe progress. Hypothesis: freezing the source height at drag start will feel more stable and intentional than chasing finger Y on every frame, while still preserving direct-manipulation cues.
+- Guardrails Touched:
+  - `apps/frontend/src/domains/event/ui/demand-card-swipe-feedback.ts`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventDemandCard.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+- Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `pnpm --filter @partner-up-dev/frontend lint:tokens`
+  - browser inspection on local `/events/2` card mode
+- Verification Outcome:
+  - Passed: `pnpm --filter @partner-up-dev/frontend build`
+  - Token lint remains at the same 42 unrelated baseline findings
+  - Browser inspection confirmed the projection center aligns with the sampled anchor Y when `cardSwipePreviewState.anchorViewportY` is set
+
+## Follow-up Slice: Corner-Anchored Elliptical Edge Glow
+
+- Objective & Hypothesis: Replace the continuous Y-tracking point light with four fixed corner slots (`left-top`, `right-top`, `left-bottom`, `right-bottom`) and move plain-text prompts onto the glow layer without badge chrome. Hypothesis: deciding the vertical slot once on `pointerdown`, then projecting a larger elliptical glow half-hidden beyond the screen edge, will feel cleaner and more legible than continuously recomputing projection height.
+- Guardrails Touched:
+  - `apps/frontend/src/domains/event/ui/demand-card-swipe-feedback.ts`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventDemandCard.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+- Implemented:
+  - preview state now persists `anchorCorner` (`top` / `bottom`) so drag, rebound, and exit reuse the same corner slot instead of re-deriving from live stage geometry
+  - `AnchorEventDemandCard` samples `anchorCorner` once on `pointerdown` and keeps it frame-synced through preview phase transitions
+  - projection shell now renders a larger elliptical light source with more diffuse bloom/spill and keeps the source center further beyond the viewport edge
+  - prompt text is rendered as plain text above the glow, outside the light element's `mix-blend-mode`, so it does not get washed out with the projection
+  - fixed a visibility bug where prompt text existed but was pushed outside the viewport by the projection shell offset
+- Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `pnpm --filter @partner-up-dev/frontend lint:tokens`
+  - browser verification on local `http://127.0.0.1:4173/events/2?mode=card`
+- Verification Outcome:
+  - Passed: `pnpm --filter @partner-up-dev/frontend build`
+  - Token lint remains at the same 42 unrelated baseline findings
+  - Browser verification confirmed:
+    - top-right state shows visible `加入` text with green edge glow
+    - bottom-left state shows visible `跳过` text with red edge glow
+    - prompt visibility bug root cause was projection-shell horizontal offset placing text outside the viewport
+  - Note: direct drag simulation via `agent-browser` mouse actions did not reliably trigger the card's pointer-capture interaction in this environment, so visual verification used browser-side state injection on `cardSwipePreviewState` after confirming the live page component tree
+
+## Follow-up Slice: Glow Under Card Experiment
+
+- Objective & Hypothesis: Try moving only the edge-glow layer beneath the active card while keeping the corner-slot logic and prompt text placement intact. Hypothesis: keeping glow below the card shell will reduce cover-image washout and make the feedback read more like ambient edge bleed than a projection cast onto the card face.
+- Guardrails Touched:
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+- Implemented:
+  - split the previous projection layer into an under-card glow underlay and a label-only overlay
+  - kept prompt text above the card for legibility, while moving only the glow beneath the card stack
+  - preserved `pointer-events: none` on both auxiliary layers
+  - decoupled prompt positioning from the glow shell so bottom-corner glow states also keep their prompt copy at the card's top outer edge instead of overlapping the card face
+  - lifted the top-outer prompt rail by another ~20px to avoid grazing the card's top edge
+  - switched prompt and glow activation/spread response to an ease-out curve so feedback ramps up faster early and slows as it approaches the threshold
+  - replaced the absolute-positioned prompt overlay with a dedicated `label rail` row in normal document flow, while moving the glow underlay inside the card-area container; this makes prompt/card separation come from CSS layout rather than paint-time offsets
+  - rebalanced the card deck insets from symmetric vertical padding to asymmetric `top 2% / bottom 10%`, so the reserved top rail does not make the card feel visibly sunk
+- Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `pnpm --filter @partner-up-dev/frontend lint:tokens`
+  - browser verification on local `http://127.0.0.1:4173/events/2?mode=card`
+- Verification Outcome:
+  - Passed: `pnpm --filter @partner-up-dev/frontend build`
+  - Token lint remains at the same 42 unrelated baseline findings
+  - Browser verification confirmed the glow no longer washes across the card face; it now reads mainly as edge/background bleed while the prompt text remains visible above the card
+  - Browser verification also confirmed bottom-corner prompt text now stays at the card-top outer rail rather than drifting down with the lower glow slot
+  - Browser verification confirmed the raised top rail leaves clearer separation from the card edge, and the new easing makes prompt/glow presence appear earlier in the swipe
+  - Cross-height gap measurements after the `label rail` refactor:
+    - `390x844`: prompt bottom -> card top gap `49.36px`
+    - `375x667`: prompt bottom -> card top gap `38.73px`
+    - `320x568`: prompt bottom -> card top gap `29.92px`
+  - Assessment:
+    - the previous absolute-positioned prompt overlay could still overlap on shorter heights because it shared the same paint plane as the card and relied on visual offsets only
+    - the current `label rail + card area` grid structure removes that class of overlap by reserving prompt space through normal flow before the card row is laid out
+  - After the inset rebalance, the card position moved back upward while preserving positive rail clearance:
+    - `375x667`: gap `22.61px`, `cardTop 196.05px`
+    - `320x568`: gap `19.67px`, `cardTop 241.11px`
+    - compared with the prior `320x568` measurement, `cardTop` moved upward by about `10.25px`
+  - After tightening the label rail to roughly 60% of the prior spacing:
+    - `375x667`: gap `14.78px`
+    - `320x568`: gap `11.83px`
+    - both remain positive, so the rail/card separation still holds structurally without overlap

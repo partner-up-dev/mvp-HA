@@ -51,6 +51,14 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import {
+  DEMAND_CARD_EXIT_TRANSITION,
+  DEMAND_CARD_REBOUND_TRANSITION,
+  createDemandCardSwipePreviewState,
+  type DemandCardSwipePreviewAnchorCorner,
+  type DemandCardSwipePreviewPhase,
+  type DemandCardSwipePreviewState,
+} from "@/domains/event/ui/demand-card-swipe-feedback";
 
 const MAX_DRAG_DISTANCE = 260;
 const MIN_DISTANCE_THRESHOLD = 96;
@@ -59,8 +67,6 @@ const FLICK_VELOCITY_THRESHOLD = 760;
 const FLICK_MIN_DISTANCE = 22;
 const ROTATION_DIVISOR = 22;
 const MAX_ROTATION_DEG = 18;
-const EXIT_TRANSITION = "transform 280ms cubic-bezier(0.16, 1, 0.3, 1)";
-const REBOUND_TRANSITION = "transform 440ms cubic-bezier(0.22, 1.35, 0.36, 1)";
 const MILLISECONDS_PER_SECOND = 1000;
 const VELOCITY_SAMPLE_WINDOW_MS = 90;
 const MAX_VELOCITY_SAMPLES = 8;
@@ -88,7 +94,7 @@ type PointerState = {
 };
 
 type SwipeAction = "skip" | "view-detail";
-type SwipePhase = "idle" | "dragging" | "exiting" | "rebounding";
+type SwipePhase = DemandCardSwipePreviewPhase;
 
 const props = withDefaults(
   defineProps<{
@@ -115,17 +121,19 @@ const props = withDefaults(
 const emit = defineEmits<{
   skip: [];
   "view-detail": [];
-  "swipe-preview": [intensity: number];
+  "swipe-preview": [previewState: DemandCardSwipePreviewState];
 }>();
 
 const activePointer = ref<PointerState | null>(null);
 const translateX = ref(0);
 const rawTranslateX = ref(0);
 const swipeThreshold = ref(MIN_DISTANCE_THRESHOLD);
-const settleTransition = ref(REBOUND_TRANSITION);
+const settleTransition = ref(DEMAND_CARD_REBOUND_TRANSITION);
 const swipePhase = ref<SwipePhase>("idle");
 const pendingAction = ref<SwipeAction | null>(null);
 const hasDispatchedExitAction = ref(false);
+const previewAnchorViewportY = ref<number | null>(null);
+const previewAnchorCorner = ref<DemandCardSwipePreviewAnchorCorner | null>(null);
 
 const isDragging = computed(() => swipePhase.value === "dragging");
 const isPendingState = computed(
@@ -230,35 +238,48 @@ const resolveVelocityX = (
   );
 };
 
-const clampSwipePreviewIntensity = (value: number): number =>
-  Math.max(Math.min(value, 1), -1);
-
-const emitSwipePreview = (intensity: number) => {
+const emitSwipePreview = (
+  intensity: number,
+  phase: SwipePhase = swipePhase.value,
+  anchorViewportY: number | null = previewAnchorViewportY.value,
+  anchorCorner: DemandCardSwipePreviewAnchorCorner | null =
+    previewAnchorCorner.value,
+) => {
   if (props.preview) {
     return;
   }
 
-  emit("swipe-preview", clampSwipePreviewIntensity(intensity));
+  emit(
+    "swipe-preview",
+    createDemandCardSwipePreviewState(
+      intensity,
+      phase,
+      anchorViewportY,
+      anchorCorner,
+    ),
+  );
 };
 
 const resetCardState = () => {
-  emitSwipePreview(0);
+  previewAnchorViewportY.value = null;
+  previewAnchorCorner.value = null;
+  emitSwipePreview(0, "idle", null, null);
   activePointer.value = null;
   translateX.value = 0;
   rawTranslateX.value = 0;
-  settleTransition.value = REBOUND_TRANSITION;
+  settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
   swipePhase.value = "idle";
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
 };
 
 const startRebound = () => {
-  emitSwipePreview(0);
   activePointer.value = null;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
   swipePhase.value = "rebounding";
-  settleTransition.value = REBOUND_TRANSITION;
+  settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
+  emitSwipePreview(0, "rebounding");
   translateX.value = 0;
   rawTranslateX.value = 0;
 };
@@ -266,13 +287,12 @@ const startRebound = () => {
 const startExit = (action: SwipeAction) => {
   const direction = action === "skip" ? -1 : 1;
 
-  emitSwipePreview(direction);
-
   activePointer.value = null;
   pendingAction.value = action;
   hasDispatchedExitAction.value = false;
   swipePhase.value = "exiting";
-  settleTransition.value = EXIT_TRANSITION;
+  settleTransition.value = DEMAND_CARD_EXIT_TRANSITION;
+  emitSwipePreview(direction, "exiting");
   rawTranslateX.value = direction * swipeThreshold.value;
   translateX.value =
     direction *
@@ -285,8 +305,6 @@ const startExit = (action: SwipeAction) => {
 const handlePointerDown = (event: PointerEvent) => {
   if (isInteractionLocked.value || swipePhase.value !== "idle") return;
 
-  emitSwipePreview(0);
-
   const currentTarget = event.currentTarget;
   if (!(currentTarget instanceof HTMLElement)) return;
 
@@ -294,15 +312,20 @@ const handlePointerDown = (event: PointerEvent) => {
   const localY = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
   const normalizedY =
     rect.height > 0 ? Math.min(Math.max(localY / rect.height, 0), 1) : 0.5;
+  const anchorCorner: DemandCardSwipePreviewAnchorCorner =
+    normalizedY <= 0.5 ? "top" : "bottom";
   const tiltDirectionFactor = 1 - normalizedY * 2;
   swipeThreshold.value = Math.max(
     MIN_DISTANCE_THRESHOLD,
     window.innerWidth * DISTANCE_THRESHOLD_RATIO,
   );
-  settleTransition.value = REBOUND_TRANSITION;
+  settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
   swipePhase.value = "dragging";
+  previewAnchorViewportY.value = event.clientY;
+  previewAnchorCorner.value = anchorCorner;
+  emitSwipePreview(0, "dragging", event.clientY, anchorCorner);
 
   currentTarget.setPointerCapture(event.pointerId);
   activePointer.value = {
@@ -326,7 +349,7 @@ const handlePointerMove = (event: PointerEvent) => {
 
   rawTranslateX.value = event.clientX - pointer.startX;
   translateX.value = applyDamping(rawTranslateX.value);
-  emitSwipePreview(rawTranslateX.value / swipeThreshold.value);
+  emitSwipePreview(rawTranslateX.value / swipeThreshold.value, "dragging");
   appendMotionSample(pointer, event.clientX, event.timeStamp);
 };
 
