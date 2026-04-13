@@ -38,6 +38,7 @@
 
       <AnchorPRFactsCard
         class="facts-card"
+        :pr-id="prDetail.id"
         :location="prDetail.core.location ?? null"
         :time-text="localizedTimeText"
         :preferences="prDetail.core.preferences"
@@ -47,6 +48,7 @@
         :has-more-roster="hasMoreRoster"
         :location-gallery-available="locationGallery.length > 0"
         @view-location-gallery="showLocationGalleryModal = true"
+        @view-roster="showRosterModal = true"
         data-region="summary"
       />
 
@@ -87,6 +89,24 @@
           </p>
         </div>
 
+        <div v-if="showExitActionInContext" class="secondary-danger-action">
+          <Button
+            tone="danger"
+            :disabled="!sharedActions.canExit.value"
+            :loading="sharedActions.exitPending.value"
+            block
+            @click="requestExitWithConfirm"
+          >
+            {{ t("prPage.exit") }}
+          </Button>
+          <p v-if="exitBlockedTip" class="action-tip">
+            {{ exitBlockedTip }}
+          </p>
+          <p v-if="exitActionError" class="action-error">
+            {{ exitActionError }}
+          </p>
+        </div>
+
         <p
           v-if="primaryActionErrorMessage"
           class="action-error page-action-error"
@@ -106,82 +126,43 @@
       </section>
 
       <section class="utility-area">
-        <section class="utility-row">
-          <div class="utility-row__main">
-            <div class="utility-row__content">
-              <h2 class="utility-row__title">补贴与报销</h2>
-              <p class="utility-row__description">
-                {{ bookingSupportSummaryHeadline }}
-              </p>
-              <p class="utility-row__description">
-                {{ bookingSupportSummaryDeadline }}
-              </p>
-              <p
-                v-for="highlight in bookingSupportHighlights"
-                :key="highlight"
-                class="utility-row__description"
-              >
-                {{ highlight }}
-              </p>
-            </div>
-            <div class="utility-row__actions">
-              <Button tone="outline" @click="goBookingSupport">
-                {{ t("prPage.bookingSupportEntry.viewAction") }}
-              </Button>
-              <Button
-                v-if="showReimbursementShortcut"
-                tone="surface"
-                @click="goBookingSupport"
-              >
-                {{ reimbursementButtonLabel }}
-              </Button>
-            </div>
-          </div>
-        </section>
+        <div class="utility-actions">
+          <Button tone="outline" block @click="goBookingSupport">
+            {{ t("prPage.bookingSupportEntry.viewAction") }}
+          </Button>
 
-        <section
-          v-if="showMessageThread && id !== null"
-          class="utility-row utility-row--message-thread"
-          data-region="reliability"
-        >
-          <AnchorPRMessageThread :pr-id="id" />
-        </section>
+          <Button
+            v-if="showMessageThread && id !== null"
+            tone="outline"
+            block
+            @click="handleOpenMessages"
+          >
+            {{ t("prPage.messageEntry.action") }}
+          </Button>
 
-        <section class="utility-row" data-region="share">
-          <div class="utility-row__main">
-            <div class="utility-row__content">
-              <h2 class="utility-row__title">分享邀请</h2>
-              <p class="utility-row__description">
-                把当前活动分享给合适的搭子。
-              </p>
-            </div>
-            <div class="utility-row__actions">
-              <Button tone="outline" @click="showShareDrawer = true">
-                分享 / 邀请
-              </Button>
+          <div class="utility-action-group" data-region="share">
+            <Button tone="outline" block @click="showShareDrawer = true">
+              {{ t("prPage.shareEntry.action") }}
+            </Button>
+            <div class="utility-link-row">
+              <router-link :to="{ name: 'event-plaza' }" class="utility-link">
+                {{ t("anchorEvent.otherEvents.action") }}
+                <span
+                  class="utility-link__icon i-mdi:arrow-right"
+                  aria-hidden="true"
+                />
+              </router-link>
             </div>
           </div>
-          <div class="utility-row__link-row">
-            <router-link
-              :to="{ name: 'event-plaza' }"
-              class="utility-row__link"
-            >
-              {{ t("anchorEvent.otherEvents.action") }}
-              <span
-                class="utility-row__link-icon i-mdi:arrow-right"
-                aria-hidden="true"
-              />
-            </router-link>
-          </div>
-        </section>
+        </div>
 
         <section
           v-if="showInlineReminderSubscriptions"
-          class="utility-row"
+          class="utility-section"
           data-region="reliability"
         >
-          <div class="utility-row__content utility-row__content--stack">
-            <h2 class="utility-row__title">
+          <div class="utility-section__content">
+            <h2 class="utility-section__title">
               {{ t("prPage.notificationSubscriptions.title") }}
             </h2>
             <APRNotificationSubscriptions
@@ -189,72 +170,8 @@
               outline-profile="surface"
             />
           </div>
-        </section>
-
-        <section v-if="showTopLevelExitAction" class="utility-row">
-          <div class="utility-row__main">
-            <div class="utility-row__content">
-              <h2 class="utility-row__title">退出</h2>
-              <p class="utility-row__description">
-                退出后你的参与名额会被释放。
-              </p>
-            </div>
-            <div class="utility-row__actions">
-              <Button
-                tone="danger"
-                :loading="sharedActions.exitPending.value"
-                @click="requestExitWithConfirm"
-              >
-                {{ t("prPage.exit") }}
-              </Button>
-            </div>
-          </div>
-          <p v-if="exitActionError" class="action-error">
-            {{ exitActionError }}
-          </p>
         </section>
       </section>
-
-      <details class="context-details">
-        <summary class="context-summary">更多信息</summary>
-        <div class="context-details__body">
-          <AnchorPRAwarenessLane
-            :pr-id="prDetail.id"
-            :section="prDetail.partnerSection"
-          />
-
-          <section
-            v-if="showReminderSubscriptionsInMoreInfo"
-            class="context-section"
-          >
-            <h2 class="context-section__title">
-              {{ t("prPage.notificationSubscriptions.title") }}
-            </h2>
-            <APRNotificationSubscriptions
-              :updating-label="t('prPage.wechatReminder.updating')"
-              outline-profile="surface"
-            />
-          </section>
-
-          <section v-if="showMoreInfoExitArea" class="context-section">
-            <h2 class="context-section__title">退出</h2>
-            <Button
-              tone="danger"
-              :disabled="!sharedActions.canExit.value"
-              :loading="sharedActions.exitPending.value"
-              @click="requestExitWithConfirm"
-            >
-              {{ t("prPage.exit") }}
-            </Button>
-            <p v-if="exitBlockedTip" class="action-tip">
-              {{ exitBlockedTip }}
-            </p>
-            <p v-if="exitActionError" class="action-error">
-              {{ exitActionError }}
-            </p>
-          </section>
-        </div>
-      </details>
 
       <BottomDrawer
         :open="showShareDrawer"
@@ -270,6 +187,13 @@
           :auto-rotate-interval-ms="null"
         />
       </BottomDrawer>
+
+      <AnchorPRRosterModal
+        :open="showRosterModal"
+        :pr-id="prDetail.id"
+        :section="prDetail.partnerSection"
+        @close="showRosterModal = false"
+      />
 
       <EditPRContentModal
         v-if="showEditModal && id !== null"
@@ -294,6 +218,34 @@
         :images="locationGallery"
         @close="showLocationGalleryModal = false"
       />
+
+      <Modal
+        :open="showJoinSubscriptionModal"
+        @close="showJoinSubscriptionModal = false"
+      >
+        <div class="notification-modal">
+          <p class="modal-text modal-text--tight">
+            {{ t("prPage.joinSuccessSubscriptions.description") }}
+          </p>
+
+          <WeChatNotificationSubscriptionsCard
+            :title="t('prPage.notificationSubscriptions.title')"
+          >
+            <APRNotificationSubscriptions
+              :updating-label="t('prPage.wechatReminder.updating')"
+              outline-profile="surface"
+            />
+          </WeChatNotificationSubscriptionsCard>
+
+          <Button
+            tone="surface"
+            block
+            @click="showJoinSubscriptionModal = false"
+          >
+            {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         :open="showJoinFlowModal"
@@ -431,22 +383,21 @@ import ConfirmDialog from "@/shared/ui/overlay/ConfirmDialog.vue";
 import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModal.vue";
+import AnchorPRRosterModal from "@/domains/pr/ui/modals/AnchorPRRosterModal.vue";
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
+import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
 import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
-import AnchorPRAwarenessLane from "@/domains/pr/ui/sections/AnchorPRAwarenessLane.vue";
 import AnchorPRRecoveryLane from "@/domains/pr/ui/sections/AnchorPRRecoveryLane.vue";
-import AnchorPRMessageThread from "@/domains/pr/ui/sections/AnchorPRMessageThread.vue";
 import AnchorPRFactsCard from "@/domains/pr/ui/composites/AnchorPRFactsCard.vue";
 import {
   useAcceptAnchorAlternativeBatch,
   useAnchorPR,
-  useAnchorReimbursementStatus,
   useJoinAnchorPR,
   type AnchorPRDetailResponse,
 } from "@/domains/pr/queries/useAnchorPR";
@@ -463,6 +414,7 @@ import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/r
 import {
   anchorPRDetailPath,
   anchorPRBookingSupportPath,
+  anchorPRMessagesPath,
 } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import type { AnchorPRFormFields } from "@/domains/pr/model/types";
@@ -509,13 +461,6 @@ const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
 const userSessionStore = useUserSessionStore();
 
 const { data, isLoading, error, refetch } = useAnchorPR(id);
-const shouldLoadReimbursementStatus = computed(
-  () => userSessionStore.isAuthenticated,
-);
-const reimbursementQuery = useAnchorReimbursementStatus(
-  id,
-  shouldLoadReimbursementStatus,
-);
 const prDetail = computed(() => data.value);
 const backFallbackTo = computed(() => {
   const anchorEventId = prDetail.value?.anchor.anchorEventId ?? null;
@@ -528,12 +473,13 @@ const backFallbackTo = computed(() => {
   }
   return "/";
 });
-const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const joinMutation = useJoinAnchorPR();
 const acceptAlternativeBatchMutation = useAcceptAnchorAlternativeBatch();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
+const showRosterModal = ref(false);
+const showJoinSubscriptionModal = ref(false);
 const showJoinFlowModal = ref(false);
 const showExitConfirmModal = ref(false);
 const showShareDrawer = ref(false);
@@ -610,6 +556,8 @@ useBodyScrollLock(
       showEditModal.value ||
       showModifyModal.value ||
       showLocationGalleryModal.value ||
+      showRosterModal.value ||
+      showJoinSubscriptionModal.value ||
       showJoinFlowModal.value ||
       showExitConfirmModal.value ||
       showShareDrawer.value ||
@@ -679,50 +627,6 @@ const rosterPreview = computed(() => activeRoster.value.slice(0, 4));
 const hasMoreRoster = computed(
   () => activeRoster.value.length > rosterPreview.value.length,
 );
-
-const bookingSupportSummaryHeadline = computed(() => {
-  return (
-    prDetail.value?.anchor.bookingSupportPreview.headline ??
-    t("prPage.bookingSupportEntry.headlineFallback")
-  );
-});
-const bookingSupportHighlights = computed(
-  () =>
-    prDetail.value?.anchor.bookingSupportPreview.highlights.slice(1, 3) ?? [],
-);
-const bookingSupportSummaryDeadline = computed(() => {
-  const deadline =
-    prDetail.value?.anchor.bookingSupportPreview.effectiveBookingDeadlineAt ??
-    null;
-  if (!deadline) return t("prPage.bookingSupportEntry.deadlineUnset");
-  return t("prPage.bookingSupportEntry.deadlineWithValue", {
-    deadline:
-      formatLocalDateTimeValue(deadline) ??
-      t("prPage.bookingSupportEntry.deadlineUnset"),
-  });
-});
-
-const eventEndAt = computed(() => prDetail.value?.core.time[1] ?? null);
-const hasEventEnded = computed(() => {
-  const endAt = eventEndAt.value;
-  if (!endAt) return false;
-  const parsed = Date.parse(endAt);
-  if (Number.isNaN(parsed)) return false;
-  return Date.now() >= parsed;
-});
-
-const reimbursementButtonDisabled = computed(() => {
-  if (reimbursementQuery.isLoading.value) return true;
-  if (!hasEventEnded.value) return true;
-  const status = reimbursement.value;
-  if (!status) return true;
-  return !(status.eligible && status.canRequest);
-});
-
-const reimbursementButtonLabel = computed(() => {
-  if (reimbursementQuery.isLoading.value) return t("common.loading");
-  return t("prBookingSupport.reimbursement.title");
-});
 
 const viewerState = computed<ViewerState>(() => {
   if (!prDetail.value) return "VISITOR_BLOCKED";
@@ -804,38 +708,18 @@ const showReminderSubscriptions = computed(() => {
   return section.viewer.isParticipant;
 });
 
-const isActiveOrLater = computed(() => {
-  const status = prDetail.value?.status;
-  return status === "ACTIVE" || status === "CLOSED" || status === "EXPIRED";
-});
-
 const showInlineReminderSubscriptions = computed(
-  () => showReminderSubscriptions.value && !isActiveOrLater.value,
+  () => showReminderSubscriptions.value,
 );
 
 const showMessageThread = computed(
   () => prDetail.value?.partnerSection.viewer.isParticipant ?? false,
 );
 
-const showReminderSubscriptionsInMoreInfo = computed(
-  () => showReminderSubscriptions.value && isActiveOrLater.value,
-);
-
-const showReimbursementShortcut = computed(
-  () =>
-    !reimbursementQuery.isLoading.value && !reimbursementButtonDisabled.value,
-);
-
-const showTopLevelExitAction = computed(() => {
+const showExitActionInContext = computed(() => {
   const viewer = prDetail.value?.partnerSection.viewer;
   if (!viewer?.isParticipant) return false;
-  return sharedActions.canExit.value;
-});
-
-const showMoreInfoExitArea = computed(() => {
-  const viewer = prDetail.value?.partnerSection.viewer;
-  if (!viewer?.isParticipant) return false;
-  return !showTopLevelExitAction.value;
+  return true;
 });
 
 const showContextualActionArea = computed(() =>
@@ -843,6 +727,7 @@ const showContextualActionArea = computed(() =>
     releaseNoticeText.value ||
     primaryBlockedMessage.value ||
     primaryDockAction.value ||
+    showExitActionInContext.value ||
     primaryActionErrorMessage.value ||
     showRecoveryLane.value,
   ),
@@ -921,6 +806,7 @@ const finalizeJoinFlow = async (bookingContactPhone?: string | null) => {
   joinFlowPending.value = false;
   if (result) {
     closeJoinFlowModal();
+    showJoinSubscriptionModal.value = true;
     return;
   }
   joinFlowError.value =
@@ -1110,6 +996,11 @@ const goBookingSupport = () => {
   router.push(anchorPRBookingSupportPath(id.value));
 };
 
+const handleOpenMessages = () => {
+  if (id.value === null) return;
+  router.push(anchorPRMessagesPath(id.value));
+};
+
 const handleEditSuccess = () => {
   showEditModal.value = false;
 };
@@ -1267,61 +1158,38 @@ function buttonToneForAction(
   max-width: 100%;
 }
 
+.secondary-danger-action {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+}
+
 .utility-area {
   margin-top: var(--sys-spacing-lg);
   display: flex;
   flex-direction: column;
+  gap: var(--sys-spacing-lg);
 }
 
-.utility-row {
-  padding: var(--sys-spacing-med) 0;
-  border-top: 1px solid var(--sys-color-outline-variant);
-}
-
-.utility-row__main {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--sys-spacing-sm);
-}
-
-.utility-row__content {
-  min-width: 0;
+.utility-actions,
+.utility-action-group,
+.utility-section__content {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-2xs);
-}
-
-.utility-row__content--stack {
   gap: var(--sys-spacing-sm);
 }
 
-.utility-row__title {
+.utility-section__title {
   margin: 0;
-  @include mx.pu-font(title-small);
+  @include mx.pu-font(body-large);
 }
 
-.utility-row__description {
-  margin: 0;
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.utility-row__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--sys-spacing-xs);
-  flex-shrink: 0;
-}
-
-.utility-row__link-row {
+.utility-link-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: var(--sys-spacing-med);
 }
 
-.utility-row__link {
+.utility-link {
   @include mx.pu-font(body-medium);
   display: inline-flex;
   align-items: center;
@@ -1337,7 +1205,7 @@ function buttonToneForAction(
   }
 }
 
-.utility-row__link-icon {
+.utility-link__icon {
   margin-left: var(--sys-spacing-xs);
   display: inline-block;
   vertical-align: middle;
@@ -1345,7 +1213,7 @@ function buttonToneForAction(
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .utility-row__link:hover {
+  .utility-link:hover {
     transform: translateX(2px);
     color: var(--sys-color-primary);
   }
@@ -1405,39 +1273,20 @@ function buttonToneForAction(
   margin-top: var(--sys-spacing-sm);
 }
 
-.context-details {
-  margin-top: var(--sys-spacing-lg);
-}
-
-.context-summary {
-  @include mx.pu-font(title-small);
-  cursor: pointer;
-}
-
-.context-details__body {
-  margin-top: var(--sys-spacing-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-lg);
-}
-
-.context-section {
-  padding-top: var(--sys-spacing-sm);
-  border-top: 1px solid var(--sys-color-outline-variant);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.context-section__title {
-  margin: 0;
-  @include mx.pu-font(title-small);
-}
-
 .modal-text {
   margin: 0 0 var(--sys-spacing-sm);
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.modal-text--tight {
+  margin-bottom: 0;
+}
+
+.notification-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-med);
 }
 
 .modal-phone-input {
@@ -1478,15 +1327,6 @@ function buttonToneForAction(
   .header-quick-actions {
     flex-wrap: wrap;
     justify-content: flex-end;
-  }
-
-  .utility-row__main {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .utility-row__actions {
-    justify-content: flex-start;
   }
 }
 </style>

@@ -11,6 +11,7 @@
 
 - join and exit `Community PR`
 - join and exit `Anchor PR`
+- prompt notification subscription immediately after successful `Anchor PR` join
 - post and read non-realtime PR messages
 - confirm participation in `Anchor PR`
 - submit `Anchor PR` check-in feedback
@@ -20,6 +21,11 @@
 
 - browse Anchor Events and batches
 - enter `Anchor PR` from event context
+- keep the `Anchor PR` detail page focused on facts, participation, booking support, and persistent notification-subscription management
+- open the Anchor PR message experience through `/apr/:id/messages`
+- open the participant roster modal from the facts-card participant row
+- open venue images through a clickable label row aligned with other facts-card entry rows
+- open participant profile pages from clickable participant badges
 - re-discover other active Anchor Events from current Anchor Event and Anchor PR context
 - create controlled `Anchor PR` inside batch and location context
 - review alternative recommendations within the same batch

@@ -1,11 +1,15 @@
 <template>
-  <PageScaffold class="anchor-pr-messages-page" data-page="anchor-pr-messages">
-    <PageHeader
-      :title="t('prPage.messagePage.title')"
-      :subtitle="t('prPage.messagePage.subtitle')"
-      :back-label="t('prPage.messagePage.backToDetail')"
-      :back-fallback-to="backFallbackTo"
-    />
+  <FullScreenPageScaffold
+    class="anchor-pr-messages-page"
+    data-page="anchor-pr-messages"
+  >
+    <template #header>
+      <PageHeader
+        :title="t('prPage.messagePage.title')"
+        :back-label="t('prPage.messagePage.backToDetail')"
+        :back-fallback-to="backFallbackTo"
+      />
+    </template>
 
     <ErrorToast
       v-if="id === null"
@@ -13,16 +17,23 @@
       persistent
     />
 
-    <AnchorPRMessageThread v-else :pr-id="id" :show-header="false" />
+    <AnchorPRMessageThread
+      v-else
+      :pr-id="id"
+      :show-header="false"
+      layout="page"
+    />
 
-    <ContactSupportFooter data-region="support" />
-  </PageScaffold>
+    <template #footer>
+      <ContactSupportFooter data-region="support" />
+    </template>
+  </FullScreenPageScaffold>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import FullScreenPageScaffold from "@/shared/ui/layout/FullScreenPageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import AnchorPRMessageThread from "@/domains/pr/ui/sections/AnchorPRMessageThread.vue";
@@ -42,5 +53,6 @@ const backFallbackTo = computed(() => {
 <style scoped lang="scss">
 .anchor-pr-messages-page {
   min-width: 0;
+  --pu-page-max-width: 72rem;
 }
 </style>

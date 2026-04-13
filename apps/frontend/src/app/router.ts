@@ -11,6 +11,7 @@ import MyPRsPage from "@/pages/MyPRsPage.vue";
 import CommunityPRPage from "@/pages/CommunityPRPage.vue";
 import CommunityPRCreatePage from "@/pages/CommunityPRCreatePage.vue";
 import AnchorPRPage from "@/pages/AnchorPRPage.vue";
+import AnchorPRMessagesPage from "@/pages/AnchorPRMessagesPage.vue";
 import UserProfilePage from "@/pages/UserProfilePage.vue";
 import AnchorPRBookingSupportPage from "@/pages/AnchorPRBookingSupportPage.vue";
 import AdminLoginPage from "@/pages/AdminLoginPage.vue";
@@ -81,6 +82,15 @@ const routes: RouteRecordRaw[] = [
     path: "/apr/:id/partners/:partnerId",
     name: "anchor-partner-profile",
     component: UserProfilePage,
+    meta: {
+      wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
+    },
+  },
+  {
+    path: "/apr/:id/messages",
+    name: "anchor-pr-messages",
+    component: AnchorPRMessagesPage,
     meta: {
       wechatSharePolicy: "skip",
       wechatAutoLoginPolicy: "skip",

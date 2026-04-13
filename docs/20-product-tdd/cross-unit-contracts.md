@@ -41,6 +41,7 @@ Stable user-facing route families that materially affect coordination include:
 - `/cpr/:id`
 - `/cpr/:id/partners/:partnerId`
 - `/apr/:id`
+- `/apr/:id/messages`
 - `/apr/:id/partners/:partnerId`
 - `/apr/:id/booking-support`
 - `/events`
@@ -61,6 +62,7 @@ Stable user-facing route families that materially affect coordination include:
 Important coordination note:
 
 - user-managed Anchor PR creation is event-scoped: frontend starts it from `/events/:eventId`, backend realizes it through `POST /api/events/:eventId/batches/:batchId/anchor-prs`, and the system does not expose a generic standalone Anchor PR create route
+- `/apr/:id` remains the primary Anchor PR detail route for read/join/exit/confirm/check-in/share/booking-support handoff, keeps the persistent notification-subscriptions section mounted there, and links into adjacent Anchor PR sub-routes instead of absorbing all secondary actions inline
 - `/events/search` is an Anchor PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
 - `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative and may vary between requests for exposure balancing, so frontend should treat it as opaque display policy instead of hardcoded ranking truth; it does not own Anchor PR search results
 - `GET /api/events` and `GET /api/events/:eventId` expose each Anchor Event's beta-group QR code when configured; `/about` and `/events/:eventId` use that event-owned value for beta-group entry instead of reading a generic beta-group public config key
@@ -68,6 +70,7 @@ Important coordination note:
 - if Anchor PR search has exactly one result, frontend may replace-route to that `/apr/:id` while avoiding a browser-back auto-redirect loop
 - `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`
 - that `mode` query is a frontend route-state hint for initial rendering only in the current version; switching modes in-page does not rewrite the URL, and `spm` remains attribution-only rather than a UI-mode switch
+- `/apr/:id` participant roster UI should use the existing `/apr/:id/partners/:partnerId` profile route for participant-badge navigation rather than introducing a second profile-route family
 
 ## 6. Admin Booking Execution Contract
 
@@ -109,6 +112,7 @@ Important coordination note:
   - the viewer's read marker for that PR thread
   - whether the current unread message wave has already consumed one `PR_MESSAGE` notification opportunity for that recipient
 - Frontend rollout is currently Anchor-only, but the contract is PR-generic. The system should not hardcode message entities, notification naming, or persistence semantics as Anchor-only truth.
+- In the current Anchor rollout, frontend page placement is route-based: `/apr/:id` is the handoff/detail page and `/apr/:id/messages` is the dedicated message page.
 - Route/API shape should follow the existing scene-specific route families instead of introducing a third generic user-facing family. The Anchor rollout therefore depends on:
   - `GET /api/apr/:id/messages`
   - `POST /api/apr/:id/messages`
@@ -124,7 +128,7 @@ Important coordination note:
 - Message visibility, message creation, and read-marker advancement all reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread.
 - Backend notification fan-out evaluates all current active participants except the author. A `PR_MESSAGE` notification is eligible only when the recipient has available credits and no existing unread wave for the same PR.
 - Asynchronous notification execution must revalidate recipient participation and eligibility before delivery instead of assuming the API-time participant set is still valid.
-- Frontend owns only page placement, thread rendering, composer input, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
+- Frontend owns only route/page placement, thread rendering, composer input, join-success subscription-modal prompting, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
 
 ## 10. Coordination And Failure Assumptions
 

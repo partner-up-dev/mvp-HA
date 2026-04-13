@@ -330,6 +330,13 @@ export interface MessageSchema {
     metaFallbackTitle: string;
     metaFallbackDescription: string;
     metaTitleWithName: string;
+    bookingSupportEntry: {
+      title: string;
+      viewAction: string;
+      headlineFallback: string;
+      deadlineUnset: string;
+      deadlineWithValue: string;
+    };
     sameBatch: {
       title: string;
       subtitle: string;
@@ -392,6 +399,25 @@ export interface MessageSchema {
         };
       };
     };
+    joinSuccessSubscriptions: {
+      description: string;
+      closeAction: string;
+    };
+    shareEntry: {
+      title: string;
+      hint: string;
+      action: string;
+    };
+    messageEntry: {
+      title: string;
+      hint: string;
+      action: string;
+    };
+    messagePage: {
+      title: string;
+      subtitle: string;
+      backToDetail: string;
+    };
     messageThread: {
       title: string;
       subtitle: string;
@@ -452,6 +478,126 @@ export interface MessageSchema {
       timelineBookingDeadline: string;
       timelineBookingTriggered: string;
     };
+  };
+  eventPlaza: {
+    title: string;
+    subtitle: string;
+    searchAction: string;
+    locationLeadSingle: string;
+    locationLeadWithMore: string;
+    locationCount: string;
+    openEventAction: string;
+    noEvents: string;
+    loadFailed: string;
+  };
+  anchorPRSearch: {
+    title: string;
+    resultTitle: string;
+    resultSubtitleFallback: string;
+    drawerTitle: string;
+    loadEventsFailed: string;
+    loadEventsFailedHint: string;
+    loadFailed: string;
+    loadFailedHint: string;
+    emptyEventsTitle: string;
+    emptyEventsDescription: string;
+    emptyResultTitle: string;
+    emptyResultDescription: string;
+    resultSummary: string;
+    redirectingSingleResult: string;
+    actions: {
+      backHome: string;
+      search: string;
+      modifyCriteria: string;
+      applyCriteria: string;
+      goEventPlaza: string;
+    };
+    form: {
+      eventTitle: string;
+      dateTitle: string;
+      todayMarker: string;
+      weekdays: {
+        mon: string;
+        tue: string;
+        wed: string;
+        thu: string;
+        fri: string;
+        sat: string;
+        sun: string;
+      };
+    };
+    resultCard: {
+      unknownTime: string;
+      unknownLocation: string;
+      partnerCountWithMax: string;
+      partnerCountWithoutMax: string;
+    };
+  };
+  anchorEvent: {
+    backToPlaza: string;
+    loadFailed: string;
+    noBatches: string;
+    noPRsInBatch: string;
+    batchLabel: string;
+    viewMode: {
+      ariaLabel: string;
+      card: string;
+      list: string;
+    };
+    card: {
+      batchLabel: string;
+      preferenceTitle: string;
+      preferenceEmpty: string;
+      skipButton: string;
+      detailButton: string;
+      swipeHintToast: string;
+      emptyTitle: string;
+      emptySubtitle: string;
+    };
+    exhausted: string;
+    subscribeHint: string;
+    betaGroupCard: {
+      kicker: string;
+      description: string;
+      expandAction: string;
+      collapseAction: string;
+      qrAlt: string;
+      qrMissing: string;
+    };
+    otherEvents: {
+      title: string;
+      action: string;
+    };
+    discoverOthers: string;
+    createCard: {
+      title: string;
+      subtitle: string;
+      locationLabel: string;
+      locationPlaceholder: string;
+      bookingHint: string;
+      createAction: string;
+      creatingAction: string;
+      optionMaxReached: string;
+      optionRemaining: string;
+      errors: {
+        timeWindowConflict: string;
+        wechatAuthRequired: string;
+        wechatOAuthNotConfigured: string;
+        locationCapReached: string;
+        eventUnavailable: string;
+        createFailed: string;
+      };
+    };
+  };
+  prStatus: {
+    DRAFT: string;
+    OPEN: string;
+    READY: string;
+    FULL: string;
+    LOCKED_TO_START: string;
+    ACTIVE: string;
+    CLOSED: string;
+    EXPIRED: string;
   };
   createdPRList: {
     title: string;

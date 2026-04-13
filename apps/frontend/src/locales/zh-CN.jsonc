@@ -297,7 +297,7 @@
     "metaTitleWithName": "{title} - 搭一把",
     "bookingSupportEntry": {
       "title": "预订与资助",
-      "viewAction": "查看详情",
+      "viewAction": "查看资源补助",
       "headlineFallback": "本场活动的预订、补贴和附带物资会在这里统一说明。",
       "deadlineUnset": "当前没有额外的预订截止要求",
       "deadlineWithValue": "最晚需要在 {deadline} 前完成预订安排"
@@ -376,10 +376,29 @@
         }
       }
     },
+    "joinSuccessSubscriptions": {
+      "description": "刚加入成功，现在可以顺手开启你关心的提醒。",
+      "closeAction": "稍后再说"
+    },
+    "shareEntry": {
+      "title": "分享邀请",
+      "hint": "把当前活动分享给合适的搭子。",
+      "action": "分享"
+    },
+    "messageEntry": {
+      "title": "留言",
+      "hint": "和当前参与者围绕本次活动做异步沟通。",
+      "action": "留言"
+    },
+    "messagePage": {
+      "title": "留言",
+      "subtitle": "留言是非即时的，您发送的留言会被通知给本搭子请求内的搭子。",
+      "backToDetail": "返回活动详情"
+    },
     "messageThread": {
       "title": "活动留言",
       "subtitle": "和当前参与者围绕本次活动做异步沟通。",
-      "nonRealtimeHint": "这是非即时留言区，不提供在线状态、输入中或已读回执。",
+      "nonRealtimeHint": "留言是非即时的，您发送的留言会被通知给本搭子请求内的搭子。",
       "emptyTitle": "还没有留言",
       "emptyDescription": "可以先留一句集合说明、补充事项或临时变更。",
       "inputLabel": "发送留言",
@@ -1155,12 +1174,11 @@
     },
     "card": {
       "batchLabel": "时间批次",
-      "stampLike": "详情",
-      "stampNope": "跳过",
       "preferenceTitle": "偏好",
       "preferenceEmpty": "暂无额外偏好要求",
       "skipButton": "跳过",
       "detailButton": "加入",
+      "swipeHintToast": "左右滑动试试",
       "emptyTitle": "卡片已看完",
       "emptySubtitle": "还没有合适的局？可以直接创建一个。"
     },

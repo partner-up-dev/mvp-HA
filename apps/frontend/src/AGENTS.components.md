@@ -83,7 +83,9 @@ Prohibited:
 
 - `shared/ui/actions/Button.vue`: Shared button primitive. Prefer it over page-local button classes; use `appearance="pill"` for compact CTA clusters and `appearance="rect"` for dialogs or block actions. Keep `tone` choices narrow (`primary`, `outline`, `secondary`, `surface`, `danger`, `ghost`).
 - `shared/ui/containers/SurfaceCard.vue`: Standard card shell for reusable section, inset, and outline surfaces. Use it instead of re-declaring `pu-surface-card(...)` in pages when the wrapper itself is a reusable primitive.
+- `shared/ui/layout/FullScreenPageScaffold.vue`: Viewport-height page scaffold with `header`, content, and `footer` regions. Use it when the main content should absorb remaining height and manage its own inner scrolling.
 - `shared/ui/forms/FormField.vue`: Label + control + hint/error wrapper for plain form rows. It does not own the input shell; pair it with native controls or existing form primitives that already style the control.
+- `shared/ui/forms/TextareaInput.vue`: Shared textarea primitive with stable shell, optional char count, and configurable rows/max length. Prefer it when multiple screens need the same textarea treatment instead of re-implementing native `<textarea>` styling locally.
 - `shared/ui/forms/ProductLocalDateCalendarPicker.vue`: Product-local date-key calendar grid for visible-window multi-select flows. Keep search policy such as defaults, fallback, and allowed-date derivation in the owning page or domain component.
 - `shared/ui/display/InfoRow.vue`: Generic label/value row with inline or stacked layout. Use it for neutral metadata presentation, not domain-specific timeline or status logic.
 - `shared/ui/display/Chip.vue` and `shared/ui/display/ChipGroup.vue`: Neutral tokenized chips for tags, lightweight roster labels, and compact metadata groups. Do not move domain semantics like PR status into these when a domain badge already exists.

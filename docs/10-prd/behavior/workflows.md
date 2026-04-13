@@ -11,11 +11,12 @@
 ## 2. Enter Through a Link and Join a PR
 
 1. The user opens `/cpr/:id` or `/apr/:id`.
-2. The user reads the request details, current count, visible status, and participant list.
+2. The user reads the request details, current count, visible status, and participant list. In the current `Anchor PR` detail layout, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
 3. `Community PR` uses local account plus PIN for joining; `Anchor PR` uses authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, and scenario rules.
-5. If join succeeds, the user enters the downstream progression of that collaboration object.
-6. If the current `Anchor PR` is not the right fit, `/apr/:id` keeps a lightweight path back to browsing other active `Anchor Events` without hiding the current collaboration detail.
+5. If join succeeds in `Anchor PR`, the system immediately prompts the notification-subscription modal while still keeping the persistent notification-subscriptions section available on the detail page for later revisit.
+6. If join succeeds, the user enters the downstream progression of that collaboration object.
+7. If the current `Anchor PR` is not the right fit, `/apr/:id` keeps a lightweight path back to browsing other active `Anchor Events` without hiding the current collaboration detail.
 
 ## 3. Enter Anchor Collaboration Through Event Browsing And Search
 
@@ -45,11 +46,12 @@
 
 ## 6. Non-Realtime PR Messaging
 
-1. A current active participant enters a PR detail page and reviews the current collaboration context. In the current rollout, the frontend message entry is exposed on `/apr/:id`.
-2. A current active participant can post plain-text messages inside the PR to coordinate meetup details, timing changes, or other collaboration context.
-3. The system persists those messages inside the corresponding `PartnerRequest` context rather than forcing participants into an external chat tool.
-4. If other current active participants still have remaining notification quota, the system triggers message notifications under the rule of at most one send per `PR / recipient / unread wave`.
-5. After another participant revisits that PR and catches up on the unread wave, a later wave may trigger a new notification.
+1. A current active participant enters an `Anchor PR` detail page, reviews the current collaboration context, and uses that page as the handoff point into the dedicated message route `/apr/:id/messages`.
+2. The message experience is a separate page so the detail page can stay focused on facts, participation, booking-support context, and notification-subscription management.
+3. A current active participant can post plain-text messages inside the PR to coordinate meetup details, timing changes, or other collaboration context.
+4. The system persists those messages inside the corresponding `PartnerRequest` context rather than forcing participants into an external chat tool.
+5. If other current active participants still have remaining notification quota, the system triggers message notifications under the rule of at most one send per `PR / recipient / unread wave`.
+6. After another participant revisits that PR and catches up on the unread wave, a later wave may trigger a new notification.
 
 ## 7. Anchor Reliability Loop
 

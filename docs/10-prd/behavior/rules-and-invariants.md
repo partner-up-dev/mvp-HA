@@ -5,7 +5,7 @@
 - The core external collaboration object is `PartnerRequest`.
 - `PartnerRequest` currently exists as `Community PR` and `Anchor PR`.
 - `Community PR` and `Anchor PR` share base semantics such as participation, time windows, and partner thresholds, but their pages and rules may evolve separately.
-- PR messaging semantics span both `Community PR` and `Anchor PR`, but the current frontend entry is exposed only in `Anchor PR`.
+- PR messaging semantics span both `Community PR` and `Anchor PR`, but the current frontend entry is exposed only in `Anchor PR` and currently uses a dedicated `/apr/:id/messages` page rather than an inline detail-page composer.
 
 ## 2. Creation And Publish Rules
 
@@ -25,6 +25,8 @@
 - `Community PR` supports `join` and `exit` only.
 - `Anchor PR` supports `join`, `exit`, confirmation, and check-in feedback.
 - PR messages are visible only to current active participants; users who exit or are released must no longer see that PR's message thread.
+- `Anchor PR` detail keeps notification-subscription management visible as a persistent section even when other actions, such as messaging, move into adjacent route-family pages.
+- The participant roster is opened from the facts-card participant row, and each participant badge remains a read-only navigation entry into that participant's profile page.
 
 ### Status Semantics
 
@@ -70,6 +72,7 @@
 - Check-in feedback is not mandatory by default; absence of check-in should remain "unknown" rather than auto-converted into "did not attend".
 - PR messaging is a non-realtime coordination layer and must not introduce chat-room semantics such as presence, typing, or read receipts.
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
+- Successful `Anchor PR` join should immediately offer the notification-subscription modal without making that modal the only later path to subscription management.
 - PR message notifications are limited to at most one send per `PR / recipient / unread wave`.
 - Before a PR message notification is sent, the system must re-validate that the recipient is still a current active participant of that PR.
 - Only `PLATFORM_PASSTHROUGH` booking requires the first booking-contact owner to provide a phone number. Standard `PLATFORM` booking must not add that requirement.
