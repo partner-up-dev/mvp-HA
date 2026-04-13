@@ -12,6 +12,7 @@ const batchRepo = new AnchorEventBatchRepository();
 export interface UpdateAdminAnchorEventBatchInput {
   timeWindow: [string | null, string | null];
   status: AnchorEventBatchStatus;
+  description: string | null;
 }
 
 export async function updateAdminAnchorEventBatch(
@@ -26,10 +27,13 @@ export async function updateAdminAnchorEventBatch(
   const updated = await batchRepo.update(batchId, {
     timeWindow: input.timeWindow,
     status: input.status,
+    description: input.description,
   });
 
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to update anchor event batch" });
+    throw new HTTPException(500, {
+      message: "Failed to update anchor event batch",
+    });
   }
 
   await syncAnchorEventTimeWindowPool(current.anchorEventId);

@@ -76,7 +76,9 @@ export class AnchorEventBatchRepository {
 
   async update(
     id: AnchorEventBatchId,
-    data: Partial<Pick<AnchorEventBatch, "timeWindow" | "status">>,
+    data: Partial<
+      Pick<AnchorEventBatch, "timeWindow" | "status" | "description">
+    >,
   ): Promise<AnchorEventBatch | null> {
     const result = await db
       .update(anchorEventBatches)

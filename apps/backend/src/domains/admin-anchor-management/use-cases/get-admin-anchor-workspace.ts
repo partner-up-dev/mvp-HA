@@ -33,6 +33,7 @@ type AdminAnchorBatchSummary = {
   id: number;
   timeWindow: [string | null, string | null];
   status: string;
+  description: string | null;
   prs: AdminAnchorPRSummary[];
 };
 
@@ -110,6 +111,7 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
               id: batch.id,
               timeWindow: batch.timeWindow,
               status: batch.status,
+              description: batch.description,
               prs: prSummaries,
             };
           }),

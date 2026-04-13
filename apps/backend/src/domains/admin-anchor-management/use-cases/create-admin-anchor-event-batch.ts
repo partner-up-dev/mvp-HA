@@ -14,6 +14,7 @@ const batchRepo = new AnchorEventBatchRepository();
 export interface CreateAdminAnchorEventBatchInput {
   timeWindow: [string | null, string | null];
   status: AnchorEventBatchStatus;
+  description: string | null;
 }
 
 export async function createAdminAnchorEventBatch(
@@ -29,6 +30,7 @@ export async function createAdminAnchorEventBatch(
     anchorEventId: eventId,
     timeWindow: input.timeWindow,
     status: input.status,
+    description: input.description,
   });
 
   await syncAnchorEventTimeWindowPool(eventId);

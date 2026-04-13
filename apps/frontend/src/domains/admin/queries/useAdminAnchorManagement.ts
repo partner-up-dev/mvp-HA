@@ -76,6 +76,7 @@ export type AdminAnchorEventInput = {
 export type AdminAnchorBatchInput = {
   timeWindow: [string | null, string | null];
   status: "OPEN" | "FULL" | "EXPIRED";
+  description: string | null;
 };
 
 export type AdminCreateAnchorPRInput = {
@@ -112,15 +113,15 @@ export type AdminUpdateAnchorPRVisibilityInput = {
   visibilityStatus: "VISIBLE" | "HIDDEN";
 };
 
-export const useAdminAnchorWorkspace = (
-  enabled: MaybeRef<boolean> = true,
-) =>
+export const useAdminAnchorWorkspace = (enabled: MaybeRef<boolean> = true) =>
   useQuery<AdminAnchorWorkspaceResponse>({
     queryKey: queryKeys.admin.anchorWorkspace(),
     queryFn: async () => {
       const res = await adminClient.api.admin["anchor-pr"].workspace.$get();
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "获取 Anchor 管理数据失败"));
+        throw new Error(
+          await readErrorMessage(res, "获取 Anchor 管理数据失败"),
+        );
       }
       return await res.json();
     },
@@ -161,7 +162,9 @@ export const useUpdateAdminAnchorEvent = () => {
     { eventId: number; input: AdminAnchorEventInput }
   >({
     mutationFn: async ({ eventId, input }) => {
-      const res = await adminClient.api.admin["anchor-events"][":eventId"].$patch({
+      const res = await adminClient.api.admin["anchor-events"][
+        ":eventId"
+      ].$patch({
         param: { eventId: eventId.toString() },
         json: input,
       });
@@ -187,7 +190,9 @@ export const useCreateAdminAnchorBatch = () => {
     { eventId: number; input: AdminAnchorBatchInput }
   >({
     mutationFn: async ({ eventId, input }) => {
-      const res = await adminClient.api.admin["anchor-events"][":eventId"].batches.$post({
+      const res = await adminClient.api.admin["anchor-events"][
+        ":eventId"
+      ].batches.$post({
         param: { eventId: eventId.toString() },
         json: input,
       });
@@ -239,7 +244,9 @@ export const useCreateAdminAnchorPR = () => {
     { batchId: number; input: AdminCreateAnchorPRInput }
   >({
     mutationFn: async ({ batchId, input }) => {
-      const res = await adminClient.api.admin.batches[":batchId"]["anchor-prs"].$post({
+      const res = await adminClient.api.admin.batches[":batchId"][
+        "anchor-prs"
+      ].$post({
         param: { batchId: batchId.toString() },
         json: input,
       });
@@ -265,14 +272,14 @@ export const useUpdateAdminAnchorPRContent = () => {
     { prId: number; input: AdminUpdateAnchorPRContentInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][":id"].content.$patch({
+      const res = await adminClient.api.admin["anchor-prs"][
+        ":id"
+      ].content.$patch({
         param: { id: prId.toString() },
         json: input,
       });
       if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, "更新 Anchor PR 内容失败"),
-        );
+        throw new Error(await readErrorMessage(res, "更新 Anchor PR 内容失败"));
       }
       return await res.json();
     },
@@ -293,7 +300,9 @@ export const useUpdateAdminAnchorPRStatus = () => {
     { prId: number; input: AdminUpdateAnchorPRStatusInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][":id"].status.$patch({
+      const res = await adminClient.api.admin["anchor-prs"][
+        ":id"
+      ].status.$patch({
         param: { id: prId.toString() },
         json: input,
       });
@@ -319,7 +328,9 @@ export const useUpdateAdminAnchorPRVisibility = () => {
     { prId: number; input: AdminUpdateAnchorPRVisibilityInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][":id"].visibility.$patch({
+      const res = await adminClient.api.admin["anchor-prs"][
+        ":id"
+      ].visibility.$patch({
         param: { id: prId.toString() },
         json: input,
       });

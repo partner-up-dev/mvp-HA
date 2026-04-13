@@ -828,6 +828,7 @@ export interface MessageSchema {
     batchFormTitle: string;
     batchStartLabel: string;
     batchEndLabel: string;
+    batchDescriptionLabel: string;
     batchStatusLabel: string;
     saveBatchAction: string;
     createBatchAction: string;

@@ -39,6 +39,7 @@ export const anchorEventBatches = pgTable("anchor_event_batches", {
     .$type<AnchorEventBatchStatus>()
     .notNull()
     .default("OPEN"),
+  description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

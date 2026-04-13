@@ -8,15 +8,26 @@
           <div class="stack">
             <div class="section-header">
               <h2 class="card-title">{{ t("adminAnchorPR.eventsTitle") }}</h2>
-              <button class="secondary-btn" type="button" @click="prepareNewEvent">{{ t("adminAnchorPR.newEventAction") }}</button>
+              <button
+                class="secondary-btn"
+                type="button"
+                @click="prepareNewEvent"
+              >
+                {{ t("adminAnchorPR.newEventAction") }}
+              </button>
             </div>
-            <div v-if="events.length === 0" class="hint">{{ t("adminAnchorPR.emptyEvents") }}</div>
+            <div v-if="events.length === 0" class="hint">
+              {{ t("adminAnchorPR.emptyEvents") }}
+            </div>
             <div v-else class="selection-list">
               <button
                 v-for="event in events"
                 :key="event.id"
                 class="selection-btn"
-                :class="{ 'selection-btn--active': !isCreatingEvent && selectedEventId === event.id }"
+                :class="{
+                  'selection-btn--active':
+                    !isCreatingEvent && selectedEventId === event.id,
+                }"
                 type="button"
                 @click="selectEvent(event.id)"
               >
@@ -37,25 +48,70 @@
     </template>
 
     <div class="stack">
-      <LoadingIndicator v-if="workspaceQuery.isLoading.value" :message="t('common.loading')" />
-      <ErrorToast v-else-if="workspaceQuery.error.value" :message="workspaceQuery.error.value.message" persistent />
+      <LoadingIndicator
+        v-if="workspaceQuery.isLoading.value"
+        :message="t('common.loading')"
+      />
+      <ErrorToast
+        v-else-if="workspaceQuery.error.value"
+        :message="workspaceQuery.error.value.message"
+        persistent
+      />
 
       <template v-else>
         <div class="grid-2">
           <section class="panel">
             <div class="stack">
-              <h2 class="card-title">{{ t("adminAnchorPR.eventFormTitle") }}</h2>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventNameLabel") }}</span><input v-model="eventForm.title" class="field-input" /></label>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventTypeLabel") }}</span><input v-model="eventForm.type" class="field-input" /></label>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventDescriptionLabel") }}</span><textarea v-model="eventForm.description" class="field-input field-textarea"></textarea></label>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventCoverImageLabel") }}</span><input v-model="eventForm.coverImage" class="field-input" /></label>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventBetaGroupQrCodeLabel") }}</span><input v-model="eventForm.betaGroupQrCode" class="field-input" /></label>
+              <h2 class="card-title">
+                {{ t("adminAnchorPR.eventFormTitle") }}
+              </h2>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.eventNameLabel")
+                }}</span
+                ><input v-model="eventForm.title" class="field-input"
+              /></label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.eventTypeLabel")
+                }}</span
+                ><input v-model="eventForm.type" class="field-input"
+              /></label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.eventDescriptionLabel")
+                }}</span
+                ><textarea
+                  v-model="eventForm.description"
+                  class="field-input field-textarea"
+                ></textarea>
+              </label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.eventCoverImageLabel")
+                }}</span
+                ><input v-model="eventForm.coverImage" class="field-input"
+              /></label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.eventBetaGroupQrCodeLabel")
+                }}</span
+                ><input v-model="eventForm.betaGroupQrCode" class="field-input"
+              /></label>
               <label class="field">
-                <span class="field-label">{{ t("adminAnchorPR.eventStatusLabel") }}</span>
+                <span class="field-label">{{
+                  t("adminAnchorPR.eventStatusLabel")
+                }}</span>
                 <select v-model="eventForm.status" class="field-input">
-                  <option value="ACTIVE">{{ t("adminAnchorPR.statusActive") }}</option>
-                  <option value="PAUSED">{{ t("adminAnchorPR.statusPaused") }}</option>
-                  <option value="ARCHIVED">{{ t("adminAnchorPR.statusArchived") }}</option>
+                  <option value="ACTIVE">
+                    {{ t("adminAnchorPR.statusActive") }}
+                  </option>
+                  <option value="PAUSED">
+                    {{ t("adminAnchorPR.statusPaused") }}
+                  </option>
+                  <option value="ARCHIVED">
+                    {{ t("adminAnchorPR.statusArchived") }}
+                  </option>
                 </select>
               </label>
               <div class="grid-2">
@@ -85,15 +141,44 @@
               <p v-if="eventBoundsValidationMessage" class="error-message">
                 {{ eventBoundsValidationMessage }}
               </p>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.eventLocationPoolLabel") }}</span><textarea v-model="eventForm.systemLocationPoolText" class="field-input field-textarea"></textarea></label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.eventLocationPoolLabel")
+                }}</span
+                ><textarea
+                  v-model="eventForm.systemLocationPoolText"
+                  class="field-input field-textarea"
+                ></textarea>
+              </label>
               <label class="field">
-                <span class="field-label">用户可创建地点池（每行: 地点ID,上限）</span>
-                <textarea v-model="eventForm.userLocationPoolText" class="field-input field-textarea"></textarea>
+                <span class="field-label"
+                  >用户可创建地点池（每行: 地点ID,上限）</span
+                >
+                <textarea
+                  v-model="eventForm.userLocationPoolText"
+                  class="field-input field-textarea"
+                ></textarea>
               </label>
               <p class="hint">{{ t("adminAnchorPR.eventPoiHint") }}</p>
               <p class="hint">{{ t("adminAnchorPR.eventTimeWindowHint") }}</p>
-              <button class="primary-btn" type="button" :disabled="createEventMutation.isPending.value || updateEventMutation.isPending.value || Boolean(eventBoundsValidationMessage)" @click="handleSaveEvent">
-                {{ (createEventMutation.isPending.value || updateEventMutation.isPending.value) ? t("adminAnchorPR.saving") : (isCreatingEvent ? t("adminAnchorPR.createEventAction") : t("adminAnchorPR.saveEventAction")) }}
+              <button
+                class="primary-btn"
+                type="button"
+                :disabled="
+                  createEventMutation.isPending.value ||
+                  updateEventMutation.isPending.value ||
+                  Boolean(eventBoundsValidationMessage)
+                "
+                @click="handleSaveEvent"
+              >
+                {{
+                  createEventMutation.isPending.value ||
+                  updateEventMutation.isPending.value
+                    ? t("adminAnchorPR.saving")
+                    : isCreatingEvent
+                      ? t("adminAnchorPR.createEventAction")
+                      : t("adminAnchorPR.saveEventAction")
+                }}
               </button>
             </div>
           </section>
@@ -101,38 +186,101 @@
           <section class="panel">
             <div class="stack">
               <div class="section-header">
-                <h2 class="card-title">{{ t("adminAnchorPR.batchesTitle") }}</h2>
-                <button class="secondary-btn" type="button" :disabled="selectedEventId === null" @click="prepareNewBatch">{{ t("adminAnchorPR.newBatchAction") }}</button>
+                <h2 class="card-title">
+                  {{ t("adminAnchorPR.batchesTitle") }}
+                </h2>
+                <button
+                  class="secondary-btn"
+                  type="button"
+                  :disabled="selectedEventId === null"
+                  @click="prepareNewBatch"
+                >
+                  {{ t("adminAnchorPR.newBatchAction") }}
+                </button>
               </div>
-              <div v-if="selectedEvent === null" class="hint">{{ t("adminAnchorPR.emptyEvents") }}</div>
-              <div v-else-if="selectedEvent.batches.length === 0" class="hint">{{ t("adminAnchorPR.emptyBatches") }}</div>
+              <div v-if="selectedEvent === null" class="hint">
+                {{ t("adminAnchorPR.emptyEvents") }}
+              </div>
+              <div v-else-if="selectedEvent.batches.length === 0" class="hint">
+                {{ t("adminAnchorPR.emptyBatches") }}
+              </div>
               <div v-else class="selection-list">
                 <button
                   v-for="batch in selectedEvent.batches"
                   :key="batch.id"
                   class="selection-btn"
-                  :class="{ 'selection-btn--active': !isCreatingBatch && selectedBatchId === batch.id }"
+                  :class="{
+                    'selection-btn--active':
+                      !isCreatingBatch && selectedBatchId === batch.id,
+                  }"
                   type="button"
                   @click="selectBatch(batch.id)"
                 >
                   <span>{{ formatWindow(batch.timeWindow) }}</span>
+                  <small v-if="batch.description">{{
+                    batch.description
+                  }}</small>
                   <small>{{ batch.status }}</small>
                 </button>
               </div>
               <div v-if="selectedEvent !== null" class="stack inset">
-                <h3 class="card-title">{{ t("adminAnchorPR.batchFormTitle") }}</h3>
-                <label class="field"><span class="field-label">{{ t("adminAnchorPR.batchStartLabel") }}</span><input v-model="batchForm.start" class="field-input" /></label>
-                <label class="field"><span class="field-label">{{ t("adminAnchorPR.batchEndLabel") }}</span><input v-model="batchForm.end" class="field-input" /></label>
+                <h3 class="card-title">
+                  {{ t("adminAnchorPR.batchFormTitle") }}
+                </h3>
+                <label class="field"
+                  ><span class="field-label">{{
+                    t("adminAnchorPR.batchStartLabel")
+                  }}</span
+                  ><input v-model="batchForm.start" class="field-input"
+                /></label>
+                <label class="field"
+                  ><span class="field-label">{{
+                    t("adminAnchorPR.batchEndLabel")
+                  }}</span
+                  ><input v-model="batchForm.end" class="field-input"
+                /></label>
+                <label class="field"
+                  ><span class="field-label">{{
+                    t("adminAnchorPR.batchDescriptionLabel")
+                  }}</span
+                  ><textarea
+                    v-model="batchForm.description"
+                    class="field-input field-textarea"
+                  ></textarea>
+                </label>
                 <label class="field">
-                  <span class="field-label">{{ t("adminAnchorPR.batchStatusLabel") }}</span>
+                  <span class="field-label">{{
+                    t("adminAnchorPR.batchStatusLabel")
+                  }}</span>
                   <select v-model="batchForm.status" class="field-input">
-                    <option value="OPEN">{{ t("adminAnchorPR.batchStatusOpen") }}</option>
-                    <option value="FULL">{{ t("adminAnchorPR.batchStatusFull") }}</option>
-                    <option value="EXPIRED">{{ t("adminAnchorPR.batchStatusExpired") }}</option>
+                    <option value="OPEN">
+                      {{ t("adminAnchorPR.batchStatusOpen") }}
+                    </option>
+                    <option value="FULL">
+                      {{ t("adminAnchorPR.batchStatusFull") }}
+                    </option>
+                    <option value="EXPIRED">
+                      {{ t("adminAnchorPR.batchStatusExpired") }}
+                    </option>
                   </select>
                 </label>
-                <button class="primary-btn" type="button" :disabled="createBatchMutation.isPending.value || updateBatchMutation.isPending.value" @click="handleSaveBatch">
-                  {{ (createBatchMutation.isPending.value || updateBatchMutation.isPending.value) ? t("adminAnchorPR.saving") : (isCreatingBatch ? t("adminAnchorPR.createBatchAction") : t("adminAnchorPR.saveBatchAction")) }}
+                <button
+                  class="primary-btn"
+                  type="button"
+                  :disabled="
+                    createBatchMutation.isPending.value ||
+                    updateBatchMutation.isPending.value
+                  "
+                  @click="handleSaveBatch"
+                >
+                  {{
+                    createBatchMutation.isPending.value ||
+                    updateBatchMutation.isPending.value
+                      ? t("adminAnchorPR.saving")
+                      : isCreatingBatch
+                        ? t("adminAnchorPR.createBatchAction")
+                        : t("adminAnchorPR.saveBatchAction")
+                  }}
                 </button>
               </div>
             </div>
@@ -142,41 +290,116 @@
         <section class="panel">
           <div class="stack">
             <div class="section-header">
-              <h2 class="card-title">{{ t("adminAnchorPR.anchorPRsTitle") }}</h2>
-              <button class="secondary-btn" type="button" :disabled="selectedBatch === null || selectedEvent === null" @click="prepareNewPR">{{ t("adminAnchorPR.newAnchorPRAction") }}</button>
+              <h2 class="card-title">
+                {{ t("adminAnchorPR.anchorPRsTitle") }}
+              </h2>
+              <button
+                class="secondary-btn"
+                type="button"
+                :disabled="selectedBatch === null || selectedEvent === null"
+                @click="prepareNewPR"
+              >
+                {{ t("adminAnchorPR.newAnchorPRAction") }}
+              </button>
             </div>
 
-            <div v-if="selectedBatch === null" class="hint">{{ t("adminAnchorPR.emptyBatches") }}</div>
-            <div v-else-if="selectedBatch.prs.length === 0" class="hint">{{ t("adminAnchorPR.emptyAnchorPRs") }}</div>
+            <div v-if="selectedBatch === null" class="hint">
+              {{ t("adminAnchorPR.emptyBatches") }}
+            </div>
+            <div v-else-if="selectedBatch.prs.length === 0" class="hint">
+              {{ t("adminAnchorPR.emptyAnchorPRs") }}
+            </div>
             <div v-else class="selection-list selection-list--grid">
               <button
                 v-for="pr in selectedBatch.prs"
                 :key="pr.prId"
                 class="selection-btn"
-                :class="{ 'selection-btn--active': !isCreatingPR && selectedPRId === pr.prId }"
+                :class="{
+                  'selection-btn--active':
+                    !isCreatingPR && selectedPRId === pr.prId,
+                }"
                 type="button"
                 @click="selectPR(pr.prId)"
               >
                 <span>{{ pr.title || pr.location || `#${pr.prId}` }}</span>
                 <small>{{ pr.status }} / {{ pr.visibilityStatus }}</small>
-                <small>{{ t("adminAnchorPR.partnerCountWithValue", { count: pr.partnerCount }) }}</small>
+                <small>{{
+                  t("adminAnchorPR.partnerCountWithValue", {
+                    count: pr.partnerCount,
+                  })
+                }}</small>
               </button>
             </div>
 
-            <div v-if="selectedBatch !== null && selectedEvent !== null" class="stack inset">
-              <h3 class="card-title">{{ t("adminAnchorPR.anchorPRFormTitle") }}</h3>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRTitleLabel") }}</span><input v-model="prForm.title" class="field-input" :disabled="!canEditPRContent" /></label>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRTypeLabel") }}</span><input v-model="prForm.type" class="field-input" :disabled="!canEditPRContent" /></label>
+            <div
+              v-if="selectedBatch !== null && selectedEvent !== null"
+              class="stack inset"
+            >
+              <h3 class="card-title">
+                {{ t("adminAnchorPR.anchorPRFormTitle") }}
+              </h3>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.anchorPRTitleLabel")
+                }}</span
+                ><input
+                  v-model="prForm.title"
+                  class="field-input"
+                  :disabled="!canEditPRContent"
+              /></label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.anchorPRTypeLabel")
+                }}</span
+                ><input
+                  v-model="prForm.type"
+                  class="field-input"
+                  :disabled="!canEditPRContent"
+              /></label>
               <label class="field">
-                <span class="field-label">{{ t("adminAnchorPR.anchorPRLocationLabel") }}</span>
-                <select v-model="prForm.location" class="field-input" :disabled="!canEditPRContent || !hasLocationOptions">
-                  <option v-if="!hasLocationOptions" value="">{{ t("adminAnchorPR.noLocationOption") }}</option>
-                  <option v-for="location in adminLocationOptions" :key="location" :value="location">{{ location }}</option>
+                <span class="field-label">{{
+                  t("adminAnchorPR.anchorPRLocationLabel")
+                }}</span>
+                <select
+                  v-model="prForm.location"
+                  class="field-input"
+                  :disabled="!canEditPRContent || !hasLocationOptions"
+                >
+                  <option v-if="!hasLocationOptions" value="">
+                    {{ t("adminAnchorPR.noLocationOption") }}
+                  </option>
+                  <option
+                    v-for="location in adminLocationOptions"
+                    :key="location"
+                    :value="location"
+                  >
+                    {{ location }}
+                  </option>
                 </select>
               </label>
               <div class="grid-2">
-                <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMinPartnersLabel") }}</span><input v-model.number="prForm.minPartners" class="field-input" type="number" min="2" :disabled="!canEditPRContent" /></label>
-                <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRMaxPartnersLabel") }}</span><input v-model.number="prForm.maxPartners" class="field-input" type="number" min="2" :disabled="!canEditPRContent" /></label>
+                <label class="field"
+                  ><span class="field-label">{{
+                    t("adminAnchorPR.anchorPRMinPartnersLabel")
+                  }}</span
+                  ><input
+                    v-model.number="prForm.minPartners"
+                    class="field-input"
+                    type="number"
+                    min="2"
+                    :disabled="!canEditPRContent"
+                /></label>
+                <label class="field"
+                  ><span class="field-label">{{
+                    t("adminAnchorPR.anchorPRMaxPartnersLabel")
+                  }}</span
+                  ><input
+                    v-model.number="prForm.maxPartners"
+                    class="field-input"
+                    type="number"
+                    min="2"
+                    :disabled="!canEditPRContent"
+                /></label>
               </div>
               <p v-if="prBoundsValidationMessage" class="error-message">
                 {{ prBoundsValidationMessage }}
@@ -186,14 +409,35 @@
                 :title="t('adminAnchorPR.participationPolicyTitle')"
                 :description="t('adminAnchorPR.participationPolicyDescription')"
                 :event-start-at="selectedBatch.timeWindow[0]"
-                :booking-deadline-at="selectedPR?.effectiveBookingDeadlineAt ?? null"
+                :booking-deadline-at="
+                  selectedPR?.effectiveBookingDeadlineAt ?? null
+                "
                 :disabled="!canEditPRContent"
                 :validation-message="policyValidationMessage"
               />
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRPreferencesLabel") }}</span><input v-model="prForm.preferencesText" class="field-input" :disabled="!canEditPRContent" /></label>
-              <label class="field"><span class="field-label">{{ t("adminAnchorPR.anchorPRNotesLabel") }}</span><textarea v-model="prForm.notes" class="field-input field-textarea" :disabled="!canEditPRContent"></textarea></label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.anchorPRPreferencesLabel")
+                }}</span
+                ><input
+                  v-model="prForm.preferencesText"
+                  class="field-input"
+                  :disabled="!canEditPRContent"
+              /></label>
+              <label class="field"
+                ><span class="field-label">{{
+                  t("adminAnchorPR.anchorPRNotesLabel")
+                }}</span
+                ><textarea
+                  v-model="prForm.notes"
+                  class="field-input field-textarea"
+                  :disabled="!canEditPRContent"
+                ></textarea>
+              </label>
               <label class="field">
-                <span class="field-label">{{ t("adminAnchorPR.anchorPRStatusLabel") }}</span>
+                <span class="field-label">{{
+                  t("adminAnchorPR.anchorPRStatusLabel")
+                }}</span>
                 <select v-model="prForm.status" class="field-input">
                   <option value="OPEN">OPEN</option>
                   <option value="READY">READY</option>
@@ -202,23 +446,54 @@
                 </select>
               </label>
               <label class="field">
-                <span class="field-label">{{ t("adminAnchorPR.anchorPRVisibilityLabel") }}</span>
+                <span class="field-label">{{
+                  t("adminAnchorPR.anchorPRVisibilityLabel")
+                }}</span>
                 <select v-model="prForm.visibilityStatus" class="field-input">
-                  <option value="VISIBLE">{{ t("adminAnchorPR.visibilityVisible") }}</option>
-                  <option value="HIDDEN">{{ t("adminAnchorPR.visibilityHidden") }}</option>
+                  <option value="VISIBLE">
+                    {{ t("adminAnchorPR.visibilityVisible") }}
+                  </option>
+                  <option value="HIDDEN">
+                    {{ t("adminAnchorPR.visibilityHidden") }}
+                  </option>
                 </select>
               </label>
-              <p v-if="!hasLocationOptions" class="hint">{{ t("adminAnchorPR.anchorPRLocationHint") }}</p>
+              <p v-if="!hasLocationOptions" class="hint">
+                {{ t("adminAnchorPR.anchorPRLocationHint") }}
+              </p>
               <p class="hint">{{ t("adminAnchorPR.anchorPRTimeHint") }}</p>
               <p v-if="policyRecommendationMessage" class="hint">
                 {{ policyRecommendationMessage }}
               </p>
               <p v-if="selectedPR?.bookingTriggeredAt" class="hint">
-                {{ t("adminAnchorPR.bookingTriggeredAtLabel", { dateTime: formatDateTime(selectedPR.bookingTriggeredAt) }) }}
+                {{
+                  t("adminAnchorPR.bookingTriggeredAtLabel", {
+                    dateTime: formatDateTime(selectedPR.bookingTriggeredAt),
+                  })
+                }}
               </p>
-              <p v-if="!canEditPRContent" class="hint">{{ t("adminAnchorPR.anchorPRContentLockedHint") }}</p>
-              <button class="primary-btn" type="button" :disabled="isSavingPR || (isCreatingPR && !hasLocationOptions) || Boolean(policyValidationMessage) || ((isCreatingPR || canEditPRContent) && Boolean(prBoundsValidationMessage))" @click="handleSavePR">
-                {{ isSavingPR ? t("adminAnchorPR.saving") : (isCreatingPR ? t("adminAnchorPR.createAnchorPRAction") : t("adminAnchorPR.saveAnchorPRAction")) }}
+              <p v-if="!canEditPRContent" class="hint">
+                {{ t("adminAnchorPR.anchorPRContentLockedHint") }}
+              </p>
+              <button
+                class="primary-btn"
+                type="button"
+                :disabled="
+                  isSavingPR ||
+                  (isCreatingPR && !hasLocationOptions) ||
+                  Boolean(policyValidationMessage) ||
+                  ((isCreatingPR || canEditPRContent) &&
+                    Boolean(prBoundsValidationMessage))
+                "
+                @click="handleSavePR"
+              >
+                {{
+                  isSavingPR
+                    ? t("adminAnchorPR.saving")
+                    : isCreatingPR
+                      ? t("adminAnchorPR.createAnchorPRAction")
+                      : t("adminAnchorPR.saveAnchorPRAction")
+                }}
               </button>
             </div>
           </div>
@@ -265,18 +540,96 @@ type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
 type BatchRecord = EventRecord["batches"][number];
 type PRRecord = BatchRecord["prs"][number];
-type EventForm = { title: string; type: string; description: string; coverImage: string; betaGroupQrCode: string; status: "ACTIVE" | "PAUSED" | "ARCHIVED"; defaultMinPartners: number | null; defaultMaxPartners: number | null; systemLocationPoolText: string; userLocationPoolText: string };
-type BatchForm = { start: string; end: string; status: "OPEN" | "FULL" | "EXPIRED" };
-type PRForm = { title: string; type: string; location: string; minPartners: number | null; maxPartners: number | null; confirmationStartOffsetMinutes: number; confirmationEndOffsetMinutes: number; joinLockOffsetMinutes: number; preferencesText: string; notes: string; status: "OPEN" | "READY" | "ACTIVE" | "CLOSED"; visibilityStatus: "VISIBLE" | "HIDDEN" };
+type EventForm = {
+  title: string;
+  type: string;
+  description: string;
+  coverImage: string;
+  betaGroupQrCode: string;
+  status: "ACTIVE" | "PAUSED" | "ARCHIVED";
+  defaultMinPartners: number | null;
+  defaultMaxPartners: number | null;
+  systemLocationPoolText: string;
+  userLocationPoolText: string;
+};
+type BatchForm = {
+  start: string;
+  end: string;
+  description: string;
+  status: "OPEN" | "FULL" | "EXPIRED";
+};
+type PRForm = {
+  title: string;
+  type: string;
+  location: string;
+  minPartners: number | null;
+  maxPartners: number | null;
+  confirmationStartOffsetMinutes: number;
+  confirmationEndOffsetMinutes: number;
+  joinLockOffsetMinutes: number;
+  preferencesText: string;
+  notes: string;
+  status: "OPEN" | "READY" | "ACTIVE" | "CLOSED";
+  visibilityStatus: "VISIBLE" | "HIDDEN";
+};
 
 const resolveDefaultMinPartners = (value: number | null | undefined): number =>
-  typeof value === "number" && Number.isInteger(value) && value >= 2 ? value : 2;
+  typeof value === "number" && Number.isInteger(value) && value >= 2
+    ? value
+    : 2;
 
-const emptyEventForm = (): EventForm => ({ title: "", type: "", description: "", coverImage: "", betaGroupQrCode: "", status: "ACTIVE", defaultMinPartners: 2, defaultMaxPartners: null, systemLocationPoolText: "", userLocationPoolText: "" });
-const emptyBatchForm = (): BatchForm => ({ start: "", end: "", status: "OPEN" });
-const emptyPRForm = (location = "", type = "", minPartners = 2): PRForm => ({ title: "", type, location, minPartners, maxPartners: null, confirmationStartOffsetMinutes: 120, confirmationEndOffsetMinutes: 30, joinLockOffsetMinutes: 30, preferencesText: "", notes: "", status: "OPEN", visibilityStatus: "VISIBLE" });
-const toEventForm = (event: EventRecord): EventForm => ({ title: event.title, type: event.type, description: event.description ?? "", coverImage: event.coverImage ?? "", betaGroupQrCode: event.betaGroupQrCode ?? "", status: event.status as EventForm["status"], defaultMinPartners: resolveDefaultMinPartners(event.defaultMinPartners), defaultMaxPartners: event.defaultMaxPartners ?? null, systemLocationPoolText: event.systemLocationPool.join("\n"), userLocationPoolText: event.userLocationPool.map((entry) => `${entry.id},${entry.perBatchCap}`).join("\n") });
-const toBatchForm = (batch: BatchRecord): BatchForm => ({ start: batch.timeWindow[0] ?? "", end: batch.timeWindow[1] ?? "", status: batch.status as BatchForm["status"] });
+const emptyEventForm = (): EventForm => ({
+  title: "",
+  type: "",
+  description: "",
+  coverImage: "",
+  betaGroupQrCode: "",
+  status: "ACTIVE",
+  defaultMinPartners: 2,
+  defaultMaxPartners: null,
+  systemLocationPoolText: "",
+  userLocationPoolText: "",
+});
+const emptyBatchForm = (): BatchForm => ({
+  start: "",
+  end: "",
+  description: "",
+  status: "OPEN",
+});
+const emptyPRForm = (location = "", type = "", minPartners = 2): PRForm => ({
+  title: "",
+  type,
+  location,
+  minPartners,
+  maxPartners: null,
+  confirmationStartOffsetMinutes: 120,
+  confirmationEndOffsetMinutes: 30,
+  joinLockOffsetMinutes: 30,
+  preferencesText: "",
+  notes: "",
+  status: "OPEN",
+  visibilityStatus: "VISIBLE",
+});
+const toEventForm = (event: EventRecord): EventForm => ({
+  title: event.title,
+  type: event.type,
+  description: event.description ?? "",
+  coverImage: event.coverImage ?? "",
+  betaGroupQrCode: event.betaGroupQrCode ?? "",
+  status: event.status as EventForm["status"],
+  defaultMinPartners: resolveDefaultMinPartners(event.defaultMinPartners),
+  defaultMaxPartners: event.defaultMaxPartners ?? null,
+  systemLocationPoolText: event.systemLocationPool.join("\n"),
+  userLocationPoolText: event.userLocationPool
+    .map((entry) => `${entry.id},${entry.perBatchCap}`)
+    .join("\n"),
+});
+const toBatchForm = (batch: BatchRecord): BatchForm => ({
+  start: batch.timeWindow[0] ?? "",
+  end: batch.timeWindow[1] ?? "",
+  description: batch.description ?? "",
+  status: batch.status as BatchForm["status"],
+});
 const toPRForm = (pr: PRRecord): PRForm => ({
   title: pr.title ?? "",
   type: pr.type,
@@ -312,15 +665,40 @@ const isCreatingPR = ref(false);
 const eventForm = ref<EventForm>(emptyEventForm());
 const batchForm = ref<BatchForm>(emptyBatchForm());
 const prForm = ref<PRForm>(emptyPRForm());
-const workspace = computed<Workspace | null>(() => workspaceQuery.data.value ?? null);
+const workspace = computed<Workspace | null>(
+  () => workspaceQuery.data.value ?? null,
+);
 const events = computed<EventRecord[]>(() => workspace.value?.events ?? []);
-const selectedEventId = computed<number | null>(() => { const parsed = Number(selectedEventIdRaw.value); return Number.isFinite(parsed) && parsed > 0 ? parsed : null; });
-const selectedEvent = computed<EventRecord | null>(() => events.value.find((event) => event.id === selectedEventId.value) ?? null);
-const selectedBatchId = computed<number | null>(() => { const parsed = Number(selectedBatchIdRaw.value); return Number.isFinite(parsed) && parsed > 0 ? parsed : null; });
-const selectedBatch = computed<BatchRecord | null>(() => selectedEvent.value?.batches.find((batch) => batch.id === selectedBatchId.value) ?? null);
-const selectedPRId = computed<number | null>(() => { const parsed = Number(selectedPRIdRaw.value); return Number.isFinite(parsed) && parsed > 0 ? parsed : null; });
-const selectedPR = computed<PRRecord | null>(() => selectedBatch.value?.prs.find((pr) => pr.prId === selectedPRId.value) ?? null);
-const canEditPRContent = computed(() => isCreatingPR.value || selectedPR.value?.status === "OPEN");
+const selectedEventId = computed<number | null>(() => {
+  const parsed = Number(selectedEventIdRaw.value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+});
+const selectedEvent = computed<EventRecord | null>(
+  () =>
+    events.value.find((event) => event.id === selectedEventId.value) ?? null,
+);
+const selectedBatchId = computed<number | null>(() => {
+  const parsed = Number(selectedBatchIdRaw.value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+});
+const selectedBatch = computed<BatchRecord | null>(
+  () =>
+    selectedEvent.value?.batches.find(
+      (batch) => batch.id === selectedBatchId.value,
+    ) ?? null,
+);
+const selectedPRId = computed<number | null>(() => {
+  const parsed = Number(selectedPRIdRaw.value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+});
+const selectedPR = computed<PRRecord | null>(
+  () =>
+    selectedBatch.value?.prs.find((pr) => pr.prId === selectedPRId.value) ??
+    null,
+);
+const canEditPRContent = computed(
+  () => isCreatingPR.value || selectedPR.value?.status === "OPEN",
+);
 const collectEventLocationOptions = (
   event: EventRecord | null | undefined,
 ): string[] => {
@@ -333,16 +711,29 @@ const collectEventLocationOptions = (
     .filter((locationId) => locationId.length > 0);
   return Array.from(new Set(ids));
 };
-const firstEventLocation = (
-  event: EventRecord | null | undefined,
-): string => collectEventLocationOptions(event)[0] ?? "";
+const firstEventLocation = (event: EventRecord | null | undefined): string =>
+  collectEventLocationOptions(event)[0] ?? "";
 const adminLocationOptions = computed(() =>
   collectEventLocationOptions(selectedEvent.value),
 );
-const hasLocationOptions = computed(() => adminLocationOptions.value.length > 0);
-const isSavingPR = computed(() => createPRMutation.isPending.value || updatePRContentMutation.isPending.value || updatePRStatusMutation.isPending.value || updatePRVisibilityMutation.isPending.value);
-const normalizeLines = (value: string): string[] => value.split("\n").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-const normalizeUserLocationLines = (value: string): Array<{ id: string; perBatchCap: number }> =>
+const hasLocationOptions = computed(
+  () => adminLocationOptions.value.length > 0,
+);
+const isSavingPR = computed(
+  () =>
+    createPRMutation.isPending.value ||
+    updatePRContentMutation.isPending.value ||
+    updatePRStatusMutation.isPending.value ||
+    updatePRVisibilityMutation.isPending.value,
+);
+const normalizeLines = (value: string): string[] =>
+  value
+    .split("\n")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+const normalizeUserLocationLines = (
+  value: string,
+): Array<{ id: string; perBatchCap: number }> =>
   value
     .split("\n")
     .map((entry) => entry.trim())
@@ -352,11 +743,16 @@ const normalizeUserLocationLines = (value: string): Array<{ id: string; perBatch
       const id = parts[0] ?? "";
       const capRaw = parts[1] ?? "";
       const parsedCap = Number(capRaw);
-      const perBatchCap = Number.isInteger(parsedCap) && parsedCap > 0 ? parsedCap : 1;
+      const perBatchCap =
+        Number.isInteger(parsedCap) && parsedCap > 0 ? parsedCap : 1;
       return { id, perBatchCap };
     })
     .filter((entry) => entry.id.length > 0);
-const normalizeComma = (value: string): string[] => value.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+const normalizeComma = (value: string): string[] =>
+  value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
 const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
     return value;
@@ -389,16 +785,17 @@ const prBoundsValidationMessage = computed(() =>
     normalizeNullableNonNegativeInteger(prForm.value.maxPartners),
   ),
 );
-const mutationErrorMessage = computed(() =>
-  createEventMutation.error.value?.message ||
-  updateEventMutation.error.value?.message ||
-  createBatchMutation.error.value?.message ||
-  updateBatchMutation.error.value?.message ||
-  createPRMutation.error.value?.message ||
-  updatePRContentMutation.error.value?.message ||
-  updatePRStatusMutation.error.value?.message ||
-  updatePRVisibilityMutation.error.value?.message ||
-  null,
+const mutationErrorMessage = computed(
+  () =>
+    createEventMutation.error.value?.message ||
+    updateEventMutation.error.value?.message ||
+    createBatchMutation.error.value?.message ||
+    updateBatchMutation.error.value?.message ||
+    createPRMutation.error.value?.message ||
+    updatePRContentMutation.error.value?.message ||
+    updatePRStatusMutation.error.value?.message ||
+    updatePRVisibilityMutation.error.value?.message ||
+    null,
 );
 
 const prPolicyValue = computed({
@@ -438,8 +835,11 @@ const policyValidationMessage = computed(() => {
 const policyRecommendationMessage = computed(() => {
   const batchStartRaw = selectedBatch.value?.timeWindow[0] ?? null;
   const batchStart = batchStartRaw ? new Date(batchStartRaw) : null;
-  const bookingDeadlineRaw = selectedPR.value?.effectiveBookingDeadlineAt ?? null;
-  const bookingDeadline = bookingDeadlineRaw ? new Date(bookingDeadlineRaw) : null;
+  const bookingDeadlineRaw =
+    selectedPR.value?.effectiveBookingDeadlineAt ?? null;
+  const bookingDeadline = bookingDeadlineRaw
+    ? new Date(bookingDeadlineRaw)
+    : null;
   if (
     batchStart &&
     !Number.isNaN(batchStart.getTime()) &&
@@ -447,12 +847,15 @@ const policyRecommendationMessage = computed(() => {
     !Number.isNaN(bookingDeadline.getTime())
   ) {
     const confirmationEndAt = new Date(
-      batchStart.getTime() - prForm.value.confirmationEndOffsetMinutes * 60 * 1000,
+      batchStart.getTime() -
+        prForm.value.confirmationEndOffsetMinutes * 60 * 1000,
     );
     const recommendedConfirmationEndLatestAt = new Date(
       bookingDeadline.getTime() - 30 * 60 * 1000,
     );
-    if (confirmationEndAt.getTime() > recommendedConfirmationEndLatestAt.getTime()) {
+    if (
+      confirmationEndAt.getTime() > recommendedConfirmationEndLatestAt.getTime()
+    ) {
       return t("adminAnchorPR.policyValidationDeadlineAfterConfirmationEnd");
     }
   }
@@ -460,34 +863,157 @@ const policyRecommendationMessage = computed(() => {
   return null;
 });
 
-watch([events, isAdmin, isCreatingEvent], ([nextEvents, adminReady, creating]) => {
-  if (!adminReady || creating || nextEvents.length === 0) { if (!adminReady || nextEvents.length === 0) selectedEventIdRaw.value = ""; return; }
-  if (!nextEvents.some((event) => String(event.id) === selectedEventIdRaw.value)) selectedEventIdRaw.value = String(nextEvents[0].id);
-}, { immediate: true });
-watch([selectedEvent, isCreatingEvent], ([event, creating]) => {
-  if (creating) { eventForm.value = emptyEventForm(); selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(); return; }
-  if (!event) { eventForm.value = emptyEventForm(); selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(); return; }
-  eventForm.value = toEventForm(event);
-  if (!event.batches.some((batch) => String(batch.id) === selectedBatchIdRaw.value)) selectedBatchIdRaw.value = event.batches[0] ? String(event.batches[0].id) : "";
-}, { immediate: true });
-watch([selectedBatch, isCreatingBatch, selectedEvent], ([batch, creating, event]) => {
-  if (creating) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
-  if (!batch || !event) { batchForm.value = emptyBatchForm(); selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
-  batchForm.value = toBatchForm(batch);
-  if (!batch.prs.some((pr) => String(pr.prId) === selectedPRIdRaw.value)) selectedPRIdRaw.value = batch.prs[0] ? String(batch.prs[0].prId) : "";
-}, { immediate: true });
-watch([selectedPR, isCreatingPR, selectedEvent], ([pr, creating, event]) => {
-  if (creating) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
-  if (!pr || !event) { prForm.value = emptyPRForm(firstEventLocation(event), event?.type ?? "", resolveDefaultMinPartners(event?.defaultMinPartners)); return; }
-  prForm.value = { ...toPRForm(pr), location: pr.location ?? firstEventLocation(event), type: pr.type };
-}, { immediate: true });
+watch(
+  [events, isAdmin, isCreatingEvent],
+  ([nextEvents, adminReady, creating]) => {
+    if (!adminReady || creating || nextEvents.length === 0) {
+      if (!adminReady || nextEvents.length === 0) selectedEventIdRaw.value = "";
+      return;
+    }
+    if (
+      !nextEvents.some((event) => String(event.id) === selectedEventIdRaw.value)
+    )
+      selectedEventIdRaw.value = String(nextEvents[0].id);
+  },
+  { immediate: true },
+);
+watch(
+  [selectedEvent, isCreatingEvent],
+  ([event, creating]) => {
+    if (creating) {
+      eventForm.value = emptyEventForm();
+      selectedBatchIdRaw.value = "";
+      selectedPRIdRaw.value = "";
+      batchForm.value = emptyBatchForm();
+      prForm.value = emptyPRForm();
+      return;
+    }
+    if (!event) {
+      eventForm.value = emptyEventForm();
+      selectedBatchIdRaw.value = "";
+      selectedPRIdRaw.value = "";
+      batchForm.value = emptyBatchForm();
+      prForm.value = emptyPRForm();
+      return;
+    }
+    eventForm.value = toEventForm(event);
+    if (
+      !event.batches.some(
+        (batch) => String(batch.id) === selectedBatchIdRaw.value,
+      )
+    )
+      selectedBatchIdRaw.value = event.batches[0]
+        ? String(event.batches[0].id)
+        : "";
+  },
+  { immediate: true },
+);
+watch(
+  [selectedBatch, isCreatingBatch, selectedEvent],
+  ([batch, creating, event]) => {
+    if (creating) {
+      batchForm.value = emptyBatchForm();
+      selectedPRIdRaw.value = "";
+      prForm.value = emptyPRForm(
+        firstEventLocation(event),
+        event?.type ?? "",
+        resolveDefaultMinPartners(event?.defaultMinPartners),
+      );
+      return;
+    }
+    if (!batch || !event) {
+      batchForm.value = emptyBatchForm();
+      selectedPRIdRaw.value = "";
+      prForm.value = emptyPRForm(
+        firstEventLocation(event),
+        event?.type ?? "",
+        resolveDefaultMinPartners(event?.defaultMinPartners),
+      );
+      return;
+    }
+    batchForm.value = toBatchForm(batch);
+    if (!batch.prs.some((pr) => String(pr.prId) === selectedPRIdRaw.value))
+      selectedPRIdRaw.value = batch.prs[0] ? String(batch.prs[0].prId) : "";
+  },
+  { immediate: true },
+);
+watch(
+  [selectedPR, isCreatingPR, selectedEvent],
+  ([pr, creating, event]) => {
+    if (creating) {
+      prForm.value = emptyPRForm(
+        firstEventLocation(event),
+        event?.type ?? "",
+        resolveDefaultMinPartners(event?.defaultMinPartners),
+      );
+      return;
+    }
+    if (!pr || !event) {
+      prForm.value = emptyPRForm(
+        firstEventLocation(event),
+        event?.type ?? "",
+        resolveDefaultMinPartners(event?.defaultMinPartners),
+      );
+      return;
+    }
+    prForm.value = {
+      ...toPRForm(pr),
+      location: pr.location ?? firstEventLocation(event),
+      type: pr.type,
+    };
+  },
+  { immediate: true },
+);
 
-const prepareNewEvent = () => { isCreatingEvent.value = true; isCreatingBatch.value = false; isCreatingPR.value = false; selectedEventIdRaw.value = ""; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; eventForm.value = emptyEventForm(); batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(); };
-const selectEvent = (eventId: number) => { isCreatingEvent.value = false; isCreatingBatch.value = false; isCreatingPR.value = false; selectedEventIdRaw.value = String(eventId); };
-const prepareNewBatch = () => { if (!selectedEvent.value) return; isCreatingBatch.value = true; isCreatingPR.value = false; selectedBatchIdRaw.value = ""; selectedPRIdRaw.value = ""; batchForm.value = emptyBatchForm(); prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type, resolveDefaultMinPartners(selectedEvent.value.defaultMinPartners)); };
-const selectBatch = (batchId: number) => { isCreatingBatch.value = false; isCreatingPR.value = false; selectedBatchIdRaw.value = String(batchId); };
-const prepareNewPR = () => { if (!selectedEvent.value || selectedBatchId.value === null) return; isCreatingPR.value = true; selectedPRIdRaw.value = ""; prForm.value = emptyPRForm(firstEventLocation(selectedEvent.value), selectedEvent.value.type, resolveDefaultMinPartners(selectedEvent.value.defaultMinPartners)); };
-const selectPR = (prId: number) => { isCreatingPR.value = false; selectedPRIdRaw.value = String(prId); };
+const prepareNewEvent = () => {
+  isCreatingEvent.value = true;
+  isCreatingBatch.value = false;
+  isCreatingPR.value = false;
+  selectedEventIdRaw.value = "";
+  selectedBatchIdRaw.value = "";
+  selectedPRIdRaw.value = "";
+  eventForm.value = emptyEventForm();
+  batchForm.value = emptyBatchForm();
+  prForm.value = emptyPRForm();
+};
+const selectEvent = (eventId: number) => {
+  isCreatingEvent.value = false;
+  isCreatingBatch.value = false;
+  isCreatingPR.value = false;
+  selectedEventIdRaw.value = String(eventId);
+};
+const prepareNewBatch = () => {
+  if (!selectedEvent.value) return;
+  isCreatingBatch.value = true;
+  isCreatingPR.value = false;
+  selectedBatchIdRaw.value = "";
+  selectedPRIdRaw.value = "";
+  batchForm.value = emptyBatchForm();
+  prForm.value = emptyPRForm(
+    firstEventLocation(selectedEvent.value),
+    selectedEvent.value.type,
+    resolveDefaultMinPartners(selectedEvent.value.defaultMinPartners),
+  );
+};
+const selectBatch = (batchId: number) => {
+  isCreatingBatch.value = false;
+  isCreatingPR.value = false;
+  selectedBatchIdRaw.value = String(batchId);
+};
+const prepareNewPR = () => {
+  if (!selectedEvent.value || selectedBatchId.value === null) return;
+  isCreatingPR.value = true;
+  selectedPRIdRaw.value = "";
+  prForm.value = emptyPRForm(
+    firstEventLocation(selectedEvent.value),
+    selectedEvent.value.type,
+    resolveDefaultMinPartners(selectedEvent.value.defaultMinPartners),
+  );
+};
+const selectPR = (prId: number) => {
+  isCreatingPR.value = false;
+  selectedPRIdRaw.value = String(prId);
+};
 const resetMutationErrors = () => {
   createEventMutation.reset();
   updateEventMutation.reset();
@@ -506,7 +1032,9 @@ const handleSaveEvent = async () => {
     type: eventForm.value.type.trim(),
     description: eventForm.value.description.trim() || null,
     systemLocationPool: normalizeLines(eventForm.value.systemLocationPoolText),
-    userLocationPool: normalizeUserLocationLines(eventForm.value.userLocationPoolText),
+    userLocationPool: normalizeUserLocationLines(
+      eventForm.value.userLocationPoolText,
+    ),
     defaultMinPartners: normalizeNullableNonNegativeInteger(
       eventForm.value.defaultMinPartners,
     ),
@@ -518,9 +1046,13 @@ const handleSaveEvent = async () => {
     status: eventForm.value.status,
   };
   try {
-    const result = isCreatingEvent.value || selectedEventId.value === null
-      ? await createEventMutation.mutateAsync(input)
-      : await updateEventMutation.mutateAsync({ eventId: selectedEventId.value, input });
+    const result =
+      isCreatingEvent.value || selectedEventId.value === null
+        ? await createEventMutation.mutateAsync(input)
+        : await updateEventMutation.mutateAsync({
+            eventId: selectedEventId.value,
+            input,
+          });
     isCreatingEvent.value = false;
     selectedEventIdRaw.value = String(result.id);
   } catch {
@@ -529,11 +1061,25 @@ const handleSaveEvent = async () => {
 };
 const handleSaveBatch = async () => {
   if (selectedEventId.value === null) return;
-  const input = { timeWindow: [batchForm.value.start.trim() || null, batchForm.value.end.trim() || null] as [string | null, string | null], status: batchForm.value.status };
+  const input = {
+    timeWindow: [
+      batchForm.value.start.trim() || null,
+      batchForm.value.end.trim() || null,
+    ] as [string | null, string | null],
+    status: batchForm.value.status,
+    description: batchForm.value.description.trim() || null,
+  };
   try {
-    const result = isCreatingBatch.value || selectedBatchId.value === null
-      ? await createBatchMutation.mutateAsync({ eventId: selectedEventId.value, input })
-      : await updateBatchMutation.mutateAsync({ batchId: selectedBatchId.value, input });
+    const result =
+      isCreatingBatch.value || selectedBatchId.value === null
+        ? await createBatchMutation.mutateAsync({
+            eventId: selectedEventId.value,
+            input,
+          })
+        : await updateBatchMutation.mutateAsync({
+            batchId: selectedBatchId.value,
+            input,
+          });
     isCreatingBatch.value = false;
     selectedBatchIdRaw.value = String(result.id);
   } catch {
@@ -541,9 +1087,22 @@ const handleSaveBatch = async () => {
   }
 };
 const handleSavePR = async () => {
-  if (!selectedEvent.value || !hasLocationOptions.value || selectedBatchId.value === null) return;
-  if ((isCreatingPR.value || canEditPRContent.value) && prBoundsValidationMessage.value) return;
-  if (isCreatingPR.value || selectedPRId.value === null || selectedBatch.value === null) {
+  if (
+    !selectedEvent.value ||
+    !hasLocationOptions.value ||
+    selectedBatchId.value === null
+  )
+    return;
+  if (
+    (isCreatingPR.value || canEditPRContent.value) &&
+    prBoundsValidationMessage.value
+  )
+    return;
+  if (
+    isCreatingPR.value ||
+    selectedPRId.value === null ||
+    selectedBatch.value === null
+  ) {
     try {
       const result = await createPRMutation.mutateAsync({
         batchId: selectedBatchId.value,
@@ -553,8 +1112,10 @@ const handleSavePR = async () => {
           location: prForm.value.location,
           minPartners: prForm.value.minPartners,
           maxPartners: prForm.value.maxPartners,
-          confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
-          confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
+          confirmationStartOffsetMinutes:
+            prForm.value.confirmationStartOffsetMinutes,
+          confirmationEndOffsetMinutes:
+            prForm.value.confirmationEndOffsetMinutes,
           joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
           preferences: normalizeComma(prForm.value.preferencesText),
           notes: prForm.value.notes.trim() || null,
@@ -577,8 +1138,10 @@ const handleSavePR = async () => {
           location: prForm.value.location,
           minPartners: prForm.value.minPartners,
           maxPartners: prForm.value.maxPartners,
-          confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
-          confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
+          confirmationStartOffsetMinutes:
+            prForm.value.confirmationStartOffsetMinutes,
+          confirmationEndOffsetMinutes:
+            prForm.value.confirmationEndOffsetMinutes,
           joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,
           preferences: normalizeComma(prForm.value.preferencesText),
           notes: prForm.value.notes.trim() || null,
@@ -586,10 +1149,19 @@ const handleSavePR = async () => {
       });
     }
     if (selectedPR.value && prForm.value.status !== selectedPR.value.status) {
-      await updatePRStatusMutation.mutateAsync({ prId: selectedPRId.value, input: { status: prForm.value.status } });
+      await updatePRStatusMutation.mutateAsync({
+        prId: selectedPRId.value,
+        input: { status: prForm.value.status },
+      });
     }
-    if (selectedPR.value && prForm.value.visibilityStatus !== selectedPR.value.visibilityStatus) {
-      await updatePRVisibilityMutation.mutateAsync({ prId: selectedPRId.value, input: { visibilityStatus: prForm.value.visibilityStatus } });
+    if (
+      selectedPR.value &&
+      prForm.value.visibilityStatus !== selectedPR.value.visibilityStatus
+    ) {
+      await updatePRVisibilityMutation.mutateAsync({
+        prId: selectedPRId.value,
+        input: { visibilityStatus: prForm.value.visibilityStatus },
+      });
     }
   } catch {
     // Mutation state already drives the page-level error toast.

@@ -52,6 +52,7 @@ export interface BatchDetail {
   id: number;
   timeWindow: [string | null, string | null];
   status: string;
+  description: string | null;
   prs: AnchorPRSummary[];
   locationOptions: LocationOption[];
 }
@@ -111,6 +112,7 @@ function toBatchDetail(
     id: batch.id,
     timeWindow: batch.timeWindow,
     status: batch.status,
+    description: batch.description,
     prs: prs.map(toPRSummary),
     locationOptions,
   };
@@ -138,9 +140,7 @@ export async function getAnchorEventDetail(
   const batchDetails: BatchDetail[] = [];
   const allPRIds: number[] = [];
   for (const batch of batches) {
-    const prs = await readVisibleAnchorPRRecordsByBatchId(
-      batch.id,
-    );
+    const prs = await readVisibleAnchorPRRecordsByBatchId(batch.id);
     const activeUserCountsByLocation = new Map<string, number>();
     for (const record of prs) {
       if (record.anchor.locationSource !== "USER") continue;
@@ -156,7 +156,10 @@ export async function getAnchorEventDetail(
     const locationOptions: LocationOption[] = [];
     for (const userLocation of userLocationPool) {
       const activeCount = activeUserCountsByLocation.get(userLocation.id) ?? 0;
-      const remainingQuota = Math.max(userLocation.perBatchCap - activeCount, 0);
+      const remainingQuota = Math.max(
+        userLocation.perBatchCap - activeCount,
+        0,
+      );
       const disabled = remainingQuota === 0;
       locationOptions.push({
         locationId: userLocation.id,
