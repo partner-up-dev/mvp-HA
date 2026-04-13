@@ -15,6 +15,7 @@
 3. `Community PR` uses local account plus PIN for joining; `Anchor PR` uses authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, and scenario rules.
 5. If join succeeds, the user enters the downstream progression of that collaboration object.
+6. If the current `Anchor PR` is not the right fit, `/apr/:id` keeps a lightweight path back to browsing other active `Anchor Events` without hiding the current collaboration detail.
 
 ## 3. Enter Anchor Collaboration Through Event Browsing And Search
 
@@ -25,8 +26,9 @@
 5. The user enters an existing `Anchor PR` from batch, card, or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint.
 6. The Anchor Event page exposes that event's beta-group entry as an independent card. List mode defaults the card to a collapsed kicker and description; card mode defaults it to an expanded state with the QR code. The group is for event-specific support such as requesting new sessions, getting booking/subsidy support, and coordinating activity context.
 7. If the current batch or location does not have a suitable `Anchor PR` and creation is still allowed, the user can create one through the controlled event-page flow.
-8. The user may then join, inspect alternatives, or view booking-support information.
-9. `Anchor PR` continues through timing and reliability loops such as confirmation, reminders, and check-in.
+8. The current Anchor Event and downstream Anchor PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-anchored collaboration journey entirely.
+9. The user may then join, inspect alternatives, or view booking-support information.
+10. `Anchor PR` continues through timing and reliability loops such as confirmation, reminders, and check-in.
 
 ## 4. Revisit and History Entry
 

@@ -20,6 +20,7 @@
 
 - browse Anchor Events and batches
 - enter `Anchor PR` from event context
+- re-discover other active Anchor Events from current Anchor Event and Anchor PR context
 - create controlled `Anchor PR` inside batch and location context
 - review alternative recommendations within the same batch
 - view booking support and resource-support semantics

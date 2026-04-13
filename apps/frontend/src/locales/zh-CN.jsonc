@@ -644,6 +644,7 @@
     "batchFormTitle": "批次信息",
     "batchStartLabel": "开始时间",
     "batchEndLabel": "结束时间",
+    "batchDescriptionLabel": "批次文案",
     "batchStatusLabel": "批次状态",
     "saveBatchAction": "保存批次",
     "createBatchAction": "创建批次",
@@ -1173,7 +1174,11 @@
       "qrAlt": "{eventTitle} 内测群二维码",
       "qrMissing": "该活动暂未配置内测群二维码。"
     },
-    "discoverOthers": "发现其他活动",
+    "otherEvents": {
+      "title": "看看其它活动",
+      "action": "看看其它活动"
+    },
+    "discoverOthers": "看看其它活动",
     "createCard": {
       "title": "其它地点？",
       "subtitle": "在另外的地点找搭子",

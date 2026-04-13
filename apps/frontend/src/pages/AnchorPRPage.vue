@@ -161,6 +161,18 @@
               </Button>
             </div>
           </div>
+          <div class="utility-row__link-row">
+            <router-link
+              :to="{ name: 'event-plaza' }"
+              class="utility-row__link"
+            >
+              {{ t("anchorEvent.otherEvents.action") }}
+              <span
+                class="utility-row__link-icon i-mdi:arrow-right"
+                aria-hidden="true"
+              />
+            </router-link>
+          </div>
         </section>
 
         <section
@@ -1301,6 +1313,42 @@ function buttonToneForAction(
   justify-content: flex-end;
   gap: var(--sys-spacing-xs);
   flex-shrink: 0;
+}
+
+.utility-row__link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--sys-spacing-med);
+}
+
+.utility-row__link {
+  @include mx.pu-font(body-medium);
+  display: inline-flex;
+  align-items: center;
+  color: var(--sys-color-secondary);
+  text-decoration: none;
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.utility-row__link-icon {
+  margin-left: var(--sys-spacing-xs);
+  display: inline-block;
+  vertical-align: middle;
+  @include mx.pu-icon(medium);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .utility-row__link:hover {
+    transform: translateX(2px);
+    color: var(--sys-color-primary);
+  }
 }
 
 .action-btn {

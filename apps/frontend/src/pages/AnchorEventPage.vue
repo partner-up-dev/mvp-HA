@@ -194,6 +194,12 @@
                 }}
               </button>
             </div>
+
+            <OtherAnchorEventsSection
+              :current-event-id="detail.id"
+              variant="embedded"
+              data-region="discover-other-events"
+            />
           </div>
 
           <AnchorEventBetaGroupCard
@@ -214,6 +220,10 @@
             :aria-label="t('anchorEvent.batchLabel')"
             @update:model-value="handleBatchTabChange"
           />
+
+          <p v-if="selectedBatch?.description" class="batch-description">
+            {{ selectedBatch.description }}
+          </p>
 
           <div v-if="selectedBatch" class="batch-content" role="tabpanel">
             <div class="pr-list" data-region="anchor-pr-list">
@@ -242,6 +252,11 @@
                 :qr-code-url="detail.betaGroupQrCode"
                 :default-expanded="false"
                 variant="list"
+              />
+              <OtherAnchorEventsSection
+                :current-event-id="detail.id"
+                variant="panel"
+                data-region="discover-other-events"
               />
             </div>
           </div>
@@ -276,6 +291,7 @@ import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.v
 import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
+import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
@@ -500,6 +516,19 @@ function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   return `${t("anchorEvent.batchLabel")} ${index + 1}`;
 }
 
+const formatBatchOptionLabel = (
+  batch: AnchorEventDetailResponse["batches"][number],
+  index: number,
+): string => {
+  const baseLabel = formatBatchLabel(batch.timeWindow, index);
+  const description = batch.description?.trim() ?? "";
+  if (!description) {
+    return baseLabel;
+  }
+
+  return `${baseLabel} · ${description}`;
+};
+
 const batchTabs = computed(() =>
   sortedBatches.value.map((batch, index) => ({
     key: batch.id,
@@ -648,7 +677,7 @@ const buildDemandCards = (
   const cardMap = new Map<string, DemandCardViewModel>();
 
   batches.forEach((batch, batchIndex) => {
-    const timeLabel = formatBatchLabel(batch.timeWindow, batchIndex);
+    const timeLabel = formatBatchOptionLabel(batch, batchIndex);
     const batchStartTimestamp = resolveBatchStartTimestamp(batch.timeWindow);
 
     batch.prs.forEach((pr) => {
@@ -1013,7 +1042,7 @@ const handleCreateInList = async (locationId: string | null) => {
 const cardCreateBatchOptions = computed<CardBatchOption[]>(() =>
   nonExpiredSortedBatches.value.map((batch, index) => ({
     batchId: batch.id,
-    label: formatBatchLabel(batch.timeWindow, index),
+    label: formatBatchOptionLabel(batch, index),
   })),
 );
 
@@ -1123,6 +1152,12 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 
 .batch-section :deep(.tab-bar) {
   margin-bottom: 1rem;
+}
+
+.batch-description {
+  margin: 0 0 0.75rem;
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .pr-list {

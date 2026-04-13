@@ -57,31 +57,16 @@
       </RouterLink>
     </div>
 
-    <ul
+    <AnchorEventHorizontalList
       v-else
       class="highlights-list"
       :class="{ 'is-in-view': isInView }"
       :style="itemMotionStyle(1)"
-    >
-      <li
-        v-for="(event, index) in highlightEvents"
-        :key="event.id"
-        class="highlight-item"
-        :class="{ 'is-in-view': isInView }"
-        :style="itemMotionStyle(index + 2)"
-      >
-        <EventCard
-          class="highlight-card"
-          :class="{ 'is-pressed': pressedCardIndex === index }"
-          :event="event"
-          @click="trackHighlightClick(event.id, index)"
-          @pointerdown="onCardPointerDown(index, $event)"
-          @pointerup="releasePressedCard"
-          @pointercancel="releasePressedCard"
-          @pointerleave="releasePressedCard"
-        />
-      </li>
-    </ul>
+      :events="highlightEvents"
+      variant="full-bleed"
+      :max-count="MAX_HIGHLIGHT_COUNT"
+      @card-click="trackHighlightClick($event.eventId, $event.index)"
+    />
   </section>
 </template>
 
@@ -89,7 +74,7 @@
 import { computed, ref, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
-import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
+import AnchorEventHorizontalList from "@/domains/event/ui/composites/AnchorEventHorizontalList.vue";
 import { useInViewStagger } from "@/shared/motion/useInViewStagger";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
 import { trackEvent } from "@/shared/telemetry/track";
@@ -107,24 +92,12 @@ const highlightEvents = computed(() =>
 );
 
 const hasTrackedSectionImpression = ref(false);
-const pressedCardIndex = ref<number | null>(null);
 
 const trackHighlightClick = (eventId: number, index: number) => {
   trackEvent("home_event_highlight_click", {
     eventId,
     index,
   });
-};
-
-const onCardPointerDown = (index: number, event: PointerEvent) => {
-  if (event.pointerType === "mouse" && event.button !== 0) {
-    return;
-  }
-  pressedCardIndex.value = index;
-};
-
-const releasePressedCard = () => {
-  pressedCardIndex.value = null;
 };
 
 watchEffect(() => {
@@ -154,7 +127,6 @@ watchEffect(() => {
   min-height: 0;
   position: relative;
   isolation: isolate;
-  --highlight-rail-inset: clamp(0.5rem, 2vw, 2rem);
 }
 
 .highlights-header {
@@ -228,65 +200,7 @@ watchEffect(() => {
 }
 
 .highlights-list {
-  list-style: none;
-  display: flex;
-  flex-direction: row;
-  width: 100vw;
-  max-width: none;
-  min-width: 0;
-  gap: clamp(0.8rem, 3vw, 1.2rem);
-  margin: 0;
-  margin-inline: calc(50% - 50vw);
-  padding-top: var(--sys-spacing-sm);
-  padding-bottom: var(--sys-spacing-sm);
-  padding-left: calc(var(--highlight-rail-inset) + var(--pu-safe-left));
-  padding-right: calc(var(--highlight-rail-inset) + var(--pu-safe-right));
-  overflow-x: auto;
-  overflow-y: visible;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: calc(
-    var(--highlight-rail-inset) + var(--pu-safe-left)
-  );
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
   position: relative;
   z-index: 3;
-  background-color: var(--sys-color-surface);
-}
-
-.highlight-item {
-  @include mx.pu-motion-enter(0.58rem);
-  flex: 0 0 clamp(14.8rem, 72vw, 19.4rem);
-  max-width: 100%;
-  min-width: 0;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-}
-
-.highlight-card {
-  @include mx.pu-motion-pressable(0.988);
-  @include mx.pu-motion-ripple-base();
-  min-height: 100%;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .highlight-card:hover {
-    transform: translateY(-2px);
-    @include mx.pu-elevation(2);
-  }
-}
-
-@media (max-width: 768px) {
-  .highlights-list {
-    gap: var(--sys-spacing-sm);
-  }
-
-  .highlight-item {
-    flex-basis: clamp(14.4rem, 79vw, 17.2rem);
-  }
 }
 </style>
