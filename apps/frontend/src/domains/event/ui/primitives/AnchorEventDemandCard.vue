@@ -13,21 +13,6 @@
     @pointercancel="handlePointerCancel"
     @transitionend="handleTransitionEnd"
   >
-    <div v-if="!preview" class="demand-card__stamps" aria-hidden="true">
-      <span
-        class="demand-card__stamp demand-card__stamp--like"
-        :style="{ opacity: likeStampOpacity }"
-      >
-        {{ t("anchorEvent.card.stampLike") }}
-      </span>
-      <span
-        class="demand-card__stamp demand-card__stamp--nope"
-        :style="{ opacity: nopeStampOpacity }"
-      >
-        {{ t("anchorEvent.card.stampNope") }}
-      </span>
-    </div>
-
     <div
       v-if="coverImage"
       class="demand-card__cover"
@@ -66,7 +51,6 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
 
 const MAX_DRAG_DISTANCE = 260;
 const MIN_DISTANCE_THRESHOLD = 96;
@@ -131,9 +115,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   skip: [];
   "view-detail": [];
+  "swipe-preview": [intensity: number];
 }>();
-
-const { t } = useI18n();
 
 const activePointer = ref<PointerState | null>(null);
 const translateX = ref(0);
@@ -161,12 +144,6 @@ const isInteractionLocked = computed(
 );
 const dragProgress = computed(() =>
   Math.min(Math.abs(rawTranslateX.value) / swipeThreshold.value, 1),
-);
-const likeStampOpacity = computed(() =>
-  rawTranslateX.value > 0 ? dragProgress.value : 0,
-);
-const nopeStampOpacity = computed(() =>
-  rawTranslateX.value < 0 ? dragProgress.value : 0,
 );
 const rotationDeg = computed(() => {
   const tiltDirectionFactor = activePointer.value?.tiltDirectionFactor ?? 1;
@@ -253,7 +230,19 @@ const resolveVelocityX = (
   );
 };
 
+const clampSwipePreviewIntensity = (value: number): number =>
+  Math.max(Math.min(value, 1), -1);
+
+const emitSwipePreview = (intensity: number) => {
+  if (props.preview) {
+    return;
+  }
+
+  emit("swipe-preview", clampSwipePreviewIntensity(intensity));
+};
+
 const resetCardState = () => {
+  emitSwipePreview(0);
   activePointer.value = null;
   translateX.value = 0;
   rawTranslateX.value = 0;
@@ -264,6 +253,7 @@ const resetCardState = () => {
 };
 
 const startRebound = () => {
+  emitSwipePreview(0);
   activePointer.value = null;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
@@ -275,6 +265,8 @@ const startRebound = () => {
 
 const startExit = (action: SwipeAction) => {
   const direction = action === "skip" ? -1 : 1;
+
+  emitSwipePreview(direction);
 
   activePointer.value = null;
   pendingAction.value = action;
@@ -292,6 +284,8 @@ const startExit = (action: SwipeAction) => {
 
 const handlePointerDown = (event: PointerEvent) => {
   if (isInteractionLocked.value || swipePhase.value !== "idle") return;
+
+  emitSwipePreview(0);
 
   const currentTarget = event.currentTarget;
   if (!(currentTarget instanceof HTMLElement)) return;
@@ -332,6 +326,7 @@ const handlePointerMove = (event: PointerEvent) => {
 
   rawTranslateX.value = event.clientX - pointer.startX;
   translateX.value = applyDamping(rawTranslateX.value);
+  emitSwipePreview(rawTranslateX.value / swipeThreshold.value);
   appendMotionSample(pointer, event.clientX, event.timeStamp);
 };
 
@@ -492,40 +487,6 @@ watch(
 
 .demand-card--preview .demand-card__content {
   gap: var(--sys-spacing-sm);
-}
-
-.demand-card__stamps {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.demand-card__stamp {
-  position: absolute;
-  top: var(--sys-spacing-med);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid currentColor;
-  border-radius: var(--sys-radius-med);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  @include mx.pu-font(title-medium);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  background: var(--sys-color-surface);
-}
-
-.demand-card__stamp--like {
-  left: var(--sys-spacing-med);
-  color: var(--sys-color-green);
-  transform: rotate(-14deg);
-}
-
-.demand-card__stamp--nope {
-  right: var(--sys-spacing-med);
-  color: var(--sys-color-red);
-  transform: rotate(14deg);
 }
 
 .demand-card__cover {

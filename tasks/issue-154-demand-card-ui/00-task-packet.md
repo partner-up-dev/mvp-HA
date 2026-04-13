@@ -26,3 +26,13 @@
 
 - Passed: `pnpm --filter @partner-up-dev/frontend build`
 - Existing baseline debt remains in token lint across unrelated files; this change removed newly introduced local `color-mix` findings and left the pre-existing lint set at 40 findings outside baseline.
+
+## Follow-up Slice: Page Maintainability
+
+- Objective: split the oversized `AnchorEventPage` card/list branches into dedicated mode sections before further visual tuning.
+- Implemented:
+  - added `AnchorEventCardModeSection.vue` for card mode rendering and interactions
+  - added `AnchorEventListModeSection.vue` for list mode rendering and interactions
+  - rewired `AnchorEventPage.vue` to assemble the two sections and keep page-level state/effects only
+- Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`

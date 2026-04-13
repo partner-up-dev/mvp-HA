@@ -57,229 +57,48 @@
       </PageHeader>
 
       <template v-if="viewMode === 'CARD'">
-        <div
-          v-if="activeDemandCard"
-          class="card-mode"
-          data-region="anchor-pr-list"
-        >
-          <div class="card-stage">
-            <div class="card-stage__inner">
-              <AnchorEventDemandCard
-                v-for="(previewCard, previewIndex) in stackPreviewCards"
-                :key="`preview-${previewCard.cardKey}`"
-                class="card-stack-preview"
-                :style="{
-                  zIndex: 2 - previewIndex,
-                  animationDelay: `${70 + previewIndex * 40}ms`,
-                }"
-                :display-location-name="previewCard.displayLocationName"
-                :time-label="previewCard.timeLabel"
-                :preference-tags="previewCard.preferenceTags"
-                :notes="previewCard.notes"
-                :cover-image="previewCard.coverImage"
-                :detail-pr-id="previewCard.detailPrId"
-                :preview="true"
-                :preview-depth="previewIndex + 1"
-                aria-hidden="true"
-              />
-
-              <div
-                :key="`front-${activeDemandCard.cardKey}`"
-                class="card-stage__front-shell"
-                @pointerdown="handleCardUserInteraction"
-              >
-                <AnchorEventDemandCard
-                  class="card-stage__front"
-                  :display-location-name="activeDemandCard.displayLocationName"
-                  :time-label="activeDemandCard.timeLabel"
-                  :preference-tags="activeDemandCard.preferenceTags"
-                  :notes="activeDemandCard.notes"
-                  :cover-image="activeDemandCard.coverImage"
-                  :detail-pr-id="activeDemandCard.detailPrId"
-                  :pending="isCardRouting"
-                  @skip="handleSkipActiveCard"
-                  @view-detail="handleViewActiveCardDetail"
-                />
-              </div>
-
-              <transition name="card-swipe-hint">
-                <p
-                  v-if="showCardSwipeHintToast"
-                  class="card-mode__swipe-hint-toast"
-                  role="status"
-                  aria-live="polite"
-                >
-                  {{ t("anchorEvent.card.swipeHintToast") }}
-                </p>
-              </transition>
-            </div>
-          </div>
-
-          <div class="card-mode__actions">
-            <button
-              type="button"
-              class="card-mode__action card-mode__action--skip"
-              :disabled="isCardRouting"
-              @click="handleSkipActiveCard"
-            >
-              {{ t("anchorEvent.card.skipButton") }}
-            </button>
-            <button
-              type="button"
-              class="card-mode__action card-mode__action--detail"
-              :disabled="isCardRouting || activeDemandCard.detailPrId === null"
-              @click="handleViewActiveCardDetail"
-            >
-              {{ t("anchorEvent.card.detailButton") }}
-            </button>
-          </div>
-
-          <p v-if="cardActionError" class="card-mode__error">
-            {{ cardActionError }}
-          </p>
-        </div>
-
-        <div v-else class="card-empty-stack">
-          <div class="card-empty">
-            <p class="card-empty__title">
-              {{ t("anchorEvent.card.emptyTitle") }}
-            </p>
-            <p class="card-empty__subtitle">
-              {{ t("anchorEvent.card.emptySubtitle") }}
-            </p>
-
-            <div class="card-empty__create" data-region="create-anchor-pr">
-              <label
-                v-if="cardCreateBatchOptions.length > 0"
-                class="card-empty__field"
-              >
-                <span class="card-empty__label">{{
-                  t("anchorEvent.card.batchLabel")
-                }}</span>
-                <select
-                  v-model.number="cardCreateBatchId"
-                  class="card-empty__input"
-                >
-                  <option
-                    v-for="option in cardCreateBatchOptions"
-                    :key="option.batchId"
-                    :value="option.batchId"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
-              </label>
-
-              <label
-                v-if="cardCreateBatchOptions.length > 0"
-                class="card-empty__field"
-              >
-                <span class="card-empty__label">{{
-                  t("anchorEvent.createCard.locationLabel")
-                }}</span>
-                <select
-                  v-model="cardCreateLocationId"
-                  class="card-empty__input"
-                >
-                  <option
-                    v-for="option in cardCreateLocationOptions"
-                    :key="option.locationId"
-                    :value="option.locationId"
-                    :disabled="option.disabled"
-                  >
-                    {{ formatLocationOptionLabel(option) }}
-                  </option>
-                </select>
-              </label>
-
-              <p v-if="createActionErrorMessage" class="card-empty__error">
-                {{ createActionErrorMessage }}
-              </p>
-
-              <button
-                type="button"
-                class="card-empty__action"
-                :disabled="isCreatePending"
-                @click="handleCreateFromCardEmpty"
-              >
-                {{
-                  isCreatePending
-                    ? t("anchorEvent.createCard.creatingAction")
-                    : t("anchorEvent.createCard.createAction")
-                }}
-              </button>
-            </div>
-
-            <OtherAnchorEventsSection
-              :current-event-id="detail.id"
-              variant="embedded"
-              data-region="discover-other-events"
-            />
-          </div>
-
-          <AnchorEventBetaGroupCard
-            :event-id="detail.id"
-            :event-title="detail.title"
-            :qr-code-url="detail.betaGroupQrCode"
-            :default-expanded="true"
-            variant="card"
-          />
-        </div>
+        <AnchorEventCardModeSection
+          :active-demand-card="activeDemandCard"
+          :stack-preview-cards="stackPreviewCards"
+          :is-card-routing="isCardRouting"
+          :card-action-error="cardActionError"
+          :show-card-swipe-hint-toast="showCardSwipeHintToast"
+          :left-edge-glow-style="leftEdgeGlowStyle"
+          :right-edge-glow-style="rightEdgeGlowStyle"
+          :card-create-batch-options="cardCreateBatchOptions"
+          :card-create-batch-id="cardCreateBatchId"
+          :card-create-location-id="cardCreateLocationId"
+          :card-create-location-options="cardCreateLocationOptionViewModels"
+          :create-action-error-message="createActionErrorMessage"
+          :is-create-pending="isCreatePending"
+          :event-id="detail.id"
+          :event-title="detail.title"
+          :event-beta-group-qr-code="detail.betaGroupQrCode"
+          @user-interaction="handleCardUserInteraction"
+          @swipe-preview="handleCardSwipePreview"
+          @skip-active-card="handleSkipActiveCard"
+          @view-active-card-detail="handleViewActiveCardDetail"
+          @update:card-create-batch-id="cardCreateBatchId = $event"
+          @update:card-create-location-id="cardCreateLocationId = $event"
+          @create-from-card-empty="handleCreateFromCardEmpty"
+        />
       </template>
 
       <template v-else>
-        <div v-if="detail.batches.length > 0" class="batch-section">
-          <TabBar
-            :items="batchTabs"
-            :model-value="selectedBatchId ?? -1"
-            :aria-label="t('anchorEvent.batchLabel')"
-            @update:model-value="handleBatchTabChange"
-          />
-
-          <p v-if="selectedBatch?.description" class="batch-description">
-            {{ selectedBatch.description }}
-          </p>
-
-          <div v-if="selectedBatch" class="batch-content" role="tabpanel">
-            <div class="pr-list" data-region="anchor-pr-list">
-              <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
-                {{ t("anchorEvent.noPRsInBatch") }}
-              </div>
-              <AnchorEventPRCard
-                v-for="pr in selectedBatch.prs"
-                :key="pr.id"
-                :pr="pr"
-                :cover-image="resolveCoverImage(pr.location)"
-              />
-            </div>
-
-            <div class="batch-action-cards">
-              <AnchorPRCreateCard
-                :location-options="selectedBatch.locationOptions"
-                :pending="isCreatePending"
-                :error-message="createActionErrorMessage"
-                @create="handleCreateInList"
-                data-region="create-anchor-pr"
-              />
-              <AnchorEventBetaGroupCard
-                :event-id="detail.id"
-                :event-title="detail.title"
-                :qr-code-url="detail.betaGroupQrCode"
-                :default-expanded="false"
-                variant="list"
-              />
-              <OtherAnchorEventsSection
-                :current-event-id="detail.id"
-                variant="panel"
-                data-region="discover-other-events"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div v-else class="empty-state">
-          {{ t("anchorEvent.noBatches") }}
-        </div>
+        <AnchorEventListModeSection
+          :has-batches="detail.batches.length > 0"
+          :batch-tabs="batchTabs"
+          :selected-batch-id="selectedBatchId"
+          :selected-batch="selectedBatch"
+          :event-id="detail.id"
+          :event-title="detail.title"
+          :event-beta-group-qr-code="detail.betaGroupQrCode"
+          :is-create-pending="isCreatePending"
+          :create-action-error-message="createActionErrorMessage"
+          :resolve-cover-image="resolveCoverImage"
+          @select-batch="selectedBatchId = $event"
+          @create-in-list="handleCreateInList"
+        />
       </template>
       <div
         v-if="detail.exhausted"
@@ -301,12 +120,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
-import TabBar from "@/shared/ui/navigation/TabBar.vue";
-import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
-import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
-import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
-import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
-import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
+import AnchorEventCardModeSection from "@/domains/event/ui/sections/AnchorEventCardModeSection.vue";
+import AnchorEventListModeSection from "@/domains/event/ui/sections/AnchorEventListModeSection.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
@@ -343,6 +158,12 @@ type LocationOption =
 type CardBatchOption = {
   batchId: number;
   label: string;
+};
+
+type CardCreateLocationOptionViewModel = {
+  locationId: string;
+  label: string;
+  disabled: boolean;
 };
 
 type DemandCardCandidate = {
@@ -418,6 +239,7 @@ const isCardRouting = ref(false);
 const hasCardUserInteraction = ref(false);
 const hasShownCardSwipeHintToast = ref(false);
 const showCardSwipeHintToast = ref(false);
+const cardSwipePreviewIntensity = ref(0);
 
 let cardSwipeHintDelayTimer: ReturnType<typeof setTimeout> | null = null;
 let cardSwipeHintHideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -430,6 +252,17 @@ const eventId = computed(() => {
   const num = Number(raw);
   return Number.isFinite(num) && num > 0 ? num : null;
 });
+
+const clampSwipePreviewIntensity = (value: number): number =>
+  Math.max(Math.min(value, 1), -1);
+
+const resetCardSwipePreview = () => {
+  cardSwipePreviewIntensity.value = 0;
+};
+
+const handleCardSwipePreview = (intensity: number) => {
+  cardSwipePreviewIntensity.value = clampSwipePreviewIntensity(intensity);
+};
 
 const clearCardSwipeHintTimers = () => {
   if (cardSwipeHintDelayTimer !== null) {
@@ -456,6 +289,7 @@ const handleCardUserInteraction = () => {
   hasCardUserInteraction.value = true;
   hideCardSwipeHintToast();
   clearCardSwipeHintTimers();
+  resetCardSwipePreview();
 };
 
 const handleSwitchViewMode = (mode: EventViewMode) => {
@@ -479,6 +313,7 @@ watch(eventId, () => {
   hasCardUserInteraction.value = false;
   hasShownCardSwipeHintToast.value = false;
   showCardSwipeHintToast.value = false;
+  resetCardSwipePreview();
   clearCardSwipeHintTimers();
 });
 
@@ -603,11 +438,6 @@ const batchTabs = computed(() =>
     tabClass: isExpiredBatch(batch) ? "tab-bar__tab--expired" : undefined,
   })),
 );
-
-const handleBatchTabChange = (value: string | number) => {
-  if (typeof value !== "number") return;
-  selectedBatchId.value = value;
-};
 
 const selectedBatch = computed(
   () =>
@@ -867,6 +697,36 @@ const stackPreviewCards = computed(() =>
 const isCardStageActive = computed(
   () => viewMode.value === "CARD" && activeDemandCard.value !== null,
 );
+const swipePreviewMagnitude = computed(() =>
+  Math.min(Math.abs(cardSwipePreviewIntensity.value), 1),
+);
+const swipeGlowStrength = computed(() =>
+  Math.pow(swipePreviewMagnitude.value, 1.6),
+);
+const leftEdgeGlowOpacity = computed(() =>
+  cardSwipePreviewIntensity.value < 0 ? swipeGlowStrength.value * 0.88 : 0,
+);
+const rightEdgeGlowOpacity = computed(() =>
+  cardSwipePreviewIntensity.value > 0 ? swipeGlowStrength.value * 0.88 : 0,
+);
+const leftEdgeGlowScale = computed(() =>
+  cardSwipePreviewIntensity.value < 0
+    ? 0.74 + swipeGlowStrength.value * 0.44
+    : 0.74,
+);
+const rightEdgeGlowScale = computed(() =>
+  cardSwipePreviewIntensity.value > 0
+    ? 0.74 + swipeGlowStrength.value * 0.44
+    : 0.74,
+);
+const leftEdgeGlowStyle = computed(() => ({
+  opacity: leftEdgeGlowOpacity.value,
+  transform: `scaleX(${leftEdgeGlowScale.value})`,
+}));
+const rightEdgeGlowStyle = computed(() => ({
+  opacity: rightEdgeGlowOpacity.value,
+  transform: `scaleX(${rightEdgeGlowScale.value})`,
+}));
 const shouldArmCardSwipeHint = computed(
   () =>
     isCardStageActive.value &&
@@ -906,6 +766,13 @@ watch(
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
+  resetCardSwipePreview();
+});
+
+watch(isCardStageActive, (isActive) => {
+  if (!isActive) {
+    resetCardSwipePreview();
+  }
 });
 
 const markCardProcessed = (cardKey: string) => {
@@ -1200,6 +1067,16 @@ const cardCreateLocationOptions = computed<LocationOption[]>(() => {
   return cardCreateBatch.value?.locationOptions ?? [];
 });
 
+const cardCreateLocationOptionViewModels = computed<
+  CardCreateLocationOptionViewModel[]
+>(() =>
+  cardCreateLocationOptions.value.map((option) => ({
+    locationId: option.locationId,
+    label: formatLocationOptionLabel(option),
+    disabled: option.disabled,
+  })),
+);
+
 watch(
   cardCreateLocationOptions,
   (options) => {
@@ -1247,49 +1124,8 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 }
 
 .anchor-event-page__header,
-.card-mode__actions,
-.card-mode__error,
 .exhausted-banner {
   flex-shrink: 0;
-}
-
-.batch-section {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  margin-bottom: 1rem;
-}
-
-.batch-section :deep(.tab-bar) {
-  margin-bottom: 0.4rem;
-}
-
-.batch-description {
-  margin: 0 0 0.75rem;
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.pr-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.batch-content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.batch-action-cards {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  margin-top: auto;
-  padding-top: var(--sys-spacing-med);
 }
 
 .view-mode-switch {
@@ -1312,220 +1148,6 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 .view-mode-switch__button--active {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
-}
-
-.card-mode {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  margin-left: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-left)));
-  margin-right: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-right)));
-}
-
-.anchor-event-page--card-active .card-mode {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.card-stage {
-  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
-}
-
-.anchor-event-page--card-active .card-stage {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.card-stage__inner {
-  position: relative;
-  --card-stage-vertical-inset: 6%;
-}
-
-.anchor-event-page--card-active .card-stage__inner {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.card-stage__front-shell {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: var(--card-stage-vertical-inset);
-  bottom: var(--card-stage-vertical-inset);
-  z-index: 3;
-  animation: card-front-promote 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-stage__front {
-  z-index: 2;
-}
-
-.card-stack-preview {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: var(--card-stage-vertical-inset);
-  bottom: var(--card-stage-vertical-inset);
-  pointer-events: none;
-  animation: card-preview-reveal 220ms ease-out both;
-}
-
-.card-mode__swipe-hint-toast {
-  @include mx.pu-font(label-large);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 4;
-  transform: translate(-50%, -50%);
-  margin: 0;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-med);
-  border-radius: 999px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface);
-  box-shadow: var(--sys-shadow-2);
-  backdrop-filter: blur(4px);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.card-swipe-hint-enter-active,
-.card-swipe-hint-leave-active {
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
-}
-
-.card-swipe-hint-enter-from,
-.card-swipe-hint-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -46%);
-}
-
-@keyframes card-front-promote {
-  from {
-    transform: translateY(14px) scale(0.972);
-  }
-  to {
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes card-preview-reveal {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.card-mode__error {
-  @include mx.pu-font(body-medium);
-  margin: 0;
-  color: var(--sys-color-error);
-  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
-}
-
-.card-mode__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-sm);
-  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
-}
-
-.card-mode__action {
-  @include mx.pu-pill-action(outline-transparent, default);
-  border: none;
-  cursor: pointer;
-  min-height: 48px;
-}
-
-.card-mode__action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.card-mode__action--detail {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border-color: var(--sys-color-primary);
-}
-
-.card-mode__action--skip {
-  color: var(--sys-color-error);
-  border-color: var(--sys-color-error);
-}
-
-.card-empty-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.card-empty {
-  padding: 1rem;
-  border-radius: var(--sys-radius-lg);
-  background: var(--sys-color-surface-container);
-  border: 1px solid var(--sys-color-outline-variant);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.card-empty__title {
-  @include mx.pu-font(title-medium);
-  margin: 0;
-  color: var(--sys-color-on-surface);
-}
-
-.card-empty__subtitle {
-  @include mx.pu-font(body-small);
-  margin: 0;
-  color: var(--sys-color-on-surface-variant);
-}
-
-.card-empty__create {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.card-empty__field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-}
-
-.card-empty__label {
-  @include mx.pu-font(label-small);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.card-empty__input {
-  @include mx.pu-field-shell(compact-surface);
-  min-height: var(--sys-size-large);
-}
-
-.card-empty__error {
-  margin: 0;
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-error);
-}
-
-.card-empty__action {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-  cursor: pointer;
-}
-
-.card-empty__action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .exhausted-banner {
@@ -1558,9 +1180,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 }
 
 .loading-state,
-.error-state,
-.empty-state,
-.empty-batch {
+.error-state {
   text-align: center;
   padding: 3rem 0;
   color: var(--sys-color-on-surface-variant);
