@@ -58,10 +58,12 @@
         size="sm"
         chip-class="event-available-location-pill"
       />
-      <h3 class="event-title">{{ event.title }}</h3>
-      <p v-if="event.description" class="event-desc">
-        {{ event.description }}
-      </p>
+      <div class="flex flex-col gap-1">
+        <h3 class="event-title">{{ event.title }}</h3>
+        <p v-if="event.description" class="event-desc">
+          {{ event.description }}
+        </p>
+      </div>
       <span v-if="!isSelectMode && !isShorter" class="event-cta">
         {{ t("eventPlaza.openEventAction") }}
         <span class="event-cta-icon i-mdi:arrow-right" aria-hidden="true" />
@@ -348,7 +350,7 @@ const handleClick = () => {
   flex: 1;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
 }
 
 .event-available-locations-row {
@@ -396,11 +398,11 @@ const handleClick = () => {
   align-items: center;
   gap: var(--sys-spacing-xs);
   margin-top: auto;
-  color: var(--sys-color-primary);
+  color: var(--sys-color-secondary);
 }
 
 .event-cta-icon {
-  @include mx.pu-icon(medium);
+  @include mx.pu-icon(small);
 }
 
 .event-card--shorter .event-cover {

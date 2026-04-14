@@ -63,7 +63,7 @@ const props = withDefaults(
     variant: "contained",
     cardSurface: "filled",
     autoScroll: false,
-    autoScrollSpeedPxPerSecond: 26,
+    autoScrollSpeedPxPerSecond: 31,
   },
 );
 
@@ -72,8 +72,10 @@ const emit = defineEmits<{
 }>();
 
 const visibleEvents = computed(() => props.events.slice(0, props.maxCount));
-const resolvedCardVariant = computed(() =>
-  props.cardVariant ?? (props.variant === "full-bleed" ? "default" : "shorter"),
+const resolvedCardVariant = computed(
+  () =>
+    props.cardVariant ??
+    (props.variant === "full-bleed" ? "default" : "shorter"),
 );
 const renderedEvents = computed<RenderedEventItem[]>(() => {
   const baseItems = visibleEvents.value.map((event, sourceIndex) => ({
@@ -114,11 +116,7 @@ const resolveItemElement = (
     return element;
   }
 
-  if (
-    element &&
-    "$el" in element &&
-    element.$el instanceof HTMLLIElement
-  ) {
+  if (element && "$el" in element && element.$el instanceof HTMLLIElement) {
     return element.$el;
   }
 
@@ -305,11 +303,13 @@ const stepAutoScroll = (timestamp: number) => {
 
   if (lastAnimationFrameAt !== null) {
     const elapsedMs = timestamp - lastAnimationFrameAt;
-    const distance =
-      (props.autoScrollSpeedPxPerSecond * elapsedMs) / 1000;
+    const distance = (props.autoScrollSpeedPxPerSecond * elapsedMs) / 1000;
     list.scrollLeft += distance;
 
-    if (loopSegmentWidth.value > 0 && list.scrollLeft >= loopSegmentWidth.value * 2) {
+    if (
+      loopSegmentWidth.value > 0 &&
+      list.scrollLeft >= loopSegmentWidth.value * 2
+    ) {
       list.scrollLeft -= loopSegmentWidth.value;
     }
   }
