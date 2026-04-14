@@ -1,24 +1,31 @@
 <template>
-  <ExpandableCard
+  <div
     v-if="shouldRenderSection && variant === 'panel'"
-    class="other-anchor-events other-anchor-events--panel"
-    :title="t('anchorEvent.otherEvents.title')"
-    :default-expanded="false"
+    ref="sectionRef"
+    class="other-anchor-events__panel-shell"
   >
-    <p v-if="isLoading" class="other-anchor-events__state">
-      {{ t("common.loading") }}
-    </p>
+    <ExpandableCard
+      class="other-anchor-events other-anchor-events--panel"
+      :title="t('anchorEvent.otherEvents.title')"
+      :default-expanded="false"
+    >
+      <p v-if="isLoading" class="other-anchor-events__state">
+        {{ t("common.loading") }}
+      </p>
 
-    <AnchorEventHorizontalList
-      v-else
-      :events="otherEvents"
-      variant="contained"
-      card-surface="outline"
-    />
-  </ExpandableCard>
+      <AnchorEventHorizontalList
+        v-else
+        :events="otherEvents"
+        variant="contained"
+        card-surface="outline"
+        :auto-scroll="isInView"
+      />
+    </ExpandableCard>
+  </div>
 
   <section
     v-else-if="shouldRenderSection"
+    ref="sectionRef"
     class="other-anchor-events other-anchor-events--embedded"
   >
     <h3 class="other-anchor-events__title">
@@ -34,6 +41,7 @@
       :events="otherEvents"
       variant="contained"
       card-surface="outline"
+      :auto-scroll="isInView"
     />
   </section>
 </template>
@@ -42,6 +50,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
+import { useInViewStagger } from "@/shared/motion/useInViewStagger";
 import AnchorEventHorizontalList from "@/domains/event/ui/composites/AnchorEventHorizontalList.vue";
 import ExpandableCard from "@/shared/ui/containers/ExpandableCard.vue";
 
@@ -57,6 +66,7 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+const { targetRef: sectionRef, isInView } = useInViewStagger({ once: false });
 const { data: events, isLoading, isError } = useAnchorEvents();
 
 const otherEvents = computed(() => {
@@ -83,6 +93,10 @@ const shouldRenderSection = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
+}
+
+.other-anchor-events__panel-shell {
+  min-width: 0;
 }
 
 .other-anchor-events--embedded {

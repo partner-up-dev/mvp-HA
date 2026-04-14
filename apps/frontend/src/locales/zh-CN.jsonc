@@ -1177,9 +1177,9 @@
       "preferenceTitle": "偏好",
       "preferenceEmpty": "暂无额外偏好要求",
       "skipButton": "下一个",
-      "detailButton": "加入",
+      "detailButton": "查看详情",
       "swipeSkipHint": "下一个",
-      "swipeDetailHint": "加入",
+      "swipeDetailHint": "查看详情",
       "emptyTitle": "卡片已看完",
       "emptySubtitle": "还没有合适的局？可以直接创建一个。"
     },

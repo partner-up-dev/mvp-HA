@@ -41,6 +41,7 @@ import {
 } from "vue";
 import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
 import type { AnchorEventListItem } from "@/domains/event/model/types";
+import { useReducedMotion } from "@/shared/motion/useReducedMotion";
 
 type RenderedEventItem = {
   key: string;
@@ -63,7 +64,7 @@ const props = withDefaults(
     variant: "contained",
     cardSurface: "filled",
     autoScroll: false,
-    autoScrollSpeedPxPerSecond: 31,
+    autoScrollSpeedPxPerSecond: 32,
   },
 );
 
@@ -102,6 +103,9 @@ const loopEnabled = ref(false);
 const loopSegmentWidth = ref(0);
 const isPointerHolding = ref(false);
 const isInteractionPaused = ref(false);
+const containerWidth = ref(0);
+const leadingItemWidth = ref(0);
+const { prefersReducedMotion } = useReducedMotion();
 
 let resizeObserver: ResizeObserver | null = null;
 let animationFrameId: number | null = null;
@@ -177,6 +181,57 @@ const resolveLoopSegmentWidth = () => {
   return middleCopyStart.offsetLeft - firstItem.offsetLeft;
 };
 
+const syncMeasuredLayout = () => {
+  const list = listRef.value;
+  containerWidth.value = list?.clientWidth ?? 0;
+  leadingItemWidth.value =
+    itemRefs.value[0]?.getBoundingClientRect().width ?? 0;
+};
+
+const BASELINE_CONTAINER_WIDTH_PX = 350;
+const BASELINE_CARD_FOOTPRINT_RATIO = 0.78;
+const MIN_CARD_FOOTPRINT_RATIO = 0.55;
+const MAX_CARD_FOOTPRINT_RATIO = 1.15;
+const MIN_AUTO_SCROLL_SPEED_PX_PER_SECOND = 12;
+const MAX_AUTO_SCROLL_SPEED_PX_PER_SECOND = 72;
+
+const resolvedAutoScrollSpeedPxPerSecond = computed(() => {
+  if (prefersReducedMotion.value) {
+    return 0;
+  }
+
+  const baselineSpeed = props.autoScrollSpeedPxPerSecond;
+  if (baselineSpeed <= 0) {
+    return 0;
+  }
+
+  const measuredContainerWidth =
+    containerWidth.value > 0
+      ? containerWidth.value
+      : BASELINE_CONTAINER_WIDTH_PX;
+  const measuredItemWidth =
+    leadingItemWidth.value > 0
+      ? leadingItemWidth.value
+      : measuredContainerWidth * BASELINE_CARD_FOOTPRINT_RATIO;
+  const clampedCardFootprintRatio = Math.min(
+    MAX_CARD_FOOTPRINT_RATIO,
+    Math.max(
+      MIN_CARD_FOOTPRINT_RATIO,
+      measuredItemWidth / measuredContainerWidth,
+    ),
+  );
+  const containerFactor = measuredContainerWidth / BASELINE_CONTAINER_WIDTH_PX;
+  const cardFactor =
+    clampedCardFootprintRatio / BASELINE_CARD_FOOTPRINT_RATIO;
+  const scaledSpeed =
+    baselineSpeed * containerFactor * Math.sqrt(cardFactor);
+
+  return Math.min(
+    MAX_AUTO_SCROLL_SPEED_PX_PER_SECOND,
+    Math.max(MIN_AUTO_SCROLL_SPEED_PX_PER_SECOND, scaledSpeed),
+  );
+});
+
 const normalizeLoopPosition = () => {
   const list = listRef.value;
   const segmentWidth = loopSegmentWidth.value;
@@ -206,6 +261,8 @@ const updateLoopAvailability = async () => {
   if (!list) {
     return;
   }
+
+  syncMeasuredLayout();
 
   if (!props.autoScroll || visibleEvents.value.length <= 1) {
     resetLoopState();
@@ -295,7 +352,7 @@ const stepAutoScroll = (timestamp: number) => {
     !list ||
     !loopEnabled.value ||
     isInteractionPaused.value ||
-    props.autoScrollSpeedPxPerSecond <= 0
+    resolvedAutoScrollSpeedPxPerSecond.value <= 0
   ) {
     stopAnimation();
     return;
@@ -303,7 +360,8 @@ const stepAutoScroll = (timestamp: number) => {
 
   if (lastAnimationFrameAt !== null) {
     const elapsedMs = timestamp - lastAnimationFrameAt;
-    const distance = (props.autoScrollSpeedPxPerSecond * elapsedMs) / 1000;
+    const distance =
+      (resolvedAutoScrollSpeedPxPerSecond.value * elapsedMs) / 1000;
     list.scrollLeft += distance;
 
     if (
@@ -344,7 +402,7 @@ watchEffect((onCleanup) => {
   if (
     !loopEnabled.value ||
     isInteractionPaused.value ||
-    props.autoScrollSpeedPxPerSecond <= 0
+    resolvedAutoScrollSpeedPxPerSecond.value <= 0
   ) {
     onCleanup(() => {
       stopAnimation();
@@ -382,6 +440,7 @@ onMounted(() => {
 
   if (typeof ResizeObserver !== "undefined" && listRef.value) {
     resizeObserver = new ResizeObserver(() => {
+      syncMeasuredLayout();
       void updateLoopAvailability();
     });
     resizeObserver.observe(listRef.value);
