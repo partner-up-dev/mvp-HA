@@ -64,7 +64,6 @@
           :stack-preview-cards="stackPreviewCards"
           :is-card-routing="isCardRouting"
           :card-action-error="cardActionError"
-          :swipe-preview-state="cardSwipePreviewState"
           :drag-hint-token="cardDragHintToken"
           :card-create-batch-options="cardCreateBatchOptions"
           :card-create-batch-id="cardCreateBatchId"
@@ -75,7 +74,7 @@
           :event-id="detail.id"
           :event-title="detail.title"
           :event-beta-group-qr-code="detail.betaGroupQrCode"
-          @swipe-preview="handleCardSwipePreview"
+          @consume-drag-hint-window="consumeCardDragHintWindow"
           @skip-active-card="handleSkipActiveCard"
           @view-active-card-detail="handleViewActiveCardDetail"
           @update:card-create-batch-id="cardCreateBatchId = $event"
@@ -153,11 +152,6 @@ import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
 } from "@/processes/wechat/pending-wechat-action";
-import {
-  clampDemandCardSwipePreviewIntensity,
-  createIdleDemandCardSwipePreviewState,
-  type DemandCardSwipePreviewState,
-} from "@/domains/event/ui/demand-card-swipe-feedback";
 import { useReducedMotion } from "@/shared/motion/useReducedMotion";
 
 type EventViewMode = "LIST" | "CARD";
@@ -260,9 +254,6 @@ const selectedBatchId = ref<number | null>(null);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
-const cardSwipePreviewState = ref<DemandCardSwipePreviewState>(
-  createIdleDemandCardSwipePreviewState(),
-);
 const cardDragHintToken = ref(0);
 
 const cardCreateBatchId = ref<number | null>(null);
@@ -274,10 +265,6 @@ const eventId = computed(() => {
   const num = Number(raw);
   return Number.isFinite(num) && num > 0 ? num : null;
 });
-
-const resetCardSwipePreview = () => {
-  cardSwipePreviewState.value = createIdleDemandCardSwipePreviewState();
-};
 
 const clearCardDragHintTimer = () => {
   if (typeof window === "undefined" || cardDragHintTimerId === null) {
@@ -314,22 +301,6 @@ const consumeCardDragHintWindow = () => {
   clearCardDragHintTimer();
 };
 
-const handleCardSwipePreview = (previewState: DemandCardSwipePreviewState) => {
-  if (
-    previewState.phase !== "idle" ||
-    Math.abs(previewState.intensity) > 0.01
-  ) {
-    consumeCardDragHintWindow();
-  }
-
-  cardSwipePreviewState.value = {
-    intensity: clampDemandCardSwipePreviewIntensity(previewState.intensity),
-    phase: previewState.phase,
-    anchorViewportY: previewState.anchorViewportY,
-    anchorCorner: previewState.anchorCorner,
-  };
-};
-
 const handleSwitchViewMode = (mode: EventViewMode) => {
   if (viewMode.value === mode) {
     return;
@@ -339,7 +310,6 @@ const handleSwitchViewMode = (mode: EventViewMode) => {
     consumeCardDragHintWindow();
   }
 
-  resetCardSwipePreview();
   viewMode.value = mode;
 };
 
@@ -353,7 +323,6 @@ watch(
 
 watch(eventId, () => {
   consumeCardDragHintWindow();
-  resetCardSwipePreview();
 });
 
 const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
@@ -774,7 +743,6 @@ const isCardStageActive = computed(
 
 watch(activeDemandCard, () => {
   cardActionError.value = null;
-  resetCardSwipePreview();
 });
 
 watch(
@@ -784,7 +752,6 @@ watch(
 
     if (!isActive) {
       consumeCardDragHintWindow();
-      resetCardSwipePreview();
       return;
     }
 
@@ -830,7 +797,6 @@ const handleSkipActiveCard = () => {
   }
 
   consumeCardDragHintWindow();
-  resetCardSwipePreview();
   markCardProcessed(card.cardKey);
   cardActionError.value = null;
 };
@@ -842,7 +808,6 @@ const handleViewActiveCardDetail = async () => {
   }
 
   consumeCardDragHintWindow();
-  resetCardSwipePreview();
   cardActionError.value = null;
   isCardRouting.value = true;
   try {
