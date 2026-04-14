@@ -65,6 +65,7 @@
           :is-card-routing="isCardRouting"
           :card-action-error="cardActionError"
           :swipe-preview-state="cardSwipePreviewState"
+          :drag-hint-token="cardDragHintToken"
           :card-create-batch-options="cardCreateBatchOptions"
           :card-create-batch-id="cardCreateBatchId"
           :card-create-location-id="cardCreateLocationId"
@@ -113,7 +114,7 @@
     </template>
 
     <template #footer>
-      <MiniumCommonFooter data-region="support" />
+      <FullCommonFooter data-region="footer" />
     </template>
   </FooterRevealPageScaffold>
 </template>
@@ -122,10 +123,10 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import AnchorEventCardModeSection from "@/domains/event/ui/sections/AnchorEventCardModeSection.vue";
 import AnchorEventListModeSection from "@/domains/event/ui/sections/AnchorEventListModeSection.vue";
-import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
@@ -157,6 +158,7 @@ import {
   createIdleDemandCardSwipePreviewState,
   type DemandCardSwipePreviewState,
 } from "@/domains/event/ui/demand-card-swipe-feedback";
+import { useReducedMotion } from "@/shared/motion/useReducedMotion";
 
 type EventViewMode = "LIST" | "CARD";
 type TimeWindow = [string | null, string | null];
@@ -200,8 +202,10 @@ type DemandCardViewModel = {
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { prefersReducedMotion } = useReducedMotion();
 
 const CARD_OVERFLOW_GUARD_CLASS = "anchor-event-card-overflow-guard";
+const CARD_MODE_DRAG_HINT_DELAY_MS = 3000;
 
 const syncCardOverflowGuard = (enabled: boolean) => {
   if (typeof document === "undefined") {
@@ -259,9 +263,11 @@ const isCardRouting = ref(false);
 const cardSwipePreviewState = ref<DemandCardSwipePreviewState>(
   createIdleDemandCardSwipePreviewState(),
 );
+const cardDragHintToken = ref(0);
 
 const cardCreateBatchId = ref<number | null>(null);
 const cardCreateLocationId = ref("");
+let cardDragHintTimerId: number | null = null;
 
 const eventId = computed(() => {
   const raw = route.params.eventId;
@@ -273,7 +279,49 @@ const resetCardSwipePreview = () => {
   cardSwipePreviewState.value = createIdleDemandCardSwipePreviewState();
 };
 
+const clearCardDragHintTimer = () => {
+  if (typeof window === "undefined" || cardDragHintTimerId === null) {
+    return;
+  }
+
+  window.clearTimeout(cardDragHintTimerId);
+  cardDragHintTimerId = null;
+};
+
+const scheduleCardDragHint = () => {
+  clearCardDragHintTimer();
+
+  if (
+    typeof window === "undefined" ||
+    prefersReducedMotion.value ||
+    !isCardStageActive.value
+  ) {
+    return;
+  }
+
+  cardDragHintTimerId = window.setTimeout(() => {
+    cardDragHintTimerId = null;
+
+    if (!isCardStageActive.value || prefersReducedMotion.value) {
+      return;
+    }
+
+    cardDragHintToken.value += 1;
+  }, CARD_MODE_DRAG_HINT_DELAY_MS);
+};
+
+const consumeCardDragHintWindow = () => {
+  clearCardDragHintTimer();
+};
+
 const handleCardSwipePreview = (previewState: DemandCardSwipePreviewState) => {
+  if (
+    previewState.phase !== "idle" ||
+    Math.abs(previewState.intensity) > 0.01
+  ) {
+    consumeCardDragHintWindow();
+  }
+
   cardSwipePreviewState.value = {
     intensity: clampDemandCardSwipePreviewIntensity(previewState.intensity),
     phase: previewState.phase,
@@ -285,6 +333,10 @@ const handleCardSwipePreview = (previewState: DemandCardSwipePreviewState) => {
 const handleSwitchViewMode = (mode: EventViewMode) => {
   if (viewMode.value === mode) {
     return;
+  }
+
+  if (mode !== "CARD") {
+    consumeCardDragHintWindow();
   }
 
   resetCardSwipePreview();
@@ -300,6 +352,7 @@ watch(
 );
 
 watch(eventId, () => {
+  consumeCardDragHintWindow();
   resetCardSwipePreview();
 });
 
@@ -726,17 +779,39 @@ watch(activeDemandCard, () => {
 
 watch(
   isCardStageActive,
-  (isActive) => {
+  (isActive, wasActive) => {
     syncCardOverflowGuard(isActive);
 
     if (!isActive) {
+      consumeCardDragHintWindow();
       resetCardSwipePreview();
+      return;
+    }
+
+    if (!wasActive) {
+      scheduleCardDragHint();
     }
   },
   { immediate: true },
 );
 
+watch(
+  prefersReducedMotion,
+  (reduced) => {
+    if (reduced) {
+      consumeCardDragHintWindow();
+      return;
+    }
+
+    if (isCardStageActive.value) {
+      scheduleCardDragHint();
+    }
+  },
+  { immediate: false },
+);
+
 onUnmounted(() => {
+  consumeCardDragHintWindow();
   syncCardOverflowGuard(false);
 });
 
@@ -754,6 +829,7 @@ const handleSkipActiveCard = () => {
     return;
   }
 
+  consumeCardDragHintWindow();
   resetCardSwipePreview();
   markCardProcessed(card.cardKey);
   cardActionError.value = null;
@@ -765,6 +841,7 @@ const handleViewActiveCardDetail = async () => {
     return;
   }
 
+  consumeCardDragHintWindow();
   resetCardSwipePreview();
   cardActionError.value = null;
   isCardRouting.value = true;

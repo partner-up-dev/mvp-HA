@@ -68,8 +68,14 @@ const footerNavLinks = computed(() => [
 
 <style lang="scss" scoped>
 .home-section--footer {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   justify-content: flex-start;
   gap: var(--dcs-space-footer-gap);
+  padding-top: var(--full-common-footer-padding-top, 0);
+  padding-left: var(--full-common-footer-padding-inline-start, 0);
+  padding-right: var(--full-common-footer-padding-inline-end, 0);
   padding-bottom: calc(
     var(--dcs-space-landing-section-padding-block) + var(--pu-safe-bottom)
   );
