@@ -64,6 +64,7 @@
       :style="itemMotionStyle(1)"
       :events="highlightEvents"
       variant="full-bleed"
+      :auto-scroll="isInView"
       :max-count="MAX_HIGHLIGHT_COUNT"
       @card-click="trackHighlightClick($event.eventId, $event.index)"
     />

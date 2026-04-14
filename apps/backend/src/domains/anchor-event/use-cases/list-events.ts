@@ -76,28 +76,8 @@ function toSummary(
   };
 }
 
-function shuffledCopy<T>(items: readonly T[]): T[] {
-  const shuffled = [...items];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    const current = shuffled[index];
-    const candidate = shuffled[swapIndex];
-
-    if (current === undefined || candidate === undefined) {
-      continue;
-    }
-
-    shuffled[index] = candidate;
-    shuffled[swapIndex] = current;
-  }
-
-  return shuffled;
-}
-
 export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
-  // Shuffle once per request to avoid long-term top-item exposure bias.
-  const events = shuffledCopy(await repo.listActive());
+  const events = await repo.listActive();
 
   const uniqueLocationLabels = new Set<string>();
   for (const event of events) {

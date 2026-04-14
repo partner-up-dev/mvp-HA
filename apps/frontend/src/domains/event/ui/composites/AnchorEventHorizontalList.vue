@@ -1,28 +1,52 @@
 <template>
   <ul
+    ref="listRef"
     class="anchor-event-horizontal-list"
-    :class="`anchor-event-horizontal-list--${variant}`"
+    :class="[
+      `anchor-event-horizontal-list--${variant}`,
+      {
+        'anchor-event-horizontal-list--looping': loopEnabled,
+      },
+    ]"
+    @pointerdown="handlePointerDown"
+    @scroll.passive="handleScroll"
   >
     <li
-      v-for="(event, index) in visibleEvents"
-      :key="event.id"
+      v-for="(item, index) in renderedEvents"
+      :key="item.key"
+      :ref="(element) => setItemRef(index, element)"
       class="anchor-event-horizontal-list__item"
     >
       <EventCard
         class="anchor-event-horizontal-list__card"
-        :event="event"
-        :variant="cardVariant"
+        :event="item.event"
+        :variant="resolvedCardVariant"
         :surface="cardSurface"
-        @click="emitCardClick(event.id, index)"
+        @click="emitCardClick(item.event.id, item.sourceIndex)"
       />
     </li>
   </ul>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import {
+  type ComponentPublicInstance,
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
 import type { AnchorEventListItem } from "@/domains/event/model/types";
+
+type RenderedEventItem = {
+  key: string;
+  event: AnchorEventListItem;
+  sourceIndex: number;
+};
 
 const props = withDefaults(
   defineProps<{
@@ -31,12 +55,15 @@ const props = withDefaults(
     variant?: "full-bleed" | "contained";
     cardVariant?: "default" | "shorter";
     cardSurface?: "filled" | "outline";
+    autoScroll?: boolean;
+    autoScrollSpeedPxPerSecond?: number;
   }>(),
   {
     maxCount: 4,
     variant: "contained",
-    cardVariant: "shorter",
     cardSurface: "filled",
+    autoScroll: false,
+    autoScrollSpeedPxPerSecond: 26,
   },
 );
 
@@ -45,10 +72,329 @@ const emit = defineEmits<{
 }>();
 
 const visibleEvents = computed(() => props.events.slice(0, props.maxCount));
+const resolvedCardVariant = computed(() =>
+  props.cardVariant ?? (props.variant === "full-bleed" ? "default" : "shorter"),
+);
+const renderedEvents = computed<RenderedEventItem[]>(() => {
+  const baseItems = visibleEvents.value.map((event, sourceIndex) => ({
+    key: `${event.id}-0-${sourceIndex}`,
+    event,
+    sourceIndex,
+  }));
+
+  if (!loopEnabled.value) {
+    return baseItems;
+  }
+
+  return Array.from({ length: 3 }, (_, copyIndex) =>
+    visibleEvents.value.map((event, sourceIndex) => ({
+      key: `${event.id}-${copyIndex}-${sourceIndex}`,
+      event,
+      sourceIndex,
+    })),
+  ).flat();
+});
+const listRef = ref<HTMLUListElement | null>(null);
+const itemRefs = ref<Array<HTMLLIElement | null>>([]);
+const loopEnabled = ref(false);
+const loopSegmentWidth = ref(0);
+const isPointerHolding = ref(false);
+const isInteractionPaused = ref(false);
+
+let resizeObserver: ResizeObserver | null = null;
+let animationFrameId: number | null = null;
+let lastAnimationFrameAt: number | null = null;
+let resumeTimerId: number | null = null;
+let detachWindowListeners: (() => void) | null = null;
+
+const resolveItemElement = (
+  element: Element | ComponentPublicInstance | null,
+): HTMLLIElement | null => {
+  if (element instanceof HTMLLIElement) {
+    return element;
+  }
+
+  if (
+    element &&
+    "$el" in element &&
+    element.$el instanceof HTMLLIElement
+  ) {
+    return element.$el;
+  }
+
+  return null;
+};
+
+const setItemRef = (
+  index: number,
+  element: Element | ComponentPublicInstance | null,
+) => {
+  const itemElement = resolveItemElement(element);
+  if (itemElement) {
+    itemRefs.value[index] = itemElement;
+    return;
+  }
+
+  itemRefs.value[index] = null;
+};
+
+const stopAnimation = () => {
+  if (animationFrameId !== null) {
+    window.cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  lastAnimationFrameAt = null;
+};
+
+const clearResumeTimer = () => {
+  if (resumeTimerId !== null) {
+    window.clearTimeout(resumeTimerId);
+    resumeTimerId = null;
+  }
+};
+
+const resetLoopState = () => {
+  const list = listRef.value;
+  loopEnabled.value = false;
+  loopSegmentWidth.value = 0;
+  isPointerHolding.value = false;
+  isInteractionPaused.value = false;
+  clearResumeTimer();
+
+  if (list) {
+    list.scrollTo({ left: 0, behavior: "auto" });
+  }
+};
+
+const resolveLoopSegmentWidth = () => {
+  const firstItem = itemRefs.value[0];
+  const middleCopyStart = itemRefs.value[visibleEvents.value.length];
+  if (!(firstItem instanceof HTMLLIElement)) {
+    return 0;
+  }
+  if (!(middleCopyStart instanceof HTMLLIElement)) {
+    return 0;
+  }
+
+  return middleCopyStart.offsetLeft - firstItem.offsetLeft;
+};
+
+const normalizeLoopPosition = () => {
+  const list = listRef.value;
+  const segmentWidth = loopSegmentWidth.value;
+  if (!list || !loopEnabled.value || segmentWidth <= 0) {
+    return;
+  }
+
+  let nextScrollLeft = list.scrollLeft;
+  if (nextScrollLeft < segmentWidth) {
+    nextScrollLeft += segmentWidth;
+  } else if (nextScrollLeft >= segmentWidth * 2) {
+    nextScrollLeft -= segmentWidth;
+  }
+
+  if (nextScrollLeft !== list.scrollLeft) {
+    list.scrollTo({
+      left: nextScrollLeft,
+      behavior: "auto",
+    });
+  }
+};
+
+const updateLoopAvailability = async () => {
+  await nextTick();
+
+  const list = listRef.value;
+  if (!list) {
+    return;
+  }
+
+  if (!props.autoScroll || visibleEvents.value.length <= 1) {
+    resetLoopState();
+    return;
+  }
+
+  if (!loopEnabled.value) {
+    const hasOverflow = list.scrollWidth - list.clientWidth > 1;
+    if (!hasOverflow) {
+      resetLoopState();
+      return;
+    }
+
+    loopEnabled.value = true;
+    await nextTick();
+  }
+
+  const refreshedList = listRef.value;
+  if (!refreshedList) {
+    return;
+  }
+
+  const segmentWidth = resolveLoopSegmentWidth();
+  if (segmentWidth <= refreshedList.clientWidth + 1) {
+    resetLoopState();
+    return;
+  }
+
+  loopSegmentWidth.value = segmentWidth;
+  normalizeLoopPosition();
+};
 
 const emitCardClick = (eventId: number, index: number) => {
   emit("card-click", { eventId, index });
 };
+
+const scheduleResume = () => {
+  if (!loopEnabled.value) {
+    return;
+  }
+
+  clearResumeTimer();
+  resumeTimerId = window.setTimeout(() => {
+    resumeTimerId = null;
+    normalizeLoopPosition();
+    isInteractionPaused.value = false;
+  }, 140);
+};
+
+const handlePointerDown = (event: PointerEvent) => {
+  if (!loopEnabled.value) {
+    return;
+  }
+
+  if (event.pointerType === "mouse" && event.button !== 0) {
+    return;
+  }
+
+  clearResumeTimer();
+  isPointerHolding.value = true;
+  isInteractionPaused.value = true;
+};
+
+const finishPointerInteraction = () => {
+  if (!loopEnabled.value || !isPointerHolding.value) {
+    return;
+  }
+
+  isPointerHolding.value = false;
+  scheduleResume();
+};
+
+const handleScroll = () => {
+  if (!loopEnabled.value) {
+    return;
+  }
+
+  if (isPointerHolding.value || resumeTimerId !== null) {
+    isInteractionPaused.value = true;
+    scheduleResume();
+  }
+};
+
+const stepAutoScroll = (timestamp: number) => {
+  const list = listRef.value;
+  if (
+    !list ||
+    !loopEnabled.value ||
+    isInteractionPaused.value ||
+    props.autoScrollSpeedPxPerSecond <= 0
+  ) {
+    stopAnimation();
+    return;
+  }
+
+  if (lastAnimationFrameAt !== null) {
+    const elapsedMs = timestamp - lastAnimationFrameAt;
+    const distance =
+      (props.autoScrollSpeedPxPerSecond * elapsedMs) / 1000;
+    list.scrollLeft += distance;
+
+    if (loopSegmentWidth.value > 0 && list.scrollLeft >= loopSegmentWidth.value * 2) {
+      list.scrollLeft -= loopSegmentWidth.value;
+    }
+  }
+
+  lastAnimationFrameAt = timestamp;
+  animationFrameId = window.requestAnimationFrame(stepAutoScroll);
+};
+
+watch(
+  () => renderedEvents.value.length,
+  (length) => {
+    itemRefs.value = itemRefs.value.slice(0, length);
+  },
+  { immediate: true },
+);
+
+watch(
+  [() => visibleEvents.value, () => props.autoScroll, () => props.variant],
+  () => {
+    void updateLoopAvailability();
+  },
+  { flush: "post" },
+);
+
+watchEffect((onCleanup) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  stopAnimation();
+
+  if (
+    !loopEnabled.value ||
+    isInteractionPaused.value ||
+    props.autoScrollSpeedPxPerSecond <= 0
+  ) {
+    onCleanup(() => {
+      stopAnimation();
+    });
+    return;
+  }
+
+  animationFrameId = window.requestAnimationFrame(stepAutoScroll);
+  onCleanup(() => {
+    stopAnimation();
+  });
+});
+
+onMounted(() => {
+  void updateLoopAvailability();
+
+  if (typeof window !== "undefined") {
+    const handleWindowPointerUp = () => {
+      finishPointerInteraction();
+    };
+    const handleWindowResize = () => {
+      void updateLoopAvailability();
+    };
+
+    window.addEventListener("pointerup", handleWindowPointerUp);
+    window.addEventListener("pointercancel", handleWindowPointerUp);
+    window.addEventListener("resize", handleWindowResize);
+
+    detachWindowListeners = () => {
+      window.removeEventListener("pointerup", handleWindowPointerUp);
+      window.removeEventListener("pointercancel", handleWindowPointerUp);
+      window.removeEventListener("resize", handleWindowResize);
+    };
+  }
+
+  if (typeof ResizeObserver !== "undefined" && listRef.value) {
+    resizeObserver = new ResizeObserver(() => {
+      void updateLoopAvailability();
+    });
+    resizeObserver.observe(listRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  stopAnimation();
+  clearResumeTimer();
+  resizeObserver?.disconnect();
+  detachWindowListeners?.();
+  detachWindowListeners = null;
+});
 </script>
 
 <style lang="scss" scoped>
@@ -69,6 +415,10 @@ const emitCardClick = (eventId: number, index: number) => {
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
+}
+
+.anchor-event-horizontal-list--looping {
+  scroll-snap-type: none;
 }
 
 .anchor-event-horizontal-list--full-bleed {
