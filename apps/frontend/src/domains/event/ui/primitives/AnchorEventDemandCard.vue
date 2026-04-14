@@ -5,12 +5,17 @@
       'demand-card--dragging': isDragging,
       'demand-card--pending': isPendingState,
       'demand-card--preview': preview,
+      'demand-card--interactive': isDetailActionAvailable,
     }"
+    :role="isDetailActionAvailable ? 'button' : undefined"
     :style="cardStyle"
+    :tabindex="isDetailActionAvailable ? 0 : undefined"
     @pointerdown="handlePointerDown"
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"
     @pointercancel="handlePointerCancel"
+    @keydown.enter.prevent="handleDetailKeydown"
+    @keydown.space.prevent="handleDetailKeydown"
     @transitionend="handleTransitionEnd"
   >
     <div
@@ -82,6 +87,7 @@ const EXIT_DRAG_MULTIPLIER = 1.5;
 const HINT_WOBBLE_TRANSITION = "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)";
 const HINT_WOBBLE_STEP_MS = 180;
 const HINT_WOBBLE_INTENSITIES = [0.5, -0.5, 0.36, -0.36, 0] as const;
+const TAP_DETAIL_MAX_DISTANCE = 12;
 
 type MotionSample = {
   x: number;
@@ -91,6 +97,7 @@ type MotionSample = {
 type PointerState = {
   pointerId: number;
   startX: number;
+  startY: number;
   tiltDirectionFactor: number;
   pivotY: number;
   motionSamples: MotionSample[];
@@ -141,6 +148,7 @@ const previewAnchorCorner = ref<DemandCardSwipePreviewAnchorCorner | null>(
 );
 const hintWobbleRunId = ref(0);
 const isHintWobbling = ref(false);
+const tapDetailEligible = ref(false);
 let hintWobbleTimerId: number | null = null;
 let dragAnimationFrameId: number | null = null;
 let pendingDragPointerId: number | null = null;
@@ -155,6 +163,9 @@ const displayNotes = computed(() => {
   const normalized = props.notes?.trim() ?? "";
   return normalized.length > 0 ? normalized : null;
 });
+const isDetailActionAvailable = computed(
+  () => !props.preview && props.detailPrId !== null,
+);
 const isInteractionLocked = computed(
   () =>
     props.preview ||
@@ -421,6 +432,7 @@ const playHintWobble = () => {
   previewAnchorCorner.value = null;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
+  tapDetailEligible.value = false;
 
   isHintWobbling.value = true;
   const runId = hintWobbleRunId.value + 1;
@@ -440,6 +452,7 @@ const resetCardState = () => {
   swipePhase.value = "idle";
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
+  tapDetailEligible.value = false;
 };
 
 const startRebound = () => {
@@ -453,6 +466,7 @@ const startRebound = () => {
   emitSwipePreview(0, "rebounding");
   translateX.value = 0;
   rawTranslateX.value = 0;
+  tapDetailEligible.value = false;
 };
 
 const startExit = (action: SwipeAction) => {
@@ -473,6 +487,7 @@ const startExit = (action: SwipeAction) => {
       window.innerWidth * EXIT_VIEWPORT_MULTIPLIER,
       MAX_DRAG_DISTANCE * EXIT_DRAG_MULTIPLIER,
     );
+  tapDetailEligible.value = false;
 };
 
 const triggerAction = (action: SwipeAction) => {
@@ -517,12 +532,14 @@ const handlePointerDown = (event: PointerEvent) => {
   swipePhase.value = "dragging";
   previewAnchorViewportY.value = event.clientY;
   previewAnchorCorner.value = anchorCorner;
+  tapDetailEligible.value = true;
   emitSwipePreview(0, "dragging", event.clientY, anchorCorner);
 
   currentTarget.setPointerCapture(event.pointerId);
   activePointer.value = {
     pointerId: event.pointerId,
     startX: event.clientX,
+    startY: event.clientY,
     tiltDirectionFactor,
     pivotY: localY,
     motionSamples: [{ x: event.clientX, timestamp: event.timeStamp }],
@@ -537,6 +554,13 @@ const handlePointerMove = (event: PointerEvent) => {
     swipePhase.value !== "dragging"
   ) {
     return;
+  }
+
+  if (
+    Math.abs(event.clientX - pointer.startX) > TAP_DETAIL_MAX_DISTANCE ||
+    Math.abs(event.clientY - pointer.startY) > TAP_DETAIL_MAX_DISTANCE
+  ) {
+    tapDetailEligible.value = false;
   }
 
   scheduleDragFrame(event.pointerId, event.clientX, event.timeStamp);
@@ -592,6 +616,11 @@ const handlePointerUp = (event: PointerEvent) => {
     return;
   }
 
+  if (tapDetailEligible.value && isDetailActionAvailable.value) {
+    startExit("view-detail");
+    return;
+  }
+
   startRebound();
 };
 
@@ -634,6 +663,14 @@ const handleTransitionEnd = (event: TransitionEvent) => {
   }
 
   emit("view-detail");
+};
+
+const handleDetailKeydown = () => {
+  if (!isDetailActionAvailable.value) {
+    return;
+  }
+
+  triggerAction("view-detail");
 };
 
 watch(
@@ -705,6 +742,15 @@ defineExpose({
   touch-action: pan-y;
   display: flex;
   flex-direction: column;
+}
+
+.demand-card--interactive {
+  cursor: pointer;
+}
+
+.demand-card--interactive:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 3px;
 }
 
 .demand-card--pending {
@@ -802,6 +848,12 @@ defineExpose({
   @include mx.pu-font(body-medium);
   margin: 0;
   color: var(--sys-color-on-surface-variant);
-  white-space: pre-wrap;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  text-overflow: ellipsis;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 </style>

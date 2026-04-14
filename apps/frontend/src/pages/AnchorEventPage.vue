@@ -301,9 +301,15 @@ const consumeCardDragHintWindow = () => {
   clearCardDragHintTimer();
 };
 
-const handleSwitchViewMode = (mode: EventViewMode) => {
-  if (viewMode.value === mode) {
-    return;
+const applyViewMode = (mode: EventViewMode) => {
+  if (
+    mode === "CARD" &&
+    viewMode.value !== "CARD" &&
+    remainingDemandCards.value.length === 0 &&
+    processedCardKeys.value.length > 0
+  ) {
+    processedCardKeys.value = [];
+    cardActionError.value = null;
   }
 
   if (mode !== "CARD") {
@@ -313,10 +319,18 @@ const handleSwitchViewMode = (mode: EventViewMode) => {
   viewMode.value = mode;
 };
 
+const handleSwitchViewMode = (mode: EventViewMode) => {
+  if (viewMode.value === mode) {
+    return;
+  }
+
+  applyViewMode(mode);
+};
+
 watch(
   [eventId, () => route.query.mode],
   () => {
-    viewMode.value = resolveInitialViewMode();
+    applyViewMode(resolveInitialViewMode());
   },
   { immediate: true },
 );
@@ -474,6 +488,11 @@ const formatBatchOptionLabel = (
   return `${baseLabel} · ${description}`;
 };
 
+const formatCardTimeLabel = (
+  batch: AnchorEventDetailResponse["batches"][number],
+  index: number,
+): string => formatBatchLabel(batch.timeWindow, index);
+
 const batchTabs = computed(() =>
   sortedBatches.value.map((batch, index) => ({
     key: batch.id,
@@ -617,7 +636,7 @@ const buildDemandCards = (
   const cardMap = new Map<string, DemandCardViewModel>();
 
   batches.forEach((batch, batchIndex) => {
-    const timeLabel = formatBatchOptionLabel(batch, batchIndex);
+    const timeLabel = formatCardTimeLabel(batch, batchIndex);
     const batchStartTimestamp = resolveBatchStartTimestamp(batch.timeWindow);
 
     batch.prs.forEach((pr) => {

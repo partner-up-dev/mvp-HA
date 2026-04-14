@@ -2,7 +2,7 @@
 
 ## MVT Core
 
-- Objective & Hypothesis: make the public active event catalog deterministic again, add optional looped continuous auto-scroll support to the reusable horizontal event rail, and fix the full-bleed highlight rail so it uses the intended non-compact card variant. Hypothesis: a small backend use-case rollback plus a domain-local rail enhancement is enough, while keeping frontend ordering truth opaque and backend-authored.
+- Objective & Hypothesis: make the public active event catalog deterministic again, add optional looped continuous auto-scroll support to the reusable horizontal event rail, scale its motion from live rail dimensions instead of a dead fixed speed, and fix the full-bleed highlight rail so it uses the intended non-compact card variant. Hypothesis: a small backend use-case rollback plus a domain-local rail enhancement is enough, while keeping frontend ordering truth opaque and backend-authored.
 - Guardrails Touched:
   - `docs/10-prd/behavior/workflows.md`
   - `docs/20-product-tdd/cross-unit-contracts.md`
@@ -21,7 +21,8 @@
   - remove per-request shuffle from the backend event catalog use-case
   - keep ordering backend-authored and opaque to frontend consumers
   - add opt-in auto-scroll to `AnchorEventHorizontalList` only
-  - enable auto-scroll from `EventHighlightsSection` only
+  - derive rail auto-scroll speed from live container width and card footprint using the 350px rail as the motion baseline
+  - enable auto-scroll from `EventHighlightsSection` and Anchor Event `OtherAnchorEventsSection`
   - preserve contained rails as compact/outline unless explicitly overridden
 - Excluded for this issue:
   - new ranking, recommendation, or personalization policy

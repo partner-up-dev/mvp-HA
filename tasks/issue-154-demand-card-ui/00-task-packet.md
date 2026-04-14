@@ -181,3 +181,18 @@
   - Passed: `pnpm --filter @partner-up-dev/frontend build`
   - Token lint remains at the same 42 unrelated baseline findings outside the accepted baseline
   - Remaining risk: without Android WeChat WebView traces, this is still a best-first optimization pass rather than a proven root-cause fix
+
+## Follow-up Slice: Card Detail Affordance And Reset Semantics
+
+- Objective & Hypothesis: Align Anchor Event card mode with the updated browsing expectation that each Demand Card is a direct detail entry, while keeping list-mode batch context intact. Hypothesis: separating card-only time text from list/batch labels, treating a tap on the active card as the same intent as a right-swipe, resetting processed cards when the user returns to card mode after exhausting the stack, and clamping notes to three lines will make card-mode browsing clearer without widening the mutation surface.
+- Guardrails Touched:
+  - `docs/10-prd/behavior/workflows.md`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventDemandCard.vue`
+  - `tasks/issue-154-demand-card-ui/00-task-packet.md`
+- Planned Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification Outcome:
+  - Passed: `pnpm --filter @partner-up-dev/frontend build`
+  - Verified in code that card-mode time text now excludes batch description, the active card tap path resolves to the same `view-detail` exit action as right swipe, and card-mode reset applies through both UI toggle and query-driven mode re-entry via shared `applyViewMode(...)`
+  - Notes rendering is now clamped to three lines with ellipsis behavior via `-webkit-line-clamp: 3`
