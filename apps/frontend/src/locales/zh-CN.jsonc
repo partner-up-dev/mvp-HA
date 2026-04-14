@@ -1186,12 +1186,12 @@
     "exhausted": "该活动所有场次已满",
     "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
     "betaGroupCard": {
-      "kicker": "活动内测群",
-      "description": "加入内测群，申请场次、获取补贴、联系搭子",
+      "kicker": "搭子群",
+      "description": "加入搭子群，申请场次、获取补贴、联系搭子",
       "expandAction": "查看二维码",
       "collapseAction": "收起二维码",
-      "qrAlt": "{eventTitle} 内测群二维码",
-      "qrMissing": "该活动暂未配置内测群二维码。"
+      "qrAlt": "{eventTitle} 搭子群二维码",
+      "qrMissing": "该活动暂未配置搭子群二维码。"
     },
     "otherEvents": {
       "title": "看看其它活动",

@@ -70,7 +70,7 @@
           aria-hidden="true"
         />
 
-        <div class="card-stage__front-shell">
+        <div class="card-stage__front-shell" :key="activeDemandCard.cardKey">
           <AnchorEventDemandCard
             ref="frontDemandCardRef"
             class="card-stage__front"
@@ -81,7 +81,7 @@
             :cover-image="activeDemandCard.coverImage"
             :detail-pr-id="activeDemandCard.detailPrId"
             :pending="isCardRouting"
-            @swipe-preview="emitSwipePreview"
+            @swipe-preview="handleSwipePreview"
             @skip="emitSkipActiveCard"
             @view-detail="emitViewActiveCardDetail"
           />
@@ -213,6 +213,7 @@ import {
   DEMAND_CARD_EXIT_TIMING,
   DEMAND_CARD_REBOUND_TIMING,
   clampDemandCardSwipePreviewIntensity,
+  createIdleDemandCardSwipePreviewState,
   type DemandCardSwipePreviewState,
 } from "@/domains/event/ui/demand-card-swipe-feedback";
 
@@ -247,7 +248,6 @@ const props = defineProps<{
   stackPreviewCards: DemandCardViewModel[];
   isCardRouting: boolean;
   cardActionError: string | null;
-  swipePreviewState: DemandCardSwipePreviewState;
   dragHintToken: number;
   cardCreateBatchOptions: CardBatchOption[];
   cardCreateBatchId: number | null;
@@ -261,7 +261,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "swipe-preview": [previewState: DemandCardSwipePreviewState];
+  "consume-drag-hint-window": [];
   "skip-active-card": [];
   "view-active-card-detail": [];
   "update:cardCreateBatchId": [value: number | null];
@@ -271,13 +271,17 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const frontDemandCardRef = ref<FrontDemandCardHandle | null>(null);
+const swipePreviewState = ref<DemandCardSwipePreviewState>(
+  createIdleDemandCardSwipePreviewState(),
+);
+const hasConsumedDragHintWindow = ref(false);
 
 const swipePreviewIntensity = computed(() =>
-  clampDemandCardSwipePreviewIntensity(props.swipePreviewState.intensity),
+  clampDemandCardSwipePreviewIntensity(swipePreviewState.value.intensity),
 );
-const swipePreviewPhase = computed(() => props.swipePreviewState.phase);
+const swipePreviewPhase = computed(() => swipePreviewState.value.phase);
 const swipePreviewAnchorCorner = computed(
-  () => props.swipePreviewState.anchorCorner,
+  () => swipePreviewState.value.anchorCorner,
 );
 const swipePreviewMagnitude = computed(() =>
   Math.min(Math.abs(swipePreviewIntensity.value), 1),
@@ -401,8 +405,22 @@ const rightProjectionLightStyle = computed(() =>
   buildProjectionLightStyle("right"),
 );
 
-const emitSwipePreview = (previewState: DemandCardSwipePreviewState) => {
-  emit("swipe-preview", previewState);
+const handleSwipePreview = (previewState: DemandCardSwipePreviewState) => {
+  if (
+    !hasConsumedDragHintWindow.value &&
+    previewState.phase !== "idle" &&
+    previewState.phase !== "hinting"
+  ) {
+    hasConsumedDragHintWindow.value = true;
+    emit("consume-drag-hint-window");
+  }
+
+  swipePreviewState.value = {
+    intensity: clampDemandCardSwipePreviewIntensity(previewState.intensity),
+    phase: previewState.phase,
+    anchorViewportY: previewState.anchorViewportY,
+    anchorCorner: previewState.anchorCorner,
+  };
 };
 
 const emitSkipActiveCard = () => {
@@ -458,6 +476,13 @@ const handleCardCreateLocationChange = (event: Event) => {
 
   emit("update:cardCreateLocationId", select.value);
 };
+
+watch(
+  () => props.activeDemandCard?.cardKey ?? null,
+  () => {
+    swipePreviewState.value = createIdleDemandCardSwipePreviewState();
+  },
+);
 
 watch(
   () => props.dragHintToken,

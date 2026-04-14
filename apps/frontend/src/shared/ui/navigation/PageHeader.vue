@@ -48,11 +48,22 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const router = useRouter();
 const defaultBackFallbackTo: RouteLocationRaw = { path: "/" };
+type RouterHistoryState = {
+  back?: string | null;
+};
 
 const backLabel = props.backLabel ?? t("common.backToHome");
 
-const canGoBack = (): boolean =>
-  typeof window !== "undefined" && window.history.length > 1;
+const hasRouterBackEntry = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const historyState = window.history.state as RouterHistoryState | null;
+  return (
+    typeof historyState?.back === "string" && historyState.back.length > 0
+  );
+};
 
 const resolveBackFallbackTo = (): RouteLocationRaw =>
   props.backFallbackTo ?? defaultBackFallbackTo;
@@ -69,7 +80,7 @@ async function handleBack(): Promise<void> {
     return;
   }
 
-  if (canGoBack()) {
+  if (hasRouterBackEntry()) {
     router.back();
     return;
   }

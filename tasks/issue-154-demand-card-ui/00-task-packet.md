@@ -160,3 +160,24 @@
   - Passed: `pnpm --filter @partner-up-dev/frontend build`
   - Token lint remains at the same 42 unrelated baseline findings outside the accepted baseline
   - Android WeChat WebView optimization is intentionally left at diagnosis / proposal stage pending product confirmation on the preferred trade-off
+
+## Follow-up Slice: Local Swipe Preview And RAF Drag Batching
+
+- Objective & Hypothesis: Try optimization path A without materially downgrading the glow / badge presentation, because card mode is a core landing surface. Hypothesis: moving swipe-preview ownership out of the page and batching drag work behind `requestAnimationFrame` will reduce Android WeChat WebView jank while preserving the current aha moment.
+- Guardrails Touched:
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventDemandCard.vue`
+- Implemented:
+  - removed the page-level swipe preview round-trip so `AnchorEventPage` no longer stores per-frame drag preview state
+  - made `AnchorEventCardModeSection` own the glow prompt / projection preview state locally and only notify the page once to consume the delayed drag-hint window
+  - changed active-card drag updates in `AnchorEventDemandCard` from every `pointermove` mutation to `requestAnimationFrame` batching
+  - switched the drag transform to `translate3d(...)` and added `will-change: transform` on the active card shell to make compositor promotion more explicit
+  - kept glow, prompt, badge, and preview-stack visuals intact instead of adding any Android-specific visible downgrade in this pass
+- Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `pnpm --filter @partner-up-dev/frontend lint:tokens`
+- Verification Outcome:
+  - Passed: `pnpm --filter @partner-up-dev/frontend build`
+  - Token lint remains at the same 42 unrelated baseline findings outside the accepted baseline
+  - Remaining risk: without Android WeChat WebView traces, this is still a best-first optimization pass rather than a proven root-cause fix

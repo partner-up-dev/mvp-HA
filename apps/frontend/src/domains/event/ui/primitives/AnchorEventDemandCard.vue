@@ -79,8 +79,7 @@ const PREVIEW_OPACITY_STEP = 0.12;
 const PREVIEW_MIN_OPACITY = 0.72;
 const EXIT_VIEWPORT_MULTIPLIER = 1.1;
 const EXIT_DRAG_MULTIPLIER = 1.5;
-const HINT_WOBBLE_TRANSITION =
-  "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)";
+const HINT_WOBBLE_TRANSITION = "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)";
 const HINT_WOBBLE_STEP_MS = 180;
 const HINT_WOBBLE_INTENSITIES = [0.5, -0.5, 0.36, -0.36, 0] as const;
 
@@ -137,10 +136,16 @@ const swipePhase = ref<SwipePhase>("idle");
 const pendingAction = ref<SwipeAction | null>(null);
 const hasDispatchedExitAction = ref(false);
 const previewAnchorViewportY = ref<number | null>(null);
-const previewAnchorCorner = ref<DemandCardSwipePreviewAnchorCorner | null>(null);
+const previewAnchorCorner = ref<DemandCardSwipePreviewAnchorCorner | null>(
+  null,
+);
 const hintWobbleRunId = ref(0);
 const isHintWobbling = ref(false);
 let hintWobbleTimerId: number | null = null;
+let dragAnimationFrameId: number | null = null;
+let pendingDragPointerId: number | null = null;
+let pendingDragClientX: number | null = null;
+let pendingDragTimestamp: number | null = null;
 
 const isDragging = computed(() => swipePhase.value === "dragging");
 const isPendingState = computed(
@@ -201,7 +206,7 @@ const cardStyle = computed(() => {
   const scale = 1 - dragProgress.value * 0.02;
   return {
     transformOrigin: transformOrigin.value,
-    transform: `translateX(${translateX.value}px) rotate(${rotationDeg.value}deg) scale(${scale})`,
+    transform: `translate3d(${translateX.value}px, 0, 0) rotate(${rotationDeg.value}deg) scale(${scale})`,
     transition:
       swipePhase.value === "dragging" ? "none" : settleTransition.value,
   };
@@ -237,6 +242,71 @@ const appendMotionSample = (
     .slice(-MAX_VELOCITY_SAMPLES);
 };
 
+const clearDragAnimationFrame = () => {
+  if (typeof window === "undefined" || dragAnimationFrameId === null) {
+    return;
+  }
+
+  window.cancelAnimationFrame(dragAnimationFrameId);
+  dragAnimationFrameId = null;
+};
+
+const applyDragFrame = (
+  pointer: PointerState,
+  clientX: number,
+  timestamp: number,
+) => {
+  rawTranslateX.value = clientX - pointer.startX;
+  translateX.value = applyDamping(rawTranslateX.value);
+  emitSwipePreview(rawTranslateX.value / swipeThreshold.value, "dragging");
+  appendMotionSample(pointer, clientX, timestamp);
+};
+
+const scheduleDragFrame = (
+  pointerId: number,
+  clientX: number,
+  timestamp: number,
+) => {
+  pendingDragPointerId = pointerId;
+  pendingDragClientX = clientX;
+  pendingDragTimestamp = timestamp;
+
+  if (dragAnimationFrameId !== null) {
+    return;
+  }
+
+  if (typeof window === "undefined") {
+    const pointer = activePointer.value;
+    if (
+      pointer &&
+      pointer.pointerId === pointerId &&
+      swipePhase.value === "dragging"
+    ) {
+      applyDragFrame(pointer, clientX, timestamp);
+    }
+    return;
+  }
+
+  dragAnimationFrameId = window.requestAnimationFrame(() => {
+    dragAnimationFrameId = null;
+
+    const pointer = activePointer.value;
+    if (!pointer || swipePhase.value !== "dragging") {
+      return;
+    }
+
+    if (pendingDragPointerId !== pointer.pointerId) {
+      return;
+    }
+
+    if (pendingDragClientX === null || pendingDragTimestamp === null) {
+      return;
+    }
+
+    applyDragFrame(pointer, pendingDragClientX, pendingDragTimestamp);
+  });
+};
+
 const resolveVelocityX = (
   pointer: PointerState,
   endX: number,
@@ -260,8 +330,7 @@ const emitSwipePreview = (
   intensity: number,
   phase: SwipePhase = swipePhase.value,
   anchorViewportY: number | null = previewAnchorViewportY.value,
-  anchorCorner: DemandCardSwipePreviewAnchorCorner | null =
-    previewAnchorCorner.value,
+  anchorCorner: DemandCardSwipePreviewAnchorCorner | null = previewAnchorCorner.value,
 ) => {
   if (props.preview) {
     return;
@@ -298,6 +367,7 @@ const applyHintWobbleIntensity = (intensity: number) => {
 const stopHintWobble = () => {
   clearHintWobbleTimer();
   hintWobbleRunId.value += 1;
+  clearDragAnimationFrame();
 
   if (!isHintWobbling.value) {
     return;
@@ -374,6 +444,7 @@ const resetCardState = () => {
 
 const startRebound = () => {
   stopHintWobble();
+  clearDragAnimationFrame();
   activePointer.value = null;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
@@ -386,6 +457,7 @@ const startRebound = () => {
 
 const startExit = (action: SwipeAction) => {
   stopHintWobble();
+  clearDragAnimationFrame();
   const direction = action === "skip" ? -1 : 1;
 
   activePointer.value = null;
@@ -405,6 +477,7 @@ const startExit = (action: SwipeAction) => {
 
 const triggerAction = (action: SwipeAction) => {
   stopHintWobble();
+  clearDragAnimationFrame();
 
   if (isInteractionLocked.value || swipePhase.value !== "idle") {
     return;
@@ -420,6 +493,7 @@ const triggerAction = (action: SwipeAction) => {
 
 const handlePointerDown = (event: PointerEvent) => {
   stopHintWobble();
+  clearDragAnimationFrame();
 
   if (isInteractionLocked.value || swipePhase.value !== "idle") return;
 
@@ -465,10 +539,7 @@ const handlePointerMove = (event: PointerEvent) => {
     return;
   }
 
-  rawTranslateX.value = event.clientX - pointer.startX;
-  translateX.value = applyDamping(rawTranslateX.value);
-  emitSwipePreview(rawTranslateX.value / swipeThreshold.value, "dragging");
-  appendMotionSample(pointer, event.clientX, event.timeStamp);
+  scheduleDragFrame(event.pointerId, event.clientX, event.timeStamp);
 };
 
 const resolveSwipeAction = (
@@ -501,8 +572,14 @@ const handlePointerUp = (event: PointerEvent) => {
     return;
   }
 
+  clearDragAnimationFrame();
+  pendingDragPointerId = null;
+  pendingDragClientX = null;
+  pendingDragTimestamp = null;
+
   const velocityX = resolveVelocityX(pointer, event.clientX, event.timeStamp);
-  const action = resolveSwipeAction(rawTranslateX.value, velocityX);
+  const offsetX = event.clientX - pointer.startX;
+  const action = resolveSwipeAction(offsetX, velocityX);
   activePointer.value = null;
 
   if (action === "view-detail" && props.detailPrId === null) {
@@ -521,6 +598,7 @@ const handlePointerUp = (event: PointerEvent) => {
 const handlePointerCancel = (event: PointerEvent) => {
   const pointer = activePointer.value;
   if (!pointer || pointer.pointerId !== event.pointerId) return;
+  clearDragAnimationFrame();
   startRebound();
 };
 
@@ -605,6 +683,7 @@ watch(
 
 onUnmounted(() => {
   stopHintWobble();
+  clearDragAnimationFrame();
 });
 
 defineExpose({
@@ -622,6 +701,7 @@ defineExpose({
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   box-shadow: var(--sys-shadow-3);
+  will-change: transform;
   touch-action: pan-y;
   display: flex;
   flex-direction: column;
@@ -644,7 +724,7 @@ defineExpose({
 }
 
 .demand-card__cover {
-  min-height: clamp(220px, calc(var(--pu-vh) * 0.34), 420px);
+  min-height: clamp(220px, calc(var(--pu-vh) * 0.26), 320px);
   background-size: cover;
   background-position: center;
   display: flex;
