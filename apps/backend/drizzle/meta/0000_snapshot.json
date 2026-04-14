@@ -476,6 +476,12 @@
           "notNull": true,
           "default": "'OPEN'"
         },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -731,6 +737,12 @@
         },
         "cover_image": {
           "name": "cover_image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beta_group_qr_code": {
+          "name": "beta_group_qr_code",
           "type": "text",
           "primaryKey": false,
           "notNull": false
