@@ -129,8 +129,8 @@ export interface SendPRMessageNotificationParams {
   openId: string;
   threadTitle: string;
   authorName: string;
-  messagePreview: string;
   sentAt: string;
+  messageSummary: string;
   page: string | null;
 }
 
@@ -387,10 +387,10 @@ export class WeChatSubscriptionMessageService {
       openId: params.openId,
       page: params.page,
       data: {
-        thing1: { value: clipText(params.threadTitle, 20) },
-        name2: { value: clipText(params.authorName, 10) },
-        thing3: { value: clipText(params.messagePreview, 20) },
-        time4: { value: clipText(params.sentAt, 32) },
+        thing5: { value: clipText(params.threadTitle, 20) },
+        time2: { value: clipText(params.sentAt, 32) },
+        name3: { value: clipText(params.authorName, 10) },
+        thing4: { value: clipText(params.messageSummary, 20) },
       },
     });
   }

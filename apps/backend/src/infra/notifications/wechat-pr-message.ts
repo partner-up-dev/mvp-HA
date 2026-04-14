@@ -6,6 +6,7 @@ import { PRMessageInboxStateRepository } from "../../repositories/PRMessageInbox
 import { NotificationDeliveryRepository } from "../../repositories/NotificationDeliveryRepository";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
+import { PRMessageRepository } from "../../repositories/PRMessageRepository";
 import { UserNotificationOptRepository } from "../../repositories/UserNotificationOptRepository";
 import { UserRepository } from "../../repositories/UserRepository";
 import {
@@ -17,14 +18,14 @@ import { prMessageSchedulePolicy } from "./job-schedule-policy";
 
 const WECHAT_PR_MESSAGE_JOB_TYPE = "wechat.notification.pr-message";
 const PR_MESSAGE_DEDUPE_PREFIX = "wechat-pr-message";
+export const PR_MESSAGE_DEBOUNCE_WINDOW_MS = 5 * 60 * 1_000;
 
 const prMessageJobPayloadSchema = z.object({
   prId: z.coerce.number().int().positive(),
   recipientUserId: userIdSchema,
-  authorUserId: userIdSchema,
-  messageId: z.coerce.number().int().positive(),
-  messageBody: z.string().trim().min(1),
-  messageCreatedAtIso: z.string().datetime(),
+  waveStartAuthorUserId: userIdSchema,
+  waveStartMessageId: z.coerce.number().int().positive(),
+  firstUnreadMessageCreatedAtIso: z.string().datetime(),
   scheduledAtIso: z.string().datetime(),
 });
 
@@ -35,6 +36,7 @@ const partnerRepo = new PartnerRepository();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
 const inboxStateRepo = new PRMessageInboxStateRepository();
+const messageRepo = new PRMessageRepository();
 const deliveryRepo = new NotificationDeliveryRepository();
 const subscriptionMessageService = new WeChatSubscriptionMessageService();
 
@@ -43,8 +45,9 @@ let prMessageHandlerRegistered = false;
 const buildPRMessageDedupeKey = (
   recipientUserId: UserId,
   prId: PRId,
-  messageId: number,
-): string => `${PR_MESSAGE_DEDUPE_PREFIX}:${recipientUserId}:${prId}:${messageId}`;
+  waveStartMessageId: number,
+): string =>
+  `${PR_MESSAGE_DEDUPE_PREFIX}:${recipientUserId}:${prId}:${waveStartMessageId}`;
 
 const buildPRMessageDedupePrefixForUser = (userId: UserId): string =>
   `${PR_MESSAGE_DEDUPE_PREFIX}:${userId}:`;
@@ -70,6 +73,14 @@ const resolveThreadTitle = (request: PartnerRequest): string =>
 
 const resolveAuthorName = (nickname: string | null): string =>
   nickname?.trim() || "搭子";
+
+const formatUnreadMessageSummary = (messageCount: number): string =>
+  `${Math.max(1, messageCount)}条留言，请尽快查看`;
+
+export const resolvePRMessageNotificationRunAt = (
+  firstUnreadMessageCreatedAt: Date,
+): Date =>
+  new Date(firstUnreadMessageCreatedAt.getTime() + PR_MESSAGE_DEBOUNCE_WINDOW_MS);
 
 const formatMessageSentAt = (messageCreatedAtIso: string): string =>
   new Date(messageCreatedAtIso).toLocaleString("zh-CN", {
@@ -190,7 +201,7 @@ async function handlePRMessageJob(
     payload.prId,
     payload.recipientUserId,
   );
-  if ((inboxState?.lastNotifiedMessageId ?? null) !== payload.messageId) {
+  if ((inboxState?.lastNotifiedMessageId ?? null) !== payload.waveStartMessageId) {
     await recordDelivery({
       jobId: context.jobId,
       payload,
@@ -201,7 +212,7 @@ async function handlePRMessageJob(
     return;
   }
 
-  if ((inboxState?.lastReadMessageId ?? 0) >= payload.messageId) {
+  if ((inboxState?.lastReadMessageId ?? 0) >= payload.waveStartMessageId) {
     await recordDelivery({
       jobId: context.jobId,
       payload,
@@ -240,15 +251,28 @@ async function handlePRMessageJob(
     return;
   }
 
-  const author = await userRepo.findById(payload.authorUserId);
+  const unreadAfterMessageId = inboxState?.lastReadMessageId ?? null;
+  const [latestUnreadMessage, unreadMessageCount, fallbackAuthor] =
+    await Promise.all([
+      messageRepo.findLatestWithAuthorAfterId(payload.prId, unreadAfterMessageId),
+      messageRepo.countByPrIdAfterId(payload.prId, unreadAfterMessageId),
+      userRepo.findById(payload.waveStartAuthorUserId),
+    ]);
+
+  const latestUnreadMessageCreatedAtIso =
+    latestUnreadMessage?.createdAt.toISOString() ??
+    payload.firstUnreadMessageCreatedAtIso;
+  const latestUnreadAuthorName = latestUnreadMessage
+    ? resolveAuthorName(latestUnreadMessage.authorNickname)
+    : resolveAuthorName(fallbackAuthor?.nickname ?? null);
 
   try {
     await subscriptionMessageService.sendPRMessageNotification({
       openId: recipient.openId,
       threadTitle: resolveThreadTitle(request),
-      authorName: resolveAuthorName(author?.nickname ?? null),
-      messagePreview: payload.messageBody,
-      sentAt: formatMessageSentAt(payload.messageCreatedAtIso),
+      authorName: latestUnreadAuthorName,
+      sentAt: formatMessageSentAt(latestUnreadMessageCreatedAtIso),
+      messageSummary: formatUnreadMessageSummary(unreadMessageCount),
       page: resolvePrUrl(request),
     });
     const consumeResult =
@@ -297,27 +321,30 @@ export async function scheduleWeChatPRMessageNotification(input: {
   request: PartnerRequest;
   recipientUserId: UserId;
   authorUserId: UserId;
-  messageId: number;
-  messageBody: string;
-  messageCreatedAt: Date;
+  waveStartMessageId: number;
+  firstUnreadMessageCreatedAt: Date;
 }): Promise<void> {
+  const runAt = resolvePRMessageNotificationRunAt(
+    input.firstUnreadMessageCreatedAt,
+  );
+
   await jobRunner.scheduleOnce({
     jobType: WECHAT_PR_MESSAGE_JOB_TYPE,
-    runAt: new Date(),
+    runAt,
     ...prMessageSchedulePolicy,
     dedupeKey: buildPRMessageDedupeKey(
       input.recipientUserId,
       input.request.id,
-      input.messageId,
+      input.waveStartMessageId,
     ),
     payload: {
       prId: input.request.id,
       recipientUserId: input.recipientUserId,
-      authorUserId: input.authorUserId,
-      messageId: input.messageId,
-      messageBody: input.messageBody,
-      messageCreatedAtIso: input.messageCreatedAt.toISOString(),
-      scheduledAtIso: new Date().toISOString(),
+      waveStartAuthorUserId: input.authorUserId,
+      waveStartMessageId: input.waveStartMessageId,
+      firstUnreadMessageCreatedAtIso:
+        input.firstUnreadMessageCreatedAt.toISOString(),
+      scheduledAtIso: runAt.toISOString(),
     },
   });
 }

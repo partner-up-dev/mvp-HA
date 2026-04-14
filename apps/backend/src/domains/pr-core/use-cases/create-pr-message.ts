@@ -51,7 +51,6 @@ const scheduleNotificationsBestEffort = async (input: {
   request: PartnerRequest;
   authorUserId: UserId;
   messageId: PRMessageId;
-  messageBody: string;
   messageCreatedAt: Date;
 }): Promise<void> => {
   const configured = await subscriptionMessageService.isPRMessageConfigured();
@@ -101,9 +100,8 @@ const scheduleNotificationsBestEffort = async (input: {
         request: input.request,
         recipientUserId,
         authorUserId: input.authorUserId,
-        messageId: input.messageId,
-        messageBody: input.messageBody,
-        messageCreatedAt: input.messageCreatedAt,
+        waveStartMessageId: input.messageId,
+        firstUnreadMessageCreatedAt: input.messageCreatedAt,
       });
     } catch (error) {
       console.error("[PRMessage] failed to schedule notification", {
@@ -187,7 +185,6 @@ export async function createPRMessage(input: {
     request,
     authorUserId: input.authorUserId,
     messageId: createdMessage.id,
-    messageBody: createdMessage.body,
     messageCreatedAt: createdMessage.createdAt,
   });
 

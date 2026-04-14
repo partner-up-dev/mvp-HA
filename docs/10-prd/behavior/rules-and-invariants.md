@@ -74,6 +74,7 @@
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
 - Successful `Anchor PR` join should immediately offer the notification-subscription modal without making that modal the only later path to subscription management.
 - PR message notifications are limited to at most one send per `PR / recipient / unread wave`.
+- The current `PR_MESSAGE` timing policy is one fixed short-debounce summary opportunity per unread wave rather than immediate-send or sliding-delay behavior.
 - Before a PR message notification is sent, the system must re-validate that the recipient is still a current active participant of that PR.
 - Only `PLATFORM_PASSTHROUGH` booking requires the first booking-contact owner to provide a phone number. Standard `PLATFORM` booking must not add that requirement.
 - The platform-handled booking pending workspace admits PRs that are in `READY`, `FULL`, or `LOCKED_TO_START` and still meet minimum active-participant count. It does not require participants to be `CONFIRMED`.

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, sql } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   prMessages,
@@ -93,6 +93,66 @@ export class PRMessageRepository {
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
     }));
+  }
+
+  async findLatestWithAuthorAfterId(
+    prId: PRId,
+    afterMessageId: PRMessageId | null,
+  ): Promise<PRMessageWithAuthor | null> {
+    const predicate =
+      afterMessageId === null
+        ? eq(prMessages.prId, prId)
+        : and(eq(prMessages.prId, prId), gt(prMessages.id, afterMessageId));
+
+    const rows = await db
+      .select({
+        id: prMessages.id,
+        prId: prMessages.prId,
+        authorUserId: prMessages.authorUserId,
+        body: prMessages.body,
+        createdAt: prMessages.createdAt,
+        authorNickname: users.nickname,
+        authorAvatar: users.avatar,
+      })
+      .from(prMessages)
+      .leftJoin(users, eq(users.id, prMessages.authorUserId))
+      .where(predicate)
+      .orderBy(desc(prMessages.id))
+      .limit(1);
+
+    const row = rows[0] ?? null;
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      prId: row.prId,
+      authorUserId: row.authorUserId,
+      body: row.body,
+      createdAt: row.createdAt,
+      authorNickname: row.authorNickname,
+      authorAvatar: row.authorAvatar,
+    };
+  }
+
+  async countByPrIdAfterId(
+    prId: PRId,
+    afterMessageId: PRMessageId | null,
+  ): Promise<number> {
+    const predicate =
+      afterMessageId === null
+        ? eq(prMessages.prId, prId)
+        : and(eq(prMessages.prId, prId), gt(prMessages.id, afterMessageId));
+
+    const result = await db
+      .select({
+        count: sql<number>`count(*)::int`,
+      })
+      .from(prMessages)
+      .where(predicate);
+
+    return result[0]?.count ?? 0;
   }
 
   async create(data: NewPRMessage): Promise<PRMessage | null> {

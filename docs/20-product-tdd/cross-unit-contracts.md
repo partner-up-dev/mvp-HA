@@ -126,7 +126,8 @@ Important coordination note:
 - `POST /api/apr/:id/messages` accepts one plain-text message payload, rejects non-participants, persists the new message, and returns the created item plus refreshed thread viewer state.
 - `POST /api/apr/:id/messages/read-marker` advances the viewer's read marker idempotently after the thread is actually shown. Read-marker advancement should be explicit rather than piggybacked on list fetch, so prefetching or hidden loads do not silently clear an unread wave.
 - Message visibility, message creation, and read-marker advancement all reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread.
-- Backend notification fan-out evaluates all current active participants except the author. A `PR_MESSAGE` notification is eligible only when the recipient has available credits and no existing unread wave for the same PR.
+- Backend notification fan-out evaluates all current active participants except the author. A `PR_MESSAGE` notification is eligible only when the recipient has available credits and no existing unread wave for the same PR. When a new unread wave opens, backend schedules one DB-backed delayed notification job for that wave rather than using an in-process timer.
+- The delayed `PR_MESSAGE` job recomputes latest unread sender, latest unread timestamp, and unread count from persisted messages at execution time so the send payload reflects the current unread wave summary instead of only the first triggering message.
 - Asynchronous notification execution must revalidate recipient participation and eligibility before delivery instead of assuming the API-time participant set is still valid.
 - Frontend owns only route/page placement, thread rendering, composer input, join-success subscription-modal prompting, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
 

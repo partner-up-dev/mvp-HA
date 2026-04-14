@@ -50,7 +50,7 @@
 2. The message experience is a separate page so the detail page can stay focused on facts, participation, booking-support context, and notification-subscription management.
 3. A current active participant can post plain-text messages inside the PR to coordinate meetup details, timing changes, or other collaboration context.
 4. The system persists those messages inside the corresponding `PartnerRequest` context rather than forcing participants into an external chat tool.
-5. If other current active participants still have remaining notification quota, the system triggers message notifications under the rule of at most one send per `PR / recipient / unread wave`.
+5. If other current active participants still have remaining notification quota, the system opens one unread wave per `PR / recipient`, schedules one delayed summary notification opportunity after a short fixed debounce window, and still limits delivery to at most one send per unread wave.
 6. After another participant revisits that PR and catches up on the unread wave, a later wave may trigger a new notification.
 
 ## 7. Anchor Reliability Loop
