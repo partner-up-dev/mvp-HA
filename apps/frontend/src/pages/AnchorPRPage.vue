@@ -366,7 +366,7 @@
       </Modal>
     </template>
 
-    <ContactSupportFooter data-region="support" />
+    <MiniumCommonFooter data-region="support" />
   </PageScaffold>
 </template>
 
@@ -388,7 +388,7 @@ import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
-import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";

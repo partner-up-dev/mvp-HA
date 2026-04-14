@@ -321,7 +321,7 @@
     </div>
 
     <template #footer>
-      <ContactSupportFooter />
+      <MiniumCommonFooter />
     </template>
   </PageScaffoldFlow>
 </template>
@@ -333,7 +333,7 @@ import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import InlineNotice from "@/shared/ui/feedback/InlineNotice.vue";
-import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
 import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";

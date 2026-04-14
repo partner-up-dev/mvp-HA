@@ -1,19 +1,19 @@
 <template>
-  <footer class="contact-support-footer">
+  <footer class="minium-common-footer">
     <nav
-      class="contact-support-nav"
+      class="minium-common-footer__nav"
       :aria-label="t('aboutPage.footerNavLabel')"
     >
-      <RouterLink class="contact-support-link" :to="{ name: 'me' }">
+      <RouterLink class="minium-common-footer__link" :to="{ name: 'me' }">
         {{ t("home.landing.footerNavMine") }}
       </RouterLink>
       <RouterLink
-        class="contact-support-link"
+        class="minium-common-footer__link"
         :to="{ name: 'contact-support' }"
       >
         {{ t("contactAuthorPage.footerEntry") }}
       </RouterLink>
-      <RouterLink class="contact-support-link" :to="{ name: 'about' }">
+      <RouterLink class="minium-common-footer__link" :to="{ name: 'about' }">
         {{ t("aboutPage.footerEntry") }}
       </RouterLink>
     </nav>
@@ -28,13 +28,13 @@ const { t } = useI18n();
 </script>
 
 <style lang="scss" scoped>
-.contact-support-footer {
+.minium-common-footer {
   margin-top: var(--sys-spacing-lg);
   padding-top: var(--sys-spacing-sm);
   border-top: 1px solid var(--sys-color-outline-variant);
 }
 
-.contact-support-nav {
+.minium-common-footer__nav {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,7 +42,7 @@ const { t } = useI18n();
   gap: var(--sys-spacing-sm) var(--sys-spacing-med);
 }
 
-.contact-support-link {
+.minium-common-footer__link {
   @include mx.pu-font(label-large);
   color: var(--sys-color-secondary);
   text-decoration: none;

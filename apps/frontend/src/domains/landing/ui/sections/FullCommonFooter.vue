@@ -217,7 +217,7 @@ const footerNavLinks = computed(() => [
   .footer-nav-link {
     @include mx.pu-font(title-small);
     min-height: 3rem;
-    padding: 0.38rem 0.25rem;
+    padding: var(--sys-spacing-xs);
   }
 
   .footer-legal {

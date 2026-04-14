@@ -48,7 +48,7 @@
       </section>
     </main>
 
-    <LandingFooterSection data-region="footer" />
+    <FullCommonFooter data-region="footer" />
 
     <LandingBookmarkNudge data-region="bookmark-nudge" />
   </div>
@@ -63,7 +63,7 @@ import LandingValuePropsSection from "@/domains/landing/ui/sections/LandingValue
 import EventHighlightsSection from "@/domains/event/ui/sections/landing/EventHighlightsSection.vue";
 import EventPlazaEntry from "@/domains/event/ui/sections/landing/EventPlazaEntry.vue";
 import LandingBookmarkNudge from "@/domains/landing/ui/sections/LandingBookmarkNudge.vue";
-import LandingFooterSection from "@/domains/landing/ui/sections/LandingFooterSection.vue";
+import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue";
 import LandingWeChatAccessSection from "@/domains/landing/ui/sections/LandingWeChatAccessSection.vue";
 import { trackEvent } from "@/shared/telemetry/track";
 

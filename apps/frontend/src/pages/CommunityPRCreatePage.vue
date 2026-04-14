@@ -58,7 +58,7 @@
     </template>
 
     <template #footer>
-      <ContactSupportFooter data-region="support" />
+      <MiniumCommonFooter data-region="support" />
     </template>
 
     <ErrorToast
@@ -87,7 +87,7 @@ import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
 import NLPRForm from "@/domains/pr/ui/forms/NLPRForm.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
-import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
 import PRCreateHeader from "@/domains/pr/ui/sections/PRCreateHeader.vue";
 import PRCreateFooterActions from "@/domains/pr/ui/sections/PRCreateFooterActions.vue";

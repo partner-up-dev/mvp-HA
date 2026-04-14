@@ -80,7 +80,7 @@
     </div>
 
     <template #footer>
-      <ContactSupportFooter />
+      <MiniumCommonFooter />
     </template>
   </PageScaffoldFlow>
 </template>
@@ -91,7 +91,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PartnerRequestSummary } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
-import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";

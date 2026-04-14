@@ -1,24 +1,14 @@
 <template>
-  <PageScaffold
+  <FooterRevealPageScaffold
     :class="[
       'anchor-event-page',
       { 'anchor-event-page--card-active': isCardStageActive },
     ]"
     data-page="event-detail"
   >
-    <div v-if="isLoading" class="loading-state">
-      {{ t("common.loading") }}
-    </div>
-
-    <div v-else-if="isError" class="error-state">
-      {{ t("anchorEvent.loadFailed") }}
-      <router-link :to="{ name: 'event-plaza' }" class="back-link">
-        {{ t("anchorEvent.backToPlaza") }}
-      </router-link>
-    </div>
-
-    <template v-else-if="detail">
+    <template #header>
       <PageHeader
+        v-if="detail"
         class="anchor-event-page__header"
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
@@ -55,7 +45,19 @@
           </div>
         </template>
       </PageHeader>
+    </template>
 
+    <div v-if="isLoading" class="loading-state">
+      {{ t("common.loading") }}
+    </div>
+
+    <div v-else-if="isError" class="error-state">
+      {{ t("anchorEvent.loadFailed") }}
+      <router-link :to="{ name: 'event-plaza' }" class="back-link">
+        {{ t("anchorEvent.backToPlaza") }}
+      </router-link>
+    </div>
+    <template v-else-if="detail">
       <template v-if="viewMode === 'CARD'">
         <AnchorEventCardModeSection
           :active-demand-card="activeDemandCard"
@@ -109,7 +111,11 @@
         </router-link>
       </div>
     </template>
-  </PageScaffold>
+
+    <template #footer>
+      <MiniumCommonFooter data-region="support" />
+    </template>
+  </FooterRevealPageScaffold>
 </template>
 
 <script setup lang="ts">
@@ -119,7 +125,8 @@ import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import AnchorEventCardModeSection from "@/domains/event/ui/sections/AnchorEventCardModeSection.vue";
 import AnchorEventListModeSection from "@/domains/event/ui/sections/AnchorEventListModeSection.vue";
-import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
+import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import {
   useCreateUserAnchorPR,
@@ -1078,6 +1085,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
 .anchor-event-page {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .anchor-event-page__header,

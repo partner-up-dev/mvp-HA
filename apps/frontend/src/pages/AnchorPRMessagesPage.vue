@@ -25,7 +25,7 @@
     />
 
     <template #footer>
-      <ContactSupportFooter data-region="support" />
+      <MiniumCommonFooter data-region="support" />
     </template>
   </FullScreenPageScaffold>
 </template>
@@ -37,7 +37,7 @@ import FullScreenPageScaffold from "@/shared/ui/layout/FullScreenPageScaffold.vu
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import AnchorPRMessageThread from "@/domains/pr/ui/sections/AnchorPRMessageThread.vue";
-import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 
