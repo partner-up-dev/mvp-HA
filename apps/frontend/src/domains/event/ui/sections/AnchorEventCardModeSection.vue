@@ -332,7 +332,7 @@ const buildPromptStyle = (direction: "left" | "right") => {
 };
 
 const buildProjectionShellStyle = (direction: "left" | "right") => {
-  const slotY = projectionCornerSlot.value === "top" ? "23%" : "77%";
+  const slotY = projectionCornerSlot.value === "top" ? "23%" : "71%";
   const horizontalOffset = direction === "left" ? "-74%" : "74%";
 
   return {
@@ -433,6 +433,7 @@ const handleCardCreateLocationChange = (event: Event) => {
   flex-direction: column;
   gap: var(--sys-spacing-sm);
   min-height: 0;
+  --card-mode-inline-breathing-room: 10px;
   margin-left: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-left)));
   margin-right: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-right)));
 }
@@ -449,11 +450,18 @@ const handleCardCreateLocationChange = (event: Event) => {
   --card-stage-page-width: min(100vw, var(--dcs-layout-page-max-width));
   --card-stage-card-width: calc(
     var(--card-stage-page-width) - (var(--sys-spacing-med) * 2) -
+      (var(--card-mode-inline-breathing-room) * 2) -
       var(--pu-safe-left) - var(--pu-safe-right)
   );
   isolation: isolate;
-  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+  padding-inline-start: calc(
+    var(--sys-spacing-med) + var(--pu-safe-left) +
+      var(--card-mode-inline-breathing-room)
+  );
+  padding-inline-end: calc(
+    var(--sys-spacing-med) + var(--pu-safe-right) +
+      var(--card-mode-inline-breathing-room)
+  );
 }
 
 .card-stage__projection-layer {
@@ -693,16 +701,28 @@ const handleCardCreateLocationChange = (event: Event) => {
   @include mx.pu-font(body-medium);
   margin: 0;
   color: var(--sys-color-error);
-  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+  padding-inline-start: calc(
+    var(--sys-spacing-med) + var(--pu-safe-left) +
+      var(--card-mode-inline-breathing-room)
+  );
+  padding-inline-end: calc(
+    var(--sys-spacing-med) + var(--pu-safe-right) +
+      var(--card-mode-inline-breathing-room)
+  );
 }
 
 .card-mode__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-spacing-sm);
-  padding-inline-start: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-inline-end: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+  padding-inline-start: calc(
+    var(--sys-spacing-med) + var(--pu-safe-left) +
+      var(--card-mode-inline-breathing-room)
+  );
+  padding-inline-end: calc(
+    var(--sys-spacing-med) + var(--pu-safe-right) +
+      var(--card-mode-inline-breathing-room)
+  );
 }
 
 .card-mode__action {

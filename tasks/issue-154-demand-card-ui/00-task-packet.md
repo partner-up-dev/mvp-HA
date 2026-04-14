@@ -138,3 +138,25 @@
     - `375x667`: gap `14.78px`
     - `320x568`: gap `11.83px`
     - both remain positive, so the rail/card separation still holds structurally without overlap
+
+## Follow-up Slice: Card Breathing Room And Android WeChat WebView Diagnosis
+
+- Objective & Hypothesis: Make the active demand card read slimmer in card mode, lift the bottom-corner glow so lower drag starts still light the card's upper edge, and inspect Android WeChat WebView jank without committing to a risky motion rewrite yet. Hypothesis: reclaiming about `20px` of total card width through stage-side breathing room will improve negative space more cleanly than shrinking inner card content, while Android jank is more likely caused by per-frame reactive round-trips plus expensive glow compositing than by the drag transform alone.
+- Guardrails Touched:
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+  - `tasks/issue-154-demand-card-ui/00-task-packet.md`
+- Implemented:
+  - added `--card-mode-inline-breathing-room: 10px` so the card stage, action row, and inline error all align to a slightly narrower card footprint
+  - kept the change structural at the stage shell level instead of shrinking card content blocks, so cover, chips, and notes layout stay unchanged
+  - raised the bottom-corner glow shell slot from `77%` to `71%` so lower drag starts project light higher onto the card stack
+- Diagnosis Notes:
+  - the current swipe-preview pipeline performs a cross-component reactive round-trip on every `pointermove`: card emit -> section relay -> page state write -> section computed style rebuild
+  - the glow underlay remains expensive on weaker Android GPU / WebView combinations because it stacks `mix-blend-mode: screen`, multiple `filter: blur(...)` layers, gradients, and opacity / transform animation
+  - the active card also drags with large-surface `box-shadow`, while the location badge uses `backdrop-filter`, increasing composite cost during horizontal drag
+- Verification:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `pnpm --filter @partner-up-dev/frontend lint:tokens`
+- Verification Outcome:
+  - Passed: `pnpm --filter @partner-up-dev/frontend build`
+  - Token lint remains at the same 42 unrelated baseline findings outside the accepted baseline
+  - Android WeChat WebView optimization is intentionally left at diagnosis / proposal stage pending product confirmation on the preferred trade-off
