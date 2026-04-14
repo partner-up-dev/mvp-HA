@@ -1,5 +1,6 @@
 export type DemandCardSwipePreviewPhase =
   | "idle"
+  | "hinting"
   | "dragging"
   | "exiting"
   | "rebounding";

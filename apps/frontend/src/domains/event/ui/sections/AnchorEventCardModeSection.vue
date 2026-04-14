@@ -72,6 +72,7 @@
 
         <div class="card-stage__front-shell">
           <AnchorEventDemandCard
+            ref="frontDemandCardRef"
             class="card-stage__front"
             :display-location-name="activeDemandCard.displayLocationName"
             :time-label="activeDemandCard.timeLabel"
@@ -93,7 +94,7 @@
         type="button"
         class="card-mode__action card-mode__action--skip"
         :disabled="isCardRouting"
-        @click="emitSkipActiveCard"
+        @click="handleSkipActionClick"
       >
         {{ t("anchorEvent.card.skipButton") }}
       </button>
@@ -101,7 +102,7 @@
         type="button"
         class="card-mode__action card-mode__action--detail"
         :disabled="isCardRouting || activeDemandCard.detailPrId === null"
-        @click="emitViewActiveCardDetail"
+        @click="handleViewActionClick"
       >
         {{ t("anchorEvent.card.detailButton") }}
       </button>
@@ -203,7 +204,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
@@ -236,12 +237,18 @@ type CardCreateLocationOption = {
   disabled: boolean;
 };
 
+type FrontDemandCardHandle = {
+  triggerAction: (action: "skip" | "view-detail") => void;
+  playHintWobble: () => void;
+};
+
 const props = defineProps<{
   activeDemandCard: DemandCardViewModel | null;
   stackPreviewCards: DemandCardViewModel[];
   isCardRouting: boolean;
   cardActionError: string | null;
   swipePreviewState: DemandCardSwipePreviewState;
+  dragHintToken: number;
   cardCreateBatchOptions: CardBatchOption[];
   cardCreateBatchId: number | null;
   cardCreateLocationId: string;
@@ -263,6 +270,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const frontDemandCardRef = ref<FrontDemandCardHandle | null>(null);
 
 const swipePreviewIntensity = computed(() =>
   clampDemandCardSwipePreviewIntensity(props.swipePreviewState.intensity),
@@ -318,6 +326,14 @@ const feedbackTransition = computed(() => {
 });
 
 const buildPromptStyle = (direction: "left" | "right") => {
+  if (swipePreviewPhase.value === "hinting") {
+    return {
+      opacity: 0,
+      transform: "translate3d(0, 16px, 0) scale(0.96)",
+      transition: feedbackTransition.value,
+    };
+  }
+
   const active =
     direction === "left"
       ? swipePreviewIntensity.value < 0
@@ -397,6 +413,24 @@ const emitViewActiveCardDetail = () => {
   emit("view-active-card-detail");
 };
 
+const handleSkipActionClick = () => {
+  if (frontDemandCardRef.value) {
+    frontDemandCardRef.value.triggerAction("skip");
+    return;
+  }
+
+  emitSkipActiveCard();
+};
+
+const handleViewActionClick = () => {
+  if (frontDemandCardRef.value) {
+    frontDemandCardRef.value.triggerAction("view-detail");
+    return;
+  }
+
+  emitViewActiveCardDetail();
+};
+
 const emitCreateFromCardEmpty = () => {
   emit("create-from-card-empty");
 };
@@ -424,6 +458,17 @@ const handleCardCreateLocationChange = (event: Event) => {
 
   emit("update:cardCreateLocationId", select.value);
 };
+
+watch(
+  () => props.dragHintToken,
+  (token, previousToken) => {
+    if (token === previousToken || token <= 0) {
+      return;
+    }
+
+    frontDemandCardRef.value?.playHintWobble();
+  },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -450,8 +495,9 @@ const handleCardCreateLocationChange = (event: Event) => {
   --card-stage-page-width: min(100vw, var(--dcs-layout-page-max-width));
   --card-stage-card-width: calc(
     var(--card-stage-page-width) - (var(--sys-spacing-med) * 2) -
-      (var(--card-mode-inline-breathing-room) * 2) -
-      var(--pu-safe-left) - var(--pu-safe-right)
+      (var(--card-mode-inline-breathing-room) * 2) - var(--pu-safe-left) - var(
+        --pu-safe-right
+      )
   );
   isolation: isolate;
   padding-inline-start: calc(
@@ -723,6 +769,7 @@ const handleCardCreateLocationChange = (event: Event) => {
     var(--sys-spacing-med) + var(--pu-safe-right) +
       var(--card-mode-inline-breathing-room)
   );
+  padding-bottom: var(--sys-spacing-sm);
 }
 
 .card-mode__action {
@@ -752,6 +799,7 @@ const handleCardCreateLocationChange = (event: Event) => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
+  padding-bottom: var(--sys-spacing-med);
 }
 
 .card-empty {

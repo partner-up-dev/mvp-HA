@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import {
   DEMAND_CARD_EXIT_TRANSITION,
   DEMAND_CARD_REBOUND_TRANSITION,
@@ -79,6 +79,10 @@ const PREVIEW_OPACITY_STEP = 0.12;
 const PREVIEW_MIN_OPACITY = 0.72;
 const EXIT_VIEWPORT_MULTIPLIER = 1.1;
 const EXIT_DRAG_MULTIPLIER = 1.5;
+const HINT_WOBBLE_TRANSITION =
+  "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)";
+const HINT_WOBBLE_STEP_MS = 180;
+const HINT_WOBBLE_INTENSITIES = [0.5, -0.5, 0.36, -0.36, 0] as const;
 
 type MotionSample = {
   x: number;
@@ -134,6 +138,9 @@ const pendingAction = ref<SwipeAction | null>(null);
 const hasDispatchedExitAction = ref(false);
 const previewAnchorViewportY = ref<number | null>(null);
 const previewAnchorCorner = ref<DemandCardSwipePreviewAnchorCorner | null>(null);
+const hintWobbleRunId = ref(0);
+const isHintWobbling = ref(false);
+let hintWobbleTimerId: number | null = null;
 
 const isDragging = computed(() => swipePhase.value === "dragging");
 const isPendingState = computed(
@@ -207,6 +214,17 @@ const applyDamping = (offsetX: number): number => {
   return sign * damped;
 };
 
+const resolveSwipeThreshold = (): number => {
+  if (typeof window === "undefined") {
+    return MIN_DISTANCE_THRESHOLD;
+  }
+
+  return Math.max(
+    MIN_DISTANCE_THRESHOLD,
+    window.innerWidth * DISTANCE_THRESHOLD_RATIO,
+  );
+};
+
 const appendMotionSample = (
   pointer: PointerState,
   x: number,
@@ -260,7 +278,88 @@ const emitSwipePreview = (
   );
 };
 
+const clearHintWobbleTimer = () => {
+  if (typeof window === "undefined" || hintWobbleTimerId === null) {
+    return;
+  }
+
+  window.clearTimeout(hintWobbleTimerId);
+  hintWobbleTimerId = null;
+};
+
+const applyHintWobbleIntensity = (intensity: number) => {
+  swipeThreshold.value = resolveSwipeThreshold();
+  settleTransition.value = HINT_WOBBLE_TRANSITION;
+  rawTranslateX.value = intensity * swipeThreshold.value;
+  translateX.value = applyDamping(rawTranslateX.value);
+  emitSwipePreview(intensity, "hinting", null, null);
+};
+
+const stopHintWobble = () => {
+  clearHintWobbleTimer();
+  hintWobbleRunId.value += 1;
+
+  if (!isHintWobbling.value) {
+    return;
+  }
+
+  isHintWobbling.value = false;
+  rawTranslateX.value = 0;
+  translateX.value = 0;
+  settleTransition.value = HINT_WOBBLE_TRANSITION;
+  emitSwipePreview(0, "idle", null, null);
+};
+
+const runHintWobbleStep = (runId: number, index: number) => {
+  if (hintWobbleRunId.value !== runId) {
+    return;
+  }
+
+  const intensity = HINT_WOBBLE_INTENSITIES[index];
+  if (typeof intensity !== "number") {
+    isHintWobbling.value = false;
+    settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
+    return;
+  }
+
+  applyHintWobbleIntensity(intensity);
+
+  if (index === HINT_WOBBLE_INTENSITIES.length - 1) {
+    isHintWobbling.value = false;
+    settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
+    return;
+  }
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  hintWobbleTimerId = window.setTimeout(() => {
+    hintWobbleTimerId = null;
+    runHintWobbleStep(runId, index + 1);
+  }, HINT_WOBBLE_STEP_MS);
+};
+
+const playHintWobble = () => {
+  if (props.preview || props.pending || swipePhase.value !== "idle") {
+    return;
+  }
+
+  stopHintWobble();
+
+  previewAnchorViewportY.value = null;
+  previewAnchorCorner.value = null;
+  pendingAction.value = null;
+  hasDispatchedExitAction.value = false;
+
+  isHintWobbling.value = true;
+  const runId = hintWobbleRunId.value + 1;
+  hintWobbleRunId.value = runId;
+  runHintWobbleStep(runId, 0);
+};
+
 const resetCardState = () => {
+  stopHintWobble();
   previewAnchorViewportY.value = null;
   previewAnchorCorner.value = null;
   emitSwipePreview(0, "idle", null, null);
@@ -274,6 +373,7 @@ const resetCardState = () => {
 };
 
 const startRebound = () => {
+  stopHintWobble();
   activePointer.value = null;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
@@ -285,6 +385,7 @@ const startRebound = () => {
 };
 
 const startExit = (action: SwipeAction) => {
+  stopHintWobble();
   const direction = action === "skip" ? -1 : 1;
 
   activePointer.value = null;
@@ -302,7 +403,24 @@ const startExit = (action: SwipeAction) => {
     );
 };
 
+const triggerAction = (action: SwipeAction) => {
+  stopHintWobble();
+
+  if (isInteractionLocked.value || swipePhase.value !== "idle") {
+    return;
+  }
+
+  if (action === "view-detail" && props.detailPrId === null) {
+    startRebound();
+    return;
+  }
+
+  startExit(action);
+};
+
 const handlePointerDown = (event: PointerEvent) => {
+  stopHintWobble();
+
   if (isInteractionLocked.value || swipePhase.value !== "idle") return;
 
   const currentTarget = event.currentTarget;
@@ -466,7 +584,7 @@ watch(
     props.preferenceTags.join("|"),
   ],
   () => {
-    if (swipePhase.value !== "idle") {
+    if (swipePhase.value !== "idle" || isHintWobbling.value) {
       resetCardState();
     }
   },
@@ -475,11 +593,24 @@ watch(
 watch(
   () => props.pending,
   (isPending) => {
+    if (isPending && isHintWobbling.value) {
+      stopHintWobble();
+    }
+
     if (isPending && activePointer.value !== null) {
       startRebound();
     }
   },
 );
+
+onUnmounted(() => {
+  stopHintWobble();
+});
+
+defineExpose({
+  playHintWobble,
+  triggerAction,
+});
 </script>
 
 <style lang="scss" scoped>
