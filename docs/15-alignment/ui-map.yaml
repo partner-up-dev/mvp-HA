@@ -1,7 +1,8 @@
-version: 0.1
-scope: hot-surfaces
+version: 0.2
+scope: substrate-hot-surfaces
 notes:
-  - Partial map; expand only when repeated drift appears.
+  - Partial hot-surface aid only; not a full UI inventory.
+  - Keep this file minimal and prefer stable code anchors when possible.
 pages:
   - id: landing
     route: /

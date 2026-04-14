@@ -14,6 +14,12 @@ export type AnchorPRBookingSupportView = InferResponseType<
   (typeof client.api.apr)[":id"]["booking-support"]["$get"]
 >;
 
+export type AnchorPRSearchView = InferResponseType<
+  (typeof client.api.apr)["search"]["$get"]
+>;
+
+export type AnchorPRSearchResult = AnchorPRSearchView["results"][number];
+
 export type PRDetailView = CommunityPRDetailView | AnchorPRDetailView;
 
 export type PRFormFields = Omit<PartnerRequestFields, "budget"> & {

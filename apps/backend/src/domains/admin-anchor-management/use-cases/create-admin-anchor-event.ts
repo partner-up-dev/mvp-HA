@@ -18,6 +18,7 @@ export interface CreateAdminAnchorEventInput {
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   coverImage: string | null;
+  betaGroupQrCode: string | null;
   status: AnchorEventStatus;
 }
 
@@ -40,6 +41,7 @@ export async function createAdminAnchorEvent(
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
     coverImage: input.coverImage,
+    betaGroupQrCode: input.betaGroupQrCode,
     status: input.status,
   });
 }

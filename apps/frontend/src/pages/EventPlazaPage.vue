@@ -1,9 +1,15 @@
 <template>
   <PageScaffold class="event-plaza-page">
-    <PageHeader
-      :title="t('eventPlaza.title')"
-      :subtitle="t('eventPlaza.subtitle')"
-    />
+    <PageHeader :title="t('eventPlaza.title')" :subtitle="t('eventPlaza.subtitle')">
+      <template #top-actions>
+        <RouterLink
+          :to="{ name: 'anchor-pr-search' }"
+          class="event-plaza-page__search-link"
+        >
+          {{ t("eventPlaza.searchAction") }}
+        </RouterLink>
+      </template>
+    </PageHeader>
 
     <div v-if="isLoading" class="loading-state">
       {{ t("common.loading") }}
@@ -24,6 +30,7 @@
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
@@ -51,6 +58,11 @@ const { data: events, isLoading, isError } = useAnchorEvents();
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.event-plaza-page__search-link {
+  @include mx.pu-pill-action(outline-transparent, small);
+  text-decoration: none;
 }
 
 .loading-state,

@@ -31,22 +31,32 @@ const subscribeSendResponseSchema = z.object({
 
 const CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID =
   "wechat.submsg_confirmation_reminder_template_id";
+const CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID =
+  "wechat.submsg_activity_start_reminder_template_id";
 const CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID =
   "wechat.submsg_booking_result_template_id";
 const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
   "wechat.submsg_new_partner_template_id";
+const CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID =
+  "wechat.submsg_pr_message_template_id";
 
 type SubscriptionTemplateKind =
   | "REMINDER_CONFIRMATION"
+  | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
-  | "NEW_PARTNER";
+  | "NEW_PARTNER"
+  | "PR_MESSAGE";
 
 const resolveTemplateConfigKey = (kind: SubscriptionTemplateKind): string =>
   kind === "REMINDER_CONFIRMATION"
     ? CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
-    : kind === "BOOKING_RESULT"
+    : kind === "ACTIVITY_START_REMINDER"
+      ? CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
+      : kind === "BOOKING_RESULT"
       ? CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
-      : CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID;
+      : kind === "NEW_PARTNER"
+        ? CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
+        : CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
 
 const resolveTemplateEnvFallback = (
   kind: SubscriptionTemplateKind,
@@ -54,9 +64,13 @@ const resolveTemplateEnvFallback = (
   const value =
     kind === "REMINDER_CONFIRMATION"
       ? env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
-      : kind === "BOOKING_RESULT"
+      : kind === "ACTIVITY_START_REMINDER"
+        ? env.WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
+        : kind === "BOOKING_RESULT"
         ? env.WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
-        : env.WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID;
+        : kind === "NEW_PARTNER"
+          ? env.WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
+          : env.WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
 
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : null;
@@ -92,6 +106,15 @@ export interface SendNewPartnerNotificationParams {
   page: string | null;
 }
 
+export interface SendActivityStartReminderParams {
+  openId: string;
+  activityName: string;
+  startAt: string;
+  location: string;
+  remark: string;
+  page: string | null;
+}
+
 export interface SendBookingResultNotificationParams {
   openId: string;
   bookingItem: string;
@@ -99,6 +122,15 @@ export interface SendBookingResultNotificationParams {
   activityTime: string;
   address: string;
   bookingDetail: string;
+  page: string | null;
+}
+
+export interface SendPRMessageNotificationParams {
+  openId: string;
+  threadTitle: string;
+  authorName: string;
+  sentAt: string;
+  messageSummary: string;
   page: string | null;
 }
 
@@ -118,6 +150,10 @@ export class WeChatSubscriptionMessageService {
     return this.isConfigured("REMINDER_CONFIRMATION");
   }
 
+  async isActivityStartReminderConfigured(): Promise<boolean> {
+    return this.isConfigured("ACTIVITY_START_REMINDER");
+  }
+
   async isBookingResultConfigured(): Promise<boolean> {
     return this.isConfigured("BOOKING_RESULT");
   }
@@ -126,8 +162,16 @@ export class WeChatSubscriptionMessageService {
     return this.isConfigured("NEW_PARTNER");
   }
 
+  async isPRMessageConfigured(): Promise<boolean> {
+    return this.isConfigured("PR_MESSAGE");
+  }
+
   async getConfirmationReminderTemplateId(): Promise<string | null> {
     return this.resolveTemplateId("REMINDER_CONFIRMATION");
+  }
+
+  async getActivityStartReminderTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("ACTIVITY_START_REMINDER");
   }
 
   async getBookingResultTemplateId(): Promise<string | null> {
@@ -136,6 +180,10 @@ export class WeChatSubscriptionMessageService {
 
   async getNewPartnerTemplateId(): Promise<string | null> {
     return this.resolveTemplateId("NEW_PARTNER");
+  }
+
+  async getPRMessageTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("PR_MESSAGE");
   }
 
   private async sendSubscribeMessage(input: {
@@ -282,6 +330,22 @@ export class WeChatSubscriptionMessageService {
     });
   }
 
+  async sendActivityStartReminder(
+    params: SendActivityStartReminderParams,
+  ): Promise<string | number | null> {
+    return this.sendSubscribeMessage({
+      kind: "ACTIVITY_START_REMINDER",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        thing1: { value: clipText(params.activityName, 20) },
+        date5: { value: clipText(params.startAt, 32) },
+        thing8: { value: clipText(params.location, 20) },
+        thing7: { value: clipText(params.remark, 20) },
+      },
+    });
+  }
+
   async sendBookingResultNotification(
     params: SendBookingResultNotificationParams,
   ): Promise<string | number | null> {
@@ -311,6 +375,22 @@ export class WeChatSubscriptionMessageService {
         thing4: { value: clipText(params.teamName, 20) },
         thing5: { value: clipText(params.tip, 20) },
         time3: { value: clipText(params.appliedAt, 32) },
+      },
+    });
+  }
+
+  async sendPRMessageNotification(
+    params: SendPRMessageNotificationParams,
+  ): Promise<string | number | null> {
+    return this.sendSubscribeMessage({
+      kind: "PR_MESSAGE",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        thing5: { value: clipText(params.threadTitle, 20) },
+        time2: { value: clipText(params.sentAt, 32) },
+        name3: { value: clipText(params.authorName, 10) },
+        thing4: { value: clipText(params.messageSummary, 20) },
       },
     });
   }

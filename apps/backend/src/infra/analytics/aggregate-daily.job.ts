@@ -11,6 +11,8 @@ import {
 const ANALYTICS_DAILY_AGGREGATE_JOB_TYPE = "analytics.aggregate.daily";
 const ANALYTICS_DEDUPE_PREFIX = "analytics-daily";
 const BOOTSTRAP_DELAY_MS = 15_000;
+const ANALYTICS_RESOLUTION_MS = 1_000;
+const ANALYTICS_TOLERANCE_UNITS = 15 * 60;
 
 const payloadSchema = z.object({
   dateKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -30,6 +32,9 @@ const scheduleDailyAggregationForDate = async (
   await jobRunner.scheduleOnce({
     jobType: ANALYTICS_DAILY_AGGREGATE_JOB_TYPE,
     runAt: runAt ?? getRunAtForDateKey(payload.dateKey),
+    resolutionMs: ANALYTICS_RESOLUTION_MS,
+    earlyToleranceUnits: ANALYTICS_TOLERANCE_UNITS,
+    lateToleranceUnits: ANALYTICS_TOLERANCE_UNITS,
     dedupeKey: buildDedupeKey(payload.dateKey),
     payload,
   });

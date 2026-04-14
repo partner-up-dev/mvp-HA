@@ -1,27 +1,21 @@
-# Service Layer Guidelines
+# AGENTS.md for `src/services`
 
-## Responsibilities
+This directory is not the default home for new domain business logic.
 
-- 职责：处理业务规则、事务管理、数据加工。  
-- 调用关系：调用一个或多个 Repository。  
-- 错误处理：如果业务逻辑失败，抛出特定的 HTTPException 或应用层 Error。
+## Role
 
-## Example
+- `src/services/` currently exists for legacy facades and integration-oriented services that have not yet been moved into domain or infra owners.
+- New domain lifecycle behavior should usually go to `src/domains/*/use-cases/*` or `src/domains/*/services/*`.
+- Do not introduce a new generic service layer here just because a controller needs somewhere convenient to call.
 
-```ts
-// src/services/UserService.ts  
-import { UserRepository } from '../repositories/UserRepository';  
-import { HTTPException } from 'hono/http-exception';
+## Placement Rules
 
-const userRepo = new UserRepository();
+- Use `src/services/` only when the code is truly a legacy compatibility facade or a service that does not fit a clearer domain / infra owner yet.
+- If the logic owns business transitions, eligibility, or state semantics, it belongs under a domain owner instead.
+- If the logic is cross-cutting infrastructure such as events, jobs, analytics, or operation logs, it belongs under `src/infra/*`.
 
-export class UserService {  
-  async getUserProfile(id: number) {  
-    const user = await userRepo.findById(id);  
-    if (!user) {  
-      throw new HTTPException(404, { message: 'User not found' });  
-    }  
-    return user;  
-  }  
-}
-```
+## Guardrails
+
+- Keep facades thin when they delegate to domain use-cases.
+- Do not let `src/services/` become a second orchestration center that duplicates domain ownership.
+- When touching files here, check whether the clearer long-term owner should instead be `src/domains/*` or `src/infra/*`.

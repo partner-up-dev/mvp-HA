@@ -13,6 +13,9 @@ export const anchorPRDetailPath = (id: PRId): string => `/apr/${id}`;
 export const anchorPRBookingSupportPath = (id: PRId): string =>
   `/apr/${id}/booking-support`;
 
+export const anchorPRMessagesPath = (id: PRId): string =>
+  `/apr/${id}/messages`;
+
 export const communityPRPartnerProfilePath = (
   id: PRId,
   partnerId: number,

@@ -1,39 +1,39 @@
-# 运营与运行现实
+# Operational Realities
 
-## 1. 微信环境是关键运行现实
+## 1. WeChat Environment Differences Are a First-Class Product Reality
 
-产品的重要路径依赖微信环境：
+Important product paths depend on WeChat-specific capabilities:
 
-- 微信登录与绑定
-- 服务号订阅通知
-- 微信内分享
-- 微信内/微信外客服链接分流
+- WeChat login and binding
+- subscription notifications
+- WeChat sharing
+- support-link routing inside and outside WeChat
 
-因此产品规则必须接受“不同环境能力不同”的现实，而不是假定统一客户端能力。
+The product therefore has to accept capability differences across environments instead of assuming one uniform client.
 
-## 2. 协作可靠性需要靠反馈闭环而非单次承诺
+## 2. Reliability Depends on Feedback Loops, Not One-Time Promise Signals
 
-Anchor 场景当前通过以下机制提升可靠性：
+The current `Anchor PR` loop raises reliability through:
 
-- 确认窗口
-- 签到回流
-- 订阅提醒
-- 新搭子通知
+- confirmation windows
+- check-in feedback
+- reminder subscriptions
+- new-partner notifications
 
-这说明“是否真的来”“是否应继续相信该信号”是产品运行现实的一部分。
+This means "will the person actually show up" and "should the signal remain trustworthy" are part of current product reality, not secondary polish.
 
-## 3. 运营配置已进入产品闭环
+## 3. Operator Configuration Is Part of the User-Visible Product Loop
 
-客服链接、通知模板、POI、预订与资助资源等不只是技术配置，也会直接影响用户体验与冷启动效率。
+Support links, notification templates, POIs, booking support, and subsidy-related resources are not merely technical configuration. They directly affect user experience and cold-start viability.
 
-因此 PRD 需要承认运营配置是产品行为的一部分，而不是完全隐藏在实现内部。
+PRD therefore needs to recognize operator-managed configuration as part of product behavior whenever it changes the user-visible path.
 
-## 4. 当前系统仍处于 MVP 演化期
+## 4. The Product Is Still in MVP Evolution
 
-当前不少能力存在明确的阶段性现实：
+Some current capabilities remain stage-constrained realities:
 
-- 旧文档与新文档系统并存
-- 产品层已需要更稳定的语义边界
-- 技术分层与部署分层仍在后续迁移计划中
+- the product still depends on environment-specific capabilities rather than one universal client surface
+- operator-managed resources still materially shape whether user flows can complete successfully
+- some reliability and fulfillment flows are intentionally narrower than a mature platform would provide
 
-PRD 需要描述当前真实产品，而不是假设一个尚未完成的最终架构状态。
+PRD should describe the real current product rather than an imagined end-state platform.

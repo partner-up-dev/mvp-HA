@@ -33,8 +33,10 @@ import {
   registerAnalyticsAggregationJobs,
 } from "./infra/analytics";
 import {
+  registerWeChatActivityStartReminderJobs,
   registerWeChatBookingResultJobs,
   registerWeChatNewPartnerJobs,
+  registerWeChatPRMessageJobs,
   registerWeChatReminderJobs,
 } from "./infra/notifications";
 import { drainOutboxBatches } from "./infra/maintenance";
@@ -43,8 +45,10 @@ import { withTimeout } from "./lib/with-timeout";
 
 const app = new Hono();
 registerWeChatReminderJobs();
+registerWeChatActivityStartReminderJobs();
 registerWeChatNewPartnerJobs();
 registerWeChatBookingResultJobs();
+registerWeChatPRMessageJobs();
 registerAnalyticsAggregationJobs();
 void bootstrapAnalyticsAggregationJobs().catch((error) => {
   console.error(
@@ -223,6 +227,7 @@ export {
   createNaturalLanguagePRSchema,
   createPRStructuredStatusSchema,
 } from "./entities/partner-request";
+export { PR_MESSAGE_BODY_MAX_LENGTH } from "./entities/pr-message";
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export {
   userIdSchema,

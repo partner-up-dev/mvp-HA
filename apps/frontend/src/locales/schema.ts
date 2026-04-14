@@ -19,6 +19,19 @@ export interface MessageSchema {
     copyFailed: string;
     operationFailed: string;
   };
+  wechatMiniProgramWebView: {
+    title: string;
+    description: string;
+    instruction: string;
+    qrAlt: string;
+    qrGenerating: string;
+    qrFailed: string;
+    copyLinkAction: string;
+    operations: {
+      wechatShare: string;
+      openSubscribe: string;
+    };
+  };
   status: {
     draft: string;
     open: string;
@@ -236,10 +249,6 @@ export interface MessageSchema {
     betaGroupTitle: string;
     betaGroupDescription: string;
     betaGroupAction: string;
-    betaGroupModalTitle: string;
-    betaGroupModalDescription: string;
-    betaGroupQrAlt: string;
-    betaGroupQrMissing: string;
     authorEntry: string;
     useCases: {
       employee: string;
@@ -256,6 +265,18 @@ export interface MessageSchema {
     backendCommitLabel: string;
     unknownValue: string;
     backendCommitLoadFailed: string;
+    betaGroupsSectionTitle: string;
+    betaGroupsKicker: string;
+    betaGroupsTitle: string;
+    betaGroupsDescription: string;
+    betaGroupsLoading: string;
+    betaGroupsLoadFailed: string;
+    betaGroupsEmpty: string;
+    betaGroupLinkAction: string;
+    betaGroupModalTitle: string;
+    betaGroupModalDescription: string;
+    betaGroupQrAlt: string;
+    betaGroupQrMissing: string;
     footerEntry: string;
     footerNavLabel: string;
   };
@@ -309,6 +330,13 @@ export interface MessageSchema {
     metaFallbackTitle: string;
     metaFallbackDescription: string;
     metaTitleWithName: string;
+    bookingSupportEntry: {
+      title: string;
+      viewAction: string;
+      headlineFallback: string;
+      deadlineUnset: string;
+      deadlineWithValue: string;
+    };
     sameBatch: {
       title: string;
       subtitle: string;
@@ -337,11 +365,19 @@ export interface MessageSchema {
       subscribeOnceAction: string;
       remainingCountWithHint: string;
       openSubscribeUnavailableHint: string;
+      miniProgramWebViewHint: string;
+      openInWechatAction: string;
       items: {
         REMINDER_CONFIRMATION: {
           title: string;
           enabledHint: string;
           disabledHint: string;
+        };
+        ACTIVITY_START_REMINDER: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
         };
         BOOKING_RESULT: {
           title: string;
@@ -355,7 +391,45 @@ export interface MessageSchema {
           disabledHint: string;
           unconfiguredHint: string;
         };
+        PR_MESSAGE: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
       };
+    };
+    joinSuccessSubscriptions: {
+      description: string;
+      closeAction: string;
+    };
+    shareEntry: {
+      title: string;
+      hint: string;
+      action: string;
+    };
+    messageEntry: {
+      title: string;
+      hint: string;
+      action: string;
+    };
+    messagePage: {
+      title: string;
+      subtitle: string;
+      backToDetail: string;
+    };
+    messageThread: {
+      title: string;
+      subtitle: string;
+      nonRealtimeHint: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      inputLabel: string;
+      inputHint: string;
+      inputPlaceholder: string;
+      submitAction: string;
+      submittingAction: string;
+      authorFallback: string;
     };
     partnerSection: {
       title: string;
@@ -404,6 +478,127 @@ export interface MessageSchema {
       timelineBookingDeadline: string;
       timelineBookingTriggered: string;
     };
+  };
+  eventPlaza: {
+    title: string;
+    subtitle: string;
+    searchAction: string;
+    locationLeadSingle: string;
+    locationLeadWithMore: string;
+    locationCount: string;
+    openEventAction: string;
+    noEvents: string;
+    loadFailed: string;
+  };
+  anchorPRSearch: {
+    title: string;
+    resultTitle: string;
+    resultSubtitleFallback: string;
+    drawerTitle: string;
+    loadEventsFailed: string;
+    loadEventsFailedHint: string;
+    loadFailed: string;
+    loadFailedHint: string;
+    emptyEventsTitle: string;
+    emptyEventsDescription: string;
+    emptyResultTitle: string;
+    emptyResultDescription: string;
+    resultSummary: string;
+    redirectingSingleResult: string;
+    actions: {
+      backHome: string;
+      search: string;
+      modifyCriteria: string;
+      applyCriteria: string;
+      goEventPlaza: string;
+    };
+    form: {
+      eventTitle: string;
+      dateTitle: string;
+      todayMarker: string;
+      weekdays: {
+        mon: string;
+        tue: string;
+        wed: string;
+        thu: string;
+        fri: string;
+        sat: string;
+        sun: string;
+      };
+    };
+    resultCard: {
+      unknownTime: string;
+      unknownLocation: string;
+      partnerCountWithMax: string;
+      partnerCountWithoutMax: string;
+    };
+  };
+  anchorEvent: {
+    backToPlaza: string;
+    loadFailed: string;
+    noBatches: string;
+    noPRsInBatch: string;
+    batchLabel: string;
+    viewMode: {
+      ariaLabel: string;
+      card: string;
+      list: string;
+    };
+    card: {
+      batchLabel: string;
+      preferenceTitle: string;
+      preferenceEmpty: string;
+      skipButton: string;
+      detailButton: string;
+      swipeSkipHint: string;
+      swipeDetailHint: string;
+      emptyTitle: string;
+      emptySubtitle: string;
+    };
+    exhausted: string;
+    subscribeHint: string;
+    betaGroupCard: {
+      kicker: string;
+      description: string;
+      expandAction: string;
+      collapseAction: string;
+      qrAlt: string;
+      qrMissing: string;
+    };
+    otherEvents: {
+      title: string;
+      action: string;
+    };
+    discoverOthers: string;
+    createCard: {
+      title: string;
+      subtitle: string;
+      locationLabel: string;
+      locationPlaceholder: string;
+      bookingHint: string;
+      createAction: string;
+      creatingAction: string;
+      optionMaxReached: string;
+      optionRemaining: string;
+      errors: {
+        timeWindowConflict: string;
+        wechatAuthRequired: string;
+        wechatOAuthNotConfigured: string;
+        locationCapReached: string;
+        eventUnavailable: string;
+        createFailed: string;
+      };
+    };
+  };
+  prStatus: {
+    DRAFT: string;
+    OPEN: string;
+    READY: string;
+    FULL: string;
+    LOCKED_TO_START: string;
+    ACTIVE: string;
+    CLOSED: string;
+    EXPIRED: string;
   };
   createdPRList: {
     title: string;
@@ -566,6 +761,8 @@ export interface MessageSchema {
       generating: string;
       guidanceLine1: string;
       guidanceLine2: string;
+      miniProgramWebViewHint: string;
+      openInWechatAction: string;
       switchStyle: string;
       defaultShareTitle: string;
       pageDescriptionHome: string;
@@ -763,6 +960,7 @@ export interface MessageSchema {
     eventTypeLabel: string;
     eventDescriptionLabel: string;
     eventCoverImageLabel: string;
+    eventBetaGroupQrCodeLabel: string;
     eventStatusLabel: string;
     eventDefaultMinPartnersLabel: string;
     eventDefaultMaxPartnersLabel: string;
@@ -777,6 +975,7 @@ export interface MessageSchema {
     batchFormTitle: string;
     batchStartLabel: string;
     batchEndLabel: string;
+    batchDescriptionLabel: string;
     batchStatusLabel: string;
     saveBatchAction: string;
     createBatchAction: string;

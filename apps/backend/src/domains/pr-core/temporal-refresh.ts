@@ -25,7 +25,10 @@ import {
   listActiveParticipantSummariesForPR,
   recalculatePRStatus,
 } from "./services/slot-management.service";
-import { cancelWeChatReminderJobsForParticipant } from "../../infra/notifications";
+import {
+  cancelWeChatActivityStartReminderJobsForParticipant,
+  cancelWeChatReminderJobsForParticipant,
+} from "../../infra/notifications";
 import { operationLogService } from "../../infra/operation-log";
 import { getEffectiveBookingDeadline } from "../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "./services/anchor-booking-trigger.service";
@@ -207,6 +210,10 @@ async function releaseUnconfirmedSlotsIfNeeded(
   for (const slot of releasing) {
     await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });
     await cancelWeChatReminderJobsForParticipant(request.id, slot.userId);
+    await cancelWeChatActivityStartReminderJobsForParticipant(
+      request.id,
+      slot.userId,
+    );
     await partnerRepo.markReleased(slot.partnerId);
 
     operationLogService.log({

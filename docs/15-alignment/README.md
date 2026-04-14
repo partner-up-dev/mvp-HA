@@ -1,33 +1,71 @@
-# Alignment Pack
+# Alignment Substrate
 
-## Purpose
+## Role
 
-- Provide shared naming and anchors for reference-sensitive edits.
-- Reduce drift caused by ambiguous "this section" requests.
+Alignment exists only when collaboration repeatedly fails because humans and agents are not sharing the same referential system at the right granularity.
+
+The substrate is not a new truth layer. It is the coordination grammar used when natural-language intent is still too ambiguous to constrain a risky mutation safely.
 
 ## When To Read
 
-- UI changes or any edit where the target is ambiguous.
-- Changes that need explicit scope/invariant boundaries.
+Read `docs/15-alignment/*` only when one or more of these are true:
 
-## Canonical Target Formats
+- references or visual names are unstable
+- object boundaries are interpreted differently
+- operation words may hide different side effects
+- valid interpretation depends on state or context
+- evidence is still weak or blast radius is not obviously local
 
-- Frontend: page > region > block > element > state
-- Backend: bounded_context > service > module > endpoint > behavior
-- Docs: document > section > subsection > block
+If MVT plus local AGENTS already constrain the change cheaply, do not load the substrate.
 
-## Contents
+## What This Layer Owns
 
-- change-request-template.md
-- ui-map.yaml (partial map of hot surfaces)
+- shared object and address conventions for coordination
+- calculable or constrained surface maps for repeated hot surfaces
+- operation vocabulary tied to verification contracts
+- request structures that make boundary, state, evidence, and protocol explicit before risky mutation
 
-## How To Extend
+It does not own product intent, business rules, framework ontology, technical contracts, or runtime truth.
 
-- Add only hot surfaces with repeated drift.
-- Prefer stable anchors in code when ambiguity persists (data-page, data-region, test ids).
-- Keep the map minimal; remove stale entries.
+## Coordination Primitives
 
-## Non-Goals
+The substrate becomes actionable only when these primitives are explicit enough to verify:
 
-- Not product truth or technical design.
-- Not a full UI inventory.
+1. Object: what kind of thing is being discussed
+2. Address: where that thing lives in code or on a surface
+3. Operation: what state transition is intended
+4. Boundary and Invariants: what must not change
+5. State / Context: when the reference and mutation are valid
+6. Evidence: what objective proof justifies the change
+7. Protocol: how human and agent confirm shared understanding before execution
+
+## Engineering Rules
+
+### Prefer Stable Anchors Over Positional Descriptions
+
+When natural-language references are insufficient for frequently edited surfaces, prefer stable semantic anchors in code or route structure over purely positional descriptions.
+
+### Prefer Declarative State Diffs
+
+Express the intended mutation as:
+
+- `From`: current objective behavior or structure
+- `To`: desired objective behavior or structure
+
+This keeps object, operation, and constraints separate.
+
+### Bind Verbs To Verification
+
+Operation words are only useful when they imply a verification contract.
+
+Examples:
+
+- `refactor`: observable behavior stays equivalent
+- `extract`: topology changes while callers remain intact and a new verification seam appears
+
+## Current Assets
+
+- `change-request-template.md`
+- `ui-map.yaml`
+
+`ui-map.yaml` is intentionally minimal. It remains a partial hot-surface aid, not a full UI inventory.

@@ -45,7 +45,10 @@ const partnerIdParamSchema = z.object({
   partnerId: z.coerce.number().int().positive(),
 });
 
-const timeWindowSchema = z.tuple([z.string().nullable(), z.string().nullable()]);
+const timeWindowSchema = z.tuple([
+  z.string().nullable(),
+  z.string().nullable(),
+]);
 
 const adminAnchorEventInputSchema = z.object({
   title: z.string().trim().min(1),
@@ -56,12 +59,14 @@ const adminAnchorEventInputSchema = z.object({
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
   coverImage: z.string().trim().nullable(),
+  betaGroupQrCode: z.string().trim().nullable(),
   status: anchorEventStatusSchema,
 });
 
 const adminAnchorBatchInputSchema = z.object({
   timeWindow: timeWindowSchema,
   status: anchorEventBatchStatusSchema,
+  description: z.string().trim().nullable(),
 });
 
 const adminCreateAnchorPRInputSchema = z.object({
@@ -120,6 +125,7 @@ export const adminAnchorManagementRoute = app
         ),
         userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
         coverImage: payload.coverImage || null,
+        betaGroupQrCode: payload.betaGroupQrCode || null,
       });
       return c.json(result);
     },
@@ -139,6 +145,7 @@ export const adminAnchorManagementRoute = app
         ),
         userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
         coverImage: payload.coverImage || null,
+        betaGroupQrCode: payload.betaGroupQrCode || null,
       });
       return c.json(result);
     },
@@ -150,7 +157,10 @@ export const adminAnchorManagementRoute = app
     async (c) => {
       const { eventId } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await createAdminAnchorEventBatch(eventId, payload);
+      const result = await createAdminAnchorEventBatch(eventId, {
+        ...payload,
+        description: payload.description || null,
+      });
       return c.json(result);
     },
   )
@@ -161,7 +171,10 @@ export const adminAnchorManagementRoute = app
     async (c) => {
       const { batchId } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await updateAdminAnchorEventBatch(batchId, payload);
+      const result = await updateAdminAnchorEventBatch(batchId, {
+        ...payload,
+        description: payload.description || null,
+      });
       return c.json(result);
     },
   )

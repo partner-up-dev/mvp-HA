@@ -11,6 +11,14 @@ declare global {
 
   type WeChatOpenTagName = "wx-open-subscribe";
 
+  type WeChatMiniProgramEnv = {
+    miniprogram: boolean;
+  };
+
+  type WeChatMiniProgramJssdk = {
+    getEnv: (callback: (res: WeChatMiniProgramEnv) => void) => void;
+  };
+
   type WeChatConfigPayload = {
     debug?: boolean;
     appId: string;
@@ -62,7 +70,15 @@ declare global {
       success?: (res: { translateResult: string }) => void;
       fail?: (error: unknown) => void;
     }) => void;
+    miniProgram?: WeChatMiniProgramJssdk;
   };
+
+  interface Window {
+    __wxjs_environment?: string;
+    WeixinJSBridge?: {
+      invoke?: unknown;
+    };
+  }
 
   const wx: WeChatJssdk | undefined;
 }

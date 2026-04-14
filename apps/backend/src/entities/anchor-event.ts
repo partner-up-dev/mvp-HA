@@ -168,6 +168,7 @@ export const anchorEvents = pgTable("anchor_events", {
   defaultMinPartners: integer("default_min_partners"),
   defaultMaxPartners: integer("default_max_partners"),
   coverImage: text("cover_image"),
+  betaGroupQrCode: text("beta_group_qr_code"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

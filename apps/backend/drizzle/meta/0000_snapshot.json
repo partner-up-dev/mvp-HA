@@ -1,5 +1,5 @@
 {
-  "id": "05b44e63-b5cf-4378-9306-e28b71d31f7a",
+  "id": "6b11d7ac-15b3-4832-a719-20440d472aac",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -476,6 +476,12 @@
           "notNull": true,
           "default": "'OPEN'"
         },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -699,8 +705,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "location_pool": {
-          "name": "location_pool",
+        "system_location_pool": {
+          "name": "system_location_pool",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_location_pool": {
+          "name": "user_location_pool",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
@@ -711,8 +723,26 @@
           "primaryKey": false,
           "notNull": true
         },
+        "default_min_partners": {
+          "name": "default_min_partners",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_max_partners": {
+          "name": "default_max_partners",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "cover_image": {
           "name": "cover_image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beta_group_qr_code": {
+          "name": "beta_group_qr_code",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -769,12 +799,46 @@
           "primaryKey": false,
           "notNull": true
         },
+        "location_source": {
+          "name": "location_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SYSTEM'"
+        },
         "visibility_status": {
           "name": "visibility_status",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "default": "'VISIBLE'"
+        },
+        "confirmation_start_offset_minutes": {
+          "name": "confirmation_start_offset_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 120
+        },
+        "confirmation_end_offset_minutes": {
+          "name": "confirmation_end_offset_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 30
+        },
+        "join_lock_offset_minutes": {
+          "name": "join_lock_offset_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 30
+        },
+        "booking_triggered_at": {
+          "name": "booking_triggered_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         },
         "auto_hide_at": {
           "name": "auto_hide_at",
@@ -822,6 +886,246 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.anchor_pr_booking_contacts": {
+      "name": "anchor_pr_booking_contacts",
+      "schema": "",
+      "columns": {
+        "pr_id": {
+          "name": "pr_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_partner_id": {
+          "name": "owner_partner_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone_e164": {
+          "name": "phone_e164",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone_masked": {
+          "name": "phone_masked",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified_source": {
+          "name": "verified_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PHONE_INPUT_FORM'"
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "anchor_pr_booking_contacts_pr_id_partner_requests_id_fk": {
+          "name": "anchor_pr_booking_contacts_pr_id_partner_requests_id_fk",
+          "tableFrom": "anchor_pr_booking_contacts",
+          "tableTo": "partner_requests",
+          "columnsFrom": [
+            "pr_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "anchor_pr_booking_contacts_owner_partner_id_partners_id_fk": {
+          "name": "anchor_pr_booking_contacts_owner_partner_id_partners_id_fk",
+          "tableFrom": "anchor_pr_booking_contacts",
+          "tableTo": "partners",
+          "columnsFrom": [
+            "owner_partner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "anchor_pr_booking_contacts_owner_user_id_users_id_fk": {
+          "name": "anchor_pr_booking_contacts_owner_user_id_users_id_fk",
+          "tableFrom": "anchor_pr_booking_contacts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "owner_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.anchor_pr_booking_executions": {
+      "name": "anchor_pr_booking_executions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "pr_id": {
+          "name": "pr_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_resource_id": {
+          "name": "target_resource_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_resource_title": {
+          "name": "target_resource_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "booking_contact_phone": {
+          "name": "booking_contact_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result": {
+          "name": "result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notification_target_count": {
+          "name": "notification_target_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "notification_success_count": {
+          "name": "notification_success_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "notification_failure_count": {
+          "name": "notification_failure_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "notification_skipped_count": {
+          "name": "notification_skipped_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "anchor_pr_booking_executions_pr_id_partner_requests_id_fk": {
+          "name": "anchor_pr_booking_executions_pr_id_partner_requests_id_fk",
+          "tableFrom": "anchor_pr_booking_executions",
+          "tableTo": "partner_requests",
+          "columnsFrom": [
+            "pr_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "anchor_pr_booking_executions_target_resource_id_anchor_pr_support_resources_id_fk": {
+          "name": "anchor_pr_booking_executions_target_resource_id_anchor_pr_support_resources_id_fk",
+          "tableFrom": "anchor_pr_booking_executions",
+          "tableTo": "anchor_pr_support_resources",
+          "columnsFrom": [
+            "target_resource_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "anchor_pr_booking_executions_actor_user_id_users_id_fk": {
+          "name": "anchor_pr_booking_executions_actor_user_id_users_id_fk",
+          "tableFrom": "anchor_pr_booking_executions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -886,7 +1190,7 @@
         },
         "booking_deadline_at": {
           "name": "booking_deadline_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -1312,13 +1616,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'RELEASED'"
+          "default": "'JOINED'"
         },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "confirmed_at": {
           "name": "confirmed_at",
@@ -1326,9 +1630,21 @@
           "primaryKey": false,
           "notNull": false
         },
+        "exited_at": {
+          "name": "exited_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
         "released_at": {
           "name": "released_at",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "release_reason": {
+          "name": "release_reason",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1434,7 +1750,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1648,6 +1964,93 @@
           "primaryKey": false,
           "notNull": false
         },
+        "wechat_reminder_remaining_count": {
+          "name": "wechat_reminder_remaining_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "wechat_activity_start_reminder_opt_in": {
+          "name": "wechat_activity_start_reminder_opt_in",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "wechat_activity_start_reminder_opt_in_at": {
+          "name": "wechat_activity_start_reminder_opt_in_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wechat_activity_start_reminder_remaining_count": {
+          "name": "wechat_activity_start_reminder_remaining_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "wechat_booking_result_opt_in": {
+          "name": "wechat_booking_result_opt_in",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "wechat_booking_result_opt_in_at": {
+          "name": "wechat_booking_result_opt_in_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wechat_booking_result_remaining_count": {
+          "name": "wechat_booking_result_remaining_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "wechat_new_partner_opt_in": {
+          "name": "wechat_new_partner_opt_in",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "wechat_new_partner_opt_in_at": {
+          "name": "wechat_new_partner_opt_in_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wechat_new_partner_remaining_count": {
+          "name": "wechat_new_partner_remaining_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "wechat_pr_message_opt_in": {
+          "name": "wechat_pr_message_opt_in",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "wechat_pr_message_opt_in_at": {
+          "name": "wechat_pr_message_opt_in_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wechat_pr_message_remaining_count": {
+          "name": "wechat_pr_message_remaining_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1680,6 +2083,248 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pr_messages": {
+      "name": "pr_messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "pr_id": {
+          "name": "pr_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_user_id": {
+          "name": "author_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pr_messages_pr_id_created_at_idx": {
+          "name": "pr_messages_pr_id_created_at_idx",
+          "columns": [
+            {
+              "expression": "pr_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pr_messages_author_user_id_idx": {
+          "name": "pr_messages_author_user_id_idx",
+          "columns": [
+            {
+              "expression": "author_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pr_messages_pr_id_partner_requests_id_fk": {
+          "name": "pr_messages_pr_id_partner_requests_id_fk",
+          "tableFrom": "pr_messages",
+          "tableTo": "partner_requests",
+          "columnsFrom": [
+            "pr_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pr_messages_author_user_id_users_id_fk": {
+          "name": "pr_messages_author_user_id_users_id_fk",
+          "tableFrom": "pr_messages",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pr_message_inbox_states": {
+      "name": "pr_message_inbox_states",
+      "schema": "",
+      "columns": {
+        "pr_id": {
+          "name": "pr_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_read_message_id": {
+          "name": "last_read_message_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_notified_message_id": {
+          "name": "last_notified_message_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pr_message_inbox_states_user_id_idx": {
+          "name": "pr_message_inbox_states_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pr_message_inbox_states_pr_id_partner_requests_id_fk": {
+          "name": "pr_message_inbox_states_pr_id_partner_requests_id_fk",
+          "tableFrom": "pr_message_inbox_states",
+          "tableTo": "partner_requests",
+          "columnsFrom": [
+            "pr_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pr_message_inbox_states_user_id_users_id_fk": {
+          "name": "pr_message_inbox_states_user_id_users_id_fk",
+          "tableFrom": "pr_message_inbox_states",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pr_message_inbox_states_last_read_message_id_pr_messages_id_fk": {
+          "name": "pr_message_inbox_states_last_read_message_id_pr_messages_id_fk",
+          "tableFrom": "pr_message_inbox_states",
+          "tableTo": "pr_messages",
+          "columnsFrom": [
+            "last_read_message_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "pr_message_inbox_states_last_notified_message_id_pr_messages_id_fk": {
+          "name": "pr_message_inbox_states_last_notified_message_id_pr_messages_id_fk",
+          "tableFrom": "pr_message_inbox_states",
+          "tableTo": "pr_messages",
+          "columnsFrom": [
+            "last_notified_message_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "pr_message_inbox_states_pr_id_user_id_pk": {
+          "name": "pr_message_inbox_states_pr_id_user_id_pk",
+          "columns": [
+            "pr_id",
+            "user_id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -1741,7 +2386,24 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "outbox_events_pending_claim_idx": {
+          "name": "outbox_events_pending_claim_idx",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"outbox_events\".\"status\" = 'PENDING'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "outbox_events_event_id_domain_events_id_fk": {
           "name": "outbox_events_event_id_domain_events_id_fk",
@@ -1876,6 +2538,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "resolution_ms": {
+          "name": "resolution_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "early_tolerance_units": {
+          "name": "early_tolerance_units",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "late_tolerance_units": {
+          "name": "late_tolerance_units",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
         "attempts": {
           "name": "attempts",
@@ -2052,11 +2732,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "reminder_type": {
-          "name": "reminder_type",
+        "notification_kind": {
+          "name": "notification_kind",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "notification_trigger": {
+          "name": "notification_trigger",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "scheduled_at": {
           "name": "scheduled_at",

@@ -13,35 +13,21 @@
     @pointercancel="handlePointerCancel"
     @transitionend="handleTransitionEnd"
   >
-    <div v-if="!preview" class="demand-card__stamps" aria-hidden="true">
-      <span
-        class="demand-card__stamp demand-card__stamp--like"
-        :style="{ opacity: likeStampOpacity }"
-      >
-        {{ t("anchorEvent.card.stampLike") }}
-      </span>
-      <span
-        class="demand-card__stamp demand-card__stamp--nope"
-        :style="{ opacity: nopeStampOpacity }"
-      >
-        {{ t("anchorEvent.card.stampNope") }}
-      </span>
-    </div>
-
     <div
       v-if="coverImage"
       class="demand-card__cover"
       :style="{ backgroundImage: `url(${coverImage})` }"
     >
-      <span class="demand-card__time-badge">{{ timeLabel }}</span>
+      <span class="demand-card__location-badge">{{ displayLocationName }}</span>
     </div>
     <div v-else class="demand-card__cover demand-card__cover--fallback">
-      <span class="demand-card__time-badge">{{ timeLabel }}</span>
+      <span class="demand-card__fallback-location">{{
+        displayLocationName
+      }}</span>
     </div>
 
     <div class="demand-card__content">
       <section class="demand-card__primary">
-        <h2 class="demand-card__location">{{ displayLocationName }}</h2>
         <p class="demand-card__time">{{ timeLabel }}</p>
         <div
           v-if="preferenceTags.length > 0"
@@ -64,8 +50,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
+import { computed, onUnmounted, ref, watch } from "vue";
+import {
+  DEMAND_CARD_EXIT_TRANSITION,
+  DEMAND_CARD_REBOUND_TRANSITION,
+  createDemandCardSwipePreviewState,
+  type DemandCardSwipePreviewAnchorCorner,
+  type DemandCardSwipePreviewPhase,
+  type DemandCardSwipePreviewState,
+} from "@/domains/event/ui/demand-card-swipe-feedback";
 
 const MAX_DRAG_DISTANCE = 260;
 const MIN_DISTANCE_THRESHOLD = 96;
@@ -74,8 +67,6 @@ const FLICK_VELOCITY_THRESHOLD = 760;
 const FLICK_MIN_DISTANCE = 22;
 const ROTATION_DIVISOR = 22;
 const MAX_ROTATION_DEG = 18;
-const EXIT_TRANSITION = "transform 280ms cubic-bezier(0.16, 1, 0.3, 1)";
-const REBOUND_TRANSITION = "transform 440ms cubic-bezier(0.22, 1.35, 0.36, 1)";
 const MILLISECONDS_PER_SECOND = 1000;
 const VELOCITY_SAMPLE_WINDOW_MS = 90;
 const MAX_VELOCITY_SAMPLES = 8;
@@ -88,6 +79,10 @@ const PREVIEW_OPACITY_STEP = 0.12;
 const PREVIEW_MIN_OPACITY = 0.72;
 const EXIT_VIEWPORT_MULTIPLIER = 1.1;
 const EXIT_DRAG_MULTIPLIER = 1.5;
+const HINT_WOBBLE_TRANSITION =
+  "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)";
+const HINT_WOBBLE_STEP_MS = 180;
+const HINT_WOBBLE_INTENSITIES = [0.5, -0.5, 0.36, -0.36, 0] as const;
 
 type MotionSample = {
   x: number;
@@ -103,7 +98,7 @@ type PointerState = {
 };
 
 type SwipeAction = "skip" | "view-detail";
-type SwipePhase = "idle" | "dragging" | "exiting" | "rebounding";
+type SwipePhase = DemandCardSwipePreviewPhase;
 
 const props = withDefaults(
   defineProps<{
@@ -130,18 +125,22 @@ const props = withDefaults(
 const emit = defineEmits<{
   skip: [];
   "view-detail": [];
+  "swipe-preview": [previewState: DemandCardSwipePreviewState];
 }>();
-
-const { t } = useI18n();
 
 const activePointer = ref<PointerState | null>(null);
 const translateX = ref(0);
 const rawTranslateX = ref(0);
 const swipeThreshold = ref(MIN_DISTANCE_THRESHOLD);
-const settleTransition = ref(REBOUND_TRANSITION);
+const settleTransition = ref(DEMAND_CARD_REBOUND_TRANSITION);
 const swipePhase = ref<SwipePhase>("idle");
 const pendingAction = ref<SwipeAction | null>(null);
 const hasDispatchedExitAction = ref(false);
+const previewAnchorViewportY = ref<number | null>(null);
+const previewAnchorCorner = ref<DemandCardSwipePreviewAnchorCorner | null>(null);
+const hintWobbleRunId = ref(0);
+const isHintWobbling = ref(false);
+let hintWobbleTimerId: number | null = null;
 
 const isDragging = computed(() => swipePhase.value === "dragging");
 const isPendingState = computed(
@@ -160,12 +159,6 @@ const isInteractionLocked = computed(
 );
 const dragProgress = computed(() =>
   Math.min(Math.abs(rawTranslateX.value) / swipeThreshold.value, 1),
-);
-const likeStampOpacity = computed(() =>
-  rawTranslateX.value > 0 ? dragProgress.value : 0,
-);
-const nopeStampOpacity = computed(() =>
-  rawTranslateX.value < 0 ? dragProgress.value : 0,
 );
 const rotationDeg = computed(() => {
   const tiltDirectionFactor = activePointer.value?.tiltDirectionFactor ?? 1;
@@ -221,6 +214,17 @@ const applyDamping = (offsetX: number): number => {
   return sign * damped;
 };
 
+const resolveSwipeThreshold = (): number => {
+  if (typeof window === "undefined") {
+    return MIN_DISTANCE_THRESHOLD;
+  }
+
+  return Math.max(
+    MIN_DISTANCE_THRESHOLD,
+    window.innerWidth * DISTANCE_THRESHOLD_RATIO,
+  );
+};
+
 const appendMotionSample = (
   pointer: PointerState,
   x: number,
@@ -252,34 +256,144 @@ const resolveVelocityX = (
   );
 };
 
+const emitSwipePreview = (
+  intensity: number,
+  phase: SwipePhase = swipePhase.value,
+  anchorViewportY: number | null = previewAnchorViewportY.value,
+  anchorCorner: DemandCardSwipePreviewAnchorCorner | null =
+    previewAnchorCorner.value,
+) => {
+  if (props.preview) {
+    return;
+  }
+
+  emit(
+    "swipe-preview",
+    createDemandCardSwipePreviewState(
+      intensity,
+      phase,
+      anchorViewportY,
+      anchorCorner,
+    ),
+  );
+};
+
+const clearHintWobbleTimer = () => {
+  if (typeof window === "undefined" || hintWobbleTimerId === null) {
+    return;
+  }
+
+  window.clearTimeout(hintWobbleTimerId);
+  hintWobbleTimerId = null;
+};
+
+const applyHintWobbleIntensity = (intensity: number) => {
+  swipeThreshold.value = resolveSwipeThreshold();
+  settleTransition.value = HINT_WOBBLE_TRANSITION;
+  rawTranslateX.value = intensity * swipeThreshold.value;
+  translateX.value = applyDamping(rawTranslateX.value);
+  emitSwipePreview(intensity, "hinting", null, null);
+};
+
+const stopHintWobble = () => {
+  clearHintWobbleTimer();
+  hintWobbleRunId.value += 1;
+
+  if (!isHintWobbling.value) {
+    return;
+  }
+
+  isHintWobbling.value = false;
+  rawTranslateX.value = 0;
+  translateX.value = 0;
+  settleTransition.value = HINT_WOBBLE_TRANSITION;
+  emitSwipePreview(0, "idle", null, null);
+};
+
+const runHintWobbleStep = (runId: number, index: number) => {
+  if (hintWobbleRunId.value !== runId) {
+    return;
+  }
+
+  const intensity = HINT_WOBBLE_INTENSITIES[index];
+  if (typeof intensity !== "number") {
+    isHintWobbling.value = false;
+    settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
+    return;
+  }
+
+  applyHintWobbleIntensity(intensity);
+
+  if (index === HINT_WOBBLE_INTENSITIES.length - 1) {
+    isHintWobbling.value = false;
+    settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
+    return;
+  }
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  hintWobbleTimerId = window.setTimeout(() => {
+    hintWobbleTimerId = null;
+    runHintWobbleStep(runId, index + 1);
+  }, HINT_WOBBLE_STEP_MS);
+};
+
+const playHintWobble = () => {
+  if (props.preview || props.pending || swipePhase.value !== "idle") {
+    return;
+  }
+
+  stopHintWobble();
+
+  previewAnchorViewportY.value = null;
+  previewAnchorCorner.value = null;
+  pendingAction.value = null;
+  hasDispatchedExitAction.value = false;
+
+  isHintWobbling.value = true;
+  const runId = hintWobbleRunId.value + 1;
+  hintWobbleRunId.value = runId;
+  runHintWobbleStep(runId, 0);
+};
+
 const resetCardState = () => {
+  stopHintWobble();
+  previewAnchorViewportY.value = null;
+  previewAnchorCorner.value = null;
+  emitSwipePreview(0, "idle", null, null);
   activePointer.value = null;
   translateX.value = 0;
   rawTranslateX.value = 0;
-  settleTransition.value = REBOUND_TRANSITION;
+  settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
   swipePhase.value = "idle";
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
 };
 
 const startRebound = () => {
+  stopHintWobble();
   activePointer.value = null;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
   swipePhase.value = "rebounding";
-  settleTransition.value = REBOUND_TRANSITION;
+  settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
+  emitSwipePreview(0, "rebounding");
   translateX.value = 0;
   rawTranslateX.value = 0;
 };
 
 const startExit = (action: SwipeAction) => {
+  stopHintWobble();
   const direction = action === "skip" ? -1 : 1;
 
   activePointer.value = null;
   pendingAction.value = action;
   hasDispatchedExitAction.value = false;
   swipePhase.value = "exiting";
-  settleTransition.value = EXIT_TRANSITION;
+  settleTransition.value = DEMAND_CARD_EXIT_TRANSITION;
+  emitSwipePreview(direction, "exiting");
   rawTranslateX.value = direction * swipeThreshold.value;
   translateX.value =
     direction *
@@ -289,7 +403,24 @@ const startExit = (action: SwipeAction) => {
     );
 };
 
+const triggerAction = (action: SwipeAction) => {
+  stopHintWobble();
+
+  if (isInteractionLocked.value || swipePhase.value !== "idle") {
+    return;
+  }
+
+  if (action === "view-detail" && props.detailPrId === null) {
+    startRebound();
+    return;
+  }
+
+  startExit(action);
+};
+
 const handlePointerDown = (event: PointerEvent) => {
+  stopHintWobble();
+
   if (isInteractionLocked.value || swipePhase.value !== "idle") return;
 
   const currentTarget = event.currentTarget;
@@ -299,15 +430,20 @@ const handlePointerDown = (event: PointerEvent) => {
   const localY = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
   const normalizedY =
     rect.height > 0 ? Math.min(Math.max(localY / rect.height, 0), 1) : 0.5;
+  const anchorCorner: DemandCardSwipePreviewAnchorCorner =
+    normalizedY <= 0.5 ? "top" : "bottom";
   const tiltDirectionFactor = 1 - normalizedY * 2;
   swipeThreshold.value = Math.max(
     MIN_DISTANCE_THRESHOLD,
     window.innerWidth * DISTANCE_THRESHOLD_RATIO,
   );
-  settleTransition.value = REBOUND_TRANSITION;
+  settleTransition.value = DEMAND_CARD_REBOUND_TRANSITION;
   pendingAction.value = null;
   hasDispatchedExitAction.value = false;
   swipePhase.value = "dragging";
+  previewAnchorViewportY.value = event.clientY;
+  previewAnchorCorner.value = anchorCorner;
+  emitSwipePreview(0, "dragging", event.clientY, anchorCorner);
 
   currentTarget.setPointerCapture(event.pointerId);
   activePointer.value = {
@@ -331,6 +467,7 @@ const handlePointerMove = (event: PointerEvent) => {
 
   rawTranslateX.value = event.clientX - pointer.startX;
   translateX.value = applyDamping(rawTranslateX.value);
+  emitSwipePreview(rawTranslateX.value / swipeThreshold.value, "dragging");
   appendMotionSample(pointer, event.clientX, event.timeStamp);
 };
 
@@ -447,7 +584,7 @@ watch(
     props.preferenceTags.join("|"),
   ],
   () => {
-    if (swipePhase.value !== "idle") {
+    if (swipePhase.value !== "idle" || isHintWobbling.value) {
       resetCardState();
     }
   },
@@ -456,11 +593,24 @@ watch(
 watch(
   () => props.pending,
   (isPending) => {
+    if (isPending && isHintWobbling.value) {
+      stopHintWobble();
+    }
+
     if (isPending && activePointer.value !== null) {
       startRebound();
     }
   },
 );
+
+onUnmounted(() => {
+  stopHintWobble();
+});
+
+defineExpose({
+  playHintWobble,
+  triggerAction,
+});
 </script>
 
 <style lang="scss" scoped>
@@ -493,40 +643,6 @@ watch(
   gap: var(--sys-spacing-sm);
 }
 
-.demand-card__stamps {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.demand-card__stamp {
-  position: absolute;
-  top: var(--sys-spacing-med);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid currentColor;
-  border-radius: var(--sys-radius-med);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  @include mx.pu-font(title-medium);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  background: var(--sys-color-surface);
-}
-
-.demand-card__stamp--like {
-  left: var(--sys-spacing-med);
-  color: var(--sys-color-green);
-  transform: rotate(-14deg);
-}
-
-.demand-card__stamp--nope {
-  right: var(--sys-spacing-med);
-  color: var(--sys-color-red);
-  transform: rotate(14deg);
-}
-
 .demand-card__cover {
   min-height: clamp(220px, calc(var(--pu-vh) * 0.34), 420px);
   background-size: cover;
@@ -538,21 +654,30 @@ watch(
 }
 
 .demand-card__cover--fallback {
-  background: linear-gradient(
-    135deg,
-    var(--sys-color-surface-container-high),
-    var(--sys-color-surface-container)
-  );
+  align-items: center;
+  justify-content: center;
+  background: var(--sys-color-primary-container);
+  padding: var(--sys-spacing-med);
 }
 
-.demand-card__time-badge {
-  @include mx.pu-font(label-large);
+.demand-card__fallback-location {
+  @include mx.pu-font(title-large);
+  margin: 0;
+  color: var(--sys-color-on-primary-container);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.demand-card__location-badge {
+  @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
   padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
   border-radius: 999px;
-  background: var(--sys-color-surface);
+  background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface);
+  border: 1px solid var(--sys-color-outline-variant);
+  backdrop-filter: blur(4px);
 }
 
 .demand-card__content {
@@ -570,17 +695,10 @@ watch(
   gap: var(--sys-spacing-xs);
 }
 
-.demand-card__location {
-  @include mx.pu-font(headline-medium);
+.demand-card__time {
+  @include mx.pu-font(title-medium);
   margin: 0;
   color: var(--sys-color-on-surface);
-  line-height: 1.1;
-}
-
-.demand-card__time {
-  @include mx.pu-font(title-large);
-  margin: 0;
-  color: var(--sys-color-primary);
 }
 
 .demand-card__preference-list {

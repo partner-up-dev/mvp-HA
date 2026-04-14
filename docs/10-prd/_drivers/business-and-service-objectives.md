@@ -1,37 +1,37 @@
-# 业务与服务目标
+# Business And Service Objectives
 
-## 1. 验证“协作触发器”是否值得被工程化
+## 1. Validate Whether a Collaboration Trigger Deserves Productization
 
-PartnerUp MVP-HA 的核心业务目标不是做一个完整社区，而是验证一种更轻的协作产品形态是否成立。
+The core objective of PartnerUp MVP-HA is not to build a full community. It is to validate whether a lighter collaboration product shape is worth engineering further.
 
-具体要验证：
+The current product needs to validate:
 
-- 一句话发起是否足够形成有效需求
-- 分享链接是否足够驱动加入
-- 用户是否愿意在一次性协作中接受身份、确认、提醒与签到闭环
+- whether a one-sentence intent is enough to form actionable demand
+- whether share links are strong enough to drive participation
+- whether users accept identity, confirmation, reminder, and check-in loops inside one-off collaboration
 
-## 2. 让 Community 与 Anchor 两类场景都可验证
+## 2. Validate Both Community and Anchor Collaboration Modes
 
-产品当前需要同时验证两类场景：
+The product currently needs to validate two distinct collaboration modes:
 
-- Community PR：更自由、更轻的社区型一次性协作
-- Anchor PR：围绕活动锚点、具有更强时序与可靠性要求的协作
+- `Community PR`: freer and lighter one-off collaboration
+- `Anchor PR`: event-anchored collaboration with stronger timing and reliability requirements
 
-两类场景共享底层协作语义，但必须允许页面与规则分化演进。
+These two modes share collaboration semantics, but they must still be allowed to evolve through different pages, fields, and rules.
 
-## 3. 为后续运营与配置留出空间
+## 3. Preserve Room for Operations and Configuration
 
-当前版本已存在管理端、POI、预订与资助配置、通知配置等运营能力。
+The current version already includes management capabilities, POI semantics, booking support, subsidy-related support, and notification configuration.
 
-这意味着产品文档不仅要描述用户侧行为，也要保留服务可运营、可配置、可冷启动扩展的语义边界。
+This means product documentation must preserve not only user-facing behavior, but also the boundary that makes the service operable, configurable, and extensible during cold start.
 
-## 4. 让 AI Coding 时代的高强度迭代仍可控
+## 4. Keep High-Velocity Iteration Legible in the AI Coding Era
 
-随着需求密度与迭代速度上升，文档系统需要承担：
+As request density and iteration speed increase, the product layer must:
 
-- 对齐产品意图
-- 降低语义漂移
-- 让新任务快速落地
-- 让历史决策不依赖聊天记录回忆
+- align product intent
+- reduce semantic drift
+- let new work land quickly
+- avoid relying on chat history to recover durable decisions
 
-因此 PRD 必须足够稳定，能被人和 agent 共同消费。
+PRD therefore needs to remain stable enough to be consumed by both humans and agents.

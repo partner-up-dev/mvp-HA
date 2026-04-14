@@ -9,12 +9,16 @@ import {
   getAnchorPRBookingSupport,
   getAnchorPRDetail,
   recommendAlternativeBatches,
+  searchAnchorPRs,
 } from "../domains/pr-anchor";
 import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
 import {
+  advancePRMessageReadMarker,
   exitPR,
+  createPRMessage,
   getPRPartnerProfile,
   joinPR,
+  listPRMessages,
   updatePRContent,
   updatePRStatus,
 } from "../domains/pr-core";
@@ -24,6 +28,8 @@ import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mu
 import { HTTPException } from "hono/http-exception";
 import {
   anchorUpdateContentSchema,
+  prMessageCreateSchema,
+  prMessageReadMarkerSchema,
   prIdParamSchema,
   prPartnerProfileParamSchema,
   requireAnchorAuthenticatedIdentity,
@@ -37,6 +43,22 @@ import {
 
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
+const isoDateSearchParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const anchorPRSearchQuerySchema = z.object({
+  eventId: z.coerce.number().int().positive(),
+  date: z.preprocess(
+    (value) => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        return [value];
+      }
+      return [];
+    },
+    z.array(isoDateSearchParamSchema).min(1).max(28),
+  ),
+});
 const slotCheckInSchema = z.object({
   didAttend: z.boolean().optional(),
   wouldJoinAgain: z.boolean().nullable().optional(),
@@ -63,6 +85,14 @@ const ensureAnchorPR = async (id: number) => {
 
 export const anchorPRRoute = app
   .use("*", authMiddleware)
+  .get("/search", zValidator("query", anchorPRSearchQuerySchema), async (c) => {
+    const { eventId, date } = c.req.valid("query");
+    const result = await searchAnchorPRs({
+      eventId,
+      dates: date,
+    });
+    return c.json(result);
+  })
   .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     const identity = await tryReadAnchorAuthenticatedIdentity(c);
@@ -86,6 +116,74 @@ export const anchorPRRoute = app
         ...profile,
         avatarUrl: resolveAvatarUrl(c.req.url, profile.avatarUrl),
       });
+    },
+  )
+  .get(
+    "/:id/messages",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await ensureAnchorPR(id);
+      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await listPRMessages(id, userId);
+
+      return c.json({
+        ...result,
+        items: result.items.map((item) => ({
+          ...item,
+          author: {
+            ...item.author,
+            avatarUrl: resolveAvatarUrl(c.req.url, item.author.avatarUrl),
+          },
+        })),
+      });
+    },
+  )
+  .post(
+    "/:id/messages",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", prMessageCreateSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { body } = c.req.valid("json");
+      await ensureAnchorPR(id);
+      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await createPRMessage({
+        prId: id,
+        authorUserId: userId,
+        body,
+      });
+
+      return c.json({
+        ...result,
+        message: {
+          ...result.message,
+          author: {
+            ...result.message.author,
+            avatarUrl: resolveAvatarUrl(
+              c.req.url,
+              result.message.author.avatarUrl,
+            ),
+          },
+        },
+      });
+    },
+  )
+  .post(
+    "/:id/messages/read-marker",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", prMessageReadMarkerSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { lastReadMessageId } = c.req.valid("json");
+      await ensureAnchorPR(id);
+      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      const result = await advancePRMessageReadMarker({
+        prId: id,
+        userId,
+        lastReadMessageId,
+      });
+      return c.json(result);
     },
   )
   .get(

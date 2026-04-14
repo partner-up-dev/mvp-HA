@@ -1,23 +1,25 @@
-# 范围
+# Scope
 
-## 当前范围内
+## In Scope
 
-- Community PR 与 Anchor PR 两类搭子请求
-- 首页探索、活动页浏览、Community PR 发起、PR 详情页参与
-- 本地账户 + PIN、微信登录/绑定、`/me`、`/pr/mine`
-- 分享链路、微信分享、小红书文案/海报、`spm` 归因
-- Anchor 可靠性闭环：确认、提醒、签到、新搭子通知
-- Anchor 预订履约结果通知与运营侧执行审计
-- “需要帮助”入口下的客服 / 作者反馈 / 关于页分流
-- 运营端维护 Anchor Event / Batch / Anchor PR、POI、Booking Support
+- two collaboration object types: `Community PR` and `Anchor PR`
+- home exploration, event browsing, `Community PR` creation, and PR detail participation
+- local account plus PIN, WeChat login / binding, `/me`, and `/pr/mine`
+- distribution paths, WeChat share, Xiaohongshu caption / poster output, and `spm` attribution
+- `Anchor PR` detail-page information architecture: persistent notification subscriptions section, facts-card driven participant roster modal, clickable participant profile badges, and venue-image entry through a clickable label row
+- non-realtime PR messaging and message notifications, with the current frontend `Anchor PR` rollout exposed through the dedicated `/apr/:id/messages` route family
+- `Anchor PR` reliability loop: confirmation, reminders, check-in, and new-partner notifications
+- `Anchor PR` booking fulfillment result notifications and operator execution audit
+- support routing through "Need Help", author feedback, and about-page entry
+- operator maintenance of Anchor Event, Batch, Anchor PR, POI, and Booking Support semantics
 
-## 当前明确不在范围内
+## Explicitly Out Of Scope
 
-- 把产品做成独立社区、内容平台或完整社交网络
-- 脱离 Anchor Event/batch 上下文的通用 Anchor PR 创建入口
-- 小红书平台内直发
-- 多语言产品体验
+- turning the product into an independent community, content platform, or social network
+- a generic `Anchor PR` creation entrypoint detached from Anchor Event and batch context
+- direct publish inside Xiaohongshu
+- multilingual product experience
 
-## 当前阶段性保留
+## Deliberately Retained Current-Stage Constraints
 
-- 部分产品真实能力仍依赖微信环境差异与运营配置
+- some real product capabilities still depend on WeChat environment differences and operator-managed configuration

@@ -1,19 +1,40 @@
-# Change Request Template
+# Alignment Substrate Request Template
 
-Target:
+## Request Metadata
 
-Target path or anchor:
+- request id:
+- target surface:
+- requester:
 
-State/context:
+## Coordination Primitives
 
-Operation:
+### Reference
 
-Scope (in-scope / out-of-scope):
+- object:
+- address:
 
-Invariants:
+### Mutation Contract
 
-Likely affected files:
+- operation:
+- invariants / boundaries:
 
-Uncertainty:
+### Grounding And Synchronization
 
-Notes:
+- applicable state / context:
+- evidence:
+- protocol / handshake checkpoint:
+
+## Desired State Diff
+
+- from:
+- to:
+
+## Blast Radius Forecast
+
+- touched anchors / files:
+- downstream surfaces at risk:
+- explicitly out of scope:
+
+## Acceptance Check
+
+- verification contract:

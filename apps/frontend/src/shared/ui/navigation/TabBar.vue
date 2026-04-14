@@ -112,7 +112,6 @@ watch(
   display: flex;
   gap: var(--sys-spacing-sm);
   align-items: flex-start;
-  padding-bottom: var(--sys-spacing-sm);
   min-width: 0;
 }
 
@@ -159,6 +158,6 @@ watch(
 
 .tab-bar__tab--expired {
   border-style: dashed;
-  opacity: 0.96;
+  opacity: 0.6; // TODO replace with design token
 }
 </style>

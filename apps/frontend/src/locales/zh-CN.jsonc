@@ -20,6 +20,19 @@
     "copyFailed": "复制失败",
     "operationFailed": "操作失败"
   },
+  "wechatMiniProgramWebView": {
+    "title": "请用微信扫一扫打开网页",
+    "description": "无法在小程序中完成网页版的分享能力。",
+    "instruction": "保存此二维码，使用微信扫一扫打开方可{operation}。",
+    "qrAlt": "当前网页二维码",
+    "qrGenerating": "正在生成二维码...",
+    "qrFailed": "二维码生成失败，请复制链接后在微信内打开。",
+    "copyLinkAction": "复制当前链接",
+    "operations": {
+      "wechatShare": "进行微信群聊/朋友圈分享",
+      "openSubscribe": "订阅通知"
+    }
+  },
   "status": {
     "draft": "草稿",
     "open": "找人中",
@@ -199,13 +212,9 @@
     "supportDescription": "投诉、使用问题、功能建议等。",
     "supportAction": "联系平台客服",
     "betaGroupBadge": "内测群",
-    "betaGroupTitle": "加入微信内测群",
-    "betaGroupDescription": "获取内测动态与优先体验机会。",
-    "betaGroupAction": "查看群二维码",
-    "betaGroupModalTitle": "微信内测群",
-    "betaGroupModalDescription": "请使用微信扫码加入内测群。",
-    "betaGroupQrAlt": "微信内测群二维码",
-    "betaGroupQrMissing": "暂未配置内测群二维码",
+    "betaGroupTitle": "加入活动内测群",
+    "betaGroupDescription": "按活动选择对应群，用来请求新场次、获取补贴、联系搭子。",
+    "betaGroupAction": "选择活动内测群",
     "authorEntry": "产品建议或 Bug 反馈？联系作者",
     "useCases": {
       "staff": "报销 / 转账问题 -> 联系企业微信员工",
@@ -214,7 +223,7 @@
   },
   "aboutPage": {
     "title": "关于",
-    "description": "查看产品与版本信息。",
+    "description": "关于本软件的基础信息以及“搭一把”。",
     "sectionTitle": "版本信息",
     "productNameLabel": "产品名称",
     "repositoryLabel": "代码仓库",
@@ -222,6 +231,17 @@
     "backendCommitLabel": "后端 Commit Hash",
     "unknownValue": "未知",
     "backendCommitLoadFailed": "后端 commit hash 加载失败，请稍后重试。",
+    "betaGroupsSectionTitle": "活动内测群",
+    "betaGroupsTitle": "活动内测群",
+    "betaGroupsDescription": "在群内请求新场次、获取补贴、联系你的搭子并获得官方的帮助。",
+    "betaGroupsLoading": "正在加载活动内测群...",
+    "betaGroupsLoadFailed": "活动内测群加载失败，请稍后重试。",
+    "betaGroupsEmpty": "当前没有开放中的活动内测群。",
+    "betaGroupLinkAction": "查看二维码",
+    "betaGroupModalTitle": "{eventTitle} 内测群",
+    "betaGroupModalDescription": "请使用微信扫码加入该活动内测群。",
+    "betaGroupQrAlt": "{eventTitle} 内测群二维码",
+    "betaGroupQrMissing": "该活动暂未配置内测群二维码。",
     "footerEntry": "关于",
     "footerNavLabel": "页脚导航"
   },
@@ -277,7 +297,7 @@
     "metaTitleWithName": "{title} - 搭一把",
     "bookingSupportEntry": {
       "title": "预订与资助",
-      "viewAction": "查看详情",
+      "viewAction": "查看资源补助",
       "headlineFallback": "本场活动的预订、补贴和附带物资会在这里统一说明。",
       "deadlineUnset": "当前没有额外的预订截止要求",
       "deadlineWithValue": "最晚需要在 {deadline} 前完成预订安排"
@@ -322,11 +342,19 @@
       "subscribeOnceAction": "订阅 1 次",
       "remainingCountWithHint": "{hint} · 剩余 {count} 次",
       "openSubscribeUnavailableHint": "当前微信订阅组件不可用，请升级微信后重试。",
+      "miniProgramWebViewHint": "当前在微信小程序内，无法使用订阅通知组件。",
+      "openInWechatAction": "用微信扫一扫打开",
       "items": {
         "REMINDER_CONFIRMATION": {
           "title": "确认席位提醒",
           "enabledHint": "确认开始和截止前 30 分钟提醒",
           "disabledHint": "暂无可用提醒"
+        },
+        "ACTIVITY_START_REMINDER": {
+          "title": "活动开始提醒",
+          "enabledHint": "活动开始前 20 分钟提醒",
+          "disabledHint": "暂无可用通知",
+          "unconfiguredHint": "当前环境未配置“活动开始提醒”通知模板。"
         },
         "BOOKING_RESULT": {
           "title": "场地预订结果",
@@ -339,8 +367,46 @@
           "enabledHint": "有人加入活动时提醒",
           "disabledHint": "暂无可用通知",
           "unconfiguredHint": "当前环境未配置“新搭子”通知模板。"
+        },
+        "PR_MESSAGE": {
+          "title": "留言",
+          "enabledHint": "有新留言时提醒",
+          "disabledHint": "暂无可用通知",
+          "unconfiguredHint": "当前环境未配置“留言”通知模板。"
         }
       }
+    },
+    "joinSuccessSubscriptions": {
+      "description": "刚加入成功，现在可以顺手开启你关心的提醒。",
+      "closeAction": "稍后再说"
+    },
+    "shareEntry": {
+      "title": "分享邀请",
+      "hint": "把当前活动分享给合适的搭子。",
+      "action": "分享"
+    },
+    "messageEntry": {
+      "title": "留言",
+      "hint": "和当前参与者围绕本次活动做异步沟通。",
+      "action": "留言"
+    },
+    "messagePage": {
+      "title": "留言",
+      "subtitle": "留言是非即时的，您发送的留言会被通知给本搭子请求内的搭子。",
+      "backToDetail": "返回活动详情"
+    },
+    "messageThread": {
+      "title": "活动留言",
+      "subtitle": "和当前参与者围绕本次活动做异步沟通。",
+      "nonRealtimeHint": "留言是非即时的，您发送的留言会被通知给本搭子请求内的搭子。",
+      "emptyTitle": "还没有留言",
+      "emptyDescription": "可以先留一句集合说明、补充事项或临时变更。",
+      "inputLabel": "发送留言",
+      "inputHint": "仅支持文本，单条最长 1000 字。",
+      "inputPlaceholder": "例如：我会晚到 10 分钟，大家先在入口处集合。",
+      "submitAction": "发送留言",
+      "submittingAction": "发送中...",
+      "authorFallback": "搭子"
     },
     "partnerSection": {
       "title": "参与",
@@ -582,6 +648,7 @@
     "eventTypeLabel": "活动类型",
     "eventDescriptionLabel": "活动描述",
     "eventCoverImageLabel": "封面图 URL",
+    "eventBetaGroupQrCodeLabel": "内测群二维码 URL",
     "eventStatusLabel": "活动状态",
     "eventDefaultMinPartnersLabel": "默认最少人数",
     "eventDefaultMaxPartnersLabel": "默认最多人数",
@@ -596,6 +663,7 @@
     "batchFormTitle": "批次信息",
     "batchStartLabel": "开始时间",
     "batchEndLabel": "结束时间",
+    "batchDescriptionLabel": "批次文案",
     "batchStatusLabel": "批次状态",
     "saveBatchAction": "保存批次",
     "createBatchAction": "创建批次",
@@ -873,6 +941,8 @@
       "generating": "生成中...",
       "guidanceLine1": "请点击微信右上角“...”",
       "guidanceLine2": "选择“发送给朋友”或“分享到朋友圈”",
+      "miniProgramWebViewHint": "当前在微信小程序内，无法设置微信分享卡片。",
+      "openInWechatAction": "用微信扫一扫打开",
       "switchStyle": "换一个",
       "defaultShareTitle": "搭一把 - 轻松安全找搭子",
       "pageDescriptionHome": "一键把群聊里的搭子需求变成可加入的页面，马上发起一次真实协作。",
@@ -1040,12 +1110,56 @@
   "eventPlaza": {
     "title": "活动广场",
     "subtitle": "探索附近的活动场次",
+    "searchAction": "搜索",
     "locationLeadSingle": "先看 {location}",
     "locationLeadWithMore": "先看 {location}，另有 {count} 个场地",
     "locationCount": "{count} 个场地可选",
     "openEventAction": "查看场次",
     "noEvents": "暂无活动",
     "loadFailed": "加载活动列表失败"
+  },
+  "anchorPRSearch": {
+    "title": "找搭子",
+    "resultTitle": "检索结果",
+    "resultSubtitleFallback": "按活动和日期查看可加入的搭子结果",
+    "drawerTitle": "修改条件",
+    "loadEventsFailed": "加载活动列表失败",
+    "loadEventsFailedHint": "暂时无法获取可选活动，请稍后重试。",
+    "loadFailed": "加载活动搭子结果失败",
+    "loadFailedHint": "当前结果暂时不可用，请调整条件或稍后重试。",
+    "emptyEventsTitle": "当前没有可搜索的活动",
+    "emptyEventsDescription": "等活动开放后，再回来按日期找搭子。",
+    "emptyResultTitle": "没有找到匹配结果",
+    "emptyResultDescription": "试试换一个活动，或调整可参加日期。",
+    "resultSummary": "找到 {count} 个可加入的活动搭子",
+    "redirectingSingleResult": "正在打开唯一匹配的活动搭子...",
+    "actions": {
+      "backHome": "返回首页",
+      "search": "检索",
+      "modifyCriteria": "修改条件",
+      "applyCriteria": "应用",
+      "goEventPlaza": "去活动广场看看"
+    },
+    "form": {
+      "eventTitle": "什么活动",
+      "dateTitle": "什么时候",
+      "todayMarker": "今",
+      "weekdays": {
+        "mon": "一",
+        "tue": "二",
+        "wed": "三",
+        "thu": "四",
+        "fri": "五",
+        "sat": "六",
+        "sun": "日"
+      }
+    },
+    "resultCard": {
+      "unknownTime": "时间待确认",
+      "unknownLocation": "地点待确认",
+      "partnerCountWithMax": "{current}/{max} 人",
+      "partnerCountWithoutMax": "{current} 人"
+    }
   },
   "anchorEvent": {
     "backToPlaza": "活动广场",
@@ -1060,20 +1174,30 @@
     },
     "card": {
       "batchLabel": "时间批次",
-      "stampLike": "详情",
-      "stampNope": "跳过",
       "preferenceTitle": "偏好",
       "preferenceEmpty": "暂无额外偏好要求",
-      "skipButton": "跳过",
+      "skipButton": "下一个",
       "detailButton": "加入",
+      "swipeSkipHint": "下一个",
+      "swipeDetailHint": "加入",
       "emptyTitle": "卡片已看完",
       "emptySubtitle": "还没有合适的局？可以直接创建一个。"
     },
     "exhausted": "该活动所有场次已满",
     "subscribeHint": "关注我们的公众号，有名额释放或新场次时第一时间通知你",
-    "betaGroupHintSuffix": "，及时获得活动上新消息",
-    "betaGroupAction": "加入内测群",
-    "discoverOthers": "发现其他活动",
+    "betaGroupCard": {
+      "kicker": "活动内测群",
+      "description": "加入内测群，申请场次、获取补贴、联系搭子",
+      "expandAction": "查看二维码",
+      "collapseAction": "收起二维码",
+      "qrAlt": "{eventTitle} 内测群二维码",
+      "qrMissing": "该活动暂未配置内测群二维码。"
+    },
+    "otherEvents": {
+      "title": "看看其它活动",
+      "action": "看看其它活动"
+    },
+    "discoverOthers": "看看其它活动",
     "createCard": {
       "title": "其它地点？",
       "subtitle": "在另外的地点找搭子",

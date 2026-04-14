@@ -1,31 +1,55 @@
 <template>
-  <RouterLink
+  <component
+    :is="rootComponent"
+    v-bind="rootProps"
     class="event-card"
-    :to="{ name: 'anchor-event', params: { eventId: event.id } }"
+    :class="{
+      'event-card--select': isSelectMode,
+      'event-card--shorter': isShorter,
+      'event-card--outline': isOutline,
+      'event-card--selected': isSelectMode && props.selected,
+      'event-card--disabled': isSelectMode && props.disabled,
+    }"
     @click="handleClick"
   >
     <div
-      v-if="coverImage"
-      class="event-cover"
-      :style="{ backgroundImage: `url(${coverImage})` }"
-    />
-    <div
-      v-else-if="poisGalleryCoverImage"
-      class="event-cover"
-      :style="{ backgroundImage: `url(${poisGalleryCoverImage})` }"
-    />
-    <div
-      v-else-if="activeFallbackImage"
-      class="event-cover"
-      :style="{ backgroundImage: `url(${activeFallbackImage})` }"
-    />
-    <div v-else class="event-cover event-cover--placeholder">
-      <span>{{ event.type }}</span>
+      class="event-cover-shell"
+      :class="{ 'event-cover-shell--shorter': isShorter }"
+    >
+      <div
+        v-if="coverImage"
+        class="event-cover"
+        :style="{ backgroundImage: `url(${coverImage})` }"
+      />
+      <div
+        v-else-if="poisGalleryCoverImage"
+        class="event-cover"
+        :style="{ backgroundImage: `url(${poisGalleryCoverImage})` }"
+      />
+      <div
+        v-else-if="activeFallbackImage"
+        class="event-cover"
+        :style="{ backgroundImage: `url(${activeFallbackImage})` }"
+      />
+      <div v-else class="event-cover event-cover--placeholder">
+        <span>{{ event.type }}</span>
+      </div>
+
+      <FitChipGroup
+        v-if="isShorter && availableLocations.length > 0"
+        class="event-cover-locations"
+        :items="availableLocations"
+        :max-items="MAX_AVAILABLE_LOCATION_PILLS"
+        gap="xs"
+        tone="surface"
+        size="sm"
+        chip-class="event-cover-location-pill"
+      />
     </div>
 
     <div class="event-info">
       <FitChipGroup
-        v-if="availableLocations.length > 0"
+        v-if="!isShorter && availableLocations.length > 0"
         class="event-available-locations-row"
         :items="availableLocations"
         :max-items="MAX_AVAILABLE_LOCATION_PILLS"
@@ -34,16 +58,18 @@
         size="sm"
         chip-class="event-available-location-pill"
       />
-      <h3 class="event-title">{{ event.title }}</h3>
-      <p v-if="event.description" class="event-desc">
-        {{ event.description }}
-      </p>
-      <span class="event-cta">
+      <div class="flex flex-col gap-1">
+        <h3 class="event-title">{{ event.title }}</h3>
+        <p v-if="event.description" class="event-desc">
+          {{ event.description }}
+        </p>
+      </div>
+      <span v-if="!isSelectMode && !isShorter" class="event-cta">
         {{ t("eventPlaza.openEventAction") }}
         <span class="event-cta-icon i-mdi:arrow-right" aria-hidden="true" />
       </span>
     </div>
-  </RouterLink>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -55,9 +81,20 @@ import FitChipGroup from "@/shared/ui/display/FitChipGroup.vue";
 
 interface EventCardProps {
   event: AnchorEventListItem;
+  mode?: "link" | "select";
+  variant?: "default" | "shorter";
+  surface?: "filled" | "outline";
+  selected?: boolean;
+  disabled?: boolean;
 }
 
-const props = defineProps<EventCardProps>();
+const props = withDefaults(defineProps<EventCardProps>(), {
+  mode: "link",
+  variant: "default",
+  surface: "filled",
+  selected: false,
+  disabled: false,
+});
 const MAX_AVAILABLE_LOCATION_PILLS = 3;
 
 const emit = defineEmits<{
@@ -65,6 +102,17 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const isSelectMode = computed(() => props.mode === "select");
+const isShorter = computed(() => props.variant === "shorter");
+const isOutline = computed(() => props.surface === "outline");
+const rootComponent = computed(() => (isSelectMode.value ? "div" : RouterLink));
+const rootProps = computed<Record<string, unknown>>(() =>
+  isSelectMode.value
+    ? {}
+    : {
+        to: { name: "anchor-event", params: { eventId: props.event.id } },
+      },
+);
 
 const normalizeImageUrl = (value: unknown): string | null => {
   if (typeof value !== "string") {
@@ -216,17 +264,23 @@ const handleClick = () => {
   flex-direction: column;
   min-height: 100%;
   overflow: hidden;
+  width: 100%;
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: var(--sys-radius-lg);
   background: var(--sys-color-surface-container);
   text-decoration: none;
   color: inherit;
+  text-align: left;
   transition:
     transform 180ms ease,
     border-color 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    opacity 180ms ease;
   @include mx.pu-elevation(3);
 
-  &:active {
+  &:active:not(.event-card--select) {
     transform: scale(0.985);
   }
 
@@ -236,9 +290,28 @@ const handleClick = () => {
   }
 }
 
+.event-card--select {
+  cursor: inherit;
+}
+
+.event-card--selected {
+  @include mx.pu-elevation(4);
+}
+
+.event-card--disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.event-card--outline {
+  background: transparent;
+  border-color: var(--sys-color-outline-variant);
+  box-shadow: none;
+}
+
 .event-cover {
   width: 100%;
-  height: 148px;
+  height: 130px;
   background-size: cover;
   background-position: center;
 
@@ -252,12 +325,32 @@ const handleClick = () => {
   }
 }
 
+.event-cover-shell {
+  position: relative;
+}
+
+.event-cover-shell--shorter::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  block-size: 56%;
+  background: linear-gradient(180deg, transparent 0%, rgb(0 0 0 / 55%) 100%);
+  pointer-events: none;
+}
+
+.event-cover-locations {
+  position: absolute;
+  inset: auto var(--sys-spacing-sm) var(--sys-spacing-sm);
+  z-index: 1;
+  min-width: 0;
+}
+
 .event-info {
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
 }
 
 .event-available-locations-row {
@@ -270,8 +363,18 @@ const handleClick = () => {
   border-color: var(--sys-color-outline-variant) !important;
 }
 
+:deep(.event-cover-location-pill) {
+  background: color-mix(
+    in srgb,
+    var(--sys-color-surface-container-high) 92%,
+    white 8%
+  ) !important;
+  color: var(--sys-color-on-surface) !important;
+  border-color: transparent !important;
+}
+
 .event-title {
-  @include mx.pu-font(title-large);
+  @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface);
   margin: 0;
   text-wrap: balance;
@@ -279,7 +382,7 @@ const handleClick = () => {
 }
 
 .event-desc {
-  @include mx.pu-font(body-medium);
+  @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
   margin: 0;
   display: -webkit-box;
@@ -290,15 +393,29 @@ const handleClick = () => {
 }
 
 .event-cta {
-  @include mx.pu-font(label-large);
+  @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
   gap: var(--sys-spacing-xs);
   margin-top: auto;
-  color: var(--sys-color-primary);
+  color: var(--sys-color-secondary);
 }
 
 .event-cta-icon {
-  @include mx.pu-icon(medium);
+  @include mx.pu-icon(small);
+}
+
+.event-card--shorter .event-cover {
+  height: 104px;
+}
+
+.event-card--shorter .event-info {
+  gap: var(--sys-spacing-xs);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med) var(--sys-spacing-med);
+}
+
+.event-card--outline:hover,
+.event-card--outline:focus-visible {
+  box-shadow: none;
 }
 </style>

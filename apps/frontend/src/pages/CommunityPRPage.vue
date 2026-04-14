@@ -125,7 +125,7 @@
       />
     </template>
 
-    <ContactSupportFooter data-region="support" />
+    <MiniumCommonFooter data-region="support" />
   </PageScaffold>
 </template>
 
@@ -139,7 +139,7 @@ import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
 import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModal.vue";
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
-import ContactSupportFooter from "@/domains/support/ui/sections/ContactSupportFooter.vue";
+import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PRHeroHeader from "@/domains/pr/ui/composites/PRHeroHeader.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";

@@ -1,61 +1,61 @@
-# 派生领域边界
+# Derived Boundaries
 
-## 原则
+## Principle
 
-这些边界是从产品行为、词汇和生命周期中派生出来的，用来帮助讨论与演进。
+These boundaries are derived from product behavior, business vocabulary, and stable collaboration semantics. They exist to help discussion and evolution.
 
-它们不是上游需求来源，也不能反过来改写产品主张。
+They are not upstream requirement sources and must not rewrite product claims in reverse.
 
 ## 1. PartnerRequest Core
 
-关注：
+Focus:
 
-- Community PR / Anchor PR 作为核心搭子请求类型
-- 发起、发布、状态、时间窗口、人数阈值
-- 页面进入与再次进入
+- `Community PR` and `Anchor PR` as the primary collaboration object types
+- creation, publish, status, time windows, and partner thresholds
+- entry and re-entry semantics
 
 ## 2. Participation And Reliability
 
-关注：
+Focus:
 
-- join / exit / confirm / check-in
-- 时间冲突
-- 可靠性回流
-- 当前参与者与参与名单
+- `join`, `exit`, confirmation, and check-in
+- time-window conflict
+- reliability feedback loops
+- current participants and participant-list semantics
 
 ## 3. Identity And Session
 
-关注：
+Focus:
 
-- 本地账户 + PIN
-- authenticated 会话
-- 微信登录与绑定
-- `/me` 与回访恢复
+- local account plus PIN
+- authenticated session continuity
+- WeChat login and binding
+- `/me` and revisit restoration
 
 ## 4. Event And Anchor Context
 
-关注：
+Focus:
 
-- Anchor Event / batch
-- 从活动浏览进入 Anchor PR
-- 替代推荐
-- Booking Support 与 POI 语义
+- Anchor Event and batch context
+- entering `Anchor PR` from event browsing
+- alternative recommendations
+- booking-support and POI semantics
 
 ## 5. Distribution And Attribution
 
-关注：
+Focus:
 
-- 分享链接
-- 微信分享
-- 小红书内容
-- `spm` 归因
+- share links
+- WeChat sharing
+- Xiaohongshu share outputs
+- `spm` attribution
 
 ## 6. Support And Operations
 
-关注：
+Focus:
 
-- “需要帮助”入口、联系作者与关于页导流
-- 内测群入口
-- 公众号关注二维码
-- 管理端维护能力
-- 对用户链路有直接影响的配置
+- "Need Help", author feedback, and about-page routing
+- beta-group entrypoints
+- official-account QR support
+- operator maintenance capability
+- configuration that directly changes user-visible flow

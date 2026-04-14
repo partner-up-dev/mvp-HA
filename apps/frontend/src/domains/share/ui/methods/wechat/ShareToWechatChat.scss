@@ -6,6 +6,30 @@
   min-height: 0;
 }
 
+.wechat-chat-method__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--sys-spacing-med);
+  min-height: 0;
+}
+
+.mini-program-webview-state {
+  display: grid;
+  place-items: center;
+  gap: var(--sys-spacing-sm);
+  min-height: 100%;
+  padding: var(--sys-spacing-med);
+  text-align: center;
+}
+
+.mini-program-webview-state__text {
+  @include mx.pu-font(body-medium);
+  max-width: 24rem;
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
 .preview-section {
   flex: 1;
   min-height: 0;

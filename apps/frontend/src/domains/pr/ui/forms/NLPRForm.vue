@@ -2,11 +2,16 @@
   <form class="nl-form" @submit.prevent="onSubmit">
     <Field name="rawText" v-slot="{ field, errors }">
       <div class="field-wrapper">
-        <PRInput
+        <TextareaInput
+          input-id="pr-text"
           :model-value="field.value"
           @update:model-value="field.onChange"
           :disabled="isSubmitting"
           :placeholder="placeholderText"
+          :rows="3"
+          :max-length="120"
+          show-count
+          min-height="120px"
         />
         <div class="nl-actions">
           <button
@@ -66,12 +71,12 @@ import {
   usePublishCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
 import { communityPRDetailPath } from "@/domains/pr/routing/routes";
-import PRInput from "@/domains/pr/ui/forms/PRInput.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { useLandingRotatingTopic } from "@/domains/landing/use-cases/useLandingRotatingTopic";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import Button from "@/shared/ui/actions/Button.vue";
+import TextareaInput from "@/shared/ui/forms/TextareaInput.vue";
 import { useNaturalLanguageDraftStore } from "@/domains/pr/use-cases/useNaturalLanguageDraft";
 import { useWeChatVoiceInput } from "@/shared/wechat/useWeChatVoiceInput";
 

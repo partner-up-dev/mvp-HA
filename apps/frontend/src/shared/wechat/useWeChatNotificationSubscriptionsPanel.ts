@@ -10,16 +10,20 @@ import {
 } from "@/shared/wechat/ability-mocking";
 import { useWeChatNotificationSubscriptions } from "@/shared/wechat/queries/useWeChatNotificationSubscriptions";
 import { useUpdateWeChatNotificationSubscription } from "@/shared/wechat/queries/useUpdateWeChatNotificationSubscription";
+import { useWeChatMiniProgramWebView } from "@/shared/wechat/useWeChatMiniProgramWebView";
 import { useWeChatShare } from "@/shared/wechat/useWeChatShare";
 
 export type WeChatNotificationKind =
   | "REMINDER_CONFIRMATION"
+  | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
-  | "NEW_PARTNER";
+  | "NEW_PARTNER"
+  | "PR_MESSAGE";
 
 type NotificationActionKind =
   | "ADD_ONE"
   | "OPEN_SUBSCRIBE"
+  | "SHOW_MINIPROGRAM_WEBVIEW_NOTICE"
   | "LOGIN"
   | "BIND"
   | null;
@@ -53,6 +57,8 @@ export const useWeChatNotificationSubscriptionsPanel = ({
   const query = useWeChatNotificationSubscriptions();
   const mutation = useUpdateWeChatNotificationSubscription();
   const { initWeChatSdk } = useWeChatShare();
+  const { isMiniProgramWebView: detectedMiniProgramWebView } =
+    useWeChatMiniProgramWebView();
   const openSubscribeReady = ref<boolean>(isWeChatAbilityMockingEnabled());
   const openSubscribePreparing = ref(false);
   const openSubscribeError = ref<string | null>(null);
@@ -61,6 +67,9 @@ export const useWeChatNotificationSubscriptionsPanel = ({
 
   const isWeChatEnv = computed(() =>
     typeof navigator === "undefined" ? false : isWeChatAbilityEnv(),
+  );
+  const isMiniProgramWebView = computed(() =>
+    isWeChatAbilityMockingEnabled() ? false : detectedMiniProgramWebView.value,
   );
 
   const ensureOpenSubscribeReady = async (): Promise<boolean> => {
@@ -71,6 +80,13 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     }
     if (!isWeChatEnv.value) {
       openSubscribeReady.value = false;
+      return false;
+    }
+    if (isMiniProgramWebView.value) {
+      openSubscribeReady.value = false;
+      openSubscribeError.value = t(
+        "prPage.notificationSubscriptions.miniProgramWebViewHint",
+      );
       return false;
     }
     if (openSubscribeReady.value) {
@@ -110,6 +126,9 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (!isWeChatEnv.value) {
       return;
     }
+    if (isMiniProgramWebView.value) {
+      return;
+    }
 
     const payload = query.data.value;
     if (!payload?.configured || !payload.authenticated || !payload.wechatBound) {
@@ -126,7 +145,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       );
     });
 
-    if (!needsOpenSubscribe || openSubscribeReady.value || openSubscribePreparing.value) {
+    if (
+      !needsOpenSubscribe ||
+      openSubscribeReady.value ||
+      openSubscribePreparing.value
+    ) {
       return;
     }
 
@@ -267,10 +290,18 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         "prPage.notificationSubscriptions.items.REMINDER_CONFIRMATION.title",
       );
     }
+    if (kind === "ACTIVITY_START_REMINDER") {
+      return t(
+        "prPage.notificationSubscriptions.items.ACTIVITY_START_REMINDER.title",
+      );
+    }
     if (kind === "BOOKING_RESULT") {
       return t("prPage.notificationSubscriptions.items.BOOKING_RESULT.title");
     }
-    return t("prPage.notificationSubscriptions.items.NEW_PARTNER.title");
+    if (kind === "NEW_PARTNER") {
+      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.title");
+    }
+    return t("prPage.notificationSubscriptions.items.PR_MESSAGE.title");
   };
 
   const resolveItemEnabledHint = (kind: WeChatNotificationKind): string => {
@@ -279,12 +310,20 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         "prPage.notificationSubscriptions.items.REMINDER_CONFIRMATION.enabledHint",
       );
     }
+    if (kind === "ACTIVITY_START_REMINDER") {
+      return t(
+        "prPage.notificationSubscriptions.items.ACTIVITY_START_REMINDER.enabledHint",
+      );
+    }
     if (kind === "BOOKING_RESULT") {
       return t(
         "prPage.notificationSubscriptions.items.BOOKING_RESULT.enabledHint",
       );
     }
-    return t("prPage.notificationSubscriptions.items.NEW_PARTNER.enabledHint");
+    if (kind === "NEW_PARTNER") {
+      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.enabledHint");
+    }
+    return t("prPage.notificationSubscriptions.items.PR_MESSAGE.enabledHint");
   };
 
   const resolveItemDisabledHint = (kind: WeChatNotificationKind): string => {
@@ -293,12 +332,20 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         "prPage.notificationSubscriptions.items.REMINDER_CONFIRMATION.disabledHint",
       );
     }
+    if (kind === "ACTIVITY_START_REMINDER") {
+      return t(
+        "prPage.notificationSubscriptions.items.ACTIVITY_START_REMINDER.disabledHint",
+      );
+    }
     if (kind === "BOOKING_RESULT") {
       return t(
         "prPage.notificationSubscriptions.items.BOOKING_RESULT.disabledHint",
       );
     }
-    return t("prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint");
+    if (kind === "NEW_PARTNER") {
+      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint");
+    }
+    return t("prPage.notificationSubscriptions.items.PR_MESSAGE.disabledHint");
   };
 
   const items = computed<NotificationSubscriptionCardItem[]>(() => {
@@ -328,10 +375,25 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         description = t("prPage.wechatReminder.unconfiguredHint");
       } else if (!isWeChatEnv.value) {
         description = t("prPage.wechatReminder.nonWechatHint");
+      } else if (isMiniProgramWebView.value) {
+        description = t(
+          "prPage.notificationSubscriptions.miniProgramWebViewHint",
+        );
+        actionLabel = t("prPage.notificationSubscriptions.openInWechatAction");
+        actionKind = "SHOW_MINIPROGRAM_WEBVIEW_NOTICE";
+        actionDisabled = false;
       } else if (!kindConfigured) {
         if (kind === "NEW_PARTNER") {
           description = t(
             "prPage.notificationSubscriptions.items.NEW_PARTNER.unconfiguredHint",
+          );
+        } else if (kind === "PR_MESSAGE") {
+          description = t(
+            "prPage.notificationSubscriptions.items.PR_MESSAGE.unconfiguredHint",
+          );
+        } else if (kind === "ACTIVITY_START_REMINDER") {
+          description = t(
+            "prPage.notificationSubscriptions.items.ACTIVITY_START_REMINDER.unconfiguredHint",
           );
         } else if (kind === "REMINDER_CONFIRMATION") {
           description = t("prPage.wechatReminder.unconfiguredHint");
@@ -354,16 +416,16 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         const itemHint = enabled
           ? resolveItemEnabledHint(kind)
           : resolveItemDisabledHint(kind);
-        description = t("prPage.notificationSubscriptions.remainingCountWithHint", {
-          count: remainingCount,
-          hint: itemHint,
-        });
+        description = t(
+          "prPage.notificationSubscriptions.remainingCountWithHint",
+          {
+            count: remainingCount,
+            hint: itemHint,
+          },
+        );
         actionLabel = t("prPage.notificationSubscriptions.subscribeOnceAction");
 
-        if (
-          requiresOpenSubscribe &&
-          !isWeChatAbilityMockingEnabled()
-        ) {
+        if (requiresOpenSubscribe && !isWeChatAbilityMockingEnabled()) {
           actionKind = "OPEN_SUBSCRIBE";
           openSubscribeTemplateId = openSubscribeReady.value ? templateId : null;
           actionDisabled = pending || !templateId;
@@ -399,6 +461,7 @@ export const useWeChatNotificationSubscriptionsPanel = ({
 
   return {
     isWeChatEnv,
+    isMiniProgramWebView,
     items,
     query,
     mutation,
