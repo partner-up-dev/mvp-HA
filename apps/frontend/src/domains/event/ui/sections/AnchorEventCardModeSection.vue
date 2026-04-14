@@ -70,7 +70,7 @@
           aria-hidden="true"
         />
 
-        <div class="card-stage__front-shell">
+        <div class="card-stage__front-shell" :key="activeDemandCard.cardKey">
           <AnchorEventDemandCard
             ref="frontDemandCardRef"
             class="card-stage__front"
