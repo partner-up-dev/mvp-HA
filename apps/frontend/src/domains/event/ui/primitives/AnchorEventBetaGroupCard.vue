@@ -2,7 +2,7 @@
   <ExpandableCard
     v-if="variant === 'list'"
     class="anchor-event-beta-group-card anchor-event-beta-group-card--list"
-    :title="t('anchorEvent.betaGroupCard.kicker')"
+    :title="cardTitle"
     :subtitle="description"
     :default-expanded="defaultExpanded"
     data-region="event-beta-group"
@@ -27,7 +27,7 @@
   >
     <div class="anchor-event-beta-group-card__summary">
       <span class="anchor-event-beta-group-card__kicker">
-        {{ t("anchorEvent.betaGroupCard.kicker") }}
+        {{ cardTitle }}
       </span>
       <span class="anchor-event-beta-group-card__description">
         {{ description }}
@@ -89,6 +89,12 @@ const qrAlt = computed(() =>
   t("anchorEvent.betaGroupCard.qrAlt", { eventTitle: props.eventTitle }),
 );
 const normalizedQrCodeUrl = computed(() => normalizeHttpUrl(props.qrCodeUrl));
+const cardTitle = computed(() => {
+  const title = props.eventTitle.trim();
+  return title.length > 0
+    ? `${title}群`
+    : t("anchorEvent.betaGroupCard.kicker");
+});
 const description = computed(() => t("anchorEvent.betaGroupCard.description"));
 </script>
 
