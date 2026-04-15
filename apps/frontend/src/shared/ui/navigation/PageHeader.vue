@@ -60,9 +60,7 @@ const hasRouterBackEntry = (): boolean => {
   }
 
   const historyState = window.history.state as RouterHistoryState | null;
-  return (
-    typeof historyState?.back === "string" && historyState.back.length > 0
-  );
+  return typeof historyState?.back === "string" && historyState.back.length > 0;
 };
 
 const resolveBackFallbackTo = (): RouteLocationRaw =>
@@ -91,7 +89,7 @@ async function handleBack(): Promise<void> {
 
 <style lang="scss" scoped>
 .page-header {
-  margin-bottom: var(--sys-spacing-lg);
+  margin-bottom: var(--sys-spacing-med);
 }
 
 .page-header__top {

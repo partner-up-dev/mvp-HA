@@ -7,9 +7,14 @@
     />
     <div class="anchor-pr-card__content">
       <div class="anchor-pr-card__header">
-        <span class="anchor-pr-card__title">
+        <div class="anchor-pr-card__headline">
+          <span v-if="timeLabel" class="anchor-pr-card__time">
+            {{ timeLabel }}
+          </span>
+          <span class="anchor-pr-card__title">
           {{ prTitle }}
-        </span>
+          </span>
+        </div>
         <span class="anchor-pr-card__status" :class="statusClass">
           {{ t(`prStatus.${pr.status}`) }}
         </span>
@@ -39,10 +44,12 @@ import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
 interface AnchorEventPRCardProps {
   pr: AnchorEventBatchPR;
   coverImage?: string | null;
+  timeLabel?: string | null;
 }
 
 const props = withDefaults(defineProps<AnchorEventPRCardProps>(), {
   coverImage: null,
+  timeLabel: null,
 });
 
 const { t } = useI18n();
@@ -82,14 +89,25 @@ const statusClass = computed(
 .anchor-pr-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 0.375rem;
   gap: 0.5rem;
 }
 
+.anchor-pr-card__headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.anchor-pr-card__time {
+  @include mx.pu-font(label-small);
+  color: var(--sys-color-on-surface-variant);
+}
+
 .anchor-pr-card__title {
-  font-size: 0.9375rem;
-  font-weight: 600;
+  @include mx.pu-font(title-small);
   overflow-wrap: anywhere;
 }
 

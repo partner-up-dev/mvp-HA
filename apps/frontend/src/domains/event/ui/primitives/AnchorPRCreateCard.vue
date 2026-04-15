@@ -5,19 +5,42 @@
   >
     <ExpandableCard
       :key="expandableCardKey"
-      :title="t('anchorEvent.createCard.title')"
-      :subtitle="t('anchorEvent.createCard.subtitle')"
+      :title="title ?? t('anchorEvent.createCard.title')"
+      :subtitle="
+        t('anchorEvent.createCard.subtitle', {
+          eventTitle,
+        })
+      "
       :default-expanded="expandableDefaultExpanded"
     >
       <div class="create-card">
+        <label v-if="batchOptions.length > 0" class="create-card__field">
+          <span class="create-card__label">{{
+            t("anchorEvent.card.batchLabel")
+          }}</span>
+          <select
+            :value="selectedBatchId ?? ''"
+            class="create-card__input"
+            @change="handleBatchChange"
+          >
+            <option
+              v-for="option in batchOptions"
+              :key="option.batchId"
+              :value="option.batchId"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+
         <label class="create-card__field">
           <span class="create-card__label">{{
             t("anchorEvent.createCard.locationLabel")
           }}</span>
           <select v-model="selectedLocationId" class="create-card__input">
-            <option value="">{{
-              t("anchorEvent.createCard.locationPlaceholder")
-            }}</option>
+            <option value="">
+              {{ t("anchorEvent.createCard.locationPlaceholder") }}
+            </option>
             <option
               v-for="option in locationOptions"
               :key="option.locationId"
@@ -28,10 +51,6 @@
             </option>
           </select>
         </label>
-
-        <p class="create-card__hint">
-          {{ t("anchorEvent.createCard.bookingHint") }}
-        </p>
 
         <p v-if="errorMessage" class="create-card__error">{{ errorMessage }}</p>
 
@@ -65,11 +84,21 @@ type LocationOption = {
   disabledReason: "NONE" | "MAX_REACHED";
 };
 
+type BatchOption = {
+  batchId: number;
+  label: string;
+};
+
 const AUTO_EXPAND_DELAY_MS = 1000;
 const AUTO_EXPAND_FLASH_DURATION_MS = 900;
 
 const props = withDefaults(
   defineProps<{
+    title?: string;
+    batchTimeLabel: string;
+    eventTitle: string;
+    batchOptions?: BatchOption[];
+    selectedBatchId?: number | null;
     locationOptions: LocationOption[];
     pending?: boolean;
     errorMessage?: string | null;
@@ -77,6 +106,9 @@ const props = withDefaults(
     autoExpandContextKey?: string | number | null;
   }>(),
   {
+    title: undefined,
+    batchOptions: () => [],
+    selectedBatchId: null,
     pending: false,
     errorMessage: null,
     defaultExpanded: false,
@@ -86,6 +118,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   create: [locationId: string | null];
+  "update:selectedBatchId": [value: number | null];
 }>();
 
 const { t } = useI18n();
@@ -100,13 +133,17 @@ let autoExpandHighlightTimerId: number | null = null;
 let autoExpandHighlightAnimationFrameId: number | null = null;
 
 const selectFirstAvailable = () => {
-  const firstAvailable = props.locationOptions.find((option) => !option.disabled);
+  const firstAvailable = props.locationOptions.find(
+    (option) => !option.disabled,
+  );
   selectedLocationId.value = firstAvailable?.locationId ?? "";
 };
 
 const expandableCardKey = computed(() => {
   const contextKey = props.autoExpandContextKey ?? "default";
-  const expandedState = expandableDefaultExpanded.value ? "expanded" : "collapsed";
+  const expandedState = expandableDefaultExpanded.value
+    ? "expanded"
+    : "collapsed";
   return `${contextKey}:${expandedState}:${expandableCardVersion.value}`;
 });
 
@@ -120,10 +157,7 @@ const clearAutoExpandTimer = () => {
 };
 
 const clearAutoExpandHighlightTimer = () => {
-  if (
-    typeof window === "undefined" ||
-    autoExpandHighlightTimerId === null
-  ) {
+  if (typeof window === "undefined" || autoExpandHighlightTimerId === null) {
     return;
   }
 
@@ -248,6 +282,22 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   });
 };
 
+const handleBatchChange = (event: Event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) {
+    return;
+  }
+
+  const normalized = target.value.trim();
+  if (normalized.length === 0) {
+    emit("update:selectedBatchId", null);
+    return;
+  }
+
+  const parsed = Number(normalized);
+  emit("update:selectedBatchId", Number.isInteger(parsed) ? parsed : null);
+};
+
 const emitCreate = () => {
   const normalized = selectedLocationId.value.trim();
   emit("create", normalized.length > 0 ? normalized : null);
@@ -347,5 +397,4 @@ const emitCreate = () => {
     background-color: transparent;
   }
 }
-
 </style>

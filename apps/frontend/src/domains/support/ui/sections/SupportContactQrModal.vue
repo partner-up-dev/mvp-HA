@@ -1,0 +1,112 @@
+<template>
+  <Modal
+    :open="open"
+    :title="title"
+    max-width="420px"
+    @close="emit('close')"
+  >
+    <div class="support-contact-qr-modal">
+      <p class="support-contact-qr-modal__description">
+        {{ description }}
+      </p>
+
+      <div class="support-contact-qr-modal__qr">
+        <img
+          v-if="qrCodeDataUrl"
+          :src="qrCodeDataUrl"
+          :alt="qrAlt"
+          class="support-contact-qr-modal__qr-image"
+        />
+        <p v-else class="support-contact-qr-modal__qr-empty">
+          {{ qrCodeError ?? missingText }}
+        </p>
+      </div>
+
+      <p v-if="targetUrl" class="support-contact-qr-modal__url">
+        {{ targetUrl }}
+      </p>
+
+      <Button appearance="rect" type="button" block @click="emit('close')">
+        {{ t("common.close") }}
+      </Button>
+    </div>
+  </Modal>
+</template>
+
+<script setup lang="ts">
+import { computed, toRef } from "vue";
+import { useI18n } from "vue-i18n";
+import Button from "@/shared/ui/actions/Button.vue";
+import Modal from "@/shared/ui/overlay/Modal.vue";
+import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
+import { useQrCodeDataUrl } from "@/shared/wechat/useQrCodeDataUrl";
+
+const props = defineProps<{
+  open: boolean;
+  title: string;
+  description: string;
+  targetUrl: string;
+  qrAlt: string;
+  missingText: string;
+}>();
+
+const emit = defineEmits<{
+  close: [];
+}>();
+
+const { t } = useI18n();
+const openRef = toRef(props, "open");
+const targetUrlRef = toRef(props, "targetUrl");
+const { qrCodeDataUrl, qrCodeError } = useQrCodeDataUrl(
+  openRef,
+  targetUrlRef,
+);
+
+useBodyScrollLock(computed(() => props.open));
+</script>
+
+<style scoped lang="scss">
+.support-contact-qr-modal {
+  display: grid;
+  justify-items: center;
+  gap: var(--sys-spacing-sm);
+}
+
+.support-contact-qr-modal__description,
+.support-contact-qr-modal__qr-empty {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+  text-align: center;
+}
+
+.support-contact-qr-modal__qr {
+  display: grid;
+  place-items: center;
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-md);
+  background: var(--sys-color-surface-container-lowest);
+}
+
+.support-contact-qr-modal__qr-image {
+  width: min(100%, 260px);
+  border-radius: var(--sys-radius-sm);
+}
+
+.support-contact-qr-modal__url {
+  @include mx.pu-font(label-medium);
+  width: 100%;
+  margin: 0;
+  padding: var(--sys-spacing-xs);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.support-contact-qr-modal :deep(.ui-button) {
+  width: 100%;
+}
+</style>

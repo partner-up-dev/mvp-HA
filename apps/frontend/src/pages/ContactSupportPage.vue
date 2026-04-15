@@ -17,14 +17,14 @@
           <p>{{ t("contactSupportPage.staffDescription") }}</p>
         </div>
 
-        <a
+        <component
           class="contact-action"
-          :href="staffLink"
-          target="_blank"
-          rel="noopener noreferrer"
+          :is="staffActionTag"
+          v-bind="staffActionProps"
+          @click="handleStaffAction"
         >
           {{ t("contactSupportPage.staffAction") }}
-        </a>
+        </component>
       </div>
 
       <div class="contact-card contact-card--support">
@@ -36,14 +36,14 @@
           <p>{{ t("contactSupportPage.supportDescription") }}</p>
         </div>
 
-        <a
+        <component
           class="contact-action contact-action--support"
-          :href="supportLink"
-          target="_blank"
-          rel="noopener noreferrer"
+          :is="supportActionTag"
+          v-bind="supportActionProps"
+          @click="handleSupportAction"
         >
           {{ t("contactSupportPage.supportAction") }}
-        </a>
+        </component>
       </div>
 
       <div class="contact-card contact-card--beta-group">
@@ -72,16 +72,38 @@
         {{ t("aboutPage.title") }}
       </RouterLink>
     </nav>
+
+    <SupportContactQrModal
+      :open="staffQrModalOpen"
+      :title="t('contactSupportPage.staffQrModalTitle')"
+      :description="t('contactSupportPage.staffQrModalDescription')"
+      :target-url="staffLink"
+      :qr-alt="t('contactSupportPage.staffQrAlt')"
+      :missing-text="t('contactSupportPage.staffQrMissing')"
+      @close="staffQrModalOpen = false"
+    />
+
+    <SupportContactQrModal
+      :open="supportQrModalOpen"
+      :title="t('contactSupportPage.supportQrModalTitle')"
+      :description="t('contactSupportPage.supportQrModalDescription')"
+      :target-url="supportLink"
+      :qr-alt="t('contactSupportPage.supportQrAlt')"
+      :missing-text="t('contactSupportPage.supportQrMissing')"
+      @close="supportQrModalOpen = false"
+    />
   </PageScaffoldCentered>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
+import SupportContactQrModal from "@/domains/support/ui/sections/SupportContactQrModal.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
+import { useWeChatMiniProgramWebView } from "@/shared/wechat/useWeChatMiniProgramWebView";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 
 const DEFAULT_SUPPORT_LINK_WECHAT_IN =
@@ -91,6 +113,9 @@ const DEFAULT_SUPPORT_LINK_WECHAT_OUT =
 const DEFAULT_STAFF_LINK = "https://work.weixin.qq.com/ca/cawcdeaeb65ab3d47f";
 
 const { t } = useI18n();
+const { isMiniProgramWebView } = useWeChatMiniProgramWebView();
+const staffQrModalOpen = ref(false);
+const supportQrModalOpen = ref(false);
 
 const supportLinkWechatInQuery = usePublicConfig(
   PUBLIC_CONFIG_KEYS.wecomSupportLinkWechatIn,
@@ -163,6 +188,49 @@ const staffLink = computed(() => {
     DEFAULT_STAFF_LINK,
   );
 });
+
+const usesMiniProgramQrEntry = computed(() => isMiniProgramWebView.value);
+
+const linkActionProps = (href: string) => ({
+  href,
+  target: "_blank",
+  rel: "noopener noreferrer",
+});
+
+const buttonActionProps = {
+  type: "button" as const,
+};
+
+const staffActionTag = computed(() =>
+  usesMiniProgramQrEntry.value ? "button" : "a",
+);
+const supportActionTag = computed(() =>
+  usesMiniProgramQrEntry.value ? "button" : "a",
+);
+
+const staffActionProps = computed(() =>
+  usesMiniProgramQrEntry.value ? buttonActionProps : linkActionProps(staffLink.value),
+);
+
+const supportActionProps = computed(() =>
+  usesMiniProgramQrEntry.value
+    ? buttonActionProps
+    : linkActionProps(supportLink.value),
+);
+
+const handleStaffAction = (event: Event): void => {
+  if (!usesMiniProgramQrEntry.value) return;
+
+  event.preventDefault();
+  staffQrModalOpen.value = true;
+};
+
+const handleSupportAction = (event: Event): void => {
+  if (!usesMiniProgramQrEntry.value) return;
+
+  event.preventDefault();
+  supportQrModalOpen.value = true;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -235,6 +303,7 @@ const staffLink = computed(() => {
 .contact-action {
   @include mx.pu-font(label-large);
   @include mx.pu-pill-action(solid-primary);
+  border: 0;
 
   &:hover {
     opacity: 0.92;

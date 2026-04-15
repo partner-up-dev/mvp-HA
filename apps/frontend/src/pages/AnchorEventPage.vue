@@ -86,16 +86,17 @@
       <template v-else>
         <AnchorEventListModeSection
           :has-batches="detail.batches.length > 0"
-          :batch-tabs="batchTabs"
-          :selected-batch-id="selectedBatchId"
-          :selected-batch="selectedBatch"
+          :date-tabs="dateTabs"
+          :selected-date-key="selectedDateKey"
+          :selected-date-group="selectedDateGroup"
+          :create-batch-choices="listModeCreateBatchChoices"
           :event-id="detail.id"
           :event-title="detail.title"
           :event-beta-group-qr-code="detail.betaGroupQrCode"
           :is-create-pending="isCreatePending"
           :create-action-error-message="createActionErrorMessage"
           :resolve-cover-image="resolveCoverImage"
-          @select-batch="selectedBatchId = $event"
+          @select-date="selectedDateKey = $event"
           @create-in-list="handleCreateInList"
         />
       </template>
@@ -128,6 +129,7 @@ import AnchorEventCardModeSection from "@/domains/event/ui/sections/AnchorEventC
 import AnchorEventListModeSection from "@/domains/event/ui/sections/AnchorEventListModeSection.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
+import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
 import {
   useCreateUserAnchorPR,
   type CreateUserAnchorPRError,
@@ -143,11 +145,18 @@ import {
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
+import { toDemandCardViewModels } from "@/domains/event/model/demand-cards";
 import {
   pickRandomPoiGalleryImage,
   toPoiGalleryMap,
 } from "@/domains/event/model/poi-gallery";
 import type { ApiError } from "@/shared/api/error";
+import {
+  addDaysToProductLocalDateKey,
+  getTodayProductLocalDateKey,
+  parseProductLocalDateKey,
+  type ProductLocalDateKey,
+} from "@/shared/datetime/productLocalDate";
 import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
@@ -171,26 +180,22 @@ type CardCreateLocationOptionViewModel = {
   disabled: boolean;
 };
 
-type DemandCardCandidate = {
-  prId: number;
-  status: string;
-  createdAt: string;
-  notes: string | null;
+type ListModeBatchViewModel = {
+  batch: AnchorEventDetailResponse["batches"][number];
+  timeLabel: string;
 };
 
-type DemandCardViewModel = {
-  cardKey: string;
-  batchId: number;
-  timeWindow: TimeWindow;
-  batchStartTimestamp: number;
-  timeLabel: string;
-  displayLocationName: string;
-  preferenceFingerprint: string | null;
-  preferenceTags: string[];
-  notes: string | null;
-  candidates: DemandCardCandidate[];
-  detailPrId: number | null;
-  coverImage: string | null;
+type ListModeDateGroupViewModel = {
+  key: string;
+  label: string;
+  tabClass?: string;
+  batches: ListModeBatchViewModel[];
+};
+
+type ListModeCreateBatchChoice = {
+  batch: AnchorEventDetailResponse["batches"][number];
+  optionLabel: string;
+  subtitleLabel: string;
 };
 
 const route = useRoute();
@@ -250,7 +255,7 @@ const resolveInitialViewMode = (): EventViewMode =>
   resolveQueryViewMode(route.query.mode) ?? "LIST";
 
 const viewMode = ref<EventViewMode>("LIST");
-const selectedBatchId = ref<number | null>(null);
+const selectedDateKey = ref<string | null>(null);
 const processedCardKeys = ref<string[]>([]);
 const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
@@ -339,11 +344,27 @@ watch(eventId, () => {
   consumeCardDragHintWindow();
 });
 
-const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
+const {
+  data: detail,
+  isLoading: isDetailLoading,
+  isError: isDetailError,
+} = useAnchorEventDetail(eventId);
+const {
+  data: demandCards,
+  isLoading: isDemandCardsLoading,
+  isError: isDemandCardsError,
+} = useAnchorEventDemandCards(eventId);
 const createUserAnchorPRMutation = useCreateUserAnchorPR();
 const createCommunityPRMutation = useCreateCommunityPRFromStructured();
 const publishCommunityPRMutation = usePublishCommunityPR();
 const userSessionStore = useUserSessionStore();
+
+const isLoading = computed(
+  () => isDetailLoading.value || isDemandCardsLoading.value,
+);
+const isError = computed(
+  () => isDetailError.value || isDemandCardsError.value,
+);
 
 const isCreatePending = computed(
   () =>
@@ -412,35 +433,79 @@ const nonExpiredSortedBatches = computed(() =>
   sortedBatches.value.filter((batch) => !isExpiredBatch(batch)),
 );
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const openSortedBatches = computed(() =>
+  sortedBatches.value.filter((batch) => batch.status === "OPEN"),
+);
+
+const PRODUCT_TIME_ZONE = "Asia/Shanghai";
+
+const productLocalTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  timeZone: PRODUCT_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+const productLocalWeekdayFormatter = new Intl.DateTimeFormat("zh-CN", {
+  timeZone: PRODUCT_TIME_ZONE,
+  weekday: "short",
+});
 
 const resolveRelativeDayLabel = (
-  date: Date,
+  dateKey: ProductLocalDateKey,
 ): "今天" | "明天" | "后天" | null => {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const targetStart = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  );
-  const diffDays = Math.round(
-    (targetStart.getTime() - todayStart.getTime()) / MS_PER_DAY,
-  );
-
-  if (diffDays === 0) {
+  const todayDateKey = getTodayProductLocalDateKey();
+  if (dateKey === todayDateKey) {
     return "今天";
   }
 
-  if (diffDays === 1) {
+  const tomorrowDateKey = addDaysToProductLocalDateKey(todayDateKey, 1);
+  if (tomorrowDateKey !== null && dateKey === tomorrowDateKey) {
     return "明天";
   }
 
-  if (diffDays === 2) {
+  const dayAfterTomorrowDateKey = addDaysToProductLocalDateKey(
+    todayDateKey,
+    2,
+  );
+  if (
+    dayAfterTomorrowDateKey !== null &&
+    dateKey === dayAfterTomorrowDateKey
+  ) {
     return "后天";
   }
 
   return null;
+};
+
+const resolveBatchDateKey = (timeWindow: TimeWindow): ProductLocalDateKey | null => {
+  const [start] = timeWindow;
+  if (!start) {
+    return null;
+  }
+
+  const date = new Date(start);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return getTodayProductLocalDateKey(date);
+};
+
+const formatDateKeyLabel = (dateKey: ProductLocalDateKey): string => {
+  const parsed = parseProductLocalDateKey(dateKey);
+  if (!parsed) {
+    return dateKey;
+  }
+
+  const month = parsed.getUTCMonth() + 1;
+  const day = parsed.getUTCDate();
+  const relativeDayLabel = resolveRelativeDayLabel(dateKey);
+  if (relativeDayLabel) {
+    return `${month}月${day}日(${relativeDayLabel})`;
+  }
+
+  return `${month}月${day}日${productLocalWeekdayFormatter.format(parsed)}`;
 };
 
 function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
@@ -448,27 +513,32 @@ function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   if (start) {
     try {
       const date = new Date(start);
-      if (Number.isNaN(date.getTime())) {
+      const dateKey = resolveBatchDateKey(timeWindow);
+      if (Number.isNaN(date.getTime()) || dateKey === null) {
         return `${t("anchorEvent.batchLabel")} ${index + 1}`;
       }
 
-      const relativeDayLabel = resolveRelativeDayLabel(date);
-      const datePart = relativeDayLabel
-        ? `${date.getMonth() + 1}月${date.getDate()}日(${relativeDayLabel})`
-        : `${date.getMonth() + 1}月${date.getDate()}日${date.toLocaleDateString(
-            "zh-CN",
-            {
-              weekday: "short",
-            },
-          )}`;
-      const timePart = date.toLocaleTimeString("zh-CN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
+      const datePart = formatDateKeyLabel(dateKey);
+      const timePart = productLocalTimeFormatter.format(date);
       return `${datePart} ${timePart}`;
     } catch {
       return `${t("anchorEvent.batchLabel")} ${index + 1}`;
+    }
+  }
+
+  return `${t("anchorEvent.batchLabel")} ${index + 1}`;
+}
+
+function formatBatchTimeLabel(timeWindow: TimeWindow, index: number): string {
+  const [start] = timeWindow;
+  if (start) {
+    try {
+      const date = new Date(start);
+      if (!Number.isNaN(date.getTime())) {
+        return productLocalTimeFormatter.format(date);
+      }
+    } catch {
+      // fall through to default label
     }
   }
 
@@ -493,54 +563,101 @@ const formatCardTimeLabel = (
   index: number,
 ): string => formatBatchLabel(batch.timeWindow, index);
 
-const batchTabs = computed(() =>
-  sortedBatches.value.map((batch, index) => ({
-    key: batch.id,
-    label: formatBatchLabel(batch.timeWindow, index),
-    tabClass: isExpiredBatch(batch) ? "tab-bar__tab--expired" : undefined,
-  })),
-);
+const dateGroups = computed<ListModeDateGroupViewModel[]>(() => {
+  const groups: ListModeDateGroupViewModel[] = [];
+  const groupIndexByKey = new Map<string, number>();
 
-const selectedBatch = computed(
-  () =>
-    sortedBatches.value.find((batch) => batch.id === selectedBatchId.value) ??
-    null,
-);
+  sortedBatches.value.forEach((batch, index) => {
+    const groupKey = resolveBatchDateKey(batch.timeWindow) ?? `batch:${batch.id}`;
+    const existingIndex = groupIndexByKey.get(groupKey);
+    const batchViewModel: ListModeBatchViewModel = {
+      batch,
+      timeLabel: formatBatchTimeLabel(batch.timeWindow, index),
+    };
 
-const resolveDefaultBatchId = (
-  batches: AnchorEventDetailResponse["batches"],
-): number | null => {
-  const firstOpenBatch = batches.find((batch) => batch.status === "OPEN");
-  if (firstOpenBatch) {
-    return firstOpenBatch.id;
-  }
-
-  const firstNonExpiredBatch = batches.find((batch) => !isExpiredBatch(batch));
-  if (firstNonExpiredBatch) {
-    return firstNonExpiredBatch.id;
-  }
-
-  return batches[0]?.id ?? null;
-};
-
-watch(
-  sortedBatches,
-  (batches) => {
-    if (batches.length === 0) {
-      selectedBatchId.value = null;
+    if (existingIndex !== undefined) {
+      groups[existingIndex]?.batches.push(batchViewModel);
       return;
     }
 
-    if (selectedBatchId.value !== null) {
-      const matched = batches.some(
-        (batch) => batch.id === selectedBatchId.value,
-      );
+    const groupLabel =
+      groupKey.startsWith("batch:")
+        ? formatBatchLabel(batch.timeWindow, index)
+        : formatDateKeyLabel(groupKey as ProductLocalDateKey);
+
+    groupIndexByKey.set(groupKey, groups.length);
+    groups.push({
+      key: groupKey,
+      label: groupLabel,
+      tabClass: isExpiredBatch(batch) ? "tab-bar__tab--expired" : undefined,
+      batches: [batchViewModel],
+    });
+  });
+
+  return groups.map((group) => ({
+    ...group,
+    tabClass: group.batches.every(({ batch }) => isExpiredBatch(batch))
+      ? "tab-bar__tab--expired"
+      : undefined,
+  }));
+});
+
+const dateTabs = computed(() =>
+  dateGroups.value.map((group) => ({
+    key: group.key,
+    label: group.label,
+    tabClass: group.tabClass,
+  })),
+);
+
+const listModeCreateBatchChoices = computed<ListModeCreateBatchChoice[]>(() =>
+  openSortedBatches.value.map((batch, index) => ({
+    batch,
+    optionLabel: formatBatchOptionLabel(batch, index),
+    subtitleLabel: formatBatchLabel(batch.timeWindow, index),
+  })),
+);
+
+const selectedDateGroup = computed(
+  () => dateGroups.value.find((group) => group.key === selectedDateKey.value) ?? null,
+);
+
+const resolveDefaultDateKey = (
+  groups: ListModeDateGroupViewModel[],
+): string | null => {
+  const firstOpenGroup = groups.find((group) =>
+    group.batches.some(({ batch }) => batch.status === "OPEN"),
+  );
+  if (firstOpenGroup) {
+    return firstOpenGroup.key;
+  }
+
+  const firstNonExpiredGroup = groups.find((group) =>
+    group.batches.some(({ batch }) => !isExpiredBatch(batch)),
+  );
+  if (firstNonExpiredGroup) {
+    return firstNonExpiredGroup.key;
+  }
+
+  return groups[0]?.key ?? null;
+};
+
+watch(
+  dateGroups,
+  (groups) => {
+    if (groups.length === 0) {
+      selectedDateKey.value = null;
+      return;
+    }
+
+    if (selectedDateKey.value !== null) {
+      const matched = groups.some((group) => group.key === selectedDateKey.value);
       if (matched) {
         return;
       }
     }
 
-    selectedBatchId.value = resolveDefaultBatchId(batches);
+    selectedDateKey.value = resolveDefaultDateKey(groups);
   },
   { immediate: true },
 );
@@ -565,7 +682,6 @@ const allPoiIdsCsv = computed(() => {
 });
 
 const { data: eventPois } = usePoisByIds(allPoiIdsCsv);
-
 const poiGalleryById = computed(() => toPoiGalleryMap(eventPois.value ?? []));
 
 const resolveCoverImage = (location: string | null): string | null => {
@@ -581,168 +697,13 @@ const resolveCoverImage = (location: string | null): string | null => {
   return pickRandomPoiGalleryImage(poiGalleryById.value.get(normalized) ?? []);
 };
 
-const normalizeFingerprint = (value: string): string | null => {
-  const normalized = value.trim().toLowerCase();
-  return normalized.length > 0 ? normalized : null;
-};
-
-const normalizePreferenceTag = (value: string): string | null => {
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-};
-
-const normalizeCardNotes = (
-  value: string | null | undefined,
-): string | null => {
-  const normalized = value?.trim() ?? "";
-  return normalized.length > 0 ? normalized : null;
-};
-
-const resolvePreferenceTags = (values: string[]): string[] => {
-  const seen = new Set<string>();
-  const tags: string[] = [];
-
-  for (const value of values) {
-    const tag = normalizePreferenceTag(value);
-    if (!tag) continue;
-    const key = tag.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    tags.push(tag);
-  }
-
-  return tags;
-};
-
-const normalizeCardKeySegment = (value: string): string =>
-  value.trim().replace(/\s+/g, " ").toLowerCase();
-
-const buildDemandCardKey = (
-  batchId: number,
-  displayLocationName: string,
-  preferenceFingerprint: string | null,
-): string => {
-  const locationSegment = normalizeCardKeySegment(displayLocationName);
-  const preferenceSegment = preferenceFingerprint
-    ? normalizeCardKeySegment(preferenceFingerprint)
-    : "_";
-  return `${batchId}::${locationSegment}::${preferenceSegment}`;
-};
-
-const buildDemandCards = (
-  batches: AnchorEventDetailResponse["batches"],
-  eventCoverImage: string | null,
-): DemandCardViewModel[] => {
-  const cardMap = new Map<string, DemandCardViewModel>();
-
-  batches.forEach((batch, batchIndex) => {
-    const timeLabel = formatCardTimeLabel(batch, batchIndex);
-    const batchStartTimestamp = resolveBatchStartTimestamp(batch.timeWindow);
-
-    batch.prs.forEach((pr) => {
-      const location = pr.location?.trim() ?? "";
-      if (!location) {
-        return;
-      }
-
-      const preferenceTags = resolvePreferenceTags(
-        Array.isArray(pr.preferences) ? pr.preferences : [],
-      );
-      const preferenceFingerprint =
-        preferenceTags.length > 0
-          ? preferenceTags
-              .map((tag) => normalizeFingerprint(tag))
-              .filter((tag): tag is string => tag !== null)
-              .sort()
-              .join("|")
-          : null;
-      const cardKey = buildDemandCardKey(
-        batch.id,
-        location,
-        preferenceFingerprint,
-      );
-
-      const candidate: DemandCardCandidate = {
-        prId: pr.id,
-        status: pr.status,
-        createdAt: pr.createdAt,
-        notes: normalizeCardNotes(pr.notes),
-      };
-
-      const existing = cardMap.get(cardKey);
-      if (existing) {
-        existing.candidates.push(candidate);
-        return;
-      }
-
-      cardMap.set(cardKey, {
-        cardKey,
-        batchId: batch.id,
-        timeWindow: batch.timeWindow,
-        batchStartTimestamp,
-        timeLabel,
-        displayLocationName: location,
-        preferenceFingerprint,
-        preferenceTags,
-        notes: candidate.notes,
-        candidates: [candidate],
-        detailPrId: pr.id,
-        coverImage: null,
-      });
-    });
-  });
-
-  const cards = Array.from(cardMap.values()).map((card) => {
-    const sortedCandidates = [...card.candidates].sort((left, right) => {
-      const leftTime = new Date(left.createdAt).getTime();
-      const rightTime = new Date(right.createdAt).getTime();
-
-      const safeLeft = Number.isFinite(leftTime)
-        ? leftTime
-        : Number.POSITIVE_INFINITY;
-      const safeRight = Number.isFinite(rightTime)
-        ? rightTime
-        : Number.POSITIVE_INFINITY;
-
-      if (safeLeft !== safeRight) {
-        return safeLeft - safeRight;
-      }
-
-      return left.prId - right.prId;
-    });
-    const representativeCandidate =
-      sortedCandidates.find((candidate) => candidate.notes !== null) ??
-      sortedCandidates[0] ??
-      null;
-
-    return {
-      ...card,
-      candidates: sortedCandidates,
-      notes: representativeCandidate?.notes ?? null,
-      detailPrId: representativeCandidate?.prId ?? null,
-    };
-  });
-
-  cards.sort((left, right) => {
-    if (left.batchStartTimestamp !== right.batchStartTimestamp) {
-      return left.batchStartTimestamp - right.batchStartTimestamp;
-    }
-
-    return left.cardKey.localeCompare(right.cardKey);
-  });
-
-  return cards.map((card) => ({
-    ...card,
-    coverImage: resolveCoverImage(card.displayLocationName) ?? eventCoverImage,
-  }));
-};
-
-const allDemandCards = computed(() => {
-  return buildDemandCards(
-    nonExpiredSortedBatches.value,
-    detail.value?.coverImage ?? null,
-  );
-});
+const allDemandCards = computed(() =>
+  toDemandCardViewModels({
+    cards: demandCards.value ?? [],
+    eventCoverImage: detail.value?.coverImage ?? null,
+    resolveCoverImage,
+  }),
+);
 
 const processedCardKeySet = computed(() => new Set(processedCardKeys.value));
 
@@ -1029,10 +990,15 @@ onMounted(() => {
   void attemptPendingCreateReplay();
 });
 
-const handleCreateInList = async (locationId: string | null) => {
-  const batch = selectedBatch.value;
+const handleCreateInList = async ({
+  batchId,
+  locationId,
+}: {
+  batchId: number | null;
+  locationId: string | null;
+}) => {
   await createPRWithFallback({
-    targetBatchId: batch?.id ?? null,
+    targetBatchId: batchId,
     locationId,
   });
 };

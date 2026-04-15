@@ -86,6 +86,9 @@ export const useCreateUserAnchorPR = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorEvent.detail(variables.eventId),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.anchorEvent.demandCards(variables.eventId),
+      });
     },
   });
 };

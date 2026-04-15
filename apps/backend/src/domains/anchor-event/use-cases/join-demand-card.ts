@@ -10,6 +10,11 @@ import type {
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
 import { readVisibleAnchorPRRecordsByBatchIdAndLocation } from "../../pr-core/services/pr-read.service";
+import {
+  buildDemandCardKey,
+  listJoinableDemandCardCandidates,
+  normalizePreferenceFingerprint,
+} from "../services/demand-card-projection.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
@@ -49,30 +54,6 @@ const normalizeTimeWindow = (
   return [trimNullable(value[0]), trimNullable(value[1])];
 };
 
-const normalizePreferenceFingerprint = (
-  value: string | null,
-): string | null => {
-  if (value === null) return null;
-  const trimmed = value
-    .trim()
-    .toLowerCase()
-    .split("|")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0)
-    .join("|");
-  return trimmed.length > 0 ? trimmed : null;
-};
-
-const normalizePreferencesFingerprint = (values: string[]): string | null => {
-  const normalized = values
-    .map((value) => value.trim().toLowerCase())
-    .filter((value) => value.length > 0)
-    .sort()
-    .join("|");
-
-  return normalized.length > 0 ? normalized : null;
-};
-
 const resolveOccupancyScore = (
   activePartnerCount: number,
   maxPartners: number | null,
@@ -82,9 +63,6 @@ const resolveOccupancyScore = (
   }
   return activePartnerCount / maxPartners;
 };
-
-const isJoinableStatus = (status: string): boolean =>
-  status === "OPEN" || status === "READY";
 
 const isRetryableCandidateError = (error: unknown): error is HTTPException => {
   if (!(error instanceof HTTPException)) {
@@ -170,38 +148,43 @@ export const joinDemandCard = async ({
   }
 
   const normalizedFingerprint = normalizePreferenceFingerprint(
-    preferenceFingerprint,
+    preferenceFingerprint === null
+      ? []
+      : preferenceFingerprint
+          .split("|")
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0),
+  );
+  const normalizedCardKey = buildDemandCardKey(
+    batchId,
+    normalizedLocation,
+    normalizedFingerprint,
   );
 
-  const records =
-    await readVisibleAnchorPRRecordsByBatchIdAndLocation(
-      batchId,
-      normalizedLocation,
-    );
+  if (normalizedCardKey !== cardKey) {
+    throw new HTTPException(400, {
+      message: "Demand card identity does not match request payload",
+    });
+  }
 
-  const matchedByEvent = records.filter(
-    (record) => record.anchor.anchorEventId === event.id,
-  );
-
-  const matchedByPreference = matchedByEvent.filter((record) => {
-    if (!normalizedFingerprint) return true;
-
-    const preferencesFingerprint = normalizePreferencesFingerprint(
-      Array.isArray(record.root.preferences) ? record.root.preferences : [],
-    );
-    return preferencesFingerprint === normalizedFingerprint;
+  const joinableCandidates = await listJoinableDemandCardCandidates({
+    eventId,
+    cardKey,
   });
 
-  const joinableByStatus = matchedByPreference.filter((record) =>
-    isJoinableStatus(record.root.status),
-  );
-
-  if (joinableByStatus.length === 0) {
+  if (joinableCandidates.length === 0) {
     throw createNoJoinableCandidateError();
   }
 
+  const candidateIds = new Set(joinableCandidates.map((candidate) => candidate.prId));
+  const records = await readVisibleAnchorPRRecordsByBatchIdAndLocation(
+    batchId,
+    normalizedLocation,
+  );
+  const matchedRecords = records.filter((record) => candidateIds.has(record.root.id));
+
   const candidates = await Promise.all(
-    joinableByStatus.map(async (record) => ({
+    matchedRecords.map(async (record) => ({
       record,
       activePartnerCount: await partnerRepo.countActiveByPrId(record.root.id),
     })),

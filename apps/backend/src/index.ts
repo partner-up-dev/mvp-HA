@@ -229,6 +229,7 @@ export type { PRKind, VisibilityStatus } from "./entities/partner-request";
 export type {
   AnchorEventSummary,
   AnchorEventDetail,
+  AnchorEventDemandCard,
   BatchDetail,
   AnchorPRSummary,
 } from "./domains/anchor-event";
