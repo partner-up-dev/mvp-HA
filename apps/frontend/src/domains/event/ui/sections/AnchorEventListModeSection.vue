@@ -26,9 +26,9 @@
 
       <div class="batch-action-cards">
         <AnchorPRCreateCard
-          :key="createCardKey"
           :location-options="selectedBatch.locationOptions"
           :default-expanded="shouldAutoExpandCreateCard"
+          :auto-expand-context-key="createCardAutoExpandContextKey"
           :pending="isCreatePending"
           :error-message="createActionErrorMessage"
           @create="handleCreateInList"
@@ -106,10 +106,9 @@ const shouldAutoExpandCreateCard = computed(() => {
   return !batch.prs.some(isAvailableAnchorPR);
 });
 
-const createCardKey = computed(() => {
-  const batchId = props.selectedBatch?.id ?? "none";
-  return `${batchId}:${shouldAutoExpandCreateCard.value ? "expanded" : "collapsed"}`;
-});
+const createCardAutoExpandContextKey = computed(
+  () => props.selectedBatch?.id ?? "none",
+);
 
 const handleBatchTabChange = (value: string | number) => {
   if (typeof value !== "number") {
