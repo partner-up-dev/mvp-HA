@@ -1,6 +1,9 @@
 <template>
   <PageScaffold class="event-plaza-page">
-    <PageHeader :title="t('eventPlaza.title')" :subtitle="t('eventPlaza.subtitle')">
+    <PageHeader
+      :title="t('eventPlaza.title')"
+      :subtitle="t('eventPlaza.subtitle')"
+    >
       <template #top-actions>
         <RouterLink
           :to="{ name: 'anchor-pr-search' }"
@@ -19,8 +22,12 @@
       {{ t("eventPlaza.loadFailed") }}
     </div>
 
-    <div v-else-if="events && events.length > 0" class="event-grid">
-      <EventCard v-for="event in events" :key="event.id" :event="event" />
+    <div v-else-if="randomizedEvents.length > 0" class="event-grid">
+      <EventCard
+        v-for="event in randomizedEvents"
+        :key="event.id"
+        :event="event"
+      />
     </div>
 
     <div v-else class="empty-state">
@@ -30,15 +37,41 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
+import type { AnchorEventListResponse } from "@/domains/event/model/types";
 
 const { t } = useI18n();
 const { data: events, isLoading, isError } = useAnchorEvents();
+
+const shuffleEvents = (
+  eventList: AnchorEventListResponse,
+): AnchorEventListResponse => {
+  const shuffledEvents = [...eventList];
+  for (let index = shuffledEvents.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledEvents[index], shuffledEvents[randomIndex]] = [
+      shuffledEvents[randomIndex],
+      shuffledEvents[index],
+    ];
+  }
+  return shuffledEvents;
+};
+
+const randomizedEvents = ref<AnchorEventListResponse>([]);
+
+watch(
+  events,
+  (nextEvents) => {
+    randomizedEvents.value = shuffleEvents(nextEvents ?? []);
+  },
+  { immediate: true },
+);
 </script>
 
 <style lang="scss" scoped>

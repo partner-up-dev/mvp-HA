@@ -8,7 +8,6 @@
       :title="title ?? t('anchorEvent.createCard.title')"
       :subtitle="
         t('anchorEvent.createCard.subtitle', {
-          timeLabel: batchTimeLabel,
           eventTitle,
         })
       "

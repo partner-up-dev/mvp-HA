@@ -26,7 +26,7 @@ const { t } = useI18n();
   display: flex;
   align-items: center;
   gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-lg);
+  margin-bottom: var(--sys-spacing-med);
 
   h1 {
     @include mx.pu-font(headline-medium);

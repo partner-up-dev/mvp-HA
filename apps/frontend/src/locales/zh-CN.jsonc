@@ -1192,6 +1192,7 @@
     "loadFailed": "加载活动详情失败",
     "noBatches": "暂无可用场次",
     "noPRsInBatch": "该时段暂无可用场地",
+    "dateLabel": "日期",
     "batchLabel": "场次",
     "viewMode": {
       "ariaLabel": "活动浏览模式",
@@ -1225,9 +1226,9 @@
     },
     "discoverOthers": "看看其它活动",
     "createCard": {
-      "title": "没有合适的？",
-      "titleWhenNoAvailablePR": "其它场地或时间？",
-      "subtitle": "在你喜欢的场地创建一个{timeLabel}开始的{eventTitle}请求，找到搭子后我们会通知您",
+      "title": "想自己发一个？",
+      "titleWhenNoAvailablePR": "这一天还没有合适的？",
+      "subtitle": "在你喜欢的场地创建一个{eventTitle}请求，找到搭子后我们会通知您",
       "locationLabel": "地点",
       "locationPlaceholder": "请选择地点",
       "createAction": "创建搭子请求",

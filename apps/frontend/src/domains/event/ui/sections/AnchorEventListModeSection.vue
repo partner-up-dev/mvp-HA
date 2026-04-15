@@ -1,33 +1,38 @@
 <template>
-  <div v-if="hasBatches" class="batch-section">
+  <div v-if="hasBatches" class="date-section">
     <TabBar
-      :items="batchTabs"
-      :model-value="selectedBatchId ?? -1"
-      :aria-label="t('anchorEvent.batchLabel')"
-      @update:model-value="handleBatchTabChange"
+      :items="dateTabs"
+      :model-value="selectedDateKey ?? 'none'"
+      :aria-label="t('anchorEvent.dateLabel')"
+      @update:model-value="handleDateTabChange"
     />
 
-    <p v-if="selectedBatch?.description" class="batch-description">
-      {{ selectedBatch.description }}
-    </p>
-
-    <div v-if="selectedBatch" class="batch-content" role="tabpanel">
-      <div class="pr-list" data-region="anchor-pr-list">
-        <div v-if="selectedBatch.prs.length === 0" class="empty-batch">
-          {{ t("anchorEvent.noPRsInBatch") }}
-        </div>
-        <AnchorEventPRCard
-          v-for="pr in selectedBatch.prs"
-          :key="pr.id"
-          :pr="pr"
-          :cover-image="resolveCoverImage(pr.location)"
-        />
+    <div v-if="selectedDateGroup" class="date-content" role="tabpanel">
+      <div class="batch-list" data-region="anchor-pr-list">
+        <section
+          v-for="batchItem in selectedDateGroup.batches"
+          :key="batchItem.batch.id"
+          class="batch-panel"
+        >
+          <div class="pr-list">
+            <div v-if="batchItem.batch.prs.length === 0" class="empty-batch">
+              {{ t("anchorEvent.noPRsInBatch") }}
+            </div>
+            <AnchorEventPRCard
+              v-for="pr in batchItem.batch.prs"
+              :key="pr.id"
+              :pr="pr"
+              :time-label="batchItem.timeLabel"
+              :cover-image="resolveCoverImage(pr.location)"
+            />
+          </div>
+        </section>
       </div>
 
       <div class="batch-action-cards">
         <AnchorPRCreateCard
           :title="createCardTitle"
-          :batch-time-label="createBatchTimeLabel"
+          :batch-time-label="createCardSubtitleTimeLabel"
           :event-title="eventTitle"
           :batch-options="createBatchOptions"
           :selected-batch-id="createBatchId"
@@ -71,8 +76,8 @@ import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventB
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 
-type BatchTabItem = {
-  key: number;
+type DateTabItem = {
+  key: string;
   label: string;
   tabClass?: string;
 };
@@ -80,12 +85,29 @@ type BatchTabItem = {
 type AnchorEventBatch = AnchorEventDetailResponse["batches"][number];
 type AnchorEventBatchPR = AnchorEventBatch["prs"][number];
 
+type DateGroupBatchItem = {
+  batch: AnchorEventBatch;
+  timeLabel: string;
+};
+
+type DateGroup = {
+  key: string;
+  label: string;
+  batches: DateGroupBatchItem[];
+};
+
+type CreateBatchChoice = {
+  batch: AnchorEventBatch;
+  optionLabel: string;
+  subtitleLabel: string;
+};
+
 const props = defineProps<{
   hasBatches: boolean;
-  batchTabs: BatchTabItem[];
-  batches: AnchorEventBatch[];
-  selectedBatchId: number | null;
-  selectedBatch: AnchorEventBatch | null;
+  dateTabs: DateTabItem[];
+  selectedDateKey: string | null;
+  selectedDateGroup: DateGroup | null;
+  createBatchChoices: CreateBatchChoice[];
   eventId: number;
   eventTitle: string;
   eventBetaGroupQrCode: string | null;
@@ -95,55 +117,84 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "select-batch": [batchId: number];
-  "create-in-list": [payload: { batchId: number | null; locationId: string | null }];
+  "select-date": [dateKey: string];
+  "create-in-list": [
+    payload: { batchId: number | null; locationId: string | null },
+  ];
 }>();
 
 const { t } = useI18n();
 const createBatchId = ref<number | null>(null);
 
-watch(
-  () => props.selectedBatchId,
-  (nextSelectedBatchId) => {
-    if (nextSelectedBatchId !== null) {
-      createBatchId.value = nextSelectedBatchId;
-      return;
-    }
+const isAvailableAnchorPR = (pr: AnchorEventBatchPR): boolean =>
+  pr.status === "OPEN" || pr.status === "READY";
 
-    createBatchId.value = props.batches[0]?.id ?? null;
-  },
-  { immediate: true },
-);
+const batchHasAvailableAnchorPR = (batch: AnchorEventBatch): boolean =>
+  batch.prs.some(isAvailableAnchorPR);
+
+const resolveDefaultCreateBatchId = (
+  group: DateGroup | null,
+): number | null => {
+  if (!group) {
+    return null;
+  }
+
+  const firstCreatableBatchWithoutAvailablePR = group.batches.find(
+    ({ batch }) =>
+      batch.locationOptions.some((option) => !option.disabled) &&
+      !batchHasAvailableAnchorPR(batch),
+  );
+  if (firstCreatableBatchWithoutAvailablePR) {
+    return firstCreatableBatchWithoutAvailablePR.batch.id;
+  }
+
+  const firstCreatableBatch = group.batches.find(({ batch }) =>
+    batch.locationOptions.some((option) => !option.disabled),
+  );
+  if (firstCreatableBatch) {
+    return firstCreatableBatch.batch.id;
+  }
+
+  return group.batches[0]?.batch.id ?? null;
+};
 
 watch(
-  () => props.batches,
-  (batches) => {
+  [() => props.selectedDateGroup, () => props.createBatchChoices],
+  ([group, createBatchChoices]) => {
     const currentBatchId = createBatchId.value;
     if (
       currentBatchId !== null &&
-      batches.some((batch) => batch.id === currentBatchId)
+      createBatchChoices.some(({ batch }) => batch.id === currentBatchId)
     ) {
       return;
     }
 
-    createBatchId.value = props.selectedBatchId ?? batches[0]?.id ?? null;
+    const preferredBatchId = resolveDefaultCreateBatchId(group);
+    if (
+      preferredBatchId !== null &&
+      createBatchChoices.some(({ batch }) => batch.id === preferredBatchId)
+    ) {
+      createBatchId.value = preferredBatchId;
+      return;
+    }
+
+    createBatchId.value = createBatchChoices[0]?.batch.id ?? null;
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 
-const batchTabLabelById = computed(() => {
+const batchLabelById = computed(() => {
   const map = new Map<number, string>();
-  for (const tab of props.batchTabs) {
-    map.set(tab.key, tab.label);
+  for (const batchChoice of props.createBatchChoices) {
+    map.set(batchChoice.batch.id, batchChoice.subtitleLabel);
   }
   return map;
 });
 
 const createBatchOptions = computed(() =>
-  props.batches.map((batch) => ({
+  props.createBatchChoices.map(({ batch, optionLabel }) => ({
     batchId: batch.id,
-    label:
-      batchTabLabelById.value.get(batch.id) ?? `${t("anchorEvent.batchLabel")} ${batch.id}`,
+    label: optionLabel,
   })),
 );
 
@@ -152,24 +203,29 @@ const createBatch = computed(() => {
     return null;
   }
 
-  return props.batches.find((batch) => batch.id === createBatchId.value) ?? null;
+  return (
+    props.createBatchChoices.find(({ batch }) => batch.id === createBatchId.value)
+      ?.batch ?? null
+  );
 });
 
 const createBatchTimeLabel = computed(() => {
-  const targetBatchId = createBatch.value?.id ?? props.selectedBatch?.id ?? null;
+  const targetBatchId = createBatch.value?.id ?? null;
   if (targetBatchId === null) {
     return "";
   }
 
-  return batchTabLabelById.value.get(targetBatchId) ?? "";
+  return batchLabelById.value.get(targetBatchId) ?? "";
+});
+
+const createCardSubtitleTimeLabel = computed(() => {
+  const batchTimeLabel = createBatchTimeLabel.value;
+  return batchTimeLabel;
 });
 
 const createBatchLocationOptions = computed(
   () => createBatch.value?.locationOptions ?? [],
 );
-
-const isAvailableAnchorPR = (pr: AnchorEventBatchPR): boolean =>
-  pr.status === "OPEN" || pr.status === "READY";
 
 const hasAvailableAnchorPRInCreateBatch = computed(() => {
   const batch = createBatch.value;
@@ -177,11 +233,20 @@ const hasAvailableAnchorPRInCreateBatch = computed(() => {
     return false;
   }
 
-  return batch.prs.some(isAvailableAnchorPR);
+  return batchHasAvailableAnchorPR(batch);
+});
+
+const hasAvailableAnchorPRInSelectedDate = computed(() => {
+  const group = props.selectedDateGroup;
+  if (!group) {
+    return false;
+  }
+
+  return group.batches.some(({ batch }) => batchHasAvailableAnchorPR(batch));
 });
 
 const createCardTitle = computed(() => {
-  if (hasAvailableAnchorPRInCreateBatch.value) {
+  if (hasAvailableAnchorPRInSelectedDate.value) {
     return t("anchorEvent.createCard.title");
   }
 
@@ -189,28 +254,24 @@ const createCardTitle = computed(() => {
 });
 
 const shouldAutoExpandCreateCard = computed(() => {
-  const batch = props.selectedBatch;
-  if (!batch) {
+  if (!props.selectedDateGroup) {
     return false;
   }
 
-  return !batch.prs.some(isAvailableAnchorPR);
+  return !hasAvailableAnchorPRInSelectedDate.value;
 });
 
 const createCardAutoExpandContextKey = computed(
-  () => props.selectedBatch?.id ?? "none",
+  () =>
+    `${props.selectedDateKey ?? "none"}:${createBatchId.value ?? "none"}`,
 );
 
 const handleCreateBatchChange = (batchId: number | null) => {
   createBatchId.value = batchId;
 };
 
-const handleBatchTabChange = (value: string | number) => {
-  if (typeof value !== "number") {
-    return;
-  }
-
-  emit("select-batch", value);
+const handleDateTabChange = (value: string | number) => {
+  emit("select-date", String(value));
 };
 
 const handleCreateInList = (locationId: string | null) => {
@@ -222,7 +283,7 @@ const handleCreateInList = (locationId: string | null) => {
 </script>
 
 <style lang="scss" scoped>
-.batch-section {
+.date-section {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -230,27 +291,32 @@ const handleCreateInList = (locationId: string | null) => {
   margin-bottom: 1rem;
 }
 
-.batch-section :deep(.tab-bar) {
-  margin-bottom: 0.4rem;
+.date-section :deep(.tab-bar) {
+  margin-bottom: 1rem;
 }
 
-.batch-description {
-  margin: 0 0 0.75rem;
-  @include mx.pu-font(label-large);
-  color: var(--sys-color-on-surface-variant);
+.date-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-med);
+}
+
+.batch-panel {
+  display: flex;
+  flex-direction: column;
 }
 
 .pr-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.batch-content {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
 }
 
 .batch-action-cards {
