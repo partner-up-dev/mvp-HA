@@ -1,9 +1,9 @@
 import { ref, computed, createApp, nextTick } from "vue";
 import type { ComponentPublicInstance } from "vue";
-import html2canvas from "html2canvas";
 import PosterTemplate from "@/domains/share/ui/templates/XhsPosterTemplate.vue";
 import type { PosterData } from "@/lib/poster-types";
 import { i18n } from "@/locales/i18n";
+import { loadHtml2Canvas } from "./html2canvas-loader";
 
 const unwrapHTMLElement = (value: unknown): HTMLElement | null => {
   if (value instanceof HTMLElement) return value;
@@ -75,6 +75,7 @@ export const useGeneratePoster = () => {
       }
 
       // Configure html2canvas options for high quality
+      const html2canvas = await loadHtml2Canvas();
       const canvas = await html2canvas(posterElement, {
         width: 540,
         height: 720,

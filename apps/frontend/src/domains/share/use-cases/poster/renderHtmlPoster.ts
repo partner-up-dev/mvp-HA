@@ -1,5 +1,5 @@
-import html2canvas from "html2canvas";
 import { i18n } from "@/locales/i18n";
+import { loadHtml2Canvas } from "./html2canvas-loader";
 
 const getHTMLElementCtor = (doc: Document): typeof HTMLElement | null => {
   const win = doc.defaultView;
@@ -167,6 +167,7 @@ export const renderPosterHtmlToBlob = async (input: {
 
     const root = pickRenderRoot(doc, input.width, input.height);
 
+    const html2canvas = await loadHtml2Canvas();
     const canvas = await html2canvas(root, {
       width: input.width,
       height: input.height,

@@ -1,8 +1,8 @@
 import { computed, createApp, nextTick, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
-import html2canvas from "html2canvas";
 import WechatThumbTemplate from "@/domains/share/ui/templates/WechatShareThumbTemplate.vue";
 import { i18n } from "@/locales/i18n";
+import { loadHtml2Canvas } from "./html2canvas-loader";
 
 const unwrapHTMLElement = (value: unknown): HTMLElement | null => {
   if (value instanceof HTMLElement) return value;
@@ -56,6 +56,7 @@ export const useGenerateWechatThumbPoster = () => {
         throw new Error(i18n.global.t("errors.thumbnailElementMissing"));
       }
 
+      const html2canvas = await loadHtml2Canvas();
       const canvas = await html2canvas(element, {
         width: 300,
         height: 300,
