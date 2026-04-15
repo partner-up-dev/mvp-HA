@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { PartnerRequest, PRId } from "../../entities/partner-request";
-import { userIdSchema, type UserId } from "../../entities/user";
+import { userIdSchema, type UserId, type UserRole } from "../../entities/user";
 import { env } from "../../lib/env";
 import { PRMessageInboxStateRepository } from "../../repositories/PRMessageInboxStateRepository";
 import { NotificationDeliveryRepository } from "../../repositories/NotificationDeliveryRepository";
@@ -71,8 +71,10 @@ const resolvePrUrl = (request: PartnerRequest): string | null => {
 const resolveThreadTitle = (request: PartnerRequest): string =>
   request.title?.trim() || request.type || `PR#${request.id}`;
 
-const resolveAuthorName = (nickname: string | null): string =>
-  nickname?.trim() || "搭子";
+const resolveAuthorName = (
+  nickname: string | null,
+  role: UserRole | null,
+): string => (role === "service" ? "系统消息" : nickname?.trim() || "搭子");
 
 const formatUnreadMessageSummary = (messageCount: number): string =>
   `${Math.max(1, messageCount)}条留言，请尽快查看`;
@@ -263,8 +265,14 @@ async function handlePRMessageJob(
     latestUnreadMessage?.createdAt.toISOString() ??
     payload.firstUnreadMessageCreatedAtIso;
   const latestUnreadAuthorName = latestUnreadMessage
-    ? resolveAuthorName(latestUnreadMessage.authorNickname)
-    : resolveAuthorName(fallbackAuthor?.nickname ?? null);
+    ? resolveAuthorName(
+        latestUnreadMessage.authorNickname,
+        latestUnreadMessage.authorRole,
+      )
+    : resolveAuthorName(
+        fallbackAuthor?.nickname ?? null,
+        fallbackAuthor?.role ?? null,
+      );
 
   try {
     await subscriptionMessageService.sendPRMessageNotification({

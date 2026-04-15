@@ -69,11 +69,14 @@
             v-for="item in threadItems"
             :key="item.id"
             class="message-list__item"
-            :class="{ 'message-list__item--page': isPageLayout }"
+            :class="{
+              'message-list__item--page': isPageLayout,
+              'message-list__item--system': item.messageType === 'SYSTEM',
+            }"
           >
             <div class="message-list__meta">
               <span class="message-list__author">
-                {{ resolveAuthorName(item.author.nickname) }}
+                {{ resolveAuthorName(item) }}
               </span>
               <time class="message-list__time" :datetime="item.createdAt">
                 {{ formatMessageTime(item.createdAt) }}
@@ -139,6 +142,7 @@ import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import {
   useAdvanceAnchorPRMessageReadMarker,
+  type AnchorPRMessagesResponse,
   useAnchorPRMessages,
   useCreateAnchorPRMessage,
 } from "@/domains/pr/queries/useAnchorPRMessages";
@@ -224,8 +228,14 @@ watch(
   { immediate: true },
 );
 
-const resolveAuthorName = (nickname: string | null): string => {
-  const normalized = nickname?.trim();
+const resolveAuthorName = (
+  item: AnchorPRMessagesResponse["items"][number],
+): string => {
+  if (item.messageType === "SYSTEM") {
+    return item.author.label;
+  }
+
+  const normalized = item.author.nickname?.trim();
   if (normalized) return normalized;
   return t("prPage.messageThread.authorFallback");
 };
@@ -357,6 +367,11 @@ const handleSubmitMessage = async () => {
   background: var(--sys-color-surface-container-lowest);
 }
 
+.message-list__item--system {
+  border-color: var(--sys-color-outline);
+  background: var(--sys-color-surface-container-low);
+}
+
 .message-list--page {
   flex: 1 1 auto;
   min-height: 0;
@@ -385,6 +400,10 @@ const handleSubmitMessage = async () => {
 .message-list__author {
   @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface);
+}
+
+.message-list__item--system .message-list__author {
+  color: var(--sys-color-primary);
 }
 
 .message-list__time {

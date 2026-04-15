@@ -49,9 +49,10 @@
 1. A current active participant enters an `Anchor PR` detail page, reviews the current collaboration context, and uses that page as the handoff point into the dedicated message route `/apr/:id/messages`.
 2. The message experience is a separate page so the detail page can stay focused on facts, participation, booking-support context, and notification-subscription management.
 3. A current active participant can post plain-text messages inside the PR to coordinate meetup details, timing changes, or other collaboration context.
-4. The system persists those messages inside the corresponding `PartnerRequest` context rather than forcing participants into an external chat tool.
-5. If other current active participants still have remaining notification quota, the system opens one unread wave per `PR / recipient`, schedules one delayed summary notification opportunity after a short fixed debounce window, and still limits delivery to at most one send per unread wave.
-6. After another participant revisits that PR and catches up on the unread wave, a later wave may trigger a new notification.
+4. An operator may also add a plain-text system message to one specific `Anchor PR` when participants need an official coordination note, fulfillment update, or other operator-authored context inside the same thread.
+5. The system persists both participant messages and operator-authored system messages inside the corresponding `PartnerRequest` context rather than forcing participants into an external chat tool.
+6. If other current active participants still have remaining notification quota, the system opens one unread wave per `PR / recipient`, schedules one delayed summary notification opportunity after a short fixed debounce window, and still limits delivery to at most one send per unread wave.
+7. After another participant revisits that PR and catches up on the unread wave, a later wave may trigger a new notification.
 
 ## 7. Anchor Reliability Loop
 

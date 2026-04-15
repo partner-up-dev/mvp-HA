@@ -18,6 +18,7 @@
   - keep the change inside Anchor Event list-mode components
   - treat available Anchor PRs as the joinable statuses already used elsewhere in frontend/backend flow (`OPEN` / `READY`)
   - reset the create-card initial expansion when the user switches batches
+  - after batch switches, delay auto-expansion by 1 second and add a local visual attention flash without widening shared primitive APIs
 - Excluded for this issue:
   - backend filtering or serialization changes
   - list-mode PR visibility or ordering changes

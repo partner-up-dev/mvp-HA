@@ -48,6 +48,8 @@ export const queryKeys = {
     bookingExecutionWorkspace: () =>
       ["admin", "booking-execution", "workspace"] as const,
     anchorWorkspace: () => ["admin", "anchor-workspace"] as const,
+    anchorPRMessages: (id: PRId | null) =>
+      ["admin", "anchor-pr", "messages", id] as const,
   },
   wechat: {
     notificationSubscriptions: () =>

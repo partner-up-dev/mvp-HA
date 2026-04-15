@@ -6,6 +6,7 @@
 - `PartnerRequest` currently exists as `Community PR` and `Anchor PR`.
 - `Community PR` and `Anchor PR` share base semantics such as participation, time windows, and partner thresholds, but their pages and rules may evolve separately.
 - PR messaging semantics span both `Community PR` and `Anchor PR`, but the current frontend entry is exposed only in `Anchor PR` and currently uses a dedicated `/apr/:id/messages` page rather than an inline detail-page composer.
+- PR messaging may contain both participant-authored messages and operator-authored system messages; system messages are part of the same thread but remain visually identifiable as system-authored context rather than participant speech.
 
 ## 2. Creation And Publish Rules
 
@@ -25,6 +26,7 @@
 - `Community PR` supports `join` and `exit` only.
 - `Anchor PR` supports `join`, `exit`, confirmation, and check-in feedback.
 - PR messages are visible only to current active participants; users who exit or are released must no longer see that PR's message thread.
+- Only current active participants may view the thread or act on read markers and participant posting, but operators may inject system messages through admin tooling without becoming participants themselves.
 - `Anchor PR` detail keeps notification-subscription management visible as a persistent section even when other actions, such as messaging, move into adjacent route-family pages.
 - The participant roster is opened from the facts-card participant row, and each participant badge remains a read-only navigation entry into that participant's profile page.
 

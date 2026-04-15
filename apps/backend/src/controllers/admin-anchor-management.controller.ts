@@ -18,6 +18,7 @@ import {
   createAdminAnchorEvent,
   createAdminAnchorEventBatch,
   createAdminAnchorPR,
+  createAdminAnchorPRMessage,
   getAdminAnchorWorkspace,
   releaseAdminAnchorPRPartner,
   updateAdminAnchorEvent,
@@ -26,6 +27,7 @@ import {
   updateAdminAnchorPRStatus,
   updateAdminAnchorPRVisibility,
 } from "../domains/admin-anchor-management";
+import { prMessageCreateSchema } from "./pr-controller.shared";
 
 const app = new Hono<AdminAuthEnv>();
 
@@ -190,6 +192,25 @@ export const adminAnchorManagementRoute = app
         title: payload.title || null,
         type: payload.type || null,
         notes: payload.notes || null,
+      });
+      return c.json(result);
+    },
+  )
+  .post(
+    "/anchor-prs/:id/messages",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", prMessageCreateSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { body } = c.req.valid("json");
+      const auth = c.get("auth");
+      if (!auth.userId) {
+        throw new Error("Admin user id missing after admin auth");
+      }
+      const result = await createAdminAnchorPRMessage({
+        prId: id,
+        body,
+        actorUserId: auth.userId,
       });
       return c.json(result);
     },

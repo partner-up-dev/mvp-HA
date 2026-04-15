@@ -136,10 +136,30 @@ export async function createPRMessage(input: {
     });
   }
 
-  const createdMessage = await messageRepo.create({
+  return createPersistedPRMessage({
+    request,
     prId: input.prId,
     authorUserId: input.authorUserId,
     body,
+    actorUserId: input.authorUserId,
+    action: "pr.create_message",
+    markAuthorRead: true,
+  });
+}
+
+export async function createPersistedPRMessage(input: {
+  request: PartnerRequest;
+  prId: PRId;
+  authorUserId: UserId;
+  body: string;
+  actorUserId: UserId | null;
+  action: string;
+  markAuthorRead: boolean;
+}) {
+  const createdMessage = await messageRepo.create({
+    prId: input.prId,
+    authorUserId: input.authorUserId,
+    body: input.body,
   });
   if (!createdMessage) {
     throw new HTTPException(500, {
@@ -147,13 +167,15 @@ export async function createPRMessage(input: {
     });
   }
 
-  const [createdMessageWithAuthor, authorInboxState] = await Promise.all([
+  const [createdMessageWithAuthor, actorInboxState] = await Promise.all([
     messageRepo.findWithAuthorById(createdMessage.id),
-    inboxStateRepo.upsertLastReadMessageId(
-      input.prId,
-      input.authorUserId,
-      createdMessage.id,
-    ),
+    input.markAuthorRead && input.authorUserId
+      ? inboxStateRepo.upsertLastReadMessageId(
+          input.prId,
+          input.authorUserId,
+          createdMessage.id,
+        )
+      : Promise.resolve(null),
   ]);
   if (!createdMessageWithAuthor) {
     throw new HTTPException(500, {
@@ -174,15 +196,17 @@ export async function createPRMessage(input: {
   void writeToOutbox(event);
 
   operationLogService.log({
-    actorId: input.authorUserId,
-    action: "pr.create_message",
+    actorId: input.actorUserId,
+    action: input.action,
     aggregateType: "partner_request",
     aggregateId: String(input.prId),
-    detail: { messageId: createdMessage.id },
+    detail: {
+      messageId: createdMessage.id,
+    },
   });
 
   void scheduleNotificationsBestEffort({
-    request,
+    request: input.request,
     authorUserId: input.authorUserId,
     messageId: createdMessage.id,
     messageCreatedAt: createdMessage.createdAt,
@@ -190,6 +214,6 @@ export async function createPRMessage(input: {
 
   return {
     message: toPRMessageThreadItem(createdMessageWithAuthor),
-    thread: buildPRMessageThreadState(createdMessage.id, authorInboxState),
+    thread: buildPRMessageThreadState(createdMessage.id, actorInboxState),
   };
 }

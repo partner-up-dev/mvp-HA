@@ -859,6 +859,7 @@ export interface MessageSchema {
     title: string;
     subtitle: string;
     navAnchorPR: string;
+    navAnchorPRMessages: string;
     navBookingSupport: string;
     navBookingExecution: string;
     navPois: string;
@@ -1015,6 +1016,31 @@ export interface MessageSchema {
     visibilityVisible: string;
     visibilityHidden: string;
     saving: string;
+  };
+  adminAnchorPRMessages: {
+    title: string;
+    subtitle: string;
+    eventsTitle: string;
+    batchesTitle: string;
+    anchorPRsTitle: string;
+    composerTitle: string;
+    composerHint: string;
+    emptyEvents: string;
+    emptyBatches: string;
+    emptyAnchorPRs: string;
+    selectEventHint: string;
+    selectBatchHint: string;
+    selectPRHint: string;
+    selectedCount: string;
+    partnerCountWithValue: string;
+    eventLabel: string;
+    batchLabel: string;
+    locationLabel: string;
+    statusLabel: string;
+    messageLabel: string;
+    messagePlaceholder: string;
+    messageAction: string;
+    messageSending: string;
   };
   adminBookingExecution: {
     title: string;

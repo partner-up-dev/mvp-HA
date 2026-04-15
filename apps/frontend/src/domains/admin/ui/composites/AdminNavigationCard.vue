@@ -15,6 +15,12 @@
         {{ t("adminCommon.navAnchorPR") }}
       </RouterLink>
       <RouterLink
+        :to="{ name: 'admin-anchor-pr-messages' }"
+        class="admin-navigation-card__link"
+      >
+        {{ t("adminCommon.navAnchorPRMessages") }}
+      </RouterLink>
+      <RouterLink
         :to="{ name: 'admin-booking-support' }"
         class="admin-navigation-card__link"
       >
