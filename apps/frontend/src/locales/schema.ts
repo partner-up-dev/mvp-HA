@@ -236,22 +236,30 @@ export interface MessageSchema {
     description: string;
     guideTitle: string;
     actionsTitle: string;
-    employeeBadge: string;
-    employeeTitle: string;
-    employeeDescription: string;
-    employeeAction: string;
-    employeeLinkMissing: string;
+    staffBadge: string;
+    staffTitle: string;
+    staffDescription: string;
+    staffAction: string;
+    staffLinkMissing: string;
+    staffQrModalTitle: string;
+    staffQrModalDescription: string;
+    staffQrAlt: string;
+    staffQrMissing: string;
     supportBadge: string;
     supportTitle: string;
     supportDescription: string;
     supportAction: string;
+    supportQrModalTitle: string;
+    supportQrModalDescription: string;
+    supportQrAlt: string;
+    supportQrMissing: string;
     betaGroupBadge: string;
     betaGroupTitle: string;
     betaGroupDescription: string;
     betaGroupAction: string;
     authorEntry: string;
     useCases: {
-      employee: string;
+      staff: string;
       support: string;
     };
   };
@@ -538,6 +546,7 @@ export interface MessageSchema {
     loadFailed: string;
     noBatches: string;
     noPRsInBatch: string;
+    dateLabel: string;
     batchLabel: string;
     viewMode: {
       ariaLabel: string;
@@ -576,7 +585,6 @@ export interface MessageSchema {
       subtitle: string;
       locationLabel: string;
       locationPlaceholder: string;
-      bookingHint: string;
       createAction: string;
       creatingAction: string;
       optionMaxReached: string;
