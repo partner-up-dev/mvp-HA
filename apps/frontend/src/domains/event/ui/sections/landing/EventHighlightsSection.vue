@@ -65,7 +65,7 @@
       :events="highlightEvents"
       variant="full-bleed"
       :auto-scroll="isInView"
-      :max-count="MAX_HIGHLIGHT_COUNT"
+      :max-count="highlightEvents.length"
       @card-click="trackHighlightClick($event.eventId, $event.index)"
     />
   </section>
@@ -82,15 +82,11 @@ import { trackEvent } from "@/shared/telemetry/track";
 import Chip from "@/shared/ui/display/Chip.vue";
 import ChipGroup from "@/shared/ui/display/ChipGroup.vue";
 
-const MAX_HIGHLIGHT_COUNT = 4;
-
 const { t } = useI18n();
 const { targetRef: sectionRef, isInView, itemMotionStyle } = useInViewStagger();
 const { data: events, isLoading, isError } = useAnchorEvents();
 
-const highlightEvents = computed(() =>
-  (events.value ?? []).slice(0, MAX_HIGHLIGHT_COUNT),
-);
+const highlightEvents = computed(() => events.value ?? []);
 
 const hasTrackedSectionImpression = ref(false);
 
