@@ -378,7 +378,7 @@
     },
     "joinSuccessSubscriptions": {
       "description": "刚加入成功，现在可以顺手开启你关心的提醒。",
-      "closeAction": "稍后再说"
+      "closeAction": "完成"
     },
     "shareEntry": {
       "title": "分享邀请",
