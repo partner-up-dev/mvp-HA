@@ -545,7 +545,7 @@ export interface MessageSchema {
     backToPlaza: string;
     loadFailed: string;
     noBatches: string;
-    noPRsInBatch: string;
+    noPRsInSelectedDate: string;
     dateLabel: string;
     batchLabel: string;
     viewMode: {

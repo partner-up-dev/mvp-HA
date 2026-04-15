@@ -558,11 +558,6 @@ const formatBatchOptionLabel = (
   return `${baseLabel} · ${description}`;
 };
 
-const formatCardTimeLabel = (
-  batch: AnchorEventDetailResponse["batches"][number],
-  index: number,
-): string => formatBatchLabel(batch.timeWindow, index);
-
 const dateGroups = computed<ListModeDateGroupViewModel[]>(() => {
   const groups: ListModeDateGroupViewModel[] = [];
   const groupIndexByKey = new Map<string, number>();

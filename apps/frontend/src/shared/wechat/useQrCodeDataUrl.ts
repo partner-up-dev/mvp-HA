@@ -1,4 +1,3 @@
-import QRCode from "qrcode";
 import { computed, ref, watch, type Ref } from "vue";
 import { i18n } from "@/locales/i18n";
 
@@ -28,6 +27,7 @@ export const useQrCodeDataUrl = (
       }
 
       try {
+        const { default: QRCode } = await import("qrcode");
         const dataUrl = await QRCode.toDataURL(nextTargetUrl, {
           errorCorrectionLevel: "M",
           margin: 2,

@@ -8,11 +8,8 @@
     <div class="anchor-pr-card__content">
       <div class="anchor-pr-card__header">
         <div class="anchor-pr-card__headline">
-          <span v-if="timeLabel" class="anchor-pr-card__time">
-            {{ timeLabel }}
-          </span>
           <span class="anchor-pr-card__title">
-          {{ prTitle }}
+            {{ prTitle }}
           </span>
         </div>
         <span class="anchor-pr-card__status" :class="statusClass">
@@ -20,6 +17,9 @@
         </span>
       </div>
       <div class="anchor-pr-card__meta">
+        <span v-if="timeLabel" class="anchor-pr-card__time">
+          🕒 {{ timeLabel }}
+        </span>
         <span v-if="pr.location" class="anchor-pr-card__location">
           📍 {{ pr.location }}
         </span>
@@ -101,11 +101,6 @@ const statusClass = computed(
   min-width: 0;
 }
 
-.anchor-pr-card__time {
-  @include mx.pu-font(label-small);
-  color: var(--sys-color-on-surface-variant);
-}
-
 .anchor-pr-card__title {
   @include mx.pu-font(title-small);
   overflow-wrap: anywhere;
@@ -141,6 +136,7 @@ const statusClass = computed(
 
 .anchor-pr-card__meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   font-size: 0.8125rem;
   color: var(--sys-color-on-surface-variant);

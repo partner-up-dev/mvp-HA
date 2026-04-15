@@ -5,29 +5,37 @@ import {
 } from "vue-router";
 import { trackEvent } from "@/shared/telemetry/track";
 import { captureSpmAttributionFromUrl } from "@/shared/telemetry/spm-attribution";
-import HomePage from "@/pages/HomePage.vue";
-import MePage from "@/pages/MePage.vue";
-import MyPRsPage from "@/pages/MyPRsPage.vue";
-import CommunityPRPage from "@/pages/CommunityPRPage.vue";
-import CommunityPRCreatePage from "@/pages/CommunityPRCreatePage.vue";
-import AnchorPRPage from "@/pages/AnchorPRPage.vue";
-import AnchorPRMessagesPage from "@/pages/AnchorPRMessagesPage.vue";
-import UserProfilePage from "@/pages/UserProfilePage.vue";
-import AnchorPRBookingSupportPage from "@/pages/AnchorPRBookingSupportPage.vue";
-import AdminLoginPage from "@/pages/AdminLoginPage.vue";
-import AdminAnchorPRPage from "@/pages/AdminAnchorPRPage.vue";
-import AdminAnchorPRMessagesPage from "@/pages/AdminAnchorPRMessagesPage.vue";
-import AdminBookingSupportPage from "@/pages/AdminBookingSupportPage.vue";
-import AdminBookingExecutionPage from "@/pages/AdminBookingExecutionPage.vue";
-import AdminPoisPage from "@/pages/AdminPoisPage.vue";
-import ContactAuthorPage from "@/pages/ContactAuthorPage.vue";
-import ContactSupportPage from "@/pages/ContactSupportPage.vue";
-import AboutPage from "@/pages/AboutPage.vue";
-import EventPlazaPage from "@/pages/EventPlazaPage.vue";
-import AnchorPRSearchPage from "@/pages/AnchorPRSearchPage.vue";
-import AnchorEventPage from "@/pages/AnchorEventPage.vue";
-import WeChatOAuthCallbackPage from "@/pages/WeChatOAuthCallbackPage.vue";
 import { getStoredAdminHasAccess } from "@/domains/admin/model/admin-session-storage";
+
+const HomePage = () => import("@/pages/HomePage.vue");
+const MePage = () => import("@/pages/MePage.vue");
+const MyPRsPage = () => import("@/pages/MyPRsPage.vue");
+const CommunityPRPage = () => import("@/pages/CommunityPRPage.vue");
+const CommunityPRCreatePage = () =>
+  import("@/pages/CommunityPRCreatePage.vue");
+const AnchorPRPage = () => import("@/pages/AnchorPRPage.vue");
+const AnchorPRMessagesPage = () =>
+  import("@/pages/AnchorPRMessagesPage.vue");
+const UserProfilePage = () => import("@/pages/UserProfilePage.vue");
+const AnchorPRBookingSupportPage = () =>
+  import("@/pages/AnchorPRBookingSupportPage.vue");
+const AdminLoginPage = () => import("@/pages/AdminLoginPage.vue");
+const AdminAnchorPRPage = () => import("@/pages/AdminAnchorPRPage.vue");
+const AdminAnchorPRMessagesPage = () =>
+  import("@/pages/AdminAnchorPRMessagesPage.vue");
+const AdminBookingSupportPage = () =>
+  import("@/pages/AdminBookingSupportPage.vue");
+const AdminBookingExecutionPage = () =>
+  import("@/pages/AdminBookingExecutionPage.vue");
+const AdminPoisPage = () => import("@/pages/AdminPoisPage.vue");
+const ContactAuthorPage = () => import("@/pages/ContactAuthorPage.vue");
+const ContactSupportPage = () => import("@/pages/ContactSupportPage.vue");
+const AboutPage = () => import("@/pages/AboutPage.vue");
+const EventPlazaPage = () => import("@/pages/EventPlazaPage.vue");
+const AnchorPRSearchPage = () => import("@/pages/AnchorPRSearchPage.vue");
+const AnchorEventPage = () => import("@/pages/AnchorEventPage.vue");
+const WeChatOAuthCallbackPage = () =>
+  import("@/pages/WeChatOAuthCallbackPage.vue");
 
 const routes: RouteRecordRaw[] = [
   {

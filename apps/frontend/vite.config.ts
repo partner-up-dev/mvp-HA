@@ -72,6 +72,81 @@ const readGitValue = (command: string): string | null => {
   }
 };
 
+const frameworkVendorPackages = [
+  "vue",
+  "@vue/runtime-core",
+  "@vue/runtime-dom",
+  "@vue/reactivity",
+  "@vue/shared",
+  "vue-router",
+  "vue-i18n",
+  "@intlify/core-base",
+  "@intlify/message-compiler",
+  "@intlify/shared",
+  "pinia",
+  "pinia-plugin-persistedstate",
+  "@tanstack/query-core",
+  "@tanstack/vue-query",
+  "@unhead/vue",
+  "unhead",
+  "hookable",
+] as const;
+
+const validationVendorPackages = [
+  "zod",
+  "vee-validate",
+  "@vee-validate/zod",
+] as const;
+
+const posterRenderingVendorPackages = ["html2canvas"] as const;
+const qrCodeVendorPackages = ["qrcode"] as const;
+
+const normalizeModuleId = (id: string): string => id.replace(/\\/g, "/");
+
+const includesNodePackage = (
+  id: string,
+  packageName: string,
+): boolean => id.includes(`/node_modules/${packageName}/`);
+
+const includesAnyNodePackage = (
+  id: string,
+  packageNames: readonly string[],
+): boolean =>
+  packageNames.some((packageName) => includesNodePackage(id, packageName));
+
+const getManualChunkName = (id: string): string | undefined => {
+  const moduleId = normalizeModuleId(id);
+
+  if (includesAnyNodePackage(moduleId, posterRenderingVendorPackages)) {
+    return "vendor-poster-rendering";
+  }
+
+  if (includesAnyNodePackage(moduleId, qrCodeVendorPackages)) {
+    return "vendor-qr-code";
+  }
+
+  if (includesAnyNodePackage(moduleId, validationVendorPackages)) {
+    return "vendor-validation";
+  }
+
+  if (includesAnyNodePackage(moduleId, frameworkVendorPackages)) {
+    return "vendor-framework";
+  }
+
+  if (moduleId.includes("/node_modules/")) {
+    return "vendor";
+  }
+
+  if (
+    moduleId.includes("/src/domains/share/") ||
+    moduleId.includes("/src/lib/poster-types")
+  ) {
+    return "share";
+  }
+
+  return undefined;
+};
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
   const frontendCommitHash =
@@ -101,23 +176,7 @@ export default defineConfig(({ mode }) => {
       outDir: "./dist",
       rollupOptions: {
         output: {
-          manualChunks: (id) => {
-            if (id.includes("node_modules")) {
-              return "vendor";
-            }
-
-            if (
-              id.includes("src/components/share/") ||
-              id.includes("src/composables/useGeneratePoster") ||
-              id.includes("src/composables/useGenerateWechatThumbPoster") ||
-              id.includes("src/composables/renderHtmlPoster") ||
-              id.includes("src/lib/poster-types")
-            ) {
-              return "share";
-            }
-
-            return undefined;
-          },
+          manualChunks: getManualChunkName,
         },
       },
     },
