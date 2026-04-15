@@ -36,6 +36,8 @@ export const queryKeys = {
     list: () => ["anchor-event", "list"] as const,
     detail: (eventId: number | null) =>
       ["anchor-event", "detail", eventId] as const,
+    demandCards: (eventId: number | null) =>
+      ["anchor-event", "demand-cards", eventId] as const,
   },
   poi: {
     byIds: (idsCsv: string) => ["poi", "by-ids", idsCsv] as const,

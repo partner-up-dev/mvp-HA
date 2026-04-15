@@ -5,6 +5,7 @@ import { z } from "zod";
 import {
   listAnchorEvents,
   getAnchorEventDetail,
+  getAnchorEventDemandCards,
   createUserAnchorPR,
   checkUserAnchorPRAvailability,
   AnchorEventNotFoundError,
@@ -130,6 +131,15 @@ export const anchorEventRoute = app
     const detail = await getAnchorEventDetail(eventId);
     return c.json(detail);
   })
+  .get(
+    "/:eventId/demand-cards",
+    zValidator("param", eventIdParamSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const cards = await getAnchorEventDemandCards(eventId);
+      return c.json(cards);
+    },
+  )
   .post(
     "/:eventId/demand-cards/:cardKey/join",
     zValidator("param", demandCardJoinParamSchema),

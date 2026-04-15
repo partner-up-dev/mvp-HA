@@ -11,6 +11,10 @@ export type AnchorEventDetailResponse = InferResponseType<
   (typeof client.api.events)[":eventId"]["$get"]
 >;
 
+export type AnchorEventDemandCardsResponse = InferResponseType<
+  (typeof client.api.events)[":eventId"]["demand-cards"]["$get"]
+>;
+
 export type AnchorEventBatch = AnchorEventDetailResponse["batches"][number];
 
 export type AnchorEventBatchPR = AnchorEventBatch["prs"][number];

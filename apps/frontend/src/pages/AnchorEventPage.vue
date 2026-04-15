@@ -145,6 +145,7 @@ import {
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
+import { toDemandCardViewModels } from "@/domains/event/model/demand-cards";
 import {
   pickRandomPoiGalleryImage,
   toPoiGalleryMap,
@@ -343,12 +344,27 @@ watch(eventId, () => {
   consumeCardDragHintWindow();
 });
 
-const { data: detail, isLoading, isError } = useAnchorEventDetail(eventId);
-const { data: demandCards } = useAnchorEventDemandCards(eventId);
+const {
+  data: detail,
+  isLoading: isDetailLoading,
+  isError: isDetailError,
+} = useAnchorEventDetail(eventId);
+const {
+  data: demandCards,
+  isLoading: isDemandCardsLoading,
+  isError: isDemandCardsError,
+} = useAnchorEventDemandCards(eventId);
 const createUserAnchorPRMutation = useCreateUserAnchorPR();
 const createCommunityPRMutation = useCreateCommunityPRFromStructured();
 const publishCommunityPRMutation = usePublishCommunityPR();
 const userSessionStore = useUserSessionStore();
+
+const isLoading = computed(
+  () => isDetailLoading.value || isDemandCardsLoading.value,
+);
+const isError = computed(
+  () => isDetailError.value || isDemandCardsError.value,
+);
 
 const isCreatePending = computed(
   () =>
@@ -681,7 +697,13 @@ const resolveCoverImage = (location: string | null): string | null => {
   return pickRandomPoiGalleryImage(poiGalleryById.value.get(normalized) ?? []);
 };
 
-const allDemandCards = computed(() => demandCards.value ?? []);
+const allDemandCards = computed(() =>
+  toDemandCardViewModels({
+    cards: demandCards.value ?? [],
+    eventCoverImage: detail.value?.coverImage ?? null,
+    resolveCoverImage,
+  }),
+);
 
 const processedCardKeySet = computed(() => new Set(processedCardKeys.value));
 

@@ -14,17 +14,24 @@
           :key="batchItem.batch.id"
           class="batch-panel"
         >
+          <template v-if="visiblePRsByBatchId.get(batchItem.batch.id)?.length">
+            <div class="pr-list">
+              <AnchorEventPRCard
+                v-for="pr in visiblePRsByBatchId.get(batchItem.batch.id) ?? []"
+                :key="pr.id"
+                :pr="pr"
+                :time-label="batchItem.timeLabel"
+                :cover-image="resolveCoverImage(pr.location)"
+              />
+            </div>
+          </template>
           <div class="pr-list">
-            <div v-if="batchItem.batch.prs.length === 0" class="empty-batch">
+            <div
+              v-if="(visiblePRsByBatchId.get(batchItem.batch.id)?.length ?? 0) === 0"
+              class="empty-batch"
+            >
               {{ t("anchorEvent.noPRsInBatch") }}
             </div>
-            <AnchorEventPRCard
-              v-for="pr in batchItem.batch.prs"
-              :key="pr.id"
-              :pr="pr"
-              :time-label="batchItem.timeLabel"
-              :cover-image="resolveCoverImage(pr.location)"
-            />
           </div>
         </section>
       </div>
@@ -125,6 +132,22 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const createBatchId = ref<number | null>(null);
+
+const isVisibleListModePR = (pr: AnchorEventBatchPR): boolean =>
+  pr.status !== "EXPIRED";
+
+const visiblePRsByBatchId = computed(() => {
+  const map = new Map<number, AnchorEventBatchPR[]>();
+
+  for (const batchItem of props.selectedDateGroup?.batches ?? []) {
+    map.set(
+      batchItem.batch.id,
+      batchItem.batch.prs.filter(isVisibleListModePR),
+    );
+  }
+
+  return map;
+});
 
 const isAvailableAnchorPR = (pr: AnchorEventBatchPR): boolean =>
   pr.status === "OPEN" || pr.status === "READY";
