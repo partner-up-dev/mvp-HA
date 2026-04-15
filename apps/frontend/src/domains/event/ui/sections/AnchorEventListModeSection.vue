@@ -26,7 +26,9 @@
 
       <div class="batch-action-cards">
         <AnchorPRCreateCard
+          :key="createCardKey"
           :location-options="selectedBatch.locationOptions"
+          :default-expanded="shouldAutoExpandCreateCard"
           :pending="isCreatePending"
           :error-message="createActionErrorMessage"
           @create="handleCreateInList"
@@ -54,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
@@ -69,8 +72,9 @@ type BatchTabItem = {
 };
 
 type AnchorEventBatch = AnchorEventDetailResponse["batches"][number];
+type AnchorEventBatchPR = AnchorEventBatch["prs"][number];
 
-defineProps<{
+const props = defineProps<{
   hasBatches: boolean;
   batchTabs: BatchTabItem[];
   selectedBatchId: number | null;
@@ -89,6 +93,23 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+const isAvailableAnchorPR = (pr: AnchorEventBatchPR): boolean =>
+  pr.status === "OPEN" || pr.status === "READY";
+
+const shouldAutoExpandCreateCard = computed(() => {
+  const batch = props.selectedBatch;
+  if (!batch) {
+    return false;
+  }
+
+  return !batch.prs.some(isAvailableAnchorPR);
+});
+
+const createCardKey = computed(() => {
+  const batchId = props.selectedBatch?.id ?? "none";
+  return `${batchId}:${shouldAutoExpandCreateCard.value ? "expanded" : "collapsed"}`;
+});
 
 const handleBatchTabChange = (value: string | number) => {
   if (typeof value !== "number") {

@@ -2,6 +2,7 @@
   <ExpandableCard
     :title="t('anchorEvent.createCard.title')"
     :subtitle="t('anchorEvent.createCard.subtitle')"
+    :default-expanded="defaultExpanded"
   >
     <div class="create-card">
       <label class="create-card__field">
@@ -60,10 +61,12 @@ const props = withDefaults(
     locationOptions: LocationOption[];
     pending?: boolean;
     errorMessage?: string | null;
+    defaultExpanded?: boolean;
   }>(),
   {
     pending: false,
     errorMessage: null,
+    defaultExpanded: false,
   },
 );
 
