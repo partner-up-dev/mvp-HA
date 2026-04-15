@@ -57,6 +57,10 @@ export type UpdateAdminAnchorPRVisibilityResponse = InferResponseType<
   AnchorPRRoute["visibility"]["$patch"]
 >;
 
+export type CreateAdminAnchorPRMessageResponse = InferResponseType<
+  AnchorPRRoute["messages"]["$post"]
+>;
+
 export type AdminAnchorEventInput = {
   title: string;
   type: string;
@@ -111,6 +115,10 @@ export type AdminUpdateAnchorPRStatusInput = {
 
 export type AdminUpdateAnchorPRVisibilityInput = {
   visibilityStatus: "VISIBLE" | "HIDDEN";
+};
+
+export type AdminCreateAnchorPRMessageInput = {
+  body: string;
 };
 
 export const useAdminAnchorWorkspace = (enabled: MaybeRef<boolean> = true) =>
@@ -344,6 +352,40 @@ export const useUpdateAdminAnchorPRVisibility = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.anchorWorkspace(),
+      });
+    },
+  });
+};
+
+export const useCreateAdminAnchorPRMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    CreateAdminAnchorPRMessageResponse,
+    Error,
+    { prId: number; input: AdminCreateAnchorPRMessageInput }
+  >({
+    mutationFn: async ({ prId, input }) => {
+      const res = await adminClient.api.admin["anchor-prs"][":id"].messages.$post(
+        {
+          param: { id: prId.toString() },
+          json: input,
+        },
+      );
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "发送系统留言失败"));
+      }
+      return await res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.anchorWorkspace(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.anchorPR.messages(variables.prId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.anchorPRMessages(variables.prId),
       });
     },
   });

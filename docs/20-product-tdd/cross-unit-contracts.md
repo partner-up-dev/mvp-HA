@@ -107,7 +107,7 @@ Important coordination note:
 ## 9. PR Messaging Contract
 
 - Backend owns persisted `PRMessage` items and one backend-authoritative `PRMessageInboxState` per `prId + userId`.
-- `PRMessage` is a PR-scoped plain-text message item authored by one user inside one `PartnerRequest` thread.
+- `PRMessage` is a PR-scoped plain-text message item inside one `PartnerRequest` thread. A message is either participant-authored or operator-authored system context, and backend owns that author/type classification.
 - `PRMessageInboxState` is the cross-unit marker state used to answer two separate questions without frontend-owned inference:
   - the viewer's read marker for that PR thread
   - whether the current unread message wave has already consumed one `PR_MESSAGE` notification opportunity for that recipient
@@ -120,12 +120,14 @@ Important coordination note:
 - If Community frontend rollout starts later, it should use the parallel `/api/cpr/:id/messages*` shape with the same payload and response semantics rather than inventing a separate message contract.
 - `GET /api/apr/:id/messages` returns the visible message list plus thread-level viewer state needed for UI assembly and explicit read-marker advancement. That response should be sufficient for frontend to render:
   - ordered message items
+  - whether each item is participant-authored or a system message
   - whether the current viewer can post
   - the latest visible message marker
   - the viewer's current read marker or an equivalent unread summary
 - `POST /api/apr/:id/messages` accepts one plain-text message payload, rejects non-participants, persists the new message, and returns the created item plus refreshed thread viewer state.
+- `POST /api/admin/anchor-prs/:id/messages` accepts one plain-text message payload from admin-authenticated tooling, persists one system message for that Anchor PR, and returns the created item plus refreshed thread state for downstream admin UX refresh.
 - `POST /api/apr/:id/messages/read-marker` advances the viewer's read marker idempotently after the thread is actually shown. Read-marker advancement should be explicit rather than piggybacked on list fetch, so prefetching or hidden loads do not silently clear an unread wave.
-- Message visibility, message creation, and read-marker advancement all reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread.
+- Message visibility and read-marker advancement reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread. Participant-authored message creation uses that same rule, while admin-authored system-message creation is a separate admin-only capability.
 - Backend notification fan-out evaluates all current active participants except the author. A `PR_MESSAGE` notification is eligible only when the recipient has available credits and no existing unread wave for the same PR. When a new unread wave opens, backend schedules one DB-backed delayed notification job for that wave rather than using an in-process timer.
 - The delayed `PR_MESSAGE` job recomputes latest unread sender, latest unread timestamp, and unread count from persisted messages at execution time so the send payload reflects the current unread wave summary instead of only the first triggering message.
 - Asynchronous notification execution must revalidate recipient participation and eligibility before delivery instead of assuming the API-time participant set is still valid.

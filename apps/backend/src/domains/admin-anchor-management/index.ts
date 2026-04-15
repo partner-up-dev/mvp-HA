@@ -1,6 +1,7 @@
 export * from "./use-cases/create-admin-anchor-event";
 export * from "./use-cases/create-admin-anchor-event-batch";
 export * from "./use-cases/create-admin-anchor-pr";
+export * from "./use-cases/create-admin-anchor-pr-message";
 export * from "./use-cases/get-admin-anchor-workspace";
 export * from "./use-cases/update-admin-anchor-event";
 export * from "./use-cases/update-admin-anchor-event-batch";

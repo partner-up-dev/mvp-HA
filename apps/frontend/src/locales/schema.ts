@@ -1004,6 +1004,12 @@ export interface MessageSchema {
     policyValidationDeadlineAfterConfirmationEnd: string;
     saveAnchorPRAction: string;
     createAnchorPRAction: string;
+    systemMessageTitle: string;
+    systemMessageHint: string;
+    systemMessageLabel: string;
+    systemMessagePlaceholder: string;
+    systemMessageAction: string;
+    systemMessageSending: string;
     prListTitle: string;
     partnerCountWithValue: string;
     statusActive: string;

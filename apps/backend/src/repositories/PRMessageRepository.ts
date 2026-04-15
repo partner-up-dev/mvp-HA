@@ -7,7 +7,7 @@ import {
   type PRMessageId,
 } from "../entities/pr-message";
 import type { PRId } from "../entities/partner-request";
-import type { UserId } from "../entities/user";
+import type { UserId, UserRole } from "../entities/user";
 import { users } from "../entities/user";
 
 export type PRMessageWithAuthor = {
@@ -16,6 +16,7 @@ export type PRMessageWithAuthor = {
   authorUserId: UserId;
   body: string;
   createdAt: Date;
+  authorRole: UserRole | null;
   authorNickname: string | null;
   authorAvatar: string | null;
 };
@@ -45,6 +46,7 @@ export class PRMessageRepository {
         authorUserId: prMessages.authorUserId,
         body: prMessages.body,
         createdAt: prMessages.createdAt,
+        authorRole: users.role,
         authorNickname: users.nickname,
         authorAvatar: users.avatar,
       })
@@ -63,6 +65,7 @@ export class PRMessageRepository {
       authorUserId: row.authorUserId,
       body: row.body,
       createdAt: row.createdAt,
+      authorRole: row.authorRole,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
     };
@@ -76,6 +79,7 @@ export class PRMessageRepository {
         authorUserId: prMessages.authorUserId,
         body: prMessages.body,
         createdAt: prMessages.createdAt,
+        authorRole: users.role,
         authorNickname: users.nickname,
         authorAvatar: users.avatar,
       })
@@ -90,6 +94,7 @@ export class PRMessageRepository {
       authorUserId: row.authorUserId,
       body: row.body,
       createdAt: row.createdAt,
+      authorRole: row.authorRole,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
     }));
@@ -111,6 +116,7 @@ export class PRMessageRepository {
         authorUserId: prMessages.authorUserId,
         body: prMessages.body,
         createdAt: prMessages.createdAt,
+        authorRole: users.role,
         authorNickname: users.nickname,
         authorAvatar: users.avatar,
       })
@@ -131,6 +137,7 @@ export class PRMessageRepository {
       authorUserId: row.authorUserId,
       body: row.body,
       createdAt: row.createdAt,
+      authorRole: row.authorRole,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
     };

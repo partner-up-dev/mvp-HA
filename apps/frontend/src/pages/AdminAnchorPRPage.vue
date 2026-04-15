@@ -495,6 +495,47 @@
                       : t("adminAnchorPR.saveAnchorPRAction")
                 }}
               </button>
+
+              <div
+                v-if="!isCreatingPR && selectedPRId !== null"
+                class="stack message-composer"
+              >
+                <h4 class="card-title">
+                  {{ t("adminAnchorPR.systemMessageTitle") }}
+                </h4>
+                <p class="hint">
+                  {{ t("adminAnchorPR.systemMessageHint") }}
+                </p>
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorPR.systemMessageLabel")
+                  }}</span>
+                  <textarea
+                    v-model="systemMessageDraft"
+                    class="field-input field-textarea"
+                    :placeholder="t('adminAnchorPR.systemMessagePlaceholder')"
+                    :disabled="createPRMessageMutation.isPending.value"
+                  ></textarea>
+                </label>
+                <p v-if="systemMessageError" class="error-message">
+                  {{ systemMessageError }}
+                </p>
+                <button
+                  class="secondary-btn"
+                  type="button"
+                  :disabled="
+                    createPRMessageMutation.isPending.value ||
+                    systemMessageDraft.trim().length === 0
+                  "
+                  @click="handleSendSystemMessage"
+                >
+                  {{
+                    createPRMessageMutation.isPending.value
+                      ? t("adminAnchorPR.systemMessageSending")
+                      : t("adminAnchorPR.systemMessageAction")
+                  }}
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -521,6 +562,7 @@ import {
   useCreateAdminAnchorEvent,
   useCreateAdminAnchorBatch,
   useCreateAdminAnchorPR,
+  useCreateAdminAnchorPRMessage,
   useUpdateAdminAnchorEvent,
   useUpdateAdminAnchorBatch,
   useUpdateAdminAnchorPRContent,
@@ -653,6 +695,7 @@ const updateEventMutation = useUpdateAdminAnchorEvent();
 const createBatchMutation = useCreateAdminAnchorBatch();
 const updateBatchMutation = useUpdateAdminAnchorBatch();
 const createPRMutation = useCreateAdminAnchorPR();
+const createPRMessageMutation = useCreateAdminAnchorPRMessage();
 const updatePRContentMutation = useUpdateAdminAnchorPRContent();
 const updatePRStatusMutation = useUpdateAdminAnchorPRStatus();
 const updatePRVisibilityMutation = useUpdateAdminAnchorPRVisibility();
@@ -665,6 +708,8 @@ const isCreatingPR = ref(false);
 const eventForm = ref<EventForm>(emptyEventForm());
 const batchForm = ref<BatchForm>(emptyBatchForm());
 const prForm = ref<PRForm>(emptyPRForm());
+const systemMessageDraft = ref("");
+const systemMessageError = ref<string | null>(null);
 const workspace = computed<Workspace | null>(
   () => workspaceQuery.data.value ?? null,
 );
@@ -797,6 +842,10 @@ const mutationErrorMessage = computed(
     updatePRVisibilityMutation.error.value?.message ||
     null,
 );
+
+watch(systemMessageDraft, () => {
+  systemMessageError.value = null;
+});
 
 const prPolicyValue = computed({
   get: () => ({
@@ -1013,6 +1062,8 @@ const prepareNewPR = () => {
 const selectPR = (prId: number) => {
   isCreatingPR.value = false;
   selectedPRIdRaw.value = String(prId);
+  systemMessageDraft.value = "";
+  systemMessageError.value = null;
 };
 const resetMutationErrors = () => {
   createEventMutation.reset();
@@ -1020,9 +1071,29 @@ const resetMutationErrors = () => {
   createBatchMutation.reset();
   updateBatchMutation.reset();
   createPRMutation.reset();
+  createPRMessageMutation.reset();
   updatePRContentMutation.reset();
   updatePRStatusMutation.reset();
   updatePRVisibilityMutation.reset();
+};
+
+const handleSendSystemMessage = async () => {
+  if (selectedPRId.value === null) return;
+
+  const body = systemMessageDraft.value.trim();
+  if (!body) return;
+
+  systemMessageError.value = null;
+  try {
+    await createPRMessageMutation.mutateAsync({
+      prId: selectedPRId.value,
+      input: { body },
+    });
+    systemMessageDraft.value = "";
+  } catch (error) {
+    systemMessageError.value =
+      error instanceof Error ? error.message : t("common.operationFailed");
+  }
 };
 
 const handleSaveEvent = async () => {
@@ -1264,6 +1335,11 @@ const handleSavePR = async () => {
 .field-textarea {
   min-height: 96px;
   resize: vertical;
+}
+
+.message-composer {
+  padding-top: var(--sys-spacing-sm);
+  border-top: 1px solid var(--sys-color-outline-variant);
 }
 
 .grid-2 {

@@ -12,7 +12,7 @@
 - join and exit `Community PR`
 - join and exit `Anchor PR`
 - prompt notification subscription immediately after successful `Anchor PR` join
-- post and read non-realtime PR messages
+- post and read non-realtime PR messages, including operator-authored system messages inside the same PR thread
 - confirm participation in `Anchor PR`
 - submit `Anchor PR` check-in feedback
 - progress status based on partner thresholds and time windows
