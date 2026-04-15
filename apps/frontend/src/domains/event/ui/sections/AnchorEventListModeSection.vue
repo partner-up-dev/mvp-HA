@@ -9,31 +9,18 @@
 
     <div v-if="selectedDateGroup" class="date-content" role="tabpanel">
       <div class="batch-list" data-region="anchor-pr-list">
-        <section
-          v-for="batchItem in selectedDateGroup.batches"
-          :key="batchItem.batch.id"
-          class="batch-panel"
-        >
-          <template v-if="visiblePRsByBatchId.get(batchItem.batch.id)?.length">
-            <div class="pr-list">
-              <AnchorEventPRCard
-                v-for="pr in visiblePRsByBatchId.get(batchItem.batch.id) ?? []"
-                :key="pr.id"
-                :pr="pr"
-                :time-label="batchItem.timeLabel"
-                :cover-image="resolveCoverImage(pr.location)"
-              />
-            </div>
-          </template>
-          <div class="pr-list">
-            <div
-              v-if="(visiblePRsByBatchId.get(batchItem.batch.id)?.length ?? 0) === 0"
-              class="empty-batch"
-            >
-              {{ t("anchorEvent.noPRsInBatch") }}
-            </div>
-          </div>
-        </section>
+        <div v-if="visiblePRItems.length > 0" class="pr-list">
+          <AnchorEventPRCard
+            v-for="item in visiblePRItems"
+            :key="`${item.batchId}:${item.pr.id}`"
+            :pr="item.pr"
+            :time-label="item.timeLabel"
+            :cover-image="resolveCoverImage(item.pr.location)"
+          />
+        </div>
+        <div v-else class="empty-batch">
+          {{ t("anchorEvent.noPRsInSelectedDate") }}
+        </div>
       </div>
 
       <div class="batch-action-cards">
@@ -103,6 +90,12 @@ type DateGroup = {
   batches: DateGroupBatchItem[];
 };
 
+type VisiblePRItem = {
+  batchId: number;
+  pr: AnchorEventBatchPR;
+  timeLabel: string;
+};
+
 type CreateBatchChoice = {
   batch: AnchorEventBatch;
   optionLabel: string;
@@ -136,17 +129,20 @@ const createBatchId = ref<number | null>(null);
 const isVisibleListModePR = (pr: AnchorEventBatchPR): boolean =>
   pr.status !== "EXPIRED";
 
-const visiblePRsByBatchId = computed(() => {
-  const map = new Map<number, AnchorEventBatchPR[]>();
+const visiblePRItems = computed<VisiblePRItem[]>(() => {
+  const items: VisiblePRItem[] = [];
 
   for (const batchItem of props.selectedDateGroup?.batches ?? []) {
-    map.set(
-      batchItem.batch.id,
-      batchItem.batch.prs.filter(isVisibleListModePR),
-    );
+    for (const pr of batchItem.batch.prs.filter(isVisibleListModePR)) {
+      items.push({
+        batchId: batchItem.batch.id,
+        pr,
+        timeLabel: batchItem.timeLabel,
+      });
+    }
   }
 
-  return map;
+  return items;
 });
 
 const isAvailableAnchorPR = (pr: AnchorEventBatchPR): boolean =>
@@ -329,11 +325,6 @@ const handleCreateInList = (locationId: string | null) => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-med);
-}
-
-.batch-panel {
-  display: flex;
-  flex-direction: column;
 }
 
 .pr-list {

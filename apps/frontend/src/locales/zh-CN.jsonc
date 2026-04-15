@@ -1199,7 +1199,7 @@
     "backToPlaza": "活动广场",
     "loadFailed": "加载活动详情失败",
     "noBatches": "暂无可用场次",
-    "noPRsInBatch": "该时段暂无可加入的搭子请求",
+    "noPRsInSelectedDate": "该日期暂无可加入的搭子请求",
     "dateLabel": "日期",
     "batchLabel": "场次",
     "viewMode": {
