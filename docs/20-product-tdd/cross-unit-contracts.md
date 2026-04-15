@@ -55,6 +55,7 @@ Stable user-facing route families that materially affect coordination include:
 - `/wechat/oauth/callback`
 - `/admin/login`
 - `/admin/anchor-pr`
+- `/admin/anchor-pr-messages`
 - `/admin/booking-support`
 - `/admin/booking-execution`
 - `/admin/pois`

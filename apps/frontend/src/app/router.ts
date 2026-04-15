@@ -16,6 +16,7 @@ import UserProfilePage from "@/pages/UserProfilePage.vue";
 import AnchorPRBookingSupportPage from "@/pages/AnchorPRBookingSupportPage.vue";
 import AdminLoginPage from "@/pages/AdminLoginPage.vue";
 import AdminAnchorPRPage from "@/pages/AdminAnchorPRPage.vue";
+import AdminAnchorPRMessagesPage from "@/pages/AdminAnchorPRMessagesPage.vue";
 import AdminBookingSupportPage from "@/pages/AdminBookingSupportPage.vue";
 import AdminBookingExecutionPage from "@/pages/AdminBookingExecutionPage.vue";
 import AdminPoisPage from "@/pages/AdminPoisPage.vue";
@@ -117,6 +118,15 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/anchor-pr",
     name: "admin-anchor-pr",
     component: AdminAnchorPRPage,
+    meta: {
+      wechatSharePolicy: "route",
+      requiresAdminAuth: true,
+    },
+  },
+  {
+    path: "/admin/anchor-pr-messages",
+    name: "admin-anchor-pr-messages",
+    component: AdminAnchorPRMessagesPage,
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,
