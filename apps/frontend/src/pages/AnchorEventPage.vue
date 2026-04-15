@@ -87,6 +87,7 @@
         <AnchorEventListModeSection
           :has-batches="detail.batches.length > 0"
           :batch-tabs="batchTabs"
+          :batches="sortedBatches"
           :selected-batch-id="selectedBatchId"
           :selected-batch="selectedBatch"
           :event-id="detail.id"
@@ -1029,10 +1030,15 @@ onMounted(() => {
   void attemptPendingCreateReplay();
 });
 
-const handleCreateInList = async (locationId: string | null) => {
-  const batch = selectedBatch.value;
+const handleCreateInList = async ({
+  batchId,
+  locationId,
+}: {
+  batchId: number | null;
+  locationId: string | null;
+}) => {
   await createPRWithFallback({
-    targetBatchId: batch?.id ?? null,
+    targetBatchId: batchId,
     locationId,
   });
 };

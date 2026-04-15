@@ -26,11 +26,17 @@
 
       <div class="batch-action-cards">
         <AnchorPRCreateCard
-          :location-options="selectedBatch.locationOptions"
+          :title="createCardTitle"
+          :batch-time-label="createBatchTimeLabel"
+          :event-title="eventTitle"
+          :batch-options="createBatchOptions"
+          :selected-batch-id="createBatchId"
+          :location-options="createBatchLocationOptions"
           :default-expanded="shouldAutoExpandCreateCard"
           :auto-expand-context-key="createCardAutoExpandContextKey"
           :pending="isCreatePending"
           :error-message="createActionErrorMessage"
+          @update:selected-batch-id="handleCreateBatchChange"
           @create="handleCreateInList"
           data-region="create-anchor-pr"
         />
@@ -56,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
@@ -77,6 +83,7 @@ type AnchorEventBatchPR = AnchorEventBatch["prs"][number];
 const props = defineProps<{
   hasBatches: boolean;
   batchTabs: BatchTabItem[];
+  batches: AnchorEventBatch[];
   selectedBatchId: number | null;
   selectedBatch: AnchorEventBatch | null;
   eventId: number;
@@ -89,13 +96,97 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "select-batch": [batchId: number];
-  "create-in-list": [locationId: string | null];
+  "create-in-list": [payload: { batchId: number | null; locationId: string | null }];
 }>();
 
 const { t } = useI18n();
+const createBatchId = ref<number | null>(null);
+
+watch(
+  () => props.selectedBatchId,
+  (nextSelectedBatchId) => {
+    if (nextSelectedBatchId !== null) {
+      createBatchId.value = nextSelectedBatchId;
+      return;
+    }
+
+    createBatchId.value = props.batches[0]?.id ?? null;
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.batches,
+  (batches) => {
+    const currentBatchId = createBatchId.value;
+    if (
+      currentBatchId !== null &&
+      batches.some((batch) => batch.id === currentBatchId)
+    ) {
+      return;
+    }
+
+    createBatchId.value = props.selectedBatchId ?? batches[0]?.id ?? null;
+  },
+  { immediate: true },
+);
+
+const batchTabLabelById = computed(() => {
+  const map = new Map<number, string>();
+  for (const tab of props.batchTabs) {
+    map.set(tab.key, tab.label);
+  }
+  return map;
+});
+
+const createBatchOptions = computed(() =>
+  props.batches.map((batch) => ({
+    batchId: batch.id,
+    label:
+      batchTabLabelById.value.get(batch.id) ?? `${t("anchorEvent.batchLabel")} ${batch.id}`,
+  })),
+);
+
+const createBatch = computed(() => {
+  if (createBatchId.value === null) {
+    return null;
+  }
+
+  return props.batches.find((batch) => batch.id === createBatchId.value) ?? null;
+});
+
+const createBatchTimeLabel = computed(() => {
+  const targetBatchId = createBatch.value?.id ?? props.selectedBatch?.id ?? null;
+  if (targetBatchId === null) {
+    return "";
+  }
+
+  return batchTabLabelById.value.get(targetBatchId) ?? "";
+});
+
+const createBatchLocationOptions = computed(
+  () => createBatch.value?.locationOptions ?? [],
+);
 
 const isAvailableAnchorPR = (pr: AnchorEventBatchPR): boolean =>
   pr.status === "OPEN" || pr.status === "READY";
+
+const hasAvailableAnchorPRInCreateBatch = computed(() => {
+  const batch = createBatch.value;
+  if (!batch) {
+    return false;
+  }
+
+  return batch.prs.some(isAvailableAnchorPR);
+});
+
+const createCardTitle = computed(() => {
+  if (hasAvailableAnchorPRInCreateBatch.value) {
+    return t("anchorEvent.createCard.title");
+  }
+
+  return t("anchorEvent.createCard.titleWhenNoAvailablePR");
+});
 
 const shouldAutoExpandCreateCard = computed(() => {
   const batch = props.selectedBatch;
@@ -110,6 +201,10 @@ const createCardAutoExpandContextKey = computed(
   () => props.selectedBatch?.id ?? "none",
 );
 
+const handleCreateBatchChange = (batchId: number | null) => {
+  createBatchId.value = batchId;
+};
+
 const handleBatchTabChange = (value: string | number) => {
   if (typeof value !== "number") {
     return;
@@ -119,7 +214,10 @@ const handleBatchTabChange = (value: string | number) => {
 };
 
 const handleCreateInList = (locationId: string | null) => {
-  emit("create-in-list", locationId);
+  emit("create-in-list", {
+    batchId: createBatchId.value,
+    locationId,
+  });
 };
 </script>
 

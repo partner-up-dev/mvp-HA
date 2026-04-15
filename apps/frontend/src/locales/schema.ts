@@ -572,6 +572,7 @@ export interface MessageSchema {
     discoverOthers: string;
     createCard: {
       title: string;
+      titleWhenNoAvailablePR: string;
       subtitle: string;
       locationLabel: string;
       locationPlaceholder: string;
