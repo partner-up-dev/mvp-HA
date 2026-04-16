@@ -3,6 +3,7 @@ import { useRoute } from "vue-router";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
 import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+import { hasPendingWeChatOAuthHandoff } from "@/processes/wechat/oauth-handoff";
 
 const AUTO_LOGIN_ATTEMPT_STORAGE_KEY =
   "partner_up_wechat_auto_login_attempted_routes";
@@ -71,6 +72,7 @@ export const useRouteWeChatAutoLogin = () => {
       route.meta.wechatAutoLoginPolicy,
     );
     if (!routeKey) return;
+    if (hasPendingWeChatOAuthHandoff()) return;
 
     if (userSessionStore.isAuthenticated) {
       clearRouteAttempted(routeKey);

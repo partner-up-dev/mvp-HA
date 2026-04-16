@@ -49,6 +49,8 @@ const envSchema = z.object({
 
   // Frontend URL for share links
   FRONTEND_URL: z.string().min(1).optional(),
+  // Optional exact OAuth callback URL registered in the WeChat official account console.
+  WECHAT_OAUTH_CALLBACK_URL: z.string().url().optional(),
 
   // Access token (JWT-like HMAC token) config.
   AUTH_JWT_SECRET: z.string().min(16).default("dev-auth-secret-change-me"),

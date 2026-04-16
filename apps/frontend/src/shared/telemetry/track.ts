@@ -7,6 +7,7 @@ import type {
 import { LEGACY_ANALYTICS_EVENT_NAME_MAP } from "@/shared/telemetry/events";
 import { resolveCurrentSpmAttribution } from "@/shared/telemetry/spm-attribution";
 import { sanitizeSpmValue } from "@/shared/url/spm";
+import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
 import { client } from "@/lib/rpc";
 
 type AnalyticsEventRecord<
@@ -100,7 +101,9 @@ const toCanonicalEventName = (
 
 const getCurrentPath = (): string => {
   if (typeof window === "undefined") return "/";
-  return `${window.location.pathname}${window.location.search}`;
+  return sanitizeSensitiveRoutePath(
+    `${window.location.pathname}${window.location.search}`,
+  );
 };
 
 const createSessionId = (): string => {

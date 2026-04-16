@@ -5,11 +5,14 @@ import {
   type AuthSessionPayload,
 } from "@/shared/auth/useUserSessionStore";
 import { getStoredAccessToken } from "@/shared/auth/session-storage";
+import { hasPendingWeChatOAuthHandoff } from "@/processes/wechat/oauth-handoff";
 
 let hasBootstrappedAuthSession = false;
 let bootstrappingPromise: Promise<void> | null = null;
 
-const runAuthSessionBootstrap = async (): Promise<void> => {
+type AuthSessionBootstrapResult = "completed" | "deferred";
+
+const runAuthSessionBootstrap = async (): Promise<AuthSessionBootstrapResult> => {
   if (typeof window !== "undefined") {
     const isOAuthCallback =
       window.location.pathname === "/wechat/oauth/callback";
@@ -18,12 +21,17 @@ const runAuthSessionBootstrap = async (): Promise<void> => {
       const hasOAuthParams =
         Boolean(searchParams.get("code")) && Boolean(searchParams.get("state"));
       if (hasOAuthParams) {
-        return;
+        return "completed";
       }
     }
   }
 
+  if (hasPendingWeChatOAuthHandoff()) {
+    return "deferred";
+  }
+
   const store = useUserSessionStore();
+
   const existingToken = getStoredAccessToken();
 
   if (!existingToken) {
@@ -65,11 +73,12 @@ const runAuthSessionBootstrap = async (): Promise<void> => {
 
     const rotated = getStoredAccessToken();
     store.setAccessToken(rotated);
-    return;
+    return "completed";
   }
 
   const payload = (await res.json()) as AuthSessionPayload;
   store.applyAuthSession(payload);
+  return "completed";
 };
 
 export const ensureAuthSessionBootstrapped = async (): Promise<void> => {
@@ -78,10 +87,15 @@ export const ensureAuthSessionBootstrapped = async (): Promise<void> => {
   }
 
   if (!bootstrappingPromise) {
-    bootstrappingPromise = runAuthSessionBootstrap().finally(() => {
-      hasBootstrappedAuthSession = true;
-      bootstrappingPromise = null;
-    });
+    bootstrappingPromise = runAuthSessionBootstrap()
+      .then((result) => {
+        if (result === "completed") {
+          hasBootstrappedAuthSession = true;
+        }
+      })
+      .finally(() => {
+        bootstrappingPromise = null;
+      });
   }
 
   await bootstrappingPromise;

@@ -6,6 +6,7 @@ import {
 import { trackEvent } from "@/shared/telemetry/track";
 import { captureSpmAttributionFromUrl } from "@/shared/telemetry/spm-attribution";
 import { getStoredAdminHasAccess } from "@/domains/admin/model/admin-session-storage";
+import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
 
 const HomePage = () => import("@/pages/HomePage.vue");
 const MePage = () => import("@/pages/MePage.vue");
@@ -282,7 +283,7 @@ router.afterEach((to) => {
   }
 
   trackEvent("page_view", {
-    page: to.fullPath,
+    page: sanitizeSensitiveRoutePath(to.fullPath),
     routeName: typeof to.name === "string" ? to.name : undefined,
     prId: parsePositiveInt(to.params.id),
   });

@@ -23,8 +23,9 @@ Contract implication:
 
 - Frontend stores local user and admin access tokens in browser storage.
 - Backend may rotate tokens through the `x-access-token` response header.
-- Frontend must preserve `credentials: "include"` on flows that rely on cookie-backed session state, especially WeChat OAuth and bind paths.
+- Frontend must preserve `credentials: "include"` on flows that rely on cookie-backed session state, especially WeChat OAuth, OAuth handoff, and bind paths.
 - Admin and user sessions are separate client contexts.
+- WeChat OAuth callback completion must not place the long-lived access token in route query parameters. Backend-owned OAuth callbacks hand the frontend session across with a short-lived signed cookie plus a non-secret handoff nonce.
 
 ## 4. Error Contract
 

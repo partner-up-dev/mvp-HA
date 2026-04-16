@@ -27,7 +27,8 @@ Use it when code plus Product TDD are no longer enough to preserve a fragile loc
 
 Current repo state:
 
-- there is no active hard-unit Unit TDD yet
+- active hard-unit docs:
+  - [WeChat OAuth Handoff](./wechat-oauth-handoff.md)
 - broad frontend/backend package folders were intentionally removed as over-broad
 
 ## How This Layer Connects To Adjacent Layers

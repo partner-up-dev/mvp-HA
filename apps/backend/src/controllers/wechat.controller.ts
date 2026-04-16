@@ -55,6 +55,10 @@ const templateMessageService = new WeChatTemplateMessageService();
 
 const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
 const OAUTH_STATE_TTL_SECONDS = 10 * 60;
+const OAUTH_HANDOFF_COOKIE_NAME = "wechat_oauth_handoff";
+const OAUTH_HANDOFF_TTL_SECONDS = 2 * 60;
+const OAUTH_HANDOFF_QUERY_PARAM = "wechatOAuthHandoff";
+const OAUTH_HANDOFF_COOKIE_PATH = "/api/wechat/oauth/handoff";
 const OAUTH_MOCK_CODE = "mock-oauth-code";
 const ANCHOR_USER_AUTH_REQUIRED_CODE = "ANCHOR_USER_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
@@ -76,12 +80,29 @@ const oauthCallbackQuerySchema = z.object({
   state: z.string().min(1).optional(),
 });
 
+const oauthHandoffQuerySchema = z.object({
+  handoff: z.string().min(1),
+});
+
 const oauthStateCookiePayloadSchema = z.object({
   nonce: z.string().min(1),
   returnTo: z.string().url(),
   mode: z.enum(["login", "bind"]),
   bindUserId: z.string().uuid().nullable(),
   anonymousUserId: z.string().uuid().nullable(),
+  expiresAtMs: z.number().int().positive(),
+});
+
+const oauthCallbackAuthPayloadSchema = z.object({
+  role: z.enum(["authenticated", "service"]),
+  userId: z.string().uuid(),
+  userPin: z.string().nullable(),
+  accessToken: z.string().min(1),
+});
+
+const oauthHandoffCookiePayloadSchema = z.object({
+  nonce: z.string().min(1),
+  userId: z.string().uuid(),
   expiresAtMs: z.number().int().positive(),
 });
 const reminderSubscriptionUpdateSchema = z.object({
@@ -95,6 +116,10 @@ const notificationSubscriptionUpdateSchema = z.object({
 
 type OAuthStateCookiePayload = z.infer<typeof oauthStateCookiePayloadSchema>;
 type OAuthStateMode = OAuthStateCookiePayload["mode"];
+type OAuthHandoffCookiePayload = z.infer<
+  typeof oauthHandoffCookiePayloadSchema
+>;
+type OAuthCallbackAuthPayload = z.infer<typeof oauthCallbackAuthPayloadSchema>;
 type NotificationSubscriptionState = {
   enabled: boolean;
   optInAt: string | null;
@@ -468,6 +493,24 @@ const clearOAuthStateCookieByNonce = (c: Context, nonce: string): void => {
   );
 };
 
+const resolveOAuthHandoffCookieName = (nonce: string): string =>
+  `${OAUTH_HANDOFF_COOKIE_NAME}_${nonce}`;
+
+const resolveOAuthHandoffCookieOptions = (c: Context) => ({
+  ...resolveCookieBaseOptions(c),
+  sameSite: isSecureRequest(c) ? ("None" as const) : ("Lax" as const),
+  secure: isSecureRequest(c),
+  path: OAUTH_HANDOFF_COOKIE_PATH,
+});
+
+const clearOAuthHandoffCookieByNonce = (c: Context, nonce: string): void => {
+  deleteCookie(
+    c,
+    resolveOAuthHandoffCookieName(nonce),
+    resolveOAuthHandoffCookieOptions(c),
+  );
+};
+
 const collectAllowedReturnToOrigins = (c: Context): Set<string> => {
   const origins = new Set<string>();
 
@@ -541,13 +584,11 @@ const resolveReturnTo = (
 };
 
 const resolveOAuthCallbackUrl = (c: Context): string => {
-  const frontendUrl = parseHttpUrl(env.FRONTEND_URL);
-  if (frontendUrl) {
-    const frontendCallbackUrl = new URL(frontendUrl);
-    frontendCallbackUrl.pathname = "/wechat/oauth/callback";
-    frontendCallbackUrl.search = "";
-    frontendCallbackUrl.hash = "";
-    return frontendCallbackUrl.toString();
+  const configuredCallbackUrl = parseHttpUrl(env.WECHAT_OAUTH_CALLBACK_URL);
+  if (configuredCallbackUrl) {
+    configuredCallbackUrl.search = "";
+    configuredCallbackUrl.hash = "";
+    return configuredCallbackUrl.toString();
   }
 
   const backendCallbackUrl = new URL(c.req.url);
@@ -575,26 +616,12 @@ const resolveMockOAuthAuthorizeUrl = (c: Context, state: string): string => {
 const resolveMockOAuthCallbackUrl = (
   c: Context,
   state: string,
-  returnTo: string | null,
 ): string => {
-  let callbackUrl: URL;
-
-  try {
-    if (returnTo) {
-      const parsedReturnTo = new URL(returnTo);
-      if (isHttpProtocol(parsedReturnTo.protocol)) {
-        callbackUrl = parsedReturnTo;
-      } else {
-        callbackUrl = new URL(resolveFallbackReturnTo(c));
-      }
-    } else {
-      callbackUrl = new URL(resolveFallbackReturnTo(c));
-    }
-  } catch {
-    callbackUrl = new URL(resolveFallbackReturnTo(c));
-  }
-
-  callbackUrl.pathname = "/wechat/oauth/callback";
+  const callbackUrl = new URL(c.req.url);
+  callbackUrl.pathname = callbackUrl.pathname.replace(
+    /\/oauth\/mock\/authorize$/,
+    "/oauth/callback",
+  );
   callbackUrl.search = "";
   callbackUrl.searchParams.set("state", state);
   callbackUrl.searchParams.set("code", OAUTH_MOCK_CODE);
@@ -608,6 +635,15 @@ const appendBindResultToReturnTo = (
 ): string => {
   const url = new URL(returnTo);
   url.searchParams.set("wechatBind", result);
+  return url.toString();
+};
+
+const appendOAuthHandoffToReturnTo = (
+  returnTo: string,
+  handoffNonce: string,
+): string => {
+  const url = new URL(returnTo);
+  url.searchParams.set(OAUTH_HANDOFF_QUERY_PARAM, handoffNonce);
   return url.toString();
 };
 
@@ -641,6 +677,27 @@ const setOAuthStateCookie = async (
   );
 };
 
+const setOAuthHandoffCookie = async (
+  c: Context,
+  payload: OAuthHandoffCookiePayload,
+): Promise<void> => {
+  const sessionSecret = resolveOAuthSessionSecret();
+  if (!sessionSecret) {
+    throw new Error("WeChat OAuth handoff secret is not configured");
+  }
+
+  await setSignedCookie(
+    c,
+    resolveOAuthHandoffCookieName(payload.nonce),
+    encodeSignedPayload(payload),
+    sessionSecret,
+    {
+      ...resolveOAuthHandoffCookieOptions(c),
+      maxAge: OAUTH_HANDOFF_TTL_SECONDS,
+    },
+  );
+};
+
 const buildOAuthStatePayload = (
   returnTo: string,
   mode: OAuthStateMode,
@@ -654,6 +711,27 @@ const buildOAuthStatePayload = (
   anonymousUserId,
   expiresAtMs: nowMs() + OAUTH_STATE_TTL_SECONDS * 1000,
 });
+
+const buildOAuthHandoffPayload = (
+  userId: UserId,
+): OAuthHandoffCookiePayload => ({
+  nonce: randomUUID(),
+  userId,
+  expiresAtMs: nowMs() + OAUTH_HANDOFF_TTL_SECONDS * 1000,
+});
+
+const isOAuthCallbackNavigationRequest = (c: Context): boolean => {
+  const secFetchMode = c.req.header("sec-fetch-mode")?.toLowerCase();
+  if (secFetchMode === "navigate") {
+    return true;
+  }
+  if (secFetchMode === "cors") {
+    return false;
+  }
+
+  const accept = c.req.header("accept")?.toLowerCase() ?? "";
+  return accept.includes("text/html");
+};
 
 const requireAuthenticatedUserId = (c: Context): UserId => {
   const auth = c.get("auth");
@@ -670,13 +748,6 @@ const readSessionUserId = (c: Context<AuthEnv>): UserId | null => {
     return null;
   }
   return auth.userId as UserId;
-};
-
-type OAuthCallbackAuthPayload = {
-  role: "authenticated" | "service";
-  userId: UserId;
-  userPin: string | null;
-  accessToken: string;
 };
 
 const issueOAuthCallbackAuth = async (
@@ -965,33 +1036,7 @@ export const wechatRoute = app
       }
 
       const { state } = c.req.valid("query");
-      const sessionSecret = resolveOAuthSessionSecret();
-      const statePayload = sessionSecret
-        ? ((await readSignedCookiePayload(
-            c,
-            resolveOAuthStateCookieName(state),
-            sessionSecret,
-            oauthStateCookiePayloadSchema,
-          )) ??
-          (await readSignedCookiePayload(
-            c,
-            OAUTH_STATE_COOKIE_NAME,
-            sessionSecret,
-            oauthStateCookiePayloadSchema,
-          )))
-        : null;
-
-      const returnToFromState =
-        statePayload &&
-        statePayload.nonce === state &&
-        statePayload.expiresAtMs > nowMs()
-          ? statePayload.returnTo
-          : null;
-
-      return c.redirect(
-        resolveMockOAuthCallbackUrl(c, state, returnToFromState),
-        302,
-      );
+      return c.redirect(resolveMockOAuthCallbackUrl(c, state), 302);
     },
   )
   .get(
@@ -1112,6 +1157,44 @@ export const wechatRoute = app
     return c.json({ authorizeUrl });
   })
   .get(
+    "/oauth/handoff",
+    zValidator("query", oauthHandoffQuerySchema),
+    async (c) => {
+      const { handoff } = c.req.valid("query");
+      const sessionSecret = resolveOAuthSessionSecret();
+      if (!sessionSecret) {
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
+
+      const payload = await readSignedCookiePayload(
+        c,
+        resolveOAuthHandoffCookieName(handoff),
+        sessionSecret,
+        oauthHandoffCookiePayloadSchema,
+      );
+
+      clearOAuthHandoffCookieByNonce(c, handoff);
+
+      if (!payload) {
+        return c.json({ error: "Invalid OAuth handoff" }, 400);
+      }
+      if (payload.expiresAtMs <= nowMs()) {
+        return c.json({ error: "OAuth handoff expired" }, 400);
+      }
+      if (payload.nonce !== handoff) {
+        return c.json({ error: "OAuth handoff mismatch" }, 400);
+      }
+
+      const user = await userRepo.findById(payload.userId as UserId);
+      if (!user || user.status !== "ACTIVE") {
+        return c.json({ error: "OAuth handoff user not found" }, 401);
+      }
+
+      const authPayload = await issueOAuthCallbackAuth(c, user);
+      return c.json({ ok: true, auth: authPayload });
+    },
+  )
+  .get(
     "/oauth/callback",
     zValidator("query", oauthCallbackQuerySchema),
     async (c) => {
@@ -1121,10 +1204,29 @@ export const wechatRoute = app
         returnTo?: string | null,
       ) =>
         c.json({ ok: false, error, returnTo: returnTo ?? undefined }, status);
-      const respondSuccess = (
+      const respondSuccess = async (returnTo: string) => {
+        if (!isOAuthCallbackNavigationRequest(c)) {
+          return c.json({ ok: true, returnTo });
+        }
+
+        return c.redirect(returnTo, 302);
+      };
+      const respondAuthenticatedSuccess = async (
         returnTo: string,
-        auth?: OAuthCallbackAuthPayload,
-      ) => c.json({ ok: true, returnTo, auth });
+        user: User,
+      ) => {
+        if (!isOAuthCallbackNavigationRequest(c)) {
+          const authPayload = await issueOAuthCallbackAuth(c, user);
+          return c.json({ ok: true, returnTo, auth: authPayload });
+        }
+
+        const handoffPayload = buildOAuthHandoffPayload(user.id);
+        await setOAuthHandoffCookie(c, handoffPayload);
+        return c.redirect(
+          appendOAuthHandoffToReturnTo(returnTo, handoffPayload.nonce),
+          302,
+        );
+      };
       const resolveActiveUserById = async (userId: UserId): Promise<User> => {
         const user = await userRepo.findById(userId);
         if (!user || user.status !== "ACTIVE") {
@@ -1196,14 +1298,13 @@ export const wechatRoute = app
 
           const occupiedUser = await userRepo.findByOpenId(bindOpenId);
           if (occupiedUser && occupiedUser.status === "ACTIVE") {
-            const authPayload = await issueOAuthCallbackAuth(c, occupiedUser);
             clearAnonymousSessionCookie(c);
             clearOAuthStateCookieByNonce(c, state);
             clearOAuthStateCookie(c);
 
-            return respondSuccess(
+            return respondAuthenticatedSuccess(
               appendBindResultToReturnTo(statePayload.returnTo, "success"),
-              authPayload,
+              occupiedUser,
             );
           }
 
@@ -1227,14 +1328,13 @@ export const wechatRoute = app
             boundUser = await resolveActiveUserById(bindTargetUser.id);
           }
 
-          const authPayload = await issueOAuthCallbackAuth(c, boundUser);
           clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
 
-          return respondSuccess(
+          return respondAuthenticatedSuccess(
             appendBindResultToReturnTo(statePayload.returnTo, "success"),
-            authPayload,
+            boundUser,
           );
         }
 
@@ -1259,11 +1359,13 @@ export const wechatRoute = app
 
         const existingUser = await userRepo.findByOpenId(loginOpenId);
         if (existingUser) {
-          const authPayload = await issueOAuthCallbackAuth(c, existingUser);
           clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
-          return respondSuccess(statePayload.returnTo, authPayload);
+          return respondAuthenticatedSuccess(
+            statePayload.returnTo,
+            existingUser,
+          );
         }
 
         const bindCandidateUserId =
@@ -1294,14 +1396,13 @@ export const wechatRoute = app
             }
 
             if (boundCandidate && boundCandidate.status === "ACTIVE") {
-              const authPayload = await issueOAuthCallbackAuth(
-                c,
-                boundCandidate,
-              );
               clearAnonymousSessionCookie(c);
               clearOAuthStateCookieByNonce(c, state);
               clearOAuthStateCookie(c);
-              return respondSuccess(statePayload.returnTo, authPayload);
+              return respondAuthenticatedSuccess(
+                statePayload.returnTo,
+                boundCandidate,
+              );
             }
           }
         }
@@ -1321,11 +1422,13 @@ export const wechatRoute = app
           throw new Error("Failed to create user for WeChat OAuth login");
         }
 
-        const authPayload = await issueOAuthCallbackAuth(c, resolvedUser);
         clearAnonymousSessionCookie(c);
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return respondSuccess(statePayload.returnTo, authPayload);
+        return respondAuthenticatedSuccess(
+          statePayload.returnTo,
+          resolvedUser,
+        );
       } catch (error) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);

@@ -7,6 +7,11 @@ import {
   normalizePublicUrl,
   type ShareSpmRouteKey,
 } from "@/shared/url/spm";
+import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
+import {
+  hasPendingWeChatOAuthHandoff,
+  WECHAT_OAUTH_HANDOFF_CLEARED_EVENT,
+} from "@/processes/wechat/oauth-handoff";
 import type { RouteShareDescriptor } from "@/domains/share/model/types";
 import {
   replayCurrentRouteShareDescriptor,
@@ -81,15 +86,17 @@ const buildTargetUrl = (
   routeKey?: ShareSpmRouteKey,
 ): string => {
   if (typeof window === "undefined") return "";
+  const routePath = sanitizeSensitiveRoutePath(route.fullPath);
+
   if (!routeKey) {
     return normalizePublicUrl({
-      rawUrl: route.fullPath,
+      rawUrl: routePath,
       baseHref: window.location.href,
     });
   }
 
   return buildProductShareUrl({
-    rawUrl: route.fullPath,
+    rawUrl: routePath,
     baseHref: window.location.href,
     routeKey,
     methodKey: "wechat_share",
@@ -104,10 +111,11 @@ const buildRouteFallbackDescriptor = (
 
   const fallback = resolveFallbackText(route.name);
   if (!fallback) return null;
+  const routePath = sanitizeSensitiveRoutePath(route.fullPath);
 
   return {
     entityKey: null,
-    revision: `fallback:${route.fullPath}:${resolveCurrentLocale()}`,
+    revision: `fallback:${routePath}:${resolveCurrentLocale()}`,
     phase: "FALLBACK",
     signatureUrl: window.location.href,
     targetUrl: buildTargetUrl(route, fallback.routeKey),
@@ -121,6 +129,7 @@ export const useRouteShareOrchestrator = () => {
   const route = useRoute();
 
   const startRouteSession = async (): Promise<void> => {
+    if (hasPendingWeChatOAuthHandoff()) return;
     const descriptor = buildRouteFallbackDescriptor(route);
     await startRouteShareSession(descriptor);
   };
@@ -148,13 +157,25 @@ export const useRouteShareOrchestrator = () => {
     void replayCurrentRouteShareDescriptor("visibilitychange");
   };
 
+  const handleWeChatOAuthHandoffCleared = (): void => {
+    void startRouteSession();
+  };
+
   onMounted(() => {
     window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener(
+      WECHAT_OAUTH_HANDOFF_CLEARED_EVENT,
+      handleWeChatOAuthHandoffCleared,
+    );
     document.addEventListener("visibilitychange", handleVisibilityChange);
   });
 
   onBeforeUnmount(() => {
     window.removeEventListener("pageshow", handlePageShow);
+    window.removeEventListener(
+      WECHAT_OAUTH_HANDOFF_CLEARED_EVENT,
+      handleWeChatOAuthHandoffCleared,
+    );
     document.removeEventListener("visibilitychange", handleVisibilityChange);
   });
 
