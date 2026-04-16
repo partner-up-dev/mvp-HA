@@ -115,13 +115,8 @@ const handleDismiss = () => {
   transform: translateX(-50%);
   bottom: calc(var(--sys-spacing-med) + var(--pu-safe-bottom));
   width: min(100% - (var(--sys-spacing-med) * 2), 24rem);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-low) 92%,
-    transparent
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--sys-color-outline) 54%, transparent);
+  background: var(--sys-color-surface-container-low);
+  border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-radius-med);
   padding: var(--sys-spacing-med);
   z-index: 20;

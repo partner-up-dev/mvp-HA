@@ -3,18 +3,10 @@
  * Governed outputs that should be named, shared, and centrally owned.
  */
 
-@use "./ref" as ref;
-@use "./functions" as fn;
-
 $all: (
   layout: (
     page-max-width: 480px,
-    panel-max-width: 30rem,
-    support-actions-max-width: 33rem,
-    bookmark-nudge-max-width: 30rem,
     expandable-panel-max-height: 26rem,
-    anchor-card-stage-height: min(79vh, 780px),
-    anchor-card-cover-height: clamp(260px, 46vh, 420px),
     landing-hero-title-measure: 9.5ch,
     landing-hero-title-measure-compact: 8.8ch,
     landing-hero-subtitle-measure: 30ch,
@@ -35,16 +27,8 @@ $all: (
     landing-hero-padding-block-compact: clamp(2.7rem, 10.5vw, 4.7rem),
     landing-hero-gap-compact: clamp(0.9rem, 4vw, 1.3rem),
     footer-gap: clamp(1.3rem, 4.8vw, 2rem),
-    admin-panel-padding: clamp(1.4rem, 4vw, 2rem),
-    anchor-card-content-padding: clamp(1rem, 2.8vw, 1.5rem),
   ),
   typography: (
     page-hero-size: clamp(2rem, 4vw, 3rem),
-    page-hero-weight: 700,
-    page-hero-line-height: 1.05,
-    anchor-match-badge-size: clamp(2rem, 8vw, 3.4rem),
-  ),
-  surface: (
-    panel-radius-large: 28px,
   ),
 );

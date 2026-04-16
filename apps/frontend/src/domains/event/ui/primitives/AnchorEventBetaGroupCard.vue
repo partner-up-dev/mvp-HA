@@ -100,7 +100,7 @@ const description = computed(() => t("anchorEvent.betaGroupCard.description"));
 
 <style lang="scss" scoped>
 .anchor-event-beta-group-card--card {
-  padding: 1rem;
+  padding: var(--sys-spacing-med);
   border-radius: var(--sys-radius-lg);
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);

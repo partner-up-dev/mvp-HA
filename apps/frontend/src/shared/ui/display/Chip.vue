@@ -83,12 +83,8 @@ withDefaults(
 }
 
 .ui-chip--tone-warning {
-  background: color-mix(
-    in srgb,
-    var(--sys-color-warning) 18%,
-    var(--sys-color-surface-container-lowest)
-  );
-  color: var(--sys-color-on-surface);
-  border-color: color-mix(in srgb, var(--sys-color-warning) 42%, transparent);
+  background: var(--sys-color-warning);
+  color: var(--sys-color-on-warning);
+  border-color: var(--sys-color-warning);
 }
 </style>

@@ -211,8 +211,7 @@ onUnmounted(() => {
 .section-stack--creator {
   max-width: min(100%, 32rem);
   padding-top: var(--sys-spacing-sm);
-  border-top: 1px dashed
-    color-mix(in srgb, var(--sys-color-outline) 44%, transparent);
+  border-top: 1px dashed var(--sys-color-outline-variant);
 }
 
 .section-header {
@@ -265,14 +264,9 @@ onUnmounted(() => {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--sys-spacing-sm);
-  border: 1px dashed
-    color-mix(in srgb, var(--sys-color-outline) 58%, transparent);
+  border: 1px dashed var(--sys-color-outline-variant);
   border-radius: var(--sys-radius-med);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-low) 72%,
-    transparent
-  );
+  background: var(--sys-color-surface-container-low);
   transition:
     transform 210ms ease,
     border-color 210ms ease,
@@ -280,12 +274,8 @@ onUnmounted(() => {
 
   &:hover {
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--sys-color-primary) 45%, transparent);
-    background: color-mix(
-      in srgb,
-      var(--sys-color-primary-container) 34%,
-      var(--sys-color-surface-container-low)
-    );
+    border-color: var(--sys-color-primary);
+    background: var(--sys-color-primary-container);
   }
 
   &:active {

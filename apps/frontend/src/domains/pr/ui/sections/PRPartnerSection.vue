@@ -811,12 +811,8 @@ function blockedReasonText(
 
   &:hover {
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--sys-color-primary) 40%, transparent);
-    background: color-mix(
-      in srgb,
-      var(--sys-color-primary) 6%,
-      var(--sys-color-surface-container-lowest)
-    );
+    border-color: var(--sys-color-primary);
+    background: var(--sys-color-surface-container-low);
   }
 
   &:focus-visible {
@@ -863,7 +859,7 @@ function blockedReasonText(
 .partner-section__state-badge,
 .partner-section__link-meta {
   @include mx.pu-font(label-small);
-  padding: 2px 8px;
+  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
   border-radius: 999px;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);

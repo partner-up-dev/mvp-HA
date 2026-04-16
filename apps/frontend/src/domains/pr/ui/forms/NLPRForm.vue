@@ -229,11 +229,7 @@ const handleVoiceToggle = async (): Promise<void> => {
   height: var(--sys-size-large);
   border-radius: var(--sys-radius-sm);
   border: 1px dashed var(--sys-color-primary);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) 72%,
-    transparent
-  );
+  background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
   user-select: none;
   -webkit-user-select: none;
@@ -247,19 +243,12 @@ const handleVoiceToggle = async (): Promise<void> => {
 
   &.is-recording {
     border-style: solid;
-    background: color-mix(
-      in srgb,
-      var(--sys-color-primary) 16%,
-      transparent
-    );
+    background: var(--sys-color-primary);
+    color: var(--sys-color-on-primary);
   }
 
   &:hover:not(:disabled) {
-    background: color-mix(
-      in srgb,
-      var(--sys-color-primary-container) 86%,
-      transparent
-    );
+    background: var(--sys-color-primary-container);
   }
 
   &:active:not(:disabled) {

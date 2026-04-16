@@ -168,11 +168,7 @@ defineEmits<{
   color: var(--sys-color-on-surface);
 
   &:hover:not(:disabled) {
-    background: color-mix(
-      in srgb,
-      var(--sys-color-surface-container-high) 68%,
-      transparent
-    );
+    background: var(--sys-color-surface-container-high);
   }
 }
 

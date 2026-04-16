@@ -367,11 +367,7 @@ const rosterAvatarFallback = (displayName: string): string => {
   transition: background-color 160ms ease;
 
   &:hover {
-    background: color-mix(
-      in srgb,
-      var(--sys-color-primary) 6%,
-      transparent
-    );
+    background: var(--sys-color-surface-container-low);
   }
 
   &:focus-visible {

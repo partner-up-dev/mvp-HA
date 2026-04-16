@@ -239,7 +239,7 @@ const handleSupportAction = (event: Event): void => {
 }
 
 .contact-actions {
-  width: min(100%, var(--dcs-layout-support-actions-max-width));
+  width: min(100%, 33rem);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-spacing-med);

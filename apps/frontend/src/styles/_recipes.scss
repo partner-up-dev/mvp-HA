@@ -121,7 +121,7 @@
 @mixin pu-surface-panel($profile: subtle) {
   @if $profile == admin-login {
     overflow: hidden;
-    border-radius: var(--dcs-surface-panel-radius-large);
+    border-radius: var(--sys-radius-lg);
     border: 1px solid fn.sys-var(color, outline-variant);
     background:
       radial-gradient(

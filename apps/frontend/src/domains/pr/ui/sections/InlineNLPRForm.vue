@@ -282,7 +282,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 
   &:hover:not(:disabled) {
     opacity: 0.92;
-    border-color: color-mix(in srgb, var(--sys-color-primary) 72%, transparent);
+    border-color: var(--sys-color-primary);
   }
 
   &:active:not(:disabled) {
@@ -319,11 +319,7 @@ const handleVoiceToggle = async (): Promise<void> => {
   height: var(--sys-size-large);
   border: 1px dashed var(--sys-color-primary);
   border-radius: var(--sys-radius-sm);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) 68%,
-    transparent
-  );
+  background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
   display: inline-flex;
   align-items: center;

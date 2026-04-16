@@ -219,7 +219,7 @@ const toggleDate = (dateKey: ProductLocalDateKey) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.125rem;
+  gap: calc(var(--sys-spacing-xs) / 2);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-radius-sm);
   background: var(--sys-color-surface);
@@ -234,11 +234,7 @@ const toggleDate = (dateKey: ProductLocalDateKey) => {
 
 .product-local-date-calendar-picker__cell--selected {
   border-color: var(--sys-color-primary);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) 68%,
-    var(--sys-color-surface)
-  );
+  background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
 }
 

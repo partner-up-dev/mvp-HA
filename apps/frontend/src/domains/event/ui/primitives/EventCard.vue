@@ -364,11 +364,7 @@ const handleClick = () => {
 }
 
 :deep(.event-cover-location-pill) {
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-high) 92%,
-    white 8%
-  ) !important;
+  background: var(--sys-color-surface-container-high) !important;
   color: var(--sys-color-on-surface) !important;
   border-color: transparent !important;
 }

@@ -97,7 +97,7 @@ const statusClass = computed(
 .anchor-pr-card__headline {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: calc(var(--sys-spacing-xs) / 2);
   min-width: 0;
 }
 
@@ -107,8 +107,8 @@ const statusClass = computed(
 }
 
 .anchor-pr-card__status {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
+  @include mx.pu-font(label-small);
+  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
   border-radius: 999px;
   background: var(--sys-color-surface-container-high);
   flex-shrink: 0;
@@ -137,8 +137,8 @@ const statusClass = computed(
 .anchor-pr-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  font-size: 0.8125rem;
+  gap: var(--sys-spacing-med);
+  @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
 }
 </style>

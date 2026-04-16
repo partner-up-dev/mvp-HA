@@ -85,21 +85,13 @@ const iconClass = computed(() => {
 }
 
 .inline-notice--success {
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) 72%,
-    var(--sys-color-surface-container-lowest)
-  );
-  color: var(--sys-color-on-surface);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
 }
 
 .inline-notice--warning {
-  background: color-mix(
-    in srgb,
-    var(--sys-color-warning) 18%,
-    var(--sys-color-surface-container-lowest)
-  );
-  color: var(--sys-color-on-surface);
+  background: var(--sys-color-warning);
+  color: var(--sys-color-on-warning);
 }
 
 .inline-notice--error {

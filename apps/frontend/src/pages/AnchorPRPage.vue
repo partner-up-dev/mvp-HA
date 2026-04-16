@@ -1313,8 +1313,8 @@ function buttonToneForAction(
 
 .action-btn:disabled {
   cursor: not-allowed;
-  background: color-mix(in srgb, var(--sys-color-on-surface) 12%, transparent);
-  color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface-variant);
   box-shadow: none;
 }
 
@@ -1334,12 +1334,8 @@ function buttonToneForAction(
 .action-btn--surface:disabled,
 .action-btn--danger:disabled {
   background: transparent;
-  border-color: color-mix(
-    in srgb,
-    var(--sys-color-on-surface) 12%,
-    transparent
-  );
-  color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
+  border-color: var(--sys-color-outline-variant);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .action-tip {

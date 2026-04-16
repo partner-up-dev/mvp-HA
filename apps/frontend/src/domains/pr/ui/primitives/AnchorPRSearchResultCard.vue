@@ -110,7 +110,7 @@ const partnerCountLabel = computed(() => {
 
 .anchor-pr-search-result-card__status {
   flex-shrink: 0;
-  padding: 0.125rem 0.5rem;
+  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
   border-radius: 999px;
   background: var(--sys-color-surface-container-high);
   @include mx.pu-font(label-medium);

@@ -309,12 +309,8 @@ onUnmounted(() => {
 .hero-action--secondary {
   @include mx.pu-pill-action(transparent);
   color: var(--sys-color-on-surface-variant);
-  border-color: color-mix(in srgb, var(--sys-color-outline) 50%, transparent);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-low) 60%,
-    transparent
-  );
+  border-color: var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container-low);
   min-height: auto;
   padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
 }

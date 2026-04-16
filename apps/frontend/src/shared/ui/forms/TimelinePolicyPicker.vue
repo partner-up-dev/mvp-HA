@@ -272,7 +272,7 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: calc(var(--sys-spacing-xs) / 2);
   text-align: center;
 }
 

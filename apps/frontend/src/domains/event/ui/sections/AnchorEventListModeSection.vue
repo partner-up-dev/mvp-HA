@@ -330,7 +330,7 @@ const handleCreateInList = (locationId: string | null) => {
 .pr-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: calc(var(--sys-spacing-sm) + var(--sys-spacing-xs));
 }
 
 .batch-action-cards {
@@ -344,7 +344,7 @@ const handleCreateInList = (locationId: string | null) => {
 .empty-state,
 .empty-batch {
   text-align: center;
-  padding: 3rem 0;
+  padding: calc(var(--sys-spacing-lg) + var(--sys-spacing-med)) 0;
   color: var(--sys-color-on-surface-variant);
 }
 </style>

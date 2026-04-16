@@ -733,7 +733,7 @@ defineExpose({
 .demand-card {
   position: absolute;
   inset: 0;
-  border-radius: var(--dcs-surface-panel-radius-large);
+  border-radius: var(--sys-radius-lg);
   overflow: hidden;
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
@@ -770,7 +770,7 @@ defineExpose({
 }
 
 .demand-card__cover {
-  min-height: clamp(220px, calc(var(--pu-vh) * 0.26), 320px);
+  min-height: calc(var(--sys-size-xLarge) * 4);
   background-size: cover;
   background-position: center;
   display: flex;
@@ -807,7 +807,7 @@ defineExpose({
 }
 
 .demand-card__content {
-  padding: var(--dcs-space-anchor-card-content-padding);
+  padding: calc(var(--sys-spacing-med) + var(--sys-spacing-xs));
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-med);

@@ -144,8 +144,8 @@ watchEffect(() => {
 
 .admin-login-page__title {
   font-size: var(--dcs-typography-page-hero-size);
-  font-weight: var(--dcs-typography-page-hero-weight);
-  line-height: var(--dcs-typography-page-hero-line-height);
+  font-weight: 700;
+  line-height: 1.05;
 }
 
 .admin-login-page__subtitle,
@@ -156,7 +156,7 @@ watchEffect(() => {
 
 .admin-login-card {
   position: relative;
-  width: min(100%, var(--dcs-layout-panel-max-width));
+  width: min(100%, 30rem);
   @include mx.pu-surface-panel(admin-login);
 }
 
@@ -166,14 +166,14 @@ watchEffect(() => {
   width: 14rem;
   height: 14rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--sys-color-primary) 16%, transparent);
+  background: var(--sys-color-primary-container);
   filter: blur(36px);
 }
 
 .admin-login-card__content {
   position: relative;
   gap: var(--sys-spacing-med);
-  padding: var(--dcs-space-admin-panel-padding);
+  padding: calc(var(--sys-spacing-med) + var(--sys-spacing-sm));
 }
 
 .field {
