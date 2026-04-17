@@ -122,7 +122,10 @@ onMounted(() => {
 
 .pin-field {
   flex: 1;
-  @include mx.pu-form-control(plain);
+  width: 100%;
+  border: 1px solid var(--sys-color-outline);
+  color: var(--sys-color-on-surface);
+  background: transparent;
   padding: 0 var(--sys-spacing-sm);
   height: var(--sys-size-large);
   box-sizing: border-box;
@@ -131,6 +134,16 @@ onMounted(() => {
   transition: border-color 0.2s;
   letter-spacing: 0.5rem;
   @include mx.pu-font(body-large, true);
+
+  &::placeholder {
+    color: var(--sys-color-on-surface-variant);
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: -1px;
+  }
 }
 
 .regenerate-btn {

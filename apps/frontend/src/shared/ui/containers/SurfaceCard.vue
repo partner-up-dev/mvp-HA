@@ -34,15 +34,22 @@ withDefaults(
 }
 
 .surface-card--tone-section {
-  @include mx.pu-surface-card(section);
+  padding: var(--sys-spacing-med);
+  border-radius: var(--sys-radius-med);
+  background: var(--sys-color-surface-container);
 }
 
 .surface-card--tone-inset-high {
-  @include mx.pu-surface-card(inset-high);
+  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
 }
 
 .surface-card--tone-outline {
-  @include mx.pu-surface-card(outline);
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  background: transparent;
 }
 
 .surface-card--gap-none {

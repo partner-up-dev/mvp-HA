@@ -72,12 +72,12 @@ const footerNavLinks = computed(() => [
   flex-direction: column;
   min-width: 0;
   justify-content: flex-start;
-  gap: var(--dcs-space-footer-gap);
+  gap: var(--landing-footer-gap);
   padding-top: var(--full-common-footer-padding-top, 0);
   padding-left: var(--full-common-footer-padding-inline-start, 0);
   padding-right: var(--full-common-footer-padding-inline-end, 0);
   padding-bottom: calc(
-    var(--dcs-space-landing-section-padding-block) + var(--pu-safe-bottom)
+    var(--landing-section-padding-block) + var(--pu-safe-bottom)
   );
   animation-delay: 260ms;
   background-color: var(--sys-color-surface-container);
@@ -112,7 +112,7 @@ const footerNavLinks = computed(() => [
 .footer-brand p {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
-  max-width: var(--dcs-layout-landing-footer-copy-measure);
+  max-width: var(--landing-footer-copy-measure);
   margin: 0;
 }
 

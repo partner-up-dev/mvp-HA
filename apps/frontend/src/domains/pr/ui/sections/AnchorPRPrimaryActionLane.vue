@@ -339,7 +339,9 @@ function blockedReasonText(reason: BlockedReason): string {
 <style lang="scss" scoped>
 .lane-card {
   margin-top: var(--sys-spacing-lg);
-  @include mx.pu-surface-card(section);
+  padding: var(--sys-spacing-med);
+  border-radius: var(--sys-radius-med);
+  background: var(--sys-color-surface-container);
   border-top: 3px solid var(--sys-color-primary);
   display: flex;
   flex-direction: column;
@@ -378,7 +380,9 @@ function blockedReasonText(reason: BlockedReason): string {
 }
 
 .lane-summary-card {
-  @include mx.pu-surface-card(inset-high);
+  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-xs);
@@ -394,9 +398,10 @@ function blockedReasonText(reason: BlockedReason): string {
 }
 
 .lane-availability-note {
-  @include mx.pu-surface-card(inset-high);
-  border-inline-start: 3px solid var(--sys-color-primary);
   padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
+  border-inline-start: 3px solid var(--sys-color-primary);
 }
 
 .lane-actions {

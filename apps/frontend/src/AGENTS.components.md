@@ -52,23 +52,23 @@ Use the architecture rules in `src/ARCHITECTURE.md`.
 
 ### Styling
 
-All components MUST follow `src/styles/TOKEN-GOVERNANCE.md`.
+All components MUST follow `src/styles/AGENTS.md`.
 
 Default rule:
 
 - use direct `sys` tokens first
-- do not add `dcs` or a recipe if existing `sys` already solves the need without a severe visual regression
+- do not add `dcs` or a component contract if existing `sys` already solves the need without a severe visual regression
 
-Components may use existing shared recipes when the treatment is already centralized, but should not add a new recipe just to hide ordinary `sys` usage.
+Components may use existing shared primitives when the treatment is already centralized, but should not add a new primitive or variant just to hide ordinary `sys` usage.
 
-Action recipes are restricted to the lowest action primitives:
+Action treatments live inside the lowest action primitives:
 
 - `shared/ui/actions/Button.vue`
 - `shared/ui/actions/ActionLink.vue`
 
-Pages, domain components, and higher-level shared components should compose `Button`, `ActionLink`, or `FeedbackButton` instead of directly including `pu-pill-action(...)` or `pu-rect-action(...)`. Navigation components such as `TabBar` should own their navigation-specific styles directly instead of reusing action recipes.
+Pages, domain components, and higher-level shared components should compose `Button`, `ActionLink`, or `FeedbackButton` instead of re-declaring action treatment styles. Navigation components such as `TabBar` should own their navigation-specific styles directly instead of reusing action treatments.
 
-Exception: explicitly exempted visual surfaces such as the Landing Page may keep treatment styles component-local when visual continuity matters. Do not push those one-off treatments into `dcs` or shared recipes just to satisfy reuse.
+Exception: explicitly exempted visual surfaces such as the Landing Page may keep treatment styles component-local when visual continuity matters. Do not push those one-off treatments into `dcs` or shared primitives just to satisfy reuse.
 
 - Mixins are auto-injected by Vite config for all components, use them directly:
   - `@include mx.pu-font($key)` - Typography (e.g., `body-large`, `label-small`)
@@ -80,20 +80,21 @@ Exception: explicitly exempted visual surfaces such as the Landing Page may keep
   - Spacing: `--sys-spacing-xs`, `--sys-spacing-med`, etc.
   - Radius: `--sys-radius-sm`, `--sys-radius-lg`, etc.
 
-Learn available tokens in `src/styles/_sys.scss`, governance rules in `src/styles/TOKEN-GOVERNANCE.md`, and shared recipes in `src/styles/_mixins.scss`.
+Learn available tokens in `src/styles/_sys.scss`, governance rules in `src/styles/AGENTS.md`, and low-level typography/elevation/icon mixins in `src/styles/_mixins.scss`.
 
 Prohibited:
 
 - ❌ Hardcoded colors, sizes, or font properties
-- ❌ Adding a new recipe or `dcs` token when direct `sys` is already enough
+- ❌ Adding a new component contract or `dcs` token when direct `sys` is already enough
 - ❌ Direct imports of token files (`_sys.scss`, `_ref.scss`)
 
 ## Components
 
-- `shared/ui/actions/Button.vue`: Shared button primitive. Prefer it over page-local button classes; use `appearance="pill"` for compact CTA clusters and `appearance="rect"` for dialogs or block actions. Keep `tone` choices narrow (`primary`, `outline`, `secondary`, `surface`, `danger`, `ghost`).
-- `shared/ui/actions/ActionLink.vue`: Shared action-looking link primitive for `<RouterLink>` and external `<a>` CTAs. Use it instead of page-local link classes that include action recipes.
+- `shared/ui/actions/Button.vue`: Shared button primitive. Prefer it over page-local button classes; use `appearance="pill"` for compact CTA clusters and `appearance="rect"` for dialogs or block actions. Keep `tone` choices narrow (`primary`, `outline`, `secondary`, `surface`, `tertiary`, `dashed`, `danger`, `ghost`).
+- `shared/ui/actions/ActionLink.vue`: Shared action-looking link primitive for `<RouterLink>` and external `<a>` CTAs. Use it instead of page-local link classes that recreate action treatment styles.
 - `shared/ui/actions/FeedbackButton.vue`: Shared transient feedback action button. Use `state="pending|success|error"` for short-lived action results instead of page-local `.success` / `.error` button treatments.
-- `shared/ui/containers/SurfaceCard.vue`: Standard card shell for reusable section, inset, and outline surfaces. Use it instead of re-declaring `pu-surface-card(...)` in pages when the wrapper itself is a reusable primitive.
+- `shared/ui/containers/SurfaceCard.vue`: Standard card shell for reusable section, inset, and outline surfaces. Use it instead of re-declaring card shells in pages when the wrapper itself is a reusable primitive.
+- `shared/ui/containers/ChoiceCard.vue`: Selectable card primitive for button-like choices and RouterLink navigation choices. Use it for repeated default/active selectable card shells without embedding domain semantics.
 - `shared/ui/layout/FullScreenPageScaffold.vue`: Viewport-height page scaffold with `header`, content, and `footer` regions. Use it when the main content should absorb remaining height and manage its own inner scrolling.
 - `shared/ui/layout/FooterRevealPageScaffold.vue`: Viewport-first page scaffold with `header`, content, and `footer` regions where `header + content` fill the first screen and the footer appears only after continued page scroll.
 - `shared/ui/forms/FormField.vue`: Label + control + hint/error wrapper for plain form rows. It does not own the input shell; pair it with native controls or existing form primitives that already style the control.

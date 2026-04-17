@@ -159,7 +159,21 @@ watchEffect(() => {
 .admin-login-card {
   position: relative;
   width: min(100%, 30rem);
-  @include mx.pu-surface-panel(admin-login);
+  overflow: hidden;
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background:
+    radial-gradient(
+      circle at top left,
+      var(--sys-color-primary-container),
+      transparent 42%
+    ),
+    linear-gradient(
+      180deg,
+      var(--sys-color-surface),
+      var(--sys-color-surface-container)
+    );
+  box-shadow: var(--sys-shadow-2);
 }
 
 .admin-login-card__glow {
@@ -187,7 +201,12 @@ watchEffect(() => {
 }
 
 .field__input {
-  @include mx.pu-field-shell;
+  width: 100%;
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 </style>

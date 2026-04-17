@@ -21,8 +21,7 @@ Read the smallest useful set and keep durable docs current:
 - Active task packets and temporary reasoning: `tasks/*`
 - Architecture: `src/ARCHITECTURE.md`
 - Vue component guideline: `src/AGENTS.components.md`
-- Styling governance: `src/styles/TOKEN-GOVERNANCE.md`
-- Styling local rules: `src/styles/AGENTS.md`
+- Styling rules: `src/styles/AGENTS.md`
 - Data fetching local rules: `src/queries/AGENTS.md`
 
 Useful commands:
@@ -36,10 +35,10 @@ Useful commands:
 - Request params: if backend uses `zValidator`, mismatched param types will cause type errors; do not bypass with `as any`.
 - Always use Hono RPC Client (`client`) for API requests instead of manual `fetch`.
 - UnoCSS icon preset is configured; use icons by `class="i-mdi-icon-name"`.
-- Styling governance: use direct `sys` tokens first; add `dcs` only for real governed outputs; add recipes only for governed logic or stable shared treatments.
+- Styling governance: use direct `sys` tokens first; add `dcs` only for real governed outputs; extend shared primitives only for stable reusable treatments with a real component contract.
 - Make use of SCSS features.
 - Page layout reuse: prefer `src/shared/ui/layout/PageScaffold.vue`, `PageScaffoldFlow.vue`, `PageScaffoldCentered.vue`, and `DesktopPageScaffold.vue` for route pages; do not duplicate root safe-area container styles in page files.
-- Shared UI reuse: before adding page-local shells or feedback widgets, check `src/shared/ui/AGENTS.md` and prefer existing primitives such as `SurfaceCard`, `FormField`, `Button`, `InfoRow`, `Chip`, `ChipGroup`, `InlineNotice`, `EmptyState`, `ConfirmDialog`, and `Avatar` when the fit is real.
+- Shared UI reuse: before adding page-local shells or feedback widgets, check `src/shared/ui/AGENTS.md` and prefer existing primitives such as `SurfaceCard`, `ChoiceCard`, `FormField`, `Button`, `InfoRow`, `Chip`, `ChipGroup`, `InlineNotice`, `EmptyState`, `ConfirmDialog`, and `Avatar` when the fit is real.
 - Feature composition boundary: extract reusable feature UI plus business logic into dedicated feature components instead of leaving logic in page files.
 - Container vs feature split: keep container components presentational-only; they should provide layout and shell and should not own feature side effects.
 - Usage-site assembly: pages should assemble container plus feature components and only own page context such as visibility, section placement, and page-level error aggregation.

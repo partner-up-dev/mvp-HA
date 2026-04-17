@@ -30,7 +30,11 @@
         </p>
         <ul v-else class="list">
           <li v-for="item in createdItems" :key="`created-${item.id}`">
-            <button class="list-item" type="button" @click="goToPR(item)">
+            <ChoiceCard
+              class="list-item"
+              tone="low"
+              @click="goToPR(item)"
+            >
               <div class="item-top">
                 <div class="item-text">
                   <div class="item-name">{{ item.title || item.type }}</div>
@@ -40,7 +44,7 @@
                 </div>
                 <PRStatusBadge :status="item.status" />
               </div>
-            </button>
+            </ChoiceCard>
           </li>
         </ul>
       </section>
@@ -63,7 +67,11 @@
         </p>
         <ul v-else class="list">
           <li v-for="item in joinedDisplayItems" :key="`joined-${item.id}`">
-            <button class="list-item" type="button" @click="goToPR(item)">
+            <ChoiceCard
+              class="list-item"
+              tone="low"
+              @click="goToPR(item)"
+            >
               <div class="item-top">
                 <div class="item-text">
                   <div class="item-name">{{ item.title || item.type }}</div>
@@ -73,7 +81,7 @@
                 </div>
                 <PRStatusBadge :status="item.status" />
               </div>
-            </button>
+            </ChoiceCard>
           </li>
         </ul>
       </section>
@@ -95,6 +103,7 @@ import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
+import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import { useMyCreatedPRs } from "@/domains/pr/queries/useMyCreatedPRs";
 import { useMyJoinedPRs } from "@/domains/pr/queries/useMyJoinedPRs";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
@@ -195,11 +204,6 @@ const formatDate = (dateStr: string) => {
 }
 
 .list-item {
-  width: 100%;
-  text-align: left;
-  @include mx.pu-selection-card(default, low);
-  cursor: pointer;
-
   &:hover {
     background: var(--sys-color-surface-container);
   }

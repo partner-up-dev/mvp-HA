@@ -99,8 +99,10 @@ const hasTags = computed(
 }
 
 .pr-roster-item--card {
-  @include mx.pu-surface-card(outline);
   padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  background: transparent;
 }
 
 .pr-roster-item--link {

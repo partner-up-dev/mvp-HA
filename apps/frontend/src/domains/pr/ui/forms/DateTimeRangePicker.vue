@@ -232,8 +232,23 @@ const clearEndTime = () => {
 
 input {
   @include mx.pu-font(body-large);
-  @include mx.pu-form-control(container);
+  width: 100%;
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  color: var(--sys-color-on-surface);
+  background: var(--sys-color-surface-container);
   min-height: var(--sys-size-large);
+
+  &::placeholder {
+    color: var(--sys-color-on-surface-variant);
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: -1px;
+  }
 }
 
 .clear-time {

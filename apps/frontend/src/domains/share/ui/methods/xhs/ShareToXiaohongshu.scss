@@ -33,11 +33,21 @@
 
 // ===== CAPTION EDITOR =====
 .caption-textarea {
-  @include mx.pu-form-control(container);
   @include mx.pu-font(body-medium);
+  width: 100%;
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  color: var(--sys-color-on-surface);
+  background: var(--sys-color-surface-container);
   font-family: inherit;
   resize: vertical;
   transition: opacity 0.3s ease;
+
+  &::placeholder {
+    color: var(--sys-color-on-surface-variant);
+    opacity: 0.6;
+  }
 
   &:focus {
     outline: 2px solid var(--sys-color-primary);

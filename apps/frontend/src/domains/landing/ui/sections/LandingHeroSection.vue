@@ -212,7 +212,7 @@ onUnmounted(() => {
 .hero {
   position: relative;
   overflow: clip;
-  padding: var(--dcs-space-landing-hero-padding-block) 0;
+  padding: var(--landing-hero-padding-block) 0;
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-med);
@@ -222,7 +222,7 @@ onUnmounted(() => {
   @include mx.pu-font(display-large);
   color: var(--sys-color-on-surface);
   margin: 0;
-  max-width: var(--dcs-layout-landing-hero-title-measure);
+  max-width: var(--landing-hero-title-measure);
   line-height: 1.02;
   text-wrap: balance;
 }
@@ -249,7 +249,7 @@ onUnmounted(() => {
 .subtitle {
   @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface-variant);
-  max-width: var(--dcs-layout-landing-hero-subtitle-measure);
+  max-width: var(--landing-hero-subtitle-measure);
   opacity: 0;
   transform: translate3d(0, 0.55rem, 0);
   transition:
@@ -388,17 +388,17 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .hero {
-    padding: var(--dcs-space-landing-hero-padding-block-compact) 0;
-    gap: var(--dcs-space-landing-hero-gap-compact);
+    padding: var(--landing-hero-padding-block-compact) 0;
+    gap: var(--landing-hero-gap-compact);
   }
 
   .hero-title {
-    max-width: var(--dcs-layout-landing-hero-title-measure-compact);
+    max-width: var(--landing-hero-title-measure-compact);
   }
 
   .subtitle {
     @include mx.pu-font(body-large);
-    max-width: var(--dcs-layout-landing-hero-subtitle-measure-compact);
+    max-width: var(--landing-hero-subtitle-measure-compact);
   }
 
   .hero-actions {

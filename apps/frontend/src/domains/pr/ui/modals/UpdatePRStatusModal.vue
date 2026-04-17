@@ -6,14 +6,15 @@
     @close="handleClose"
   >
     <div class="status-options">
-      <button
+      <ChoiceCard
         v-for="status in statusOptions"
         :key="status.value"
-        :class="['status-option', { active: selectedStatus === status.value }]"
+        class="status-option"
+        :active="selectedStatus === status.value"
         @click="selectedStatus = status.value"
       >
         {{ status.label }}
-      </button>
+      </ChoiceCard>
     </div>
 
     <div v-if="requiresPin" class="pin-input">
@@ -55,6 +56,7 @@ import Modal from "@/shared/ui/overlay/Modal.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import PinInput from "@/shared/ui/forms/PinInput.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import { useUpdateAnchorPRStatus } from "@/domains/pr/queries/useAnchorPR";
 import { useUpdateCommunityPRStatus } from "@/domains/pr/queries/useCommunityPR";
 import type { PRId, PRKind, PRStatusManual } from "@partner-up-dev/backend";
@@ -138,15 +140,9 @@ const resetUpdateMutation = () => {
 
 .status-option {
   @include mx.pu-font(label-large);
-  @include mx.pu-selection-card(default);
   flex: 1;
   justify-content: center;
   min-width: 0;
-  cursor: pointer;
-
-  &.active {
-    @include mx.pu-selection-card(active);
-  }
 }
 
 .pin-input {

@@ -8,8 +8,8 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
 
 ## Guardrails Touched
 
-- `apps/frontend/src/styles/TOKEN-GOVERNANCE.md`
 - `apps/frontend/src/styles/AGENTS.md`
+- `apps/frontend/scripts/check-token-governance.mjs`
 - `apps/frontend/src/styles/_dcs.scss`
 - `apps/frontend/src/styles/_sys.scss`
 - `apps/frontend/src/styles/_recipes.scss`
@@ -38,6 +38,16 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
 - After phase 4, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
 - After phase 4, `git diff --check` passed.
 - After phase 4, `pnpm --filter @partner-up-dev/frontend build` passed.
+- After phase 5, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
+- After phase 5, `git diff --check` passed.
+- After phase 5, `pnpm --filter @partner-up-dev/frontend build` passed.
+- After phase 6, confirmed no remaining frontend references to `pu-*` recipe mixins or `_recipes`.
+- After phase 6, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
+- After phase 6, `git diff --check` passed.
+- After phase 6, `pnpm --filter @partner-up-dev/frontend build` passed.
+- After phase 7, confirmed no active source/doc references to `TOKEN-GOVERNANCE.md` outside historical task notes.
+- After phase 7, `git diff --check` passed.
+- After phase 7, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
 
 ## Findings
 
@@ -105,3 +115,31 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
 - Updated `TabBar` so it no longer includes `pu-pill-action(...)`; its tab buttons now own navigation-specific styles directly with `sys` tokens.
 - Documented that `pu-pill-action(...)` and `pu-rect-action(...)` are restricted to lowest action primitives (`Button`, `ActionLink`) rather than pages, domain components, or higher-level shared components.
 - Remaining direct action recipe usage is now limited to lowest action primitives plus previously deferred PR-specific unsupported variants (`tertiary`, `dashed`) in `AnchorAttendancePanel` and `PRForm`.
+
+## Phase 5 Implementation Slice
+
+- Moved Landing-only DCS values out of global `dcs` and into the Landing page boundary as `--landing-*` local CSS variables on `HomePage`.
+- Updated Landing descendants to consume inherited `--landing-*` variables instead of global `--dcs-*` variables:
+  - `LandingHeroSection`
+  - `LandingValuePropsSection`
+  - `FullCommonFooter`
+- Removed Landing-only entries from `_dcs.scss`, including hero measures, section/panel/entry spacing, footer gap/copy measure, and expandable panel max height.
+- Preserved the Landing visual values exactly; only ownership moved from global DCS to Landing-local style.
+- Confirmed no remaining runtime references to removed `--dcs-space-*`, `--dcs-layout-landing-*`, or `--dcs-layout-expandable-*` variables.
+- Updated token governance docs and checker so Landing visual boundaries may keep local `clamp()` / `color-mix()` formulas without weakening those rules for ordinary pages and components.
+
+## Phase 6 Implementation Slice
+
+- Removed the remaining global recipe layer by deleting `_recipes.scss` and the recipe forward from `_mixins.scss`.
+- Inlined action treatment ownership into `Button` and `ActionLink`, adding `tertiary` and `dashed` tones so PR-specific consumers no longer include action recipes directly.
+- Added `ChoiceCard` as the shared selectable card primitive and replaced previous `pu-selection-card(...)` usage in admin navigation, admin workspaces, PR status selection, and My PR lists.
+- Moved reusable surface shell ownership into `SurfaceCard`; domain/page-specific card, panel, and field shells now use local `sys` composition instead of shared recipes.
+- Inlined `PageScaffold` safe-area layout inside the scaffold primitive.
+- Updated styling/component governance docs to describe the retired recipe layer and the current shared primitive/component-contract path.
+
+## Phase 7 Documentation Slice
+
+- Merged the separate token governance document into `apps/frontend/src/styles/AGENTS.md`.
+- Deleted `apps/frontend/src/styles/TOKEN-GOVERNANCE.md` so styling rules have one frontend-local owner.
+- Simplified the style rules around four decisions: use `sys` first, keep `dcs` narrow, extend shared primitives only for real component contracts, and keep Landing-only art direction local.
+- Updated frontend/component documentation references to point at `src/styles/AGENTS.md`.

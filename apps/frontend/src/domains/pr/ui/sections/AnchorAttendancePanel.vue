@@ -1,22 +1,24 @@
 <template>
   <section v-if="(hasJoined && canConfirm) || (hasJoined && canCheckIn)" class="actions">
-    <button
+    <Button
       v-if="hasJoined && canConfirm"
       class="confirm-slot-btn"
+      tone="secondary"
       @click="emit('confirm-slot')"
       :disabled="confirmPending"
     >
       {{ confirmPending ? t("prPage.confirmingSlot") : t("prPage.confirmSlot") }}
-    </button>
+    </Button>
 
-    <button
+    <Button
       v-if="hasJoined && canCheckIn"
       class="checkin-attended-btn"
+      tone="tertiary"
       @click="emit('prepare-check-in')"
       :disabled="checkInPending"
     >
       {{ checkInPending ? t("prPage.checkingIn") : t("prPage.checkInAttended") }}
-    </button>
+    </Button>
   </section>
 
   <section v-if="showCheckInFollowup" class="checkin-followup">
@@ -24,33 +26,37 @@
       {{ t("prPage.checkInFollowupQuestion", { status: checkInFollowupStatusLabel }) }}
     </p>
     <div class="checkin-followup-actions">
-      <button
+      <Button
         class="checkin-followup-btn confirm"
+        tone="primary"
         :disabled="checkInPending"
         @click="emit('submit-check-in', true)"
       >
         {{ t("prPage.wouldJoinAgainYes") }}
-      </button>
-      <button
+      </Button>
+      <Button
         class="checkin-followup-btn decline"
+        tone="outline"
         :disabled="checkInPending"
         @click="emit('submit-check-in', false)"
       >
         {{ t("prPage.wouldJoinAgainNo") }}
-      </button>
-      <button
+      </Button>
+      <Button
         class="checkin-followup-btn cancel"
+        tone="outline"
         :disabled="checkInPending"
         @click="emit('cancel-check-in')"
       >
         {{ t("common.cancel") }}
-      </button>
+      </Button>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import Button from "@/shared/ui/actions/Button.vue";
 
 defineProps<{
   hasJoined: boolean;
@@ -87,19 +93,9 @@ const { t } = useI18n();
 
 .confirm-slot-btn,
 .checkin-attended-btn {
-  @include mx.pu-font(label-large);
   flex: 1;
   min-width: 0;
-  cursor: pointer;
   font-weight: 600;
-}
-
-.confirm-slot-btn {
-  @include mx.pu-rect-action(outline-primary, default);
-}
-
-.checkin-attended-btn {
-  @include mx.pu-rect-action(tertiary, default);
 }
 
 .checkin-followup {
@@ -122,16 +118,6 @@ const { t } = useI18n();
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--sys-spacing-sm);
-}
-
-.checkin-followup-btn {
-  @include mx.pu-font(label-large);
-  @include mx.pu-rect-action(outline, default);
-  cursor: pointer;
-}
-
-.checkin-followup-btn.confirm {
-  @include mx.pu-rect-action(primary, default);
 }
 
 .checkin-followup-btn.cancel {

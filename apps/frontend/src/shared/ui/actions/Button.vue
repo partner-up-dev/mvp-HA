@@ -49,6 +49,8 @@ type ButtonTone =
   | "secondary"
   | "outline"
   | "surface"
+  | "tertiary"
+  | "dashed"
   | "danger"
   | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
@@ -144,23 +146,46 @@ defineEmits<{
 }
 
 .ui-button--appearance-rect.ui-button--tone-primary {
-  @include mx.pu-rect-action(primary, default);
+  border: none;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .ui-button--appearance-rect.ui-button--tone-secondary {
-  @include mx.pu-rect-action(outline-primary, default);
+  border-color: var(--sys-color-primary);
+  background: transparent;
+  color: var(--sys-color-primary);
 }
 
 .ui-button--appearance-rect.ui-button--tone-outline {
-  @include mx.pu-rect-action(outline, default);
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-rect.ui-button--tone-surface {
-  @include mx.pu-rect-action(surface, default);
+  border-color: var(--sys-color-outline);
+  background: var(--sys-color-surface-container);
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-rect.ui-button--tone-danger {
-  @include mx.pu-rect-action(danger, default);
+  border-color: var(--sys-color-error);
+  background: transparent;
+  color: var(--sys-color-error);
+}
+
+.ui-button--appearance-rect.ui-button--tone-tertiary {
+  border: none;
+  background: var(--sys-color-tertiary);
+  color: var(--sys-color-on-tertiary);
+}
+
+.ui-button--appearance-rect.ui-button--tone-dashed {
+  border-style: dashed;
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-rect.ui-button--tone-ghost {
@@ -173,15 +198,19 @@ defineEmits<{
 }
 
 .ui-button--appearance-pill.ui-button--tone-primary {
-  @include mx.pu-pill-action(solid-primary, default);
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .ui-button--appearance-pill.ui-button--tone-secondary {
-  @include mx.pu-pill-action(solid-secondary, default);
+  background: var(--sys-color-secondary);
+  color: var(--sys-color-on-secondary);
 }
 
 .ui-button--appearance-pill.ui-button--tone-outline {
-  @include mx.pu-pill-action(outline-transparent, default);
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-pill.ui-button--tone-surface {
@@ -196,8 +225,21 @@ defineEmits<{
   color: var(--sys-color-error);
 }
 
+.ui-button--appearance-pill.ui-button--tone-tertiary {
+  background: var(--sys-color-tertiary);
+  color: var(--sys-color-on-tertiary);
+}
+
+.ui-button--appearance-pill.ui-button--tone-dashed {
+  border-style: dashed;
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
+}
+
 .ui-button--appearance-pill.ui-button--tone-ghost {
-  @include mx.pu-pill-action(transparent, default);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--size-sm {
@@ -244,11 +286,15 @@ defineEmits<{
 
 .ui-button--appearance-pill.ui-button--tone-surface:hover:not(:disabled),
 .ui-button--appearance-pill.ui-button--tone-danger:hover:not(:disabled),
+.ui-button--appearance-pill.ui-button--tone-tertiary:hover:not(:disabled),
+.ui-button--appearance-pill.ui-button--tone-dashed:hover:not(:disabled),
 .ui-button--appearance-pill.ui-button--tone-ghost:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-primary:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-secondary:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-outline:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-surface:hover:not(:disabled),
+.ui-button--appearance-rect.ui-button--tone-tertiary:hover:not(:disabled),
+.ui-button--appearance-rect.ui-button--tone-dashed:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-danger:hover:not(:disabled) {
   filter: brightness(0.98);
 }

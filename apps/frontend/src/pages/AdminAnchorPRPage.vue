@@ -22,20 +22,16 @@
               {{ t("adminAnchorPR.emptyEvents") }}
             </div>
             <div v-else class="selection-list">
-              <button
+              <ChoiceCard
                 v-for="event in events"
                 :key="event.id"
                 class="selection-btn"
-                :class="{
-                  'selection-btn--active':
-                    !isCreatingEvent && selectedEventId === event.id,
-                }"
-                type="button"
+                :active="!isCreatingEvent && selectedEventId === event.id"
                 @click="selectEvent(event.id)"
               >
                 <span>{{ event.title }}</span>
                 <small>{{ event.status }}</small>
-              </button>
+              </ChoiceCard>
             </div>
           </div>
         </section>
@@ -210,15 +206,11 @@
                 {{ t("adminAnchorPR.emptyBatches") }}
               </div>
               <div v-else class="selection-list">
-                <button
+                <ChoiceCard
                   v-for="batch in selectedEvent.batches"
                   :key="batch.id"
                   class="selection-btn"
-                  :class="{
-                    'selection-btn--active':
-                      !isCreatingBatch && selectedBatchId === batch.id,
-                  }"
-                  type="button"
+                  :active="!isCreatingBatch && selectedBatchId === batch.id"
                   @click="selectBatch(batch.id)"
                 >
                   <span>{{ formatWindow(batch.timeWindow) }}</span>
@@ -226,7 +218,7 @@
                     batch.description
                   }}</small>
                   <small>{{ batch.status }}</small>
-                </button>
+                </ChoiceCard>
               </div>
               <div v-if="selectedEvent !== null" class="stack inset">
                 <h3 class="card-title">
@@ -318,15 +310,11 @@
               {{ t("adminAnchorPR.emptyAnchorPRs") }}
             </div>
             <div v-else class="selection-list selection-list--grid">
-              <button
+              <ChoiceCard
                 v-for="pr in selectedBatch.prs"
                 :key="pr.prId"
                 class="selection-btn"
-                :class="{
-                  'selection-btn--active':
-                    !isCreatingPR && selectedPRId === pr.prId,
-                }"
-                type="button"
+                :active="!isCreatingPR && selectedPRId === pr.prId"
                 @click="selectPR(pr.prId)"
               >
                 <span>{{ pr.title || pr.location || `#${pr.prId}` }}</span>
@@ -336,7 +324,7 @@
                     count: pr.partnerCount,
                   })
                 }}</small>
-              </button>
+              </ChoiceCard>
             </div>
 
             <div
@@ -526,6 +514,7 @@ import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCa
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   useAdminAnchorWorkspace,
@@ -1214,7 +1203,9 @@ const handleSavePR = async () => {
 
 .panel {
   padding: var(--sys-spacing-lg);
-  @include mx.pu-surface-panel(admin-workspace);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface-container);
 }
 
 .card-title {
@@ -1242,15 +1233,6 @@ const handleSavePR = async () => {
   flex-wrap: wrap;
 }
 
-.selection-btn {
-  @include mx.pu-selection-card(default);
-  cursor: pointer;
-}
-
-.selection-btn--active {
-  @include mx.pu-selection-card(active);
-}
-
 .selection-list--grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1269,7 +1251,12 @@ const handleSavePR = async () => {
 }
 
 .field-input {
-  @include mx.pu-field-shell(compact-surface);
+  width: 100%;
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .field-textarea {
@@ -1284,7 +1271,9 @@ const handleSavePR = async () => {
 
 .inset {
   padding: var(--sys-spacing-med);
-  @include mx.pu-surface-panel(subtle-inset);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface);
 }
 
 @media (min-width: 880px) {

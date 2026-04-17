@@ -15,7 +15,22 @@
   input,
   textarea {
     @include mx.pu-font(body-large);
-    @include mx.pu-form-control(container);
+    width: 100%;
+    padding: var(--sys-spacing-sm);
+    border: 1px solid var(--sys-color-outline);
+    border-radius: var(--sys-radius-sm);
+    color: var(--sys-color-on-surface);
+    background: var(--sys-color-surface-container);
+
+    &::placeholder {
+      color: var(--sys-color-on-surface-variant);
+      opacity: 0.6;
+    }
+
+    &:focus {
+      outline: 2px solid var(--sys-color-primary);
+      outline-offset: -1px;
+    }
   }
 
   textarea {
@@ -25,10 +40,6 @@
 }
 
 .advanced-toggle {
-  @include mx.pu-font(label-large);
-  width: 100%;
-  min-height: var(--sys-size-large);
-  @include mx.pu-rect-action(dashed);
   margin-bottom: var(--sys-spacing-med);
 
   &:hover {
@@ -42,8 +53,17 @@
 }
 
 .tags-input {
-  @include mx.pu-form-control(container);
+  width: 100%;
   padding: var(--sys-spacing-xs);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  color: var(--sys-color-on-surface);
+  background: var(--sys-color-surface-container);
+
+  &:focus-within {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: -1px;
+  }
 
   .tags {
     display: flex;

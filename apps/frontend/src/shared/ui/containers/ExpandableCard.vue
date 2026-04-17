@@ -42,7 +42,9 @@ const expanded = ref(props.defaultExpanded);
 
 <style lang="scss" scoped>
 .expandable-card {
-  @include mx.pu-surface-panel(subtle-inset);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface);
 }
 
 .expandable-card__toggle {

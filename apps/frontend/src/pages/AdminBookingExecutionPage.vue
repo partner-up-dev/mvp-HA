@@ -851,7 +851,9 @@ const handleRelease = async (item: PendingItem) => {
 .panel,
 .card {
   padding: var(--sys-spacing-lg);
-  @include mx.pu-surface-panel(admin-workspace);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface-container);
 }
 
 .card {
@@ -917,7 +919,12 @@ const handleRelease = async (item: PendingItem) => {
 }
 
 .field-input {
-  @include mx.pu-field-shell(compact-surface);
+  width: 100%;
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .field-textarea {

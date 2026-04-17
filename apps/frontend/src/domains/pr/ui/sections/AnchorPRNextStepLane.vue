@@ -188,7 +188,9 @@ const formatWindow = (start: string | null, end: string | null): string => {
 <style lang="scss" scoped>
 .lane-card {
   margin-top: var(--sys-spacing-lg);
-  @include mx.pu-surface-card(section);
+  padding: var(--sys-spacing-med);
+  border-radius: var(--sys-radius-med);
+  background: var(--sys-color-surface-container);
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-med);
@@ -212,7 +214,10 @@ const formatWindow = (start: string | null, end: string | null): string => {
 }
 
 .timeline-item {
-  @include mx.pu-surface-card(outline);
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  background: transparent;
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-xs);
@@ -228,7 +233,9 @@ const formatWindow = (start: string | null, end: string | null): string => {
 }
 
 .sub-panel {
-  @include mx.pu-surface-card(inset-high);
+  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
   border: 1px solid var(--sys-color-outline-variant);
   display: flex;
   flex-direction: column;

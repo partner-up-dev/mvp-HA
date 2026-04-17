@@ -26,9 +26,11 @@
       </span>
     </div>
 
-    <button
+    <Button
       type="button"
       class="advanced-toggle"
+      tone="dashed"
+      block
       :aria-expanded="isAdvancedOpen"
       @click="isAdvancedOpen = !isAdvancedOpen"
     >
@@ -37,7 +39,7 @@
           ? t("partnerRequestForm.advancedHide")
           : t("partnerRequestForm.advancedShow")
       }}
-    </button>
+    </Button>
 
     <Transition name="advanced-fields">
       <div v-if="isAdvancedOpen" class="advanced-section">
@@ -139,6 +141,7 @@ import { buildPartnerRequestFormValidationSchema } from "@/lib/validation";
 import DateTimeRangePicker from "@/domains/pr/ui/forms/DateTimeRangePicker.vue";
 import type { PRFormFields } from "@/domains/pr/model/types";
 import { clonePRFields, parseNullableNumber } from "@/domains/pr/model/form";
+import Button from "@/shared/ui/actions/Button.vue";
 
 const props = withDefaults(
   defineProps<{

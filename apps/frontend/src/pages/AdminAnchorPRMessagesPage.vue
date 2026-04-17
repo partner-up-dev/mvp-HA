@@ -11,19 +11,16 @@
               {{ t("adminAnchorPRMessages.emptyEvents") }}
             </div>
             <div v-else class="selection-list">
-              <button
+              <ChoiceCard
                 v-for="event in events"
                 :key="event.id"
                 class="selection-btn"
-                :class="{
-                  'selection-btn--active': selectedEventId === event.id,
-                }"
-                type="button"
+                :active="selectedEventId === event.id"
                 @click="selectEvent(event.id)"
               >
                 <span>{{ event.title }}</span>
                 <small>{{ event.status }}</small>
-              </button>
+              </ChoiceCard>
             </div>
           </div>
         </section>
@@ -38,20 +35,17 @@
               {{ t("adminAnchorPRMessages.emptyBatches") }}
             </div>
             <div v-else class="selection-list">
-              <button
+              <ChoiceCard
                 v-for="batch in selectedEvent.batches"
                 :key="batch.id"
                 class="selection-btn"
-                :class="{
-                  'selection-btn--active': selectedBatchId === batch.id,
-                }"
-                type="button"
+                :active="selectedBatchId === batch.id"
                 @click="selectBatch(batch.id)"
               >
                 <span>{{ formatWindow(batch.timeWindow) }}</span>
                 <small v-if="batch.description">{{ batch.description }}</small>
                 <small>{{ batch.status }}</small>
-              </button>
+              </ChoiceCard>
             </div>
           </div>
         </section>
@@ -99,14 +93,11 @@
               {{ t("adminAnchorPRMessages.emptyAnchorPRs") }}
             </div>
             <div v-else class="selection-list selection-list--grid">
-              <button
+              <ChoiceCard
                 v-for="pr in selectedBatch.prs"
                 :key="pr.prId"
                 class="selection-btn"
-                :class="{
-                  'selection-btn--active': selectedPRId === pr.prId,
-                }"
-                type="button"
+                :active="selectedPRId === pr.prId"
                 @click="selectPR(pr.prId)"
               >
                 <span>{{ pr.title || pr.location || `#${pr.prId}` }}</span>
@@ -116,7 +107,7 @@
                     count: pr.partnerCount,
                   })
                 }}</small>
-              </button>
+              </ChoiceCard>
             </div>
           </div>
         </section>
@@ -219,6 +210,7 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
@@ -400,7 +392,9 @@ const handleSendSystemMessage = async () => {
 
 .panel {
   padding: var(--sys-spacing-lg);
-  @include mx.pu-surface-panel(admin-workspace);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface-container);
 }
 
 .card-title {
@@ -435,15 +429,6 @@ const handleSendSystemMessage = async () => {
   flex-wrap: wrap;
 }
 
-.selection-btn {
-  @include mx.pu-selection-card(default);
-  cursor: pointer;
-}
-
-.selection-btn--active {
-  @include mx.pu-selection-card(active);
-}
-
 .selection-list--grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -463,7 +448,12 @@ const handleSendSystemMessage = async () => {
 }
 
 .field-input {
-  @include mx.pu-field-shell(compact-surface);
+  width: 100%;
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .field-textarea {

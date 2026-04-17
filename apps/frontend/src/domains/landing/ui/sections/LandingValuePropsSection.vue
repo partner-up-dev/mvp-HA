@@ -250,14 +250,14 @@ h2.is-visible {
 
 .value-panel-expand-enter-to,
 .value-panel-expand-leave-from {
-  max-height: var(--dcs-layout-expandable-panel-max-height);
+  max-height: var(--landing-value-panel-max-height);
   opacity: 1;
   transform: translateY(0);
 }
 
 @media (max-width: 768px) {
   .value-props {
-    gap: var(--dcs-space-landing-hero-gap-compact);
+    gap: var(--landing-hero-gap-compact);
   }
 
   h2 {

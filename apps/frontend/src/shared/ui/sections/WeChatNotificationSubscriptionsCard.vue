@@ -1,24 +1,19 @@
 <template>
-  <section class="section-card">
+  <SurfaceCard gap="md">
     <h2 class="section-title">{{ title }}</h2>
     <slot />
-  </section>
+  </SurfaceCard>
 </template>
 
 <script setup lang="ts">
+import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
+
 defineProps<{
   title: string;
 }>();
 </script>
 
 <style scoped lang="scss">
-.section-card {
-  @include mx.pu-surface-card(section);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-med);
-}
-
 .section-title {
   margin: 0;
   @include mx.pu-font(title-medium);

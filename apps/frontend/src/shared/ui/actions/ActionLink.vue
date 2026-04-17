@@ -47,6 +47,8 @@ type ActionLinkTone =
   | "secondary"
   | "outline"
   | "surface"
+  | "tertiary"
+  | "dashed"
   | "danger"
   | "ghost";
 type ActionLinkSize = "sm" | "md" | "lg";
@@ -172,23 +174,46 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .ui-action-link--appearance-rect.ui-action-link--tone-primary {
-  @include mx.pu-rect-action(primary, default);
+  border: none;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .ui-action-link--appearance-rect.ui-action-link--tone-secondary {
-  @include mx.pu-rect-action(outline-primary, default);
+  border-color: var(--sys-color-primary);
+  background: transparent;
+  color: var(--sys-color-primary);
 }
 
 .ui-action-link--appearance-rect.ui-action-link--tone-outline {
-  @include mx.pu-rect-action(outline, default);
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-action-link--appearance-rect.ui-action-link--tone-surface {
-  @include mx.pu-rect-action(surface, default);
+  border-color: var(--sys-color-outline);
+  background: var(--sys-color-surface-container);
+  color: var(--sys-color-on-surface);
 }
 
 .ui-action-link--appearance-rect.ui-action-link--tone-danger {
-  @include mx.pu-rect-action(danger, default);
+  border-color: var(--sys-color-error);
+  background: transparent;
+  color: var(--sys-color-error);
+}
+
+.ui-action-link--appearance-rect.ui-action-link--tone-tertiary {
+  border: none;
+  background: var(--sys-color-tertiary);
+  color: var(--sys-color-on-tertiary);
+}
+
+.ui-action-link--appearance-rect.ui-action-link--tone-dashed {
+  border-style: dashed;
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-action-link--appearance-rect.ui-action-link--tone-ghost {
@@ -197,15 +222,19 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .ui-action-link--appearance-pill.ui-action-link--tone-primary {
-  @include mx.pu-pill-action(solid-primary, default);
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--tone-secondary {
-  @include mx.pu-pill-action(solid-secondary, default);
+  background: var(--sys-color-secondary);
+  color: var(--sys-color-on-secondary);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--tone-outline {
-  @include mx.pu-pill-action(outline-transparent, default);
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--tone-surface {
@@ -220,8 +249,21 @@ const handleClick = (event: MouseEvent) => {
   color: var(--sys-color-error);
 }
 
+.ui-action-link--appearance-pill.ui-action-link--tone-tertiary {
+  background: var(--sys-color-tertiary);
+  color: var(--sys-color-on-tertiary);
+}
+
+.ui-action-link--appearance-pill.ui-action-link--tone-dashed {
+  border-style: dashed;
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
+}
+
 .ui-action-link--appearance-pill.ui-action-link--tone-ghost {
-  @include mx.pu-pill-action(transparent, default);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-action-link--size-sm {
@@ -268,11 +310,15 @@ const handleClick = (event: MouseEvent) => {
 
 .ui-action-link--appearance-pill.ui-action-link--tone-surface:hover,
 .ui-action-link--appearance-pill.ui-action-link--tone-danger:hover,
+.ui-action-link--appearance-pill.ui-action-link--tone-tertiary:hover,
+.ui-action-link--appearance-pill.ui-action-link--tone-dashed:hover,
 .ui-action-link--appearance-pill.ui-action-link--tone-ghost:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-primary:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-secondary:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-outline:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-surface:hover,
+.ui-action-link--appearance-rect.ui-action-link--tone-tertiary:hover,
+.ui-action-link--appearance-rect.ui-action-link--tone-dashed:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-danger:hover {
   filter: brightness(0.98);
 }

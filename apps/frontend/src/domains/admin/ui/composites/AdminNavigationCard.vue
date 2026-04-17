@@ -8,36 +8,36 @@
     </div>
 
     <nav class="admin-navigation-card__nav">
-      <RouterLink
+      <ChoiceCard
         :to="{ name: 'admin-anchor-pr' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navAnchorPR") }}
-      </RouterLink>
-      <RouterLink
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-anchor-pr-messages' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navAnchorPRMessages") }}
-      </RouterLink>
-      <RouterLink
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-booking-support' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navBookingSupport") }}
-      </RouterLink>
-      <RouterLink
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-booking-execution' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navBookingExecution") }}
-      </RouterLink>
-      <RouterLink
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-pois' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navPois") }}
-      </RouterLink>
+      </ChoiceCard>
     </nav>
 
     <Button
@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import Button from "@/shared/ui/actions/Button.vue";
+import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 
 defineProps<{
   showLogout?: boolean;
@@ -74,7 +75,8 @@ const { t } = useI18n();
   flex-direction: column;
   gap: var(--sys-spacing-med);
   padding: var(--sys-spacing-med);
-  @include mx.pu-surface-panel(admin-workspace);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
     var(--sys-color-surface-container);
@@ -108,11 +110,6 @@ const { t } = useI18n();
 
 .admin-navigation-card__link {
   @include mx.pu-font(body-medium);
-  @include mx.pu-selection-card(default);
-}
-
-.admin-navigation-card__link.router-link-active {
-  @include mx.pu-selection-card(active);
 }
 
 </style>

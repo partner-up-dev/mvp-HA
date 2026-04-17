@@ -446,7 +446,9 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 .editor-block {
   gap: var(--sys-spacing-med);
   padding: var(--sys-spacing-med);
-  @include mx.pu-surface-panel(subtle-inset);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface);
 }
 
 .header {
@@ -470,7 +472,9 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 
 .panel {
   padding: var(--sys-spacing-lg);
-  @include mx.pu-surface-panel(admin-workspace);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface-container);
 }
 
 .card-title {
@@ -520,7 +524,12 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
 }
 
 .field-input {
-  @include mx.pu-field-shell(compact-surface);
+  width: 100%;
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .field-textarea {

@@ -239,7 +239,9 @@ const backendCommitHash = computed(() => {
 }
 
 .about-item {
-  @include mx.pu-surface-card(section);
+  padding: var(--sys-spacing-med);
+  border-radius: var(--sys-radius-med);
+  background: var(--sys-color-surface-container);
 
   dt {
     @include mx.pu-font(label-large);

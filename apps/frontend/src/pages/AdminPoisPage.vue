@@ -391,7 +391,9 @@ const handleSaveGallery = async () => {
 
 .panel {
   padding: var(--sys-spacing-lg);
-  @include mx.pu-surface-panel(admin-workspace);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface-container);
 }
 
 .card-title {
@@ -419,7 +421,12 @@ const handleSaveGallery = async () => {
 }
 
 .field-input {
-  @include mx.pu-field-shell(compact-surface);
+  width: 100%;
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .manual-url-row {
@@ -439,7 +446,9 @@ const handleSaveGallery = async () => {
   flex-direction: column;
   gap: var(--sys-spacing-xs);
   padding: var(--sys-spacing-sm);
-  @include mx.pu-surface-panel(subtle-inset);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface);
 }
 
 .gallery-image {

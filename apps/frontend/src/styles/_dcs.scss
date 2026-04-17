@@ -6,27 +6,6 @@
 $all: (
   layout: (
     page-max-width: 480px,
-    expandable-panel-max-height: 26rem,
-    landing-hero-title-measure: 9.5ch,
-    landing-hero-title-measure-compact: 8.8ch,
-    landing-hero-subtitle-measure: 30ch,
-    landing-hero-subtitle-measure-compact: 25ch,
-    landing-footer-copy-measure: 34ch,
-  ),
-  space: (
-    landing-section-gap: clamp(1rem, 4vw, 1.9rem),
-    landing-section-gap-compact: clamp(1.35rem, 5vw, 2.3rem),
-    landing-section-padding-block: clamp(1.25rem, 5vw, 3rem),
-    landing-section-padding-inline-compact: clamp(1rem, 4.8vw, 1.3rem),
-    landing-panel-gap: clamp(1rem, 4vw, 1.9rem),
-    landing-panel-padding: clamp(1rem, 3.6vw, 1.4rem),
-    landing-panel-padding-compact: clamp(1.12rem, 4.8vw, 1.58rem),
-    landing-entry-padding: clamp(0.95rem, 3.8vw, 1.45rem),
-    landing-entry-padding-compact: clamp(1.1rem, 4.8vw, 1.52rem),
-    landing-hero-padding-block: clamp(2.5rem, 9vw, 4.5rem),
-    landing-hero-padding-block-compact: clamp(2.7rem, 10.5vw, 4.7rem),
-    landing-hero-gap-compact: clamp(0.9rem, 4vw, 1.3rem),
-    footer-gap: clamp(1.3rem, 4.8vw, 2rem),
   ),
   typography: (
     page-hero-size: clamp(2rem, 4vw, 3rem),

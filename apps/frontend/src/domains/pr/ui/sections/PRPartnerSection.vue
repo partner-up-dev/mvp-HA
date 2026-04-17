@@ -571,7 +571,9 @@ function blockedReasonText(
 <style lang="scss" scoped>
 .partner-section {
   margin-top: var(--sys-spacing-lg);
-  @include mx.pu-surface-card(section);
+  padding: var(--sys-spacing-med);
+  border-radius: var(--sys-radius-med);
+  background: var(--sys-color-surface-container);
   border-top: 3px solid var(--sys-color-primary);
   display: flex;
   flex-direction: column;
@@ -588,7 +590,9 @@ function blockedReasonText(
 
 .partner-section__panel,
 .partner-section__followup {
-  @include mx.pu-surface-card(inset-high);
+  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
   border: 1px solid var(--sys-color-outline-variant);
 }
 
@@ -645,19 +649,21 @@ function blockedReasonText(
 }
 
 .partner-section__availability-note {
-  @include mx.pu-surface-card(inset-high);
-  border-inline-start: 3px solid var(--sys-color-primary);
   padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
+  border-inline-start: 3px solid var(--sys-color-primary);
   margin-top: var(--sys-spacing-xs);
   margin-bottom: var(--sys-spacing-xs);
 }
 
 .partner-section__summary-card {
-  @include mx.pu-surface-card(inset-high);
+  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-high);
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-xs);
-  padding: var(--sys-spacing-sm);
 }
 
 .partner-section__summary-label,
@@ -701,8 +707,10 @@ function blockedReasonText(
 .partner-section__link-card,
 .partner-section__alternative-item,
 .partner-section__timeline-item {
-  @include mx.pu-surface-card(outline);
   padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-sm);
+  background: transparent;
 }
 
 .partner-section__alternative-item,

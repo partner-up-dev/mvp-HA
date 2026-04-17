@@ -19,18 +19,29 @@ const ignoredPathFragments = [
   `${path.sep}router${path.sep}`,
 ];
 
+const landingVisualExceptionPaths = [
+  { type: "file", path: path.join(srcRoot, "pages", "HomePage.vue") },
+  { type: "dir", path: path.join(srcRoot, "domains", "landing") },
+  {
+    type: "dir",
+    path: path.join(srcRoot, "domains", "event", "ui", "sections", "landing"),
+  },
+];
+
 const rules = [
   {
     id: "no-local-color-mix",
     description:
-      "Do not invent reusable tint logic in consumers. Prefer sys, dcs, or shared recipes.",
+      "Do not invent reusable tint logic in consumers. Prefer sys, dcs, or shared component contracts.",
     regex: /\bcolor-mix\(/g,
+    allowLandingVisualException: true,
   },
   {
     id: "no-local-clamp",
     description:
-      "Do not invent adaptive formulas in consumers. Prefer sys, dcs, or shared recipes.",
+      "Do not invent adaptive formulas in consumers. Prefer sys, dcs, or shared component contracts.",
     regex: /\bclamp\(/g,
+    allowLandingVisualException: true,
   },
   {
     id: "no-hardcoded-font-size",
@@ -100,6 +111,14 @@ const relativePath = (filePath) =>
 const shouldIgnorePath = (filePath) =>
   ignoredPathFragments.some((fragment) => filePath.includes(fragment));
 
+const isLandingVisualExceptionPath = (filePath) =>
+  landingVisualExceptionPaths.some((entry) => {
+    if (entry.type === "file") {
+      return filePath === entry.path;
+    }
+    return filePath.startsWith(`${entry.path}${path.sep}`);
+  });
+
 const collectFindings = async () => {
   const files = (
     await Promise.all(scanRoots.map(async (scanRoot) => await walk(scanRoot)))
@@ -118,6 +137,12 @@ const collectFindings = async () => {
         return;
       }
       for (const rule of rules) {
+        if (
+          rule.allowLandingVisualException &&
+          isLandingVisualExceptionPath(filePath)
+        ) {
+          continue;
+        }
         if (rule.skipLine?.(line)) {
           continue;
         }

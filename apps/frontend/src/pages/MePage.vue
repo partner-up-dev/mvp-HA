@@ -583,7 +583,9 @@ const handleCopyCredential = async (
 }
 
 .history-link {
-  @include mx.pu-surface-card(section);
+  padding: var(--sys-spacing-med);
+  border-radius: var(--sys-radius-med);
+  background: var(--sys-color-surface-container);
 }
 
 .section-header {
@@ -632,7 +634,12 @@ const handleCopyCredential = async (
 }
 
 .text-input {
-  @include mx.pu-field-shell;
+  width: 100%;
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .profile-actions,

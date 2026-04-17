@@ -1,96 +1,63 @@
 # AGENTS.md for Frontend Styles
 
-Use `src/styles/TOKEN-GOVERNANCE.md` as the source of truth for styling decisions.
+This file is the frontend styling source of truth.
 
-## Layer Order
+## Ownership Model
 
-1. `ref`
-2. `sys`
-3. `dcs`
-4. recipes
-5. optional component contracts
+- `ref` owns raw primitives only; ordinary components should not import it.
+- `sys` owns app-wide semantic roles and is the default consumption layer.
+- `dcs` owns narrow governed outputs that need central naming, such as page max width, bounded measures, or adaptive page typography.
+- Shared UI primitives own reusable treatment contracts when the HTML, interaction, and styling must move together.
 
-Each design decision must have one owner. Do not recreate the same decision lower in the tree for convenience.
+Each styling decision should have one owner. Do not recreate the same decision lower in the tree for convenience.
 
 ## Default Rule
 
 Use direct `sys` tokens first.
 
-If an existing `sys` token is already a good semantic fit and using it would not cause a severe visual regression:
+Do not add `dcs`, a new primitive, or a new primitive variant just to wrap:
 
-- use the `sys` token directly
-- do not add a `dcs` token
-- do not add a recipe
+- one spacing, size, radius, or obvious semantic color token
+- a trivial composition of existing `sys` values
+- a local layout detail such as `margin: 0`, `width: fit-content`, or grid structure
 
-## When `dcs` Is Allowed
+## Escalation Rules
 
-Add `dcs` only when the governed output itself needs central ownership.
+Add or keep `dcs` only when the governed output itself needs central ownership and cannot be represented cleanly by existing `sys`.
 
-Typical cases:
+Extend a shared primitive only when the treatment is stable across consumers and the HTML/interaction contract belongs with the style. Current examples:
 
-- fluid layout or spacing outputs
-- page-level max widths and bounded measures
-- adaptive rules that must stay consistent across several consumers
-- a decision that cannot be represented cleanly by existing `sys`
+- page scaffold components for safe-area layout
+- `Button`, `ActionLink`, and `FeedbackButton` for action treatments
+- `SurfaceCard` for reusable card shells
+- `ChoiceCard` for reusable selectable card shells
+- form primitives for reusable input shells
 
-Do not use `dcs` as a naming layer for ordinary spacing, radius, or size tokens that already exist in `sys`.
+If a style is domain-specific, page-specific, or only local structure, keep it local with direct `sys` tokens.
 
-## When Recipes Are Allowed
+## Consumer Rules
 
-Recipes are for:
+Components, domain UI, pages, and sections may compose `sys`, narrow `dcs`, and shared primitives.
 
-- governed logic
-- stable shared treatments that need multiple coordinated properties
+They must not invent ordinary reusable styling infrastructure locally:
 
-Examples:
+- no new fluid spacing/type curves
+- no new reusable tint math
+- no new shared interaction geometry
+- no duplicated safe-area formulas outside scaffold primitives
+- no private token namespaces that hide one-off values
 
-- safe-area-aware page shell logic
-- a shared surface treatment with border, background, and radius working together
-- a stable interaction treatment with shared sizing, border, and state behavior
+## Landing Exception
 
-Non-examples:
+The Landing Page is an art-directed visual surface. Landing-only adaptive curves, tint math, and `--landing-*` aliases may stay inside:
 
-- `gap: var(--sys-spacing-med)`
-- one standard button padding block
-- a single radius assignment
+- `src/pages/HomePage.vue`
+- `src/domains/landing/**`
+- `src/domains/event/ui/sections/landing/**`
 
-## Local Consumer Rules
+Do not promote Landing-only values into global `dcs` or shared primitives. If several Landing children need the same value, define a `--landing-*` custom property on the Landing page shell and let descendants inherit it.
 
-Components, domain UI, pages, and sections may:
-
-- consume `sys`, `dcs`, and approved recipes
-- create local aliases to governed values
-- compose governed values structurally
-
-They may not:
-
-- invent new reusable design values locally
-- add new fluid curves locally
-- add new tint math locally
-- create private token namespaces to justify one-off values
-
-## Current Shared Treatments
-
-Use existing recipes before inventing another one:
-
-- `pu-page-shell`
-- `pu-surface-panel(...)`
-- `pu-surface-card(...)`
-- `pu-pill-action(...)`
-- `pu-selection-card(...)`
-- `pu-field-shell(...)`
-- `pu-form-control(...)`
-- `pu-rect-action(...)`
-
-If none fits, decide whether the need is:
-
-- direct `sys`
-- real `dcs`
-- a real shared treatment
-
-Only then add a new abstraction.
-
-## Guardrail Command
+## Guardrails
 
 Use:
 
@@ -100,4 +67,4 @@ Strict mode exists for enforcement work:
 
 - `pnpm --filter @partner-up-dev/frontend lint:tokens:strict`
 
-The current setup is baseline-backed. New findings outside the accepted baseline should be treated as regressions.
+The token checker is baseline-backed. New findings outside the accepted baseline should be treated as regressions.

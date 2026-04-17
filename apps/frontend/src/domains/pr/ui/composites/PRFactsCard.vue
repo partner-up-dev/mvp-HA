@@ -1,5 +1,5 @@
 <template>
-  <article class="pr-facts-card">
+  <SurfaceCard as="article" class="pr-facts-card" gap="md">
     <div class="field" v-if="type">
       <span class="label">{{ t("prCard.type") }}</span>
       <span class="value">{{ type }}</span>
@@ -44,13 +44,14 @@
       <summary>{{ t("prCard.rawText") }}</summary>
       <p>{{ rawText }}</p>
     </details>
-  </article>
+  </SurfaceCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields } from "@partner-up-dev/backend";
+import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 
 const props = defineProps<{
   type: string;
@@ -136,13 +137,6 @@ const shouldShowPartners = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-.pr-facts-card {
-  @include mx.pu-surface-card(section);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-med);
-}
-
 .field {
   display: flex;
   flex-direction: column;

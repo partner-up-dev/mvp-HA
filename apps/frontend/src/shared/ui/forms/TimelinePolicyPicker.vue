@@ -227,7 +227,9 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
   flex-direction: column;
   gap: var(--sys-spacing-sm);
   padding: var(--sys-spacing-med);
-  @include mx.pu-surface-panel(subtle-inset);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-lg);
+  background: var(--sys-color-surface);
 }
 
 .timeline-policy-picker__header {
@@ -331,6 +333,10 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
 }
 
 .timeline-policy-picker__number {
-  @include mx.pu-field-shell(compact-surface);
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 </style>
