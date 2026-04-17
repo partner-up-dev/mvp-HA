@@ -34,17 +34,6 @@ This repository is a pnpm workspace with two product units:
 - Durable product and technical truth live under `docs/`
 - Volatile work, diagnosis, and temporary reasoning live under `tasks/`
 
-## Minimal Cheat Sheet
-
-- Unit: a logical technical boundary; not the same thing as a folder.
-- PRD (`docs/10-prd/`): owns product intent, observable behavior, and business vocabulary.
-- Alignment Substrate (`docs/15-alignment/`): optional coordination grammar for risky or ambiguous mutation.
-- Product TDD (`docs/20-product-tdd/`): owns cross-unit technical contracts and topology.
-- Unit TDD (`docs/30-unit-tdd/`): owns hard local unit design only when code and Product TDD are not enough.
-- Local Context (`**/AGENTS.md`): owns tactical hazards and recurrence tripwires nearest to code.
-- Deployment (`docs/40-deployment/`): owns runtime, rollout, observability, and recovery truth.
-- Tasks (`tasks/`): owns exploration, diagnosis, plans, artifacts, and temporary reasoning.
-
 ## Documentation
 
 Read only what is needed for the current work and keep durable docs current.
@@ -91,7 +80,7 @@ Mode guidance:
 - switch modes when evidence or clarity changes
 - mode selection never overrides durable ownership
 
-## Impact Handshake
+### Impact Handshake
 
 Before mutating durable truth after alignment expansion, or when blast radius is not obviously local, pause and restate:
 
@@ -103,7 +92,7 @@ Before mutating durable truth after alignment expansion, or when blast radius is
 
 If evidence is missing or the durable owner is still unclear, return to `Explore` or `Diagnose` instead of guessing.
 
-## Negotiation Triggers
+### Negotiation Triggers
 
 Pause and ask for human confirmation when:
 
@@ -117,6 +106,7 @@ Pause and ask for human confirmation when:
 - Use GitHub CLI (`gh`) for GitHub operations and issue workflows.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
 - Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.
+- Read commit message policy at `./CONTRIBUTING.md`
 
 ## Coding Guidelines
 

@@ -1,0 +1,34 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "apps/backend/**"
+      - "apps/frontend/**"
+      - "release-please-config.json"
+      - ".release-please-manifest.json"
+      - ".github/release-please-backend-github-release.json"
+      - ".github/workflows/release-please.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release pull requests and frontend source releases
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

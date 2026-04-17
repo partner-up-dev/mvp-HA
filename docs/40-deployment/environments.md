@@ -49,6 +49,7 @@ fallbacks when the DB config row is absent.
 - deploy target: production environment in GitHub Actions
 - FC behavior: deploy to `LATEST`, then publish immutable function version, then update `production` alias
 - migrations run before deploy
+- backend GitHub Release is created only after production alias publication succeeds
 
 ## Database Environment Model
 
@@ -77,3 +78,6 @@ Current durable facts we can state:
 - WeChat OAuth callback defaults to the backend `/api/wechat/oauth/callback` URL inferred from the OAuth start request; set `WECHAT_OAUTH_CALLBACK_URL` when the callback URL registered in the WeChat service-account console must be an exact externally reachable URL
 
 The repo does not currently document a full CI/CD workflow for frontend ESA rollout with the same level of detail as backend FC deploy.
+
+Frontend GitHub Releases are source releases only in the current pull-based ESA
+deployment model.

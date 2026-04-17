@@ -19,6 +19,8 @@ Primary workflow: `.github/workflows/backend-fc-deploy.yml`
 11. inject `BACKEND_COMMIT_HASH` from `GITHUB_SHA`
 12. deploy backend FC function
 13. on `master`, publish function version and update `production` alias
+14. on `master`, create the backend GitHub Release after production alias
+    publication succeeds
 
 ## Rollout Guarantees
 
@@ -26,6 +28,38 @@ Primary workflow: `.github/workflows/backend-fc-deploy.yml`
 - backend deploys run serially through the `backend-fc-deploy` concurrency group
 - layer-only publish is supported via workflow dispatch input
 - runtime build metadata stays available even when the deployed package has no `.git` directory
+- backend GitHub Releases are gated by successful production deployment
+
+## Release Automation
+
+Primary workflow: `.github/workflows/release-please.yml`
+
+Release Please owns automated version bumps, changelog updates, release tags,
+and GitHub Release notes after the `0.3.0` bootstrap baseline.
+
+Tracked release units:
+
+- backend: `apps/backend/package.json`, `apps/backend/CHANGELOG.md`,
+  `backend-vX.Y.Z`
+- frontend: `apps/frontend/package.json`, `apps/frontend/CHANGELOG.md`,
+  `frontend-vX.Y.Z`
+
+The shared manifest is `.release-please-manifest.json`.
+
+Backend and frontend release semantics intentionally differ:
+
+- Backend Release Please PRs update source release metadata, but backend GitHub
+  Releases are skipped in the general release workflow. The backend deployment
+  workflow creates the backend GitHub Release only after the `master`
+  production rollout finishes successfully.
+- Frontend GitHub Releases are source releases. Frontend deployment is
+  currently pull-based, so GitHub Actions cannot prove that Aliyun ESA has
+  picked up and deployed the new frontend source.
+
+If release PR checks must run when opened by automation, configure
+`RELEASE_PLEASE_TOKEN` as a GitHub PAT or GitHub App token with repository
+contents, pull request, and issue-label permissions. Without that secret, the
+workflow falls back to `GITHUB_TOKEN`.
 
 ## DB Artifact Validation
 
@@ -57,6 +91,9 @@ Repo-tracked rollout facts:
 - not found strategy: SPA fallback
 
 The repo does not currently define a canonical GitHub Actions workflow for frontend ESA deploy.
+
+Frontend GitHub Releases do not assert deployment success under the current
+pull-based ESA rollout model.
 
 ## Manual Rollout Reality
 
