@@ -19,7 +19,7 @@ import {
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
-import type { PartnerRequest } from "../../../entities/partner-request";
+import type { PRStatus } from "../../../entities/partner-request";
 import {
   isActiveVisibleAnchorPRStatus,
   readVisibleAnchorPRRecordsByBatchId,
@@ -41,7 +41,7 @@ export interface AnchorPRSummary {
   preferences: string[];
   notes: string | null;
   time: [string | null, string | null];
-  status: string;
+  status: PRStatus;
   minPartners: number | null;
   maxPartners: number | null;
   partnerCount: number;

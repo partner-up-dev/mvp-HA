@@ -10,12 +10,12 @@
       >
         {{ props.result.pr.title }}
       </h2>
-      <span
+      <PRStatusBadge
         class="anchor-pr-search-result-card__status"
-        :class="`anchor-pr-search-result-card__status--${props.result.pr.status.toLowerCase()}`"
-      >
-        {{ t(`prStatus.${props.result.pr.status}`) }}
-      </span>
+        :status="props.result.pr.status"
+        size="sm"
+        appearance="pill"
+      />
     </div>
 
     <p class="anchor-pr-search-result-card__meta">
@@ -33,6 +33,7 @@ import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import type { AnchorPRSearchResult } from "@/domains/pr/model/types";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 const props = defineProps<{
@@ -110,18 +111,6 @@ const partnerCountLabel = computed(() => {
 
 .anchor-pr-search-result-card__status {
   flex-shrink: 0;
-  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
-  border-radius: 999px;
-  background: var(--sys-color-surface-container-high);
-  @include mx.pu-font(label-medium);
-}
-
-.anchor-pr-search-result-card__status--open {
-  color: var(--sys-color-primary);
-}
-
-.anchor-pr-search-result-card__status--ready {
-  color: var(--sys-color-tertiary);
 }
 
 .anchor-pr-search-result-card__meta {

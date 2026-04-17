@@ -6,19 +6,16 @@
         <p class="subscription-desc">{{ item.description }}</p>
       </div>
 
-      <button
+      <Button
         v-if="item.actionKind === 'OPEN_SUBSCRIBE' && item.pending"
-        :class="[
-          'action-btn',
-          props.outlineProfile === 'surface'
-            ? 'action-btn--surface'
-            : 'action-btn--secondary',
-        ]"
+        class="subscription-action"
+        :tone="actionButtonTone"
+        size="sm"
         type="button"
         disabled
       >
         {{ props.updatingLabel }}
-      </button>
+      </Button>
 
       <div
         v-else-if="
@@ -29,17 +26,14 @@
         "
         class="open-subscribe-proxy"
       >
-        <button
-          :class="[
-            'action-btn',
-            props.outlineProfile === 'surface'
-              ? 'action-btn--surface'
-              : 'action-btn--secondary',
-          ]"
+        <Button
+          class="subscription-action"
+          :tone="actionButtonTone"
+          size="sm"
           type="button"
         >
           {{ item.actionLabel }}
-        </button>
+        </Button>
 
         <wx-open-subscribe
           class="open-subscribe-overlay"
@@ -61,38 +55,32 @@
         </wx-open-subscribe>
       </div>
 
-      <button
+      <Button
         v-else-if="
           item.actionKind === 'SHOW_MINIPROGRAM_WEBVIEW_NOTICE' &&
           item.actionLabel
         "
-        :class="[
-          'action-btn',
-          props.outlineProfile === 'surface'
-            ? 'action-btn--surface'
-            : 'action-btn--secondary',
-        ]"
+        class="subscription-action"
+        :tone="actionButtonTone"
+        size="sm"
         type="button"
         :disabled="item.actionDisabled || item.pending"
         @click="showMiniProgramWebViewNotice = true"
       >
         {{ item.actionLabel }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-else-if="item.actionLabel"
-        :class="[
-          'action-btn',
-          props.outlineProfile === 'surface'
-            ? 'action-btn--surface'
-            : 'action-btn--secondary',
-        ]"
+        class="subscription-action"
+        :tone="actionButtonTone"
+        size="sm"
         type="button"
         :disabled="item.actionDisabled || item.pending"
         @click="handleAction(item.key)"
       >
         {{ item.pending ? props.updatingLabel : item.actionLabel }}
-      </button>
+      </Button>
     </div>
   </article>
 
@@ -112,6 +100,7 @@ import {
   useWeChatNotificationSubscriptionsPanel,
   type WeChatNotificationKind,
 } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
+import Button from "@/shared/ui/actions/Button.vue";
 import WeChatMiniProgramJssdkNoticeModal from "@/shared/wechat/WeChatMiniProgramJssdkNoticeModal.vue";
 
 const props = withDefaults(
@@ -144,6 +133,9 @@ const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
 const showMiniProgramWebViewNotice = ref(false);
 
 const items = computed(() => notificationSubscriptions.items.value);
+const actionButtonTone = computed(() =>
+  props.outlineProfile === "surface" ? "outline" : "secondary",
+);
 
 const panelError = computed(() => {
   if (notificationSubscriptions.mutation.error.value instanceof Error) {
@@ -253,36 +245,8 @@ const openSubscribeButtonTemplate = `
   color: var(--sys-color-on-surface-variant);
 }
 
-.action-btn {
-  @include mx.pu-font(label-medium);
-  min-height: 2rem;
-  padding: 0 var(--sys-spacing-sm);
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
+.subscription-action {
   flex-shrink: 0;
-}
-
-.action-btn:disabled {
-  cursor: not-allowed;
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface-variant);
-  box-shadow: none;
-}
-
-.action-btn--secondary {
-  @include mx.pu-rect-action(outline-primary, compact);
-}
-
-.action-btn--surface {
-  @include mx.pu-rect-action(outline, compact);
-}
-
-.action-btn--secondary:disabled,
-.action-btn--surface:disabled {
-  background: transparent;
-  border-color: var(--sys-color-outline-variant);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .open-subscribe-proxy {
@@ -292,7 +256,7 @@ const openSubscribeButtonTemplate = `
   flex-shrink: 0;
 }
 
-.open-subscribe-proxy .action-btn {
+.open-subscribe-proxy .subscription-action {
   pointer-events: none;
 }
 

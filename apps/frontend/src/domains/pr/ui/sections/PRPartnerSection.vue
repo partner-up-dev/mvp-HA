@@ -48,45 +48,48 @@
     </div>
 
     <div class="partner-section__actions">
-      <button
+      <Button
         v-if="section.viewer.canJoin"
-        class="partner-section__primary-btn"
+        type="button"
         :disabled="joinPending"
         @click="emit('join')"
       >
         {{ joinPending ? t("prPage.joining") : t("prPage.join") }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-if="section.viewer.canExit"
-        class="partner-section__danger-btn"
+        tone="danger"
+        type="button"
         :disabled="exitPending"
         @click="emit('exit')"
       >
         {{ exitPending ? t("prPage.exiting") : t("prPage.exit") }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-if="section.scenario === 'ANCHOR' && section.viewer.canConfirm"
-        class="partner-section__secondary-btn"
+        tone="secondary"
+        type="button"
         :disabled="confirmPending"
         @click="emit('confirm-slot')"
       >
         {{
           confirmPending ? t("prPage.confirmingSlot") : t("prPage.confirmSlot")
         }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-if="section.scenario === 'ANCHOR' && section.viewer.canCheckIn"
-        class="partner-section__secondary-btn"
+        tone="secondary"
+        type="button"
         :disabled="checkInPending"
         @click="emit('prepare-check-in')"
       >
         {{
           checkInPending ? t("prPage.checkingIn") : t("prPage.checkInAttended")
         }}
-      </button>
+      </Button>
     </div>
 
     <p v-if="joinErrorMessage" class="partner-section__error-note">
@@ -106,27 +109,29 @@
         }}
       </p>
       <div class="partner-section__followup-actions">
-        <button
-          class="partner-section__primary-btn"
+        <Button
+          type="button"
           :disabled="checkInPending"
           @click="emit('submit-check-in', true)"
         >
           {{ t("prPage.wouldJoinAgainYes") }}
-        </button>
-        <button
-          class="partner-section__secondary-btn"
+        </Button>
+        <Button
+          tone="secondary"
+          type="button"
           :disabled="checkInPending"
           @click="emit('submit-check-in', false)"
         >
           {{ t("prPage.wouldJoinAgainNo") }}
-        </button>
-        <button
-          class="partner-section__ghost-btn"
+        </Button>
+        <Button
+          tone="surface"
+          type="button"
           :disabled="checkInPending"
           @click="emit('cancel-check-in')"
         >
           {{ t("common.cancel") }}
-        </button>
+        </Button>
       </div>
     </section>
 
@@ -149,78 +154,21 @@
       </p>
 
       <div v-else class="partner-section__roster">
-        <template v-for="item in section.roster" :key="item.partnerId">
-          <router-link
-            v-if="isRosterLinkable(item.state)"
-            :to="partnerProfilePath(item.partnerId)"
-            class="partner-section__roster-item partner-section__roster-link"
-          >
-            <div class="partner-section__roster-main">
-              <div class="partner-section__roster-identity">
-                <img
-                  v-if="item.avatarUrl"
-                  :src="item.avatarUrl"
-                  :alt="rosterAvatarAlt(item.displayName)"
-                  class="partner-section__roster-avatar"
-                />
-                <div
-                  v-else
-                  class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
-                  aria-hidden="true"
-                >
-                  <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                </div>
-                <span class="partner-section__roster-name">{{
-                  item.displayName
-                }}</span>
-              </div>
-              <div class="partner-section__roster-tags">
-                <span v-if="item.isSelf" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterSelf") }}
-                </span>
-                <span v-if="item.isCreator" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterCreator") }}
-                </span>
-              </div>
-            </div>
-            <span class="partner-section__state-badge">
-              {{ rosterStateText(item.state) }}
-            </span>
-          </router-link>
-          <div v-else class="partner-section__roster-item">
-            <div class="partner-section__roster-main">
-              <div class="partner-section__roster-identity">
-                <img
-                  v-if="item.avatarUrl"
-                  :src="item.avatarUrl"
-                  :alt="rosterAvatarAlt(item.displayName)"
-                  class="partner-section__roster-avatar"
-                />
-                <div
-                  v-else
-                  class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
-                  aria-hidden="true"
-                >
-                  <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                </div>
-                <span class="partner-section__roster-name">{{
-                  item.displayName
-                }}</span>
-              </div>
-              <div class="partner-section__roster-tags">
-                <span v-if="item.isSelf" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterSelf") }}
-                </span>
-                <span v-if="item.isCreator" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterCreator") }}
-                </span>
-              </div>
-            </div>
-            <span class="partner-section__state-badge">
-              {{ rosterStateText(item.state) }}
-            </span>
-          </div>
-        </template>
+        <PRRosterItem
+          v-for="item in section.roster"
+          :key="item.partnerId"
+          :display-name="item.displayName"
+          :avatar-url="item.avatarUrl"
+          :avatar-alt="rosterAvatarAlt(item.displayName)"
+          :avatar-fallback="rosterAvatarFallback(item.displayName)"
+          :is-self="item.isSelf"
+          :is-creator="item.isCreator"
+          :self-label="t('prPage.partnerSection.rosterSelf')"
+          :creator-label="t('prPage.partnerSection.rosterCreator')"
+          :state-label="rosterStateText(item.state)"
+          :to="rosterItemProfilePath(item)"
+          variant="card"
+        />
       </div>
     </section>
 
@@ -295,9 +243,9 @@
 
       <p class="partner-section__note">{{ reminderHintText }}</p>
 
-      <button
+      <Button
         v-if="canToggleReminder"
-        class="partner-section__primary-btn"
+        type="button"
         :disabled="reminderTogglePending"
         @click="emit('toggle-reminder')"
       >
@@ -308,15 +256,16 @@
               ? t("prPage.wechatReminder.disableAction")
               : t("prPage.wechatReminder.enableAction")
         }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-else-if="isWeChatEnv && reminderConfigured && !reminderAuthenticated"
-        class="partner-section__ghost-btn"
+        tone="surface"
+        type="button"
         @click="emit('go-wechat-login')"
       >
         {{ t("prPage.wechatReminder.loginAction") }}
-      </button>
+      </Button>
     </section>
 
     <section
@@ -376,13 +325,13 @@
             }}</strong>
             <span class="partner-section__note">{{ item.location }}</span>
           </div>
-          <button
-            class="partner-section__primary-btn"
+          <Button
+            type="button"
             :disabled="acceptAlternativeBatchPending"
             @click="emit('accept-alternative-batch', item.timeWindow)"
           >
             {{ t("prPage.alternativeBatch.accept") }}
-          </button>
+          </Button>
         </article>
       </div>
     </section>
@@ -399,6 +348,8 @@ import {
   anchorPRPartnerProfilePath,
   communityPRPartnerProfilePath,
 } from "@/domains/pr/routing/routes";
+import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type PartnerSectionView =
@@ -531,6 +482,11 @@ const partnerProfilePath = (partnerId: number): string => {
   return communityPRPartnerProfilePath(props.prId, partnerId);
 };
 
+const rosterItemProfilePath = (
+  item: PartnerSectionView["roster"][number],
+): string | null =>
+  isRosterLinkable(item.state) ? partnerProfilePath(item.partnerId) : null;
+
 const confirmWindowText = computed(() => {
   const notSet = t("prPage.partnerSection.notSet");
   if (props.section.scenario !== "ANCHOR" || !props.section.timeline) {
@@ -623,7 +579,6 @@ function blockedReasonText(
 
 .partner-section__header,
 .partner-section__panel-header,
-.partner-section__roster-item,
 .partner-section__alternative-item {
   display: flex;
   justify-content: space-between;
@@ -718,8 +673,7 @@ function blockedReasonText(
 }
 
 .partner-section__summary-value,
-.partner-section__timeline-value,
-.partner-section__roster-name {
+.partner-section__timeline-value {
   @include mx.pu-font(body-large);
 }
 
@@ -739,50 +693,16 @@ function blockedReasonText(
   gap: var(--sys-spacing-sm);
 }
 
-.partner-section__primary-btn,
-.partner-section__danger-btn,
-.partner-section__secondary-btn,
-.partner-section__ghost-btn {
-  @include mx.pu-font(label-large);
-  border: none;
-  cursor: pointer;
-}
-
-.partner-section__primary-btn {
-  @include mx.pu-rect-action(primary, default);
-}
-
-.partner-section__danger-btn {
-  @include mx.pu-rect-action(danger, default);
-}
-
-.partner-section__secondary-btn {
-  @include mx.pu-rect-action(outline-primary, default);
-}
-
-.partner-section__ghost-btn {
-  @include mx.pu-rect-action(surface, default);
-}
-
-.partner-section__roster-main,
 .partner-section__alternative-meta {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-xs);
 }
 
-.partner-section__roster-identity {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
-  min-width: 0;
-}
-
 .partner-section__roster {
   margin-top: var(--sys-spacing-xs);
 }
 
-.partner-section__roster-item,
 .partner-section__link-card,
 .partner-section__alternative-item,
 .partner-section__timeline-item {
@@ -790,84 +710,17 @@ function blockedReasonText(
   padding: var(--sys-spacing-sm);
 }
 
-.partner-section__roster-item,
 .partner-section__alternative-item,
 .partner-section__timeline-item {
   align-items: center;
 }
 
-.partner-section__roster-item {
-  align-items: flex-start;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-}
-
-.partner-section__roster-link {
-  text-decoration: none;
-  color: inherit;
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    border-color: var(--sys-color-primary);
-    background: var(--sys-color-surface-container-low);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
-}
-
-.partner-section__roster-avatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.partner-section__roster-avatar {
-  object-fit: cover;
-}
-
-.partner-section__roster-avatar--fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-
-  span {
-    @include mx.pu-font(label-large);
-  }
-}
-
-.partner-section__roster-name {
-  overflow-wrap: anywhere;
-}
-
-.partner-section__roster-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
-}
-
-.partner-section__tag,
-.partner-section__state-badge,
 .partner-section__link-meta {
   @include mx.pu-font(label-small);
   padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
   border-radius: 999px;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
-}
-
-.partner-section__state-badge {
-  align-self: center;
-  margin-left: auto;
 }
 
 .partner-section__link-card {

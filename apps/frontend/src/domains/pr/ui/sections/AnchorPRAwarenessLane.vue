@@ -37,70 +37,21 @@
         </p>
 
         <div v-else class="roster-list">
-          <template v-for="item in activeRoster" :key="item.partnerId">
-            <router-link
-              v-if="isRosterLinkable(item.state)"
-              :to="partnerProfilePath(item.partnerId)"
-              class="roster-item roster-link"
-            >
-              <div class="roster-main">
-                <div class="roster-identity">
-                  <img
-                    v-if="item.avatarUrl"
-                    :src="item.avatarUrl"
-                    :alt="rosterAvatarAlt(item.displayName)"
-                    class="roster-avatar"
-                  />
-                  <div
-                    v-else
-                    class="roster-avatar roster-avatar--fallback"
-                    aria-hidden="true"
-                  >
-                    <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                  </div>
-                  <span class="roster-name">{{ item.displayName }}</span>
-                </div>
-                <div class="roster-tags">
-                  <span v-if="item.isSelf" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterSelf") }}
-                  </span>
-                  <span v-if="item.isCreator" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterCreator") }}
-                  </span>
-                </div>
-              </div>
-              <span class="roster-state">{{ rosterStateText(item.state) }}</span>
-            </router-link>
-            <div v-else class="roster-item">
-              <div class="roster-main">
-                <div class="roster-identity">
-                  <img
-                    v-if="item.avatarUrl"
-                    :src="item.avatarUrl"
-                    :alt="rosterAvatarAlt(item.displayName)"
-                    class="roster-avatar"
-                  />
-                  <div
-                    v-else
-                    class="roster-avatar roster-avatar--fallback"
-                    aria-hidden="true"
-                  >
-                    <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                  </div>
-                  <span class="roster-name">{{ item.displayName }}</span>
-                </div>
-                <div class="roster-tags">
-                  <span v-if="item.isSelf" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterSelf") }}
-                  </span>
-                  <span v-if="item.isCreator" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterCreator") }}
-                  </span>
-                </div>
-              </div>
-              <span class="roster-state">{{ rosterStateText(item.state) }}</span>
-            </div>
-          </template>
+          <PRRosterItem
+            v-for="item in activeRoster"
+            :key="item.partnerId"
+            :display-name="item.displayName"
+            :avatar-url="item.avatarUrl"
+            :avatar-alt="rosterAvatarAlt(item.displayName)"
+            :avatar-fallback="rosterAvatarFallback(item.displayName)"
+            :is-self="item.isSelf"
+            :is-creator="item.isCreator"
+            :self-label="t('prPage.partnerSection.rosterSelf')"
+            :creator-label="t('prPage.partnerSection.rosterCreator')"
+            :state-label="rosterStateText(item.state)"
+            :to="rosterItemProfilePath(item)"
+            variant="plain"
+          />
         </div>
       </section>
 
@@ -117,70 +68,21 @@
         </summary>
 
         <div class="roster-list roster-list--history">
-          <template v-for="item in historyRoster" :key="item.partnerId">
-            <router-link
-              v-if="isRosterLinkable(item.state)"
-              :to="partnerProfilePath(item.partnerId)"
-              class="roster-item roster-link"
-            >
-              <div class="roster-main">
-                <div class="roster-identity">
-                  <img
-                    v-if="item.avatarUrl"
-                    :src="item.avatarUrl"
-                    :alt="rosterAvatarAlt(item.displayName)"
-                    class="roster-avatar"
-                  />
-                  <div
-                    v-else
-                    class="roster-avatar roster-avatar--fallback"
-                    aria-hidden="true"
-                  >
-                    <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                  </div>
-                  <span class="roster-name">{{ item.displayName }}</span>
-                </div>
-                <div class="roster-tags">
-                  <span v-if="item.isSelf" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterSelf") }}
-                  </span>
-                  <span v-if="item.isCreator" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterCreator") }}
-                  </span>
-                </div>
-              </div>
-              <span class="roster-state">{{ rosterStateText(item.state) }}</span>
-            </router-link>
-            <div v-else class="roster-item">
-              <div class="roster-main">
-                <div class="roster-identity">
-                  <img
-                    v-if="item.avatarUrl"
-                    :src="item.avatarUrl"
-                    :alt="rosterAvatarAlt(item.displayName)"
-                    class="roster-avatar"
-                  />
-                  <div
-                    v-else
-                    class="roster-avatar roster-avatar--fallback"
-                    aria-hidden="true"
-                  >
-                    <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                  </div>
-                  <span class="roster-name">{{ item.displayName }}</span>
-                </div>
-                <div class="roster-tags">
-                  <span v-if="item.isSelf" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterSelf") }}
-                  </span>
-                  <span v-if="item.isCreator" class="roster-tag">
-                    {{ t("prPage.partnerSection.rosterCreator") }}
-                  </span>
-                </div>
-              </div>
-              <span class="roster-state">{{ rosterStateText(item.state) }}</span>
-            </div>
-          </template>
+          <PRRosterItem
+            v-for="item in historyRoster"
+            :key="item.partnerId"
+            :display-name="item.displayName"
+            :avatar-url="item.avatarUrl"
+            :avatar-alt="rosterAvatarAlt(item.displayName)"
+            :avatar-fallback="rosterAvatarFallback(item.displayName)"
+            :is-self="item.isSelf"
+            :is-creator="item.isCreator"
+            :self-label="t('prPage.partnerSection.rosterSelf')"
+            :creator-label="t('prPage.partnerSection.rosterCreator')"
+            :state-label="rosterStateText(item.state)"
+            :to="rosterItemProfilePath(item)"
+            variant="plain"
+          />
         </div>
       </details>
     </template>
@@ -192,6 +94,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
 import { anchorPRPartnerProfilePath } from "@/domains/pr/routing/routes";
+import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 
 type AnchorPartnerSection = AnchorPRDetailResponse["partnerSection"];
 
@@ -234,6 +137,9 @@ const historyRoster = computed(() =>
 
 const partnerProfilePath = (partnerId: number): string =>
   anchorPRPartnerProfilePath(props.prId, partnerId);
+
+const rosterItemProfilePath = (item: RosterItem): string | null =>
+  isRosterLinkable(item.state) ? partnerProfilePath(item.partnerId) : null;
 
 const rosterAvatarAlt = (name: string): string =>
   t("prPage.partnerSection.rosterAvatarAlt", { name });
@@ -334,82 +240,4 @@ const rosterAvatarFallback = (displayName: string): string => {
   @include mx.pu-font(body-small);
 }
 
-.roster-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm) 0;
-}
-
-.roster-main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-  min-width: 0;
-}
-
-.roster-identity {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
-  min-width: 0;
-}
-
-.roster-name {
-  @include mx.pu-font(body-large);
-  overflow-wrap: anywhere;
-}
-
-.roster-link {
-  text-decoration: none;
-  color: inherit;
-  transition: background-color 160ms ease;
-
-  &:hover {
-    background: var(--sys-color-surface-container-low);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
-}
-
-.roster-avatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 999px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.roster-avatar--fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-
-  span {
-    @include mx.pu-font(label-large);
-  }
-}
-
-.roster-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
-}
-
-.roster-tag,
-.roster-state {
-  @include mx.pu-font(label-small);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.roster-state {
-  align-self: center;
-}
 </style>

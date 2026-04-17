@@ -14,6 +14,9 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
 - `apps/frontend/src/styles/_sys.scss`
 - `apps/frontend/src/styles/_recipes.scss`
 - `apps/frontend/src/styles/_mixins.scss`
+- `apps/frontend/src/shared/ui/actions/Button.vue`
+- `apps/frontend/src/domains/pr/ui/primitives/PRStatusBadge.vue`
+- `apps/frontend/src/domains/pr/ui/primitives/PRRosterItem.vue`
 
 ## Verification
 
@@ -22,6 +25,9 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
 - Checked actual DCS definitions and consumers before forming the recommendation.
 - After implementation, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed with no findings outside baseline.
 - After implementation, `pnpm --filter @partner-up-dev/frontend build` passed.
+- After phase 2, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
+- After phase 2, `pnpm --filter @partner-up-dev/frontend build` passed.
+- After phase 2 backend response typing adjustment, `pnpm --filter @partner-up-dev/backend typecheck` passed.
 
 ## Findings
 
@@ -47,3 +53,19 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
   - `surface.panel-radius-large`
 - Replaced current token-lint consumer bypass findings with existing `sys` tokens or local composition based on `sys`.
 - Did not extract HTML + styles into new components or recipes in this slice; that remains a separate design discussion.
+
+## Phase 2 Implementation Slice
+
+- Reused shared `Button` for local action button markup in:
+  - `apps/frontend/src/pages/AnchorPRPage.vue`
+  - `apps/frontend/src/shared/ui/sections/APRNotificationSubscriptions.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/PRPartnerSection.vue`
+- Extended `PRStatusBadge` with small and pill variants, then replaced local PR status chip HTML/style in:
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventPRCard.vue`
+  - `apps/frontend/src/domains/pr/ui/primitives/AnchorPRSearchResultCard.vue`
+- Added `PRRosterItem` as a PR-domain primitive for shared roster identity/tag/state markup, with `plain` and `card` variants preserving the two existing contexts.
+- Replaced duplicated roster item HTML/style in:
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRAwarenessLane.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/PRPartnerSection.vue`
+- Narrowed `AnchorPRSummary.status` from `string` to `PRStatus` in the backend event-detail response type so frontend RPC consumers can reuse `PRStatusBadge` without a template cast.
+- Confirmed the touched consumer files no longer contain direct `pu-rect-action` / `pu-pill-action` recipe includes or the removed local action/roster/status classes. Repo-wide recipe direct usage still exists in unrelated admin pages and older PR sections; those remain separate cleanup candidates.

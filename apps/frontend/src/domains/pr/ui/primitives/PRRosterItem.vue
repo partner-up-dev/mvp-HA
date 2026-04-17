@@ -1,0 +1,204 @@
+<template>
+  <component
+    :is="rootComponent"
+    v-bind="rootProps"
+    class="pr-roster-item"
+    :class="[
+      `pr-roster-item--${props.variant}`,
+      { 'pr-roster-item--link': hasLink },
+    ]"
+  >
+    <div class="pr-roster-item__main">
+      <div class="pr-roster-item__identity">
+        <img
+          v-if="props.avatarUrl"
+          :src="props.avatarUrl"
+          :alt="props.avatarAlt"
+          class="pr-roster-item__avatar"
+        />
+        <div
+          v-else
+          class="pr-roster-item__avatar pr-roster-item__avatar--fallback"
+          aria-hidden="true"
+        >
+          <span>{{ props.avatarFallback }}</span>
+        </div>
+        <span class="pr-roster-item__name">{{ props.displayName }}</span>
+      </div>
+
+      <div v-if="hasTags" class="pr-roster-item__tags">
+        <span
+          v-if="props.isSelf && props.selfLabel"
+          class="pr-roster-item__tag"
+        >
+          {{ props.selfLabel }}
+        </span>
+        <span
+          v-if="props.isCreator && props.creatorLabel"
+          class="pr-roster-item__tag"
+        >
+          {{ props.creatorLabel }}
+        </span>
+      </div>
+    </div>
+
+    <span class="pr-roster-item__state">{{ props.stateLabel }}</span>
+  </component>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import { RouterLink, type RouteLocationRaw } from "vue-router";
+
+const props = withDefaults(
+  defineProps<{
+    displayName: string;
+    avatarAlt: string;
+    avatarFallback: string;
+    stateLabel: string;
+    avatarUrl?: string | null;
+    isSelf?: boolean;
+    isCreator?: boolean;
+    selfLabel?: string;
+    creatorLabel?: string;
+    to?: RouteLocationRaw | null;
+    variant?: "plain" | "card";
+  }>(),
+  {
+    avatarUrl: null,
+    isSelf: false,
+    isCreator: false,
+    selfLabel: "",
+    creatorLabel: "",
+    to: null,
+    variant: "plain",
+  },
+);
+
+const hasLink = computed(() => props.to !== null);
+const rootComponent = computed(() => (hasLink.value ? RouterLink : "div"));
+const rootProps = computed(() => (hasLink.value ? { to: props.to } : {}));
+const hasTags = computed(
+  () =>
+    (props.isSelf && props.selfLabel.length > 0) ||
+    (props.isCreator && props.creatorLabel.length > 0),
+);
+</script>
+
+<style lang="scss" scoped>
+.pr-roster-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sys-spacing-sm);
+  color: inherit;
+}
+
+.pr-roster-item--plain {
+  padding: var(--sys-spacing-sm) 0;
+}
+
+.pr-roster-item--card {
+  @include mx.pu-surface-card(outline);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+}
+
+.pr-roster-item--link {
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.pr-roster-item--plain.pr-roster-item--link {
+  transition: background-color 160ms ease;
+
+  &:hover {
+    background: var(--sys-color-surface-container-low);
+  }
+}
+
+.pr-roster-item--card.pr-roster-item--link {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: var(--sys-color-primary);
+    background: var(--sys-color-surface-container-low);
+  }
+}
+
+.pr-roster-item__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-xs);
+  min-width: 0;
+}
+
+.pr-roster-item__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--sys-spacing-sm);
+  min-width: 0;
+}
+
+.pr-roster-item__name {
+  @include mx.pu-font(body-large);
+  overflow-wrap: anywhere;
+}
+
+.pr-roster-item__avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.pr-roster-item__avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sys-color-outline-variant);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+
+  span {
+    @include mx.pu-font(label-large);
+  }
+}
+
+.pr-roster-item__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sys-spacing-xs);
+}
+
+.pr-roster-item__tag,
+.pr-roster-item__state {
+  @include mx.pu-font(label-small);
+  color: var(--sys-color-on-surface-variant);
+}
+
+.pr-roster-item--plain .pr-roster-item__state {
+  align-self: center;
+}
+
+.pr-roster-item--card .pr-roster-item__tag,
+.pr-roster-item--card .pr-roster-item__state {
+  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
+  border-radius: 999px;
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+}
+
+.pr-roster-item--card .pr-roster-item__state {
+  align-self: center;
+  margin-left: auto;
+}
+</style>

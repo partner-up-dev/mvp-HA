@@ -12,9 +12,12 @@
             {{ prTitle }}
           </span>
         </div>
-        <span class="anchor-pr-card__status" :class="statusClass">
-          {{ t(`prStatus.${pr.status}`) }}
-        </span>
+        <PRStatusBadge
+          class="anchor-pr-card__status"
+          :status="pr.status"
+          size="sm"
+          appearance="pill"
+        />
       </div>
       <div class="anchor-pr-card__meta">
         <span v-if="timeLabel" class="anchor-pr-card__time">
@@ -36,10 +39,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import type { AnchorEventBatchPR } from "@/domains/event/model/types";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 
 interface AnchorEventPRCardProps {
   pr: AnchorEventBatchPR;
@@ -52,12 +55,7 @@ const props = withDefaults(defineProps<AnchorEventPRCardProps>(), {
   timeLabel: null,
 });
 
-const { t } = useI18n();
-
 const prTitle = computed(() => props.pr.title || props.pr.type);
-const statusClass = computed(
-  () => `anchor-pr-card__status--${props.pr.status.toLowerCase()}`,
-);
 </script>
 
 <style lang="scss" scoped>
@@ -107,31 +105,7 @@ const statusClass = computed(
 }
 
 .anchor-pr-card__status {
-  @include mx.pu-font(label-small);
-  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
-  border-radius: 999px;
-  background: var(--sys-color-surface-container-high);
   flex-shrink: 0;
-
-  &--open {
-    color: var(--sys-color-primary);
-  }
-
-  &--ready {
-    color: var(--sys-color-tertiary);
-  }
-
-  &--full {
-    color: var(--sys-color-error);
-  }
-
-  &--active {
-    color: var(--sys-color-primary);
-  }
-
-  &--locked_to_start {
-    color: var(--sys-color-secondary);
-  }
 }
 
 .anchor-pr-card__meta {

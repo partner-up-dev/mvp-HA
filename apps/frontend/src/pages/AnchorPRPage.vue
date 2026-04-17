@@ -11,22 +11,24 @@
       >
         <template #top-actions>
           <div v-if="isCreator" class="header-quick-actions">
-            <button
+            <Button
               v-if="sharedActions.showEditContentAction.value"
-              class="header-quick-btn"
+              tone="outline"
+              size="sm"
               type="button"
               @click="handleOpenCreatorEdit"
             >
               {{ t("prPage.editContent") }}
-            </button>
-            <button
+            </Button>
+            <Button
               v-if="sharedActions.showModifyStatusAction.value"
-              class="header-quick-btn"
+              tone="outline"
+              size="sm"
               type="button"
               @click="handleOpenCreatorModifyStatus"
             >
               {{ t("prPage.modifyStatus") }}
-            </button>
+            </Button>
           </div>
         </template>
 
@@ -256,21 +258,20 @@
           <p class="modal-text">确认加入当前活动？</p>
           <p class="modal-text">加入后即可按流程完成确认与签到。</p>
           <div class="modal-actions">
-            <button
-              class="action-btn action-btn--surface"
+            <Button
+              tone="surface"
               type="button"
               @click="closeJoinFlowModal"
             >
               {{ t("common.cancel") }}
-            </button>
-            <button
-              class="action-btn"
+            </Button>
+            <Button
               type="button"
               :disabled="joinFlowPending"
               @click="continueJoinFlow"
             >
               {{ joinFlowPending ? t("prPage.joining") : t("common.confirm") }}
-            </button>
+            </Button>
           </div>
         </template>
 
@@ -288,15 +289,14 @@
               placeholder="请输入 11 位大陆手机号"
             />
             <div class="modal-actions">
-              <button
-                class="action-btn action-btn--surface"
+              <Button
+                tone="surface"
                 type="button"
                 @click="closeJoinFlowModal"
               >
                 {{ t("common.cancel") }}
-              </button>
-              <button
-                class="action-btn"
+              </Button>
+              <Button
                 type="button"
                 :disabled="joinFlowPending"
                 @click="submitJoinFlowPhoneAndJoin"
@@ -306,7 +306,7 @@
                     ? t("prPage.joining")
                     : t("prPage.bookingContact.joinFlowSubmit")
                 }}
-              </button>
+              </Button>
             </div>
           </div>
         </template>
@@ -338,30 +338,29 @@
         @close="attendanceActions.cancelPendingCheckIn"
       >
         <div class="modal-actions modal-actions--stack">
-          <button
-            class="action-btn"
+          <Button
             type="button"
             :disabled="attendanceActions.checkInPending.value"
             @click="attendanceActions.submitCheckIn(true)"
           >
             {{ t("prPage.wouldJoinAgainYes") }}
-          </button>
-          <button
-            class="action-btn action-btn--secondary"
+          </Button>
+          <Button
+            tone="secondary"
             type="button"
             :disabled="attendanceActions.checkInPending.value"
             @click="attendanceActions.submitCheckIn(false)"
           >
             {{ t("prPage.wouldJoinAgainNo") }}
-          </button>
-          <button
-            class="action-btn action-btn--surface"
+          </Button>
+          <Button
+            tone="surface"
             type="button"
             :disabled="attendanceActions.checkInPending.value"
             @click="attendanceActions.cancelPendingCheckIn"
           >
             {{ t("common.cancel") }}
-          </button>
+          </Button>
         </div>
       </Modal>
     </template>
@@ -1206,14 +1205,6 @@ function buttonToneForAction(
   gap: var(--sys-spacing-xs);
 }
 
-.header-quick-btn {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-rect-action(outline, default);
-  border: none;
-  cursor: pointer;
-  padding-inline: var(--sys-spacing-sm);
-}
-
 .type-badge {
   @include mx.pu-font(label-medium);
   padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
@@ -1302,40 +1293,6 @@ function buttonToneForAction(
     transform: translateX(2px);
     color: var(--sys-color-primary);
   }
-}
-
-.action-btn {
-  @include mx.pu-rect-action(primary, default);
-  @include mx.pu-font(label-large);
-  border: none;
-  cursor: pointer;
-}
-
-.action-btn:disabled {
-  cursor: not-allowed;
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface-variant);
-  box-shadow: none;
-}
-
-.action-btn--secondary {
-  @include mx.pu-rect-action(outline-primary, default);
-}
-
-.action-btn--surface {
-  @include mx.pu-rect-action(outline, default);
-}
-
-.action-btn--danger {
-  @include mx.pu-rect-action(danger, default);
-}
-
-.action-btn--secondary:disabled,
-.action-btn--surface:disabled,
-.action-btn--danger:disabled {
-  background: transparent;
-  border-color: var(--sys-color-outline-variant);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .action-tip {

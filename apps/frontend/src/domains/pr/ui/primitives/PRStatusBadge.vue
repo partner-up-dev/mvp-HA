@@ -1,5 +1,12 @@
 <template>
-  <span class="status-badge" :class="status.toLowerCase()">
+  <span
+    class="status-badge"
+    :class="[
+      status.toLowerCase(),
+      `status-badge--size-${props.size}`,
+      `status-badge--appearance-${props.appearance}`,
+    ]"
+  >
     {{ statusText }}
   </span>
 </template>
@@ -9,9 +16,17 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRStatus } from "@partner-up-dev/backend";
 
-const props = defineProps<{
-  status: PRStatus;
-}>();
+const props = withDefaults(
+  defineProps<{
+    status: PRStatus;
+    size?: "sm" | "md";
+    appearance?: "rounded" | "pill";
+  }>(),
+  {
+    size: "md",
+    appearance: "rounded",
+  },
+);
 const { t } = useI18n();
 
 const statusText = computed(() => {
@@ -31,9 +46,28 @@ const statusText = computed(() => {
 
 <style lang="scss" scoped>
 .status-badge {
-  @include mx.pu-font(label-large);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  flex-shrink: 0;
+
+  &--size-md {
+    @include mx.pu-font(label-large);
+    padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  }
+
+  &--size-sm {
+    @include mx.pu-font(label-medium);
+    padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
+  }
+
+  &--appearance-rounded {
+    border-radius: var(--sys-radius-sm);
+  }
+
+  &--appearance-pill {
+    border-radius: 999px;
+  }
 
   &.draft {
     background: var(--sys-color-surface-container-highest);
