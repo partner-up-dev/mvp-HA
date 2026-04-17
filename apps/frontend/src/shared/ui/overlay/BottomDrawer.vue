@@ -20,15 +20,18 @@
           <slot name="header">
             <h3 v-if="title" class="bottom-drawer-title">{{ title }}</h3>
           </slot>
-          <button
+          <Button
             v-if="showClose"
             class="bottom-drawer-close"
+            appearance="pill"
+            tone="ghost"
+            size="sm"
             type="button"
             aria-label="Close drawer"
             @click="emitClose"
           >
             <span class="i-mdi-close" aria-hidden="true"></span>
-          </button>
+          </Button>
         </header>
 
         <div class="bottom-drawer-content">
@@ -45,6 +48,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, watch } from "vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 interface Props {
   open: boolean;
@@ -152,13 +156,6 @@ onBeforeUnmount(() => {
 .bottom-drawer-title {
   @include mx.pu-font(title-medium);
   margin: 0;
-}
-
-.bottom-drawer-close {
-  @include mx.pu-pill-action(transparent, small);
-  border: none;
-  cursor: pointer;
-  color: var(--sys-color-on-surface);
 }
 
 .bottom-drawer-content {

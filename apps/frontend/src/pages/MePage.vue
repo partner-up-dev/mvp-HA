@@ -29,16 +29,17 @@
             <h2>{{ t("mePage.profile.title") }}</h2>
             <p>{{ t("mePage.profile.description") }}</p>
           </div>
-          <span
+          <Chip
             class="status-pill"
-            :class="{ 'status-pill--bound': wechatBound }"
+            :tone="wechatBound ? 'primary' : 'secondary'"
+            size="lg"
           >
             {{
               wechatBound
                 ? t("mePage.profile.wechatBound")
                 : t("mePage.profile.wechatUnbound")
             }}
-          </span>
+          </Chip>
         </div>
 
         <div class="profile-panel">
@@ -340,6 +341,7 @@ import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import FormField from "@/shared/ui/forms/FormField.vue";
 import Avatar from "@/shared/ui/identity/Avatar.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
@@ -608,12 +610,7 @@ const handleCopyCredential = async (
 }
 
 .status-pill {
-  @include mx.pu-pill-badge(secondary);
   flex-shrink: 0;
-}
-
-.status-pill--bound {
-  @include mx.pu-pill-badge(primary);
 }
 
 .profile-panel {

@@ -61,6 +61,15 @@ Default rule:
 
 Components may use existing shared recipes when the treatment is already centralized, but should not add a new recipe just to hide ordinary `sys` usage.
 
+Action recipes are restricted to the lowest action primitives:
+
+- `shared/ui/actions/Button.vue`
+- `shared/ui/actions/ActionLink.vue`
+
+Pages, domain components, and higher-level shared components should compose `Button`, `ActionLink`, or `FeedbackButton` instead of directly including `pu-pill-action(...)` or `pu-rect-action(...)`. Navigation components such as `TabBar` should own their navigation-specific styles directly instead of reusing action recipes.
+
+Exception: explicitly exempted visual surfaces such as the Landing Page may keep treatment styles component-local when visual continuity matters. Do not push those one-off treatments into `dcs` or shared recipes just to satisfy reuse.
+
 - Mixins are auto-injected by Vite config for all components, use them directly:
   - `@include mx.pu-font($key)` - Typography (e.g., `body-large`, `label-small`)
   - `@include mx.pu-elevation($level)` - Shadows (levels 1-5)
@@ -82,6 +91,8 @@ Prohibited:
 ## Components
 
 - `shared/ui/actions/Button.vue`: Shared button primitive. Prefer it over page-local button classes; use `appearance="pill"` for compact CTA clusters and `appearance="rect"` for dialogs or block actions. Keep `tone` choices narrow (`primary`, `outline`, `secondary`, `surface`, `danger`, `ghost`).
+- `shared/ui/actions/ActionLink.vue`: Shared action-looking link primitive for `<RouterLink>` and external `<a>` CTAs. Use it instead of page-local link classes that include action recipes.
+- `shared/ui/actions/FeedbackButton.vue`: Shared transient feedback action button. Use `state="pending|success|error"` for short-lived action results instead of page-local `.success` / `.error` button treatments.
 - `shared/ui/containers/SurfaceCard.vue`: Standard card shell for reusable section, inset, and outline surfaces. Use it instead of re-declaring `pu-surface-card(...)` in pages when the wrapper itself is a reusable primitive.
 - `shared/ui/layout/FullScreenPageScaffold.vue`: Viewport-height page scaffold with `header`, content, and `footer` regions. Use it when the main content should absorb remaining height and manage its own inner scrolling.
 - `shared/ui/layout/FooterRevealPageScaffold.vue`: Viewport-first page scaffold with `header`, content, and `footer` regions where `header + content` fill the first screen and the footer appears only after continued page scroll.
@@ -89,7 +100,7 @@ Prohibited:
 - `shared/ui/forms/TextareaInput.vue`: Shared textarea primitive with stable shell, optional char count, and configurable rows/max length. Prefer it when multiple screens need the same textarea treatment instead of re-implementing native `<textarea>` styling locally.
 - `shared/ui/forms/ProductLocalDateCalendarPicker.vue`: Product-local date-key calendar grid for visible-window multi-select flows. Keep search policy such as defaults, fallback, and allowed-date derivation in the owning page or domain component.
 - `shared/ui/display/InfoRow.vue`: Generic label/value row with inline or stacked layout. Use it for neutral metadata presentation, not domain-specific timeline or status logic.
-- `shared/ui/display/Chip.vue` and `shared/ui/display/ChipGroup.vue`: Neutral tokenized chips for tags, lightweight roster labels, and compact metadata groups. Do not move domain semantics like PR status into these when a domain badge already exists.
+- `shared/ui/display/Chip.vue` and `shared/ui/display/ChipGroup.vue`: Neutral tokenized chips for tags, lightweight roster labels, and compact metadata groups. Use `size="lg"` when replacing legacy pill-badge treatments. Do not move domain semantics like PR status into these when a domain badge already exists.
 - `shared/ui/display/FitChipGroup.vue`: Single-line chip row that measures available width and only shows whole chips that fully fit. Prefer it when chip text must stay complete and overflow should hide entire chips rather than truncate them.
 - `shared/ui/feedback/InlineNotice.vue`: Inline success/info/warning/error banner. Prefer it over page-local feedback blocks when the message is simple and does not need toast behavior.
 - `shared/ui/feedback/EmptyState.vue`: Empty or not-found shell with title, description, icon, and optional actions slot.

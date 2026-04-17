@@ -2,7 +2,7 @@
   <section class="lane-card">
     <header class="lane-header">
       <h2 class="lane-title">{{ t("prPage.partnerSection.title") }}</h2>
-      <p class="lane-slot-state">{{ slotStateText }}</p>
+      <Chip tone="primary" size="lg">{{ slotStateText }}</Chip>
     </header>
 
     <p class="lane-subtitle">{{ t("prPage.partnerSection.subtitleAnchor") }}</p>
@@ -43,34 +43,34 @@
     </p>
 
     <div class="lane-actions">
-      <button
+      <Button
         v-if="primaryActionType !== 'NONE'"
-        class="lane-primary-btn"
-        :class="{
-          'lane-primary-btn--danger': primaryActionType === 'EXIT',
-        }"
+        :tone="primaryActionType === 'EXIT' ? 'danger' : 'primary'"
+        type="button"
         :disabled="primaryActionPending"
         @click="handlePrimaryAction"
       >
         {{ primaryActionLabel }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-if="showSecondaryExit"
-        class="lane-secondary-btn lane-secondary-btn--danger"
+        tone="outline"
+        type="button"
         :disabled="exitPending"
         @click="emit('exit')"
       >
         {{ exitPending ? t("prPage.exiting") : t("prPage.exit") }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-if="showRecoveryShortcut"
-        class="lane-secondary-btn"
+        tone="secondary"
+        type="button"
         @click="handleRecoveryShortcut"
       >
         {{ t("prPage.alternativeBatch.title") }}
-      </button>
+      </Button>
     </div>
 
     <p v-if="joinErrorMessage" class="lane-error-note">
@@ -83,6 +83,8 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
+import Button from "@/shared/ui/actions/Button.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
 import { trackEvent } from "@/shared/telemetry/track";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
@@ -369,12 +371,6 @@ function blockedReasonText(reason: BlockedReason): string {
   color: var(--sys-color-error);
 }
 
-.lane-slot-state {
-  margin: 0;
-  @include mx.pu-pill-badge(primary);
-  border-radius: 999px;
-}
-
 .lane-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -407,29 +403,6 @@ function blockedReasonText(reason: BlockedReason): string {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
-}
-
-.lane-primary-btn,
-.lane-secondary-btn {
-  @include mx.pu-font(label-large);
-  border: none;
-  cursor: pointer;
-}
-
-.lane-primary-btn {
-  @include mx.pu-rect-action(primary, default);
-}
-
-.lane-primary-btn--danger {
-  @include mx.pu-rect-action(danger, default);
-}
-
-.lane-secondary-btn {
-  @include mx.pu-rect-action(outline-primary, default);
-}
-
-.lane-secondary-btn--danger {
-  @include mx.pu-rect-action(outline, default);
 }
 
 @media (min-width: 880px) {

@@ -2,8 +2,10 @@
   <div class="xiaohongshu-method">
     <!-- Options Section -->
     <div v-if="prData" class="options-section">
-      <button
-        class="refresh-btn"
+      <Button
+        tone="outline"
+        type="button"
+        block
         @click="handleRegenerate"
         :disabled="isCaptionGenerating"
       >
@@ -12,7 +14,7 @@
             ? t("share.xiaohongshu.generating")
             : `🔄 ${t("share.xiaohongshu.regenerateButton")}`
         }}
-      </button>
+      </Button>
     </div>
 
     <!-- Preview Section -->
@@ -66,37 +68,39 @@
     <!-- Actions Section -->
     <div class="action-section">
       <div class="actions-row">
-        <button
+        <FeedbackButton
           class="outline-btn copy-caption-btn"
-          :class="{
-            success: copyState === 'copied',
-            error: copyState === 'error',
-          }"
-          @click="handleCopyCaptionWithUrl"
+          tone="outline"
+          :state="copyFeedbackState"
           :disabled="!caption?.caption || copyState !== 'idle'"
+          @click="handleCopyCaptionWithUrl"
         >
           {{ copyButtonLabel }}
-        </button>
-        <button
+        </FeedbackButton>
+        <Button
           class="outline-btn download-poster-btn"
+          tone="outline"
           @click="handleDownloadPoster"
           :disabled="!caption?.caption || posterIsGenerating || inWeChatBrowser"
         >
           {{ downloadButtonLabel }}
-        </button>
+        </Button>
       </div>
-      <button class="primary-btn" @click="handleOpenApp">
+      <Button type="button" block @click="handleOpenApp">
         {{ t("share.xiaohongshu.openAppButton") }}
         <div class="i-mdi-arrow-top-right"></div>
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRShareProps } from "@/domains/share/model/types";
 import { useShareToXiaohongshu } from "@/domains/share/use-cases/xhs/useShareToXiaohongshu";
+import Button from "@/shared/ui/actions/Button.vue";
+import FeedbackButton from "@/shared/ui/actions/FeedbackButton.vue";
 
 const props = defineProps<PRShareProps>();
 const { t } = useI18n();
@@ -125,6 +129,12 @@ const {
   spmRouteKey: props.spmRouteKey,
   prData: props.prData,
   t,
+});
+
+const copyFeedbackState = computed<"idle" | "success" | "error">(() => {
+  if (copyState.value === "copied") return "success";
+  if (copyState.value === "error") return "error";
+  return "idle";
 });
 </script>
 

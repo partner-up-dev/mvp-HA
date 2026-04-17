@@ -12,11 +12,13 @@
         data-region="summary"
       />
 
-      <section v-if="prDetail.status === 'DRAFT'" class="surface-card">
+      <SurfaceCard v-if="prDetail.status === 'DRAFT'" class="surface-card">
         <h2 class="card-title">{{ t("prPage.publishDraft.title") }}</h2>
         <p class="card-copy">{{ t("prPage.publishDraft.description") }}</p>
-        <button
-          class="primary-button"
+        <Button
+          appearance="pill"
+          size="sm"
+          type="button"
           :disabled="publishMutation.isPending.value"
           @click="handlePublishDraft"
         >
@@ -25,10 +27,10 @@
               ? t("prPage.publishDraft.pending")
               : t("prPage.publishDraft.action")
           }}
-        </button>
-      </section>
+        </Button>
+      </SurfaceCard>
 
-      <section v-if="showPinHelpCard" class="surface-card">
+      <SurfaceCard v-if="showPinHelpCard" class="surface-card">
         <h2 class="card-title">{{ t("prPage.pinHelp.title") }}</h2>
         <p class="card-copy">{{ t("prPage.pinHelp.description") }}</p>
         <p v-if="userSessionStore.userPin" class="pin-text">
@@ -36,7 +38,7 @@
             t("prPage.pinHelp.currentPin", { pin: userSessionStore.userPin })
           }}
         </p>
-      </section>
+      </SurfaceCard>
 
       <PRFactsCard
         :type="prDetail.core.type"
@@ -141,6 +143,8 @@ import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import Button from "@/shared/ui/actions/Button.vue";
+import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import PRHeroHeader from "@/domains/pr/ui/composites/PRHeroHeader.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
 import CommunityPRActionsBar from "@/domains/pr/ui/sections/CommunityPRActionsBar.vue";
@@ -296,10 +300,6 @@ const goHome = () => {
 <style lang="scss" scoped>
 .surface-card {
   margin: var(--sys-spacing-lg) 0;
-  @include mx.pu-surface-card(section);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
 }
 
 .card-title {
@@ -319,25 +319,9 @@ const goHome = () => {
   color: var(--sys-color-primary);
 }
 
-.primary-button,
-.secondary-button,
 .link-button {
   border-radius: 999px;
   cursor: pointer;
-}
-
-.primary-button,
-.secondary-button {
-  @include mx.pu-font(label-medium);
-}
-
-.primary-button {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-}
-
-.secondary-button {
-  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 .link-button {

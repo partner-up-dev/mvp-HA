@@ -5,12 +5,15 @@
       :subtitle="t('eventPlaza.subtitle')"
     >
       <template #top-actions>
-        <RouterLink
+        <ActionLink
           :to="{ name: 'anchor-pr-search' }"
           class="event-plaza-page__search-link"
+          appearance="pill"
+          tone="outline"
+          size="sm"
         >
           {{ t("eventPlaza.searchAction") }}
-        </RouterLink>
+        </ActionLink>
       </template>
     </PageHeader>
 
@@ -38,11 +41,11 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import EventCard from "@/domains/event/ui/primitives/EventCard.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import ActionLink from "@/shared/ui/actions/ActionLink.vue";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
 import type { AnchorEventListResponse } from "@/domains/event/model/types";
 
@@ -94,8 +97,7 @@ watch(
 }
 
 .event-plaza-page__search-link {
-  @include mx.pu-pill-action(outline-transparent, small);
-  text-decoration: none;
+  white-space: nowrap;
 }
 
 .loading-state,

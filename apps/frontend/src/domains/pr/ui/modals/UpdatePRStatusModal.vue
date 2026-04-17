@@ -28,9 +28,9 @@
     </div>
 
     <div class="modal-actions">
-      <button class="cancel-btn" @click="handleClose">
+      <Button tone="outline" @click="handleClose">
         {{ t("common.cancel") }}
-      </button>
+      </Button>
       <Button
         :loading="isUpdatePending"
         :disabled="requiresPin && (!modifyPin || modifyPin.length !== 4)"
@@ -170,11 +170,4 @@ const resetUpdateMutation = () => {
   }
 }
 
-.cancel-btn {
-  @include mx.pu-font(label-large);
-  @include mx.pu-rect-action(outline, default);
-  flex: 1;
-  min-width: 66px;
-  cursor: pointer;
-}
 </style>

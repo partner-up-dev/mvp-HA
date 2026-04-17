@@ -130,14 +130,36 @@ watch(
 }
 
 .tab-bar__tab {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-pill-action(outline-transparent, default);
+  @include mx.pu-font(label-large);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-spacing-xs);
   flex-shrink: 0;
+  min-height: var(--sys-size-large);
+  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sys-color-on-surface);
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
   cursor: pointer;
   transition:
     background-color 150ms ease,
     color 150ms ease,
-    border-color 150ms ease;
+    border-color 150ms ease,
+    opacity 150ms ease,
+    transform 150ms ease;
+
+  &:hover:not(:disabled) {
+    background: var(--sys-color-surface-container-high);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.99);
+  }
 
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
@@ -154,6 +176,10 @@ watch(
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border-color: var(--sys-color-primary);
+
+  &:hover:not(:disabled) {
+    background: var(--sys-color-primary);
+  }
 }
 
 .tab-bar__tab--expired {

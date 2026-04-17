@@ -27,8 +27,10 @@
                   class="field-input"
                   :placeholder="t('adminPois.newPoiPlaceholder')"
                 />
-                <button
-                  class="secondary-btn"
+                <Button
+                  appearance="pill"
+                  tone="outline"
+                  size="sm"
                   type="button"
                   :disabled="isCreatingPoi || !canCreatePoi"
                   @click="handleCreatePoi"
@@ -38,7 +40,7 @@
                       ? t("adminPois.creatingPoi")
                       : t("adminPois.createPoiAction")
                   }}
-                </button>
+                </Button>
               </div>
             </label>
           </div>
@@ -72,8 +74,10 @@
           </div>
 
           <div class="action-row">
-            <button
-              class="secondary-btn"
+            <Button
+              appearance="pill"
+              tone="outline"
+              size="sm"
               type="button"
               :disabled="selectedPoiId === null || isUploadingGalleryImage"
               @click="handleChooseGalleryImage"
@@ -83,9 +87,10 @@
                   ? t("adminPois.uploadingImage")
                   : t("adminPois.uploadImageAction")
               }}
-            </button>
-            <button
-              class="primary-btn"
+            </Button>
+            <Button
+              appearance="pill"
+              size="sm"
               type="button"
               :disabled="selectedPoiId === null || isSavingGallery"
               @click="handleSaveGallery"
@@ -95,7 +100,7 @@
                   ? t("adminPois.savingGallery")
                   : t("adminPois.saveGalleryAction")
               }}
-            </button>
+            </Button>
           </div>
           <input
             ref="galleryInputRef"
@@ -113,14 +118,16 @@
                 class="field-input"
                 :placeholder="t('adminPois.manualUrlPlaceholder')"
               />
-              <button
-                class="secondary-btn"
+              <Button
+                appearance="pill"
+                tone="outline"
+                size="sm"
                 type="button"
                 :disabled="selectedPoiId === null"
                 @click="handleAddManualUrl"
               >
                 {{ t("adminPois.addUrlAction") }}
-              </button>
+              </Button>
             </div>
           </label>
 
@@ -139,13 +146,14 @@
                 class="gallery-image"
               />
               <p class="gallery-url">{{ imageUrl }}</p>
-              <button
-                class="danger-btn"
+              <Button
+                tone="danger"
+                size="sm"
                 type="button"
                 @click="handleRemoveGalleryImage(index)"
               >
                 {{ t("adminPois.removeImageAction") }}
-              </button>
+              </Button>
             </article>
           </div>
         </div>
@@ -167,6 +175,7 @@ import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 
 type PoiRecord = NonNullable<AdminPoisResponse>[number];
@@ -446,26 +455,6 @@ const handleSaveGallery = async () => {
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
   word-break: break-all;
-}
-
-.primary-btn,
-.secondary-btn,
-.danger-btn {
-  @include mx.pu-font(label-medium);
-  cursor: pointer;
-}
-
-.primary-btn {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-}
-
-.secondary-btn {
-  @include mx.pu-pill-action(outline-transparent, small);
-}
-
-.danger-btn {
-  @include mx.pu-rect-action(danger);
 }
 
 .hidden-input {

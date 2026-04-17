@@ -48,13 +48,13 @@
             }}</strong>
             <span class="recovery-group__note">{{ item.location }}</span>
           </div>
-          <button
-            class="recovery-primary-btn"
+          <Button
+            type="button"
             :disabled="acceptAlternativeBatchPending"
             @click="handleAcceptAlternativeBatch(item.timeWindow)"
           >
             {{ t("prPage.alternativeBatch.accept") }}
-          </button>
+          </Button>
         </article>
       </div>
     </section>
@@ -66,6 +66,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
 import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import Button from "@/shared/ui/actions/Button.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/telemetry/track";
 
@@ -200,13 +201,6 @@ const handleAcceptAlternativeBatch = (targetTimeWindow: TimeWindow) => {
   flex-direction: column;
   gap: var(--sys-spacing-2xs);
   min-width: 0;
-}
-
-.recovery-primary-btn {
-  @include mx.pu-font(label-large);
-  @include mx.pu-rect-action(primary, default);
-  border: none;
-  cursor: pointer;
 }
 
 @media (max-width: 879px) {

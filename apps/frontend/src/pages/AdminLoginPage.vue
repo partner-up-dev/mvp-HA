@@ -36,14 +36,15 @@
           />
         </label>
 
-        <button
-          class="admin-login-card__submit"
+        <Button
+          appearance="pill"
+          size="lg"
           type="button"
           :disabled="loginMutation.isPending.value"
           @click="handleSubmit"
         >
           {{ loginMutation.isPending.value ? t("adminLogin.loggingIn") : t("adminLogin.loginAction") }}
-        </button>
+        </Button>
 
         <p class="admin-login-card__hint">{{ t("adminLogin.seedHint") }}</p>
         <ErrorToast
@@ -64,6 +65,7 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { useAdminLogin } from "@/domains/admin/queries/useAdminLogin";
 import { useAdminSessionStore } from "@/domains/admin/use-cases/useAdminSessionStore";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -188,16 +190,4 @@ watchEffect(() => {
   @include mx.pu-field-shell;
 }
 
-.admin-login-card__submit {
-  @include mx.pu-font(label-large);
-  @include mx.pu-pill-action(solid-primary, large);
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.admin-login-card__submit:disabled {
-  cursor: default;
-  opacity: 0.72;
-}
 </style>

@@ -18,16 +18,18 @@
         pattern="\\d{4}"
         :disabled="disabled"
       />
-      <button
+      <Button
         v-if="allowRegenerate"
+        class="regenerate-btn"
+        tone="outline"
+        size="sm"
         type="button"
         @click="regenerate"
-        class="regenerate-btn"
         :title="t('pinInput.regenerateTitle')"
         :disabled="disabled"
       >
         <div class="i-mdi-refresh font-label-large"></div>
-      </button>
+      </Button>
     </div>
 
     <p v-if="showInfo" class="info-text">{{ t("pinInput.info") }}</p>
@@ -37,6 +39,7 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import Button from "@/shared/ui/actions/Button.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -131,18 +134,8 @@ onMounted(() => {
 }
 
 .regenerate-btn {
-  @include mx.pu-rect-action(outline);
   height: var(--sys-size-large);
   width: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
 }
 
 .info-text {

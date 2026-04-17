@@ -284,7 +284,20 @@ onUnmounted(() => {
 
 .hero-action {
   @include mx.pu-font(label-large);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-spacing-xs);
   width: fit-content;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
 
   &:active {
     opacity: 0.78;
@@ -298,7 +311,6 @@ onUnmounted(() => {
 }
 
 .hero-action--primary {
-  @include mx.pu-pill-action(transparent);
   color: var(--sys-color-on-primary-container);
   border-color: var(--sys-color-primary);
   background: var(--sys-color-primary-container);
@@ -307,7 +319,6 @@ onUnmounted(() => {
 }
 
 .hero-action--secondary {
-  @include mx.pu-pill-action(transparent);
   color: var(--sys-color-on-surface-variant);
   border-color: var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-low);

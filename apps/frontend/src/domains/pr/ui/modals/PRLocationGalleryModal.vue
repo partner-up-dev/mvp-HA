@@ -20,14 +20,15 @@
         />
 
         <div class="controls">
-          <button
-            class="nav-btn"
+          <Button
+            appearance="pill"
+            size="sm"
             type="button"
             :disabled="images.length <= 1"
             @click="goPrev"
           >
             {{ t("prCard.locationGallery.prev") }}
-          </button>
+          </Button>
 
           <span class="counter">
             {{
@@ -38,14 +39,15 @@
             }}
           </span>
 
-          <button
-            class="nav-btn"
+          <Button
+            appearance="pill"
+            size="sm"
             type="button"
             :disabled="images.length <= 1"
             @click="goNext"
           >
             {{ t("prCard.locationGallery.next") }}
-          </button>
+          </Button>
         </div>
       </template>
     </div>
@@ -56,6 +58,7 @@
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import Modal from "@/shared/ui/overlay/Modal.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 interface PRLocationGalleryModalProps {
   open: boolean;
@@ -116,15 +119,6 @@ watch(
   align-items: center;
   justify-content: space-between;
   gap: var(--sys-spacing-sm);
-}
-
-.nav-btn {
-  @include mx.pu-font(label-large);
-  @include mx.pu-pill-action(solid-primary, small);
-
-  &:disabled {
-    opacity: 0.5;
-  }
 }
 
 .counter {

@@ -88,13 +88,13 @@
           </div>
         </div>
 
-        <button
-          class="wechat-follow-action"
+        <Button
+          appearance="pill"
           type="button"
           @click="showOfficialAccountQrModal = true"
         >
           {{ t("home.landing.officialAccountAction") }}
-        </button>
+        </Button>
       </section>
 
       <p
@@ -145,6 +145,7 @@ import { frontendBuildInfo } from "@/shared/meta/build-info";
 import { useBackendBuildMetadata } from "@/shared/meta/queries/useBackendBuildMetadata";
 import OfficialAccountQrModal from "@/shared/wechat/OfficialAccountQrModal.vue";
 import Modal from "@/shared/ui/overlay/Modal.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 
 const { t } = useI18n();
@@ -363,12 +364,6 @@ const backendCommitHash = computed(() => {
 .about-beta-group-modal__qr {
   width: min(100%, 260px);
   border-radius: var(--sys-radius-md);
-}
-
-.wechat-follow-action {
-  @include mx.pu-font(label-large);
-  @include mx.pu-pill-action(solid-primary);
-  width: fit-content;
 }
 
 .repo-link {

@@ -71,28 +71,6 @@
   flex: 0 0 auto;
 }
 
-.primary-btn,
-.outline-btn {
-  @include mx.pu-font(label-large);
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.outline-btn {
-  @include mx.pu-rect-action(outline, default);
-
-  &:hover:not(:disabled) {
-    background: var(--sys-color-surface-container-highest);
-  }
-}
-
-.primary-btn:disabled,
-.outline-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .error-text {
   @include mx.pu-font(body-small);
   color: var(--sys-color-error);

@@ -1,7 +1,7 @@
 <template>
   <footer class="page-footer">
-    <button
-      class="save-btn"
+    <Button
+      tone="outline"
       type="button"
       :disabled="pending"
       @click="emit('submit-as', 'DRAFT')"
@@ -11,9 +11,8 @@
           ? t("createPage.savePending")
           : t("common.save")
       }}
-    </button>
-    <button
-      class="create-btn"
+    </Button>
+    <Button
       type="button"
       :disabled="pending"
       @click="emit('submit-as', 'PUBLISH')"
@@ -23,13 +22,14 @@
           ? t("createPage.createPending")
           : t("common.create")
       }}
-    </button>
+    </Button>
   </footer>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import type { CreateSubmissionMode } from "@/domains/pr/use-cases/useCommunityPRCreateFlow";
+import Button from "@/shared/ui/actions/Button.vue";
 
 defineProps<{
   pending: boolean;
@@ -50,19 +50,8 @@ const { t } = useI18n();
   margin-top: var(--sys-spacing-lg);
 }
 
-.save-btn,
-.create-btn {
-  @include mx.pu-font(label-large);
+.page-footer > button {
   flex: 1;
   min-width: 0;
-  cursor: pointer;
-}
-
-.save-btn {
-  @include mx.pu-rect-action(outline, default);
-}
-
-.create-btn {
-  @include mx.pu-rect-action(primary, default);
 }
 </style>

@@ -17,22 +17,26 @@
           />
         </div>
         <div class="time-actions">
-          <button
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!startTime"
             @click="clearStartTime"
           >
             {{ t("dateTimeRangePicker.clearTime") }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!startDate && !startTime"
             @click="clearStart"
           >
             {{ t("dateTimeRangePicker.clear") }}
-          </button>
+          </Button>
         </div>
       </div>
       <div class="time-block">
@@ -50,22 +54,26 @@
           />
         </div>
         <div class="time-actions">
-          <button
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!endTime"
             @click="clearEndTime"
           >
             {{ t("dateTimeRangePicker.clearTime") }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!endDate && !endTime"
             @click="clearEnd"
           >
             {{ t("dateTimeRangePicker.clear") }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -77,6 +85,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields } from "@partner-up-dev/backend";
+import Button from "@/shared/ui/actions/Button.vue";
 
 type TimeWindow = PartnerRequestFields["time"];
 
@@ -228,18 +237,7 @@ input {
 }
 
 .clear-time {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-rect-action(outline);
   min-width: 64px;
-
-  &:hover:not(:disabled) {
-    background: var(--sys-color-surface-container);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 }
 
 .time-hint {

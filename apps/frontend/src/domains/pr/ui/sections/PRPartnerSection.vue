@@ -6,7 +6,7 @@
           <h2 class="partner-section__title">
             {{ t("prPage.partnerSection.title") }}
           </h2>
-          <p class="partner-section__slot-state">{{ slotStateText }}</p>
+          <Chip tone="primary" size="lg">{{ slotStateText }}</Chip>
         </div>
         <p class="partner-section__subtitle">{{ subtitleText }}</p>
       </div>
@@ -350,6 +350,7 @@ import {
 } from "@/domains/pr/routing/routes";
 import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type PartnerSectionView =
@@ -618,7 +619,6 @@ function blockedReasonText(
 }
 
 .partner-section__subtitle,
-.partner-section__slot-state,
 .partner-section__panel-meta,
 .partner-section__note,
 .partner-section__empty,
@@ -632,11 +632,6 @@ function blockedReasonText(
   margin: 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-error);
-}
-
-.partner-section__slot-state {
-  @include mx.pu-pill-badge(primary);
-  border-radius: 999px;
 }
 
 .partner-section__subtitle {

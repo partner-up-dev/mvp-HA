@@ -59,9 +59,9 @@
       <h3 class="sub-panel-title">{{ t("prPage.wechatReminder.title") }}</h3>
       <p class="sub-panel-note">{{ reminderHintText }}</p>
 
-      <button
+      <Button
         v-if="canToggleReminder"
-        class="primary-btn"
+        type="button"
         :disabled="reminderTogglePending"
         @click="emit('toggle-reminder')"
       >
@@ -72,15 +72,16 @@
               ? t("prPage.wechatReminder.disableAction")
               : t("prPage.wechatReminder.enableAction")
         }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-else-if="isWeChatEnv && reminderConfigured && !reminderAuthenticated"
-        class="ghost-btn"
+        tone="surface"
+        type="button"
         @click="emit('go-wechat-login')"
       >
         {{ t("prPage.wechatReminder.loginAction") }}
-      </button>
+      </Button>
     </section>
 
     <section v-if="showCheckInFollowup" class="sub-panel">
@@ -92,27 +93,29 @@
         }}
       </p>
       <div class="followup-actions">
-        <button
-          class="primary-btn"
+        <Button
+          type="button"
           :disabled="checkInPending"
           @click="emit('submit-check-in', true)"
         >
           {{ t("prPage.wouldJoinAgainYes") }}
-        </button>
-        <button
-          class="secondary-btn"
+        </Button>
+        <Button
+          tone="secondary"
+          type="button"
           :disabled="checkInPending"
           @click="emit('submit-check-in', false)"
         >
           {{ t("prPage.wouldJoinAgainNo") }}
-        </button>
-        <button
-          class="ghost-btn"
+        </Button>
+        <Button
+          tone="surface"
+          type="button"
           :disabled="checkInPending"
           @click="emit('cancel-check-in')"
         >
           {{ t("common.cancel") }}
-        </button>
+        </Button>
       </div>
     </section>
   </section>
@@ -122,6 +125,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
+import Button from "@/shared/ui/actions/Button.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type AnchorPartnerSection = AnchorPRDetailResponse["partnerSection"];
@@ -246,26 +250,6 @@ const formatWindow = (start: string | null, end: string | null): string => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-sm);
-}
-
-.primary-btn,
-.secondary-btn,
-.ghost-btn {
-  @include mx.pu-font(label-large);
-  border: none;
-  cursor: pointer;
-}
-
-.primary-btn {
-  @include mx.pu-rect-action(primary, default);
-}
-
-.secondary-btn {
-  @include mx.pu-rect-action(outline-primary, default);
-}
-
-.ghost-btn {
-  @include mx.pu-rect-action(surface, default);
 }
 
 @media (min-width: 880px) {

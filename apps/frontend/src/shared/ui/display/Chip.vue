@@ -16,7 +16,7 @@ type ChipTone =
   | "outline"
   | "danger"
   | "warning";
-type ChipSize = "sm" | "md";
+type ChipSize = "sm" | "md" | "lg";
 
 withDefaults(
   defineProps<{
@@ -52,6 +52,12 @@ withDefaults(
 .ui-chip--size-md {
   @include mx.pu-font(label-medium);
   padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  min-height: var(--sys-size-medium);
+}
+
+.ui-chip--size-lg {
+  @include mx.pu-font(label-large);
+  padding: var(--sys-spacing-xs) var(--sys-spacing-med);
   min-height: var(--sys-size-medium);
 }
 

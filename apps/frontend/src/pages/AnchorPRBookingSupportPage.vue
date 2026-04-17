@@ -11,7 +11,7 @@
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
     <template v-else-if="bookingSupportDetail">
-      <section class="card">
+      <SurfaceCard class="card" gap="none">
         <h2 class="card-title">{{ bookingSupportDetail.bookingSupport.overview.title }}</h2>
         <p class="headline">
           {{
@@ -38,14 +38,15 @@
             {{ highlight }}
           </span>
         </div>
-      </section>
+      </SurfaceCard>
 
-      <section
+      <SurfaceCard
         v-if="
           bookingSupportDetail.bookingSupport.bookingContact.required &&
           bookingSupportDetail.bookingSupport.bookingContact.ownerIsCurrentViewer
         "
         class="card"
+        gap="none"
       >
         <h2 class="card-title">{{ t("prBookingSupport.bookingContact.title") }}</h2>
         <p class="headline">{{ bookingContactHeadline }}</p>
@@ -71,8 +72,10 @@
             maxlength="11"
             placeholder="请输入 11 位大陆手机号"
           />
-          <button
+          <Button
             class="request-btn"
+            appearance="pill"
+            size="sm"
             type="submit"
             :disabled="updateBookingContactPhoneMutation.isPending.value"
           >
@@ -83,18 +86,19 @@
                   ? "更新手机号"
                   : t("prBookingSupport.bookingContact.verifyAction")
             }}
-          </button>
+          </Button>
         </form>
 
         <p v-if="bookingContactVerifyErrorMessage" class="error-text">
           {{ bookingContactVerifyErrorMessage }}
         </p>
-      </section>
+      </SurfaceCard>
 
-      <section
+      <SurfaceCard
         v-for="resource in bookingSupportDetail.bookingSupport.resources"
         :key="resource.id"
         class="card"
+        gap="none"
       >
         <div class="resource-header">
           <div>
@@ -160,9 +164,13 @@
             {{ rule }}
           </li>
         </ul>
-      </section>
+      </SurfaceCard>
 
-      <section v-if="showReimbursementSection" class="card reimbursement-card">
+      <SurfaceCard
+        v-if="showReimbursementSection"
+        class="card reimbursement-card"
+        gap="none"
+      >
         <h2 class="card-title">{{ t("prBookingSupport.reimbursement.title") }}</h2>
 
         <div v-if="reimbursementQuery.isLoading.value" class="hint">
@@ -201,9 +209,11 @@
             {{ reimbursementReasonText(reimbursement.reason) }}
           </p>
 
-          <div
+          <SurfaceCard
             v-if="bookingSupportDetail.status === 'CLOSED'"
             class="reimburse-prompt-card"
+            tone="inset-high"
+            gap="none"
           >
             <p class="reimburse-prompt-title">
               {{ t("prBookingSupport.reimbursement.promptTitle") }}
@@ -211,12 +221,18 @@
             <p class="reimburse-prompt-desc">
               {{ t("prBookingSupport.reimbursement.promptDesc") }}
             </p>
-            <button class="request-btn" @click="showWecomQrModal = true">
+            <Button
+              class="request-btn"
+              appearance="pill"
+              size="sm"
+              type="button"
+              @click="showWecomQrModal = true"
+            >
               {{ t("prBookingSupport.reimbursement.openWecomQr") }}
-            </button>
-          </div>
+            </Button>
+          </SurfaceCard>
         </template>
-      </section>
+      </SurfaceCard>
     </template>
 
     <Modal
@@ -249,6 +265,8 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import Modal from "@/shared/ui/overlay/Modal.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+import Button from "@/shared/ui/actions/Button.vue";
+import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import {
   useAnchorPRBookingSupport,
   useAnchorReimbursementStatus,
@@ -510,7 +528,6 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 <style lang="scss" scoped>
 .card {
   margin-top: var(--sys-spacing-med);
-  @include mx.pu-surface-card(section);
 }
 
 .card-title {
@@ -599,8 +616,6 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 
 .request-btn {
   margin-top: var(--sys-spacing-sm);
-  @include mx.pu-pill-action(solid-primary, small);
-  cursor: pointer;
 }
 
 .phone-form {
@@ -622,7 +637,6 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 
 .reimburse-prompt-card {
   margin-top: var(--sys-spacing-sm);
-  @include mx.pu-surface-card(inset-high);
 }
 
 .reimburse-prompt-title {

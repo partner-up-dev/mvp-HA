@@ -35,14 +35,14 @@
           <div class="stack">
             <div class="section-header">
               <h2 class="card-title">{{ t("adminBookingSupport.eventResourcesTitle") }}</h2>
-              <button class="secondary-btn" type="button" @click="addEventResource">{{ t("adminBookingSupport.addResourceAction") }}</button>
+              <Button appearance="pill" tone="outline" size="sm" type="button" @click="addEventResource">{{ t("adminBookingSupport.addResourceAction") }}</Button>
             </div>
 
             <div class="editor-list">
               <article v-for="(resource, index) in editableResources" :key="`resource-${index}`" class="editor-block">
                 <div class="action-row">
                   <strong>{{ resource.title || `${t("adminBookingSupport.resourceFallback")} ${index + 1}` }}</strong>
-                  <button class="danger-btn" type="button" @click="removeEventResource(index)">{{ t("adminBookingSupport.removeAction") }}</button>
+                  <Button tone="danger" size="sm" type="button" @click="removeEventResource(index)">{{ t("adminBookingSupport.removeAction") }}</Button>
                 </div>
                 <div class="grid">
                   <label class="field"><span class="field-label">code</span><input v-model="resource.code" class="field-input" /></label>
@@ -100,14 +100,15 @@
               </article>
             </div>
 
-            <button
-              class="primary-btn"
+            <Button
+              appearance="pill"
+              size="sm"
               type="button"
               :disabled="replaceEventResourcesMutation.isPending.value || selectedEventId === null || hasEventResourceLocationValidationError"
               @click="handleSaveEventResources"
             >
               {{ replaceEventResourcesMutation.isPending.value ? t("adminBookingSupport.saving") : t("adminBookingSupport.saveEventResources") }}
-            </button>
+            </Button>
           </div>
         </section>
 
@@ -128,7 +129,7 @@
               <article v-for="(override, index) in editableOverrides" :key="`override-${index}`" class="editor-block">
                 <div class="action-row">
                   <strong>#{{ override.eventSupportResourceId }}</strong>
-                  <button class="danger-btn" type="button" @click="removeBatchOverride(index)">{{ t("adminBookingSupport.removeAction") }}</button>
+                  <Button tone="danger" size="sm" type="button" @click="removeBatchOverride(index)">{{ t("adminBookingSupport.removeAction") }}</Button>
                 </div>
                 <div class="grid">
                   <label class="field"><span class="field-label">eventSupportResourceId</span><input v-model.number="override.eventSupportResourceId" class="field-input" type="number" /></label>
@@ -164,10 +165,10 @@
             </div>
 
             <div class="action-row">
-              <button class="secondary-btn" type="button" @click="addBatchOverride">{{ t("adminBookingSupport.addOverrideAction") }}</button>
-              <button class="primary-btn" type="button" :disabled="replaceBatchOverridesMutation.isPending.value || selectedBatchId === null || selectedEventId === null" @click="handleSaveBatchOverrides">
+              <Button appearance="pill" tone="outline" size="sm" type="button" @click="addBatchOverride">{{ t("adminBookingSupport.addOverrideAction") }}</Button>
+              <Button appearance="pill" size="sm" type="button" :disabled="replaceBatchOverridesMutation.isPending.value || selectedBatchId === null || selectedEventId === null" @click="handleSaveBatchOverrides">
                 {{ replaceBatchOverridesMutation.isPending.value ? t("adminBookingSupport.saving") : t("adminBookingSupport.saveBatchOverrides") }}
-              </button>
+              </Button>
             </div>
           </div>
         </section>
@@ -182,6 +183,7 @@ import { useI18n } from "vue-i18n";
 import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCard.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   type AdminAnchorWorkspaceResponse,
@@ -540,23 +542,4 @@ const formatBatchLabel = (timeWindow: [string | null, string | null]) =>
   color: var(--sys-color-error);
 }
 
-.primary-btn,
-.secondary-btn,
-.danger-btn {
-  @include mx.pu-font(label-medium);
-  cursor: pointer;
-}
-
-.primary-btn {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-}
-
-.secondary-btn {
-  @include mx.pu-pill-action(outline-transparent, small);
-}
-
-.danger-btn {
-  @include mx.pu-rect-action(danger);
-}
 </style>

@@ -9,58 +9,61 @@
       :aria-label="t('contactSupportPage.actionsTitle')"
     >
       <div class="contact-card contact-card--staff">
-        <span class="contact-badge contact-badge--staff">
+        <Chip tone="primary" size="lg">
           {{ t("contactSupportPage.staffBadge") }}
-        </span>
+        </Chip>
         <div class="contact-copy">
           <h2>{{ t("contactSupportPage.staffTitle") }}</h2>
           <p>{{ t("contactSupportPage.staffDescription") }}</p>
         </div>
 
-        <component
+        <SupportContactAction
           class="contact-action"
-          :is="staffActionTag"
-          v-bind="staffActionProps"
-          @click="handleStaffAction"
+          :href="staffLink"
+          :qr-entry="usesMiniProgramQrEntry"
+          @open-qr="staffQrModalOpen = true"
         >
           {{ t("contactSupportPage.staffAction") }}
-        </component>
+        </SupportContactAction>
       </div>
 
       <div class="contact-card contact-card--support">
-        <span class="contact-badge contact-badge--support">
+        <Chip tone="secondary" size="lg">
           {{ t("contactSupportPage.supportBadge") }}
-        </span>
+        </Chip>
         <div class="contact-copy">
           <h2>{{ t("contactSupportPage.supportTitle") }}</h2>
           <p>{{ t("contactSupportPage.supportDescription") }}</p>
         </div>
 
-        <component
+        <SupportContactAction
           class="contact-action contact-action--support"
-          :is="supportActionTag"
-          v-bind="supportActionProps"
-          @click="handleSupportAction"
+          :href="supportLink"
+          :qr-entry="usesMiniProgramQrEntry"
+          tone="secondary"
+          @open-qr="supportQrModalOpen = true"
         >
           {{ t("contactSupportPage.supportAction") }}
-        </component>
+        </SupportContactAction>
       </div>
 
       <div class="contact-card contact-card--beta-group">
-        <span class="contact-badge contact-badge--beta-group">
+        <Chip class="contact-badge--beta-group" tone="secondary" size="lg">
           {{ t("contactSupportPage.betaGroupBadge") }}
-        </span>
+        </Chip>
         <div class="contact-copy">
           <h2>{{ t("contactSupportPage.betaGroupTitle") }}</h2>
           <p>{{ t("contactSupportPage.betaGroupDescription") }}</p>
         </div>
 
-        <RouterLink
+        <ActionLink
           class="contact-action contact-action--beta-group"
           :to="{ name: 'about', hash: '#beta-groups' }"
+          appearance="pill"
+          tone="outline"
         >
           {{ t("contactSupportPage.betaGroupAction") }}
-        </RouterLink>
+        </ActionLink>
       </div>
     </section>
 
@@ -99,9 +102,12 @@
 import { computed, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
+import SupportContactAction from "@/domains/support/ui/sections/SupportContactAction.vue";
 import SupportContactQrModal from "@/domains/support/ui/sections/SupportContactQrModal.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
+import ActionLink from "@/shared/ui/actions/ActionLink.vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { useWeChatMiniProgramWebView } from "@/shared/wechat/useWeChatMiniProgramWebView";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
@@ -191,53 +197,9 @@ const staffLink = computed(() => {
 
 const usesMiniProgramQrEntry = computed(() => isMiniProgramWebView.value);
 
-const linkActionProps = (href: string) => ({
-  href,
-  target: "_blank",
-  rel: "noopener noreferrer",
-});
-
-const buttonActionProps = {
-  type: "button" as const,
-};
-
-const staffActionTag = computed(() =>
-  usesMiniProgramQrEntry.value ? "button" : "a",
-);
-const supportActionTag = computed(() =>
-  usesMiniProgramQrEntry.value ? "button" : "a",
-);
-
-const staffActionProps = computed(() =>
-  usesMiniProgramQrEntry.value ? buttonActionProps : linkActionProps(staffLink.value),
-);
-
-const supportActionProps = computed(() =>
-  usesMiniProgramQrEntry.value
-    ? buttonActionProps
-    : linkActionProps(supportLink.value),
-);
-
-const handleStaffAction = (event: Event): void => {
-  if (!usesMiniProgramQrEntry.value) return;
-
-  event.preventDefault();
-  staffQrModalOpen.value = true;
-};
-
-const handleSupportAction = (event: Event): void => {
-  if (!usesMiniProgramQrEntry.value) return;
-
-  event.preventDefault();
-  supportQrModalOpen.value = true;
-};
 </script>
 
 <style lang="scss" scoped>
-.contact-badge {
-  @include mx.pu-font(label-medium);
-}
-
 .contact-actions {
   width: min(100%, 33rem);
   display: grid;
@@ -270,16 +232,7 @@ const handleSupportAction = (event: Event): void => {
   background: var(--sys-color-surface-container-low);
 }
 
-.contact-badge--staff {
-  @include mx.pu-pill-badge(primary);
-}
-
-.contact-badge--support {
-  @include mx.pu-pill-badge(secondary);
-}
-
 .contact-badge--beta-group {
-  @include mx.pu-pill-badge(secondary);
   opacity: 0.8;
 }
 
@@ -301,27 +254,12 @@ const handleSupportAction = (event: Event): void => {
 }
 
 .contact-action {
-  @include mx.pu-font(label-large);
-  @include mx.pu-pill-action(solid-primary);
-  border: 0;
+  width: fit-content;
 
   &:hover {
     opacity: 0.92;
     transform: translateY(-1px);
   }
-
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
-}
-
-.contact-action--support {
-  @include mx.pu-pill-action(solid-secondary);
-}
-
-.contact-action--beta-group {
-  @include mx.pu-pill-action(outline-transparent);
 }
 
 .support-entry-links {

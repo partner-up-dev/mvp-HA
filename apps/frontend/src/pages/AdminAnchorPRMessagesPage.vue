@@ -179,8 +179,9 @@
               </p>
 
               <div class="actions">
-                <button
-                  class="primary-btn"
+                <Button
+                  appearance="pill"
+                  size="sm"
                   type="button"
                   :disabled="
                     createMessageMutation.isPending.value ||
@@ -193,7 +194,7 @@
                       ? t("adminAnchorPRMessages.messageSending")
                       : t("adminAnchorPRMessages.messageAction")
                   }}
-                </button>
+                </Button>
               </div>
             </template>
           </div>
@@ -217,6 +218,7 @@ import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDat
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
@@ -483,13 +485,6 @@ const handleSendSystemMessage = async () => {
 .actions {
   display: flex;
   justify-content: flex-end;
-}
-
-.primary-btn {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-  cursor: pointer;
 }
 
 @media (min-width: 880px) {

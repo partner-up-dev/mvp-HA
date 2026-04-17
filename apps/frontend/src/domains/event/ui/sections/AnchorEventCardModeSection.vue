@@ -90,22 +90,25 @@
     </div>
 
     <div class="card-mode__actions">
-      <button
+      <Button
         type="button"
-        class="card-mode__action card-mode__action--skip"
+        class="card-mode__action"
+        appearance="pill"
+        tone="danger"
         :disabled="isCardRouting"
         @click="handleSkipActionClick"
       >
         {{ t("anchorEvent.card.skipButton") }}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
-        class="card-mode__action card-mode__action--detail"
+        class="card-mode__action"
+        appearance="pill"
         :disabled="isCardRouting || activeDemandCard.detailPrId === null"
         @click="handleViewActionClick"
       >
         {{ t("anchorEvent.card.detailButton") }}
-      </button>
+      </Button>
     </div>
 
     <p v-if="cardActionError" class="card-mode__error">
@@ -172,9 +175,10 @@
           {{ createActionErrorMessage }}
         </p>
 
-        <button
+        <Button
           type="button"
-          class="card-empty__action"
+          appearance="pill"
+          size="sm"
           :disabled="isCreatePending"
           @click="emitCreateFromCardEmpty"
         >
@@ -183,7 +187,7 @@
               ? t("anchorEvent.createCard.creatingAction")
               : t("anchorEvent.createCard.createAction")
           }}
-        </button>
+        </Button>
       </div>
 
       <OtherAnchorEventsSection
@@ -209,6 +213,7 @@ import { useI18n } from "vue-i18n";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import {
   DEMAND_CARD_EXIT_TIMING,
   DEMAND_CARD_REBOUND_TIMING,
@@ -798,26 +803,7 @@ watch(
 }
 
 .card-mode__action {
-  @include mx.pu-pill-action(outline-transparent, default);
-  border: none;
-  cursor: pointer;
   min-height: 48px;
-}
-
-.card-mode__action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.card-mode__action--detail {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border-color: var(--sys-color-primary);
-}
-
-.card-mode__action--skip {
-  color: var(--sys-color-error);
-  border-color: var(--sys-color-error);
 }
 
 .card-empty-stack {
@@ -877,14 +863,4 @@ watch(
   color: var(--sys-color-error);
 }
 
-.card-empty__action {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-  cursor: pointer;
-}
-
-.card-empty__action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 </style>

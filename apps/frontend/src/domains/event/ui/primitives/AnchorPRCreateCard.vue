@@ -54,9 +54,10 @@
 
         <p v-if="errorMessage" class="create-card__error">{{ errorMessage }}</p>
 
-        <button
+        <Button
           type="button"
-          class="create-card__action"
+          appearance="pill"
+          size="sm"
           :disabled="pending"
           @click="emitCreate"
         >
@@ -65,7 +66,7 @@
               ? t("anchorEvent.createCard.creatingAction")
               : t("anchorEvent.createCard.createAction")
           }}
-        </button>
+        </Button>
       </div>
     </ExpandableCard>
   </div>
@@ -75,6 +76,7 @@
 import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import ExpandableCard from "@/shared/ui/containers/ExpandableCard.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import { useReducedMotion } from "@/shared/motion/useReducedMotion";
 
 type LocationOption = {
@@ -362,17 +364,6 @@ const emitCreate = () => {
   margin: 0;
   @include mx.pu-font(body-small);
   color: var(--sys-color-error);
-}
-
-.create-card__action {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-  cursor: pointer;
-}
-
-.create-card__action:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 @keyframes create-card-surface-flash {

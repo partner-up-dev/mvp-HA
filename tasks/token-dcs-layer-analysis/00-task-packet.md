@@ -15,6 +15,10 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
 - `apps/frontend/src/styles/_recipes.scss`
 - `apps/frontend/src/styles/_mixins.scss`
 - `apps/frontend/src/shared/ui/actions/Button.vue`
+- `apps/frontend/src/shared/ui/actions/ActionLink.vue`
+- `apps/frontend/src/shared/ui/actions/FeedbackButton.vue`
+- `apps/frontend/src/shared/ui/navigation/TabBar.vue`
+- `apps/frontend/src/domains/support/ui/sections/SupportContactAction.vue`
 - `apps/frontend/src/domains/pr/ui/primitives/PRStatusBadge.vue`
 - `apps/frontend/src/domains/pr/ui/primitives/PRRosterItem.vue`
 
@@ -28,6 +32,12 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
 - After phase 2, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
 - After phase 2, `pnpm --filter @partner-up-dev/frontend build` passed.
 - After phase 2 backend response typing adjustment, `pnpm --filter @partner-up-dev/backend typecheck` passed.
+- After phase 3, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
+- After phase 3, `git diff --check` passed.
+- After phase 3, `pnpm --filter @partner-up-dev/frontend build` passed.
+- After phase 4, `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` passed.
+- After phase 4, `git diff --check` passed.
+- After phase 4, `pnpm --filter @partner-up-dev/frontend build` passed.
 
 ## Findings
 
@@ -69,3 +79,29 @@ Hypothesis: The current problem is mixed. The `dcs` map is not primarily a color
   - `apps/frontend/src/domains/pr/ui/sections/PRPartnerSection.vue`
 - Narrowed `AnchorPRSummary.status` from `string` to `PRStatus` in the backend event-detail response type so frontend RPC consumers can reuse `PRStatusBadge` without a template cast.
 - Confirmed the touched consumer files no longer contain direct `pu-rect-action` / `pu-pill-action` recipe includes or the removed local action/roster/status classes. Repo-wide recipe direct usage still exists in unrelated admin pages and older PR sections; those remain separate cleanup candidates.
+
+## Phase 3 Implementation Slice
+
+- Extended shared `Chip` with a large size so legacy `pu-pill-badge` consumers can reuse the component without local badge treatment CSS.
+- Replaced page/domain-local `pu-pill-badge` consumers with `Chip` in support, profile, and PR action-lane contexts.
+- Replaced many pure `<button>` `pu-rect-action` / `pu-pill-action` consumers with shared `Button`, including admin flows, PR action sections, share UI controls, event card actions, and drawer/carousel controls.
+- Adopted `SurfaceCard` for simple page-level card wrappers in community PR, OAuth callback, and anchor booking support flows.
+- Left link-like actions, navigation treatments, statusful success/error controls, dashed/tertiary actions, and domain-internal card layouts in local recipes pending API or component-boundary discussion.
+- Remaining direct recipe usage now mostly falls into:
+  - shared primitive internals (`Button`, `SurfaceCard`)
+  - link/navigation treatments
+  - statusful copy/download controls
+  - unsupported Button API variants (`tertiary`, `dashed`)
+  - PR domain-internal card structures that may deserve componentization rather than direct `SurfaceCard` replacement
+
+## Phase 4 Implementation Slice
+
+- Added `ActionLink` as the shared action-looking link primitive for RouterLink and external anchor CTAs.
+- Added `FeedbackButton` as the shared transient pending/success/error action primitive that composes `Button` and keeps state styling centralized.
+- Added `SupportContactAction` in the support domain for the support-page mini-program QR fallback, composing `Button` or `ActionLink` without leaking that workflow into shared UI.
+- Replaced remaining link/RouterLink action recipe consumers in event plaza and contact support with `ActionLink` or support-domain composition.
+- Restored Landing Page action markup and visual treatment to component-local styles after confirming Landing is an explicit visual exception; the restored treatment does not call `pu-pill-action(...)` or move the style back into DCS/recipe.
+- Replaced share copy/share success/error button treatments with `FeedbackButton`; download/regenerate/open-app actions now compose `Button`.
+- Updated `TabBar` so it no longer includes `pu-pill-action(...)`; its tab buttons now own navigation-specific styles directly with `sys` tokens.
+- Documented that `pu-pill-action(...)` and `pu-rect-action(...)` are restricted to lowest action primitives (`Button`, `ActionLink`) rather than pages, domain components, or higher-level shared components.
+- Remaining direct action recipe usage is now limited to lowest action primitives plus previously deferred PR-specific unsupported variants (`tertiary`, `dashed`) in `AnchorAttendancePanel` and `PRForm`.

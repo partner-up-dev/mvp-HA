@@ -264,8 +264,9 @@
                     {{ drafts[item.prId].errorMessage }}
                   </p>
                   <div class="action-row">
-                    <button
-                      class="primary-btn"
+                    <Button
+                      appearance="pill"
+                      size="sm"
                       type="button"
                       :disabled="isSubmitDisabled(item)"
                       @click="handleSubmit(item)"
@@ -275,9 +276,11 @@
                           ? t("adminBookingExecution.submittingAction")
                           : t("adminBookingExecution.submitAction")
                       }}
-                    </button>
-                    <button
-                      class="secondary-btn"
+                    </Button>
+                    <Button
+                      appearance="pill"
+                      tone="outline"
+                      size="sm"
                       type="button"
                       :disabled="isReleaseDisabled(item)"
                       @click="handleRelease(item)"
@@ -287,7 +290,7 @@
                           ? t("adminBookingExecution.releasingAction")
                           : t("adminBookingExecution.releaseAction")
                       }}
-                    </button>
+                    </Button>
                   </div>
                   <p
                     v-if="item.bookingContact.ownerPartnerId === null"
@@ -490,6 +493,7 @@ import { formatLocalDateTimeValue, formatLocalDateTimeWindowLabel } from "@/shar
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 type Workspace = NonNullable<AdminBookingExecutionWorkspaceResponse>;
 type PendingItem = Workspace["pendingItems"][number];
@@ -919,21 +923,6 @@ const handleRelease = async (item: PendingItem) => {
 .field-textarea {
   min-height: 96px;
   resize: vertical;
-}
-
-.primary-btn,
-.secondary-btn {
-  @include mx.pu-font(label-medium);
-  cursor: pointer;
-}
-
-.primary-btn {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-}
-
-.secondary-btn {
-  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 .field-error {

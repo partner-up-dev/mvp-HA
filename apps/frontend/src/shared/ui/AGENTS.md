@@ -12,6 +12,8 @@ Do not move a component into `shared/ui` just because two pages happen to look s
 ## Preferred Primitives
 
 - `actions/Button.vue`: shared button primitive for pill and rect actions; prefer it over page-local button classes.
+- `actions/ActionLink.vue`: shared action-looking link primitive for RouterLink and external anchor CTAs.
+- `actions/FeedbackButton.vue`: shared action button wrapper for short-lived pending/success/error feedback states.
 - `containers/SurfaceCard.vue`: shared card shell for section, outline, and inset treatments.
 - `layout/FullScreenPageScaffold.vue`: viewport-height page shell with dedicated header/content/footer slots for pages whose middle region should flex and own scrolling.
 - `layout/FooterRevealPageScaffold.vue`: viewport-first page shell with dedicated header/content/footer slots for pages that should keep `header + content` in the first screen and reveal the footer through normal page scrolling.
@@ -28,6 +30,7 @@ Do not move a component into `shared/ui` just because two pages happen to look s
 ## Reuse Rules
 
 - Prefer composing these primitives in pages and domain sections before creating new page-local shells.
+- Keep action recipes inside the lowest action primitives (`Button` and `ActionLink`); higher-level shared components, domain components, and pages should compose primitives instead of including `pu-pill-action(...)` or `pu-rect-action(...)`.
 - If a component needs backend-derived policy logic, workflow branching, or domain vocabulary, keep it in the owning domain and compose shared primitives inside it.
 - If a primitive variant is needed in a third distinct place, extend the shared primitive API instead of cloning the component locally.
 - When extending a primitive API, update `src/AGENTS.components.md` in the same change so the new contract stays discoverable.

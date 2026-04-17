@@ -163,21 +163,32 @@ const handleDismiss = () => {
 
 .nudge-action {
   @include mx.pu-font(label-large);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-spacing-xs);
+  min-height: auto;
+  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  border: 1px solid transparent;
+  border-radius: 999px;
   cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .nudge-action--ghost {
-  @include mx.pu-pill-action(outline-transparent);
   border-color: var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-low);
-  min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  color: var(--sys-color-on-surface);
 }
 
 .nudge-action--primary {
-  @include mx.pu-pill-action(solid-primary);
-  min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .nudge-fade-enter-active,

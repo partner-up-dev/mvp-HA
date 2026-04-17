@@ -8,13 +8,15 @@
           <div class="stack">
             <div class="section-header">
               <h2 class="card-title">{{ t("adminAnchorPR.eventsTitle") }}</h2>
-              <button
-                class="secondary-btn"
+              <Button
+                appearance="pill"
+                tone="outline"
+                size="sm"
                 type="button"
                 @click="prepareNewEvent"
               >
                 {{ t("adminAnchorPR.newEventAction") }}
-              </button>
+              </Button>
             </div>
             <div v-if="events.length === 0" class="hint">
               {{ t("adminAnchorPR.emptyEvents") }}
@@ -161,8 +163,9 @@
               </label>
               <p class="hint">{{ t("adminAnchorPR.eventPoiHint") }}</p>
               <p class="hint">{{ t("adminAnchorPR.eventTimeWindowHint") }}</p>
-              <button
-                class="primary-btn"
+              <Button
+                appearance="pill"
+                size="sm"
                 type="button"
                 :disabled="
                   createEventMutation.isPending.value ||
@@ -179,7 +182,7 @@
                       ? t("adminAnchorPR.createEventAction")
                       : t("adminAnchorPR.saveEventAction")
                 }}
-              </button>
+              </Button>
             </div>
           </section>
 
@@ -189,14 +192,16 @@
                 <h2 class="card-title">
                   {{ t("adminAnchorPR.batchesTitle") }}
                 </h2>
-                <button
-                  class="secondary-btn"
+                <Button
+                  appearance="pill"
+                  tone="outline"
+                  size="sm"
                   type="button"
                   :disabled="selectedEventId === null"
                   @click="prepareNewBatch"
                 >
                   {{ t("adminAnchorPR.newBatchAction") }}
-                </button>
+                </Button>
               </div>
               <div v-if="selectedEvent === null" class="hint">
                 {{ t("adminAnchorPR.emptyEvents") }}
@@ -264,8 +269,9 @@
                     </option>
                   </select>
                 </label>
-                <button
-                  class="primary-btn"
+                <Button
+                  appearance="pill"
+                  size="sm"
                   type="button"
                   :disabled="
                     createBatchMutation.isPending.value ||
@@ -281,7 +287,7 @@
                         ? t("adminAnchorPR.createBatchAction")
                         : t("adminAnchorPR.saveBatchAction")
                   }}
-                </button>
+                </Button>
               </div>
             </div>
           </section>
@@ -293,14 +299,16 @@
               <h2 class="card-title">
                 {{ t("adminAnchorPR.anchorPRsTitle") }}
               </h2>
-              <button
-                class="secondary-btn"
+              <Button
+                appearance="pill"
+                tone="outline"
+                size="sm"
                 type="button"
                 :disabled="selectedBatch === null || selectedEvent === null"
                 @click="prepareNewPR"
               >
                 {{ t("adminAnchorPR.newAnchorPRAction") }}
-              </button>
+              </Button>
             </div>
 
             <div v-if="selectedBatch === null" class="hint">
@@ -475,8 +483,9 @@
               <p v-if="!canEditPRContent" class="hint">
                 {{ t("adminAnchorPR.anchorPRContentLockedHint") }}
               </p>
-              <button
-                class="primary-btn"
+              <Button
+                appearance="pill"
+                size="sm"
                 type="button"
                 :disabled="
                   isSavingPR ||
@@ -494,7 +503,7 @@
                       ? t("adminAnchorPR.createAnchorPRAction")
                       : t("adminAnchorPR.saveAnchorPRAction")
                 }}
-              </button>
+              </Button>
 
             </div>
           </div>
@@ -516,6 +525,7 @@ import { useI18n } from "vue-i18n";
 import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCard.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   useAdminAnchorWorkspace,
@@ -1275,21 +1285,6 @@ const handleSavePR = async () => {
 .inset {
   padding: var(--sys-spacing-med);
   @include mx.pu-surface-panel(subtle-inset);
-}
-
-.primary-btn,
-.secondary-btn {
-  @include mx.pu-font(label-medium);
-  cursor: pointer;
-}
-
-.primary-btn {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-}
-
-.secondary-btn {
-  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 @media (min-width: 880px) {

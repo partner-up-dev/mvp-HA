@@ -7,44 +7,48 @@
     v-if="canJoin || canExit || showEditContentAction || showModifyStatusAction"
     class="actions"
   >
-    <button
+    <Button
       v-if="canJoin"
-      class="join-btn"
+      type="button"
       :disabled="joinPending"
       @click="emit('join')"
     >
       {{ joinPending ? t("prPage.joining") : t("prPage.join") }}
-    </button>
+    </Button>
 
-    <button
+    <Button
       v-if="canExit"
-      class="exit-btn"
+      tone="danger"
+      type="button"
       :disabled="exitPending"
       @click="emit('exit')"
     >
       {{ exitPending ? t("prPage.exiting") : t("prPage.exit") }}
-    </button>
+    </Button>
 
-    <button
+    <Button
       v-if="showEditContentAction"
-      class="secondary-btn"
+      tone="surface"
+      type="button"
       @click="emit('edit-content')"
     >
       {{ t("prPage.editContent") }}
-    </button>
+    </Button>
 
-    <button
+    <Button
       v-if="showModifyStatusAction"
-      class="secondary-btn"
+      tone="surface"
+      type="button"
       @click="emit('modify-status')"
     >
       {{ t("prPage.modifyStatus") }}
-    </button>
+    </Button>
   </section>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import Button from "@/shared/ui/actions/Button.vue";
 
 defineProps<{
   canJoin: boolean;
@@ -89,25 +93,9 @@ const { t } = useI18n();
   width: 100%;
 }
 
-.join-btn,
-.exit-btn,
-.secondary-btn {
-  @include mx.pu-font(label-large);
+.actions > button {
   flex: 1;
   min-width: 0;
-  cursor: pointer;
-}
-
-.join-btn {
-  @include mx.pu-rect-action(primary, default);
-}
-
-.exit-btn {
-  @include mx.pu-rect-action(danger, default);
-}
-
-.secondary-btn {
-  @include mx.pu-rect-action(surface, default);
 }
 
 @include mx.breakpoint(md) {

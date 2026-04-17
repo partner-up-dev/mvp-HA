@@ -40,19 +40,22 @@
       </RouterLink>
     </nav>
 
-    <button
+    <Button
       v-if="showLogout"
-      class="admin-navigation-card__logout"
+      appearance="pill"
+      tone="outline"
+      size="sm"
       type="button"
       @click="$emit('logout')"
     >
       {{ t("adminCommon.logoutAction") }}
-    </button>
+    </Button>
   </section>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import Button from "@/shared/ui/actions/Button.vue";
 
 defineProps<{
   showLogout?: boolean;
@@ -112,9 +115,4 @@ const { t } = useI18n();
   @include mx.pu-selection-card(active);
 }
 
-.admin-navigation-card__logout {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-pill-action(outline-transparent, small);
-  cursor: pointer;
-}
 </style>
