@@ -2,117 +2,22 @@ import { HTTPException } from "hono/http-exception";
 import type { PartnerRequest, PRId } from "../../../entities/partner-request";
 import {
   prMessageBodySchema,
-  type PRMessageId,
 } from "../../../entities/pr-message";
 import type { UserId } from "../../../entities/user";
 import { eventBus, writeToOutbox } from "../../../infra/events";
-import { scheduleWeChatPRMessageNotification } from "../../../infra/notifications";
 import { operationLogService } from "../../../infra/operation-log";
 import { PRMessageInboxStateRepository } from "../../../repositories/PRMessageInboxStateRepository";
 import { PRMessageRepository } from "../../../repositories/PRMessageRepository";
-import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { UserNotificationOptRepository } from "../../../repositories/UserNotificationOptRepository";
-import { WeChatSubscriptionMessageService } from "../../../services/WeChatSubscriptionMessageService";
 import { requirePRMessageParticipantAccess } from "../services/pr-message-access.service";
 import {
   PR_MESSAGE_RATE_LIMIT_MAX_MESSAGES,
   PR_MESSAGE_RATE_LIMIT_WINDOW_MS,
   buildPRMessageThreadState,
-  canNotifyForUnreadWave,
   toPRMessageThreadItem,
 } from "../services/pr-message-thread.service";
 
 const messageRepo = new PRMessageRepository();
 const inboxStateRepo = new PRMessageInboxStateRepository();
-const partnerRepo = new PartnerRepository();
-const userNotificationOptRepo = new UserNotificationOptRepository();
-const subscriptionMessageService = new WeChatSubscriptionMessageService();
-
-const collectRecipientUserIds = async (
-  request: PartnerRequest,
-  authorUserId: UserId,
-): Promise<UserId[]> => {
-  const activeParticipants =
-    await partnerRepo.listActiveParticipantSummariesByPrId(request.id);
-
-  return Array.from(
-    new Set(
-      activeParticipants
-        .map((participant) => participant.userId)
-        .filter(
-          (userId): userId is UserId =>
-            userId !== null && userId !== authorUserId,
-        ),
-    ),
-  );
-};
-
-const scheduleNotificationsBestEffort = async (input: {
-  request: PartnerRequest;
-  authorUserId: UserId;
-  messageId: PRMessageId;
-  messageCreatedAt: Date;
-}): Promise<void> => {
-  const configured = await subscriptionMessageService.isPRMessageConfigured();
-  if (!configured) {
-    return;
-  }
-
-  const recipientUserIds = await collectRecipientUserIds(
-    input.request,
-    input.authorUserId,
-  );
-  if (recipientUserIds.length === 0) {
-    return;
-  }
-
-  const existingInboxStates = await inboxStateRepo.findByPrIdAndUserIds(
-    input.request.id,
-    recipientUserIds,
-  );
-  const inboxStateByUserId = new Map(
-    existingInboxStates.map((state) => [state.userId, state]),
-  );
-
-  for (const recipientUserId of recipientUserIds) {
-    try {
-      const notificationOpt =
-        await userNotificationOptRepo.findByUserId(recipientUserId);
-      const snapshot = userNotificationOptRepo.getSubscriptionSnapshot(
-        notificationOpt,
-        "PR_MESSAGE",
-      );
-      if (!snapshot.enabled) {
-        continue;
-      }
-
-      const inboxState = inboxStateByUserId.get(recipientUserId) ?? null;
-      if (!canNotifyForUnreadWave(inboxState)) {
-        continue;
-      }
-
-      await inboxStateRepo.upsertLastNotifiedMessageId(
-        input.request.id,
-        recipientUserId,
-        input.messageId,
-      );
-      await scheduleWeChatPRMessageNotification({
-        request: input.request,
-        recipientUserId,
-        authorUserId: input.authorUserId,
-        waveStartMessageId: input.messageId,
-        firstUnreadMessageCreatedAt: input.messageCreatedAt,
-      });
-    } catch (error) {
-      console.error("[PRMessage] failed to schedule notification", {
-        prId: input.request.id,
-        recipientUserId,
-        messageId: input.messageId,
-        error,
-      });
-    }
-  }
-};
 
 export async function createPRMessage(input: {
   prId: PRId;
@@ -203,13 +108,6 @@ export async function createPersistedPRMessage(input: {
     detail: {
       messageId: createdMessage.id,
     },
-  });
-
-  void scheduleNotificationsBestEffort({
-    request: input.request,
-    authorUserId: input.authorUserId,
-    messageId: createdMessage.id,
-    messageCreatedAt: createdMessage.createdAt,
   });
 
   return {

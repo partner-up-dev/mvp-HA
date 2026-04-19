@@ -14,6 +14,7 @@ import type { DomainEventType } from "./event-types";
 // ---------------------------------------------------------------------------
 
 type OutboxHandler = (event: {
+  id: string;
   type: string;
   aggregateType: string;
   aggregateId: string;
@@ -37,6 +38,7 @@ const BATCH_SIZE = 20;
 
 interface ClaimedOutboxRow extends Record<string, unknown> {
   outbox_id: number;
+  event_id: string;
   attempts: number;
   type: string;
   aggregate_type: string;
@@ -81,6 +83,7 @@ async function claimOutboxBatch(
           and d.id = o.event_id
         returning
           o.id as outbox_id,
+          d.id as event_id,
           o.attempts,
           d.type,
           d.aggregate_type,
@@ -112,6 +115,7 @@ export async function processOutboxBatch(options?: {
     try {
       for (const handler of handlers) {
         await handler({
+          id: row.event_id,
           type: row.type as DomainEventType,
           aggregateType: row.aggregate_type,
           aggregateId: row.aggregate_id,

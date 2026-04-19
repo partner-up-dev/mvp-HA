@@ -33,12 +33,15 @@ import {
   registerAnalyticsAggregationJobs,
 } from "./infra/analytics";
 import {
+  isWeChatPRMessageNotificationConfigured,
   registerWeChatActivityStartReminderJobs,
   registerWeChatBookingResultJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatPRMessageJobs,
   registerWeChatReminderJobs,
+  scheduleWeChatPRMessageNotification,
 } from "./infra/notifications";
+import { registerNotificationOutboxHandlers } from "./domains/notification";
 import { drainOutboxBatches } from "./infra/maintenance";
 import { env } from "./lib/env";
 import { withTimeout } from "./lib/with-timeout";
@@ -53,6 +56,10 @@ registerWeChatActivityStartReminderJobs();
 registerWeChatNewPartnerJobs();
 registerWeChatBookingResultJobs();
 registerWeChatPRMessageJobs();
+registerNotificationOutboxHandlers({
+  isPRMessageChannelConfigured: isWeChatPRMessageNotificationConfigured,
+  schedulePRMessageNotification: scheduleWeChatPRMessageNotification,
+});
 registerAnalyticsAggregationJobs();
 void bootstrapAnalyticsAggregationJobs().catch((error) => {
   console.error(

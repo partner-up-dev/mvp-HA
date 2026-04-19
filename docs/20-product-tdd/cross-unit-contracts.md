@@ -131,9 +131,7 @@ Important coordination note:
 - `POST /api/admin/anchor-prs/:id/messages` accepts one plain-text message payload from admin-authenticated tooling, persists one system message for that Anchor PR, and returns the created item plus refreshed thread state for downstream admin UX refresh.
 - `POST /api/apr/:id/messages/read-marker` advances the viewer's read marker idempotently after the thread is actually shown. Read-marker advancement should be explicit rather than piggybacked on list fetch, so prefetching or hidden loads do not silently clear an unread wave.
 - Message visibility and read-marker advancement reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread. Participant-authored message creation uses that same rule, while admin-authored system-message creation is a separate admin-only capability.
-- Backend notification fan-out evaluates all current active participants except the author. A `PR_MESSAGE` notification is eligible only when the recipient has available credits and no existing unread wave for the same PR. When a new unread wave opens, backend schedules one DB-backed delayed notification job for that wave rather than using an in-process timer.
-- The delayed `PR_MESSAGE` job recomputes latest unread sender, latest unread timestamp, and unread count from persisted messages at execution time so the send payload reflects the current unread wave summary instead of only the first triggering message.
-- Asynchronous notification execution must revalidate recipient participation and eligibility before delivery instead of assuming the API-time participant set is still valid.
+- PR message notification semantics are governed by `notification-contracts.md`, including unread-wave eligibility, delayed summary dispatch, durable opportunity/wave records, and dispatch-time revalidation.
 - Frontend owns only route/page placement, thread rendering, composer input, join-success subscription-modal prompting, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
 
 ## 10. Coordination And Failure Assumptions

@@ -28,4 +28,5 @@ export {
   registerWeChatPRMessageJobs,
   scheduleWeChatPRMessageNotification,
   cancelWeChatPRMessageJobsForUser,
+  isWeChatPRMessageNotificationConfigured,
 } from "./wechat-pr-message";

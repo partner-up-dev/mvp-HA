@@ -106,7 +106,7 @@ Pause and ask for human confirmation when:
 - Use GitHub CLI (`gh`) for GitHub operations and issue workflows.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
 - Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.
-- Read commit message policy at `./CONTRIBUTING.md`
+- Read commit and release policy at `./CONTRIBUTING.md`
 
 ## Coding Guidelines
 

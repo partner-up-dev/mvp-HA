@@ -21,7 +21,9 @@ export type DomainEventType =
   | "partner.exited"
   | "partner.confirmed"
   | "partner.checked_in"
-  | "partner.slot_released";
+  | "partner.slot_released"
+  | "notification.wave_opened"
+  | "notification.opportunity_created";
 
 // ---------------------------------------------------------------------------
 // Per-event payload shapes
@@ -100,6 +102,37 @@ export interface PartnerSlotReleasedPayload {
   manualReason: string | null;
 }
 
+export interface NotificationWaveOpenedPayload {
+  notificationKind: "PR_MESSAGE";
+  aggregateType: string;
+  aggregateId: string;
+  recipientUserId: string;
+  waveKey: string;
+  waveId: number | null;
+  sourceEventId: string | null;
+  waveStartMessageId: number;
+  waveStartAuthorUserId: string;
+}
+
+export interface NotificationOpportunityCreatedPayload {
+  notificationKind:
+    | "REMINDER_CONFIRMATION"
+    | "ACTIVITY_START_REMINDER"
+    | "BOOKING_RESULT"
+    | "NEW_PARTNER"
+    | "PR_MESSAGE";
+  lifecycleModel: "WAVE" | "ONE_SHOT";
+  aggregateType: string;
+  aggregateId: string;
+  recipientUserId: string;
+  channel: "WECHAT_SUBSCRIPTION" | "WECHAT_TEMPLATE" | "EMAIL" | "SMS";
+  runAtIso: string;
+  dedupeKey: string;
+  opportunityId: number | null;
+  sourceEventId: string | null;
+  payload: Record<string, unknown>;
+}
+
 // ---------------------------------------------------------------------------
 // Payload map (type → payload)
 // ---------------------------------------------------------------------------
@@ -116,6 +149,8 @@ export interface DomainEventPayloadMap {
   "partner.confirmed": PartnerConfirmedPayload;
   "partner.checked_in": PartnerCheckedInPayload;
   "partner.slot_released": PartnerSlotReleasedPayload;
+  "notification.wave_opened": NotificationWaveOpenedPayload;
+  "notification.opportunity_created": NotificationOpportunityCreatedPayload;
 }
 
 // ---------------------------------------------------------------------------

@@ -223,7 +223,7 @@
 
       <Modal
         :open="showJoinSubscriptionModal"
-        @close="showJoinSubscriptionModal = false"
+        @close="closeJoinSuccessNotificationPrompt"
       >
         <div class="notification-modal">
           <p class="modal-text modal-text--tight">
@@ -242,7 +242,7 @@
           <Button
             tone="surface"
             block
-            @click="showJoinSubscriptionModal = false"
+            @click="closeJoinSuccessNotificationPrompt"
           >
             {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
           </Button>
@@ -409,6 +409,7 @@ import { useAnchorAttendanceActions } from "@/domains/pr/use-cases/useAnchorAtte
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
+import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
 import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import {
   anchorPRDetailPath,
@@ -558,10 +559,14 @@ const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
 const showRosterModal = ref(false);
-const showJoinSubscriptionModal = ref(false);
 const showJoinFlowModal = ref(false);
 const showExitConfirmModal = ref(false);
 const showShareDrawer = ref(false);
+const {
+  isOpen: showJoinSubscriptionModal,
+  open: openJoinSuccessNotificationPrompt,
+  close: closeJoinSuccessNotificationPrompt,
+} = useJoinSuccessNotificationPrompt();
 const joinFlowStep = ref<"SUMMARY" | "PHONE_INPUT">("SUMMARY");
 const joinFlowPending = ref(false);
 const joinFlowError = ref<string | null>(null);
@@ -890,7 +895,7 @@ const finalizeJoinFlow = async (bookingContactPhone?: string | null) => {
   joinFlowPending.value = false;
   if (result) {
     closeJoinFlowModal();
-    showJoinSubscriptionModal.value = true;
+    openJoinSuccessNotificationPrompt();
     return;
   }
   joinFlowError.value =

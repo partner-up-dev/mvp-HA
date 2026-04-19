@@ -9,7 +9,7 @@ Persisted in Postgres via backend entities and repositories:
 - PR messages and per-user PR message inbox state
 - users, user notification options, and user reliability
 - anchor events, event-specific beta-group QR codes, batches, POIs, support resources, booking contacts, and booking execution records
-- config, operation logs, domain events, outbox events, jobs, and notification deliveries
+- config, operation logs, domain events, outbox events, jobs, notification opportunities, notification waves, and notification deliveries
 - analytics aggregate tables
 
 This is the source of truth for product behavior.
@@ -18,7 +18,7 @@ This is the source of truth for product behavior.
 
 - outbox backlog and event-processing progress
 - job leases, retries, due-job claims, and bucket-based scheduling semantics carried by `run_at`, `resolution_ms`, `early_tolerance_units`, and `late_tolerance_units`
-- notification send attempts and cleanup state
+- notification opportunity scheduling, wave state, send attempts, and cleanup state
 
 These shape runtime behavior but remain backend-owned.
 
