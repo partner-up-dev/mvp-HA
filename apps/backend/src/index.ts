@@ -47,7 +47,8 @@ import { env } from "./lib/env";
 import { withTimeout } from "./lib/with-timeout";
 import {
   getWechatDomainVerificationContent,
-  WECHAT_DOMAIN_VERIFICATION_FILENAME,
+  MPWX_DOMAIN_VERIFICATION_FILENAME,
+  WXOA_DOMAIN_VERIFICATION_FILENAME,
 } from "./lib/wechat-domain-verification";
 
 const app = new Hono();
@@ -75,12 +76,7 @@ app.use(
   cors({
     origin: (origin) => origin ?? "*",
     credentials: true,
-    allowHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-User-Id",
-      "X-User-Pin",
-    ],
+    allowHeaders: ["Content-Type", "Authorization", "X-User-Id", "X-User-Pin"],
     exposeHeaders: ["x-access-token"],
   }),
 );
@@ -91,7 +87,7 @@ app.use("*", async (c, next) => {
     if (
       c.req.method === "OPTIONS" ||
       c.req.path === "/health" ||
-      c.req.path === `/${WECHAT_DOMAIN_VERIFICATION_FILENAME}` ||
+      c.req.path === `/${MPWX_DOMAIN_VERIFICATION_FILENAME}` ||
       c.req.path.startsWith("/internal/")
     ) {
       return;
@@ -143,10 +139,24 @@ const routes = app
   .route("/internal/maintenance", internalMaintenanceRoute);
 
 // Health check
-app.get(`/${WECHAT_DOMAIN_VERIFICATION_FILENAME}`, (c) => {
-  return c.body(getWechatDomainVerificationContent(), 200, {
-    "Content-Type": "text/plain; charset=utf-8",
-  });
+app.get(`/${MPWX_DOMAIN_VERIFICATION_FILENAME}`, (c) => {
+  return c.body(
+    getWechatDomainVerificationContent(MPWX_DOMAIN_VERIFICATION_FILENAME),
+    200,
+    {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  );
+});
+
+app.get(`/${WXOA_DOMAIN_VERIFICATION_FILENAME}`, (c) => {
+  return c.body(
+    getWechatDomainVerificationContent(WXOA_DOMAIN_VERIFICATION_FILENAME),
+    200,
+    {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  );
 });
 
 app.get("/health", (c) => c.json({ status: "ok", jobs: jobRunner.status() }));

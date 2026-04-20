@@ -3,15 +3,11 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-export const WECHAT_DOMAIN_VERIFICATION_FILENAME = "XdiIXm3WSq.txt";
-export const WECHAT_MINI_PROGRAM_VERIFICATION_FILENAME =
+export const MPWX_DOMAIN_VERIFICATION_FILENAME = "XdiIXm3WSq.txt";
+export const WXOA_DOMAIN_VERIFICATION_FILENAME =
   "MP_verify_bDsck6MFYTmV24vd.txt";
 
-const verificationFileRoots = [
-  "../../../frontend/public/",
-  "../../frontend/public/",
-  "../verification/",
-];
+const verificationFileRoots = ["../verification/"];
 
 const buildVerificationFileCandidates = (filename: string): URL[] => {
   return verificationFileRoots.map(
@@ -22,7 +18,7 @@ const buildVerificationFileCandidates = (filename: string): URL[] => {
 const cachedVerificationContents = new Map<string, string>();
 
 export const getWechatDomainVerificationContent = (
-  filename = WECHAT_DOMAIN_VERIFICATION_FILENAME,
+  filename: string,
 ): string => {
   const cachedContent = cachedVerificationContents.get(filename);
   if (cachedContent !== undefined) {
