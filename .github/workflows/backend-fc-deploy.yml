@@ -115,7 +115,6 @@ jobs:
       LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
       LLM_DEFAULT_MODEL: ${{ vars.LLM_DEFAULT_MODEL }}
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-      WECHAT_OAUTH_CALLBACK_URL: ${{ vars.WECHAT_OAUTH_CALLBACK_URL }}
       WECOM_TOKEN: ${{ secrets.WECOM_TOKEN }}
       WECOM_ENCODING_AES_KEY: ${{ secrets.WECOM_ENCODING_AES_KEY }}
       WECOM_CORP_ID: ${{ secrets.WECOM_CORP_ID }}
@@ -197,11 +196,6 @@ jobs:
       - name: Prepare Function Compute package
         if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
         run: bash scripts/ci/fc/prepare_fc_package.sh
-
-      - name: Normalize optional backend deploy environment
-        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
-        run: |
-          printf 'WECHAT_OAUTH_CALLBACK_URL=%s\n' "${WECHAT_OAUTH_CALLBACK_URL:-}" >> "$GITHUB_ENV"
 
       - name: Deploy to Aliyun FC
         if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
