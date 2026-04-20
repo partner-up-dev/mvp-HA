@@ -73,6 +73,7 @@ resources:
         LLM_BASE_URL: ${env('LLM_BASE_URL')}
         LLM_DEFAULT_MODEL: ${env('LLM_DEFAULT_MODEL')}
         FRONTEND_URL: ${env('FRONTEND_URL')}
+        WECHAT_OAUTH_CALLBACK_URL: ${env('WECHAT_OAUTH_CALLBACK_URL')}
         WECOM_TOKEN: ${env('WECOM_TOKEN')}
         WECOM_ENCODING_AES_KEY: ${env('WECOM_ENCODING_AES_KEY')}
         WECOM_CORP_ID: ${env('WECOM_CORP_ID')}

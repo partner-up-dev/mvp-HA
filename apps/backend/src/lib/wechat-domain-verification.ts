@@ -7,7 +7,11 @@ export const MPWX_DOMAIN_VERIFICATION_FILENAME = "XdiIXm3WSq.txt";
 export const WXOA_DOMAIN_VERIFICATION_FILENAME =
   "MP_verify_bDsck6MFYTmV24vd.txt";
 
-const verificationFileRoots = ["../verification/"];
+const verificationFileRoots = [
+  "../../../frontend/public/",
+  "../../frontend/public/",
+  "../verification/",
+];
 
 const buildVerificationFileCandidates = (filename: string): URL[] => {
   return verificationFileRoots.map(

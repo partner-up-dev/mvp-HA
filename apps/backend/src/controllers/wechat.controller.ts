@@ -439,6 +439,41 @@ const isSecureRequest = (c: Context): boolean => {
   }
 };
 
+const firstForwardedHeaderValue = (
+  rawValue: string | undefined,
+): string | null => {
+  const value = rawValue?.split(",")[0]?.trim();
+  return value && value.length > 0 ? value : null;
+};
+
+const resolveForwardedProtocol = (
+  rawValue: string | undefined,
+): string | null => {
+  const value = firstForwardedHeaderValue(rawValue)?.toLowerCase();
+  if (value === "http" || value === "http:") return "http:";
+  if (value === "https" || value === "https:") return "https:";
+  return null;
+};
+
+const resolvePublicRequestUrl = (c: Context): URL => {
+  const url = new URL(c.req.url);
+  const forwardedProtocol = resolveForwardedProtocol(
+    c.req.header("x-forwarded-proto"),
+  );
+  if (forwardedProtocol) {
+    url.protocol = forwardedProtocol;
+  }
+
+  const forwardedHost =
+    firstForwardedHeaderValue(c.req.header("x-forwarded-host")) ??
+    firstForwardedHeaderValue(c.req.header("host"));
+  if (forwardedHost) {
+    url.host = forwardedHost;
+  }
+
+  return url;
+};
+
 const resolveCookieBaseOptions = (c: Context) => ({
   httpOnly: true,
   sameSite: "Lax" as const,
@@ -514,10 +549,7 @@ const clearOAuthHandoffCookieByNonce = (c: Context, nonce: string): void => {
 const collectAllowedReturnToOrigins = (c: Context): Set<string> => {
   const origins = new Set<string>();
 
-  const requestUrl = parseHttpUrl(c.req.url);
-  if (requestUrl) {
-    origins.add(requestUrl.origin);
-  }
+  origins.add(resolvePublicRequestUrl(c).origin);
 
   const frontendUrl = parseHttpUrl(env.FRONTEND_URL);
   if (frontendUrl) {
@@ -548,7 +580,7 @@ const resolveFallbackReturnTo = (c: Context): string => {
     return frontendUrl.toString();
   }
 
-  const requestUrl = new URL(c.req.url);
+  const requestUrl = resolvePublicRequestUrl(c);
   requestUrl.pathname = "/";
   requestUrl.search = "";
   requestUrl.hash = "";
@@ -566,7 +598,7 @@ const resolveReturnTo = (
 
   let parsed: URL;
   try {
-    parsed = new URL(trimmedReturnTo, new URL(c.req.url).origin);
+    parsed = new URL(trimmedReturnTo, resolvePublicRequestUrl(c).origin);
   } catch {
     throw new Error("Invalid returnTo");
   }
@@ -591,7 +623,7 @@ const resolveOAuthCallbackUrl = (c: Context): string => {
     return configuredCallbackUrl.toString();
   }
 
-  const backendCallbackUrl = new URL(c.req.url);
+  const backendCallbackUrl = resolvePublicRequestUrl(c);
   backendCallbackUrl.pathname = backendCallbackUrl.pathname.replace(
     /\/oauth\/(?:login|bind)$/,
     "/oauth/callback",
@@ -602,7 +634,7 @@ const resolveOAuthCallbackUrl = (c: Context): string => {
 };
 
 const resolveMockOAuthAuthorizeUrl = (c: Context, state: string): string => {
-  const authorizeUrl = new URL(c.req.url);
+  const authorizeUrl = resolvePublicRequestUrl(c);
   authorizeUrl.pathname = authorizeUrl.pathname.replace(
     /\/oauth\/(?:login|bind)$/,
     "/oauth/mock/authorize",
@@ -617,7 +649,7 @@ const resolveMockOAuthCallbackUrl = (
   c: Context,
   state: string,
 ): string => {
-  const callbackUrl = new URL(c.req.url);
+  const callbackUrl = resolvePublicRequestUrl(c);
   callbackUrl.pathname = callbackUrl.pathname.replace(
     /\/oauth\/mock\/authorize$/,
     "/oauth/callback",

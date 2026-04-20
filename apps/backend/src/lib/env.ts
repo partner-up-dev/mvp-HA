@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const optionalUrlFromEnv = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().url().optional(),
+);
+
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
 
@@ -50,7 +55,7 @@ const envSchema = z.object({
   // Frontend URL for share links
   FRONTEND_URL: z.string().min(1).optional(),
   // Optional exact OAuth callback URL registered in the WeChat official account console.
-  WECHAT_OAUTH_CALLBACK_URL: z.string().url().optional(),
+  WECHAT_OAUTH_CALLBACK_URL: optionalUrlFromEnv,
 
   // Access token (JWT-like HMAC token) config.
   AUTH_JWT_SECRET: z.string().min(16).default("dev-auth-secret-change-me"),

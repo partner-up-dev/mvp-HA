@@ -75,7 +75,7 @@ Current durable facts we can state:
 - repo deployment descriptor: `apps/frontend/esa.jsonc`
 - frontend builds to `apps/frontend/dist`
 - backend runtime depends on `FRONTEND_URL` for share link generation
-- WeChat OAuth callback defaults to the backend `/api/wechat/oauth/callback` URL inferred from the OAuth start request; set `WECHAT_OAUTH_CALLBACK_URL` when the callback URL registered in the WeChat service-account console must be an exact externally reachable URL
+- WeChat OAuth callback defaults to the backend `/api/wechat/oauth/callback` URL inferred from the OAuth start request and forwarded public host / protocol headers; set `WECHAT_OAUTH_CALLBACK_URL` when the callback URL registered in the WeChat service-account console must be an exact externally reachable URL
 
 The repo does not currently document a full CI/CD workflow for frontend ESA rollout with the same level of detail as backend FC deploy.
 
