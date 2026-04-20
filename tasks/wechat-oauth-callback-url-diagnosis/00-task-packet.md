@@ -22,6 +22,5 @@
 ## Implementation Notes
 
 - OAuth callback URL inference now uses a public request URL reconstructed from `x-forwarded-proto`, `x-forwarded-host`, and `host` before falling back to the raw Hono request URL.
-- Backend FC deploy now passes optional `WECHAT_OAUTH_CALLBACK_URL` through GitHub environment variables into the function runtime.
-- Empty `WECHAT_OAUTH_CALLBACK_URL` is parsed as absent so environments can leave the override unset.
-- GitHub Actions normalizes missing optional `WECHAT_OAUTH_CALLBACK_URL` to an empty process env value before `s deploy`, because Serverless Devs `env()` requires the key to exist.
+- Backend FC deploy relies on inferred public callback URLs and does not inject `WECHAT_OAUTH_CALLBACK_URL`, because Serverless Devs `env()` requires referenced keys to exist.
+- Empty `WECHAT_OAUTH_CALLBACK_URL` is still parsed as absent for local/manual runtimes that provide the override key.
