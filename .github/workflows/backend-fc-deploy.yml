@@ -198,6 +198,11 @@ jobs:
         if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
         run: bash scripts/ci/fc/prepare_fc_package.sh
 
+      - name: Normalize optional backend deploy environment
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
+        run: |
+          printf 'WECHAT_OAUTH_CALLBACK_URL=%s\n' "${WECHAT_OAUTH_CALLBACK_URL:-}" >> "$GITHUB_ENV"
+
       - name: Deploy to Aliyun FC
         if: github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true
         env:
