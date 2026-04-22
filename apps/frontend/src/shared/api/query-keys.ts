@@ -2,14 +2,11 @@ import type { PRId } from "@partner-up-dev/backend";
 
 export const queryKeys = {
   pr: {
+    detail: (id: PRId | null) => ["partner-request", "detail", id] as const,
     mineCreated: () => ["partner-request", "mine", "created"] as const,
     mineJoined: () => ["partner-request", "mine", "joined"] as const,
-    partnerProfile: (
-      scenario: "COMMUNITY" | "ANCHOR",
-      prId: PRId | null,
-      partnerId: number | null,
-    ) =>
-      ["partner-request", "partner-profile", scenario, prId, partnerId] as const,
+    partnerProfile: (prId: PRId | null, partnerId: number | null) =>
+      ["partner-request", "partner-profile", prId, partnerId] as const,
   },
   communityPR: {
     detail: (id: PRId | null) => ["community-pr", "detail", id] as const,

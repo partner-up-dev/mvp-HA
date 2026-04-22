@@ -204,7 +204,7 @@ Fields leaving PR core:
 2. implementation blueprint for the single-PR data model, including `partner_requests` as the root table, `Partner` submodule storage shape, subtype-table retirement path, and field retirement path for `auto_hide_at` and PR-side `booking_triggered_at`
 3. schema expand and backfill scaffolding for one single PR model, including root-table expansion, partner admission fields, and compatibility bridges needed during rollout
 4. non-destructive PR vocabulary cleanup, beginning with canonical PR create routes and hooks while old `cpr` and `apr` detail surfaces remain as compatibility seams
-5. backend symbol and route cleanup for one single `PR` vocabulary across DTOs, repository contracts, and create/read surfaces
+5. canonical PR read vocabulary cleanup across detail and partner-profile read surfaces while old `apr` and `cpr` detail pages remain as compatibility seams
 6. rewrite Anchor Event assisted create and discovery around type and time-window facts, so `#170` lands as event-side assistance instead of PR-side ownership
 7. backend domain rewrite from `pr-core` / `pr-anchor` / `pr-community` toward one `pr`, including `Partner`, `PR Message`, and `PR Sharing`
 8. move PIN and WeChat user resolution helpers into `domains/user`
@@ -356,6 +356,36 @@ Fields leaving PR core:
   - `pnpm --filter @partner-up-dev/frontend build`
 - Verification gap:
   - `CommunityPR` and `AnchorPR` detail surfaces still exist and remain the next cleanup surface
+
+## Slice 5 - Canonical PR Read Vocabulary Cleanup
+
+- Status:
+  - completed on 2026-04-22
+- Scope for this narrowed slice:
+  - add canonical backend detail and partner-profile read endpoints under `/api/pr/:id*`
+  - add generic frontend read hooks for PR detail and partner profile
+  - keep existing `apr` and `cpr` detail routes, pages, and queries as compatibility seams
+- Artifacts:
+  - `apps/backend/src/domains/pr-core/use-cases/get-pr-detail.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/get-pr-partner-profile.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/index.ts`
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRDetail.ts`
+  - `apps/frontend/src/domains/user/queries/usePRPartnerProfile.ts`
+  - `apps/frontend/src/shared/api/query-keys.ts`
+- Decisions implemented:
+  - canonical detail read now lives at `GET /api/pr/:id`
+  - canonical partner profile read now lives at `GET /api/pr/:id/partners/:partnerId/profile`
+  - backend canonical read dispatch chooses the legacy anchor or community detail use case from root PR facts
+  - partner profile lookup no longer requires frontend callers to branch on `prKind`
+  - frontend now has a generic `usePRDetail` hook and a generic partner profile fetch path even while old detail pages remain in place
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - canonical frontend detail route `/pr/:id` has not been introduced yet
+  - existing `useAnchorPR` and `useCommunityPR` detail hooks still point at compatibility endpoints
 
 ## Handoff Source
 

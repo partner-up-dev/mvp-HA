@@ -7,17 +7,9 @@ import { queryKeys } from "@/shared/api/query-keys";
 
 export type PRPartnerProfileScenario = "COMMUNITY" | "ANCHOR";
 
-type CommunityPRPartnerProfileResponse = InferResponseType<
-  (typeof client.api.cpr)[":id"]["partners"][":partnerId"]["profile"]["$get"]
+type PRPartnerProfileResponse = InferResponseType<
+  (typeof client.api.pr)[":id"]["partners"][":partnerId"]["profile"]["$get"]
 >;
-
-type AnchorPRPartnerProfileResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["partners"][":partnerId"]["profile"]["$get"]
->;
-
-export type PRPartnerProfileResponse =
-  | CommunityPRPartnerProfileResponse
-  | AnchorPRPartnerProfileResponse;
 
 const readErrorMessage = async (
   response: Response,
@@ -33,34 +25,27 @@ export const usePRPartnerProfile = (
   partnerId: Ref<number | null>,
 ) => {
   const queryKey = computed(() =>
-    queryKeys.pr.partnerProfile(scenario.value ?? "COMMUNITY", prId.value, partnerId.value),
+    queryKeys.pr.partnerProfile(prId.value, partnerId.value),
   );
 
   return useQuery<PRPartnerProfileResponse>({
     queryKey,
     queryFn: async () => {
-      const activeScenario = scenario.value;
       const activePrId = prId.value;
       const activePartnerId = partnerId.value;
 
-      if (!activeScenario || activePrId === null || activePartnerId === null) {
+      if (activePrId === null || activePartnerId === null) {
         throw new Error(i18n.global.t("errors.fetchRequestFailed"));
       }
 
-      const res =
-        activeScenario === "COMMUNITY"
-          ? await client.api.cpr[":id"].partners[":partnerId"].profile.$get({
-              param: {
-                id: activePrId.toString(),
-                partnerId: activePartnerId.toString(),
-              },
-            })
-          : await client.api.apr[":id"].partners[":partnerId"].profile.$get({
-              param: {
-                id: activePrId.toString(),
-                partnerId: activePartnerId.toString(),
-              },
-            });
+      const res = await client.api.pr[":id"].partners[":partnerId"].profile.$get(
+        {
+          param: {
+            id: activePrId.toString(),
+            partnerId: activePartnerId.toString(),
+          },
+        },
+      );
 
       if (!res.ok) {
         throw new Error(
