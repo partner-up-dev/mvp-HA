@@ -43,7 +43,7 @@
 8. The event page resolves its assisted-create choices into the same structured PR create payload shape used by `/pr/new` and may carry transient event referral context for route continuity.
 9. The event page submits the same structured create command used by the form path. If the user already has an authenticated account, the backend creates and publishes the PR inside that same command.
 10. The current Anchor Event and downstream PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-context collaboration journey entirely.
-11. The user may then join, inspect alternatives, or view booking-support information.
+11. The user may then join, continue browsing other visible PRs in that event context, or view booking-support information.
 12. The resulting PR may continue through timing and reliability loops such as confirmation, reminders, and attendance follow-up when the corresponding modules are active.
 
 ## 5. Revisit and History Entry

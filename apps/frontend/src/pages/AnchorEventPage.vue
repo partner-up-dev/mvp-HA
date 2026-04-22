@@ -65,8 +65,8 @@
           :is-card-routing="isCardRouting"
           :card-action-error="cardActionError"
           :drag-hint-token="cardDragHintToken"
-          :card-create-batch-options="cardCreateBatchOptions"
-          :card-create-batch-id="cardCreateBatchId"
+          :card-create-time-window-options="cardCreateTimeWindowOptions"
+          :card-create-time-window-key="cardCreateTimeWindowKey"
           :card-create-location-id="cardCreateLocationId"
           :card-create-location-options="cardCreateLocationOptionViewModels"
           :create-action-error-message="createActionErrorMessage"
@@ -77,7 +77,7 @@
           @consume-drag-hint-window="consumeCardDragHintWindow"
           @skip-active-card="handleSkipActiveCard"
           @view-active-card-detail="handleViewActiveCardDetail"
-          @update:card-create-batch-id="cardCreateBatchId = $event"
+          @update:card-create-time-window-key="cardCreateTimeWindowKey = $event"
           @update:card-create-location-id="cardCreateLocationId = $event"
           @create-from-card-empty="handleCreateFromCardEmpty"
         />
@@ -85,11 +85,11 @@
 
       <template v-else>
         <AnchorEventListModeSection
-          :has-batches="detail.batches.length > 0"
+          :has-time-windows="detail.timeWindows.length > 0"
           :date-tabs="dateTabs"
           :selected-date-key="selectedDateKey"
           :selected-date-group="selectedDateGroup"
-          :create-batch-choices="listModeCreateBatchChoices"
+          :create-time-window-choices="listModeCreateTimeWindowChoices"
           :event-id="detail.id"
           :event-title="detail.title"
           :event-beta-group-qr-code="detail.betaGroupQrCode"
@@ -161,10 +161,10 @@ type EventViewMode = "LIST" | "CARD";
 type TimeWindow = [string | null, string | null];
 
 type LocationOption =
-  AnchorEventDetailResponse["batches"][number]["locationOptions"][number];
+  AnchorEventDetailResponse["timeWindows"][number]["locationOptions"][number];
 
-type CardBatchOption = {
-  batchId: number;
+type CardTimeWindowOption = {
+  key: string;
   label: string;
 };
 
@@ -174,8 +174,8 @@ type CardCreateLocationOptionViewModel = {
   disabled: boolean;
 };
 
-type ListModeBatchViewModel = {
-  batch: AnchorEventDetailResponse["batches"][number];
+type ListModeTimeWindowViewModel = {
+  entry: AnchorEventDetailResponse["timeWindows"][number];
   timeLabel: string;
 };
 
@@ -183,11 +183,11 @@ type ListModeDateGroupViewModel = {
   key: string;
   label: string;
   tabClass?: string;
-  batches: ListModeBatchViewModel[];
+  timeWindows: ListModeTimeWindowViewModel[];
 };
 
-type ListModeCreateBatchChoice = {
-  batch: AnchorEventDetailResponse["batches"][number];
+type ListModeCreateTimeWindowChoice = {
+  entry: AnchorEventDetailResponse["timeWindows"][number];
   optionLabel: string;
   subtitleLabel: string;
 };
@@ -255,7 +255,7 @@ const cardActionError = ref<string | null>(null);
 const isCardRouting = ref(false);
 const cardDragHintToken = ref(0);
 
-const cardCreateBatchId = ref<number | null>(null);
+const cardCreateTimeWindowKey = ref<string | null>(null);
 const cardCreateLocationId = ref("");
 let cardDragHintTimerId: number | null = null;
 
@@ -371,12 +371,9 @@ const createActionErrorMessage = computed(() => {
         return t("anchorEvent.createCard.errors.timeWindowConflict");
       case "WECHAT_AUTH_REQUIRED":
         return t("anchorEvent.createCard.errors.wechatAuthRequired");
-      case "WECHAT_OAUTH_NOT_CONFIGURED":
-        return t("anchorEvent.createCard.errors.wechatOAuthNotConfigured");
       case "LOCATION_CAP_REACHED":
         return t("anchorEvent.createCard.errors.locationCapReached");
       case "ANCHOR_EVENT_NOT_FOUND":
-      case "ANCHOR_EVENT_BATCH_NOT_FOUND":
         return t("anchorEvent.createCard.errors.eventUnavailable");
       default:
         return t("anchorEvent.createCard.errors.createFailed");
@@ -385,7 +382,7 @@ const createActionErrorMessage = computed(() => {
   return null;
 });
 
-const resolveBatchStartTimestamp = (timeWindow: TimeWindow): number => {
+const resolveTimeWindowStartTimestamp = (timeWindow: TimeWindow): number => {
   const [start] = timeWindow;
   if (!start) {
     return Number.POSITIVE_INFINITY;
@@ -399,25 +396,51 @@ const resolveBatchStartTimestamp = (timeWindow: TimeWindow): number => {
   return timestamp;
 };
 
-const sortedBatches = computed(() => {
-  const batches = detail.value?.batches ?? [];
-  return [...batches].sort((left, right) => {
-    const leftTimestamp = resolveBatchStartTimestamp(left.timeWindow);
-    const rightTimestamp = resolveBatchStartTimestamp(right.timeWindow);
+const resolveTimeWindowEndTimestamp = (timeWindow: TimeWindow): number => {
+  const [, end] = timeWindow;
+  if (!end) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const timestamp = new Date(end).getTime();
+  if (!Number.isFinite(timestamp)) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return timestamp;
+};
+
+const sortedTimeWindows = computed(() => {
+  const timeWindows = detail.value?.timeWindows ?? [];
+  return [...timeWindows].sort((left, right) => {
+    const leftTimestamp = resolveTimeWindowStartTimestamp(left.timeWindow);
+    const rightTimestamp = resolveTimeWindowStartTimestamp(right.timeWindow);
     return leftTimestamp - rightTimestamp;
   });
 });
 
-const isExpiredBatch = (
-  batch: AnchorEventDetailResponse["batches"][number],
-): boolean => batch.status === "EXPIRED";
+const hasTimeWindowStarted = (timeWindow: TimeWindow): boolean => {
+  const startTimestamp = resolveTimeWindowStartTimestamp(timeWindow);
+  if (!Number.isFinite(startTimestamp)) {
+    return false;
+  }
 
-const nonExpiredSortedBatches = computed(() =>
-  sortedBatches.value.filter((batch) => !isExpiredBatch(batch)),
-);
+  return Date.now() >= startTimestamp;
+};
 
-const openSortedBatches = computed(() =>
-  sortedBatches.value.filter((batch) => batch.status === "OPEN"),
+const isEndedTimeWindow = (timeWindow: TimeWindow): boolean => {
+  const endTimestamp = resolveTimeWindowEndTimestamp(timeWindow);
+  if (Number.isFinite(endTimestamp)) {
+    return Date.now() >= endTimestamp;
+  }
+
+  return hasTimeWindowStarted(timeWindow);
+};
+
+const upcomingSortedTimeWindows = computed(() =>
+  sortedTimeWindows.value.filter(
+    (entry) => !hasTimeWindowStarted(entry.timeWindow),
+  ),
 );
 
 const PRODUCT_TIME_ZONE = "Asia/Shanghai";
@@ -461,7 +484,9 @@ const resolveRelativeDayLabel = (
   return null;
 };
 
-const resolveBatchDateKey = (timeWindow: TimeWindow): ProductLocalDateKey | null => {
+const resolveTimeWindowDateKey = (
+  timeWindow: TimeWindow,
+): ProductLocalDateKey | null => {
   const [start] = timeWindow;
   if (!start) {
     return null;
@@ -491,12 +516,12 @@ const formatDateKeyLabel = (dateKey: ProductLocalDateKey): string => {
   return `${month}月${day}日${productLocalWeekdayFormatter.format(parsed)}`;
 };
 
-function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
+function formatTimeWindowLabel(timeWindow: TimeWindow, index: number): string {
   const [start] = timeWindow;
   if (start) {
     try {
       const date = new Date(start);
-      const dateKey = resolveBatchDateKey(timeWindow);
+      const dateKey = resolveTimeWindowDateKey(timeWindow);
       if (Number.isNaN(date.getTime()) || dateKey === null) {
         return `${t("anchorEvent.batchLabel")} ${index + 1}`;
       }
@@ -512,7 +537,7 @@ function formatBatchLabel(timeWindow: TimeWindow, index: number): string {
   return `${t("anchorEvent.batchLabel")} ${index + 1}`;
 }
 
-function formatBatchTimeLabel(timeWindow: TimeWindow, index: number): string {
+function formatTimeWindowTimeLabel(timeWindow: TimeWindow, index: number): string {
   const [start] = timeWindow;
   if (start) {
     try {
@@ -528,53 +553,50 @@ function formatBatchTimeLabel(timeWindow: TimeWindow, index: number): string {
   return `${t("anchorEvent.batchLabel")} ${index + 1}`;
 }
 
-const formatBatchOptionLabel = (
-  batch: AnchorEventDetailResponse["batches"][number],
+const formatTimeWindowOptionLabel = (
+  entry: AnchorEventDetailResponse["timeWindows"][number],
   index: number,
-): string => {
-  const baseLabel = formatBatchLabel(batch.timeWindow, index);
-  const description = batch.description?.trim() ?? "";
-  if (!description) {
-    return baseLabel;
-  }
-
-  return `${baseLabel} · ${description}`;
-};
+): string => formatTimeWindowLabel(entry.timeWindow, index);
 
 const dateGroups = computed<ListModeDateGroupViewModel[]>(() => {
   const groups: ListModeDateGroupViewModel[] = [];
   const groupIndexByKey = new Map<string, number>();
 
-  sortedBatches.value.forEach((batch, index) => {
-    const groupKey = resolveBatchDateKey(batch.timeWindow) ?? `batch:${batch.id}`;
+  sortedTimeWindows.value.forEach((entry, index) => {
+    const groupKey =
+      resolveTimeWindowDateKey(entry.timeWindow) ?? `time-window:${entry.key}`;
     const existingIndex = groupIndexByKey.get(groupKey);
-    const batchViewModel: ListModeBatchViewModel = {
-      batch,
-      timeLabel: formatBatchTimeLabel(batch.timeWindow, index),
+    const timeWindowViewModel: ListModeTimeWindowViewModel = {
+      entry,
+      timeLabel: formatTimeWindowTimeLabel(entry.timeWindow, index),
     };
 
     if (existingIndex !== undefined) {
-      groups[existingIndex]?.batches.push(batchViewModel);
+      groups[existingIndex]?.timeWindows.push(timeWindowViewModel);
       return;
     }
 
     const groupLabel =
-      groupKey.startsWith("batch:")
-        ? formatBatchLabel(batch.timeWindow, index)
+      groupKey.startsWith("time-window:")
+        ? formatTimeWindowLabel(entry.timeWindow, index)
         : formatDateKeyLabel(groupKey as ProductLocalDateKey);
 
     groupIndexByKey.set(groupKey, groups.length);
     groups.push({
       key: groupKey,
       label: groupLabel,
-      tabClass: isExpiredBatch(batch) ? "tab-bar__tab--expired" : undefined,
-      batches: [batchViewModel],
+      tabClass: isEndedTimeWindow(entry.timeWindow)
+        ? "tab-bar__tab--expired"
+        : undefined,
+      timeWindows: [timeWindowViewModel],
     });
   });
 
   return groups.map((group) => ({
     ...group,
-    tabClass: group.batches.every(({ batch }) => isExpiredBatch(batch))
+    tabClass: group.timeWindows.every(({ entry }) =>
+      isEndedTimeWindow(entry.timeWindow),
+    )
       ? "tab-bar__tab--expired"
       : undefined,
   }));
@@ -588,33 +610,29 @@ const dateTabs = computed(() =>
   })),
 );
 
-const listModeCreateBatchChoices = computed<ListModeCreateBatchChoice[]>(() =>
-  openSortedBatches.value.map((batch, index) => ({
-    batch,
-    optionLabel: formatBatchOptionLabel(batch, index),
-    subtitleLabel: formatBatchLabel(batch.timeWindow, index),
-  })),
+const listModeCreateTimeWindowChoices = computed<ListModeCreateTimeWindowChoice[]>(
+  () =>
+    upcomingSortedTimeWindows.value.map((entry, index) => ({
+      entry,
+      optionLabel: formatTimeWindowOptionLabel(entry, index),
+      subtitleLabel: formatTimeWindowLabel(entry.timeWindow, index),
+    })),
 );
 
 const selectedDateGroup = computed(
-  () => dateGroups.value.find((group) => group.key === selectedDateKey.value) ?? null,
+  () =>
+    dateGroups.value.find((group) => group.key === selectedDateKey.value) ??
+    null,
 );
 
 const resolveDefaultDateKey = (
   groups: ListModeDateGroupViewModel[],
 ): string | null => {
-  const firstOpenGroup = groups.find((group) =>
-    group.batches.some(({ batch }) => batch.status === "OPEN"),
+  const firstUpcomingGroup = groups.find((group) =>
+    group.timeWindows.some(({ entry }) => !isEndedTimeWindow(entry.timeWindow)),
   );
-  if (firstOpenGroup) {
-    return firstOpenGroup.key;
-  }
-
-  const firstNonExpiredGroup = groups.find((group) =>
-    group.batches.some(({ batch }) => !isExpiredBatch(batch)),
-  );
-  if (firstNonExpiredGroup) {
-    return firstNonExpiredGroup.key;
+  if (firstUpcomingGroup) {
+    return firstUpcomingGroup.key;
   }
 
   return groups[0]?.key ?? null;
@@ -643,8 +661,8 @@ watch(
 const allPoiIdsCsv = computed(() => {
   const uniqueLocationIds = new Set<string>();
 
-  for (const batch of sortedBatches.value) {
-    for (const pr of batch.prs) {
+  for (const entry of sortedTimeWindows.value) {
+    for (const pr of entry.prs) {
       const location = pr.location?.trim() ?? "";
       if (location.length > 0) {
         uniqueLocationIds.add(location);
@@ -798,10 +816,10 @@ const isWeChatAuthBlockingError = (
 };
 
 const buildEventAssistedFields = ({
-  targetBatchId,
+  targetTimeWindow,
   locationId,
 }: {
-  targetBatchId: number | null;
+  targetTimeWindow: TimeWindow | null;
   locationId: string | null;
 }) => {
   const event = detail.value;
@@ -809,21 +827,15 @@ const buildEventAssistedFields = ({
     throw new Error(t("common.operationFailed"));
   }
 
-  const targetBatch =
-    targetBatchId === null
-      ? null
-      : (sortedBatches.value.find((batch) => batch.id === targetBatchId) ??
-        null);
-
   const normalizedLocation = locationId?.trim() ?? "";
-  if (!targetBatch || normalizedLocation.length === 0) {
+  if (!targetTimeWindow || normalizedLocation.length === 0) {
     throw new Error(t("common.operationFailed"));
   }
 
   return {
     title: undefined,
     type: event.type,
-    time: targetBatch.timeWindow,
+    time: targetTimeWindow,
     location: normalizedLocation,
     minPartners: event.defaultMinPartners ?? 2,
     maxPartners: event.defaultMaxPartners ?? null,
@@ -835,10 +847,10 @@ const buildEventAssistedFields = ({
 };
 
 const createEventAssistedPR = async ({
-  targetBatchId,
+  targetTimeWindow,
   locationId,
 }: {
-  targetBatchId: number | null;
+  targetTimeWindow: TimeWindow | null;
   locationId: string | null;
 }) => {
   createEventAssistedPRMutation.reset();
@@ -849,7 +861,7 @@ const createEventAssistedPR = async ({
   }
 
   const fields = buildEventAssistedFields({
-    targetBatchId,
+    targetTimeWindow,
     locationId,
   });
 
@@ -925,66 +937,66 @@ onMounted(() => {
 });
 
 const handleCreateInList = async ({
-  batchId,
+  timeWindow,
   locationId,
 }: {
-  batchId: number | null;
+  timeWindow: TimeWindow | null;
   locationId: string | null;
 }) => {
   await createEventAssistedPR({
-    targetBatchId: batchId,
+    targetTimeWindow: timeWindow,
     locationId,
   });
 };
 
-const cardCreateBatchOptions = computed<CardBatchOption[]>(() =>
-  nonExpiredSortedBatches.value.map((batch, index) => ({
-    batchId: batch.id,
-    label: formatBatchOptionLabel(batch, index),
+const cardCreateTimeWindowOptions = computed<CardTimeWindowOption[]>(() =>
+  upcomingSortedTimeWindows.value.map((entry, index) => ({
+    key: entry.key,
+    label: formatTimeWindowOptionLabel(entry, index),
   })),
 );
 
-const resolveFirstCreatableBatchId = (): number | null => {
-  for (const batch of nonExpiredSortedBatches.value) {
-    if (batch.locationOptions.some((option) => !option.disabled)) {
-      return batch.id;
+const resolveFirstCreatableTimeWindowKey = (): string | null => {
+  for (const entry of upcomingSortedTimeWindows.value) {
+    if (entry.locationOptions.some((option) => !option.disabled)) {
+      return entry.key;
     }
   }
 
-  return nonExpiredSortedBatches.value[0]?.id ?? null;
+  return upcomingSortedTimeWindows.value[0]?.key ?? null;
 };
 
 watch(
-  nonExpiredSortedBatches,
-  (batches) => {
-    if (batches.length === 0) {
-      cardCreateBatchId.value = null;
+  upcomingSortedTimeWindows,
+  (timeWindows) => {
+    if (timeWindows.length === 0) {
+      cardCreateTimeWindowKey.value = null;
       return;
     }
 
-    const current = batches.find(
-      (batch) => batch.id === cardCreateBatchId.value,
+    const current = timeWindows.find(
+      (entry) => entry.key === cardCreateTimeWindowKey.value,
     );
     if (current) {
       return;
     }
 
-    cardCreateBatchId.value = resolveFirstCreatableBatchId();
+    cardCreateTimeWindowKey.value = resolveFirstCreatableTimeWindowKey();
   },
   { immediate: true },
 );
 
-const cardCreateBatch = computed(() => {
-  const id = cardCreateBatchId.value;
-  if (id === null) {
+const selectedCardCreateTimeWindow = computed(() => {
+  const key = cardCreateTimeWindowKey.value;
+  if (key === null) {
     return null;
   }
 
-  return nonExpiredSortedBatches.value.find((batch) => batch.id === id) ?? null;
+  return upcomingSortedTimeWindows.value.find((entry) => entry.key === key) ?? null;
 });
 
 const cardCreateLocationOptions = computed<LocationOption[]>(() => {
-  return cardCreateBatch.value?.locationOptions ?? [];
+  return selectedCardCreateTimeWindow.value?.locationOptions ?? [];
 });
 
 const cardCreateLocationOptionViewModels = computed<
@@ -1018,7 +1030,7 @@ watch(
 
 const handleCreateFromCardEmpty = async () => {
   await createEventAssistedPR({
-    targetBatchId: cardCreateBatchId.value,
+    targetTimeWindow: selectedCardCreateTimeWindow.value?.timeWindow ?? null,
     locationId: cardCreateLocationId.value || null,
   });
 };

@@ -1,5 +1,4 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
@@ -14,7 +13,6 @@ import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr-core/services/
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
 
 const eventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 
 const trimNullable = (value: string | null | undefined): string | null => {
   if (typeof value !== "string") {
@@ -203,21 +201,20 @@ const buildCandidateGroup = ({
 const groupJoinableCandidates = async (
   eventId: AnchorEventId,
 ): Promise<CandidateGroup[]> => {
-  const [event, batches] = await Promise.all([
-    eventRepo.findById(eventId),
-    batchRepo.findByAnchorEventId(eventId),
-  ]);
+  const event = await eventRepo.findById(eventId);
 
   if (!event) {
     return [];
   }
 
-  const nonExpiredBatches = batches.filter((batch) => batch.status !== "EXPIRED");
+  const timeWindowPool = Array.isArray(event.timeWindowPool)
+    ? event.timeWindowPool
+    : [];
   const groupMap = new Map<string, CandidateGroup>();
 
-  for (const batch of nonExpiredBatches) {
+  for (const timeWindow of timeWindowPool) {
     const records = (
-      await readVisiblePartnerRequestsByTypeAndTime(event.type, batch.timeWindow)
+      await readVisiblePartnerRequestsByTypeAndTime(event.type, timeWindow)
     ).filter((record) => isEventScopedLocation(event, record.location));
 
     for (const record of records) {
@@ -236,7 +233,7 @@ const groupJoinableCandidates = async (
       const preferenceTags = resolvePreferenceTags(preferences);
       const preferenceFingerprint = normalizePreferenceFingerprint(preferenceTags);
       const cardKey = buildDemandCardKey(
-        batch.timeWindow,
+        timeWindow,
         displayLocationName,
         preferenceFingerprint,
       );
@@ -244,7 +241,7 @@ const groupJoinableCandidates = async (
       const existing =
         groupMap.get(cardKey) ??
         buildCandidateGroup({
-          timeWindow: batch.timeWindow,
+          timeWindow,
           displayLocationName,
           preferenceFingerprint,
           preferenceTags,

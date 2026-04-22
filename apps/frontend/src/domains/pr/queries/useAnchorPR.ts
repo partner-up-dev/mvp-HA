@@ -49,7 +49,6 @@ type AnchorPRUpdateStatusInput = {
   pin?: string;
 };
 
-type TimeWindow = [string | null, string | null];
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
@@ -60,14 +59,6 @@ type PRDetailResponse = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>
 
 export type AnchorPRBookingSupportResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["booking-support"]["$get"]
->;
-
-export type AnchorAlternativeBatchesResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["alternative-batches"]["$get"]
->;
-
-export type AcceptAnchorAlternativeBatchResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["accept-alternative-batch"]["$post"]
 >;
 
 export type AnchorReimbursementStatusResponse = InferResponseType<
@@ -434,75 +425,6 @@ export const useCheckInAnchorPRSlot = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
-      });
-    },
-  });
-};
-
-export const useAnchorAlternativeBatches = (
-  id: Ref<PRId | null>,
-  enabled: Ref<boolean>,
-) => {
-  const queryKey = computed(() =>
-    queryKeys.anchorPR.alternativeBatches(id.value),
-  );
-
-  return useQuery<AnchorAlternativeBatchesResponse>({
-    queryKey,
-    queryFn: async () => {
-      const prId = id.value;
-      if (prId === null) {
-        throw new Error("缺少搭子请求 ID");
-      }
-
-      const res = await client.api.apr[":id"]["alternative-batches"].$get({
-        param: { id: prId.toString() },
-      });
-
-      if (!res.ok) {
-        throw new Error("获取其它时段推荐失败");
-      }
-
-      return await res.json();
-    },
-    enabled: () => enabled.value && id.value !== null,
-  });
-};
-
-export const useAcceptAnchorAlternativeBatch = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    AcceptAnchorAlternativeBatchResponse,
-    Error,
-    { id: PRId; targetTimeWindow: TimeWindow }
-  >({
-    mutationFn: async ({ id, targetTimeWindow }) => {
-      const res = await client.api.apr[":id"]["accept-alternative-batch"].$post(
-        {
-          param: { id: id.toString() },
-          json: { targetTimeWindow },
-        },
-      );
-
-      if (!res.ok) {
-        const payload = await readApiErrorPayload(res);
-        throw new Error(
-          resolveErrorMessage(res, payload, "接受其它时段推荐失败"),
-        );
-      }
-
-      return await res.json();
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.pr.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.alternativeBatches(variables.id),
       });
     },
   });

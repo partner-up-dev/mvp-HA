@@ -40,12 +40,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
-import type { AnchorEventBatchPR } from "@/domains/event/model/types";
+import type { AnchorEventTimeWindowPR } from "@/domains/event/model/types";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 
 interface AnchorEventPRCardProps {
-  pr: AnchorEventBatchPR;
+  pr: AnchorEventTimeWindowPR;
   coverImage?: string | null;
   timeLabel?: string | null;
 }

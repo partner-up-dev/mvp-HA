@@ -2,13 +2,11 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
-  acceptAlternativeBatch,
   checkIn,
   confirmSlot,
   getReimbursementStatus,
   getAnchorPRBookingSupport,
   getAnchorPRDetail,
-  recommendAlternativeBatches,
   searchAnchorPRs,
 } from "../domains/pr-anchor";
 import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
@@ -62,9 +60,6 @@ const anchorPRSearchQuerySchema = z.object({
 const slotCheckInSchema = z.object({
   didAttend: z.boolean().optional(),
   wouldJoinAgain: z.boolean().nullable().optional(),
-});
-const acceptAlternativeBatchSchema = z.object({
-  targetTimeWindow: z.tuple([z.string().nullable(), z.string().nullable()]),
 });
 const anchorJoinSchema = z
   .object({
@@ -196,26 +191,6 @@ export const anchorPRRoute = app
         id,
         identity?.userId ?? null,
       );
-      return c.json(result);
-    },
-  )
-  .get(
-    "/:id/alternative-batches",
-    zValidator("param", prIdParamSchema),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const result = await recommendAlternativeBatches(id);
-      return c.json(result);
-    },
-  )
-  .post(
-    "/:id/accept-alternative-batch",
-    zValidator("param", prIdParamSchema),
-    zValidator("json", acceptAlternativeBatchSchema),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const { targetTimeWindow } = c.req.valid("json");
-      const result = await acceptAlternativeBatch(id, targetTimeWindow);
       return c.json(result);
     },
   )

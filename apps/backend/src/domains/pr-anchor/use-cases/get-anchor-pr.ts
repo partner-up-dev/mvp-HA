@@ -5,8 +5,6 @@ import type { PRId, PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
 import { toPublicPR } from "../../pr-core/services/pr-view.service";
-import { recommendAlternativeBatches } from "../../pr-core/use-cases/recommend-alternative-batches";
-import type { AlternativeBatchRecommendation } from "../../pr-core/use-cases/recommend-alternative-batches";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 import {
   buildBookingSupportPreview,
@@ -18,10 +16,7 @@ import {
 } from "../../pr-core/services/partner-section-view.service";
 import { resolveAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 import { resolveBookingContactState } from "../../pr-booking-support";
-import {
-  readPartnerRequestById,
-  readVisibleAnchorPRRecordsByBatchId,
-} from "../../pr-core/services/pr-read.service";
+import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
 import {
   buildPRCanonicalShareMetadata,
   type PRCanonicalShareMetadata,
@@ -33,12 +28,6 @@ const partnerRepo = new PartnerRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
-
-type SameBatchAlternative = {
-  id: number;
-  location: string;
-  status: PRStatus;
-};
 
 export type AnchorPRDetail = {
   id: number;
@@ -96,15 +85,19 @@ export type AnchorPRDetail = {
       deadlineAt: string | null;
     };
     related: {
-      sameBatchAlternatives: SameBatchAlternative[];
-      alternativeBatches: AlternativeBatchRecommendation[];
+      sameBatchAlternatives: Array<{
+        id: number;
+        location: string;
+        status: PRStatus;
+      }>;
+      alternativeBatches: Array<{
+        location: string;
+        timeWindow: [string | null, string | null];
+      }>;
     };
   };
   partnerSection: PartnerSectionView;
 };
-
-const hasVisibleSameBatchStatus = (status: PRStatus): boolean =>
-  status !== "FULL" && status !== "EXPIRED" && status !== "CLOSED";
 
 export async function getAnchorPRDetail(
   id: PRId,
@@ -137,28 +130,6 @@ export async function getAnchorPRDetail(
     });
   }
 
-  const sameBatchAlternatives: SameBatchAlternative[] = [];
-  if (publicPR.status === "FULL") {
-    const sameBatchRecords =
-      await readVisibleAnchorPRRecordsByBatchId(
-        anchor.batchId,
-      );
-    for (const record of sameBatchRecords) {
-      if (record.root.id === publicPR.id) continue;
-      const location = record.root.location?.trim();
-      if (!location || !hasVisibleSameBatchStatus(record.root.status)) continue;
-      sameBatchAlternatives.push({
-        id: record.root.id,
-        location,
-        status: record.root.status,
-      });
-    }
-  }
-
-  const alternativeBatches =
-    publicPR.status === "FULL"
-      ? (await recommendAlternativeBatches(id)).recommendations
-      : [];
   const supportRows = await prSupportRepo.findByPrId(id);
   const bookingSupportPreview = buildBookingSupportPreview(supportRows);
   const bookingDeadlineAt = await getEffectiveBookingDeadline(id);
@@ -225,8 +196,8 @@ export async function getAnchorPRDetail(
       },
       bookingContact,
       related: {
-        sameBatchAlternatives,
-        alternativeBatches,
+        sameBatchAlternatives: [],
+        alternativeBatches: [],
       },
     },
     partnerSection: buildAnchorPartnerSection({
@@ -237,8 +208,8 @@ export async function getAnchorPRDetail(
       policy,
       bookingDeadlineAt,
       bookingContact,
-      sameBatchAlternatives,
-      alternativeBatches,
+      sameBatchAlternatives: [],
+      alternativeBatches: [],
     }),
   };
 }

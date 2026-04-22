@@ -247,7 +247,7 @@ export type {
   AnchorEventSummary,
   AnchorEventDetail,
   AnchorEventDemandCard,
-  BatchDetail,
+  TimeWindowDetail,
   AnchorPRSummary,
 } from "./domains/anchor-event";
 export {

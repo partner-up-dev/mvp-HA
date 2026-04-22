@@ -113,7 +113,7 @@
 - creating an `OPEN` PR directly, including event-assisted create, requires an authenticated account and should reuse the same WeChat login path
 - auto-generated PIN login and the page-level PIN help branch move to a separate follow-up issue and stay outside this task's implementation scope
 - frontend PR-owned detail surfaces should converge on `PR*` naming, with `AnchorPRPage -> PRPage`, `AnchorPRMessagesPage -> PRMessagesPage`, and `AnchorPRBookingSupportPage -> PRBookingSupportPage`
-- the single `PRPage` should continue carrying the still-valid page branches: draft-publish, creator quick actions, partner join or exit or confirm or check-in flows, join-success notification prompt, message-thread entry, booking-support entry, and recovery entry until the post-`#170` recovery decision lands
+- the single `PRPage` should continue carrying the still-valid page branches: draft-publish, creator quick actions, partner join or exit or confirm or check-in flows, join-success notification prompt, message-thread entry, and booking-support entry
 
 ## Error And Action Availability Contract
 
@@ -229,13 +229,33 @@ Fields leaving PR core:
 - retire frontend `ANCHOR` / `COMMUNITY` PR model branching
 - retire `/apr/*` and `/cpr/*` as canonical route families
 
+## Slice Ownership For "Anchor PR 即 PR"
+
+- Slice 5 established one canonical PR detail route and removed `CommunityPRPage` from the routed detail surface.
+- Slice 6 resolves the last unstable event-side seams that still leak batch-specific or recovery-specific behavior into the public PR and event surfaces.
+- Slice 7 carries the backend semantic rewrite from `pr-anchor` and `pr-community` toward one `pr` domain.
+- Slice 11 carries the frontend rename sweep from `AnchorPR*` toward `PR*` on PR-owned pages, queries, and UI modules.
+- Slice 12 removes the remaining compatibility seams, old controllers, old repositories, and deprecated route families.
+
+## PRPage Carry-Over Branches
+
+The single `PRPage` must continue carrying these still-valid branches while vocabulary and domain cleanup continue:
+
+- draft publish
+- creator quick actions
+- partner join
+- partner exit
+- partner confirm
+- partner check-in
+- join-success notification prompt
+- message-thread entry
+- booking-support entry
 ## Current Unknowns To Resolve Early
 
 - booking-support derivation after `anchorEventId` / `batchId` leave PR storage
 - admin Anchor Event management flows that currently key by batch
 - final discoverability query contract for the Anchor Event page
 - rollout plan for legacy `/apr/*` and `/cpr/*` links
-- recovery-lane replacement after batch removal in issue `#170`
 
 ## Verification Target
 
@@ -464,9 +484,49 @@ Fields leaving PR core:
   - `pnpm --filter @partner-up-dev/backend build`
   - `pnpm --filter @partner-up-dev/frontend build`
 - Verification gap:
-  - recovery-lane replacement is still pending the post-batch recommendation decision
-  - old batch-specific event create and demand-card join compatibility paths still remain in the codebase
-  - event detail still emits batch-shaped group shells during the compatibility window
+  - these remaining public-surface compatibility seams moved into Slice 6B
+
+## Slice 6B - Event Public Surface Contraction
+
+- Status:
+  - completed on 2026-04-22
+- Scope for this narrowed slice:
+  - remove recovery-lane behavior from the public PR detail surface
+  - remove old public batch-specific event create and demand-card join seams
+  - contract public Anchor Event detail from batch-shaped grouping into time-window discovery
+- Artifacts:
+  - `apps/backend/src/controllers/anchor-event.controller.ts`
+  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/index.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/index.ts`
+  - `apps/backend/src/index.ts`
+  - `apps/frontend/src/domains/event/model/types.ts`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventPRCard.vue`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorPRCreateCard.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventListModeSection.vue`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+  - `apps/frontend/src/pages/AnchorPRPage.vue`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
+  - `apps/frontend/src/domains/event/queries/useCreateUserAnchorPR.ts`
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRRecoveryLane.vue`
+- Decisions implemented:
+  - public Anchor Event detail now emits `timeWindows` instead of batch-shaped public group shells
+  - public event discovery and card-mode demand projection now derive candidate PRs from `event.type + time_window` plus event-owned location constraints
+  - old public batch-specific event create route has been removed, so event-assisted create now goes only through the canonical structured PR create command
+  - old public demand-card join route has been removed
+  - public PR detail no longer exposes the recovery lane or alternative-batch acceptance path
+  - anchor detail compatibility still keeps empty related arrays in the response shape until later contract cleanup
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - admin Anchor Event management and other private compatibility code still retain batch-oriented internals
+  - backend anchor detail responses still carry legacy compatibility fields that are no longer used by the public page
 
 ## Handoff Source
 

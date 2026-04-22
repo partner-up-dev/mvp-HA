@@ -1,5 +1,5 @@
 <template>
-  <div v-if="hasBatches" class="date-section">
+  <div v-if="hasTimeWindows" class="date-section">
     <TabBar
       :items="dateTabs"
       :model-value="selectedDateKey ?? 'none'"
@@ -12,7 +12,7 @@
         <div v-if="visiblePRItems.length > 0" class="pr-list">
           <AnchorEventPRCard
             v-for="item in visiblePRItems"
-            :key="`${item.batchId}:${item.pr.id}`"
+            :key="`${item.timeWindowKey}:${item.pr.id}`"
             :pr="item.pr"
             :time-label="item.timeLabel"
             :cover-image="resolveCoverImage(item.pr.location)"
@@ -26,16 +26,16 @@
       <div class="batch-action-cards">
         <AnchorPRCreateCard
           :title="createCardTitle"
-          :batch-time-label="createCardSubtitleTimeLabel"
+          :time-window-label="createCardSubtitleTimeLabel"
           :event-title="eventTitle"
-          :batch-options="createBatchOptions"
-          :selected-batch-id="createBatchId"
-          :location-options="createBatchLocationOptions"
+          :time-window-options="createTimeWindowOptions"
+          :selected-time-window-key="selectedTimeWindowKey"
+          :location-options="createTimeWindowLocationOptions"
           :default-expanded="shouldAutoExpandCreateCard"
           :auto-expand-context-key="createCardAutoExpandContextKey"
           :pending="isCreatePending"
           :error-message="createActionErrorMessage"
-          @update:selected-batch-id="handleCreateBatchChange"
+          @update:selected-time-window-key="handleSelectedTimeWindowChange"
           @create="handleCreateInList"
           data-region="create-anchor-pr"
         />
@@ -76,38 +76,38 @@ type DateTabItem = {
   tabClass?: string;
 };
 
-type AnchorEventBatch = AnchorEventDetailResponse["batches"][number];
-type AnchorEventBatchPR = AnchorEventBatch["prs"][number];
+type AnchorEventTimeWindow = AnchorEventDetailResponse["timeWindows"][number];
+type AnchorEventTimeWindowPR = AnchorEventTimeWindow["prs"][number];
 
-type DateGroupBatchItem = {
-  batch: AnchorEventBatch;
+type DateGroupTimeWindowItem = {
+  entry: AnchorEventTimeWindow;
   timeLabel: string;
 };
 
 type DateGroup = {
   key: string;
   label: string;
-  batches: DateGroupBatchItem[];
+  timeWindows: DateGroupTimeWindowItem[];
 };
 
 type VisiblePRItem = {
-  batchId: number;
-  pr: AnchorEventBatchPR;
+  timeWindowKey: string;
+  pr: AnchorEventTimeWindowPR;
   timeLabel: string;
 };
 
-type CreateBatchChoice = {
-  batch: AnchorEventBatch;
+type CreateTimeWindowChoice = {
+  entry: AnchorEventTimeWindow;
   optionLabel: string;
   subtitleLabel: string;
 };
 
 const props = defineProps<{
-  hasBatches: boolean;
+  hasTimeWindows: boolean;
   dateTabs: DateTabItem[];
   selectedDateKey: string | null;
   selectedDateGroup: DateGroup | null;
-  createBatchChoices: CreateBatchChoice[];
+  createTimeWindowChoices: CreateTimeWindowChoice[];
   eventId: number;
   eventTitle: string;
   eventBetaGroupQrCode: string | null;
@@ -119,25 +119,28 @@ const props = defineProps<{
 const emit = defineEmits<{
   "select-date": [dateKey: string];
   "create-in-list": [
-    payload: { batchId: number | null; locationId: string | null },
+    payload: {
+      timeWindow: [string | null, string | null] | null;
+      locationId: string | null;
+    },
   ];
 }>();
 
 const { t } = useI18n();
-const createBatchId = ref<number | null>(null);
+const selectedTimeWindowKey = ref<string | null>(null);
 
-const isVisibleListModePR = (pr: AnchorEventBatchPR): boolean =>
+const isVisibleListModePR = (pr: AnchorEventTimeWindowPR): boolean =>
   pr.status !== "EXPIRED";
 
 const visiblePRItems = computed<VisiblePRItem[]>(() => {
   const items: VisiblePRItem[] = [];
 
-  for (const batchItem of props.selectedDateGroup?.batches ?? []) {
-    for (const pr of batchItem.batch.prs.filter(isVisibleListModePR)) {
+  for (const timeWindowItem of props.selectedDateGroup?.timeWindows ?? []) {
+    for (const pr of timeWindowItem.entry.prs.filter(isVisibleListModePR)) {
       items.push({
-        batchId: batchItem.batch.id,
+        timeWindowKey: timeWindowItem.entry.key,
         pr,
-        timeLabel: batchItem.timeLabel,
+        timeLabel: timeWindowItem.timeLabel,
       });
     }
   }
@@ -145,114 +148,114 @@ const visiblePRItems = computed<VisiblePRItem[]>(() => {
   return items;
 });
 
-const isAvailableAnchorPR = (pr: AnchorEventBatchPR): boolean =>
+const isAvailableAnchorPR = (pr: AnchorEventTimeWindowPR): boolean =>
   pr.status === "OPEN" || pr.status === "READY";
 
-const batchHasAvailableAnchorPR = (batch: AnchorEventBatch): boolean =>
-  batch.prs.some(isAvailableAnchorPR);
+const timeWindowHasAvailableAnchorPR = (entry: AnchorEventTimeWindow): boolean =>
+  entry.prs.some(isAvailableAnchorPR);
 
-const resolveDefaultCreateBatchId = (
+const resolveDefaultCreateTimeWindowKey = (
   group: DateGroup | null,
-): number | null => {
+): string | null => {
   if (!group) {
     return null;
   }
 
-  const firstCreatableBatchWithoutAvailablePR = group.batches.find(
-    ({ batch }) =>
-      batch.locationOptions.some((option) => !option.disabled) &&
-      !batchHasAvailableAnchorPR(batch),
+  const firstCreatableTimeWindowWithoutAvailablePR = group.timeWindows.find(
+    ({ entry }) =>
+      entry.locationOptions.some((option) => !option.disabled) &&
+      !timeWindowHasAvailableAnchorPR(entry),
   );
-  if (firstCreatableBatchWithoutAvailablePR) {
-    return firstCreatableBatchWithoutAvailablePR.batch.id;
+  if (firstCreatableTimeWindowWithoutAvailablePR) {
+    return firstCreatableTimeWindowWithoutAvailablePR.entry.key;
   }
 
-  const firstCreatableBatch = group.batches.find(({ batch }) =>
-    batch.locationOptions.some((option) => !option.disabled),
+  const firstCreatableTimeWindow = group.timeWindows.find(({ entry }) =>
+    entry.locationOptions.some((option) => !option.disabled),
   );
-  if (firstCreatableBatch) {
-    return firstCreatableBatch.batch.id;
+  if (firstCreatableTimeWindow) {
+    return firstCreatableTimeWindow.entry.key;
   }
 
-  return group.batches[0]?.batch.id ?? null;
+  return group.timeWindows[0]?.entry.key ?? null;
 };
 
 watch(
-  [() => props.selectedDateGroup, () => props.createBatchChoices],
-  ([group, createBatchChoices]) => {
-    const currentBatchId = createBatchId.value;
+  [() => props.selectedDateGroup, () => props.createTimeWindowChoices],
+  ([group, createTimeWindowChoices]) => {
+    const currentTimeWindowKey = selectedTimeWindowKey.value;
     if (
-      currentBatchId !== null &&
-      createBatchChoices.some(({ batch }) => batch.id === currentBatchId)
+      currentTimeWindowKey !== null &&
+      createTimeWindowChoices.some(({ entry }) => entry.key === currentTimeWindowKey)
     ) {
       return;
     }
 
-    const preferredBatchId = resolveDefaultCreateBatchId(group);
+    const preferredTimeWindowKey = resolveDefaultCreateTimeWindowKey(group);
     if (
-      preferredBatchId !== null &&
-      createBatchChoices.some(({ batch }) => batch.id === preferredBatchId)
+      preferredTimeWindowKey !== null &&
+      createTimeWindowChoices.some(({ entry }) => entry.key === preferredTimeWindowKey)
     ) {
-      createBatchId.value = preferredBatchId;
+      selectedTimeWindowKey.value = preferredTimeWindowKey;
       return;
     }
 
-    createBatchId.value = createBatchChoices[0]?.batch.id ?? null;
+    selectedTimeWindowKey.value = createTimeWindowChoices[0]?.entry.key ?? null;
   },
   { immediate: true, deep: true },
 );
 
-const batchLabelById = computed(() => {
-  const map = new Map<number, string>();
-  for (const batchChoice of props.createBatchChoices) {
-    map.set(batchChoice.batch.id, batchChoice.subtitleLabel);
+const timeWindowLabelByKey = computed(() => {
+  const map = new Map<string, string>();
+  for (const timeWindowChoice of props.createTimeWindowChoices) {
+    map.set(timeWindowChoice.entry.key, timeWindowChoice.subtitleLabel);
   }
   return map;
 });
 
-const createBatchOptions = computed(() =>
-  props.createBatchChoices.map(({ batch, optionLabel }) => ({
-    batchId: batch.id,
+const createTimeWindowOptions = computed(() =>
+  props.createTimeWindowChoices.map(({ entry, optionLabel }) => ({
+    key: entry.key,
     label: optionLabel,
   })),
 );
 
-const createBatch = computed(() => {
-  if (createBatchId.value === null) {
+const selectedTimeWindowEntry = computed(() => {
+  if (selectedTimeWindowKey.value === null) {
     return null;
   }
 
   return (
-    props.createBatchChoices.find(({ batch }) => batch.id === createBatchId.value)
-      ?.batch ?? null
+    props.createTimeWindowChoices.find(
+      ({ entry }) => entry.key === selectedTimeWindowKey.value,
+    )?.entry ?? null
   );
 });
 
-const createBatchTimeLabel = computed(() => {
-  const targetBatchId = createBatch.value?.id ?? null;
-  if (targetBatchId === null) {
+const createTimeWindowLabel = computed(() => {
+  const targetTimeWindowKey = selectedTimeWindowEntry.value?.key ?? null;
+  if (targetTimeWindowKey === null) {
     return "";
   }
 
-  return batchLabelById.value.get(targetBatchId) ?? "";
+  return timeWindowLabelByKey.value.get(targetTimeWindowKey) ?? "";
 });
 
 const createCardSubtitleTimeLabel = computed(() => {
-  const batchTimeLabel = createBatchTimeLabel.value;
-  return batchTimeLabel;
+  return createTimeWindowLabel.value;
 });
 
-const createBatchLocationOptions = computed(
-  () => createBatch.value?.locationOptions ?? [],
+const createTimeWindowLocationOptions = computed(
+  () => selectedTimeWindowEntry.value?.locationOptions ?? [],
 );
 
-const hasAvailableAnchorPRInCreateBatch = computed(() => {
-  const batch = createBatch.value;
-  if (!batch) {
+const hasAvailableAnchorPRInSelectedTimeWindow = computed(() => {
+  const entry = selectedTimeWindowEntry.value;
+  if (!entry) {
     return false;
   }
 
-  return batchHasAvailableAnchorPR(batch);
+  return timeWindowHasAvailableAnchorPR(entry);
 });
 
 const hasAvailableAnchorPRInSelectedDate = computed(() => {
@@ -261,7 +264,7 @@ const hasAvailableAnchorPRInSelectedDate = computed(() => {
     return false;
   }
 
-  return group.batches.some(({ batch }) => batchHasAvailableAnchorPR(batch));
+  return group.timeWindows.some(({ entry }) => timeWindowHasAvailableAnchorPR(entry));
 });
 
 const createCardTitle = computed(() => {
@@ -282,11 +285,11 @@ const shouldAutoExpandCreateCard = computed(() => {
 
 const createCardAutoExpandContextKey = computed(
   () =>
-    `${props.selectedDateKey ?? "none"}:${createBatchId.value ?? "none"}`,
+    `${props.selectedDateKey ?? "none"}:${selectedTimeWindowKey.value ?? "none"}`,
 );
 
-const handleCreateBatchChange = (batchId: number | null) => {
-  createBatchId.value = batchId;
+const handleSelectedTimeWindowChange = (key: string | null) => {
+  selectedTimeWindowKey.value = key;
 };
 
 const handleDateTabChange = (value: string | number) => {
@@ -295,7 +298,7 @@ const handleDateTabChange = (value: string | number) => {
 
 const handleCreateInList = (locationId: string | null) => {
   emit("create-in-list", {
-    batchId: createBatchId.value,
+    timeWindow: selectedTimeWindowEntry.value?.timeWindow ?? null,
     locationId,
   });
 };

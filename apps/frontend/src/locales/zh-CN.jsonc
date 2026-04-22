@@ -1198,17 +1198,17 @@
   "anchorEvent": {
     "backToPlaza": "活动广场",
     "loadFailed": "加载活动详情失败",
-    "noBatches": "暂无可用场次",
+    "noBatches": "暂无可用时段",
     "noPRsInSelectedDate": "该日期暂无可加入的搭子请求",
     "dateLabel": "日期",
-    "batchLabel": "场次",
+    "batchLabel": "时段",
     "viewMode": {
       "ariaLabel": "活动浏览模式",
       "card": "卡片",
       "list": "列表"
     },
     "card": {
-      "batchLabel": "时间批次",
+      "batchLabel": "时间时段",
       "preferenceTitle": "偏好",
       "preferenceEmpty": "暂无额外偏好要求",
       "skipButton": "下一个",
@@ -1247,7 +1247,7 @@
         "timeWindowConflict": "你加入的其它搭子请求与此时间冲突。",
         "wechatAuthRequired": "请先完成微信登录，再创建活动搭子请求。",
         "wechatOAuthNotConfigured": "当前环境暂未配置微信登录，暂时无法创建活动搭子请求。",
-        "locationCapReached": "该地点当前批次名额已满，请选择其他地点。",
+        "locationCapReached": "该地点当前时段名额已满，请选择其他地点。",
         "eventUnavailable": "当前活动场次不可用，请刷新后重试。",
         "createFailed": "创建活动搭子请求失败，请稍后重试。"
       }

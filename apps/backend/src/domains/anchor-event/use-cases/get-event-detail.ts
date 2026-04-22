@@ -1,12 +1,11 @@
 /**
- * Use-case: Get a single Anchor Event with its batches and PRs.
- * Returns the event detail with batches organized by time window.
- * PR discovery now reads from the root PR table by event type plus time window.
+ * Use-case: Get a single Anchor Event with its discoverable PRs.
+ * Public event detail groups discoverable PRs by time-window facts rather than
+ * exposing batch rows as the public contract.
  */
 
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
   AnchorEvent,
@@ -18,7 +17,6 @@ import {
   normalizeSystemLocationPool,
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
-import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
 import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import {
   isActiveVisibleAnchorPRStatus,
@@ -26,7 +24,6 @@ import {
 } from "../../pr-core/services/pr-read.service";
 
 const eventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 const partnerRepo = new PartnerRepository();
 
 export interface AnchorPRSummary {
@@ -44,11 +41,9 @@ export interface AnchorPRSummary {
   createdAt: string;
 }
 
-export interface BatchDetail {
-  id: number;
+export interface TimeWindowDetail {
+  key: string;
   timeWindow: [string | null, string | null];
-  status: string;
-  description: string | null;
   prs: AnchorPRSummary[];
   locationOptions: LocationOption[];
 }
@@ -73,7 +68,7 @@ export interface AnchorEventDetail {
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: string;
-  batches: BatchDetail[];
+  timeWindows: TimeWindowDetail[];
   exhausted: boolean;
   createdAt: string;
 }
@@ -93,15 +88,18 @@ const toPRSummary = (pr: PartnerRequest): AnchorPRSummary => ({
   createdAt: pr.createdAt.toISOString(),
 });
 
-const toBatchDetail = (
-  batch: AnchorEventBatch,
+const buildTimeWindowKey = (timeWindow: TimeWindowEntry): string => {
+  const [start, end] = timeWindow;
+  return `${start ?? "_"}::${end ?? "_"}`;
+};
+
+const toTimeWindowDetail = (
+  timeWindow: TimeWindowEntry,
   prs: PartnerRequest[],
   locationOptions: LocationOption[],
-): BatchDetail => ({
-  id: batch.id,
-  timeWindow: batch.timeWindow,
-  status: batch.status,
-  description: batch.description,
+): TimeWindowDetail => ({
+  key: buildTimeWindowKey(timeWindow),
+  timeWindow,
   prs: prs.map(toPRSummary),
   locationOptions,
 });
@@ -132,18 +130,20 @@ export async function getAnchorEventDetail(
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
 
-  const batches = await batchRepo.findByAnchorEventId(eventId);
   const systemLocationPool = normalizeSystemLocationPool(
     event.systemLocationPool,
   );
   const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
+  const timeWindowPool = Array.isArray(event.timeWindowPool)
+    ? event.timeWindowPool
+    : [];
 
-  const batchDetails: BatchDetail[] = [];
+  const timeWindowDetails: TimeWindowDetail[] = [];
   const allPRIds: number[] = [];
 
-  for (const batch of batches) {
+  for (const timeWindow of timeWindowPool) {
     const prs = (
-      await readVisiblePartnerRequestsByTypeAndTime(event.type, batch.timeWindow)
+      await readVisiblePartnerRequestsByTypeAndTime(event.type, timeWindow)
     ).filter((pr) => isEventScopedLocation(event, pr.location));
 
     const activeUserCountsByLocation = new Map<string, number>();
@@ -175,25 +175,25 @@ export async function getAnchorEventDetail(
       });
     }
 
-    const detail = toBatchDetail(batch, prs, locationOptions);
+    const detail = toTimeWindowDetail(timeWindow, prs, locationOptions);
     allPRIds.push(...detail.prs.map((pr) => pr.id));
-    batchDetails.push(detail);
+    timeWindowDetails.push(detail);
   }
 
   const activePartnerCounts = await partnerRepo.countActiveByPrIds(allPRIds);
-  for (const batchDetail of batchDetails) {
-    for (const pr of batchDetail.prs) {
+  for (const timeWindowDetail of timeWindowDetails) {
+    for (const pr of timeWindowDetail.prs) {
       pr.partnerCount = activePartnerCounts.get(pr.id) ?? 0;
     }
   }
 
   const totalLocations = systemLocationPool.length;
-  const totalBatches = batches.length;
-  const totalSlots = totalLocations * totalBatches;
+  const totalTimeWindows = timeWindowPool.length;
+  const totalSlots = totalLocations * totalTimeWindows;
 
   let occupiedSlots = 0;
-  for (const batchDetail of batchDetails) {
-    const activePRs = batchDetail.prs.filter((pr) =>
+  for (const timeWindowDetail of timeWindowDetails) {
+    const activePRs = timeWindowDetail.prs.filter((pr) =>
       isActiveVisibleAnchorPRStatus(pr.status),
     );
     occupiedSlots += activePRs.filter((pr) =>
@@ -202,8 +202,8 @@ export async function getAnchorEventDetail(
   }
 
   const systemExhausted = totalSlots > 0 && occupiedSlots >= totalSlots;
-  const hasUserManagedCapacity = batchDetails.some((batchDetail) =>
-    batchDetail.locationOptions.some((option) => option.remainingQuota > 0),
+  const hasUserManagedCapacity = timeWindowDetails.some((timeWindowDetail) =>
+    timeWindowDetail.locationOptions.some((option) => option.remainingQuota > 0),
   );
   const exhausted = systemExhausted && !hasUserManagedCapacity;
 
@@ -222,7 +222,7 @@ export async function getAnchorEventDetail(
     coverImage: event.coverImage,
     betaGroupQrCode: event.betaGroupQrCode,
     status: event.status,
-    batches: batchDetails,
+    timeWindows: timeWindowDetails,
     exhausted,
     createdAt: event.createdAt.toISOString(),
   };

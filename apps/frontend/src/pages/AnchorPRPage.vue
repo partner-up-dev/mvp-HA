@@ -146,15 +146,6 @@
           {{ primaryActionErrorMessage }}
         </p>
 
-        <AnchorPRRecoveryLane
-          v-if="showRecoveryLane"
-          :pr-id="id"
-          :section="prDetail.partnerSection"
-          :accept-alternative-batch-pending="
-            isAnchorPR ? acceptAlternativeBatchMutation.isPending.value : false
-          "
-          @accept-alternative-batch="handleAcceptAlternativeBatch"
-        />
       </section>
 
       <section class="utility-area">
@@ -408,7 +399,6 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import type { PRId } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import InlineNotice from "@/shared/ui/feedback/InlineNotice.vue";
@@ -427,10 +417,8 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
-import AnchorPRRecoveryLane from "@/domains/pr/ui/sections/AnchorPRRecoveryLane.vue";
 import AnchorPRFactsCard from "@/domains/pr/ui/composites/AnchorPRFactsCard.vue";
 import {
-  useAcceptAnchorAlternativeBatch,
   useJoinAnchorPR,
 } from "@/domains/pr/queries/useAnchorPR";
 import { usePublishCommunityPR } from "@/domains/pr/queries/useCommunityPR";
@@ -452,7 +440,6 @@ import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/r
 import {
   anchorPRBookingSupportPath,
   anchorPRMessagesPath,
-  prDetailPath,
 } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import {
@@ -462,7 +449,6 @@ import {
 } from "@/domains/pr/model/types";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/telemetry/track";
-import type { ApiError } from "@/shared/api/error";
 import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
@@ -611,7 +597,6 @@ const backFallbackTo = computed(() => {
   return "/";
 });
 const joinMutation = useJoinAnchorPR();
-const acceptAlternativeBatchMutation = useAcceptAnchorAlternativeBatch();
 const publishMutation = usePublishCommunityPR();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
@@ -782,12 +767,6 @@ const releaseNoticeText = computed(() => {
   return t("prPage.partnerSection.releaseNoticeAuto");
 });
 
-const showRecoveryLane = computed(() => {
-  const viewer = prDetail.value?.partnerSection.viewer;
-  if (!viewer) return false;
-  return isAnchorPR.value && !viewer.isParticipant && !viewer.canJoin;
-});
-
 const activeRoster = computed(
   () =>
     prDetail.value?.partnerSection.roster.filter((item) =>
@@ -903,9 +882,8 @@ const showContextualActionArea = computed(() =>
     releaseNoticeText.value ||
     primaryBlockedMessage.value ||
     primaryDockAction.value ||
-    showExitActionInContext.value ||
-    primaryActionErrorMessage.value ||
-    showRecoveryLane.value,
+      showExitActionInContext.value ||
+    primaryActionErrorMessage.value,
   ),
 );
 
@@ -1121,30 +1099,6 @@ watch(
 onMounted(() => {
   void attemptPendingWeChatActionReplay();
 });
-
-const handleAcceptAlternativeBatch = async (
-  targetTimeWindow: [string | null, string | null],
-) => {
-  if (id.value === null || !isAnchorPR.value) return;
-  const result = await acceptAlternativeBatchMutation.mutateAsync({
-    id: id.value,
-    targetTimeWindow,
-  });
-  try {
-    await joinMutation.mutateAsync({ id: result.prId as PRId });
-  } catch (error) {
-    const apiError = error as ApiError;
-    if (apiError.code === BOOKING_CONTACT_PHONE_REQUIRED_CODE) {
-      bookingContactActionError.value = t(
-        "prPage.bookingContact.ownerVerifyBeforeJoin",
-      );
-    } else {
-      bookingContactActionError.value =
-        apiError.message ?? t("errors.joinRequestFailed");
-    }
-  }
-  await router.push(prDetailPath(result.prId as PRId));
-};
 
 const handleDockAction = async (action: DockActionItem) => {
   if (action.disabled || action.pending) return;

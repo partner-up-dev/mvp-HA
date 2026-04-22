@@ -14,19 +14,19 @@
       :default-expanded="expandableDefaultExpanded"
     >
       <div class="create-card">
-        <label v-if="batchOptions.length > 0" class="create-card__field">
+        <label v-if="timeWindowOptions.length > 0" class="create-card__field">
           <span class="create-card__label">{{
             t("anchorEvent.card.batchLabel")
           }}</span>
           <select
-            :value="selectedBatchId ?? ''"
+            :value="selectedTimeWindowKey ?? ''"
             class="create-card__input"
-            @change="handleBatchChange"
+            @change="handleTimeWindowChange"
           >
             <option
-              v-for="option in batchOptions"
-              :key="option.batchId"
-              :value="option.batchId"
+              v-for="option in timeWindowOptions"
+              :key="option.key"
+              :value="option.key"
             >
               {{ option.label }}
             </option>
@@ -86,8 +86,8 @@ type LocationOption = {
   disabledReason: "NONE" | "MAX_REACHED";
 };
 
-type BatchOption = {
-  batchId: number;
+type TimeWindowOption = {
+  key: string;
   label: string;
 };
 
@@ -97,10 +97,10 @@ const AUTO_EXPAND_FLASH_DURATION_MS = 900;
 const props = withDefaults(
   defineProps<{
     title?: string;
-    batchTimeLabel: string;
+    timeWindowLabel: string;
     eventTitle: string;
-    batchOptions?: BatchOption[];
-    selectedBatchId?: number | null;
+    timeWindowOptions?: TimeWindowOption[];
+    selectedTimeWindowKey?: string | null;
     locationOptions: LocationOption[];
     pending?: boolean;
     errorMessage?: string | null;
@@ -109,8 +109,8 @@ const props = withDefaults(
   }>(),
   {
     title: undefined,
-    batchOptions: () => [],
-    selectedBatchId: null,
+    timeWindowOptions: () => [],
+    selectedTimeWindowKey: null,
     pending: false,
     errorMessage: null,
     defaultExpanded: false,
@@ -120,7 +120,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   create: [locationId: string | null];
-  "update:selectedBatchId": [value: number | null];
+  "update:selectedTimeWindowKey": [value: string | null];
 }>();
 
 const { t } = useI18n();
@@ -284,7 +284,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   });
 };
 
-const handleBatchChange = (event: Event) => {
+const handleTimeWindowChange = (event: Event) => {
   const target = event.target;
   if (!(target instanceof HTMLSelectElement)) {
     return;
@@ -292,12 +292,11 @@ const handleBatchChange = (event: Event) => {
 
   const normalized = target.value.trim();
   if (normalized.length === 0) {
-    emit("update:selectedBatchId", null);
+    emit("update:selectedTimeWindowKey", null);
     return;
   }
 
-  const parsed = Number(normalized);
-  emit("update:selectedBatchId", Number.isInteger(parsed) ? parsed : null);
+  emit("update:selectedTimeWindowKey", normalized);
 };
 
 const emitCreate = () => {

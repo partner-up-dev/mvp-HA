@@ -127,21 +127,21 @@
 
       <div class="card-empty__create" data-region="create-anchor-pr">
         <label
-          v-if="cardCreateBatchOptions.length > 0"
+          v-if="cardCreateTimeWindowOptions.length > 0"
           class="card-empty__field"
         >
           <span class="card-empty__label">{{
             t("anchorEvent.card.batchLabel")
           }}</span>
           <select
-            :value="cardCreateBatchId ?? ''"
+            :value="cardCreateTimeWindowKey ?? ''"
             class="card-empty__input"
-            @change="handleCardCreateBatchChange"
+            @change="handleCardCreateTimeWindowChange"
           >
             <option
-              v-for="option in cardCreateBatchOptions"
-              :key="option.batchId"
-              :value="option.batchId"
+              v-for="option in cardCreateTimeWindowOptions"
+              :key="option.key"
+              :value="option.key"
             >
               {{ option.label }}
             </option>
@@ -149,7 +149,7 @@
         </label>
 
         <label
-          v-if="cardCreateBatchOptions.length > 0"
+          v-if="cardCreateTimeWindowOptions.length > 0"
           class="card-empty__field"
         >
           <span class="card-empty__label">{{
@@ -232,8 +232,8 @@ type DemandCardViewModel = {
   coverImage: string | null;
 };
 
-type CardBatchOption = {
-  batchId: number;
+type CardTimeWindowOption = {
+  key: string;
   label: string;
 };
 
@@ -254,8 +254,8 @@ const props = defineProps<{
   isCardRouting: boolean;
   cardActionError: string | null;
   dragHintToken: number;
-  cardCreateBatchOptions: CardBatchOption[];
-  cardCreateBatchId: number | null;
+  cardCreateTimeWindowOptions: CardTimeWindowOption[];
+  cardCreateTimeWindowKey: string | null;
   cardCreateLocationId: string;
   cardCreateLocationOptions: CardCreateLocationOption[];
   createActionErrorMessage: string | null;
@@ -269,7 +269,7 @@ const emit = defineEmits<{
   "consume-drag-hint-window": [];
   "skip-active-card": [];
   "view-active-card-detail": [];
-  "update:cardCreateBatchId": [value: number | null];
+  "update:cardCreateTimeWindowKey": [value: string | null];
   "update:cardCreateLocationId": [value: string];
   "create-from-card-empty": [];
 }>();
@@ -458,19 +458,19 @@ const emitCreateFromCardEmpty = () => {
   emit("create-from-card-empty");
 };
 
-const handleCardCreateBatchChange = (event: Event) => {
+const handleCardCreateTimeWindowChange = (event: Event) => {
   const select = event.target;
   if (!(select instanceof HTMLSelectElement)) {
     return;
   }
 
-  const nextValue = Number(select.value);
-  if (!Number.isFinite(nextValue)) {
-    emit("update:cardCreateBatchId", null);
+  const nextValue = select.value.trim();
+  if (nextValue.length === 0) {
+    emit("update:cardCreateTimeWindowKey", null);
     return;
   }
 
-  emit("update:cardCreateBatchId", nextValue);
+  emit("update:cardCreateTimeWindowKey", nextValue);
 };
 
 const handleCardCreateLocationChange = (event: Event) => {

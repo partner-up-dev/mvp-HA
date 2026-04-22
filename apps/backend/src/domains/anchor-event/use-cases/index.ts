@@ -10,15 +10,10 @@ export {
   UserCreationLocationUnavailableError,
   LocationCapReachedError,
 } from "./create-user-anchor-pr";
-export { joinDemandCard, demandCardJoinErrorCode } from "./join-demand-card";
 export type { AnchorEventSummary } from "./list-events";
 export type {
   AnchorEventDetail,
-  BatchDetail,
+  TimeWindowDetail,
   AnchorPRSummary,
 } from "./get-event-detail";
 export type { AnchorEventDemandCard } from "./get-demand-cards";
-export type {
-  JoinDemandCardInput,
-  JoinDemandCardResult,
-} from "./join-demand-card";
