@@ -3,14 +3,14 @@
 ## Product Shape Constraints
 
 - The product is not an app, a community, or a content platform. It is a collaboration trigger embedded into existing conversation and sharing behavior.
-- The core external collaboration object is `PartnerRequest`, currently split into `Community PR` and `Anchor PR`.
-- The current version does not provide a generic Anchor PR creation entrypoint outside Anchor Event and batch context. User-created Anchor PRs are restricted to the controlled event-page flow.
+- The core external collaboration object is `PartnerRequest`, surfaced product-side as `PR`.
+- The current version keeps event-context PR creation inside Anchor Event and time-pool context. User-created PRs from event context stay inside the controlled event-page flow.
 
 ## Interaction And Identity Constraints
 
-- `Community PR` and `Anchor PR` share underlying participation semantics, but their pages and business rules must be allowed to diverge.
-- `Community PR` join and exit flows depend on local account plus PIN.
-- Key `Anchor PR` participation actions require an authenticated local session plus a bound WeChat `openid`.
+- one `PR` object supports shared participation semantics across multiple entry paths and reliability configurations.
+- baseline PR join and exit flows depend on local account plus PIN.
+- higher-trust PR participation actions require an authenticated local session plus a bound WeChat `openid`.
 - The current version primarily targets H5 and WeChat-related environments rather than a native app.
 
 ## Cold-Start And Distribution Constraints

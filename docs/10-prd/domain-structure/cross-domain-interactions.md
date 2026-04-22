@@ -2,19 +2,21 @@
 
 ## 1. PartnerRequest Core x Identity And Session
 
-- `Community PR` publish, join, and exit depend on local account plus PIN.
-- Key `Anchor PR` actions depend on authenticated session plus WeChat binding.
+- PR publish, join, and exit support local account plus PIN.
+- PR actions that require stronger identity guarantees depend on authenticated session plus WeChat binding.
 - Identity is not an independent endpoint. It exists to support the collaboration path.
 
-## 2. PartnerRequest Core x Participation And Reliability
+## 2. PartnerRequest Core x Partner Lifecycle And Capability
 
 - Whether a PR can still be joined, whether it has formed, whether it is full, and whether confirmation is required all depend on participation and reliability rules.
 - Participant-slot state feeds back into current count, availability, and downstream action semantics.
 
 ## 3. Event And Anchor Context x PartnerRequest Core
 
-- Anchor Event and batch provide context and entry for `Anchor PR`.
-- `Anchor PR` is not a standalone object divorced from event context. It is a collaboration instance inside that context.
+- Anchor Event and time-pool rules provide one discovery and assisted-create mode for `PR`.
+- The Anchor Event page shows discoverable `PR` records under the same activity type and time-pool rules.
+- `PR` keeps its durable collaboration facts inside PR state after creation.
+- `PR` creation also exists outside Anchor Event context through home-led natural-language entry.
 
 ## 4. Distribution And Attribution x PartnerRequest Core
 

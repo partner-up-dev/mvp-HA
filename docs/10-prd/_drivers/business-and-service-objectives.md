@@ -10,14 +10,14 @@ The current product needs to validate:
 - whether share links are strong enough to drive participation
 - whether users accept identity, confirmation, reminder, and check-in loops inside one-off collaboration
 
-## 2. Validate Both Community and Anchor Collaboration Modes
+## 2. Validate One PR Object Across Home And Event Contexts
 
-The product currently needs to validate two distinct collaboration modes:
+The product currently needs to validate one collaboration object across two primary entry contexts:
 
-- `Community PR`: freer and lighter one-off collaboration
-- `Anchor PR`: event-anchored collaboration with stronger timing and reliability requirements
+- home-led PR creation and distribution
+- Anchor Event initiated PR discovery and assisted creation
 
-These two modes share collaboration semantics, but they must still be allowed to evolve through different pages, fields, and rules.
+These contexts share durable PR semantics while allowing different entry surfaces, guidance, and surrounding support context.
 
 ## 3. Preserve Room for Operations and Configuration
 

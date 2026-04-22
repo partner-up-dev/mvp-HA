@@ -10,11 +10,11 @@ They are not upstream requirement sources and must not rewrite product claims in
 
 Focus:
 
-- `Community PR` and `Anchor PR` as the primary collaboration object types
+- `PR` as the primary collaboration object
 - creation, publish, status, time windows, and partner thresholds
 - entry and re-entry semantics
 
-## 2. Participation And Reliability
+## 2. Partner Lifecycle And Capability
 
 Focus:
 
@@ -36,8 +36,8 @@ Focus:
 
 Focus:
 
-- Anchor Event and batch context
-- entering `Anchor PR` from event browsing
+- Anchor Event and time-pool context
+- entering `PR` from event browsing
 - alternative recommendations
 - booking-support and POI semantics
 

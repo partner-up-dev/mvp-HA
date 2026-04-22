@@ -114,5 +114,4 @@ Backend owns:
 - unread-wave reset rules
 - delivery result persistence
 
-Frontend renders notification subscription management and prompts users after successful Anchor PR join, then relies on backend responses and durable state for delivery-adjacent truth.
-
+Frontend renders notification subscription management and prompts users after successful PR join when reminder registration is relevant for that PR, then relies on backend responses and durable state for delivery-adjacent truth.

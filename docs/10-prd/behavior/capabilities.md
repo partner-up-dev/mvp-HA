@@ -2,33 +2,35 @@
 
 ## 1. Collaboration Creation
 
-- create a `Community PR` from home exploration
-- create a `Community PR` from inline natural-language entry
-- use `/cpr/new` for mixed natural-language and structured creation
-- create and publish `Community PR` drafts
+- create a `PR` from home exploration
+- create a `PR` from inline natural-language entry
+- use `/pr/new` for mixed natural-language and structured creation
+- create a `PR` through a structured form where `type` accepts arbitrary input with suggestion options from known event types
+- create a `PR` through a structured form where `time_window` uses a batch or free UI mode and still resolves to one PR-owned time window
+- create and publish `PR` drafts
+- let natural-language creation stay simple while the system may map the intent to an existing Anchor Event context or synthesize a new `PR.type`
 
 ## 2. Collaboration Joining And Progression
 
-- join and exit `Community PR`
-- join and exit `Anchor PR`
-- prompt notification subscription immediately after successful `Anchor PR` join
+- join and exit `PR`
+- prompt notification subscription immediately after successful join when reminder registration is relevant for that PR
 - post and read non-realtime PR messages, including operator-authored system messages inside the same PR thread
-- confirm participation in `Anchor PR`
-- submit `Anchor PR` check-in feedback
+- confirm participation when the `Partner` submodule carries confirmation rules
+- submit PR check-in feedback when the attendance module is active
 - progress status based on partner thresholds and time windows
 
-## 3. Event-Anchored Collaboration
+## 3. Event-Context Collaboration
 
-- browse Anchor Events and batches
-- enter `Anchor PR` from event context
-- keep the `Anchor PR` detail page focused on facts, participation, booking support, and persistent notification-subscription management
-- open the Anchor PR message experience through `/apr/:id/messages`
+- browse Anchor Events and time-pool driven PR discovery surfaces
+- enter `PR` from Anchor Event context
+- keep the current event-context `PR` detail page focused on facts, participation, booking support, and persistent notification-subscription management
+- open the PR message experience through `/pr/:id/messages`
 - open the participant roster modal from the facts-card participant row
 - open venue images through a clickable label row aligned with other facts-card entry rows
 - open participant profile pages from clickable participant badges
-- re-discover other active Anchor Events from current Anchor Event and Anchor PR context
-- create controlled `Anchor PR` inside batch and location context
-- review alternative recommendations within the same batch
+- re-discover other active Anchor Events from current Anchor Event and PR context
+- create `PR` from Anchor Event context as one assisted mode inside the Anchor Event domain
+- review alternative recommendations under the same time-pool rules
 - view booking support and resource-support semantics
 
 ## 4. Identity And Revisit
@@ -53,7 +55,7 @@
 - notify new-partner events
 - notify new PR messages
 - model remaining send quota
-- release unconfirmed slots when rules require it
+- release unconfirmed slots when the `Partner` submodule carries confirmation rules
 
 ## 7. Support And Operations
 

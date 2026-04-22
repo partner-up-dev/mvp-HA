@@ -39,7 +39,7 @@ These support delivery and operations but do not own independent product behavio
 
 Backend clusters:
 
-- PR lifecycle: `pr-core`, `pr-community`, `pr-anchor`
+- PR lifecycle and coordination: `pr`
 - event and booking support: `anchor-event`, `pr-booking-support`
 - identity and user: `auth`, `user`
 - admin and operations: admin management, POI/config/meta

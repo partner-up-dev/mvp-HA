@@ -8,7 +8,7 @@
   - the created object remains stable enough to share
   - a recipient can understand what action to take
 - Evidence Expectation:
-  - users can create a `Community PR` from lightweight input
+  - users can create a `PR` from lightweight input
   - shared routes remain legible and actionable on revisit
 - Source Rationale:
   - `../_drivers/market-and-user-pressures.md`
@@ -17,16 +17,16 @@
   - `../../20-product-tdd/claim-realization-matrix.md`
   - `../../20-product-tdd/cross-unit-contracts.md`
 
-## Claim 2. Community and Anchor Collaboration Must Evolve by Scenario, Not by Forced Page Unification
+## Claim 2. One PR Must Evolve Through Context-Specific Entry Paths And Stable Collaboration Rules
 
-- Claim Intent: preserve shared collaboration semantics without forcing `Community PR` and `Anchor PR` into one page grammar.
+- Claim Intent: preserve one durable `PR` object while allowing home-led, form-led, and event-assisted entry surfaces to diverge without fragmenting collaboration semantics.
 - Evaluation Dimensions:
-  - scenario-specific fields and actions can diverge
+  - entry surfaces and suggestions can diverge
   - shared semantics such as participation and timing remain legible
-  - event-anchored collaboration can add stronger reliability and booking semantics
+  - event-assisted collaboration can add discovery and booking context without changing the core object
 - Evidence Expectation:
-  - route families and workflows remain clearly distinct
-  - `Anchor PR` can support confirmation, check-in, and booking-related flows without collapsing into the `Community PR` surface
+  - route families and workflows remain context-aware while durable vocabulary stays `PR`
+  - the same `PR` object can be created from natural-language, structured form, and event-assisted paths
 - Source Rationale:
   - `../_drivers/business-and-service-objectives.md`
   - `../_drivers/hard-constraints.md`
@@ -56,10 +56,10 @@
 - Claim Intent: help users judge whether collaboration is still credible, not just whether it was created.
 - Evaluation Dimensions:
   - formed and full states remain clear
-  - confirmation and check-in loops reinforce reliability in `Anchor PR`
+  - confirmation and check-in loops reinforce reliability when the relevant modules are present
   - notification semantics model real send opportunities rather than a generic toggle
 - Evidence Expectation:
-  - `Anchor PR` exposes confirmation, reminder, and check-in behavior
+  - the `Partner` submodule and notification modules expose confirmation, reminder, and check-in behavior when the relevant facts are present
   - fulfillment-related notifications and reliability feedback remain user-visible where relevant
 - Source Rationale:
   - `../_drivers/market-and-user-pressures.md`
@@ -74,10 +74,10 @@
 - Evaluation Dimensions:
   - anonymous browsing is allowed
   - local account plus PIN can support lightweight ownership and revisit
-  - stronger identity requirements appear only in stronger-trust scenarios
+  - stronger identity requirements appear only on the actions that carry those requirements
 - Evidence Expectation:
-  - `Community PR` remains compatible with local account plus PIN
-  - key `Anchor PR` actions remain gated by authenticated session plus WeChat binding
+  - core `PR` creation and join flows remain compatible with local account plus PIN
+  - actions that require stronger identity remain gated by authenticated session plus WeChat binding
 - Source Rationale:
   - `../_drivers/market-and-user-pressures.md`
   - `../_drivers/hard-constraints.md`
