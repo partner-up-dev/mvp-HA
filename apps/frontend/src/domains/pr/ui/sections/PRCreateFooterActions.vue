@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { CreateSubmissionMode } from "@/domains/pr/use-cases/useCommunityPRCreateFlow";
+import type { CreateSubmissionMode } from "@/domains/pr/use-cases/usePRCreateFlow";
 import Button from "@/shared/ui/actions/Button.vue";
 
 defineProps<{

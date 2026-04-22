@@ -64,6 +64,14 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/pr/new",
+    name: "pr-create",
+    component: CommunityPRCreatePage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
     path: "/cpr/:id",
     name: "community-pr",
     component: CommunityPRPage,

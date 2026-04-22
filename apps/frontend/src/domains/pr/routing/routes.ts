@@ -5,6 +5,7 @@ import type {
 } from "@partner-up-dev/backend";
 
 export const communityPRCreatePath = (): string => "/cpr/new";
+export const prCreatePath = (): string => "/pr/new";
 
 export const communityPRDetailPath = (id: PRId): string => `/cpr/${id}`;
 

@@ -46,6 +46,7 @@ const resolveFallbackText = (
         desc: i18n.global.t("share.wechat.pageDescriptionHome"),
         routeKey: "home",
       };
+    case "pr-create":
     case "community-pr-create":
       return {
         title: `${i18n.global.t("createPage.title")} - ${i18n.global.t("app.name")}`,

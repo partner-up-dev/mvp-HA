@@ -28,7 +28,7 @@
           </header>
           <RouterLink
             class="creator-entry"
-            :to="{ name: 'community-pr-create' }"
+            :to="{ name: 'pr-create' }"
             @click="handleFallbackCreateClick"
           >
             <div class="creator-copy">
@@ -80,7 +80,7 @@ const handleHeroValuesReveal = () => {
 const handleFallbackCreateClick = () => {
   trackEvent("home_create_entry_click", {
     source: "fallback_section",
-    target: "community-pr-create",
+    target: "pr-create",
   });
 };
 

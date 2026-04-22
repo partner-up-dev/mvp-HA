@@ -170,7 +170,7 @@ type CanonicalAnalyticsPayloadMap = {
   };
   home_create_entry_click: PRContextPayload & {
     source: "hero_secondary" | "fallback_section";
-    target: "community-pr-create";
+    target: "pr-create";
   };
   home_bookmark_nudge_shown: PRContextPayload & {
     triggerDepthPercent: number;

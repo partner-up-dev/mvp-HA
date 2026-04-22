@@ -29,7 +29,7 @@
       </RouterLink>
       <RouterLink
         class="hero-action hero-action--secondary"
-        :to="{ name: 'community-pr-create' }"
+        :to="{ name: 'pr-create' }"
         @click="handleSecondaryClick"
       >
         {{ t("home.landing.heroSecondaryAction") }}
@@ -195,7 +195,7 @@ const handlePrimaryClick = () => {
 const handleSecondaryClick = () => {
   trackEvent("home_create_entry_click", {
     source: "hero_secondary",
-    target: "community-pr-create",
+    target: "pr-create",
   });
 };
 

@@ -1,5 +1,5 @@
 <template>
-  <PageScaffoldFlow class="create-page" data-page="community-pr-create">
+  <PageScaffoldFlow class="create-page" data-page="pr-create">
     <template #header>
       <PRCreateHeader @back="goHome" />
     </template>
@@ -91,7 +91,7 @@ import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter
 import PageScaffoldFlow from "@/shared/ui/layout/PageScaffoldFlow.vue";
 import PRCreateHeader from "@/domains/pr/ui/sections/PRCreateHeader.vue";
 import PRCreateFooterActions from "@/domains/pr/ui/sections/PRCreateFooterActions.vue";
-import { useCommunityPRCreateFlow } from "@/domains/pr/use-cases/useCommunityPRCreateFlow";
+import { usePRCreateFlow } from "@/domains/pr/use-cases/usePRCreateFlow";
 
 const resolveQueryMode = (value: unknown): "nl" | "form" | null => {
   if (value === "nl" || value === "form") return value;
@@ -117,7 +117,7 @@ const {
   submitAs,
   handleSubmit,
   goHome,
-} = useCommunityPRCreateFlow();
+} = usePRCreateFlow();
 
 const initialMode =
   resolveQueryMode(route.query.mode) ??

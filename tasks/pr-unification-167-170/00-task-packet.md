@@ -203,7 +203,7 @@ Fields leaving PR core:
 1. doc and contract rewrite for one single `PR` vocabulary + batch removal
 2. implementation blueprint for the single-PR data model, including `partner_requests` as the root table, `Partner` submodule storage shape, subtype-table retirement path, and field retirement path for `auto_hide_at` and PR-side `booking_triggered_at`
 3. schema expand and backfill scaffolding for one single PR model, including root-table expansion, partner admission fields, and compatibility bridges needed during rollout
-4. schema and type cleanup for `prKind`, `ANCHOR`, `COMMUNITY`, `community_partner_requests`, and `anchor_partner_requests`
+4. non-destructive PR vocabulary cleanup, beginning with canonical PR create routes and hooks while old `cpr` and `apr` detail surfaces remain as compatibility seams
 5. backend symbol and route cleanup for one single `PR` vocabulary across DTOs, repository contracts, and create/read surfaces
 6. rewrite Anchor Event assisted create and discovery around type and time-window facts, so `#170` lands as event-side assistance instead of PR-side ownership
 7. backend domain rewrite from `pr-core` / `pr-anchor` / `pr-community` toward one `pr`, including `Partner`, `PR Message`, and `PR Sharing`
@@ -323,6 +323,39 @@ Fields leaving PR core:
   - `pnpm --filter @partner-up-dev/backend build`
 - Verification gap:
   - runtime read-switch verification remains for later slices
+
+## Slice 4 - Canonical PR Create Vocabulary Cleanup
+
+- Status:
+  - in progress on 2026-04-22
+- Scope for this narrowed slice:
+  - add canonical backend create commands under `/api/pr/new/*`
+  - add canonical frontend create route `/pr/new`
+  - introduce generic `PR` create hooks and create flow names
+  - keep `CommunityPR` detail, publish, and compatibility route surfaces in place
+  - defer recovery-lane replacement until the post-`#170` time-window recommendation model is defined
+- Artifacts:
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRCreate.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
+  - `apps/frontend/src/domains/pr/use-cases/useCommunityPRCreateFlow.ts`
+  - `apps/frontend/src/pages/CommunityPRCreatePage.vue`
+  - `apps/frontend/src/app/router.ts`
+  - `apps/frontend/src/pages/HomePage.vue`
+  - `apps/frontend/src/domains/landing/ui/sections/LandingHeroSection.vue`
+  - `apps/frontend/src/domains/share/use-cases/useRouteShareOrchestrator.ts`
+  - `apps/frontend/src/shared/telemetry/events.ts`
+- Decisions implemented:
+  - canonical create commands now live at `POST /api/pr/new/form` and `POST /api/pr/new/nl`
+  - frontend create hooks now center on `PR` vocabulary and call the canonical `/api/pr/new/*` endpoints
+  - `/pr/new` is now the canonical create page route while `/cpr/new` remains as a compatibility alias
+  - home and landing create entry points now navigate to `pr-create`
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - `CommunityPR` and `AnchorPR` detail surfaces still exist and remain the next cleanup surface
 
 ## Handoff Source
 

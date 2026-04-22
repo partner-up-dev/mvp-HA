@@ -5,7 +5,6 @@ import type {
   PartnerRequestFields,
   PRId,
   PRStatusManual,
-  WeekdayLabel,
 } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
@@ -15,18 +14,10 @@ import {
   readApiErrorPayload,
   resolveApiErrorMessage,
 } from "@/shared/api/error";
-
-type CreateDraftResult = { id: PRId };
-
-type CreateCommunityPRFromNaturalLanguageInput = {
-  rawText: string;
-  nowIso: string;
-  nowWeekday: WeekdayLabel;
-};
-
-type CreateCommunityPRFromStructuredInput = {
-  fields: PartnerRequestFields;
-};
+export {
+  useCreatePRFromNaturalLanguage as useCreateCommunityPRFromNaturalLanguage,
+  useCreatePRFromStructured as useCreateCommunityPRFromStructured,
+} from "./usePRCreate";
 
 type UpdateCommunityPRContentInput = {
   id: PRId;
@@ -93,56 +84,6 @@ export const useCommunityPR = (id: Ref<PRId | null>) => {
       return await res.json();
     },
     enabled: () => id.value !== null,
-  });
-};
-
-export const useCreateCommunityPRFromNaturalLanguage = () => {
-  return useMutation<
-    CreateDraftResult,
-    Error,
-    CreateCommunityPRFromNaturalLanguageInput
-  >({
-    mutationFn: async (input) => {
-      const res = await client.api.cpr.natural_language.$post({
-        json: input,
-      });
-
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(
-            res,
-            i18n.global.t("errors.createRequestFailed"),
-          ),
-        );
-      }
-
-      return await res.json();
-    },
-  });
-};
-
-export const useCreateCommunityPRFromStructured = () => {
-  return useMutation<
-    CreateDraftResult,
-    Error,
-    CreateCommunityPRFromStructuredInput
-  >({
-    mutationFn: async (input) => {
-      const res = await client.api.cpr.$post({
-        json: input.fields,
-      });
-
-      if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(
-            res,
-            i18n.global.t("errors.createRequestFailed"),
-          ),
-        );
-      }
-
-      return await res.json();
-    },
   });
 };
 
