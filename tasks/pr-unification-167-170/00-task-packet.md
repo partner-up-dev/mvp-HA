@@ -33,6 +33,7 @@
 - Address and Object:
 - `tasks/pr-unification-167-170/00-task-packet.md`
   - `tasks/pr-unification-167-170/10-action-preflight-problem-details-lld.md`
+  - `tasks/pr-unification-167-170/20-single-pr-data-model-blueprint.md`
   - `docs/10-prd/*` PR and Anchor Event vocabulary/rule docs
   - `docs/20-product-tdd/*` PR route/API and authority docs
   - `apps/backend/src/entities/partner-request.ts`
@@ -201,7 +202,7 @@ Fields leaving PR core:
 
 1. doc and contract rewrite for one single `PR` vocabulary + batch removal
 2. implementation blueprint for the single-PR data model, including `partner_requests` as the root table, `Partner` submodule storage shape, subtype-table retirement path, and field retirement path for `auto_hide_at` and PR-side `booking_triggered_at`
-3. schema expand and backfill scaffolding for one single PR model, including root-table expansion, partner-rule storage, and compatibility bridges needed during rollout
+3. schema expand and backfill scaffolding for one single PR model, including root-table expansion, partner admission fields, and compatibility bridges needed during rollout
 4. schema and type cleanup for `prKind`, `ANCHOR`, `COMMUNITY`, `community_partner_requests`, and `anchor_partner_requests`
 5. backend symbol and route cleanup for one single `PR` vocabulary across DTOs, repository contracts, and create/read surfaces
 6. rewrite Anchor Event assisted create and discovery around type and time-window facts, so `#170` lands as event-side assistance instead of PR-side ownership
@@ -273,6 +274,56 @@ Fields leaving PR core:
 - Verification gap:
   - runtime and compile-time verification remain part of later execution slices because Slice 1 changed durable docs only
 
+## Slice 2 - Single PR Data Model Blueprint
+
+- Status:
+  - completed on 2026-04-22
+- Artifact:
+  - `tasks/pr-unification-167-170/20-single-pr-data-model-blueprint.md`
+- Decisions recorded:
+  - `partner_requests` remains the single PR root table
+  - `visibility_status` moves to the PR root
+    - confirmation and join-lock offsets move onto `partner_requests` while staying `Partner`-owned semantically
+  - `pr_kind`, `anchor_event_id`, `batch_id`, `location_source`, `auto_hide_at`, and subtype-table identity all leave the PR durable model
+  - `booking_triggered_at` leaves the PR model and is re-homed under booking-support-owned resource state
+  - `raw_text` and `creation_source` leave the durable PR model and fall back to acquisition / analytics / operation-log concerns
+  - booking-support runtime reads stay PR-keyed, while event/batch inputs remain transient during the compatibility window
+- Verification completed:
+  - root, subtype, partner, booking-support, and booking-trigger current storage were re-read from backend entity and service files before finalizing the blueprint
+  - blast-radius scan covered current field usage for `prKind`, anchor subtype fields, batch/event keys, and booking-trigger paths
+- Verification gap:
+  - no schema or code was changed in this slice, so runtime verification remains part of Slice 3 and later execution slices
+
+## Slice 3 - Schema Expand And Compatibility Write Bridge
+
+- Status:
+  - completed on 2026-04-22
+- Schema artifacts:
+  - `apps/backend/drizzle/0024_single_pr_expand.sql`
+  - `apps/backend/src/entities/partner-request.ts`
+- Local repair artifact:
+  - `tasks/pr-unification-167-170/21-local-db-realign-after-0024-rewrite.sql`
+- Compatibility write artifacts:
+  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/backend/src/repositories/PartnerRequestRepository.ts`
+  - `apps/backend/src/repositories/PRRootRepository.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-pr.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/create-user-anchor-pr.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/expand-full-anchor-pr.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/accept-alternative-batch.ts`
+- Decisions implemented:
+  - `partner_requests.visibility_status` is added with default `VISIBLE`
+  - partner admission offsets are added directly onto `partner_requests`
+  - backfill from `anchor_partner_requests` populates root visibility and partner admission offsets
+  - anchor compatibility writes now dual-write old anchor subtype fields and new root fields while old anchor subtype reads remain in place
+  - direct transactional anchor create paths now populate the new root fields directly
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend db:lint`
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+- Verification gap:
+  - runtime read-switch verification remains for later slices
+
 ## Handoff Source
 
 This packet spins out of:
@@ -283,3 +334,4 @@ This packet spins out of:
 ## LLD Artifacts
 
 - `tasks/pr-unification-167-170/10-action-preflight-problem-details-lld.md`
+- `tasks/pr-unification-167-170/20-single-pr-data-model-blueprint.md`

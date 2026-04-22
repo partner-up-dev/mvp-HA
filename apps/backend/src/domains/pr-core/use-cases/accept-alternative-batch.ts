@@ -149,6 +149,12 @@ export async function acceptAlternativeBatch(
           time: targetTimeWindow,
           location: sourceLocation,
           status: "OPEN",
+          visibilityStatus: "VISIBLE",
+          confirmationStartOffsetMinutes:
+            sourceAnchor.confirmationStartOffsetMinutes,
+          confirmationEndOffsetMinutes:
+            sourceAnchor.confirmationEndOffsetMinutes,
+          joinLockOffsetMinutes: sourceAnchor.joinLockOffsetMinutes,
           minPartners: partnerBounds.minPartners,
           maxPartners: partnerBounds.maxPartners,
           preferences: source.preferences,

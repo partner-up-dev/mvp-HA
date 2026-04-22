@@ -130,6 +130,13 @@ export const partnerRequests = pgTable("partner_requests", {
     .default(sql`ARRAY[NULL, NULL]::text[]`),
   location: text("location"),
   status: text("status").$type<PRStatus>().notNull().default("OPEN"),
+  visibilityStatus: text("visibility_status")
+    .$type<VisibilityStatus>()
+    .notNull()
+    .default("VISIBLE"),
+  confirmationStartOffsetMinutes: integer("confirmation_start_offset_minutes"),
+  confirmationEndOffsetMinutes: integer("confirmation_end_offset_minutes"),
+  joinLockOffsetMinutes: integer("join_lock_offset_minutes"),
   minPartners: integer("min_partners"),
   maxPartners: integer("max_partners"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -156,6 +163,7 @@ export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
+  visibilityStatus: visibilityStatusSchema,
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
@@ -163,6 +171,7 @@ export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
+  visibilityStatus: visibilityStatusSchema,
 });
 
 // Type inference

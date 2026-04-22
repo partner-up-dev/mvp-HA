@@ -7,6 +7,7 @@ import {
   type PartnerRequestFields,
   type PRId,
   type PRStatus,
+  type VisibilityStatus,
   type XiaohongshuPosterCache,
   type WechatThumbnailCache,
 } from "../entities/partner-request";
@@ -47,6 +48,38 @@ export class PRRootRepository {
     const result = await db
       .update(partnerRequests)
       .set({ status })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async updateVisibilityStatus(
+    id: PRId,
+    visibilityStatus: VisibilityStatus,
+  ): Promise<PartnerRequest | null> {
+    const result = await db
+      .update(partnerRequests)
+      .set({ visibilityStatus })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async updatePartnerRules(
+    id: PRId,
+    data: {
+      confirmationStartOffsetMinutes: number | null;
+      confirmationEndOffsetMinutes: number | null;
+      joinLockOffsetMinutes: number | null;
+    },
+  ): Promise<PartnerRequest | null> {
+    const result = await db
+      .update(partnerRequests)
+      .set({
+        confirmationStartOffsetMinutes: data.confirmationStartOffsetMinutes,
+        confirmationEndOffsetMinutes: data.confirmationEndOffsetMinutes,
+        joinLockOffsetMinutes: data.joinLockOffsetMinutes,
+      })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] ?? null;

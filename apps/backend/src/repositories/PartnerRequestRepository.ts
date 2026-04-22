@@ -4,6 +4,7 @@ import {
   type NewPartnerRequest,
   type PRStatus,
   type PRId,
+  type VisibilityStatus,
   type XiaohongshuPosterCache,
   type WechatThumbnailCache,
   type PartnerRequest,
@@ -56,6 +57,35 @@ export class PartnerRequestRepository {
     const result = await db
       .update(partnerRequests)
       .set({ status })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async updateVisibilityStatus(id: PRId, visibilityStatus: VisibilityStatus) {
+    const result = await db
+      .update(partnerRequests)
+      .set({ visibilityStatus })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async updatePartnerRules(
+    id: PRId,
+    data: {
+      confirmationStartOffsetMinutes: number | null;
+      confirmationEndOffsetMinutes: number | null;
+      joinLockOffsetMinutes: number | null;
+    },
+  ) {
+    const result = await db
+      .update(partnerRequests)
+      .set({
+        confirmationStartOffsetMinutes: data.confirmationStartOffsetMinutes,
+        confirmationEndOffsetMinutes: data.confirmationEndOffsetMinutes,
+        joinLockOffsetMinutes: data.joinLockOffsetMinutes,
+      })
       .where(eq(partnerRequests.id, id))
       .returning();
     return result[0] || null;

@@ -16,6 +16,7 @@ import {
   type VisibilityStatus,
 } from "../entities/partner-request";
 import type { AnchorPartnerRequest as AnchorPR } from "../entities/anchor-partner-request";
+import { PartnerRequestRepository } from "./PartnerRequestRepository";
 
 export type AnchorPRRecord = {
   root: PartnerRequest;
@@ -23,12 +24,29 @@ export type AnchorPRRecord = {
 };
 
 export class AnchorPRRepository {
+  private readonly prRootRepo = new PartnerRequestRepository();
+
   async create(data: NewAnchorPartnerRequest): Promise<AnchorPartnerRequest> {
-    const result = await db
-      .insert(anchorPartnerRequests)
-      .values(data)
-      .returning();
-    return result[0];
+    return await db.transaction(async (tx) => {
+      const result = await tx
+        .insert(anchorPartnerRequests)
+        .values(data)
+        .returning();
+      const created = result[0];
+
+      await tx
+        .update(partnerRequests)
+        .set({
+          visibilityStatus: created.visibilityStatus,
+          confirmationStartOffsetMinutes:
+            created.confirmationStartOffsetMinutes,
+          confirmationEndOffsetMinutes: created.confirmationEndOffsetMinutes,
+          joinLockOffsetMinutes: created.joinLockOffsetMinutes,
+        })
+        .where(eq(partnerRequests.id, created.prId));
+
+      return created;
+    });
   }
 
   async findByPrId(prId: PRId): Promise<AnchorPartnerRequest | null> {
@@ -182,6 +200,7 @@ export class AnchorPRRepository {
       .update(anchorPartnerRequests)
       .set({ visibilityStatus })
       .where(eq(anchorPartnerRequests.prId, prId));
+    await this.prRootRepo.updateVisibilityStatus(prId, visibilityStatus);
   }
 
   async updateParticipationPolicy(
@@ -202,6 +221,11 @@ export class AnchorPRRepository {
       })
       .where(eq(anchorPartnerRequests.prId, prId))
       .returning();
+    await this.prRootRepo.updatePartnerRules(prId, {
+      confirmationStartOffsetMinutes: data.confirmationStartOffsetMinutes,
+      confirmationEndOffsetMinutes: data.confirmationEndOffsetMinutes,
+      joinLockOffsetMinutes: data.joinLockOffsetMinutes,
+    });
     return result[0] ?? null;
   }
 

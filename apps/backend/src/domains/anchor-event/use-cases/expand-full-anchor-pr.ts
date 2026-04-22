@@ -109,6 +109,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     time: fullPR.root.time,
     location: targetLocation,
     status: "OPEN",
+    visibilityStatus: "VISIBLE",
     minPartners: partnerBounds.minPartners,
     maxPartners: partnerBounds.maxPartners,
     preferences: fullPR.root.preferences,

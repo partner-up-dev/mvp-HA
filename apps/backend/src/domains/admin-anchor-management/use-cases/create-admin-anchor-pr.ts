@@ -95,6 +95,7 @@ export async function createAdminAnchorPR(
     time: batch.timeWindow,
     location: input.location,
     status: "OPEN",
+    visibilityStatus: "VISIBLE",
     minPartners: input.minPartners,
     maxPartners: input.maxPartners,
     preferences: input.preferences,
