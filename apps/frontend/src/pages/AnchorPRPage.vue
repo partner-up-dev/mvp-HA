@@ -1,5 +1,5 @@
 <template>
-  <PageScaffold class="anchor-pr-page" data-page="anchor-pr-detail">
+  <PageScaffold class="pr-page" data-page="pr-detail">
     <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
     <ErrorToast v-else-if="error" :message="error.message" persistent />
 
@@ -37,6 +37,36 @@
           <PRStatusBadge :status="prDetail.status" />
         </template>
       </PageHeader>
+
+      <InlineNotice
+        v-if="showDraftPublishCard"
+        tone="warning"
+        :message="t('prPage.publishDraft.description')"
+      >
+        <template #actions>
+          <Button
+            type="button"
+            :loading="publishMutation.isPending.value"
+            @click="handlePublishDraft"
+          >
+            {{
+              publishMutation.isPending.value
+                ? t("prPage.publishDraft.pending")
+                : t("prPage.publishDraft.action")
+            }}
+          </Button>
+        </template>
+      </InlineNotice>
+
+      <InlineNotice
+        v-if="showPinHelpCard"
+        tone="info"
+        :message="
+          userSessionStore.userPin
+            ? t('prPage.pinHelp.currentPin', { pin: userSessionStore.userPin })
+            : t('prPage.pinHelp.description')
+        "
+      />
 
       <AnchorPRFactsCard
         class="facts-card"
@@ -121,7 +151,7 @@
           :pr-id="id"
           :section="prDetail.partnerSection"
           :accept-alternative-batch-pending="
-            acceptAlternativeBatchMutation.isPending.value
+            isAnchorPR ? acceptAlternativeBatchMutation.isPending.value : false
           "
           @accept-alternative-batch="handleAcceptAlternativeBatch"
         />
@@ -129,7 +159,12 @@
 
       <section class="utility-area">
         <div class="utility-actions">
-          <Button tone="outline" block @click="goBookingSupport">
+          <Button
+            v-if="showBookingSupportEntry"
+            tone="outline"
+            block
+            @click="goBookingSupport"
+          >
             {{ t("prPage.bookingSupportEntry.viewAction") }}
           </Button>
 
@@ -146,7 +181,7 @@
             <Button tone="outline" block @click="showShareDrawer = true">
               {{ t("prPage.shareEntry.action") }}
             </Button>
-            <div class="utility-link-row">
+            <div v-if="showEventPlazaLink" class="utility-link-row">
               <router-link :to="{ name: 'event-plaza' }" class="utility-link">
                 {{ t("anchorEvent.otherEvents.action") }}
                 <span
@@ -202,7 +237,7 @@
         :open="showEditModal"
         :initial-fields="editableFields"
         :pr-id="id"
-        scenario="ANCHOR"
+        :scenario="prScenario"
         @close="showEditModal = false"
         @success="handleEditSuccess"
       />
@@ -211,7 +246,7 @@
         v-if="id !== null"
         :open="showModifyModal"
         :pr-id="id"
-        scenario="ANCHOR"
+        :scenario="prScenario"
         @close="showModifyModal = false"
       />
 
@@ -371,7 +406,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
@@ -396,11 +431,14 @@ import AnchorPRRecoveryLane from "@/domains/pr/ui/sections/AnchorPRRecoveryLane.
 import AnchorPRFactsCard from "@/domains/pr/ui/composites/AnchorPRFactsCard.vue";
 import {
   useAcceptAnchorAlternativeBatch,
-  useAnchorPR,
   useJoinAnchorPR,
-  type AnchorPRDetailResponse,
 } from "@/domains/pr/queries/useAnchorPR";
-import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
+import { usePublishCommunityPR } from "@/domains/pr/queries/useCommunityPR";
+import { usePRDetail, type PRDetailResponse } from "@/domains/pr/queries/usePRDetail";
+import {
+  useUserSessionStore,
+  type AuthSessionPayload,
+} from "@/shared/auth/useUserSessionStore";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import { usePRDetailHead } from "@/domains/pr/use-cases/usePRDetailHead";
 import { usePRRouteShareDescriptor } from "@/domains/pr/use-cases/usePRRouteShareDescriptor";
@@ -412,12 +450,16 @@ import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
 import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import {
-  anchorPRDetailPath,
   anchorPRBookingSupportPath,
   anchorPRMessagesPath,
+  prDetailPath,
 } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
-import type { AnchorPRFormFields } from "@/domains/pr/model/types";
+import {
+  isAnchorPRDetail,
+  isCommunityPRDetail,
+  type PRFormFields,
+} from "@/domains/pr/model/types";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/telemetry/track";
 import type { ApiError } from "@/shared/api/error";
@@ -428,9 +470,9 @@ import {
 } from "@/processes/wechat/pending-wechat-action";
 
 type BlockedReason =
-  AnchorPRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
+  PRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
 type RosterState =
-  AnchorPRDetailResponse["partnerSection"]["roster"][number]["state"];
+  PRDetailResponse["partnerSection"]["roster"][number]["state"];
 
 type DockActionKey = "JOIN" | "CONFIRM" | "CHECKIN_ATTENDED";
 
@@ -450,6 +492,7 @@ type ViewerState =
   | "VISITOR_JOINABLE"
   | "VISITOR_BLOCKED";
 
+const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const id = usePRRouteId();
@@ -540,10 +583,17 @@ const formatFactsTimePoint = (
   return `${datePart} (${relativeDayLabel}) ${timePart}`;
 };
 
-const { data, isLoading, error, refetch } = useAnchorPR(id);
+const { data, isLoading, error, refetch } = usePRDetail(id);
 const prDetail = computed(() => data.value);
+const anchorDetail = computed(() =>
+  prDetail.value && isAnchorPRDetail(prDetail.value) ? prDetail.value : undefined,
+);
+const isAnchorPR = computed(() => Boolean(anchorDetail.value));
+const isCommunityPR = computed(
+  () => Boolean(prDetail.value && isCommunityPRDetail(prDetail.value)),
+);
 const backFallbackTo = computed(() => {
-  const anchorEventId = prDetail.value?.anchor.anchorEventId ?? null;
+  const anchorEventId = anchorDetail.value?.anchor.anchorEventId ?? null;
   if (
     anchorEventId !== null &&
     Number.isFinite(anchorEventId) &&
@@ -555,6 +605,7 @@ const backFallbackTo = computed(() => {
 });
 const joinMutation = useJoinAnchorPR();
 const acceptAlternativeBatchMutation = useAcceptAnchorAlternativeBatch();
+const publishMutation = usePublishCommunityPR();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
@@ -575,7 +626,11 @@ const joinFlowPhoneInput = ref("");
 const exitActionError = ref<string | null>(null);
 const lastPrimaryImpressionKey = ref("");
 
-const editableFields = computed<AnchorPRFormFields>(() => ({
+const prScenario = computed(() =>
+  prDetail.value?.prKind === "ANCHOR" ? "ANCHOR" : "COMMUNITY",
+);
+
+const editableFields = computed<PRFormFields>(() => ({
   title: prDetail.value?.title,
   type: prDetail.value?.core.type ?? "",
   time: prDetail.value?.core.time ?? [null, null],
@@ -583,6 +638,10 @@ const editableFields = computed<AnchorPRFormFields>(() => ({
   minPartners: prDetail.value?.core.minPartners ?? null,
   maxPartners: prDetail.value?.core.maxPartners ?? null,
   partners: prDetail.value?.core.partners ?? [],
+  budget:
+    prDetail.value && isCommunityPRDetail(prDetail.value)
+      ? prDetail.value.core.budget ?? null
+      : undefined,
   preferences: prDetail.value?.core.preferences ?? [],
   notes: prDetail.value?.core.notes ?? null,
 }));
@@ -610,13 +669,29 @@ const sharedActions = useSharedPRActions({
   id,
   pr: prDetail,
   isCreator,
-  scenario: "ANCHOR",
   onActionSuccess: resetLivePolling,
 });
 const attendanceActions = useAnchorAttendanceActions({
   id,
-  pr: prDetail,
+  pr: anchorDetail,
   onActionSuccess: resetLivePolling,
+});
+const creationEntry = computed(() => {
+  const raw = route.query.entry;
+  if (typeof raw === "string") return raw;
+  if (Array.isArray(raw)) return raw[0] ?? null;
+  return null;
+});
+const showDraftPublishCard = computed(
+  () => isCommunityPR.value && prDetail.value?.status === "DRAFT",
+);
+const showPinHelpCard = computed(() => {
+  if (!isCommunityPR.value) return false;
+  if (creationEntry.value === "join") {
+    return Boolean(userSessionStore.userPin);
+  }
+  if (!isCreator.value) return false;
+  return creationEntry.value === "create" || creationEntry.value === "publish";
 });
 const currentBookingContact = computed(
   () => prDetail.value?.partnerSection.bookingContact ?? null,
@@ -703,7 +778,7 @@ const releaseNoticeText = computed(() => {
 const showRecoveryLane = computed(() => {
   const viewer = prDetail.value?.partnerSection.viewer;
   if (!viewer) return false;
-  return !viewer.isParticipant && !viewer.canJoin;
+  return isAnchorPR.value && !viewer.isParticipant && !viewer.canJoin;
 });
 
 const activeRoster = computed(
@@ -802,8 +877,13 @@ const showInlineReminderSubscriptions = computed(
 );
 
 const showMessageThread = computed(
-  () => prDetail.value?.partnerSection.viewer.isParticipant ?? false,
+  () =>
+    isAnchorPR.value &&
+    (prDetail.value?.partnerSection.viewer.isParticipant ?? false),
 );
+
+const showBookingSupportEntry = computed(() => isAnchorPR.value);
+const showEventPlazaLink = computed(() => isAnchorPR.value);
 
 const showExitActionInContext = computed(() => {
   const viewer = prDetail.value?.partnerSection.viewer;
@@ -830,7 +910,7 @@ watch(
       viewerState.value,
     ] as const,
   ([prId, actionKey, state]) => {
-    if (prId === null || actionKey === null) return;
+    if (prId === null || actionKey === null || !isAnchorPR.value) return;
     const ctaType = mapDockActionToTrackType(actionKey);
     if (ctaType === null) return;
     const impressionKey = `${prId}:${actionKey}:${state}`;
@@ -921,6 +1001,30 @@ const submitJoinFlowPhoneAndJoin = async () => {
   await finalizeJoinFlow(joinFlowPhoneInput.value.trim());
 };
 
+const handleDirectJoin = async () => {
+  const result = await sharedActions.handleJoin();
+  const authPayload = (result as { auth?: AuthSessionPayload | null } | null)
+    ?.auth;
+  if (authPayload) {
+    userSessionStore.applyAuthSession(authPayload);
+  }
+  if (authPayload?.userPin) {
+    await router.replace({ query: { ...route.query, entry: "join" } });
+  }
+};
+
+const handlePublishDraft = async () => {
+  if (id.value === null || !isCommunityPR.value) return;
+  const result = await publishMutation.mutateAsync({ id: id.value });
+  const authPayload = (result as { auth?: AuthSessionPayload | null } | null)
+    ?.auth;
+  if (authPayload) {
+    userSessionStore.applyAuthSession(authPayload);
+  }
+  await router.replace({ query: { ...route.query, entry: "publish" } });
+  await refetch();
+};
+
 const handleConfirmWithBookingContact = async () => {
   bookingContactActionError.value = null;
 
@@ -952,7 +1056,7 @@ const matchPendingActionForCurrentPR = (
 
 const attemptPendingWeChatActionReplay = async () => {
   if (pendingActionReplayRunning.value) return;
-  if (id.value === null || !prDetail.value) return;
+  if (id.value === null || !anchorDetail.value) return;
 
   const pending = matchPendingActionForCurrentPR(readPendingWeChatAction());
   if (!pending) return;
@@ -961,7 +1065,7 @@ const attemptPendingWeChatActionReplay = async () => {
   clearPendingWeChatAction();
   try {
     if (pending.kind === "ANCHOR_PR_JOIN") {
-      const viewer = prDetail.value.partnerSection.viewer;
+      const viewer = anchorDetail.value.partnerSection.viewer;
       if (viewer.isParticipant || !viewer.canJoin) return;
       if (joinFlowNeedsBookingContact.value) {
         openJoinFlowModal();
@@ -1014,7 +1118,7 @@ onMounted(() => {
 const handleAcceptAlternativeBatch = async (
   targetTimeWindow: [string | null, string | null],
 ) => {
-  if (id.value === null) return;
+  if (id.value === null || !isAnchorPR.value) return;
   const result = await acceptAlternativeBatchMutation.mutateAsync({
     id: id.value,
     targetTimeWindow,
@@ -1032,14 +1136,14 @@ const handleAcceptAlternativeBatch = async (
         apiError.message ?? t("errors.joinRequestFailed");
     }
   }
-  await router.push(anchorPRDetailPath(result.prId as PRId));
+  await router.push(prDetailPath(result.prId as PRId));
 };
 
 const handleDockAction = async (action: DockActionItem) => {
   if (action.disabled || action.pending) return;
   const ctaType = mapDockActionToTrackType(action.key);
   if (id.value !== null) {
-    if (ctaType !== null) {
+    if (ctaType !== null && isAnchorPR.value) {
       trackEvent("anchor_pr_primary_cta_click", {
         prId: id.value,
         prKind: "ANCHOR",
@@ -1050,7 +1154,11 @@ const handleDockAction = async (action: DockActionItem) => {
   }
 
   if (action.key === "JOIN") {
-    openJoinFlowModal();
+    if (isAnchorPR.value) {
+      openJoinFlowModal();
+      return;
+    }
+    await handleDirectJoin();
     return;
   }
   if (action.key === "CONFIRM") {
@@ -1081,12 +1189,12 @@ const confirmExit = async () => {
 };
 
 const goBookingSupport = () => {
-  if (id.value === null) return;
+  if (id.value === null || !isAnchorPR.value) return;
   router.push(anchorPRBookingSupportPath(id.value));
 };
 
 const handleOpenMessages = () => {
-  if (id.value === null) return;
+  if (id.value === null || !isAnchorPR.value) return;
   router.push(anchorPRMessagesPath(id.value));
 };
 
@@ -1094,8 +1202,8 @@ const handleEditSuccess = () => {
   showEditModal.value = false;
 };
 const handleOpenCreatorEdit = () => {
-  if (id.value !== null) {
-    trackEvent("anchor_pr_secondary_action_click", {
+  if (id.value !== null && isAnchorPR.value) {
+      trackEvent("anchor_pr_secondary_action_click", {
       prId: id.value,
       prKind: "ANCHOR",
       actionType: "CREATOR_EDIT_CONTENT",
@@ -1104,7 +1212,7 @@ const handleOpenCreatorEdit = () => {
   showEditModal.value = true;
 };
 const handleOpenCreatorModifyStatus = () => {
-  if (id.value !== null) {
+  if (id.value !== null && isAnchorPR.value) {
     trackEvent("anchor_pr_secondary_action_click", {
       prId: id.value,
       prKind: "ANCHOR",

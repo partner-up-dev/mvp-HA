@@ -226,6 +226,9 @@ export const useJoinAnchorPR = () => {
         queryKey: queryKeys.anchorPR.detail(variables.id),
       });
       queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.bookingSupport(variables.id),
       });
       queryClient.invalidateQueries({
@@ -275,6 +278,9 @@ export const useExitAnchorPR = () => {
         queryKey: queryKeys.anchorPR.detail(variables.id),
       });
       queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.mineJoined(),
       });
     },
@@ -321,6 +327,9 @@ export const useConfirmAnchorPRSlot = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.detail(variables.id),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
     },
   });
 };
@@ -365,6 +374,9 @@ export const useUpdateAnchorPRBookingContactPhone = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.bookingSupport(variables.id),
@@ -419,6 +431,9 @@ export const useCheckInAnchorPRSlot = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
       });
     },
   });
@@ -482,6 +497,9 @@ export const useAcceptAnchorAlternativeBatch = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.alternativeBatches(variables.id),
@@ -577,6 +595,9 @@ export const useUpdateAnchorPRContent = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.detail(variables.id),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
     },
   });
 };
@@ -607,6 +628,9 @@ export const useUpdateAnchorPRStatus = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorPR.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
       });
     },
   });

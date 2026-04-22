@@ -286,7 +286,7 @@
         <router-link
           v-for="item in section.fallbacks.sameBatchAlternatives"
           :key="item.id"
-          :to="anchorPRDetailPath(item.id)"
+          :to="prDetailPath(item.id)"
           class="partner-section__link-card"
         >
           <span>{{ item.location }}</span>
@@ -344,9 +344,9 @@ import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
 import type { CommunityPRDetailResponse } from "@/domains/pr/queries/useCommunityPR";
 import {
-  anchorPRDetailPath,
   anchorPRPartnerProfilePath,
   communityPRPartnerProfilePath,
+  prDetailPath,
 } from "@/domains/pr/routing/routes";
 import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 import Button from "@/shared/ui/actions/Button.vue";

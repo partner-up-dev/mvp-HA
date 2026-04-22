@@ -370,35 +370,45 @@ Fields leaving PR core:
   - `apps/backend/src/domains/pr-core/use-cases/get-pr-partner-profile.ts`
   - `apps/backend/src/domains/pr-core/use-cases/index.ts`
   - `apps/backend/src/controllers/partner-request.controller.ts`
-  - `apps/frontend/src/domains/pr/queries/usePRDetail.ts`
+  - `apps/frontend/src/pages/AnchorPRPage.vue`
+  - `apps/frontend/src/app/router.ts`
   - `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
   - `apps/frontend/src/domains/pr/queries/useCommunityPR.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRDetail.ts`
   - `apps/frontend/src/domains/pr/routing/routes.ts`
-  - `apps/frontend/src/domains/user/queries/usePRPartnerProfile.ts`
-  - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
-  - `apps/frontend/src/domains/pr/ui/forms/NLPRForm.vue`
-  - `apps/frontend/src/domains/pr/ui/sections/InlineNLPRForm.vue`
+  - `apps/frontend/src/domains/pr/use-cases/useSharedPRActions.ts`
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRRecoveryLane.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/PRPartnerSection.vue`
+  - `apps/frontend/src/domains/pr/ui/primitives/AnchorPRSearchResultCard.vue`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventPRCard.vue`
   - `apps/frontend/src/pages/AnchorEventPage.vue`
-  - `apps/frontend/src/pages/PRDetailPage.vue`
-  - `apps/frontend/src/app/router.ts`
+  - `apps/frontend/src/pages/AnchorPRSearchPage.vue`
+  - `apps/frontend/src/pages/AnchorPRMessagesPage.vue`
+  - `apps/frontend/src/pages/AnchorPRBookingSupportPage.vue`
+  - `apps/frontend/src/pages/UserProfilePage.vue`
+  - `apps/frontend/src/domains/share/use-cases/useRouteShareOrchestrator.ts`
   - `apps/frontend/src/shared/api/query-keys.ts`
 - Decisions implemented:
   - canonical detail read now lives at `GET /api/pr/:id`
   - canonical partner profile read now lives at `GET /api/pr/:id/partners/:partnerId/profile`
   - backend canonical read dispatch chooses the legacy anchor or community detail use case from root PR facts
   - partner profile lookup no longer requires frontend callers to branch on `prKind`
-  - frontend now has a generic `usePRDetail` hook and a generic partner profile fetch path even while old detail pages remain in place
+  - frontend now has a generic `usePRDetail` hook and a generic partner profile fetch path
   - canonical frontend detail route now lives at `/pr/:id`
-  - `/pr/:id` currently loads generic detail, derives `prKind`, and forwards into the existing `apr` or `cpr` compatibility page
-  - existing `useAnchorPR` and `useCommunityPR` detail hooks now read through `GET /api/pr/:id` and keep kind-specific compatibility checks locally
+  - `/pr/:id` now renders the single PR detail page directly through `AnchorPRPage.vue`
+  - old `/cpr/:id` detail links now redirect into `/pr/:id`
+  - `/apr/:id` and `/pr/:id` now share the same page implementation
+  - `CommunityPRPage.vue` has been retired from the routed detail surface
+  - existing `useAnchorPR` and `useCommunityPR` detail hooks now read through `GET /api/pr/:id` and keep kind-specific compatibility checks locally where anchor-only or community-only mutations still exist
   - canonical create flows now navigate to `/pr/:id`, so newly created PRs enter the canonical route family immediately
+  - generic detail cache invalidation now happens alongside legacy anchor/community detail cache invalidation
 - Verification completed:
   - `pnpm --filter @partner-up-dev/backend typecheck`
   - `pnpm --filter @partner-up-dev/backend build`
   - `pnpm --filter @partner-up-dev/frontend build`
 - Verification gap:
-  - `apr` and `cpr` detail pages still carry the rendered page surface
-  - route resolution still depends on one compatibility forwarder page before the final single-page PR detail surface lands
+  - backend canonical detail still dispatches to legacy anchor and community detail builders
+  - `apr` alias routes and anchor-only subpages such as messages and booking support still carry legacy naming
 
 ## Handoff Source
 

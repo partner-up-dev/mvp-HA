@@ -273,7 +273,7 @@ import {
   useUpdateAnchorPRBookingContactPhone,
 } from "@/domains/pr/queries/useAnchorPR";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type BookingHandledBy = "PLATFORM" | "PLATFORM_PASSTHROUGH" | "USER";
@@ -290,7 +290,7 @@ const id = computed<PRId | null>(() => {
 });
 const backFallbackTo = computed(() => {
   if (id.value !== null) {
-    return anchorPRDetailPath(id.value);
+    return prDetailPath(id.value);
   }
   return "/";
 });

@@ -1,5 +1,5 @@
 <template>
-  <RouterLink :to="anchorPRDetailPath(pr.id)" class="anchor-pr-card">
+  <RouterLink :to="prDetailPath(pr.id)" class="anchor-pr-card">
     <div
       v-if="coverImage"
       class="anchor-pr-card__cover"
@@ -41,7 +41,7 @@
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import type { AnchorEventBatchPR } from "@/domains/event/model/types";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 
 interface AnchorEventPRCardProps {

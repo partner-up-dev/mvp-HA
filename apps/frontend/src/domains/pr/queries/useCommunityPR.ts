@@ -118,6 +118,9 @@ export const usePublishCommunityPR = () => {
         queryKey: queryKeys.communityPR.detail(variables.id),
       });
       queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.mineCreated(),
       });
       queryClient.invalidateQueries({
@@ -161,6 +164,9 @@ export const useJoinCommunityPR = () => {
         queryKey: queryKeys.communityPR.detail(variables.id),
       });
       queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.mineJoined(),
       });
     },
@@ -194,6 +200,9 @@ export const useExitCommunityPR = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.communityPR.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.mineJoined(),
@@ -231,6 +240,9 @@ export const useUpdateCommunityPRContent = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.communityPR.detail(variables.id),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
     },
   });
 };
@@ -263,6 +275,9 @@ export const useUpdateCommunityPRStatus = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.communityPR.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
       });
     },
   });

@@ -1,6 +1,6 @@
 <template>
   <RouterLink
-    :to="anchorPRDetailPath(props.result.pr.id as PRId)"
+    :to="prDetailPath(props.result.pr.id as PRId)"
     class="anchor-pr-search-result-card"
   >
     <div class="anchor-pr-search-result-card__header">
@@ -32,7 +32,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 import type { AnchorPRSearchResult } from "@/domains/pr/model/types";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 

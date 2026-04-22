@@ -11,8 +11,6 @@ import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRouteP
 const HomePage = () => import("@/pages/HomePage.vue");
 const MePage = () => import("@/pages/MePage.vue");
 const MyPRsPage = () => import("@/pages/MyPRsPage.vue");
-const PRDetailPage = () => import("@/pages/PRDetailPage.vue");
-const CommunityPRPage = () => import("@/pages/CommunityPRPage.vue");
 const CommunityPRCreatePage = () =>
   import("@/pages/CommunityPRCreatePage.vue");
 const AnchorPRPage = () => import("@/pages/AnchorPRPage.vue");
@@ -67,9 +65,10 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/pr/:id",
     name: "pr-detail",
-    component: PRDetailPage,
+    component: AnchorPRPage,
     meta: {
       wechatSharePolicy: "route",
+      wechatAutoLoginPolicy: "route",
     },
   },
   {
@@ -83,10 +82,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/cpr/:id",
     name: "community-pr",
-    component: CommunityPRPage,
-    meta: {
-      wechatSharePolicy: "route",
-    },
+    redirect: (to) => ({
+      name: "pr-detail",
+      params: to.params,
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: "/cpr/:id/partners/:partnerId",

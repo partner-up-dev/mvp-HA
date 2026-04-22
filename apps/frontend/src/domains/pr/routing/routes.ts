@@ -1,8 +1,4 @@
-import type {
-  PartnerRequestSummary,
-  PRId,
-  PRKind,
-} from "@partner-up-dev/backend";
+import type { PartnerRequestSummary, PRId, PRKind } from "@partner-up-dev/backend";
 
 export const communityPRCreatePath = (): string => "/cpr/new";
 export const prCreatePath = (): string => "/pr/new";
@@ -27,14 +23,6 @@ export const anchorPRPartnerProfilePath = (
   id: PRId,
   partnerId: number,
 ): string => `/apr/${id}/partners/${partnerId}`;
-
-export const resolvePRCompatibilityDetailPath = (input: {
-  id: PRId;
-  prKind: PRKind;
-}): string =>
-  input.prKind === "ANCHOR"
-    ? anchorPRDetailPath(input.id)
-    : communityPRDetailPath(input.id);
 
 export const resolvePRDetailPath = (input: {
   id: PRId;

@@ -38,7 +38,7 @@ import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import AnchorPRMessageThread from "@/domains/pr/ui/sections/AnchorPRMessageThread.vue";
 import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 
 const { t } = useI18n();
@@ -46,7 +46,7 @@ const id = usePRRouteId();
 
 const backFallbackTo = computed(() => {
   if (id.value === null) return "/";
-  return anchorPRDetailPath(id.value);
+  return prDetailPath(id.value);
 });
 </script>
 

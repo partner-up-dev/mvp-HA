@@ -74,8 +74,7 @@ import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import Avatar from "@/shared/ui/identity/Avatar.vue";
 import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import {
-  anchorPRDetailPath,
-  communityPRDetailPath,
+  prDetailPath,
 } from "@/domains/pr/routing/routes";
 import {
   usePRPartnerProfile,
@@ -147,12 +146,8 @@ const errorMessage = computed(() => {
 });
 
 const backFallbackTo = computed(() => {
-  if (prId.value !== null && scenario.value === "ANCHOR") {
-    return anchorPRDetailPath(prId.value as PRId);
-  }
-
   if (prId.value !== null) {
-    return communityPRDetailPath(prId.value as PRId);
+    return prDetailPath(prId.value as PRId);
   }
 
   return "/";

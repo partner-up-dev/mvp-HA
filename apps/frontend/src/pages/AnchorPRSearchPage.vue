@@ -176,7 +176,7 @@ import type { AnchorEventListItem } from "@/domains/event/model/types";
 import type { AnchorPRSearchResult } from "@/domains/pr/model/types";
 import { useAnchorPRSearch } from "@/domains/pr/queries/useAnchorPRSearch";
 import AnchorPRSearchResultCard from "@/domains/pr/ui/primitives/AnchorPRSearchResultCard.vue";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import {
   formatProductLocalShortDateLabel,
   getProductLocalWeekStartDateKey,
@@ -451,7 +451,7 @@ watch(
 
     lastAutoRedirectCriteriaKey.value = criteriaKey;
     isAutoRedirecting.value = true;
-    await router.replace(anchorPRDetailPath(results[0]!.pr.id as PRId));
+    await router.replace(prDetailPath(results[0]!.pr.id as PRId));
   },
 );
 

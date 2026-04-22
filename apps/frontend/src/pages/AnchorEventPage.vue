@@ -140,7 +140,6 @@ import {
 } from "@/domains/pr/queries/useCommunityPR";
 import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 import {
-  anchorPRDetailPath,
   prDetailPath,
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
@@ -786,7 +785,7 @@ const handleViewActiveCardDetail = async () => {
   cardActionError.value = null;
   isCardRouting.value = true;
   try {
-    await router.push(anchorPRDetailPath(card.detailPrId));
+    await router.push(prDetailPath(card.detailPrId));
   } catch (error) {
     cardActionError.value =
       error instanceof Error ? error.message : t("common.operationFailed");

@@ -28,7 +28,6 @@ type UseSharedPRActionsOptions = {
   id: ComputedRef<PRId | null>;
   pr: ComputedRef<PRDetailView | undefined>;
   isCreator: ComputedRef<boolean>;
-  scenario: "ANCHOR" | "COMMUNITY";
   onActionSuccess?: () => void;
 };
 
@@ -36,7 +35,6 @@ export const useSharedPRActions = ({
   id,
   pr,
   isCreator,
-  scenario,
   onActionSuccess,
 }: UseSharedPRActionsOptions) => {
   const { t } = useI18n();
@@ -45,9 +43,12 @@ export const useSharedPRActions = ({
   const communityExitMutation = useExitCommunityPR();
   const anchorJoinMutation = useJoinAnchorPR();
   const anchorExitMutation = useExitAnchorPR();
+  const scenario = computed<"ANCHOR" | "COMMUNITY">(() =>
+    pr.value?.prKind === "ANCHOR" ? "ANCHOR" : "COMMUNITY",
+  );
 
   const getExitMutation = () =>
-    scenario === "ANCHOR" ? anchorExitMutation : communityExitMutation;
+    scenario.value === "ANCHOR" ? anchorExitMutation : communityExitMutation;
 
   const hasJoined = computed(
     () => pr.value?.partnerSection.viewer.isParticipant ?? false,
@@ -84,14 +85,14 @@ export const useSharedPRActions = ({
   );
 
   const joinPending = computed(() =>
-    scenario === "ANCHOR"
+    scenario.value === "ANCHOR"
       ? anchorJoinMutation.isPending.value
       : communityJoinMutation.isPending.value,
   );
   const exitPending = computed(() => getExitMutation().isPending.value);
   const joinErrorMessage = computed(() => {
     const error =
-      scenario === "ANCHOR"
+      scenario.value === "ANCHOR"
         ? (anchorJoinMutation.error.value as ApiError | null)
         : (communityJoinMutation.error.value as ApiError | null);
     if (!error) return null;
@@ -119,7 +120,7 @@ export const useSharedPRActions = ({
     try {
       await ensureAuthSessionBootstrapped();
       const result =
-        scenario === "ANCHOR"
+        scenario.value === "ANCHOR"
           ? await anchorJoinMutation.mutateAsync({
               id: id.value,
               bookingContactPhone: options.bookingContactPhone ?? null,

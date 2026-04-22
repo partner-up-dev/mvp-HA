@@ -13,7 +13,7 @@
         <router-link
           v-for="item in section.fallbacks.sameBatchAlternatives"
           :key="item.id"
-          :to="anchorPRDetailPath(item.id)"
+          :to="prDetailPath(item.id)"
           class="recovery-link-row"
           @click="handleSameBatchClick(item.id)"
         >
@@ -65,7 +65,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
-import { anchorPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import Button from "@/shared/ui/actions/Button.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/telemetry/track";
