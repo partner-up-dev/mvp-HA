@@ -371,7 +371,16 @@ Fields leaving PR core:
   - `apps/backend/src/domains/pr-core/use-cases/index.ts`
   - `apps/backend/src/controllers/partner-request.controller.ts`
   - `apps/frontend/src/domains/pr/queries/usePRDetail.ts`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
+  - `apps/frontend/src/domains/pr/queries/useCommunityPR.ts`
+  - `apps/frontend/src/domains/pr/routing/routes.ts`
   - `apps/frontend/src/domains/user/queries/usePRPartnerProfile.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
+  - `apps/frontend/src/domains/pr/ui/forms/NLPRForm.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/InlineNLPRForm.vue`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+  - `apps/frontend/src/pages/PRDetailPage.vue`
+  - `apps/frontend/src/app/router.ts`
   - `apps/frontend/src/shared/api/query-keys.ts`
 - Decisions implemented:
   - canonical detail read now lives at `GET /api/pr/:id`
@@ -379,13 +388,17 @@ Fields leaving PR core:
   - backend canonical read dispatch chooses the legacy anchor or community detail use case from root PR facts
   - partner profile lookup no longer requires frontend callers to branch on `prKind`
   - frontend now has a generic `usePRDetail` hook and a generic partner profile fetch path even while old detail pages remain in place
+  - canonical frontend detail route now lives at `/pr/:id`
+  - `/pr/:id` currently loads generic detail, derives `prKind`, and forwards into the existing `apr` or `cpr` compatibility page
+  - existing `useAnchorPR` and `useCommunityPR` detail hooks now read through `GET /api/pr/:id` and keep kind-specific compatibility checks locally
+  - canonical create flows now navigate to `/pr/:id`, so newly created PRs enter the canonical route family immediately
 - Verification completed:
   - `pnpm --filter @partner-up-dev/backend typecheck`
   - `pnpm --filter @partner-up-dev/backend build`
   - `pnpm --filter @partner-up-dev/frontend build`
 - Verification gap:
-  - canonical frontend detail route `/pr/:id` has not been introduced yet
-  - existing `useAnchorPR` and `useCommunityPR` detail hooks still point at compatibility endpoints
+  - `apr` and `cpr` detail pages still carry the rendered page surface
+  - route resolution still depends on one compatibility forwarder page before the final single-page PR detail surface lands
 
 ## Handoff Source
 

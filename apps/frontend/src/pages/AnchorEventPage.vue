@@ -141,7 +141,7 @@ import {
 import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 import {
   anchorPRDetailPath,
-  communityPRDetailPath,
+  prDetailPath,
 } from "@/domains/pr/routing/routes";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
@@ -886,7 +886,7 @@ const createCommunityPRFallback = async ({
     userSessionStore.applyAuthSession(publishResult.auth);
   }
 
-  return communityPRDetailPath(draft.id);
+  return prDetailPath(draft.id);
 };
 
 const createPRWithFallback = async ({

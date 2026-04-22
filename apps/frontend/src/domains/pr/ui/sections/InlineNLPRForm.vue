@@ -79,7 +79,7 @@ import {
   useCreateCommunityPRFromNaturalLanguage,
   usePublishCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
-import { communityPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import { useLandingTypewriterPlaceholder } from "@/domains/landing/use-cases/useLandingTypewriterPlaceholder";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useNaturalLanguageDraftStore } from "@/domains/pr/use-cases/useNaturalLanguageDraft";
@@ -173,7 +173,7 @@ const submitHandler = handleSubmit(async (values) => {
     userSessionStore.applyAuthSession(publishResult.auth);
   }
 
-  await router.push(`${communityPRDetailPath(draft.id)}?entry=create`);
+  await router.push(`${prDetailPath(draft.id)}?entry=create`);
   draftStore.clear();
   resetForm({
     values: { rawText: "" },

@@ -56,6 +56,7 @@ const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 export type AnchorPRDetailResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["$get"]
 >;
+type PRDetailResponse = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
 
 export type AnchorPRBookingSupportResponse = InferResponseType<
   (typeof client.api.apr)[":id"]["booking-support"]["$get"]
@@ -118,7 +119,7 @@ export const useAnchorPR = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.missingPartnerRequestId"));
       }
 
-      const res = await client.api.apr[":id"].$get(
+      const res = await client.api.pr[":id"].$get(
         {
           param: { id: prId.toString() },
         },
@@ -133,7 +134,12 @@ export const useAnchorPR = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.fetchRequestFailed"));
       }
 
-      return await res.json();
+      const detail = (await res.json()) as PRDetailResponse;
+      if (detail.prKind !== "ANCHOR") {
+        throw new Error("Anchor PR not found");
+      }
+
+      return detail as AnchorPRDetailResponse;
     },
     enabled: () => id.value !== null,
   });

@@ -11,6 +11,7 @@ import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRouteP
 const HomePage = () => import("@/pages/HomePage.vue");
 const MePage = () => import("@/pages/MePage.vue");
 const MyPRsPage = () => import("@/pages/MyPRsPage.vue");
+const PRDetailPage = () => import("@/pages/PRDetailPage.vue");
 const CommunityPRPage = () => import("@/pages/CommunityPRPage.vue");
 const CommunityPRCreatePage = () =>
   import("@/pages/CommunityPRCreatePage.vue");
@@ -59,6 +60,14 @@ const routes: RouteRecordRaw[] = [
     path: "/pr/mine",
     name: "pr-mine",
     component: MyPRsPage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/pr/:id",
+    name: "pr-detail",
+    component: PRDetailPage,
     meta: {
       wechatSharePolicy: "route",
     },

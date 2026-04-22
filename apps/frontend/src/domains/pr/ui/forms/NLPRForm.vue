@@ -70,7 +70,7 @@ import {
   useCreateCommunityPRFromNaturalLanguage,
   usePublishCommunityPR,
 } from "@/domains/pr/queries/useCommunityPR";
-import { communityPRDetailPath } from "@/domains/pr/routing/routes";
+import { prDetailPath } from "@/domains/pr/routing/routes";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { useLandingRotatingTopic } from "@/domains/landing/use-cases/useLandingRotatingTopic";
@@ -164,7 +164,7 @@ const submitHandler = handleSubmit(async (values) => {
     userSessionStore.applyAuthSession(publishResult.auth);
   }
 
-  await router.push(`${communityPRDetailPath(draft.id)}?entry=create`);
+  await router.push(`${prDetailPath(draft.id)}?entry=create`);
   draftStore.clear();
   resetForm({
     values: { rawText: "" },

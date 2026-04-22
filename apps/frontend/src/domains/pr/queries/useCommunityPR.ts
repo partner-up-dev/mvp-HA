@@ -38,6 +38,7 @@ type CommunityPRActionInput = {
 export type CommunityPRDetailResponse = InferResponseType<
   (typeof client.api.cpr)[":id"]["$get"]
 >;
+type PRDetailResponse = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
 
 export type PublishCommunityPRResponse = InferResponseType<
   (typeof client.api.cpr)[":id"]["publish"]["$post"]
@@ -66,7 +67,7 @@ export const useCommunityPR = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.missingPartnerRequestId"));
       }
 
-      const res = await client.api.cpr[":id"].$get(
+      const res = await client.api.pr[":id"].$get(
         {
           param: { id: prId.toString() },
         },
@@ -81,7 +82,12 @@ export const useCommunityPR = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.fetchRequestFailed"));
       }
 
-      return await res.json();
+      const detail = (await res.json()) as PRDetailResponse;
+      if (detail.prKind !== "COMMUNITY") {
+        throw new Error("Community PR not found");
+      }
+
+      return detail as CommunityPRDetailResponse;
     },
     enabled: () => id.value !== null,
   });
