@@ -10,8 +10,9 @@ import {
   type PartnerRequest,
   type PartnerRequestFields,
 } from "../entities/partner-request";
+import type { TimeWindowEntry } from "../entities/anchor-event";
 import type { UserId } from "../entities/user";
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 export class PartnerRequestRepository {
   async create(data: NewPartnerRequest) {
@@ -42,6 +43,23 @@ export class PartnerRequestRepository {
       .select()
       .from(partnerRequests)
       .where(inArray(partnerRequests.status, statuses))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
+  async findVisibleByTypeAndTime(
+    type: string,
+    timeWindow: TimeWindowEntry,
+  ): Promise<PartnerRequest[]> {
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(
+        and(
+          eq(partnerRequests.type, type),
+          eq(partnerRequests.time, timeWindow),
+          eq(partnerRequests.visibilityStatus, "VISIBLE"),
+        ),
+      )
       .orderBy(desc(partnerRequests.createdAt));
   }
 

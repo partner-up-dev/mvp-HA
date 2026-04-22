@@ -11,6 +11,7 @@ import {
 import type { AnchorLocationSource } from "../../../entities/anchor-partner-request";
 import type { AnchorEventId } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
+import type { TimeWindowEntry } from "../../../entities/anchor-event";
 import type { PRId, PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
@@ -76,6 +77,15 @@ export async function readPartnerRequestsByCreatorId(
   options: { consistency?: PRReadConsistency } = {},
 ): Promise<PartnerRequest[]> {
   const rows = await prRepo.findByCreatorId(userId);
+  return applyConsistencyToRequests(rows, options.consistency ?? "strong");
+}
+
+export async function readVisiblePartnerRequestsByTypeAndTime(
+  type: string,
+  timeWindow: TimeWindowEntry,
+  options: { consistency?: PRReadConsistency } = {},
+): Promise<PartnerRequest[]> {
+  const rows = await prRepo.findVisibleByTypeAndTime(type, timeWindow);
   return applyConsistencyToRequests(rows, options.consistency ?? "strong");
 }
 

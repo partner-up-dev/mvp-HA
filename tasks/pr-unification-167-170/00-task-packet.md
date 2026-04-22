@@ -107,6 +107,13 @@
 - canonical create surfaces are natural-language entry, structured form entry, and Anchor Event assisted create
 - canonical create commands are `POST /api/pr/new/nl` and `POST /api/pr/new/form`
 - Anchor Event assisted create reuses `POST /api/pr/new/form`
+- authenticated natural-language and structured create should persist and publish in one backend-owned flow
+- anonymous users may create `DRAFT` PRs through natural-language or structured form entry
+- publishing a `DRAFT` PR requires an authenticated account and should reuse the WeChat login path
+- creating an `OPEN` PR directly, including event-assisted create, requires an authenticated account and should reuse the same WeChat login path
+- auto-generated PIN login and the page-level PIN help branch move to a separate follow-up issue and stay outside this task's implementation scope
+- frontend PR-owned detail surfaces should converge on `PR*` naming, with `AnchorPRPage -> PRPage`, `AnchorPRMessagesPage -> PRMessagesPage`, and `AnchorPRBookingSupportPage -> PRBookingSupportPage`
+- the single `PRPage` should continue carrying the still-valid page branches: draft-publish, creator quick actions, partner join or exit or confirm or check-in flows, join-success notification prompt, message-thread entry, booking-support entry, and recovery entry until the post-`#170` recovery decision lands
 
 ## Error And Action Availability Contract
 
@@ -228,6 +235,7 @@ Fields leaving PR core:
 - admin Anchor Event management flows that currently key by batch
 - final discoverability query contract for the Anchor Event page
 - rollout plan for legacy `/apr/*` and `/cpr/*` links
+- recovery-lane replacement after batch removal in issue `#170`
 
 ## Verification Target
 
@@ -327,7 +335,7 @@ Fields leaving PR core:
 ## Slice 4 - Canonical PR Create Vocabulary Cleanup
 
 - Status:
-  - in progress on 2026-04-22
+  - completed on 2026-04-22
 - Scope for this narrowed slice:
   - add canonical backend create commands under `/api/pr/new/*`
   - add canonical frontend create route `/pr/new`
@@ -409,6 +417,56 @@ Fields leaving PR core:
 - Verification gap:
   - backend canonical detail still dispatches to legacy anchor and community detail builders
   - `apr` alias routes and anchor-only subpages such as messages and booking support still carry legacy naming
+
+## Slice 6A - Event-Assisted Create And Discovery Bridge
+
+- Status:
+  - completed on 2026-04-22
+- Scope for this narrowed slice:
+  - make canonical `/api/pr/new/form` and `/api/pr/new/nl` auth-aware, so authenticated create publishes immediately and anonymous create returns `DRAFT`
+  - switch Anchor Event assisted create onto the canonical structured create command
+  - start event discovery migration from anchor subtype reads toward root PR reads keyed by `event.type + time_window`
+  - keep recovery-lane replacement and full batch-shell removal for a later Slice 6B
+- Artifacts:
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/create-pr-structured.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/create-pr-natural-language.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/create-pr.shared.ts`
+  - `apps/backend/src/domains/pr-core/services/pr-read.service.ts`
+  - `apps/backend/src/repositories/PartnerRequestRepository.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
+  - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/join-demand-card.ts`
+  - `apps/backend/src/infra/events/event-types.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRCreate.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
+  - `apps/frontend/src/domains/pr/ui/forms/NLPRForm.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/InlineNLPRForm.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/PRCreateFooterActions.vue`
+  - `apps/frontend/src/pages/CommunityPRCreatePage.vue`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+  - `apps/frontend/src/pages/AnchorPRPage.vue`
+  - `apps/frontend/src/domains/event/model/demand-cards.ts`
+  - `apps/frontend/src/domains/event/queries/useCreateEventAssistedPR.ts`
+  - `apps/frontend/src/domains/event/queries/useCreateUserAnchorPR.ts`
+  - `apps/frontend/src/processes/wechat/pending-wechat-action.ts`
+- Decisions implemented:
+  - canonical create commands now return create result state, so authenticated create paths can land directly on an already-published `/pr/:id`
+  - authenticated `/api/pr/new/form` and `/api/pr/new/nl` create and publish inside one backend-owned flow, while anonymous create continues to return `DRAFT`
+  - Anchor Event assisted create now submits the same structured PR payload plus transient assisted-create context through `/api/pr/new/form`
+  - backend enforces authenticated identity for event-assisted create and keeps that requirement aligned with direct `OPEN` creation
+  - Anchor Event page no longer falls back to community-specific create behavior
+  - event detail and demand-card discovery now start from root PR reads keyed by `event.type + time_window`, then apply event-owned location constraints while batch shells remain as compatibility grouping artifacts
+  - PR detail can preserve event referral context through `fromEvent` query state for back-navigation continuity without reintroducing durable PR-side event identity
+  - old batch-specific event create route and batch-shaped demand discovery remain compatibility seams for later cleanup
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - recovery-lane replacement is still pending the post-batch recommendation decision
+  - old batch-specific event create and demand-card join compatibility paths still remain in the codebase
+  - event detail still emits batch-shaped group shells during the compatibility window
 
 ## Handoff Source
 

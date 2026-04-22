@@ -11,15 +11,20 @@
 
 ## 2. Creation And Publish Rules
 
-- The home-led user creation path is always draft-first, then publish.
+- Natural-language and structured create commands always enter through one backend-owned create flow.
+- If the creator already has an authenticated account, that create flow persists and publishes the PR in one operation.
+- If the creator is anonymous, that create flow persists a `DRAFT` and waits for a later authenticated publish step.
 - Structured creation uses one PR-owned form contract. Its `type` field accepts arbitrary input and may offer suggestion options from known event types.
 - Structured creation uses one PR-owned `time_window` result. The UI may expose batch and free modes, while the persisted PR still owns one resolved time window.
 - Event-context PR creation is one assisted mode inside the Anchor Event domain.
+- Event-assisted create resolves event-side choices into the same structured PR fields used by `/pr/new`. Any event referral or create-source marker is transient request context rather than durable PR identity.
 - PR existence does not depend on Anchor Event identity or time-pool selection.
 - Natural-language creation may map the intent to an existing Anchor Event context or synthesize a new `PR.type`.
-- User-created PR from Anchor Event context uses the controlled event-page flow and remains constrained by that event page's local rules.
-- Publishing a home-led PR must bind the creator to a user identity and preserve later ownership checks through PIN.
+- User-created PR from Anchor Event context uses the controlled event-page flow and remains constrained by that event page's local rules. The persisted PR still keeps only PR-owned facts.
+- Publishing a `DRAFT` PR requires an authenticated account.
+- Direct creation of an `OPEN` PR, including event-assisted create, requires an authenticated account.
 - The Anchor Event page shows discoverable PRs under the same activity type and time-pool rules.
+- Event-page discovery reads root PR facts by activity type, resolved time window, and event-owned location rules rather than by durable PR-side event linkage.
 
 ## 3. Lifecycle And Participation Rules
 

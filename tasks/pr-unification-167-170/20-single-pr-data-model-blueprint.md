@@ -206,6 +206,12 @@ They remain valid as:
 
 They do not survive as PR-owned columns.
 
+Implemented compatibility bridge in Slice 6A:
+
+- event-assisted create already resolves event-side selections into the canonical structured PR create command
+- event detail discovery and demand-card projection have started reading root PRs by `event.type + time_window`
+- batch shells still remain as temporary event-side grouping artifacts during rollout
+
 ## Query-Key Migration
 
 ### Replace subtype identity keys
@@ -299,7 +305,9 @@ These symbols should retire by the end of the full task, though they do not bloc
 - `anchor_pr_booking_contacts`
 - `anchor_pr_booking_executions`
 - `AnchorPRRepository`
-- `AnchorPRPage`
+- `AnchorPRPage -> PRPage`
+- `AnchorPRMessagesPage -> PRMessagesPage`
+- `AnchorPRBookingSupportPage -> PRBookingSupportPage`
 - `CommunityPRPage`
 
 ## Recommended Rollout Order

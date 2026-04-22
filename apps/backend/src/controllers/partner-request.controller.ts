@@ -10,33 +10,51 @@ import {
 } from "../domains/pr-core";
 import {
   buildCreatorIdentity,
-  createStructuredPRSchema,
   getAuthenticatedUserId,
   nlWordCountSchema,
   prIdParamSchema,
   prPartnerProfileParamSchema,
+  requireAnchorAuthenticatedIdentity,
   requireAuthenticatedUserId,
   resolveAvatarUrl,
   tryReadAuthenticatedOpenId,
+  partnerRequestFieldsSchema,
 } from "./pr-controller.shared";
 import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 
 const app = new Hono<AuthEnv>();
+const createStructuredPRCommandSchema = z.object({
+  fields: partnerRequestFieldsSchema,
+  createSource: z.enum(["FORM", "EVENT_ASSISTED"]).optional(),
+});
 
 export const partnerRequestRoute = app
   .use("*", authMiddleware)
-  .post("/new/form", zValidator("json", createStructuredPRSchema), async (c) => {
-    const fields = c.req.valid("json");
-    const creatorIdentity = await buildCreatorIdentity(c);
-    const result = await createPRFromStructured(fields, creatorIdentity);
+  .post(
+    "/new/form",
+    zValidator("json", createStructuredPRCommandSchema),
+    async (c) => {
+      const { fields, createSource } = c.req.valid("json");
 
-    return c.json(
-      {
-        id: result.id,
-      },
-      201,
-    );
-  })
+      const creatorIdentity =
+        createSource === "EVENT_ASSISTED"
+          ? await (async () => {
+              const identity = await requireAnchorAuthenticatedIdentity(c);
+              return {
+                authenticatedUserId: identity.userId,
+                oauthOpenId: identity.openId,
+              };
+            })()
+          : await buildCreatorIdentity(c);
+
+      const result = await createPRFromStructured(fields, creatorIdentity, {
+        createSource,
+      });
+
+      return c.json(result, 201);
+    },
+  )
   .post("/new/nl", zValidator("json", nlWordCountSchema), async (c) => {
     const { rawText, nowIso, nowWeekday } = c.req.valid("json");
     const creatorIdentity = await buildCreatorIdentity(c);
@@ -47,12 +65,7 @@ export const partnerRequestRoute = app
       creatorIdentity,
     );
 
-    return c.json(
-      {
-        id: result.id,
-      },
-      201,
-    );
+    return c.json(result, 201);
   })
   .get("/mine/created", async (c) => {
     const userId = requireAuthenticatedUserId(c);

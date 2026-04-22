@@ -1,11 +1,19 @@
+import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
-import type { AnchorEventId } from "../../../entities/anchor-event";
-import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
-import type { TimeWindowEntry } from "../../../entities/anchor-event";
-import { readVisibleAnchorPRRecordsByBatchId } from "../../pr-core/services/pr-read.service";
+import type {
+  AnchorEvent,
+  AnchorEventId,
+  TimeWindowEntry,
+} from "../../../entities/anchor-event";
+import {
+  normalizeSystemLocationPool,
+  normalizeUserLocationPool,
+} from "../../../entities/anchor-event";
+import type { PartnerRequest } from "../../../entities/partner-request";
+import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr-core/services/pr-read.service";
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
 
+const eventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
 
 const trimNullable = (value: string | null | undefined): string | null => {
@@ -30,16 +38,22 @@ const normalizeFingerprintPart = (value: string): string | null => {
 const normalizeCardKeySegment = (value: string): string =>
   value.trim().replace(/\s+/g, " ").toLowerCase();
 
+const buildTimeWindowKey = (timeWindow: TimeWindowEntry): string => {
+  const [start, end] = timeWindow;
+  return `${start ?? "_"}::${end ?? "_"}`;
+};
+
 export const buildDemandCardKey = (
-  batchId: number,
+  timeWindow: TimeWindowEntry,
   displayLocationName: string,
   preferenceFingerprint: string | null,
 ): string => {
+  const timeWindowSegment = buildTimeWindowKey(timeWindow);
   const locationSegment = normalizeCardKeySegment(displayLocationName);
   const preferenceSegment = preferenceFingerprint
     ? normalizeCardKeySegment(preferenceFingerprint)
     : "_";
-  return `${batchId}::${locationSegment}::${preferenceSegment}`;
+  return `${timeWindowSegment}::${locationSegment}::${preferenceSegment}`;
 };
 
 export const normalizePreferenceFingerprint = (
@@ -91,7 +105,6 @@ export type DemandCardCandidate = {
 
 export type DemandCardSummary = {
   cardKey: string;
-  batchId: number;
   timeWindow: TimeWindowEntry;
   batchStartTimestamp: number;
   displayLocationName: string;
@@ -104,13 +117,30 @@ export type DemandCardSummary = {
 
 type CandidateGroup = {
   cardKey: string;
-  batchId: AnchorEventBatchId;
   timeWindow: TimeWindowEntry;
   batchStartTimestamp: number;
   displayLocationName: string;
   preferenceFingerprint: string | null;
   preferenceTags: string[];
   candidates: DemandCardCandidate[];
+};
+
+const isEventScopedLocation = (
+  event: AnchorEvent,
+  location: string | null,
+): boolean => {
+  const normalized = location?.trim() ?? "";
+  if (!normalized) {
+    return false;
+  }
+
+  const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
+  if (systemLocationPool.includes(normalized)) {
+    return true;
+  }
+
+  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
+  return userLocationPool.some((entry) => entry.id === normalized);
 };
 
 const compareCandidates = (
@@ -139,32 +169,29 @@ const compareCards = (left: DemandCardSummary, right: DemandCardSummary): number
   return left.cardKey.localeCompare(right.cardKey);
 };
 
-const toDemandCardCandidate = (record: AnchorPRRecord): DemandCardCandidate => ({
-  prId: record.root.id,
-  status: record.root.status,
-  createdAt: record.root.createdAt.toISOString(),
-  notes: trimNullable(record.root.notes),
+const toDemandCardCandidate = (record: PartnerRequest): DemandCardCandidate => ({
+  prId: record.id,
+  status: record.status,
+  createdAt: record.createdAt.toISOString(),
+  notes: trimNullable(record.notes),
 });
 
 const buildCandidateGroup = ({
-  batchId,
   timeWindow,
   displayLocationName,
   preferenceFingerprint,
   preferenceTags,
 }: {
-  batchId: AnchorEventBatchId;
   timeWindow: TimeWindowEntry;
   displayLocationName: string;
   preferenceFingerprint: string | null;
   preferenceTags: string[];
 }): CandidateGroup => ({
   cardKey: buildDemandCardKey(
-    batchId,
+    timeWindow,
     displayLocationName,
     preferenceFingerprint,
   ),
-  batchId,
   timeWindow,
   batchStartTimestamp: resolveDemandCardBatchStartTimestamp(timeWindow),
   displayLocationName,
@@ -176,33 +203,40 @@ const buildCandidateGroup = ({
 const groupJoinableCandidates = async (
   eventId: AnchorEventId,
 ): Promise<CandidateGroup[]> => {
-  const batches = await batchRepo.findByAnchorEventId(eventId);
+  const [event, batches] = await Promise.all([
+    eventRepo.findById(eventId),
+    batchRepo.findByAnchorEventId(eventId),
+  ]);
+
+  if (!event) {
+    return [];
+  }
+
   const nonExpiredBatches = batches.filter((batch) => batch.status !== "EXPIRED");
   const groupMap = new Map<string, CandidateGroup>();
 
   for (const batch of nonExpiredBatches) {
-    const records = await readVisibleAnchorPRRecordsByBatchId(batch.id);
+    const records = (
+      await readVisiblePartnerRequestsByTypeAndTime(event.type, batch.timeWindow)
+    ).filter((record) => isEventScopedLocation(event, record.location));
+
     for (const record of records) {
-      if (!isJoinableStatus(record.root.status)) {
+      if (!isJoinableStatus(record.status)) {
         continue;
       }
 
-      if (record.anchor.anchorEventId !== eventId) {
-        continue;
-      }
-
-      const displayLocationName = trimNullable(record.root.location);
+      const displayLocationName = trimNullable(record.location);
       if (!displayLocationName) {
         continue;
       }
 
-      const preferences = Array.isArray(record.root.preferences)
-        ? record.root.preferences
+      const preferences = Array.isArray(record.preferences)
+        ? record.preferences
         : [];
       const preferenceTags = resolvePreferenceTags(preferences);
       const preferenceFingerprint = normalizePreferenceFingerprint(preferenceTags);
       const cardKey = buildDemandCardKey(
-        batch.id,
+        batch.timeWindow,
         displayLocationName,
         preferenceFingerprint,
       );
@@ -210,7 +244,6 @@ const groupJoinableCandidates = async (
       const existing =
         groupMap.get(cardKey) ??
         buildCandidateGroup({
-          batchId: batch.id,
           timeWindow: batch.timeWindow,
           displayLocationName,
           preferenceFingerprint,
@@ -240,7 +273,6 @@ const materializeDemandCardSummary = (
 
   return {
     cardKey: group.cardKey,
-    batchId: group.batchId,
     timeWindow: group.timeWindow,
     batchStartTimestamp: group.batchStartTimestamp,
     displayLocationName: group.displayLocationName,

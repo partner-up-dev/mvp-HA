@@ -31,7 +31,7 @@ export type DomainEventType =
 
 export interface PRCreatedPayload {
   prId: number;
-  source: "natural_language" | "structured";
+  source: "natural_language" | "structured" | "event_assisted";
   status: string;
   creatorOpenId: string | null;
 }

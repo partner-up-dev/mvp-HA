@@ -4,7 +4,6 @@ import { PartnerRequestAIService } from "../../../services/PartnerRequestAIServi
 import type {
   WeekdayLabel,
 } from "../../../entities/partner-request";
-import type { UserId } from "../../../entities/user";
 import {
   initializeSlotsForPR,
 } from "../services/slot-management.service";
@@ -15,22 +14,21 @@ import {
 } from "../services/creator-identity.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import {
+  finalizeCreatedPR,
+  type CreatePRCommandResult,
+} from "./create-pr.shared";
 
 const prRepo = new PartnerRequestRepository();
 const communityPRRepo = new CommunityPRRepository();
 const aiService = new PartnerRequestAIService();
-
-export type CreatePRFromNLResult = {
-  id: number;
-  createdBy: UserId | null;
-};
 
 export async function createPRFromNaturalLanguage(
   rawText: string,
   nowIso: string,
   nowWeekday: WeekdayLabel | null,
   creatorIdentity: CreatorIdentityInput,
-): Promise<CreatePRFromNLResult> {
+): Promise<CreatePRCommandResult> {
   const fields = await aiService.parseRequest(rawText, nowIso, nowWeekday);
   const partnerBounds = normalizeAutomaticPartnerBounds(
     fields.minPartners,
@@ -87,8 +85,9 @@ export async function createPRFromNaturalLanguage(
     detail: { rawText, status: "DRAFT" },
   });
 
-  return {
+  return finalizeCreatedPR({
     id: request.id,
     createdBy,
-  };
+    creatorIdentity,
+  });
 }

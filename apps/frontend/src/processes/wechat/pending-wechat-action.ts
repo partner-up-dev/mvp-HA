@@ -21,10 +21,15 @@ type PendingAnchorConfirmAction = PendingActionBase & {
 };
 
 type PendingAnchorCreateAction = PendingActionBase & {
-  kind: "ANCHOR_EVENT_CREATE";
+  kind: "EVENT_ASSISTED_PR_CREATE";
   eventId: number;
-  batchId: number;
-  locationId: string;
+  fields: {
+    type: string;
+    time: [string | null, string | null];
+    location: string;
+    minPartners: number | null;
+    maxPartners: number | null;
+  };
 };
 
 export type PendingWeChatAction =
@@ -47,10 +52,15 @@ type NewPendingWeChatAction =
       prId: number;
     }
   | {
-      kind: "ANCHOR_EVENT_CREATE";
+      kind: "EVENT_ASSISTED_PR_CREATE";
       eventId: number;
-      batchId: number;
-      locationId: string;
+      fields: {
+        type: string;
+        time: [string | null, string | null];
+        location: string;
+        minPartners: number | null;
+        maxPartners: number | null;
+      };
     };
 
 const isPositiveInteger = (value: unknown): value is number =>
@@ -78,12 +88,22 @@ const isPendingWeChatAction = (value: unknown): value is PendingWeChatAction => 
   if (candidate.kind === "ANCHOR_PR_CONFIRM") {
     return isPositiveInteger(candidate.prId);
   }
-  if (candidate.kind === "ANCHOR_EVENT_CREATE") {
+  if (candidate.kind === "EVENT_ASSISTED_PR_CREATE") {
+    const fields = candidate.fields;
     return (
       isPositiveInteger(candidate.eventId) &&
-      isPositiveInteger(candidate.batchId) &&
-      typeof candidate.locationId === "string" &&
-      candidate.locationId.trim().length > 0
+      typeof fields === "object" &&
+      fields !== null &&
+      typeof fields.type === "string" &&
+      fields.type.trim().length > 0 &&
+      Array.isArray(fields.time) &&
+      fields.time.length === 2 &&
+      (fields.time[0] === null || typeof fields.time[0] === "string") &&
+      (fields.time[1] === null || typeof fields.time[1] === "string") &&
+      typeof fields.location === "string" &&
+      fields.location.trim().length > 0 &&
+      (fields.minPartners === null || isPositiveInteger(fields.minPartners)) &&
+      (fields.maxPartners === null || isPositiveInteger(fields.maxPartners))
     );
   }
 

@@ -56,12 +56,9 @@
     </Field>
 
     <ErrorToast
-      v-if="createMutation.isError.value || publishMutation.isError.value"
+      v-if="createMutation.isError.value"
       :message="submitErrorMessage"
-      @close="
-        createMutation.reset();
-        publishMutation.reset();
-      "
+      @close="createMutation.reset()"
     />
   </form>
 </template>
@@ -73,13 +70,8 @@ import { Field, useForm } from "vee-validate";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
-import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
-import {
-  useCreateCommunityPRFromNaturalLanguage,
-  usePublishCommunityPR,
-} from "@/domains/pr/queries/useCommunityPR";
-import { prDetailPath } from "@/domains/pr/routing/routes";
+import { useCreateCommunityPRFromNaturalLanguage } from "@/domains/pr/queries/useCommunityPR";
 import { useLandingTypewriterPlaceholder } from "@/domains/landing/use-cases/useLandingTypewriterPlaceholder";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useNaturalLanguageDraftStore } from "@/domains/pr/use-cases/useNaturalLanguageDraft";
@@ -93,9 +85,7 @@ const getLocalWeekdayLabel = (date: Date): string => {
 
 const router = useRouter();
 const { t } = useI18n();
-const userSessionStore = useUserSessionStore();
 const createMutation = useCreateCommunityPRFromNaturalLanguage();
-const publishMutation = usePublishCommunityPR();
 const { activeExampleText, typedExampleText } =
   useLandingTypewriterPlaceholder();
 const draftStore = useNaturalLanguageDraftStore();
@@ -106,14 +96,9 @@ const placeholderText = computed(() =>
 const resolvedPlaceholderText = computed(() =>
   t("prInput.placeholder", { example: activeExampleText.value }),
 );
-const isSubmitting = computed(
-  () => createMutation.isPending.value || publishMutation.isPending.value,
-);
+const isSubmitting = computed(() => createMutation.isPending.value);
 const submitErrorMessage = computed(
-  () =>
-    createMutation.error.value?.message ||
-    publishMutation.error.value?.message ||
-    t("nlForm.createFailed"),
+  () => createMutation.error.value?.message || t("nlForm.createFailed"),
 );
 
 const mergeVoiceTranscript = (text: string): void => {
@@ -162,18 +147,17 @@ const submitHandler = handleSubmit(async (values) => {
   await ensureAuthSessionBootstrapped();
 
   const now = new Date();
-  const draft = await createMutation.mutateAsync({
+  const created = await createMutation.mutateAsync({
     rawText: values.rawText,
     nowIso: now.toISOString(),
     nowWeekday: getLocalWeekdayLabel(now),
   });
 
-  const publishResult = await publishMutation.mutateAsync({ id: draft.id });
-  if (publishResult.auth) {
-    userSessionStore.applyAuthSession(publishResult.auth);
+  if (created.status === "DRAFT") {
+    await router.push(created.canonicalPath);
+  } else {
+    await router.push(`${created.canonicalPath}?entry=create`);
   }
-
-  await router.push(`${prDetailPath(draft.id)}?entry=create`);
   draftStore.clear();
   resetForm({
     values: { rawText: "" },

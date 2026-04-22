@@ -1,7 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { joinPR } from "../../pr-core";
 import type {
@@ -9,7 +8,8 @@ import type {
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
-import { readVisibleAnchorPRRecordsByBatchIdAndLocation } from "../../pr-core/services/pr-read.service";
+import type { PartnerRequest } from "../../../entities/partner-request";
+import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr-core/services/pr-read.service";
 import {
   buildDemandCardKey,
   listJoinableDemandCardCandidates,
@@ -81,7 +81,7 @@ const createNoJoinableCandidateError = (): HTTPException => {
 };
 
 type CandidateWithStats = {
-  record: AnchorPRRecord;
+  record: PartnerRequest;
   activePartnerCount: number;
 };
 
@@ -91,20 +91,18 @@ const sortCandidates = (
 ): number => {
   const leftScore = resolveOccupancyScore(
     left.activePartnerCount,
-    left.record.root.maxPartners,
+    left.record.maxPartners,
   );
   const rightScore = resolveOccupancyScore(
     right.activePartnerCount,
-    right.record.root.maxPartners,
+    right.record.maxPartners,
   );
 
   if (leftScore !== rightScore) {
     return rightScore - leftScore;
   }
 
-  return (
-    left.record.root.createdAt.getTime() - right.record.root.createdAt.getTime()
-  );
+  return left.record.createdAt.getTime() - right.record.createdAt.getTime();
 };
 
 export const joinDemandCard = async ({
@@ -156,7 +154,7 @@ export const joinDemandCard = async ({
           .filter((entry) => entry.length > 0),
   );
   const normalizedCardKey = buildDemandCardKey(
-    batchId,
+    batch.timeWindow,
     normalizedLocation,
     normalizedFingerprint,
   );
@@ -177,16 +175,22 @@ export const joinDemandCard = async ({
   }
 
   const candidateIds = new Set(joinableCandidates.map((candidate) => candidate.prId));
-  const records = await readVisibleAnchorPRRecordsByBatchIdAndLocation(
-    batchId,
-    normalizedLocation,
+  const records = await readVisiblePartnerRequestsByTypeAndTime(
+    event.type,
+    batch.timeWindow,
   );
-  const matchedRecords = records.filter((record) => candidateIds.has(record.root.id));
+  const matchedRecords = records.filter((record) => {
+    if (!candidateIds.has(record.id)) {
+      return false;
+    }
+
+    return (record.location?.trim() ?? "") === normalizedLocation;
+  });
 
   const candidates = await Promise.all(
     matchedRecords.map(async (record) => ({
       record,
-      activePartnerCount: await partnerRepo.countActiveByPrId(record.root.id),
+      activePartnerCount: await partnerRepo.countActiveByPrId(record.id),
     })),
   );
 
@@ -196,10 +200,10 @@ export const joinDemandCard = async ({
 
   for (const candidate of candidates) {
     try {
-      await joinPR(candidate.record.root.id, openId);
+      await joinPR(candidate.record.id, openId);
       return {
-        selectedPrId: candidate.record.root.id,
-        canonicalPath: `/apr/${candidate.record.root.id}`,
+        selectedPrId: candidate.record.id,
+        canonicalPath: `/pr/${candidate.record.id}`,
         cardKey,
       };
     } catch (error) {

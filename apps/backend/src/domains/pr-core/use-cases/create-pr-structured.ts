@@ -3,7 +3,6 @@ import { CommunityPRRepository } from "../../../repositories/CommunityPRReposito
 import type {
   PartnerRequestFields,
 } from "../../../entities/partner-request";
-import type { UserId } from "../../../entities/user";
 import { initializeSlotsForPR } from "../services/slot-management.service";
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import {
@@ -12,9 +11,15 @@ import {
 } from "../services/creator-identity.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import {
+  finalizeCreatedPR,
+  type CreatePRCommandResult,
+} from "./create-pr.shared";
 
 const prRepo = new PartnerRequestRepository();
 const communityPRRepo = new CommunityPRRepository();
+
+export type StructuredCreateSource = "FORM" | "EVENT_ASSISTED";
 
 function buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
   const parts: string[] = [];
@@ -26,19 +31,18 @@ function buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
   return parts.join(" | ");
 }
 
-export type CreatePRResult = {
-  id: number;
-  createdBy: UserId | null;
-};
-
 export async function createPRFromStructured(
   fields: PartnerRequestFields,
   creatorIdentity: CreatorIdentityInput,
-): Promise<CreatePRResult> {
+  options: {
+    createSource?: StructuredCreateSource;
+  } = {},
+): Promise<CreatePRCommandResult> {
   assertManualPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
 
   const creator = await resolveDraftCreator(creatorIdentity);
   const createdBy = creator?.id ?? null;
+  const createSource = options.createSource ?? "FORM";
 
   const rawText = buildStructuredFallbackRawText(fields);
   const request = await prRepo.create({
@@ -72,7 +76,7 @@ export async function createPRFromStructured(
     String(request.id),
     {
       prId: request.id,
-      source: "structured",
+      source: createSource === "EVENT_ASSISTED" ? "event_assisted" : "structured",
       status: "DRAFT",
       creatorOpenId: creatorIdentity.oauthOpenId,
     },
@@ -81,14 +85,21 @@ export async function createPRFromStructured(
 
   operationLogService.log({
     actorId: createdBy,
-    action: "pr.create_structured",
+    action:
+      createSource === "EVENT_ASSISTED"
+        ? "pr.create_event_assisted"
+        : "pr.create_structured",
     aggregateType: "partner_request",
     aggregateId: String(request.id),
-    detail: { status: "DRAFT" },
+    detail: {
+      source: createSource,
+      status: "DRAFT",
+    },
   });
 
-  return {
+  return finalizeCreatedPR({
     id: request.id,
     createdBy,
-  };
+    creatorIdentity,
+  });
 }

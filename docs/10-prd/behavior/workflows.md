@@ -6,9 +6,9 @@
 2. The user either expands the lightweight "start from one sentence" path or enters `/pr/new`.
 3. The system interprets the natural-language intent, may map it to an existing Anchor Event context, and may synthesize a new `PR.type` when no existing event context fits.
 4. The frontend submits the natural-language create command.
-5. The system creates a `DRAFT` first and publishes during the creation flow.
-6. During publish, the system assigns creator ownership and preserves local PIN continuity.
-7. The result is a `PR` that can be shared and revisited.
+5. If the user already has an authenticated account, the backend creates and publishes the PR inside the same creation flow.
+6. If the user is anonymous, the backend creates a `DRAFT` and waits for a later authenticated publish step.
+7. The publish step assigns creator ownership and returns a shareable, revisitable `PR`.
 
 ## 2. Create a PR Through Structured Form
 
@@ -17,9 +17,9 @@
 3. The `time_window` field uses batch or free UI mode. Batch mode offers suggested windows from known event-side availability. Free mode allows direct manual time entry.
 4. The UI resolves those inputs into one PR-owned create payload with one concrete `type` and one concrete `time_window`.
 5. The frontend submits the structured create command.
-6. The system creates a `DRAFT` first and publishes during the creation flow.
-7. During publish, the system assigns creator ownership and preserves local PIN continuity.
-8. The result is a `PR` that can be shared and revisited.
+6. If the user already has an authenticated account, the backend creates and publishes the PR inside the same creation flow.
+7. If the user is anonymous, the backend creates a `DRAFT` and waits for a later authenticated publish step.
+8. The publish step assigns creator ownership and returns a shareable, revisitable `PR`.
 
 ## 3. Enter Through a Link and Join a PR
 
@@ -40,8 +40,8 @@
 5. The user enters an existing `PR` from event card or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint. In card mode, the active demand card itself is also a detail-entry affordance, so tapping it should resolve to the same detail intent as the rightward action. In list mode, top-level tabs aggregate by local date while still preserving time-window grouping and location context inside the selected date panel; list rows should hide `EXPIRED` PRs while still allowing completed `CLOSED` rows to remain visible. Card-mode drag feedback should reveal directional skip versus detail cues in exposed stage space instead of covering the card body with opaque action stamps.
 6. The Anchor Event page exposes that event's beta-group entry as an independent card. List mode defaults the card to a collapsed kicker and description; card mode defaults it to an expanded state with the QR code. The group is for event-specific support such as requesting new sessions, getting booking/subsidy support, and coordinating activity context.
 7. If the current local date, time-pool rule, or location does not have a suitable PR and creation is still allowed, the user can create one through the controlled event-page flow.
-8. The event page resolves its assisted-create choices into the same structured PR create payload shape used by `/pr/new`.
-9. The event page submits the same structured create command used by the form path.
+8. The event page resolves its assisted-create choices into the same structured PR create payload shape used by `/pr/new` and may carry transient event referral context for route continuity.
+9. The event page submits the same structured create command used by the form path. If the user already has an authenticated account, the backend creates and publishes the PR inside that same command.
 10. The current Anchor Event and downstream PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-context collaboration journey entirely.
 11. The user may then join, inspect alternatives, or view booking-support information.
 12. The resulting PR may continue through timing and reliability loops such as confirmation, reminders, and attendance follow-up when the corresponding modules are active.

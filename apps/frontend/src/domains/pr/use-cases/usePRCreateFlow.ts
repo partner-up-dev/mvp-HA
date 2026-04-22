@@ -1,11 +1,10 @@
-import { nextTick, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useCreatePRFromStructured } from "@/domains/pr/queries/usePRCreate";
 import { usePublishCommunityPR } from "@/domains/pr/queries/useCommunityPR";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { trackEvent } from "@/shared/telemetry/track";
-import { prDetailPath } from "@/domains/pr/routing/routes";
 import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import {
@@ -49,6 +48,7 @@ export const usePRCreateFlow = () => {
 
   const formRef = ref<InstanceType<typeof PRForm> | null>(null);
   const pendingStatus = ref<CreateSubmissionMode>("PUBLISH");
+  const allowDraftSave = computed(() => !userSessionStore.isAuthenticated);
 
   const submitAs = (status: CreateSubmissionMode) => {
     pendingStatus.value = status;
@@ -60,10 +60,11 @@ export const usePRCreateFlow = () => {
 
     const result = await createMutation.mutateAsync({
       fields: toCommunityPRFields(fields),
+      createSource: "FORM",
     });
 
-    let createdStatus: "DRAFT" | "OPEN" = "DRAFT";
-    if (pendingStatus.value === "PUBLISH") {
+    let createdStatus: "DRAFT" | "OPEN" = result.status;
+    if (createdStatus === "DRAFT" && pendingStatus.value === "PUBLISH") {
       const publishResult = await publishMutation.mutateAsync({ id: result.id });
       if (publishResult.auth) {
         userSessionStore.applyAuthSession(publishResult.auth);
@@ -79,11 +80,11 @@ export const usePRCreateFlow = () => {
       scenarioType: fields.type,
     });
     if (createdStatus === "OPEN") {
-      await router.push(`${prDetailPath(result.id)}?entry=create`);
+      await router.push(`${result.canonicalPath}?entry=create`);
       return;
     }
 
-    await router.push(prDetailPath(result.id));
+    await router.push(result.canonicalPath);
   };
 
   const goHome = () => {
@@ -96,6 +97,7 @@ export const usePRCreateFlow = () => {
     initialFields,
     formRef,
     pendingStatus,
+    allowDraftSave,
     submitAs,
     handleSubmit,
     goHome,

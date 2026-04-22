@@ -1,15 +1,15 @@
 /**
  * Use-case: Get a single Anchor Event with its batches and PRs.
- * Returns the event detail with batches organized by time window,
- * each containing its Anchor PRs.
+ * Returns the event detail with batches organized by time window.
+ * PR discovery now reads from the root PR table by event type plus time window.
  */
 
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
+  AnchorEvent,
   AnchorEventId,
   TimeWindowEntry,
   UserLocationEntry,
@@ -19,19 +19,15 @@ import {
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatch } from "../../../entities/anchor-event-batch";
-import type { PRStatus } from "../../../entities/partner-request";
+import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import {
   isActiveVisibleAnchorPRStatus,
-  readVisibleAnchorPRRecordsByBatchId,
+  readVisiblePartnerRequestsByTypeAndTime,
 } from "../../pr-core/services/pr-read.service";
 
 const eventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
 const partnerRepo = new PartnerRepository();
-
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
 
 export interface AnchorPRSummary {
   id: number;
@@ -69,6 +65,8 @@ export interface AnchorEventDetail {
   title: string;
   type: string;
   description: string | null;
+  defaultMinPartners: number | null;
+  defaultMaxPartners: number | null;
   systemLocationPool: string[];
   userLocationPool: UserLocationEntry[];
   timeWindowPool: TimeWindowEntry[];
@@ -76,51 +74,55 @@ export interface AnchorEventDetail {
   betaGroupQrCode: string | null;
   status: string;
   batches: BatchDetail[];
-  /** True when all time-window × location combos are occupied */
   exhausted: boolean;
   createdAt: string;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const toPRSummary = (pr: PartnerRequest): AnchorPRSummary => ({
+  id: pr.id,
+  title: pr.title,
+  type: pr.type,
+  location: pr.location,
+  preferences: Array.isArray(pr.preferences) ? pr.preferences : [],
+  notes: pr.notes,
+  time: pr.time,
+  status: pr.status,
+  minPartners: pr.minPartners,
+  maxPartners: pr.maxPartners,
+  partnerCount: 0,
+  createdAt: pr.createdAt.toISOString(),
+});
 
-function toPRSummary(record: AnchorPRRecord): AnchorPRSummary {
-  const pr = record.root;
-  return {
-    id: pr.id,
-    title: pr.title,
-    type: pr.type,
-    location: pr.location,
-    preferences: Array.isArray(pr.preferences) ? pr.preferences : [],
-    notes: pr.notes,
-    time: pr.time,
-    status: pr.status,
-    minPartners: pr.minPartners,
-    maxPartners: pr.maxPartners,
-    partnerCount: 0, // will be enriched below
-    createdAt: pr.createdAt.toISOString(),
-  };
-}
-
-function toBatchDetail(
+const toBatchDetail = (
   batch: AnchorEventBatch,
-  prs: AnchorPRRecord[],
+  prs: PartnerRequest[],
   locationOptions: LocationOption[],
-): BatchDetail {
-  return {
-    id: batch.id,
-    timeWindow: batch.timeWindow,
-    status: batch.status,
-    description: batch.description,
-    prs: prs.map(toPRSummary),
-    locationOptions,
-  };
-}
+): BatchDetail => ({
+  id: batch.id,
+  timeWindow: batch.timeWindow,
+  status: batch.status,
+  description: batch.description,
+  prs: prs.map(toPRSummary),
+  locationOptions,
+});
 
-// ---------------------------------------------------------------------------
-// Use-case
-// ---------------------------------------------------------------------------
+const isEventScopedLocation = (
+  event: AnchorEvent,
+  location: string | null,
+): boolean => {
+  const normalized = location?.trim() ?? "";
+  if (!normalized) {
+    return false;
+  }
+
+  const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
+  if (systemLocationPool.includes(normalized)) {
+    return true;
+  }
+
+  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
+  return userLocationPool.some((entry) => entry.id === normalized);
+};
 
 export async function getAnchorEventDetail(
   eventId: AnchorEventId,
@@ -136,17 +138,21 @@ export async function getAnchorEventDetail(
   );
   const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
 
-  // Fetch PRs for each batch
   const batchDetails: BatchDetail[] = [];
   const allPRIds: number[] = [];
+
   for (const batch of batches) {
-    const prs = await readVisibleAnchorPRRecordsByBatchId(batch.id);
+    const prs = (
+      await readVisiblePartnerRequestsByTypeAndTime(event.type, batch.timeWindow)
+    ).filter((pr) => isEventScopedLocation(event, pr.location));
+
     const activeUserCountsByLocation = new Map<string, number>();
-    for (const record of prs) {
-      if (record.anchor.locationSource !== "USER") continue;
-      if (!isActiveVisibleAnchorPRStatus(record.root.status)) continue;
-      const location = record.root.location?.trim();
+    for (const pr of prs) {
+      if (!isActiveVisibleAnchorPRStatus(pr.status)) continue;
+      const location = pr.location?.trim();
       if (!location) continue;
+      if (!userLocationPool.some((entry) => entry.id === location)) continue;
+
       activeUserCountsByLocation.set(
         location,
         (activeUserCountsByLocation.get(location) ?? 0) + 1,
@@ -181,15 +187,13 @@ export async function getAnchorEventDetail(
     }
   }
 
-  // Check exhaustion: all location × timeWindow combos are occupied (have a non-expired PR)
   const totalLocations = systemLocationPool.length;
   const totalBatches = batches.length;
   const totalSlots = totalLocations * totalBatches;
 
-  // Count occupied slots (PRs that are not expired/closed)
   let occupiedSlots = 0;
-  for (const bd of batchDetails) {
-    const activePRs = bd.prs.filter((pr) =>
+  for (const batchDetail of batchDetails) {
+    const activePRs = batchDetail.prs.filter((pr) =>
       isActiveVisibleAnchorPRStatus(pr.status),
     );
     occupiedSlots += activePRs.filter((pr) =>
@@ -208,6 +212,8 @@ export async function getAnchorEventDetail(
     title: event.title,
     type: event.type,
     description: event.description,
+    defaultMinPartners: event.defaultMinPartners ?? null,
+    defaultMaxPartners: event.defaultMaxPartners ?? null,
     systemLocationPool,
     userLocationPool,
     timeWindowPool: Array.isArray(event.timeWindowPool)

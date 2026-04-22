@@ -131,18 +131,13 @@ import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffol
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
 import {
-  useCreateUserAnchorPR,
-  type CreateUserAnchorPRError,
-} from "@/domains/event/queries/useCreateUserAnchorPR";
-import {
-  useCreateCommunityPRFromStructured,
-  usePublishCommunityPR,
-} from "@/domains/pr/queries/useCommunityPR";
+  useCreateEventAssistedPR,
+  type CreateEventAssistedPRError,
+} from "@/domains/event/queries/useCreateEventAssistedPR";
 import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 import {
   prDetailPath,
 } from "@/domains/pr/routing/routes";
-import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 import { toDemandCardViewModels } from "@/domains/event/model/demand-cards";
 import {
@@ -353,10 +348,7 @@ const {
   isLoading: isDemandCardsLoading,
   isError: isDemandCardsError,
 } = useAnchorEventDemandCards(eventId);
-const createUserAnchorPRMutation = useCreateUserAnchorPR();
-const createCommunityPRMutation = useCreateCommunityPRFromStructured();
-const publishCommunityPRMutation = usePublishCommunityPR();
-const userSessionStore = useUserSessionStore();
+const createEventAssistedPRMutation = useCreateEventAssistedPR();
 
 const isLoading = computed(
   () => isDetailLoading.value || isDemandCardsLoading.value,
@@ -366,16 +358,13 @@ const isError = computed(
 );
 
 const isCreatePending = computed(
-  () =>
-    createUserAnchorPRMutation.isPending.value ||
-    createCommunityPRMutation.isPending.value ||
-    publishCommunityPRMutation.isPending.value,
+  () => createEventAssistedPRMutation.isPending.value,
 );
 
 const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
 const createActionErrorMessage = computed(() => {
-  const createAnchorError = createUserAnchorPRMutation.error
-    .value as CreateUserAnchorPRError | null;
+  const createAnchorError = createEventAssistedPRMutation.error
+    .value as CreateEventAssistedPRError | null;
   if (createAnchorError) {
     switch (createAnchorError.code) {
       case JOIN_TIME_WINDOW_CONFLICT_CODE:
@@ -393,12 +382,7 @@ const createActionErrorMessage = computed(() => {
         return t("anchorEvent.createCard.errors.createFailed");
     }
   }
-
-  return (
-    createCommunityPRMutation.error.value?.message ??
-    publishCommunityPRMutation.error.value?.message ??
-    null
-  );
+  return null;
 });
 
 const resolveBatchStartTimestamp = (timeWindow: TimeWindow): number => {
@@ -794,14 +778,6 @@ const handleViewActiveCardDetail = async () => {
   }
 };
 
-const APR_FALLBACK_STATUSES = new Set([400, 404, 409, 503]);
-const APR_FALLBACK_CODES = new Set([
-  "LOCATION_CAP_REACHED",
-  "INVALID_LOCATION",
-  "ANCHOR_EVENT_NOT_FOUND",
-  "ANCHOR_EVENT_BATCH_NOT_FOUND",
-  "WECHAT_OAUTH_NOT_CONFIGURED",
-]);
 const WECHAT_AUTH_BLOCKING_CODES = new Set([
   "WECHAT_AUTH_REQUIRED",
   "WECHAT_BIND_REQUIRED",
@@ -809,11 +785,11 @@ const WECHAT_AUTH_BLOCKING_CODES = new Set([
 
 const isWeChatAuthBlockingError = (
   error: unknown,
-): error is CreateUserAnchorPRError => {
+): error is CreateEventAssistedPRError => {
   if (!(error instanceof Error)) {
     return false;
   }
-  const apiError = error as CreateUserAnchorPRError;
+  const apiError = error as CreateEventAssistedPRError;
   return (
     apiError.status === 401 &&
     typeof apiError.code === "string" &&
@@ -821,34 +797,13 @@ const isWeChatAuthBlockingError = (
   );
 };
 
-const shouldFallbackToCommunity = (
-  error: unknown,
-): error is CreateUserAnchorPRError => {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const apiError = error as CreateUserAnchorPRError;
-  if (typeof apiError.status !== "number") {
-    return false;
-  }
-  if (!APR_FALLBACK_STATUSES.has(apiError.status)) {
-    return false;
-  }
-  if (typeof apiError.code === "string") {
-    return APR_FALLBACK_CODES.has(apiError.code);
-  }
-
-  return true;
-};
-
-const createCommunityPRFallback = async ({
+const buildEventAssistedFields = ({
   targetBatchId,
   locationId,
 }: {
   targetBatchId: number | null;
   locationId: string | null;
-}): Promise<string> => {
+}) => {
   const event = detail.value;
   if (!event) {
     throw new Error(t("common.operationFailed"));
@@ -861,81 +816,54 @@ const createCommunityPRFallback = async ({
         null);
 
   const normalizedLocation = locationId?.trim() ?? "";
-
-  const draft = await createCommunityPRMutation.mutateAsync({
-    fields: {
-      title: undefined,
-      type: event.type,
-      time: targetBatch?.timeWindow ?? [null, null],
-      location: normalizedLocation.length > 0 ? normalizedLocation : null,
-      minPartners: 2,
-      maxPartners: null,
-      partners: [],
-      budget: null,
-      preferences: [],
-      notes: "Created from Anchor Event fallback",
-    },
-  });
-
-  const publishResult = await publishCommunityPRMutation.mutateAsync({
-    id: draft.id,
-  });
-
-  if (publishResult.auth) {
-    userSessionStore.applyAuthSession(publishResult.auth);
+  if (!targetBatch || normalizedLocation.length === 0) {
+    throw new Error(t("common.operationFailed"));
   }
 
-  return prDetailPath(draft.id);
+  return {
+    title: undefined,
+    type: event.type,
+    time: targetBatch.timeWindow,
+    location: normalizedLocation,
+    minPartners: event.defaultMinPartners ?? 2,
+    maxPartners: event.defaultMaxPartners ?? null,
+    partners: [],
+    budget: null,
+    preferences: [],
+    notes: null,
+  };
 };
 
-const createPRWithFallback = async ({
+const createEventAssistedPR = async ({
   targetBatchId,
   locationId,
 }: {
   targetBatchId: number | null;
   locationId: string | null;
 }) => {
-  createUserAnchorPRMutation.reset();
-  createCommunityPRMutation.reset();
-  publishCommunityPRMutation.reset();
+  createEventAssistedPRMutation.reset();
 
   const event = detail.value;
   if (!event) {
     return;
   }
 
-  const normalizedLocation = locationId?.trim() ?? "";
-  if (targetBatchId === null || normalizedLocation.length === 0) {
-    const fallbackPath = await createCommunityPRFallback({
-      targetBatchId,
-      locationId: normalizedLocation.length > 0 ? normalizedLocation : null,
-    });
-    createUserAnchorPRMutation.reset();
-    await router.push(fallbackPath);
-    return;
-  }
+  const fields = buildEventAssistedFields({
+    targetBatchId,
+    locationId,
+  });
 
   try {
-    const created = await createUserAnchorPRMutation.mutateAsync({
+    const created = await createEventAssistedPRMutation.mutateAsync({
       eventId: event.id,
-      batchId: targetBatchId,
-      locationId: normalizedLocation,
+      fields,
     });
-    await router.push(created.canonicalPath);
+    await router.push(`${created.canonicalPath}?entry=create&fromEvent=${event.id}`);
   } catch (error) {
     if (isWeChatAuthBlockingError(error)) {
       return;
     }
-    if (!shouldFallbackToCommunity(error)) {
-      throw error;
-    }
-
-    const fallbackPath = await createCommunityPRFallback({
-      targetBatchId,
-      locationId: normalizedLocation,
-    });
-    createUserAnchorPRMutation.reset();
-    await router.push(fallbackPath);
+    throw error;
   }
 };
 
@@ -949,7 +877,7 @@ const attemptPendingCreateReplay = async () => {
   const pending = readPendingWeChatAction();
   if (
     !pending ||
-    pending.kind !== "ANCHOR_EVENT_CREATE" ||
+    pending.kind !== "EVENT_ASSISTED_PR_CREATE" ||
     pending.eventId !== event.id
   ) {
     return;
@@ -958,10 +886,22 @@ const attemptPendingCreateReplay = async () => {
   pendingCreateReplayRunning.value = true;
   clearPendingWeChatAction();
   try {
-    await createPRWithFallback({
-      targetBatchId: pending.batchId,
-      locationId: pending.locationId,
+    const created = await createEventAssistedPRMutation.mutateAsync({
+      eventId: event.id,
+      fields: {
+        title: undefined,
+        type: pending.fields.type,
+        time: pending.fields.time,
+        location: pending.fields.location,
+        minPartners: pending.fields.minPartners,
+        maxPartners: pending.fields.maxPartners,
+        partners: [],
+        budget: null,
+        preferences: [],
+        notes: null,
+      },
     });
+    await router.push(`${created.canonicalPath}?entry=create&fromEvent=${event.id}`);
   } catch (error) {
     if (!isWeChatAuthBlockingError(error)) {
       const apiError = error as ApiError;
@@ -991,7 +931,7 @@ const handleCreateInList = async ({
   batchId: number | null;
   locationId: string | null;
 }) => {
-  await createPRWithFallback({
+  await createEventAssistedPR({
     targetBatchId: batchId,
     locationId,
   });
@@ -1077,7 +1017,7 @@ watch(
 );
 
 const handleCreateFromCardEmpty = async () => {
-  await createPRWithFallback({
+  await createEventAssistedPR({
     targetBatchId: cardCreateBatchId.value,
     locationId: cardCreateLocationId.value || null,
   });

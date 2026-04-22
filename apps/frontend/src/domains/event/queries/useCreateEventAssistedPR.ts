@@ -1,4 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import type { InferResponseType } from "hono";
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 import {
@@ -11,40 +13,36 @@ import {
   handleWeChatAuthRequiredError,
   isWeChatAuthRequiredError,
 } from "@/processes/wechat/auth-error";
+import { setPendingWeChatAction } from "@/processes/wechat/pending-wechat-action";
 
-type CreateUserAnchorPRInput = {
+type CreateEventAssistedPRInput = {
   eventId: number;
-  batchId: number;
-  locationId: string;
+  fields: PartnerRequestFields;
 };
 
-export type CreateUserAnchorPRResponse = {
-  id: number;
-  canonicalPath: string;
-};
+export type CreateEventAssistedPRResponse = InferResponseType<
+  (typeof client.api.pr.new.form)["$post"]
+>;
 
-export type CreateUserAnchorPRError = ApiError & {
+export type CreateEventAssistedPRError = ApiError & {
   status?: number;
 };
 
-export const useCreateUserAnchorPR = () => {
+export const useCreateEventAssistedPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    CreateUserAnchorPRResponse,
-    CreateUserAnchorPRError,
-    CreateUserAnchorPRInput
+    CreateEventAssistedPRResponse,
+    CreateEventAssistedPRError,
+    CreateEventAssistedPRInput
   >({
-    mutationFn: async ({ eventId, batchId, locationId }) => {
-      const response = await client.api.events[":eventId"].batches[
-        ":batchId"
-      ]["anchor-prs"].$post(
+    mutationFn: async ({ eventId, fields }) => {
+      const response = await client.api.pr.new.form.$post(
         {
-          param: {
-            eventId: eventId.toString(),
-            batchId: batchId.toString(),
+          json: {
+            fields,
+            createSource: "EVENT_ASSISTED",
           },
-          json: { locationId },
         },
         {
           init: {
@@ -59,23 +57,35 @@ export const useCreateUserAnchorPR = () => {
           typeof window !== "undefined" &&
           isWeChatAuthRequiredError(response.status, payload)
         ) {
+          setPendingWeChatAction({
+            kind: "EVENT_ASSISTED_PR_CREATE",
+            eventId,
+            fields: {
+              type: fields.type,
+              time: fields.time,
+              location: fields.location ?? "",
+              minPartners: fields.minPartners,
+              maxPartners: fields.maxPartners,
+            },
+          });
           handleWeChatAuthRequiredError(
             response.status,
             payload,
             window.location.href,
           );
         }
+
         const error = buildApiError(
-          resolveApiErrorMessage(payload, "创建活动搭子请求失败"),
+          resolveApiErrorMessage(payload, "建立活動上下文搭子失敗"),
           payload,
-        ) as CreateUserAnchorPRError;
+        ) as CreateEventAssistedPRError;
         error.status = response.status;
         throw error;
       }
 
-      return (await response.json()) as CreateUserAnchorPRResponse;
+      return await response.json();
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorEvent.detail(variables.eventId),
       });

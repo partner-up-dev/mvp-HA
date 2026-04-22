@@ -11,7 +11,6 @@ type TimeWindow = [string | null, string | null];
 
 export type DemandCardViewModel = {
   cardKey: string;
-  batchId: number;
   timeWindow: TimeWindow;
   batchStartTimestamp: number;
   timeLabel: string;
@@ -152,7 +151,6 @@ export const toDemandCardViewModels = ({
 }): DemandCardViewModel[] =>
   cards.map((card) => ({
     cardKey: card.cardKey,
-    batchId: card.batchId,
     timeWindow: card.timeWindow,
     batchStartTimestamp: card.batchStartTimestamp,
     timeLabel: formatCardTimeLabel(card.timeWindow),

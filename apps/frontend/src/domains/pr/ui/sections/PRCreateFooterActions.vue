@@ -1,6 +1,7 @@
 <template>
   <footer class="page-footer">
     <Button
+      v-if="allowDraftSave"
       tone="outline"
       type="button"
       :disabled="pending"
@@ -34,6 +35,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 defineProps<{
   pending: boolean;
   pendingStatus: CreateSubmissionMode;
+  allowDraftSave: boolean;
 }>();
 
 const emit = defineEmits<{

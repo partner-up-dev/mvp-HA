@@ -52,6 +52,7 @@
             createMutation.isPending.value || publishMutation.isPending.value
           "
           :pending-status="pendingStatus"
+          :allow-draft-save="allowDraftSave"
           @submit-as="submitAs"
         />
       </div>
@@ -114,6 +115,7 @@ const {
   initialFields,
   formRef,
   pendingStatus,
+  allowDraftSave,
   submitAs,
   handleSubmit,
   goHome,

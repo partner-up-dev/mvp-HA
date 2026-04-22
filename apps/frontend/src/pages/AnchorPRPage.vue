@@ -593,6 +593,13 @@ const isCommunityPR = computed(
   () => Boolean(prDetail.value && isCommunityPRDetail(prDetail.value)),
 );
 const backFallbackTo = computed(() => {
+  const routeEventIdRaw = route.query.fromEvent;
+  const routeEventId =
+    typeof routeEventIdRaw === "string" ? Number(routeEventIdRaw) : null;
+  if (routeEventId !== null && Number.isFinite(routeEventId) && routeEventId > 0) {
+    return `/events/${routeEventId}`;
+  }
+
   const anchorEventId = anchorDetail.value?.anchor.anchorEventId ?? null;
   if (
     anchorEventId !== null &&

@@ -71,13 +71,21 @@ Important coordination note:
 - create commands are split by input mode:
   - `POST /api/pr/new/form`
   - `POST /api/pr/new/nl`
+- create commands return the created PR id, resulting status, and canonical detail path so frontend can route without inferring publish outcome locally
+- backend resolves create result state from the caller's auth context:
+  - authenticated create persists and publishes in one command path
+  - anonymous create persists `DRAFT` and returns that draft id for later authenticated publish
 - Anchor Event assisted create prepares the same PR-owned structured payload and submits `POST /api/pr/new/form`
+- event-assisted create may attach transient assisted-create metadata such as create source or event referral, while persisted PR state remains the same PR-owned field set used by structured create
+- event-assisted create targets direct `OPEN` creation and therefore requires an authenticated account
 - structured PR creation accepts arbitrary `type` input with event-type suggestions and accepts one resolved `time_window`; batch and free are UI modes rather than separate persisted PR models
 - `/pr/:id` remains the primary PR detail route for read, join, exit, confirm, check-in, share, and booking-support handoff; it keeps the persistent notification-subscriptions section mounted there when reminder registration is relevant for that PR and links into adjacent PR sub-routes instead of absorbing all secondary actions inline
 - `/events/search` is a PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
 - `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative display policy, so frontend should treat it as opaque instead of hardcoded ranking truth; it does not own PR search results
 - `GET /api/events` and `GET /api/events/:eventId` expose each Anchor Event's beta-group QR code when configured; `/about` and `/events/:eventId` use that event-owned value for beta-group entry instead of reading a generic beta-group public config key
 - `GET /api/events/:eventId/demand-cards` is the backend-authored card-mode demand projection contract; it returns only joinable (`OPEN` / `READY`) demand-card groups for that event and must stay semantically aligned with `POST /api/events/:eventId/demand-cards/:cardKey/join`
+- `GET /api/events/:eventId` may still expose batch-shaped group shells during rollout. Discoverable PRs inside those group shells should already be derived from root PR reads keyed by `event.type + time_window` plus event-owned location constraints.
+- `GET /api/events/:eventId/demand-cards` groups demand through compatibility card keys, while the underlying candidate PR set should already come from root PR reads keyed by `event.type + time_window` plus event-owned location constraints.
 - `GET /api/pr/search` is the PR search read contract; it queries by active `Anchor Event` id plus repeated local-date values and returns matching visible actionable PR candidates under that event's current activity type and time-pool rules
 - if PR search has exactly one result, frontend may replace-route to `/pr/:id` while avoiding a browser-back auto-redirect loop
 - `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`

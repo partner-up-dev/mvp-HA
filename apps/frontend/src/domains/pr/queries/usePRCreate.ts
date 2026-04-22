@@ -7,7 +7,11 @@ import type {
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 
-type CreateDraftResult = { id: PRId };
+export type CreatePRResult = {
+  id: PRId;
+  status: "DRAFT" | "OPEN";
+  canonicalPath: string;
+};
 
 type CreatePRFromNaturalLanguageInput = {
   rawText: string;
@@ -17,6 +21,7 @@ type CreatePRFromNaturalLanguageInput = {
 
 type CreatePRFromStructuredInput = {
   fields: PartnerRequestFields;
+  createSource?: "FORM" | "EVENT_ASSISTED";
 };
 
 const readErrorMessage = async (
@@ -29,7 +34,7 @@ const readErrorMessage = async (
 
 export const useCreatePRFromNaturalLanguage = () => {
   return useMutation<
-    CreateDraftResult,
+    CreatePRResult,
     Error,
     CreatePRFromNaturalLanguageInput
   >({
@@ -53,10 +58,13 @@ export const useCreatePRFromNaturalLanguage = () => {
 };
 
 export const useCreatePRFromStructured = () => {
-  return useMutation<CreateDraftResult, Error, CreatePRFromStructuredInput>({
+  return useMutation<CreatePRResult, Error, CreatePRFromStructuredInput>({
     mutationFn: async (input) => {
       const res = await client.api.pr.new.form.$post({
-        json: input.fields,
+        json: {
+          fields: input.fields,
+          createSource: input.createSource,
+        },
       });
 
       if (!res.ok) {
