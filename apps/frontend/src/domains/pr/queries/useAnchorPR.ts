@@ -52,10 +52,12 @@ type AnchorPRUpdateStatusInput = {
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
-export type AnchorPRDetailResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["$get"]
->;
 type PRDetailResponse = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
+export type AnchorPRDetailResponse = Extract<
+  PRDetailResponse,
+  { prKind: "ANCHOR" }
+>;
+export type AnchorPRDetailView = AnchorPRDetailResponse;
 
 export type AnchorPRBookingSupportResponse = InferResponseType<
   (typeof client.api.pr)[":id"]["booking-support"]["$get"]
@@ -102,7 +104,7 @@ const isBookingContactPhoneInvalidError = (
 export const useAnchorPR = (id: Ref<PRId | null>) => {
   const queryKey = computed(() => queryKeys.anchorPR.detail(id.value));
 
-  return useQuery<AnchorPRDetailResponse>({
+  return useQuery<AnchorPRDetailView>({
     queryKey,
     queryFn: async () => {
       const prId = id.value;
@@ -130,7 +132,7 @@ export const useAnchorPR = (id: Ref<PRId | null>) => {
         throw new Error("Anchor PR not found");
       }
 
-      return detail as AnchorPRDetailResponse;
+      return detail as AnchorPRDetailView;
     },
     enabled: () => id.value !== null,
   });

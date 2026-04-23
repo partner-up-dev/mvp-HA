@@ -1,12 +1,16 @@
 import type { InferResponseType } from "hono";
 import { client } from "@/lib/rpc";
 
-export type CommunityPRDetail = InferResponseType<
-  (typeof client.api.cpr)[":id"]["$get"]
+type CanonicalPRDetail = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
+
+export type CommunityPRDetail = Extract<
+  CanonicalPRDetail,
+  { prKind: "COMMUNITY" }
 >;
 
-export type AnchorPRDetail = InferResponseType<
-  (typeof client.api.apr)[":id"]["$get"]
+export type AnchorPRDetail = Extract<
+  CanonicalPRDetail,
+  { prKind: "ANCHOR" }
 >;
 
 export type ScenarioPRDetail = CommunityPRDetail | AnchorPRDetail;

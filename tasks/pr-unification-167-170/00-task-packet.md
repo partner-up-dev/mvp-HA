@@ -909,6 +909,33 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `anchor-pr.controller.ts` and `community-pr.controller.ts` still exist as live compatibility route shells
   - frontend and backend symbol names still retain `AnchorPR*` and `CommunityPR*` vocabulary around those hooks and controllers
 
+## Slice 7I - Controller Compatibility Shell Contraction
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - remove the now-unused `/api/cpr` controller surface
+  - contract `/api/apr` down to the still-live search endpoint
+  - move remaining frontend detail type anchors off `/api/cpr/:id` and `/api/apr/:id`
+- Artifacts:
+  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/community-pr.controller.ts`
+  - `apps/backend/src/index.ts`
+  - `apps/frontend/src/domains/pr/model/detail.ts`
+  - `apps/frontend/src/domains/pr/model/types.ts`
+- Decisions implemented:
+  - `/api/cpr` is no longer mounted, so community-controller compatibility routes have left the live backend surface
+  - `community-pr.controller.ts` has been removed
+  - `/api/apr` now keeps only `GET /api/apr/search`, because frontend still uses that search contract
+  - frontend PR detail type anchors now point at canonical `GET /api/pr/:id`
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - `/api/apr/search` still remains as a live compatibility seam until PR search gets a canonical `/api/pr/search` replacement
+  - frontend symbol names and page names still retain `AnchorPR*` and `CommunityPR*` vocabulary in several places
+
 ## Handoff Source
 
 This packet spins out of:

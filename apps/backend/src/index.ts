@@ -8,7 +8,6 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
 import { partnerRequestRoute } from "./controllers/partner-request.controller";
-import { communityPRRoute } from "./controllers/community-pr.controller";
 import { anchorPRRoute } from "./controllers/anchor-pr.controller";
 import { authRoute } from "./controllers/auth.controller";
 import { userRoute } from "./controllers/user.controller";
@@ -119,7 +118,6 @@ const routes = app
   .route("/api/auth", authRoute)
   .route("/api/users", userRoute)
   .route("/api/pr", partnerRequestRoute)
-  .route("/api/cpr", communityPRRoute)
   .route("/api/apr", anchorPRRoute)
   .route("/api/events", anchorEventRoute)
   .route("/api/llm", llmRoute)

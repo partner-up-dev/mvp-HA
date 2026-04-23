@@ -2,12 +2,16 @@ import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import type { InferResponseType } from "hono";
 import { client } from "@/lib/rpc";
 
-export type CommunityPRDetailView = InferResponseType<
-  (typeof client.api.cpr)[":id"]["$get"]
+type CanonicalPRDetailView = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
+
+export type CommunityPRDetailView = Extract<
+  CanonicalPRDetailView,
+  { prKind: "COMMUNITY" }
 >;
 
-export type AnchorPRDetailView = InferResponseType<
-  (typeof client.api.apr)[":id"]["$get"]
+export type AnchorPRDetailView = Extract<
+  CanonicalPRDetailView,
+  { prKind: "ANCHOR" }
 >;
 
 export type AnchorPRBookingSupportView = InferResponseType<
@@ -20,7 +24,7 @@ export type AnchorPRSearchView = InferResponseType<
 
 export type AnchorPRSearchResult = AnchorPRSearchView["results"][number];
 
-export type PRDetailView = CommunityPRDetailView | AnchorPRDetailView;
+export type PRDetailView = CanonicalPRDetailView;
 
 export type PRFormFields = Omit<PartnerRequestFields, "budget"> & {
   budget?: PartnerRequestFields["budget"];
