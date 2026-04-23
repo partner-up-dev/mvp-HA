@@ -1044,6 +1044,36 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `useAnchorPR.ts` and `useCommunityPR.ts` still remain as compatibility hook files for anchor-only or community-only behavior and type guards
   - `AnchorPR*` component files still remain in the tree as compatibility-owned component shells and internal naming residue
 
+## Slice 11C - Frontend Canonical Ownership Inversion
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - move live PR facts-card, roster-modal, message-thread, message-query, and attendance-actions implementations into canonical `PR*` files
+  - keep the corresponding `AnchorPR*` files as thin compatibility shells only
+  - avoid changes to event-owned search/admin surfaces and avoid telemetry cleanup beyond preserving current behavior
+- Artifacts:
+  - `apps/frontend/src/domains/pr/ui/composites/PRFactsCard.vue`
+  - `apps/frontend/src/domains/pr/ui/composites/AnchorPRFactsCard.vue`
+  - `apps/frontend/src/domains/pr/ui/modals/PRRosterModal.vue`
+  - `apps/frontend/src/domains/pr/ui/modals/AnchorPRRosterModal.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/PRMessageThread.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRMessageThread.vue`
+  - `apps/frontend/src/domains/pr/queries/usePRMessages.ts`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPRMessages.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRAttendanceActions.ts`
+  - `apps/frontend/src/domains/pr/use-cases/useAnchorAttendanceActions.ts`
+- Intended decision:
+  - canonical `PR*` files should own the actual implementation
+  - old `AnchorPR*` files should only forward props or re-export symbols for compatibility
+- Decisions implemented:
+  - `PRFactsCard.vue`, `PRRosterModal.vue`, and `PRMessageThread.vue` now own the live component implementations
+  - `usePRMessages.ts` and `usePRAttendanceActions.ts` now own the live query and attendance-action implementations
+  - `AnchorPRFactsCard.vue`, `AnchorPRRosterModal.vue`, `AnchorPRMessageThread.vue`, `useAnchorPRMessages.ts`, and `useAnchorAttendanceActions.ts` now act only as compatibility shells
+  - event-owned search and admin `AnchorPR*` surfaces remain untouched in this slice
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/frontend build`
+
 ## Handoff Source
 
 This packet spins out of:
