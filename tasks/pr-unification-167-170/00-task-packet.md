@@ -607,6 +607,35 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Verification gap:
   - publish-time PIN generation and legacy local-credential behavior remain active and still require a later product/identity cleanup slice
 
+## Slice 7B - Canonical PR Read-Model Ownership Move
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - move legacy anchor/community PR read-model implementations into canonical `domains/pr/read-models`
+  - keep old `pr-anchor` and `pr-community` read-model files as compatibility re-export shells
+  - point canonical PR detail dispatch at the new canonical read-model files
+- Artifacts:
+  - `apps/backend/src/domains/pr/read-models/get-anchor-pr-detail.ts`
+  - `apps/backend/src/domains/pr/read-models/get-community-pr-detail.ts`
+  - `apps/backend/src/domains/pr/read-models/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr/read-models/index.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/get-pr-detail.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
+- Decisions implemented:
+  - canonical `domains/pr/read-models` now owns `getAnchorPRDetail`, `getCommunityPRDetail`, and `searchAnchorPRs`
+  - `getPRDetail` now dispatches to the canonical PR read-model files instead of importing from split anchor/community domain folders
+  - old `pr-anchor` and `pr-community` read-model files remain in place only as compatibility re-export seams
+  - route shape and response shape remain unchanged in this slice
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+- Verification gap:
+  - read-model internals still depend on legacy subtype repositories and compatibility fields such as `prKind`, `anchorEventId`, and `batchId`
+  - controller route names and DTO vocabulary still carry anchor/community wording where compatibility remains active
+
 ## Handoff Source
 
 This packet spins out of:

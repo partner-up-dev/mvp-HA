@@ -5,11 +5,11 @@ import { readPartnerRequestById } from "../services/pr-read.service";
 import {
   getAnchorPRDetail,
   type AnchorPRDetail,
-} from "../../pr-anchor/use-cases/get-anchor-pr";
+} from "../../pr/read-models/get-anchor-pr-detail";
 import {
   getCommunityPRDetail,
   type CommunityPRDetail,
-} from "../../pr-community/use-cases/get-community-pr";
+} from "../../pr/read-models/get-community-pr-detail";
 
 export type PRDetail = AnchorPRDetail | CommunityPRDetail;
 
