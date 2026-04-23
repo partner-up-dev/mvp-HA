@@ -34,7 +34,7 @@ export const useAnchorPRSearch = (
         throw new Error(i18n.global.t("anchorPRSearch.loadFailed"));
       }
 
-      const res = await client.api.apr.search.$get({
+      const res = await client.api.pr.search.$get({
         query: {
           eventId: currentCriteria.eventId.toString(),
           date: currentCriteria.dates,

@@ -936,6 +936,34 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `/api/apr/search` still remains as a live compatibility seam until PR search gets a canonical `/api/pr/search` replacement
   - frontend symbol names and page names still retain `AnchorPR*` and `CommunityPR*` vocabulary in several places
 
+## Slice 7J - Canonical PR Search Unlock
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - add canonical `GET /api/pr/search`
+  - move frontend anchor-PR search query usage onto canonical `/api/pr/search`
+  - remove the last live `/api/apr` controller shell
+- Artifacts:
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/index.ts`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPRSearch.ts`
+  - `apps/frontend/src/domains/pr/model/types.ts`
+- Decisions implemented:
+  - canonical PR controller now owns `GET /api/pr/search`
+  - frontend anchor-event search flow now consumes canonical `/api/pr/search`
+  - `anchor-pr.controller.ts` has been removed
+  - `/api/apr` is no longer mounted on the backend
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - source scan confirms `client.api.apr` and `anchorPRRoute` are gone
+- Verification gap:
+  - frontend symbol names and page names still retain `AnchorPR*` vocabulary
+  - query-key naming still contains `anchorPR.search` and can be cleaned in a later rename slice
+
 ## Handoff Source
 
 This packet spins out of:

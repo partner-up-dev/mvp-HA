@@ -20,6 +20,7 @@ import {
   joinPR,
   listPRMessages,
   publishPR,
+  searchAnchorPRs,
   updatePRContent,
   updatePRStatus,
 } from "../domains/pr";
@@ -52,6 +53,22 @@ import { z } from "zod";
 
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
+const isoDateSearchParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const anchorPRSearchQuerySchema = z.object({
+  eventId: z.coerce.number().int().positive(),
+  date: z.preprocess(
+    (value) => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      if (typeof value === "string") {
+        return [value];
+      }
+      return [];
+    },
+    z.array(isoDateSearchParamSchema).min(1).max(28),
+  ),
+});
 const createStructuredPRCommandSchema = z.object({
   fields: partnerRequestFieldsSchema,
   createSource: z.enum(["FORM", "EVENT_ASSISTED"]).optional(),
@@ -91,6 +108,14 @@ const ensureAnchorPR = async (id: number) => {
 
 export const partnerRequestRoute = app
   .use("*", authMiddleware)
+  .get("/search", zValidator("query", anchorPRSearchQuerySchema), async (c) => {
+    const { eventId, date } = c.req.valid("query");
+    const result = await searchAnchorPRs({
+      eventId,
+      dates: date,
+    });
+    return c.json(result);
+  })
   .post(
     "/new/form",
     zValidator("json", createStructuredPRCommandSchema),
