@@ -3,6 +3,8 @@ import type { PRId } from "@partner-up-dev/backend";
 export const queryKeys = {
   pr: {
     detail: (id: PRId | null) => ["partner-request", "detail", id] as const,
+    search: (eventId: number | null, dates: string[]) =>
+      ["partner-request", "search", eventId, ...dates] as const,
     messages: (id: PRId | null) => ["partner-request", "messages", id] as const,
     bookingSupport: (id: PRId | null) =>
       ["partner-request", "booking-support", id] as const,

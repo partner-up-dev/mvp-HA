@@ -2,7 +2,7 @@ import { computed, nextTick, ref } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useCreatePRFromStructured } from "@/domains/pr/queries/usePRCreate";
-import { usePublishCommunityPR } from "@/domains/pr/queries/useCommunityPR";
+import { usePublishPR } from "@/domains/pr/queries/usePRPublish";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { trackEvent } from "@/shared/telemetry/track";
 import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
@@ -40,7 +40,7 @@ export const usePRCreateFlow = () => {
   const route = useRoute();
   const userSessionStore = useUserSessionStore();
   const createMutation = useCreatePRFromStructured();
-  const publishMutation = usePublishCommunityPR();
+  const publishMutation = usePublishPR();
 
   const initialFields = ref<CommunityPRFormFields>(
     buildInitialFields(resolveTopic(route.query.topic)),

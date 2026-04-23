@@ -62,7 +62,7 @@ import { Field, useForm } from "vee-validate";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
-import { useCreateCommunityPRFromNaturalLanguage } from "@/domains/pr/queries/useCommunityPR";
+import { useCreatePRFromNaturalLanguage } from "@/domains/pr/queries/usePRCreate";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { useLandingRotatingTopic } from "@/domains/landing/use-cases/useLandingRotatingTopic";
@@ -80,7 +80,7 @@ const getLocalWeekdayLabel = (date: Date): string => {
 
 const router = useRouter();
 const { t } = useI18n();
-const createMutation = useCreateCommunityPRFromNaturalLanguage();
+const createMutation = useCreatePRFromNaturalLanguage();
 const { rotatingTopicExample } = useLandingRotatingTopic();
 const draftStore = useNaturalLanguageDraftStore();
 const { rawText: draftRawText } = storeToRefs(draftStore);

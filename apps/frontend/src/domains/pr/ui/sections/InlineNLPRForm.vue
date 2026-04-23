@@ -71,7 +71,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
-import { useCreateCommunityPRFromNaturalLanguage } from "@/domains/pr/queries/useCommunityPR";
+import { useCreatePRFromNaturalLanguage } from "@/domains/pr/queries/usePRCreate";
 import { useLandingTypewriterPlaceholder } from "@/domains/landing/use-cases/useLandingTypewriterPlaceholder";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useNaturalLanguageDraftStore } from "@/domains/pr/use-cases/useNaturalLanguageDraft";
@@ -85,7 +85,7 @@ const getLocalWeekdayLabel = (date: Date): string => {
 
 const router = useRouter();
 const { t } = useI18n();
-const createMutation = useCreateCommunityPRFromNaturalLanguage();
+const createMutation = useCreatePRFromNaturalLanguage();
 const { activeExampleText, typedExampleText } =
   useLandingTypewriterPlaceholder();
 const draftStore = useNaturalLanguageDraftStore();

@@ -20,7 +20,7 @@ export const useAnchorPRSearch = (
 ) => {
   const queryKey = computed(() => {
     const currentCriteria = criteria.value;
-    return queryKeys.anchorPR.search(
+    return queryKeys.pr.search(
       currentCriteria?.eventId ?? null,
       currentCriteria?.dates ?? [],
     );

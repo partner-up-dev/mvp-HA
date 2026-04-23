@@ -268,10 +268,10 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import {
-  useAnchorPRBookingSupport,
-  useAnchorReimbursementStatus,
-  useUpdateAnchorPRBookingContactPhone,
-} from "@/domains/pr/queries/useAnchorPR";
+  usePRBookingSupport,
+  usePRReimbursementStatus,
+  useUpdatePRBookingContactPhone,
+} from "@/domains/pr/queries/usePRBookingSupport";
 import { PUBLIC_CONFIG_KEYS, usePublicConfig } from "@/shared/config/queries/usePublicConfig";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
@@ -295,14 +295,14 @@ const backFallbackTo = computed(() => {
   return "/";
 });
 
-const { data, isLoading, error } = useAnchorPRBookingSupport(id);
+const { data, isLoading, error } = usePRBookingSupport(id);
 const bookingSupportDetail = computed(() => data.value);
-const reimbursementQuery = useAnchorReimbursementStatus(id);
+const reimbursementQuery = usePRReimbursementStatus(id);
 const reimbursement = computed(() => reimbursementQuery.data.value ?? null);
 const wecomQrCodeQuery = usePublicConfig(PUBLIC_CONFIG_KEYS.wecomServiceQrCode);
 const wecomQrCodeUrl = computed(() => wecomQrCodeQuery.data.value?.value ?? null);
 const showWecomQrModal = ref(false);
-const updateBookingContactPhoneMutation = useUpdateAnchorPRBookingContactPhone();
+const updateBookingContactPhoneMutation = useUpdatePRBookingContactPhone();
 const bookingContactVerifyErrorMessage = ref<string | null>(null);
 const bookingContactPhoneInput = ref("");
 const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;

@@ -964,6 +964,47 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - frontend symbol names and page names still retain `AnchorPR*` vocabulary
   - query-key naming still contains `anchorPR.search` and can be cleaned in a later rename slice
 
+## Slice 11A - Frontend PR-Owned Vocabulary Rename Sweep
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - rename the live PR-owned frontend page files from split `AnchorPR*` and `CommunityPR*` names toward canonical `PR*`
+  - add canonical PR wrapper modules for message thread, roster modal, facts card, booking-support hooks, message hooks, publish hook, and attendance-actions hook
+  - move the live create and message-entry imports onto canonical PR hook names while leaving deeper compatibility files in place
+  - clean the live PR search query key naming from `anchorPR.search` to `pr.search`
+- Artifacts:
+  - `apps/frontend/src/pages/PRPage.vue`
+  - `apps/frontend/src/pages/PRMessagesPage.vue`
+  - `apps/frontend/src/pages/PRBookingSupportPage.vue`
+  - `apps/frontend/src/pages/PRCreatePage.vue`
+  - `apps/frontend/src/app/router.ts`
+  - `apps/frontend/src/domains/pr/ui/composites/PRFactsCard.vue`
+  - `apps/frontend/src/domains/pr/ui/modals/PRRosterModal.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/PRMessageThread.vue`
+  - `apps/frontend/src/domains/pr/queries/usePRMessages.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRBookingSupport.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRPublish.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRAttendanceActions.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
+  - `apps/frontend/src/domains/pr/ui/forms/NLPRForm.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/InlineNLPRForm.vue`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPRSearch.ts`
+  - `apps/frontend/src/shared/api/query-keys.ts`
+- Decisions implemented:
+  - canonical live page files are now `PRPage.vue`, `PRMessagesPage.vue`, `PRBookingSupportPage.vue`, and `PRCreatePage.vue`
+  - router imports for the canonical `/pr/*` surfaces now point at those `PR*` page files directly
+  - PR detail page now uses canonical `prMessagesPath`, `prBookingSupportPath`, and `usePublishPR`
+  - PR messages and booking-support pages now import through canonical `usePR*` wrappers
+  - natural-language create surfaces now import `useCreatePRFromNaturalLanguage` directly from `usePRCreate`
+  - the live PR search query key now emits through `queryKeys.pr.search`
+  - component-level `AnchorPR*` files remain as internal compatibility seams and no longer define the routed page vocabulary
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - `useAnchorPR.ts`, `useCommunityPR.ts`, `useAnchorPRMessages.ts`, and several `AnchorPR*` component files still remain as compatibility seams
+  - telemetry event names and some share descriptors still carry legacy anchor/community vocabulary and remain outside this slice
+
 ## Handoff Source
 
 This packet spins out of:

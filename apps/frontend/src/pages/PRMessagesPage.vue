@@ -17,7 +17,7 @@
       persistent
     />
 
-    <AnchorPRMessageThread
+    <PRMessageThread
       v-else
       :pr-id="id"
       :show-header="false"
@@ -36,7 +36,7 @@ import { useI18n } from "vue-i18n";
 import FullScreenPageScaffold from "@/shared/ui/layout/FullScreenPageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
-import AnchorPRMessageThread from "@/domains/pr/ui/sections/AnchorPRMessageThread.vue";
+import PRMessageThread from "@/domains/pr/ui/sections/PRMessageThread.vue";
 import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";

@@ -141,11 +141,11 @@ import TextareaInput from "@/shared/ui/forms/TextareaInput.vue";
 import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import {
-  useAdvanceAnchorPRMessageReadMarker,
-  type AnchorPRMessagesResponse,
-  useAnchorPRMessages,
-  useCreateAnchorPRMessage,
-} from "@/domains/pr/queries/useAnchorPRMessages";
+  useAdvancePRMessageReadMarker,
+  type PRMessagesResponse,
+  useCreatePRMessage,
+  usePRMessages,
+} from "@/domains/pr/queries/usePRMessages";
 
 const props = withDefaults(
   defineProps<{
@@ -166,9 +166,9 @@ const readMarkerError = ref<string | null>(null);
 const lastReadAdvanceRequestId = ref<number | null>(null);
 
 const prIdRef = computed(() => props.prId);
-const messagesQuery = useAnchorPRMessages(prIdRef);
-const createMessageMutation = useCreateAnchorPRMessage();
-const advanceReadMarkerMutation = useAdvanceAnchorPRMessageReadMarker();
+const messagesQuery = usePRMessages(prIdRef);
+const createMessageMutation = useCreatePRMessage();
+const advanceReadMarkerMutation = useAdvancePRMessageReadMarker();
 
 const threadItems = computed(() => messagesQuery.data.value?.items ?? []);
 const thread = computed(() => messagesQuery.data.value?.thread ?? null);
@@ -229,7 +229,7 @@ watch(
 );
 
 const resolveAuthorName = (
-  item: AnchorPRMessagesResponse["items"][number],
+  item: PRMessagesResponse["items"][number],
 ): string => {
   if (item.messageType === "SYSTEM") {
     return item.author.label;

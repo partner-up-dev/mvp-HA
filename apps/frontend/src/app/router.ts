@@ -11,14 +11,12 @@ import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRouteP
 const HomePage = () => import("@/pages/HomePage.vue");
 const MePage = () => import("@/pages/MePage.vue");
 const MyPRsPage = () => import("@/pages/MyPRsPage.vue");
-const CommunityPRCreatePage = () =>
-  import("@/pages/CommunityPRCreatePage.vue");
-const AnchorPRPage = () => import("@/pages/AnchorPRPage.vue");
-const AnchorPRMessagesPage = () =>
-  import("@/pages/AnchorPRMessagesPage.vue");
+const PRCreatePage = () => import("@/pages/PRCreatePage.vue");
+const PRPage = () => import("@/pages/PRPage.vue");
+const PRMessagesPage = () => import("@/pages/PRMessagesPage.vue");
 const UserProfilePage = () => import("@/pages/UserProfilePage.vue");
-const AnchorPRBookingSupportPage = () =>
-  import("@/pages/AnchorPRBookingSupportPage.vue");
+const PRBookingSupportPage = () =>
+  import("@/pages/PRBookingSupportPage.vue");
 const AdminLoginPage = () => import("@/pages/AdminLoginPage.vue");
 const AdminAnchorPRPage = () => import("@/pages/AdminAnchorPRPage.vue");
 const AdminAnchorPRMessagesPage = () =>
@@ -65,7 +63,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/pr/:id",
     name: "pr-detail",
-    component: AnchorPRPage,
+    component: PRPage,
     meta: {
       wechatSharePolicy: "route",
       wechatAutoLoginPolicy: "route",
@@ -74,7 +72,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/pr/new",
     name: "pr-create",
-    component: CommunityPRCreatePage,
+    component: PRCreatePage,
     meta: {
       wechatSharePolicy: "route",
     },
@@ -90,7 +88,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/pr/:id/messages",
     name: "pr-messages",
-    component: AnchorPRMessagesPage,
+    component: PRMessagesPage,
     meta: {
       wechatSharePolicy: "skip",
       wechatAutoLoginPolicy: "skip",
@@ -99,7 +97,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/pr/:id/booking-support",
     name: "pr-booking-support",
-    component: AnchorPRBookingSupportPage,
+    component: PRBookingSupportPage,
     meta: {
       wechatSharePolicy: "skip",
       wechatAutoLoginPolicy: "skip",
@@ -128,7 +126,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/apr/:id",
     name: "anchor-pr",
-    component: AnchorPRPage,
+    component: PRPage,
     meta: {
       wechatSharePolicy: "route",
       wechatAutoLoginPolicy: "route",
@@ -220,7 +218,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/cpr/new",
     name: "community-pr-create",
-    component: CommunityPRCreatePage,
+    component: PRCreatePage,
     meta: {
       wechatSharePolicy: "route",
     },

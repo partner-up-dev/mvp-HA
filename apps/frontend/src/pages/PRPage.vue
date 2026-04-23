@@ -68,7 +68,7 @@
         "
       />
 
-      <AnchorPRFactsCard
+      <PRFactsCard
         class="facts-card"
         :pr-id="prDetail.id"
         :location="prDetail.core.location ?? null"
@@ -216,7 +216,7 @@
         />
       </BottomDrawer>
 
-      <AnchorPRRosterModal
+      <PRRosterModal
         :open="showRosterModal"
         :pr-id="prDetail.id"
         :section="prDetail.partnerSection"
@@ -407,7 +407,7 @@ import ConfirmDialog from "@/shared/ui/overlay/ConfirmDialog.vue";
 import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModal.vue";
-import AnchorPRRosterModal from "@/domains/pr/ui/modals/AnchorPRRosterModal.vue";
+import PRRosterModal from "@/domains/pr/ui/modals/PRRosterModal.vue";
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
@@ -417,11 +417,8 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
-import AnchorPRFactsCard from "@/domains/pr/ui/composites/AnchorPRFactsCard.vue";
-import {
-  useJoinAnchorPR,
-} from "@/domains/pr/queries/useAnchorPR";
-import { usePublishCommunityPR } from "@/domains/pr/queries/useCommunityPR";
+import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
+import { usePublishPR } from "@/domains/pr/queries/usePRPublish";
 import { usePRDetail, type PRDetailResponse } from "@/domains/pr/queries/usePRDetail";
 import {
   useUserSessionStore,
@@ -431,15 +428,15 @@ import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import { usePRDetailHead } from "@/domains/pr/use-cases/usePRDetailHead";
 import { usePRRouteShareDescriptor } from "@/domains/pr/use-cases/usePRRouteShareDescriptor";
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
-import { useAnchorAttendanceActions } from "@/domains/pr/use-cases/useAnchorAttendanceActions";
+import { usePRAttendanceActions } from "@/domains/pr/use-cases/usePRAttendanceActions";
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
 import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import {
-  anchorPRBookingSupportPath,
-  anchorPRMessagesPath,
+  prBookingSupportPath,
+  prMessagesPath,
 } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import {
@@ -596,8 +593,7 @@ const backFallbackTo = computed(() => {
   }
   return "/";
 });
-const joinMutation = useJoinAnchorPR();
-const publishMutation = usePublishCommunityPR();
+const publishMutation = usePublishPR();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showLocationGalleryModal = ref(false);
@@ -663,7 +659,7 @@ const sharedActions = useSharedPRActions({
   isCreator,
   onActionSuccess: resetLivePolling,
 });
-const attendanceActions = useAnchorAttendanceActions({
+const attendanceActions = usePRAttendanceActions({
   id,
   pr: anchorDetail,
   onActionSuccess: resetLivePolling,
@@ -1151,12 +1147,12 @@ const confirmExit = async () => {
 
 const goBookingSupport = () => {
   if (id.value === null || !isAnchorPR.value) return;
-  router.push(anchorPRBookingSupportPath(id.value));
+  router.push(prBookingSupportPath(id.value));
 };
 
 const handleOpenMessages = () => {
   if (id.value === null || !isAnchorPR.value) return;
-  router.push(anchorPRMessagesPath(id.value));
+  router.push(prMessagesPath(id.value));
 };
 
 const handleEditSuccess = () => {
