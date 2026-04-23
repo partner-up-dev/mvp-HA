@@ -882,6 +882,33 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Verification gap:
   - `anchor_pr_*` event names still remain on unified PR page interactions and need a later rename slice after route and page vocabulary finish converging
 
+## Slice 7H - Canonical PR Mutation Unlock
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - add canonical `/api/pr/:id/*` mutation routes for publish, status, content, join, exit, confirm, and check-in
+  - switch frontend PR mutation hooks from `/api/apr/*` and `/api/cpr/*` to canonical `/api/pr/*`
+  - keep `anchor-pr.controller.ts` and `community-pr.controller.ts` as compatibility shells while canonical mutation traffic moves away from them
+- Artifacts:
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
+  - `apps/frontend/src/domains/pr/queries/useCommunityPR.ts`
+- Decisions implemented:
+  - canonical PR controller now owns `POST /api/pr/:id/publish`
+  - canonical PR controller now owns `PATCH /api/pr/:id/status` and `PATCH /api/pr/:id/content`
+  - canonical PR controller now owns `POST /api/pr/:id/join`, `POST /api/pr/:id/exit`, `POST /api/pr/:id/confirm`, and `POST /api/pr/:id/check-in`
+  - canonical join and exit routes preserve current behavior by branching on existing PR kind at the controller boundary, so community-specific auth behavior and anchor-specific WeChat behavior stay stable during the transition
+  - canonical content mutation preserves the current anchor/community content shape difference at the controller boundary, so frontend hooks can move first while subtype-specific payload differences remain localized
+  - frontend anchor and community mutation hooks now emit canonical `/api/pr/*` requests
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - `anchor-pr.controller.ts` and `community-pr.controller.ts` still exist as live compatibility route shells
+  - frontend and backend symbol names still retain `AnchorPR*` and `CommunityPR*` vocabulary around those hooks and controllers
+
 ## Handoff Source
 
 This packet spins out of:

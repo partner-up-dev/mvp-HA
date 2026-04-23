@@ -36,16 +36,16 @@ type CommunityPRActionInput = {
 };
 
 export type CommunityPRDetailResponse = InferResponseType<
-  (typeof client.api.cpr)[":id"]["$get"]
+  (typeof client.api.pr)[":id"]["$get"]
 >;
 type PRDetailResponse = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
 
 export type PublishCommunityPRResponse = InferResponseType<
-  (typeof client.api.cpr)[":id"]["publish"]["$post"]
+  (typeof client.api.pr)[":id"]["publish"]["$post"]
 >;
 
 export type JoinCommunityPRResponse = InferResponseType<
-  (typeof client.api.cpr)[":id"]["join"]["$post"]
+  (typeof client.api.pr)[":id"]["join"]["$post"]
 >;
 
 const readErrorMessage = async (
@@ -98,7 +98,7 @@ export const usePublishCommunityPR = () => {
 
   return useMutation<PublishCommunityPRResponse, Error, { id: PRId }>({
     mutationFn: async ({ id }) => {
-      const res = await client.api.cpr[":id"].publish.$post({
+      const res = await client.api.pr[":id"].publish.$post({
         param: { id: id.toString() },
       });
 
@@ -135,9 +135,10 @@ export const useJoinCommunityPR = () => {
 
   return useMutation<JoinCommunityPRResponse, Error, CommunityPRActionInput>({
     mutationFn: async ({ id }: CommunityPRActionInput) => {
-      const res = await client.api.cpr[":id"].join.$post(
+      const res = await client.api.pr[":id"].join.$post(
         {
           param: { id: id.toString() },
+          json: {},
         },
         {
           init: {
@@ -178,7 +179,7 @@ export const useExitCommunityPR = () => {
 
   return useMutation({
     mutationFn: async ({ id }: CommunityPRActionInput) => {
-      const res = await client.api.cpr[":id"].exit.$post(
+      const res = await client.api.pr[":id"].exit.$post(
         {
           param: { id: id.toString() },
         },
@@ -220,7 +221,7 @@ export const useUpdateCommunityPRContent = () => {
       fields,
       pin,
     }: UpdateCommunityPRContentInput) => {
-      const res = await client.api.cpr[":id"].content.$patch({
+      const res = await client.api.pr[":id"].content.$patch({
         param: { id: id.toString() },
         json: pin ? { fields, pin } : { fields },
       });
@@ -256,7 +257,7 @@ export const useUpdateCommunityPRStatus = () => {
       status,
       pin,
     }: UpdateCommunityPRStatusInput) => {
-      const res = await client.api.cpr[":id"].status.$patch({
+      const res = await client.api.pr[":id"].status.$patch({
         param: { id: id.toString() },
         json: pin ? { status, pin } : { status },
       });

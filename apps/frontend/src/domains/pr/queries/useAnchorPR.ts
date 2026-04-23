@@ -177,7 +177,7 @@ export const useJoinAnchorPR = () => {
       bookingContactPhone = null,
     }: AnchorPRJoinInput) => {
       const requestJoin = async () =>
-        client.api.apr[":id"].join.$post(
+        client.api.pr[":id"].join.$post(
           {
             param: { id: id.toString() },
             json: bookingContactPhone ? { bookingContactPhone } : {},
@@ -234,7 +234,7 @@ export const useExitAnchorPR = () => {
 
   return useMutation({
     mutationFn: async ({ id }: AnchorPRActionInput) => {
-      const res = await client.api.apr[":id"].exit.$post(
+      const res = await client.api.pr[":id"].exit.$post(
         {
           param: { id: id.toString() },
         },
@@ -283,7 +283,7 @@ export const useConfirmAnchorPRSlot = () => {
 
   return useMutation({
     mutationFn: async ({ id }: AnchorPRActionInput) => {
-      const res = await client.api.apr[":id"].confirm.$post(
+      const res = await client.api.pr[":id"].confirm.$post(
         {
           param: { id: id.toString() },
         },
@@ -381,7 +381,7 @@ export const useCheckInAnchorPRSlot = () => {
 
   return useMutation({
     mutationFn: async ({ id, wouldJoinAgain }: AnchorPRCheckInInput) => {
-      const res = await client.api.apr[":id"]["check-in"].$post(
+      const res = await client.api.pr[":id"]["check-in"].$post(
         {
           param: { id: id.toString() },
           json: {
@@ -495,7 +495,7 @@ export const useUpdateAnchorPRContent = () => {
       const requestBody = pin
         ? { fields: requestFields, pin }
         : { fields: requestFields };
-      const res = await client.api.apr[":id"].content.$patch({
+      const res = await client.api.pr[":id"].content.$patch({
         param: { id: id.toString() },
         json: requestBody,
       });
@@ -529,7 +529,7 @@ export const useUpdateAnchorPRStatus = () => {
 
   return useMutation({
     mutationFn: async ({ id, status, pin }: AnchorPRUpdateStatusInput) => {
-      const res = await client.api.apr[":id"].status.$patch({
+      const res = await client.api.pr[":id"].status.$patch({
         param: { id: id.toString() },
         json: pin ? { status, pin } : { status },
       });

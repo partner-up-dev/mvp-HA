@@ -2,35 +2,50 @@ import { Hono } from "hono";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import {
   advancePRMessageReadMarker,
+  authorizeCreatorMutation,
+  checkIn,
+  confirmSlot,
   createPRFromNaturalLanguage,
   createPRFromStructured,
   createPRMessage,
+  exitCommunityPR,
+  exitPR,
   getPRDetail,
   getAnchorPRBookingSupport,
   getPRPartnerProfile,
   getReimbursementStatus,
   getMyCreatedPRs,
   getMyJoinedPRs,
+  joinCommunityPR,
+  joinPR,
   listPRMessages,
+  publishPR,
+  updatePRContent,
+  updatePRStatus,
 } from "../domains/pr";
 import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 import {
+  anchorUpdateContentSchema,
   buildCreatorIdentity,
   getAuthenticatedUserId,
+  issueAuthPayload,
   nlWordCountSchema,
   prMessageCreateSchema,
   prMessageReadMarkerSchema,
   prIdParamSchema,
   prPartnerProfileParamSchema,
   requireAnchorAuthenticatedIdentity,
+  requireAuthenticatedOpenId,
   requireAuthenticatedUserId,
   requireSessionUserId,
   resolveAvatarUrl,
   tryReadAnchorAuthenticatedIdentity,
   tryReadAuthenticatedOpenId,
   partnerRequestFieldsSchema,
+  updateContentSchema,
+  updateStatusSchema,
 } from "./pr-controller.shared";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
@@ -41,13 +56,34 @@ const createStructuredPRCommandSchema = z.object({
   fields: partnerRequestFieldsSchema,
   createSource: z.enum(["FORM", "EVENT_ASSISTED"]).optional(),
 });
+const canonicalUpdateContentSchema = z.union([
+  updateContentSchema,
+  anchorUpdateContentSchema,
+]);
+const anchorJoinSchema = z
+  .object({
+    bookingContactPhone: z.string().trim().min(1).optional(),
+  })
+  .default({});
+const slotCheckInSchema = z.object({
+  didAttend: z.boolean().optional(),
+  wouldJoinAgain: z.boolean().nullable().optional(),
+});
 const updateBookingContactPhoneSchema = z.object({
   phone: z.string().trim().min(1),
 });
 
-const ensureAnchorPR = async (id: number) => {
+const getPROr404 = async (id: number) => {
   const request = await prRepo.findById(id);
-  if (!request || request.prKind !== "ANCHOR") {
+  if (!request) {
+    throw new HTTPException(404, { message: "Partner request not found" });
+  }
+  return request;
+};
+
+const ensureAnchorPR = async (id: number) => {
+  const request = await getPROr404(id);
+  if (request.prKind !== "ANCHOR") {
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
   return request;
@@ -90,6 +126,19 @@ export const partnerRequestRoute = app
     );
 
     return c.json(result, 201);
+  })
+  .post("/:id/publish", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    await getPROr404(id);
+    const creatorIdentity = await buildCreatorIdentity(c);
+    const result = await publishPR(id, creatorIdentity);
+    const auth = issueAuthPayload(c, result.createdBy, result.generatedUserPin);
+
+    return c.json({
+      id: result.pr.id,
+      pr: result.pr,
+      auth,
+    });
   })
   .get("/mine/created", async (c) => {
     const userId = requireAuthenticatedUserId(c);
@@ -196,6 +245,189 @@ export const partnerRequestRoute = app
     const result = await getReimbursementStatus(id, userId);
     return c.json(result);
   })
+  .patch(
+    "/:id/status",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", updateStatusSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await getPROr404(id);
+      const { status, pin } = c.req.valid("json");
+      const auth = c.get("auth");
+
+      const creatorAuth = await authorizeCreatorMutation(
+        id,
+        auth,
+        "status",
+        pin,
+      );
+
+      if (creatorAuth.request.status === "DRAFT") {
+        throw new HTTPException(400, {
+          message: "Use publish endpoint to publish DRAFT partner request",
+        });
+      }
+
+      if (creatorAuth.upgradedAuth) {
+        c.set("auth", creatorAuth.upgradedAuth);
+      }
+
+      const result = await updatePRStatus(id, status, creatorAuth.actorUserId);
+      return c.json({
+        ...result,
+        auth: creatorAuth.upgradedAuth
+          ? {
+              role: creatorAuth.upgradedAuth.role,
+              userId: creatorAuth.upgradedAuth.userId,
+              userPin: pin ?? null,
+              accessToken: creatorAuth.upgradedAuth.token,
+            }
+          : null,
+      });
+    },
+  )
+  .patch(
+    "/:id/content",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", canonicalUpdateContentSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const request = await getPROr404(id);
+      const payload = c.req.valid("json");
+      const auth = c.get("auth");
+
+      const creatorAuth = await authorizeCreatorMutation(
+        id,
+        auth,
+        "content",
+        "pin" in payload ? payload.pin : undefined,
+      );
+      if (creatorAuth.upgradedAuth) {
+        c.set("auth", creatorAuth.upgradedAuth);
+      }
+
+      if (request.prKind === "ANCHOR") {
+        const parsed = anchorUpdateContentSchema.safeParse(payload);
+        if (!parsed.success) {
+          throw new HTTPException(400, {
+            message: parsed.error.issues[0]?.message ?? "Invalid request body",
+          });
+        }
+
+        const result = await updatePRContent(
+          id,
+          {
+            ...parsed.data.fields,
+            time: creatorAuth.request.time,
+            budget: null,
+          },
+          creatorAuth.actorUserId,
+        );
+        return c.json({
+          ...result,
+          auth: creatorAuth.upgradedAuth
+            ? {
+                role: creatorAuth.upgradedAuth.role,
+                userId: creatorAuth.upgradedAuth.userId,
+                userPin: parsed.data.pin ?? null,
+                accessToken: creatorAuth.upgradedAuth.token,
+              }
+            : null,
+        });
+      }
+
+      const parsed = updateContentSchema.safeParse(payload);
+      if (!parsed.success) {
+        throw new HTTPException(400, {
+          message: parsed.error.issues[0]?.message ?? "Invalid request body",
+        });
+      }
+
+      const result = await updatePRContent(
+        id,
+        parsed.data.fields,
+        creatorAuth.actorUserId,
+      );
+      return c.json({
+        ...result,
+        auth: creatorAuth.upgradedAuth
+          ? {
+              role: creatorAuth.upgradedAuth.role,
+              userId: creatorAuth.upgradedAuth.userId,
+              userPin: parsed.data.pin ?? null,
+              accessToken: creatorAuth.upgradedAuth.token,
+            }
+          : null,
+      });
+    },
+  )
+  .post(
+    "/:id/join",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", anchorJoinSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const request = await getPROr404(id);
+      const { bookingContactPhone } = c.req.valid("json");
+
+      if (request.prKind === "COMMUNITY") {
+        const participantIdentity = await buildCreatorIdentity(c);
+        const result = await joinCommunityPR(id, participantIdentity);
+        const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);
+        return c.json({
+          ...result.pr,
+          auth,
+        });
+      }
+
+      const openId = await requireAuthenticatedOpenId(c);
+      const result = await joinPR(id, openId, {
+        bookingContactPhone: bookingContactPhone ?? null,
+      });
+      return c.json(result);
+    },
+  )
+  .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    const request = await getPROr404(id);
+
+    if (request.prKind === "COMMUNITY") {
+      const userId = requireAuthenticatedUserId(c);
+      const result = await exitCommunityPR(id, userId);
+      return c.json(result);
+    }
+
+    const { openId } = await requireAnchorAuthenticatedIdentity(c);
+    const result = await exitPR(id, openId);
+    return c.json(result);
+  })
+  .post("/:id/confirm", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    await ensureAnchorPR(id);
+    const { openId } = await requireAnchorAuthenticatedIdentity(c);
+    const result = await confirmSlot(id, openId);
+    return c.json(result);
+  })
+  .post(
+    "/:id/check-in",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", slotCheckInSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await ensureAnchorPR(id);
+      const { openId } = await requireAnchorAuthenticatedIdentity(c);
+      const { didAttend, wouldJoinAgain } = c.req.valid("json");
+      if (didAttend === false) {
+        throw new HTTPException(400, {
+          message: "didAttend=false is no longer supported",
+        });
+      }
+      const result = await checkIn(id, openId, {
+        wouldJoinAgain: wouldJoinAgain ?? null,
+      });
+      return c.json(result);
+    },
+  )
   .get(
     "/:id/partners/:partnerId/profile",
     zValidator("param", prPartnerProfileParamSchema),
