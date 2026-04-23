@@ -229,6 +229,30 @@ Fields leaving PR core:
 - retire frontend `ANCHOR` / `COMMUNITY` PR model branching
 - retire `/apr/*` and `/cpr/*` as canonical route families
 
+## Compatibility Shell Trade-off Map
+
+- retire early, because the canonical owner already exists and the shell only adds indirection
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
+- keep temporarily, because live route or mutation compatibility still exists
+  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/community-pr.controller.ts`
+  - `apps/backend/src/domains/pr-community/use-cases/join-community-pr.ts`
+  - `apps/backend/src/domains/pr-community/use-cases/exit-community-pr.ts`
+  - old `/apr/*` and `/cpr/*` route families
+- move ownership now, then keep thin re-export shells during the transition
+  - `pr-core/use-cases/list-pr-messages.ts`
+  - `pr-core/use-cases/create-pr-message.ts`
+  - `pr-core/use-cases/advance-pr-message-read-marker.ts`
+  - `pr-core/services/pr-view.service.ts`
+  - `pr-core/services/pr-share-metadata.service.ts`
+- defer, because the business shape is still coupled to later slices
+  - `pr-core/services/partner-section-view.service.ts`
+  - `pr-core/services/anchor-participation-policy.service.ts`
+  - booking-support compatibility surfaces
+  - admin batch-oriented Anchor Event internals
+
 ## Slice Ownership For "Anchor PR 即 PR"
 
 - Slice 5 established one canonical PR detail route and removed `CommunityPRPage` from the routed detail surface.
@@ -635,6 +659,46 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Verification gap:
   - read-model internals still depend on legacy subtype repositories and compatibility fields such as `prKind`, `anchorEventId`, and `batchId`
   - controller route names and DTO vocabulary still carry anchor/community wording where compatibility remains active
+
+## Slice 7C - Canonical PR Message And Share Ownership Move
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - move PR message use-cases into canonical `domains/pr/message`
+  - move public PR view and canonical share metadata services into canonical `domains/pr`
+  - keep `pr-core` message and share files as thin compatibility re-export shells
+  - keep route and response shapes stable while shrinking `pr-core` ownership
+- Artifacts:
+  - `apps/backend/src/domains/pr/message/index.ts`
+  - `apps/backend/src/domains/pr/message/list-pr-messages.ts`
+  - `apps/backend/src/domains/pr/message/create-pr-message.ts`
+  - `apps/backend/src/domains/pr/message/advance-pr-message-read-marker.ts`
+  - `apps/backend/src/domains/pr/read-models/index.ts`
+  - `apps/backend/src/domains/pr/read-models/public-pr-view.service.ts`
+  - `apps/backend/src/domains/pr/sharing/index.ts`
+  - `apps/backend/src/domains/pr/sharing/pr-share-metadata.service.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/list-pr-messages.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/create-pr-message.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/advance-pr-message-read-marker.ts`
+  - `apps/backend/src/domains/pr-core/services/pr-view.service.ts`
+  - `apps/backend/src/domains/pr-core/services/pr-share-metadata.service.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-pr-message.ts`
+  - `apps/backend/src/domains/pr/read-models/get-anchor-pr-detail.ts`
+  - `apps/backend/src/domains/pr/read-models/get-community-pr-detail.ts`
+- Decisions implemented:
+  - canonical `domains/pr/message` now owns message thread listing, message creation, system-message persistence, and read-marker advancement
+  - canonical `domains/pr/read-models/public-pr-view.service.ts` now owns `PublicPR` and `toPublicPR`
+  - canonical `domains/pr/sharing/pr-share-metadata.service.ts` now owns share metadata generation
+  - old `pr-core` message and share files remain as compatibility re-export shells
+  - admin Anchor PR message creation now imports canonical PR message ownership directly
+  - canonical PR share metadata now emits `/pr/:id` as the canonical share path
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `rg -n 'pr-core/use-cases/list-pr-messages|pr-core/use-cases/create-pr-message|pr-core/use-cases/advance-pr-message-read-marker|pr-core/services/pr-view.service|pr-core/services/pr-share-metadata.service' apps/backend/src` returned no direct ownership imports outside the compatibility shells themselves
+- Verification gap:
+  - deeper `pr-core` internal callers still import the compatibility shells and remain candidates for a later cleanup slice
 
 ## Handoff Source
 

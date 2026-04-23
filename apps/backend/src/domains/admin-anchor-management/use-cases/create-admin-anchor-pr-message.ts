@@ -3,7 +3,7 @@ import type { PRId } from "../../../entities";
 import type { UserId } from "../../../entities/user";
 import { prMessageBodySchema } from "../../../entities/pr-message";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { createPersistedPRMessage } from "../../pr-core/use-cases/create-pr-message";
+import { createPersistedPRMessage } from "../../pr/message/create-pr-message";
 
 const prRepo = new PartnerRequestRepository();
 

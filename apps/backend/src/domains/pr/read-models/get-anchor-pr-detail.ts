@@ -4,7 +4,6 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId, PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../user";
-import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 import {
   buildBookingSupportPreview,
@@ -20,7 +19,8 @@ import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
 import {
   buildPRCanonicalShareMetadata,
   type PRCanonicalShareMetadata,
-} from "../../pr-core/services/pr-share-metadata.service";
+} from "../sharing/pr-share-metadata.service";
+import { toPublicPR } from "./public-pr-view.service";
 
 const anchorPRRepo = new AnchorPRRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();

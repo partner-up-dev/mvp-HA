@@ -4,7 +4,6 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId, PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../user";
-import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import {
   buildCommunityPartnerSection,
   type PartnerSectionView,
@@ -13,7 +12,8 @@ import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
 import {
   buildPRCanonicalShareMetadata,
   type PRCanonicalShareMetadata,
-} from "../../pr-core/services/pr-share-metadata.service";
+} from "../sharing/pr-share-metadata.service";
+import { toPublicPR } from "./public-pr-view.service";
 
 const communityPRRepo = new CommunityPRRepository();
 const partnerRepo = new PartnerRepository();
