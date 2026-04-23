@@ -909,6 +909,7 @@
   },
   "userProfilePage": {
     "title": "用户资料",
+    "subtitle": "查看这位用户的头像和昵称。",
     "subtitleCommunity": "查看这位搭子的头像和昵称。",
     "subtitleAnchor": "查看这位参与者的头像和昵称。",
     "loading": "正在加载用户资料...",

@@ -783,6 +783,45 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Verification gap:
   - route and controller compatibility plus community-specific mutation compatibility remain for later slices
 
+## Slice 7E - Canonical PR Subpage Route And API Unlock
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - add canonical `/api/pr/:id/*` endpoints for PR messages and PR booking-support subpages
+  - add canonical frontend `/pr/:id/*` subpage routes for partner profile, messages, and booking support
+  - keep `/apr/*` and `/cpr/*` as redirect aliases while internal path emission converges on `/pr/*`
+- Artifacts:
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/frontend/src/app/router.ts`
+  - `apps/frontend/src/domains/pr/routing/routes.ts`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPRMessages.ts`
+  - `apps/frontend/src/domains/user/queries/usePRPartnerProfile.ts`
+  - `apps/frontend/src/pages/UserProfilePage.vue`
+  - `apps/frontend/src/pages/AnchorPRMessagesPage.vue`
+  - `apps/frontend/src/pages/AnchorPRBookingSupportPage.vue`
+  - `apps/frontend/src/shared/api/query-keys.ts`
+  - `apps/frontend/src/domains/pr/model/detail.ts`
+  - `apps/frontend/src/domains/pr/model/types.ts`
+  - `apps/frontend/src/locales/schema.ts`
+  - `apps/frontend/src/locales/zh-CN.jsonc`
+- Decisions implemented:
+  - canonical backend PR controller now serves `/api/pr/:id/messages`, `/api/pr/:id/messages/read-marker`, `/api/pr/:id/booking-support`, `/api/pr/:id/booking-contact/phone`, and `/api/pr/:id/reimbursement/status`
+  - canonical frontend routes now include `/pr/:id/partners/:partnerId`, `/pr/:id/messages`, and `/pr/:id/booking-support`
+  - old `/apr/*` partner-profile, messages, and booking-support routes now redirect to canonical `/pr/*`
+  - old `/cpr/:id/partners/:partnerId` now redirects to canonical `/pr/*`
+  - route helper emission now converges on canonical `/pr/*` paths even when legacy helper names are still imported
+  - frontend PR message and booking-support queries now call canonical `/api/pr/*` endpoints and share canonical query keys
+  - user profile page subtitle is now generic PR vocabulary
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Verification gap:
+  - `/apr/:id` and `/cpr/new` still remain as compatibility routes
+  - share-surface pathname classification still contains `/apr/*` and `/cpr/*` assumptions and should be cleaned in a later slice
+
 ## Handoff Source
 
 This packet spins out of:

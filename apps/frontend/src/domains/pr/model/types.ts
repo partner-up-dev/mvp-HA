@@ -11,7 +11,7 @@ export type AnchorPRDetailView = InferResponseType<
 >;
 
 export type AnchorPRBookingSupportView = InferResponseType<
-  (typeof client.api.apr)[":id"]["booking-support"]["$get"]
+  (typeof client.api.pr)[":id"]["booking-support"]["$get"]
 >;
 
 export type AnchorPRSearchView = InferResponseType<

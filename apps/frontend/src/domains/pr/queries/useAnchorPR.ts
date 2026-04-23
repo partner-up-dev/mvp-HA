@@ -58,15 +58,15 @@ export type AnchorPRDetailResponse = InferResponseType<
 type PRDetailResponse = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
 
 export type AnchorPRBookingSupportResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["booking-support"]["$get"]
+  (typeof client.api.pr)[":id"]["booking-support"]["$get"]
 >;
 
 export type AnchorReimbursementStatusResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["reimbursement"]["status"]["$get"]
+  (typeof client.api.pr)[":id"]["reimbursement"]["status"]["$get"]
 >;
 
 export type UpdateAnchorPRBookingContactPhoneResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["booking-contact"]["phone"]["$put"]
+  (typeof client.api.pr)[":id"]["booking-contact"]["phone"]["$put"]
 >;
 
 const resolveErrorMessage = (
@@ -137,7 +137,7 @@ export const useAnchorPR = (id: Ref<PRId | null>) => {
 };
 
 export const useAnchorPRBookingSupport = (id: Ref<PRId | null>) => {
-  const queryKey = computed(() => queryKeys.anchorPR.bookingSupport(id.value));
+  const queryKey = computed(() => queryKeys.pr.bookingSupport(id.value));
 
   return useQuery<AnchorPRBookingSupportResponse>({
     queryKey,
@@ -147,7 +147,7 @@ export const useAnchorPRBookingSupport = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.missingPartnerRequestId"));
       }
 
-      const res = await client.api.apr[":id"]["booking-support"].$get(
+      const res = await client.api.pr[":id"]["booking-support"].$get(
         {
           param: { id: prId.toString() },
         },
@@ -220,7 +220,7 @@ export const useJoinAnchorPR = () => {
         queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.bookingSupport(variables.id),
+        queryKey: queryKeys.pr.bookingSupport(variables.id),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.mineJoined(),
@@ -334,7 +334,7 @@ export const useUpdateAnchorPRBookingContactPhone = () => {
     AnchorPRUpdateBookingContactPhoneInput
   >({
     mutationFn: async ({ id, phone }) => {
-      const res = await client.api.apr[":id"]["booking-contact"][
+      const res = await client.api.pr[":id"]["booking-contact"][
         "phone"
       ].$put(
         {
@@ -370,7 +370,7 @@ export const useUpdateAnchorPRBookingContactPhone = () => {
         queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.bookingSupport(variables.id),
+        queryKey: queryKeys.pr.bookingSupport(variables.id),
       });
     },
   });
@@ -438,7 +438,7 @@ export const useAnchorReimbursementStatus = (
     () => id.value !== null && (queryEnabled?.value ?? true),
   );
   const queryKey = computed(() =>
-    queryKeys.anchorPR.reimbursementStatus(id.value),
+    queryKeys.pr.reimbursementStatus(id.value),
   );
 
   return useQuery<AnchorReimbursementStatusResponse>({
@@ -449,7 +449,7 @@ export const useAnchorReimbursementStatus = (
         throw new Error(i18n.global.t("errors.missingPartnerRequestId"));
       }
 
-      const res = await client.api.apr[":id"].reimbursement.status.$get(
+      const res = await client.api.pr[":id"].reimbursement.status.$get(
         {
           param: { id: prId.toString() },
         },

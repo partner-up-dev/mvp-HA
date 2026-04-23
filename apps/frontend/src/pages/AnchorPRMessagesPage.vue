@@ -1,7 +1,7 @@
 <template>
   <FullScreenPageScaffold
-    class="anchor-pr-messages-page"
-    data-page="anchor-pr-messages"
+    class="pr-messages-page"
+    data-page="pr-messages"
   >
     <template #header>
       <PageHeader
@@ -51,7 +51,7 @@ const backFallbackTo = computed(() => {
 </script>
 
 <style scoped lang="scss">
-.anchor-pr-messages-page {
+.pr-messages-page {
   min-width: 0;
   --pu-page-max-width: 72rem;
 }

@@ -3,6 +3,11 @@ import type { PRId } from "@partner-up-dev/backend";
 export const queryKeys = {
   pr: {
     detail: (id: PRId | null) => ["partner-request", "detail", id] as const,
+    messages: (id: PRId | null) => ["partner-request", "messages", id] as const,
+    bookingSupport: (id: PRId | null) =>
+      ["partner-request", "booking-support", id] as const,
+    reimbursementStatus: (id: PRId | null) =>
+      ["partner-request", "reimbursement-status", id] as const,
     mineCreated: () => ["partner-request", "mine", "created"] as const,
     mineJoined: () => ["partner-request", "mine", "joined"] as const,
     partnerProfile: (prId: PRId | null, partnerId: number | null) =>
@@ -15,11 +20,11 @@ export const queryKeys = {
     detail: (id: PRId | null) => ["anchor-pr", "detail", id] as const,
     search: (eventId: number | null, dates: string[]) =>
       ["anchor-pr", "search", eventId, ...dates] as const,
-    messages: (id: PRId | null) => ["anchor-pr", "messages", id] as const,
+    messages: (id: PRId | null) => ["partner-request", "messages", id] as const,
     bookingSupport: (id: PRId | null) =>
-      ["anchor-pr", "booking-support", id] as const,
+      ["partner-request", "booking-support", id] as const,
     reimbursementStatus: (id: PRId | null) =>
-      ["anchor-pr", "reimbursement-status", id] as const,
+      ["partner-request", "reimbursement-status", id] as const,
   },
   config: {
     public: (key: string) => ["config", "public", key] as const,

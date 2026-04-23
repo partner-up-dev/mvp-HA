@@ -1,28 +1,36 @@
 import type { PartnerRequestSummary, PRId, PRKind } from "@partner-up-dev/backend";
 
-export const communityPRCreatePath = (): string => "/cpr/new";
 export const prCreatePath = (): string => "/pr/new";
 export const prDetailPath = (id: PRId): string => `/pr/${id}`;
+export const prMessagesPath = (id: PRId): string => `/pr/${id}/messages`;
+export const prBookingSupportPath = (id: PRId): string =>
+  `/pr/${id}/booking-support`;
+export const prPartnerProfilePath = (
+  id: PRId,
+  partnerId: number,
+): string => `/pr/${id}/partners/${partnerId}`;
 
-export const communityPRDetailPath = (id: PRId): string => `/cpr/${id}`;
+export const communityPRCreatePath = (): string => prCreatePath();
 
-export const anchorPRDetailPath = (id: PRId): string => `/apr/${id}`;
+export const communityPRDetailPath = (id: PRId): string => prDetailPath(id);
+
+export const anchorPRDetailPath = (id: PRId): string => prDetailPath(id);
 
 export const anchorPRBookingSupportPath = (id: PRId): string =>
-  `/apr/${id}/booking-support`;
+  prBookingSupportPath(id);
 
 export const anchorPRMessagesPath = (id: PRId): string =>
-  `/apr/${id}/messages`;
+  prMessagesPath(id);
 
 export const communityPRPartnerProfilePath = (
   id: PRId,
   partnerId: number,
-): string => `/cpr/${id}/partners/${partnerId}`;
+): string => prPartnerProfilePath(id, partnerId);
 
 export const anchorPRPartnerProfilePath = (
   id: PRId,
   partnerId: number,
-): string => `/apr/${id}/partners/${partnerId}`;
+): string => prPartnerProfilePath(id, partnerId);
 
 export const resolvePRDetailPath = (input: {
   id: PRId;

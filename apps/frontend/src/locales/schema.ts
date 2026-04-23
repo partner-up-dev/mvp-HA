@@ -704,6 +704,7 @@ export interface MessageSchema {
   };
   userProfilePage: {
     title: string;
+    subtitle: string;
     subtitleCommunity: string;
     subtitleAnchor: string;
     loading: string;

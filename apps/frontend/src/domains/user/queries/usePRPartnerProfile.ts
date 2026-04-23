@@ -5,8 +5,6 @@ import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 import { queryKeys } from "@/shared/api/query-keys";
 
-export type PRPartnerProfileScenario = "COMMUNITY" | "ANCHOR";
-
 type PRPartnerProfileResponse = InferResponseType<
   (typeof client.api.pr)[":id"]["partners"][":partnerId"]["profile"]["$get"]
 >;
@@ -20,7 +18,6 @@ const readErrorMessage = async (
 };
 
 export const usePRPartnerProfile = (
-  scenario: Ref<PRPartnerProfileScenario | null>,
   prId: Ref<number | null>,
   partnerId: Ref<number | null>,
 ) => {
@@ -55,7 +52,6 @@ export const usePRPartnerProfile = (
 
       return await res.json();
     },
-    enabled: () =>
-      Boolean(scenario.value) && prId.value !== null && partnerId.value !== null,
+    enabled: () => prId.value !== null && partnerId.value !== null,
   });
 };

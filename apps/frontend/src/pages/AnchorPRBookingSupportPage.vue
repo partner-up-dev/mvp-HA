@@ -1,5 +1,5 @@
 <template>
-  <PageScaffold class="anchor-pr-booking-support-page">
+  <PageScaffold class="pr-booking-support-page">
     <PageHeader
       :title="t('prBookingSupport.title')"
       :subtitle="t('prBookingSupport.subtitle')"

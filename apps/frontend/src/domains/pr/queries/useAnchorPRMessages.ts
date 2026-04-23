@@ -8,19 +8,19 @@ import { queryKeys } from "@/shared/api/query-keys";
 import { readApiErrorPayload, resolveApiErrorMessage } from "@/shared/api/error";
 
 export type AnchorPRMessagesResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["messages"]["$get"]
+  (typeof client.api.pr)[":id"]["messages"]["$get"]
 >;
 
 export type CreateAnchorPRMessageResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["messages"]["$post"]
+  (typeof client.api.pr)[":id"]["messages"]["$post"]
 >;
 
 export type AdvanceAnchorPRMessageReadMarkerResponse = InferResponseType<
-  (typeof client.api.apr)[":id"]["messages"]["read-marker"]["$post"]
+  (typeof client.api.pr)[":id"]["messages"]["read-marker"]["$post"]
 >;
 
 export const useAnchorPRMessages = (id: Ref<PRId | null>) => {
-  const queryKey = computed(() => queryKeys.anchorPR.messages(id.value));
+  const queryKey = computed(() => queryKeys.pr.messages(id.value));
 
   return useQuery<AnchorPRMessagesResponse>({
     queryKey,
@@ -30,7 +30,7 @@ export const useAnchorPRMessages = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.missingPartnerRequestId"));
       }
 
-      const res = await client.api.apr[":id"]["messages"].$get(
+      const res = await client.api.pr[":id"]["messages"].$get(
         {
           param: { id: prId.toString() },
         },
@@ -62,7 +62,7 @@ export const useCreateAnchorPRMessage = () => {
 
   return useMutation({
     mutationFn: async (input: { id: PRId; body: string }) => {
-      const res = await client.api.apr[":id"]["messages"].$post(
+      const res = await client.api.pr[":id"]["messages"].$post(
         {
           param: { id: input.id.toString() },
           json: { body: input.body },
@@ -85,7 +85,7 @@ export const useCreateAnchorPRMessage = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData<AnchorPRMessagesResponse>(
-        queryKeys.anchorPR.messages(variables.id),
+        queryKeys.pr.messages(variables.id),
         (prev) => {
           if (!prev) {
             return {
@@ -109,7 +109,7 @@ export const useAdvanceAnchorPRMessageReadMarker = () => {
 
   return useMutation({
     mutationFn: async (input: { id: PRId; lastReadMessageId: number }) => {
-      const res = await client.api.apr[":id"]["messages"]["read-marker"].$post(
+      const res = await client.api.pr[":id"]["messages"]["read-marker"].$post(
         {
           param: { id: input.id.toString() },
           json: { lastReadMessageId: input.lastReadMessageId },
@@ -132,7 +132,7 @@ export const useAdvanceAnchorPRMessageReadMarker = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData<AnchorPRMessagesResponse>(
-        queryKeys.anchorPR.messages(variables.id),
+        queryKeys.pr.messages(variables.id),
         (prev) => {
           if (!prev) {
             return prev;

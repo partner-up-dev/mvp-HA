@@ -80,6 +80,32 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/pr/:id/partners/:partnerId",
+    name: "pr-partner-profile",
+    component: UserProfilePage,
+    meta: {
+      wechatSharePolicy: "skip",
+    },
+  },
+  {
+    path: "/pr/:id/messages",
+    name: "pr-messages",
+    component: AnchorPRMessagesPage,
+    meta: {
+      wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
+    },
+  },
+  {
+    path: "/pr/:id/booking-support",
+    name: "pr-booking-support",
+    component: AnchorPRBookingSupportPage,
+    meta: {
+      wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
+    },
+  },
+  {
     path: "/cpr/:id",
     name: "community-pr",
     redirect: (to) => ({
@@ -92,10 +118,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/cpr/:id/partners/:partnerId",
     name: "community-partner-profile",
-    component: UserProfilePage,
-    meta: {
-      wechatSharePolicy: "skip",
-    },
+    redirect: (to) => ({
+      name: "pr-partner-profile",
+      params: to.params,
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: "/apr/:id",
@@ -109,29 +137,32 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/apr/:id/partners/:partnerId",
     name: "anchor-partner-profile",
-    component: UserProfilePage,
-    meta: {
-      wechatSharePolicy: "skip",
-      wechatAutoLoginPolicy: "skip",
-    },
+    redirect: (to) => ({
+      name: "pr-partner-profile",
+      params: to.params,
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: "/apr/:id/messages",
     name: "anchor-pr-messages",
-    component: AnchorPRMessagesPage,
-    meta: {
-      wechatSharePolicy: "skip",
-      wechatAutoLoginPolicy: "skip",
-    },
+    redirect: (to) => ({
+      name: "pr-messages",
+      params: to.params,
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: "/apr/:id/booking-support",
     name: "anchor-pr-booking-support",
-    component: AnchorPRBookingSupportPage,
-    meta: {
-      wechatSharePolicy: "skip",
-      wechatAutoLoginPolicy: "skip",
-    },
+    redirect: (to) => ({
+      name: "pr-booking-support",
+      params: to.params,
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: "/admin/login",
