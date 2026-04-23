@@ -10,7 +10,7 @@ import type {
 } from "../../../entities";
 import type { UserId } from "../../../entities/user";
 import { resolveBookingContactState } from "../services/resolve-booking-contact-state";
-import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
+import { readPartnerRequestById } from "../../pr/services";
 
 const prSupportRepo = new AnchorPRSupportResourceRepository();
 
@@ -56,7 +56,7 @@ export interface PRBookingSupportDetail {
   };
 }
 
-export async function getAnchorPRBookingSupport(
+export async function getPRBookingSupport(
   id: PRId,
   viewerUserId: UserId | null = null,
 ): Promise<PRBookingSupportDetail> {

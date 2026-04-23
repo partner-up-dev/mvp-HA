@@ -11,16 +11,16 @@ import {
   exitPRByUserId,
   exitPR,
   getPRDetail,
-  getAnchorPRBookingSupport,
+  getPRBookingSupport,
   getPRPartnerProfile,
   getReimbursementStatus,
   getMyCreatedPRs,
   getMyJoinedPRs,
-  joinCommunityPR,
+  joinPRByIdentity,
   joinPR,
   listPRMessages,
   publishPR,
-  searchAnchorPRs,
+  searchPRs,
   updatePRContent,
   updatePRStatus,
 } from "../domains/pr";
@@ -102,7 +102,7 @@ export const partnerRequestRoute = app
   .use("*", authMiddleware)
   .get("/search", zValidator("query", anchorPRSearchQuerySchema), async (c) => {
     const { eventId, date } = c.req.valid("query");
-    const result = await searchAnchorPRs({
+    const result = await searchPRs({
       eventId,
       dates: date,
     });
@@ -234,10 +234,7 @@ export const partnerRequestRoute = app
   .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);
-    const result = await getAnchorPRBookingSupport(
-      id,
-      getAuthenticatedUserId(c),
-    );
+    const result = await getPRBookingSupport(id, getAuthenticatedUserId(c));
     return c.json(result);
   })
   .put(
@@ -352,7 +349,7 @@ export const partnerRequestRoute = app
       await getPROr404(id);
       const { bookingContactPhone } = c.req.valid("json");
       const participantIdentity = await buildCreatorIdentity(c);
-      const result = await joinCommunityPR(id, participantIdentity, {
+      const result = await joinPRByIdentity(id, participantIdentity, {
         bookingContactPhone: bookingContactPhone ?? null,
       });
       const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);

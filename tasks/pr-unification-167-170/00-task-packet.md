@@ -1133,6 +1133,58 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - issue `#175` local credential and generated PIN cleanup
   - admin vocabulary still carries `Anchor PR` / `batch` naming on operator pages even though storage and public contracts are already converged
 
+## Slice 12B - pr-core Rewrite And Issue 167 Final Convergence
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this convergence slice:
+  - finish the live-code convergence required by `pr-core` rewrite and issue `#167`
+  - remove remaining live `Community PR` runtime shells and thin `Anchor PR` / `Community PR` frontend compatibility shells
+  - converge external backend owners onto canonical `domains/pr`
+- Artifacts:
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/backend/src/domains/pr/model/partner/join-pr-by-identity.ts`
+  - `apps/backend/src/domains/pr/model/partner/index.ts`
+  - `apps/backend/src/domains/pr/read-models/index.ts`
+  - `apps/backend/src/domains/pr/read-models/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr/services/index.ts`
+  - `apps/backend/src/domains/anchor-event/*`
+  - `apps/backend/src/domains/admin-anchor-management/*`
+  - `apps/backend/src/domains/notification/*`
+  - `apps/backend/src/domains/pr-booking-support/*`
+  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/frontend/src/domains/pr/model/types.ts`
+  - `apps/frontend/src/domains/pr/model/detail.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRActions.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRBookingSupport.ts`
+  - `apps/frontend/src/domains/pr/queries/usePRPublish.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
+  - `apps/frontend/src/domains/pr/use-cases/useSharedPRActions.ts`
+  - `apps/frontend/src/domains/pr/ui/modals/EditPRContentModal.vue`
+  - `apps/frontend/src/domains/pr/ui/modals/PRRosterModal.vue`
+  - `apps/frontend/src/domains/pr/ui/modals/UpdatePRStatusModal.vue`
+  - `apps/frontend/src/pages/PRPage.vue`
+  - `apps/frontend/src/processes/wechat/pending-wechat-action.ts`
+- Decisions implemented:
+  - frontend live PR owner surface now runs through canonical `PR*` hooks, model types, and routed page files
+  - deleted unused frontend compatibility shells such as `useAnchorPR.ts`, `useCommunityPR.ts`, `useAnchorPRMessages.ts`, `useCommunityPRCreateFlow.ts`, `AnchorPRFactsCard.vue`, `AnchorPRRosterModal.vue`, `AnchorPRMessageThread.vue`, and unused `AnchorPR*` / `CommunityPR*` action-lane shells
+  - pending WeChat PR action keys now use canonical `PR_JOIN`, `PR_EXIT`, and `PR_CONFIRM`
+  - backend external domains now import PR runtime helpers from `domains/pr/services`
+  - canonical join-by-identity flow now lives in `domains/pr/model/partner/join-pr-by-identity.ts`
+  - `domains/pr-community` and `domains/pr-anchor` compatibility directories have left the backend tree
+  - canonical read-model exports now emit `searchPRs` and `getPRBookingSupport`
+  - `pr-core` remains only as internal implementation substrate behind canonical `domains/pr`; no external live owner continues importing split PR domains
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/backend db:lint`
+  - `pnpm --filter @partner-up-dev/backend exec tsx --test src/infra/notifications/wechat-pr-message.test.ts`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Residual follow-up:
+  - `#170` still has one remaining event-side scheduling contract cut around the legacy batch shell and canonical time-window normalization
+  - `#175` still owns generated PIN and local credential retirement
+  - telemetry event-family rename remains separate from the structural convergence completed here
+
 ## Handoff Source
 
 This packet spins out of:

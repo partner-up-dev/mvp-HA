@@ -1,138 +1,337 @@
+import { useMutation, useQueryClient } from "@tanstack/vue-query";
+import type { InferResponseType } from "hono";
 import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
-import { computed } from "vue";
-import type {
-  AnchorPRFormFields,
-  CommunityPRFormFields,
-  PRScenario,
-} from "@/domains/pr/model/types";
+import { client } from "@/lib/rpc";
+import { i18n } from "@/locales/i18n";
+import { queryKeys } from "@/shared/api/query-keys";
+import type { PRFormFields } from "@/domains/pr/model/types";
 import {
-  useCheckInAnchorPRSlot,
-  useConfirmAnchorPRSlot,
-  useExitAnchorPR,
-  useJoinAnchorPR,
-  useUpdateAnchorPRContent,
-  useUpdateAnchorPRStatus,
-} from "./useAnchorPR";
+  buildApiError,
+  type ApiErrorPayload,
+  readApiErrorPayload,
+  resolveApiErrorMessage,
+} from "@/shared/api/error";
 import {
-  useExitCommunityPR,
-  useJoinCommunityPR,
-  useUpdateCommunityPRContent,
-  useUpdateCommunityPRStatus,
-} from "./useCommunityPR";
+  handleWeChatAuthRequiredError,
+  isWeChatAuthRequiredError,
+} from "@/processes/wechat/auth-error";
+import { setPendingWeChatAction } from "@/processes/wechat/pending-wechat-action";
 
-type PRScenarioActionInput = {
+type PRActionInput = {
   id: PRId;
-  scenario: PRScenario;
 };
 
-type PRJoinInput = PRScenarioActionInput & {
+type PRJoinInput = PRActionInput & {
   bookingContactPhone?: string | null;
 };
 
-type PRUpdateContentInput = PRScenarioActionInput & {
-  fields: AnchorPRFormFields | CommunityPRFormFields;
+type PRCheckInInput = {
+  id: PRId;
+  wouldJoinAgain: boolean | null;
+};
+
+type PRUpdateContentInput = {
+  id: PRId;
+  fields: PRFormFields;
   pin?: string;
 };
 
-type PRUpdateStatusInput = PRScenarioActionInput & {
+type PRUpdateStatusInput = {
+  id: PRId;
   status: PRStatusManual;
   pin?: string;
 };
 
-export const useJoinPR = () => {
-  const anchorMutation = useJoinAnchorPR();
-  const communityMutation = useJoinCommunityPR();
+const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
+const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
-  return {
-    isPending: computed(
-      () => anchorMutation.isPending.value || communityMutation.isPending.value,
-    ),
-    getError: (scenario: PRScenario) =>
-      scenario === "ANCHOR"
-        ? anchorMutation.error.value
-        : communityMutation.error.value,
-    mutateAsync: async ({ scenario, id, bookingContactPhone }: PRJoinInput) =>
-      scenario === "ANCHOR"
-        ? anchorMutation.mutateAsync({ id, bookingContactPhone })
-        : communityMutation.mutateAsync({ id }),
-  };
+const resolveErrorMessage = (
+  response: Response,
+  payload: ApiErrorPayload | null,
+  fallback: string,
+): string => {
+  if (
+    typeof window !== "undefined" &&
+    handleWeChatAuthRequiredError(
+      response.status,
+      payload,
+      window.location.href,
+    )
+  ) {
+    return resolveApiErrorMessage(
+      payload,
+      i18n.global.t("prPage.wechatReminder.loginHint"),
+    );
+  }
+
+  return resolveApiErrorMessage(payload, fallback);
+};
+
+const isBookingContactPhoneRequiredError = (
+  payload: ApiErrorPayload | null,
+): boolean => payload?.code === BOOKING_CONTACT_PHONE_REQUIRED_CODE;
+
+const isBookingContactPhoneInvalidError = (
+  payload: ApiErrorPayload | null,
+): boolean => payload?.code === BOOKING_CONTACT_PHONE_INVALID_CODE;
+
+export const useJoinPR = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      bookingContactPhone = null,
+    }: PRJoinInput) => {
+      const requestJoin = async () =>
+        client.api.pr[":id"].join.$post(
+          {
+            param: { id: id.toString() },
+            json: bookingContactPhone ? { bookingContactPhone } : {},
+          },
+          {
+            init: {
+              credentials: "include",
+            },
+          },
+        );
+
+      const res = await requestJoin();
+      const payload = res.ok ? null : await readApiErrorPayload(res);
+
+      if (!res.ok) {
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "PR_JOIN",
+            prId: id,
+          });
+        }
+        const fallbackMessage = isBookingContactPhoneRequiredError(payload)
+          ? i18n.global.t("prPage.bookingContact.ownerVerifyBeforeJoin")
+          : isBookingContactPhoneInvalidError(payload)
+            ? i18n.global.t("prPage.bookingContact.verifyFailed")
+            : i18n.global.t("errors.joinRequestFailed");
+        throw buildApiError(
+          resolveErrorMessage(res, payload, fallbackMessage),
+          payload,
+        );
+      }
+
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.bookingSupport(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.mineJoined(),
+      });
+    },
+  });
 };
 
 export const useExitPR = () => {
-  const anchorMutation = useExitAnchorPR();
-  const communityMutation = useExitCommunityPR();
+  const queryClient = useQueryClient();
 
-  return {
-    isPending: computed(
-      () => anchorMutation.isPending.value || communityMutation.isPending.value,
-    ),
-    mutateAsync: async ({ scenario, id }: PRScenarioActionInput) =>
-      scenario === "ANCHOR"
-        ? anchorMutation.mutateAsync({ id })
-        : communityMutation.mutateAsync({ id }),
-  };
+  return useMutation({
+    mutationFn: async ({ id }: PRActionInput) => {
+      const res = await client.api.pr[":id"].exit.$post(
+        {
+          param: { id: id.toString() },
+        },
+        {
+          init: {
+            credentials: "include",
+          },
+        },
+      );
+
+      if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "PR_EXIT",
+            prId: id,
+          });
+        }
+        throw new Error(
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.exitRequestFailed"),
+          ),
+        );
+      }
+
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.mineJoined(),
+      });
+    },
+  });
+};
+
+export const useConfirmPRSlot = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: PRActionInput) => {
+      const res = await client.api.pr[":id"].confirm.$post(
+        {
+          param: { id: id.toString() },
+        },
+        {
+          init: {
+            credentials: "include",
+          },
+        },
+      );
+
+      if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "PR_CONFIRM",
+            prId: id,
+          });
+        }
+        throw buildApiError(
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.confirmSlotFailed"),
+          ),
+          payload,
+        );
+      }
+
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+    },
+  });
+};
+
+export const useCheckInPRSlot = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, wouldJoinAgain }: PRCheckInInput) => {
+      const res = await client.api.pr[":id"]["check-in"].$post(
+        {
+          param: { id: id.toString() },
+          json: {
+            wouldJoinAgain,
+          },
+        },
+        {
+          init: {
+            credentials: "include",
+          },
+        },
+      );
+
+      if (!res.ok) {
+        if (res.status === 403) {
+          return {
+            eligible: false,
+            canRequest: false,
+            requested: false,
+            reimbursementStatus: "NONE",
+            reimbursementAmount: null,
+            reason: "SLOT_NOT_ELIGIBLE",
+          };
+        }
+
+        const payload = await readApiErrorPayload(res);
+        throw new Error(
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.checkInSlotFailed"),
+          ),
+        );
+      }
+
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+    },
+  });
 };
 
 export const useUpdatePRContent = () => {
-  const anchorMutation = useUpdateAnchorPRContent();
-  const communityMutation = useUpdateCommunityPRContent();
+  const queryClient = useQueryClient();
 
-  return {
-    isPending: computed(
-      () => anchorMutation.isPending.value || communityMutation.isPending.value,
-    ),
-    getError: (scenario: PRScenario) =>
-      scenario === "ANCHOR"
-        ? anchorMutation.error.value
-        : communityMutation.error.value,
-    reset: (scenario: PRScenario) => {
-      if (scenario === "ANCHOR") {
-        anchorMutation.reset();
-        return;
+  return useMutation({
+    mutationFn: async ({ id, fields, pin }: PRUpdateContentInput) => {
+      const res = await client.api.pr[":id"].content.$patch({
+        param: { id: id.toString() },
+        json: pin ? { fields, pin } : { fields },
+      });
+
+      if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
+        throw new Error(
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.updateContentFailed"),
+          ),
+        );
       }
-      communityMutation.reset();
+
+      return await res.json();
     },
-    mutateAsync: async ({ scenario, id, fields, pin }: PRUpdateContentInput) =>
-      scenario === "ANCHOR"
-        ? anchorMutation.mutateAsync({
-            id,
-            fields: fields as AnchorPRFormFields,
-            pin,
-          })
-        : communityMutation.mutateAsync({
-            id,
-            fields: fields as CommunityPRFormFields,
-            pin,
-          }),
-  };
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+    },
+  });
 };
 
 export const useUpdatePRStatus = () => {
-  const anchorMutation = useUpdateAnchorPRStatus();
-  const communityMutation = useUpdateCommunityPRStatus();
+  const queryClient = useQueryClient();
 
-  return {
-    isPending: computed(
-      () => anchorMutation.isPending.value || communityMutation.isPending.value,
-    ),
-    getError: (scenario: PRScenario) =>
-      scenario === "ANCHOR"
-        ? anchorMutation.error.value
-        : communityMutation.error.value,
-    reset: (scenario: PRScenario) => {
-      if (scenario === "ANCHOR") {
-        anchorMutation.reset();
-        return;
+  return useMutation({
+    mutationFn: async ({ id, status, pin }: PRUpdateStatusInput) => {
+      const res = await client.api.pr[":id"].status.$patch({
+        param: { id: id.toString() },
+        json: pin ? { status, pin } : { status },
+      });
+
+      if (!res.ok) {
+        const payload = await readApiErrorPayload(res);
+        throw new Error(
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.updateStatusFailed"),
+          ),
+        );
       }
-      communityMutation.reset();
+
+      return await res.json();
     },
-    mutateAsync: async ({ scenario, id, status, pin }: PRUpdateStatusInput) =>
-      scenario === "ANCHOR"
-        ? anchorMutation.mutateAsync({ id, status, pin })
-        : communityMutation.mutateAsync({ id, status, pin }),
-  };
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+    },
+  });
 };
-
-export const useConfirmPRSlot = () => useConfirmAnchorPRSlot();
-
-export const useCheckInPRSlot = () => useCheckInAnchorPRSlot();

@@ -10,8 +10,8 @@ import {
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
 import type { PartnerRequest } from "../../../entities/partner-request";
-import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr-core/services/pr-read.service";
-import { isJoinableStatus } from "../../pr-core/services/status-rules";
+import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr/services";
+import { isJoinableStatus } from "../../pr/services";
 import { buildDiscoverableTimeWindowPoolFromBatches } from "./time-window-pool";
 import { isEventScopedLocation } from "./event-scope";
 

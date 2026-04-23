@@ -2,14 +2,14 @@ import { HTTPException } from "hono/http-exception";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import { updatePRContent } from "../../pr-core";
+import { updatePRContent } from "../../pr";
 import {
   normalizeSystemLocationPool,
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
-import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
-import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr-core/services/pr-read.service";
+import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
+import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr/services";
 import type { PRId } from "../../../entities";
 
 const anchorPRRepo = new AnchorPRRepository();

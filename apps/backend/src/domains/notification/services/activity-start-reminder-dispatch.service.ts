@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { PRId, PartnerRequest } from "../../../entities/partner-request";
 import { userIdSchema, type User, type UserId } from "../../../entities/user";
-import { getTimeWindowStart } from "../../pr-core/services/time-window.service";
+import { getTimeWindowStart } from "../../pr/services";
 import { env } from "../../../lib/env";
 import { NotificationDeliveryRepository } from "../../../repositories/NotificationDeliveryRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -9,7 +9,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { UserNotificationOptRepository } from "../../../repositories/UserNotificationOptRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { ACTIVITY_START_REMINDER_NOTIFICATION_KIND } from "../model/notification-kind";
-import { hasAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
+import { hasAnchorParticipationPolicy } from "../../pr/services";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();

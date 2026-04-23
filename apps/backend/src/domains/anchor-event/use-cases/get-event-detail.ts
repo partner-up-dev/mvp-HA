@@ -22,7 +22,7 @@ import type { PRStatus, PartnerRequest } from "../../../entities/partner-request
 import {
   isActiveVisibleAnchorPRStatus,
   readVisiblePartnerRequestsByTypeAndTime,
-} from "../../pr-core/services/pr-read.service";
+} from "../../pr/services";
 import {
   buildDiscoverableTimeWindowPoolFromBatches,
   listDiscoverableAnchorEventBatches,

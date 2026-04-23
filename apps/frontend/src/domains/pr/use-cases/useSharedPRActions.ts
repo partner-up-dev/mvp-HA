@@ -1,10 +1,7 @@
 import { computed, type ComputedRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
-import {
-  resolvePRScenario,
-  type PRDetailView,
-} from "@/domains/pr/model/types";
+import type { PRDetailView } from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/telemetry/track";
 import { useExitPR, useJoinPR } from "@/domains/pr/queries/usePRActions";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
@@ -37,7 +34,6 @@ export const useSharedPRActions = ({
 
   const joinMutation = useJoinPR();
   const exitMutation = useExitPR();
-  const scenario = computed(() => resolvePRScenario(pr.value));
 
   const hasJoined = computed(
     () => pr.value?.partnerSection.viewer.isParticipant ?? false,
@@ -77,7 +73,7 @@ export const useSharedPRActions = ({
   );
   const exitPending = computed(() => exitMutation.isPending.value);
   const joinErrorMessage = computed(() => {
-    const error = joinMutation.getError(scenario.value) as ApiError | null;
+    const error = joinMutation.error.value as ApiError | null;
     if (!error) return null;
     if (error.code === JOIN_TIME_WINDOW_CONFLICT_CODE) {
       return t("prPage.partnerSection.blockedTimeWindowConflict");
@@ -104,7 +100,6 @@ export const useSharedPRActions = ({
       await ensureAuthSessionBootstrapped();
       const result =
         await joinMutation.mutateAsync({
-          scenario: scenario.value,
           id: id.value,
           bookingContactPhone: options.bookingContactPhone ?? null,
         });
@@ -123,7 +118,6 @@ export const useSharedPRActions = ({
     if (id.value === null) return;
 
     const result = await exitMutation.mutateAsync({
-      scenario: scenario.value,
       id: id.value,
     });
     trackEvent("pr_exit_success", {

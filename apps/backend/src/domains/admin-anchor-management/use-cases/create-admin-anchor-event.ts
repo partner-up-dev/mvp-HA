@@ -5,7 +5,7 @@ import type {
   SystemLocationEntry,
   UserLocationEntry,
 } from "../../../entities";
-import { assertManualPartnerBoundsValid } from "../../pr-core/services/partner-bounds.service";
+import { assertManualPartnerBoundsValid } from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
 

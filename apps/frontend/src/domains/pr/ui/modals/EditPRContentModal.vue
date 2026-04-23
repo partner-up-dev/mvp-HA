@@ -8,8 +8,8 @@
     <PRForm
       ref="formRef"
       :initial-fields="initialFields"
-      :show-budget-field="scenario === 'COMMUNITY'"
-      :show-time-field="scenario === 'COMMUNITY'"
+      :show-budget-field="showBudgetField"
+      :show-time-field="showTimeField"
       @submit="handleSubmit"
     />
 
@@ -63,9 +63,7 @@ import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
 import PinInput from "@/shared/ui/forms/PinInput.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import {
-  toAnchorPRFields,
-  toCommunityPRFields,
-  type PRScenario,
+  toPartnerRequestFields,
   type PRFormFields,
 } from "@/domains/pr/model/types";
 
@@ -73,7 +71,8 @@ interface Props {
   open: boolean;
   initialFields: PRFormFields;
   prId: PRId;
-  scenario: PRScenario;
+  showBudgetField?: boolean;
+  showTimeField?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -89,7 +88,7 @@ const formRef = ref<InstanceType<typeof PRForm> | null>(null);
 const editPin = ref("");
 const requiresPin = computed(() => userSessionStore.role === "anonymous");
 const isUpdatePending = computed(() => updateMutation.isPending.value);
-const updateError = computed(() => updateMutation.getError(props.scenario));
+const updateError = computed(() => updateMutation.error.value);
 const hasUpdateError = computed(() => Boolean(updateError.value));
 const isFormValid = computed(() => {
   const canSubmit = formRef.value?.canSubmit;
@@ -105,12 +104,8 @@ const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
   if (requiresPin.value && (!pin || pin.length !== 4)) return;
 
   const result = await updateMutation.mutateAsync({
-    scenario: props.scenario,
     id: props.prId,
-    fields:
-      props.scenario === "ANCHOR"
-        ? toAnchorPRFields(fields)
-        : toCommunityPRFields(fields),
+    fields: toPartnerRequestFields(fields),
     pin,
   });
 
@@ -129,7 +124,7 @@ const handleClose = () => {
 };
 
 const resetUpdateMutation = () => {
-  updateMutation.reset(props.scenario);
+  updateMutation.reset();
 };
 </script>
 

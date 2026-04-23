@@ -16,8 +16,8 @@ import {
 import {
   hasAnchorParticipationPolicy,
   resolveAnchorParticipationPolicy,
-} from "../../pr-core/services/anchor-participation-policy.service";
-import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
+} from "../../pr/services";
+import { readPartnerRequestById } from "../../pr/services";
 import {
   buildPRCanonicalShareMetadata,
   type PRCanonicalShareMetadata,

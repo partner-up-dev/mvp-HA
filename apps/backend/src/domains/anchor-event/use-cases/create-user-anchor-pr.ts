@@ -5,7 +5,7 @@ import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBat
 import { resolveUserByOpenId } from "../../user";
 import { partnerRequests } from "../../../entities/partner-request";
 import { partners } from "../../../entities/partner";
-import { assertNoUserTimeWindowConflict } from "../../pr-core/services/participation-time-conflict.service";
+import { assertNoUserTimeWindowConflict } from "../../pr/services";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { normalizeUserLocationPool } from "../../../entities/anchor-event";
 import { resolveAnchorPartnerBoundsFromEvent } from "../services/anchor-partner-bounds";
@@ -16,7 +16,7 @@ import type { UserLocationEntry } from "../../../entities/anchor-event";
 import {
   countActiveVisibleAnchorPRsByBatchAndLocationSource,
   readVisibleAnchorPRRecordsByBatchIdAndLocation,
-} from "../../pr-core/services/pr-read.service";
+} from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();

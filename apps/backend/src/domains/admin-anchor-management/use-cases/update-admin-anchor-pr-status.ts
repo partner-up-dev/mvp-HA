@@ -1,5 +1,5 @@
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
-import { updatePRStatus } from "../../pr-core";
+import { updatePRStatus } from "../../pr";
 import { HTTPException } from "hono/http-exception";
 import type { PRId, PRStatusManual } from "../../../entities";
 

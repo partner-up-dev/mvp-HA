@@ -17,7 +17,7 @@ import {
   DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
   DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
   DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
-} from "../domains/pr-core/services/anchor-participation-policy.service";
+} from "../domains/pr/services";
 import {
   isEventScopedLocation,
   resolveEventLocationSource,

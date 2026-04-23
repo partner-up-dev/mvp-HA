@@ -5,18 +5,18 @@ type PendingActionBase = {
   createdAt: number;
 };
 
-type PendingAnchorJoinAction = PendingActionBase & {
-  kind: "ANCHOR_PR_JOIN";
+type PendingPRJoinAction = PendingActionBase & {
+  kind: "PR_JOIN";
   prId: number;
 };
 
-type PendingAnchorExitAction = PendingActionBase & {
-  kind: "ANCHOR_PR_EXIT";
+type PendingPRExitAction = PendingActionBase & {
+  kind: "PR_EXIT";
   prId: number;
 };
 
-type PendingAnchorConfirmAction = PendingActionBase & {
-  kind: "ANCHOR_PR_CONFIRM";
+type PendingPRConfirmAction = PendingActionBase & {
+  kind: "PR_CONFIRM";
   prId: number;
 };
 
@@ -33,22 +33,22 @@ type PendingAnchorCreateAction = PendingActionBase & {
 };
 
 export type PendingWeChatAction =
-  | PendingAnchorJoinAction
-  | PendingAnchorExitAction
-  | PendingAnchorConfirmAction
+  | PendingPRJoinAction
+  | PendingPRExitAction
+  | PendingPRConfirmAction
   | PendingAnchorCreateAction;
 
 type NewPendingWeChatAction =
   | {
-      kind: "ANCHOR_PR_JOIN";
+      kind: "PR_JOIN";
       prId: number;
     }
   | {
-      kind: "ANCHOR_PR_EXIT";
+      kind: "PR_EXIT";
       prId: number;
     }
   | {
-      kind: "ANCHOR_PR_CONFIRM";
+      kind: "PR_CONFIRM";
       prId: number;
     }
   | {
@@ -79,13 +79,13 @@ const isPendingWeChatAction = (value: unknown): value is PendingWeChatAction => 
     return false;
   }
 
-  if (candidate.kind === "ANCHOR_PR_JOIN") {
+  if (candidate.kind === "PR_JOIN") {
     return isPositiveInteger(candidate.prId);
   }
-  if (candidate.kind === "ANCHOR_PR_EXIT") {
+  if (candidate.kind === "PR_EXIT") {
     return isPositiveInteger(candidate.prId);
   }
-  if (candidate.kind === "ANCHOR_PR_CONFIRM") {
+  if (candidate.kind === "PR_CONFIRM") {
     return isPositiveInteger(candidate.prId);
   }
   if (candidate.kind === "EVENT_ASSISTED_PR_CREATE") {

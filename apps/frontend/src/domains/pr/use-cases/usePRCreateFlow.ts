@@ -8,8 +8,8 @@ import { trackEvent } from "@/shared/telemetry/track";
 import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import {
-  toCommunityPRFields,
-  type CommunityPRFormFields,
+  toPartnerRequestFields,
+  type PRFormFields,
 } from "@/domains/pr/model/types";
 
 export type CreateSubmissionMode = "DRAFT" | "PUBLISH";
@@ -22,7 +22,7 @@ const resolveTopic = (
   return trimmed.length > 0 ? trimmed : null;
 };
 
-const buildInitialFields = (topic: string | null): CommunityPRFormFields => ({
+const buildInitialFields = (topic: string | null): PRFormFields => ({
   title: undefined,
   type: topic ?? "",
   time: [null, null],
@@ -42,7 +42,7 @@ export const usePRCreateFlow = () => {
   const createMutation = useCreatePRFromStructured();
   const publishMutation = usePublishPR();
 
-  const initialFields = ref<CommunityPRFormFields>(
+  const initialFields = ref<PRFormFields>(
     buildInitialFields(resolveTopic(route.query.topic)),
   );
 
@@ -59,7 +59,7 @@ export const usePRCreateFlow = () => {
     await ensureAuthSessionBootstrapped();
 
     const result = await createMutation.mutateAsync({
-      fields: toCommunityPRFields(fields),
+      fields: toPartnerRequestFields(fields),
       createSource: "FORM",
     });
 

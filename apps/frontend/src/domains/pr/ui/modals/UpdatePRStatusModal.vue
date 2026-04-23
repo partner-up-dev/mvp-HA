@@ -63,7 +63,6 @@ import {
   useUserSessionStore,
   type AuthSessionPayload,
 } from "@/shared/auth/useUserSessionStore";
-import type { PRScenario } from "@/domains/pr/model/types";
 
 interface StatusOption {
   value: PRStatusManual;
@@ -73,7 +72,6 @@ interface StatusOption {
 const props = defineProps<{
   open: boolean;
   prId: PRId;
-  scenario: PRScenario;
 }>();
 const { t } = useI18n();
 
@@ -94,7 +92,7 @@ const selectedStatus = ref<PRStatusManual>("OPEN");
 const modifyPin = ref("");
 const requiresPin = computed(() => userSessionStore.role === "anonymous");
 const isUpdatePending = computed(() => updateMutation.isPending.value);
-const updateError = computed(() => updateMutation.getError(props.scenario));
+const updateError = computed(() => updateMutation.error.value);
 const hasUpdateError = computed(() => Boolean(updateError.value));
 
 const handleClose = () => {
@@ -110,7 +108,6 @@ const handleConfirm = async () => {
   }
 
   const result = await updateMutation.mutateAsync({
-    scenario: props.scenario,
     id: props.prId,
     status: selectedStatus.value,
     pin,
@@ -125,7 +122,7 @@ const handleConfirm = async () => {
 };
 
 const resetUpdateMutation = () => {
-  updateMutation.reset(props.scenario);
+  updateMutation.reset();
 };
 </script>
 

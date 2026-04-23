@@ -31,13 +31,13 @@ import type { PRId } from "@partner-up-dev/backend";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
-import type { AnchorPRSearchResult } from "@/domains/pr/model/types";
+import type { PRSearchResult } from "@/domains/pr/model/types";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 const props = defineProps<{
-  result: AnchorPRSearchResult;
+  result: PRSearchResult;
 }>();
 
 const { t } = useI18n();

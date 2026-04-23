@@ -96,15 +96,15 @@ import type { PRPartnerSectionView } from "@/domains/pr/model/types";
 import { prPartnerProfilePath } from "@/domains/pr/routing/routes";
 import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 
-type AnchorPartnerSection = PRPartnerSectionView;
+type PartnerSection = PRPartnerSectionView;
 
 const props = defineProps<{
   prId: number;
-  section: AnchorPartnerSection;
+  section: PartnerSection;
 }>();
 
 const { t } = useI18n();
-type RosterItem = AnchorPartnerSection["roster"][number];
+type RosterItem = PartnerSection["roster"][number];
 
 const rosterStateText = (
   state: RosterItem["state"],

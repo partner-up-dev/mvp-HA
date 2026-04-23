@@ -5,11 +5,11 @@ import {
   type ConfirmationReminderTrigger,
 } from "../../../entities/notification-delivery";
 import { userIdSchema, type User, type UserId } from "../../../entities/user";
-import { getTimeWindowStart } from "../../pr-core/services/time-window.service";
+import { getTimeWindowStart } from "../../pr/services";
 import {
   hasAnchorParticipationPolicy,
   resolveAnchorParticipationPolicy,
-} from "../../pr-core/services/anchor-participation-policy.service";
+} from "../../pr/services";
 import { env } from "../../../lib/env";
 import { NotificationDeliveryRepository } from "../../../repositories/NotificationDeliveryRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";

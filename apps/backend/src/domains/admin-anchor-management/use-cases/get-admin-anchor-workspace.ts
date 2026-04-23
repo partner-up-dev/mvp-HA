@@ -1,9 +1,9 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
-import { countActivePartnersForPR } from "../../pr-core/services/slot-management.service";
+import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
-import { readAnchorPRRecordsByBatchId } from "../../pr-core/services/pr-read.service";
+import { readAnchorPRRecordsByBatchId } from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();

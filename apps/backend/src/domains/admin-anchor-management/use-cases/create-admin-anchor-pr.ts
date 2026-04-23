@@ -3,15 +3,15 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type { AnchorPRContext } from "../../../repositories/AnchorPRRepository";
-import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
+import { initializeSlotsForPR } from "../../pr/services";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import {
   normalizeSystemLocationPool,
   normalizeUserLocationPool,
 } from "../../../entities/anchor-event";
-import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
-import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr-core/services/pr-read.service";
-import { assertManualPartnerBoundsValid } from "../../pr-core/services/partner-bounds.service";
+import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
+import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr/services";
+import { assertManualPartnerBoundsValid } from "../../pr/services";
 import type { AnchorEventBatchId, PartnerRequest } from "../../../entities";
 
 const prRepo = new PartnerRequestRepository();

@@ -3,7 +3,7 @@ import type {
   AnchorEventSupportResource,
   NewAnchorPRSupportResource,
 } from "../../../entities";
-import { getTimeWindowStart, type TimeWindow } from "../../pr-core/services/time-window.service";
+import { getTimeWindowStart, type TimeWindow } from "../../pr/services";
 
 const BOOKING_DEADLINE_RULE_PATTERN = /^T-(\d+)([mhd])$/i;
 

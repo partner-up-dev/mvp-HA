@@ -8,11 +8,13 @@ import {
   cancelWeChatActivityStartReminderJobsForParticipant,
   cancelWeChatReminderJobsForParticipant,
 } from "../../../infra/notifications";
-import { recalculatePRStatus } from "../../pr-core/services/slot-management.service";
-import { syncAnchorBookingTriggeredState } from "../../pr-core/services/anchor-booking-trigger.service";
+import {
+  applyAnchorParticipantReleaseEffects,
+  recalculatePRStatus,
+  syncAnchorBookingTriggeredState,
+} from "../../pr/services";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
-import { applyAnchorParticipantReleaseEffects } from "../../pr-core/services/anchor-participant-release-effects.service";
 
 const anchorPRRepo = new AnchorPRRepository();
 const bookingContactRepo = new AnchorPRBookingContactRepository();

@@ -173,7 +173,7 @@ import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
 import AnchorPRSearchCriteriaForm from "@/domains/event/ui/composites/AnchorPRSearchCriteriaForm.vue";
 import type { AnchorEventListItem } from "@/domains/event/model/types";
-import type { AnchorPRSearchResult } from "@/domains/pr/model/types";
+import type { PRSearchResult } from "@/domains/pr/model/types";
 import { useAnchorPRSearch } from "@/domains/pr/queries/useAnchorPRSearch";
 import AnchorPRSearchResultCard from "@/domains/pr/ui/primitives/AnchorPRSearchResultCard.vue";
 import { prDetailPath } from "@/domains/pr/routing/routes";
@@ -371,7 +371,7 @@ const searchEnabled = computed(
   () => routeHasSearchIntent.value && appliedCriteria.value !== null,
 );
 const searchQuery = useAnchorPRSearch(appliedCriteria, searchEnabled);
-const searchResults = computed<AnchorPRSearchResult[]>(
+const searchResults = computed<PRSearchResult[]>(
   () => searchQuery.data.value?.results ?? [],
 );
 

@@ -2,14 +2,14 @@ import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { joinPR } from "../../pr-core";
+import { joinPR } from "../../pr";
 import type {
   AnchorEventId,
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
 import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
 import type { PartnerRequest } from "../../../entities/partner-request";
-import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr-core/services/pr-read.service";
+import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr/services";
 import {
   buildDemandCardKey,
   listJoinableDemandCardCandidates,

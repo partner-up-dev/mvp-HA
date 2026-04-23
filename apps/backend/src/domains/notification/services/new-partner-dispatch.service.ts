@@ -9,7 +9,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { UserNotificationOptRepository } from "../../../repositories/UserNotificationOptRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { NEW_PARTNER_NOTIFICATION_KIND } from "../model/notification-kind";
-import { hasAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
+import { hasAnchorParticipationPolicy } from "../../pr/services";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();

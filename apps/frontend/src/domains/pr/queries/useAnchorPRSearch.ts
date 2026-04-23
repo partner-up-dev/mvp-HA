@@ -2,7 +2,7 @@ import { computed, type Ref } from "vue";
 import { useQuery } from "@tanstack/vue-query";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
-import type { AnchorPRSearchView } from "@/domains/pr/model/types";
+import type { PRSearchView } from "@/domains/pr/model/types";
 import { queryKeys } from "@/shared/api/query-keys";
 import {
   readApiErrorPayload,
@@ -26,7 +26,7 @@ export const useAnchorPRSearch = (
     );
   });
 
-  return useQuery<AnchorPRSearchView>({
+  return useQuery<PRSearchView>({
     queryKey,
     queryFn: async () => {
       const currentCriteria = criteria.value;

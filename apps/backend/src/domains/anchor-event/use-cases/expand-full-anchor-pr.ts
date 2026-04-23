@@ -7,19 +7,19 @@ import {
   AnchorPRRepository,
 } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
+import { initializeSlotsForPR } from "../../pr/services";
 import type { PRId } from "../../../entities/partner-request";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { normalizeSystemLocationPool } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
-import { hasAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
+import { hasAnchorParticipationPolicy } from "../../pr/services";
 import {
   isActiveVisibleAnchorPRStatus,
   readVisibleAnchorPRRecordsByBatchId,
   readVisibleAnchorPRRecordsByBatchIdAndLocation,
-} from "../../pr-core/services/pr-read.service";
-import { normalizeAutomaticPartnerBounds } from "../../pr-core/services/partner-bounds.service";
+} from "../../pr/services";
+import { normalizeAutomaticPartnerBounds } from "../../pr/services";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();

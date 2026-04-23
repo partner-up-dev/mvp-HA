@@ -3,11 +3,11 @@ import type { AnchorEventId } from "../../../entities/anchor-event";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { readVisibleAnchorPRRecordsByAnchorEventId } from "../../pr-core/services/pr-read.service";
+import { readVisibleAnchorPRRecordsByAnchorEventId } from "../../pr/services";
 import {
   getProductLocalDateKey,
   getProductLocalDateKeyForTimeWindowStart,
-} from "../../pr-core/services/time-window.service";
+} from "../../pr/services";
 import {
   buildTimeWindowKey,
   listDiscoverableAnchorEventBatches,
@@ -150,7 +150,7 @@ const resolveSortTimestamp = (value: string | null): number => {
     : parsed.getTime();
 };
 
-export async function searchAnchorPRs(input: {
+export async function searchPRs(input: {
   eventId: AnchorEventId;
   dates: string[];
 }): Promise<AnchorPRSearchResponse> {

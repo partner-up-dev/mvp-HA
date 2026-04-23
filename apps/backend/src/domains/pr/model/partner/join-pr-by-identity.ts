@@ -1,29 +1,30 @@
 import { HTTPException } from "hono/http-exception";
-import type { PRId } from "../../../entities/partner-request";
-import type { User, UserId } from "../../../entities/user";
-import { UserRepository } from "../../../repositories/UserRepository";
+import type { PRId } from "../../../../entities/partner-request";
+import type { User, UserId } from "../../../../entities/user";
+import { UserRepository } from "../../../../repositories/UserRepository";
 import {
   createLocalUserWithGeneratedPin,
   ensureUserHasPin,
   resolveUserByOpenId,
-} from "../../user";
-import { joinPRAsUser, type PublicPR } from "../../pr-core";
+} from "../../../user";
+import { joinPRAsUser } from "../../../pr-core/use-cases/join-pr";
+import type { PublicPR } from "../../read-models/public-pr-view.service";
 
 const userRepo = new UserRepository();
 
-type ParticipantIdentityInput = {
+export type PRParticipantIdentityInput = {
   authenticatedUserId: UserId | null;
   oauthOpenId: string | null;
 };
 
-export type JoinCommunityPRResult = {
+export type JoinPRByIdentityResult = {
   pr: PublicPR;
   userId: UserId;
   generatedUserPin: string | null;
 };
 
 const resolveParticipantUser = async (
-  input: ParticipantIdentityInput,
+  input: PRParticipantIdentityInput,
 ): Promise<{ user: User; generatedUserPin: string | null }> => {
   if (input.authenticatedUserId) {
     const user = await userRepo.findById(input.authenticatedUserId);
@@ -54,13 +55,13 @@ const resolveParticipantUser = async (
   };
 };
 
-export async function joinCommunityPR(
+export async function joinPRByIdentity(
   id: PRId,
-  identity: ParticipantIdentityInput,
+  identity: PRParticipantIdentityInput,
   options: {
     bookingContactPhone?: string | null;
   } = {},
-): Promise<JoinCommunityPRResult> {
+): Promise<JoinPRByIdentityResult> {
   const participant = await resolveParticipantUser(identity);
   const pr = await joinPRAsUser(id, participant.user, {
     bookingContactPhone: options.bookingContactPhone ?? null,

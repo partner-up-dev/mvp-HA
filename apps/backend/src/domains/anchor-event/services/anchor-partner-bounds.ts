@@ -1,4 +1,4 @@
-import { normalizeAutomaticPartnerBounds } from "../../pr-core/services/partner-bounds.service";
+import { normalizeAutomaticPartnerBounds } from "../../pr/services";
 
 type EventPartnerBoundsDefaults = {
   defaultMinPartners: number | null;
