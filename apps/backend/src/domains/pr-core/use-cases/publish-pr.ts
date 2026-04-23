@@ -9,8 +9,7 @@ import {
   resolvePublishedCreator,
   type CreatorIdentityInput,
 } from "../services/creator-identity.service";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
-import { ensureUserHasPin } from "../services/user-pin-auth.service";
+import { ensureUserHasPin, resolveUserByOpenId } from "../../user";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";

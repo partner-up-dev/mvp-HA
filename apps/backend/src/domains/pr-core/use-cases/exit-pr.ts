@@ -4,7 +4,7 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import { isExitAllowedStatus } from "../services/status-rules";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import {

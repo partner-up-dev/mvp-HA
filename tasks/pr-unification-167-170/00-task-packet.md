@@ -565,6 +565,48 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - internal use-case and service files still physically live under `pr-core`, `pr-anchor`, and `pr-community`
   - controller route names and response DTO names still carry legacy `Anchor PR` / `Community PR` wording where compatibility remains necessary
 
+## Slice 8A - Identity Helper Move To User Domain
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - move PIN helper and WeChat openId user-resolution helper into `domains/user`
+  - switch backend controllers and PR-related domain code to import those helpers from the user domain
+  - keep old `pr-core` helper files as compatibility re-export seams during the transition
+- Artifacts:
+  - `apps/backend/src/domains/user/index.ts`
+  - `apps/backend/src/domains/user/services/index.ts`
+  - `apps/backend/src/domains/user/services/user-pin-auth.service.ts`
+  - `apps/backend/src/domains/user/services/user-resolver.service.ts`
+  - `apps/backend/src/controllers/auth.controller.ts`
+  - `apps/backend/src/controllers/wechat.controller.ts`
+  - `apps/backend/src/domains/user/use-cases/register-local-user.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/create-user-anchor-pr.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
+  - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
+  - `apps/backend/src/domains/pr-community/use-cases/join-community-pr.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/check-in.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/confirm-slot.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/exit-pr.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/get-pr.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/join-pr.ts`
+  - `apps/backend/src/domains/pr-core/use-cases/publish-pr.ts`
+  - `apps/backend/src/domains/pr-core/services/creator-identity.service.ts`
+  - `apps/backend/src/domains/pr-core/services/creator-mutation-auth.service.ts`
+  - `apps/backend/src/domains/pr-core/services/user-pin-auth.service.ts`
+  - `apps/backend/src/domains/pr-core/services/user-resolver.service.ts`
+- Decisions implemented:
+  - backend now has a canonical `domains/user` export surface for PIN helper and WeChat openId user resolution
+  - auth controller, wechat controller, and PR-related domain code now import those helpers from `domains/user`
+  - old `pr-core/services/user-pin-auth.service.ts` and `pr-core/services/user-resolver.service.ts` remain as compatibility re-export seams
+  - current PIN and local-credential behavior remains unchanged in this slice; only ownership and import surface moved
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `rg -n "user-pin-auth|user-resolver|ensureUserHasPin|verifyUserPin|createLocalUserWithGeneratedPin|resolveUserByOpenId" apps/backend/src` now shows canonical user-domain ownership plus the planned compatibility re-export seams
+- Verification gap:
+  - publish-time PIN generation and legacy local-credential behavior remain active and still require a later product/identity cleanup slice
+
 ## Handoff Source
 
 This packet spins out of:

@@ -4,7 +4,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import {
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,

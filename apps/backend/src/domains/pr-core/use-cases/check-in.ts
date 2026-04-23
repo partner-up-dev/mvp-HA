@@ -3,7 +3,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import { hasEventStarted } from "../services/time-window.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";

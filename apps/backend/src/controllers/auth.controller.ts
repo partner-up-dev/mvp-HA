@@ -10,9 +10,11 @@ import {
 } from "../auth/middleware";
 import type { AuthEnv } from "../auth/middleware";
 import { UserRepository } from "../repositories/UserRepository";
-import { verifyUserPin } from "../domains/pr-core/services/user-pin-auth.service";
-import { registerLocalUser } from "../domains/user/use-cases/register-local-user";
-import { registerAnonymousUser } from "../domains/user/use-cases/register-anonymous-user";
+import {
+  registerAnonymousUser,
+  registerLocalUser,
+  verifyUserPin,
+} from "../domains/user";
 import {
   clearAnonymousSessionCookie,
   setAnonymousSessionCookie,

@@ -6,7 +6,7 @@ import { UserReliabilityRepository } from "../../../repositories/UserReliability
 import type { PRId } from "../../../entities/partner-request";
 import type { PartnerStatus } from "../../../entities/partner";
 import type { User } from "../../../entities/user";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import {
   isJoinLockedByPolicy,
   isWithinConfirmationWindow,

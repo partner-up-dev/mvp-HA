@@ -2,7 +2,7 @@ import { and, count, eq, notInArray, sql } from "drizzle-orm";
 import { db } from "../../../lib/db";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import { partnerRequests } from "../../../entities/partner-request";
 import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partners } from "../../../entities/partner";

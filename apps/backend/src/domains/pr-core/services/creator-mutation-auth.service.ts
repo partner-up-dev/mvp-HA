@@ -5,7 +5,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { UserRepository } from "../../../repositories/UserRepository";
 import type { RequestAuth } from "../../../auth/types";
 import { issueAuthForUser } from "../../../auth/middleware";
-import { verifyUserPin } from "./user-pin-auth.service";
+import { verifyUserPin } from "../../user";
 
 const prRepo = new PartnerRequestRepository();
 const userRepo = new UserRepository();

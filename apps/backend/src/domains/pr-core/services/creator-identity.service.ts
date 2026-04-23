@@ -1,11 +1,11 @@
 import { HTTPException } from "hono/http-exception";
 import type { User, UserId } from "../../../entities/user";
 import { UserRepository } from "../../../repositories/UserRepository";
-import { resolveUserByOpenId } from "./user-resolver.service";
 import {
   createLocalUserWithGeneratedPin,
   ensureUserHasPin,
-} from "./user-pin-auth.service";
+  resolveUserByOpenId,
+} from "../../user";
 
 const userRepo = new UserRepository();
 

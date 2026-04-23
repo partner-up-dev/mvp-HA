@@ -3,7 +3,7 @@ import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId, PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 import {

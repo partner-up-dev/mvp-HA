@@ -1,5 +1,5 @@
 import { issueAuthForUser } from "../../../auth/middleware";
-import { createLocalUserWithGeneratedPin } from "../../pr-core/services/user-pin-auth.service";
+import { createLocalUserWithGeneratedPin } from "../services/user-pin-auth.service";
 
 export type LocalRegistrationResult = {
   role: "authenticated" | "service";

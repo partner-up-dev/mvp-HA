@@ -5,8 +5,8 @@ import { UserRepository } from "../../../repositories/UserRepository";
 import {
   createLocalUserWithGeneratedPin,
   ensureUserHasPin,
-} from "../../pr-core/services/user-pin-auth.service";
-import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
+  resolveUserByOpenId,
+} from "../../user";
 import { joinPRAsUser, type PublicPR } from "../../pr-core";
 
 const userRepo = new UserRepository();

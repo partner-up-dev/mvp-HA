@@ -22,9 +22,11 @@ import {
 } from "../services/WeChatOAuthService";
 import { UserRepository } from "../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
-import { bindWeChatToCurrentUser } from "../domains/user/use-cases/current-user";
-import { upgradeAnonymousUserWithWeChat } from "../domains/user/use-cases/upgrade-anonymous-user";
-import { ensureUserHasPin } from "../domains/pr-core/services/user-pin-auth.service";
+import {
+  bindWeChatToCurrentUser,
+  ensureUserHasPin,
+  upgradeAnonymousUserWithWeChat,
+} from "../domains/user";
 import {
   clearAnonymousSessionCookie,
   readAnonymousSessionCookie,

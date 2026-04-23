@@ -3,7 +3,7 @@ import { CommunityPRRepository } from "../../../repositories/CommunityPRReposito
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId, PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import { resolveUserByOpenId } from "../../pr-core/services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import { toPublicPR } from "../../pr-core/services/pr-view.service";
 import { buildCommunityPartnerSection, type PartnerSectionView } from "../../pr-core/services/partner-section-view.service";
 import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
