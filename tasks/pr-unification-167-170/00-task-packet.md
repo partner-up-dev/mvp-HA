@@ -843,6 +843,45 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Verification gap:
   - route-share fallback naming still contains anchor/community route keys and remains part of a later vocabulary cleanup slice
 
+## Telemetry Vocabulary Decision Map
+
+| Telemetry residue | Current role | Decision | Follow-up target |
+| --- | --- | --- | --- |
+| share telemetry field `prKind` | legacy subtype analytics field on share method, share link, and share lifecycle events | retire now | use `prId`, `spm`, `routeSessionId`, and `revision` for share analysis |
+| share lifecycle field `entityKey` | route-share replay and stale-descriptor debugging key | keep temporarily | converge later on a generic PR entity key once route-share descriptor vocabulary is rewritten |
+| `anchor_pr_primary_cta_impression` | primary CTA impression on the unified PR page | rename later | `pr_primary_cta_impression` |
+| `anchor_pr_primary_cta_click` | primary CTA click on the unified PR page | rename later | `pr_primary_cta_click` |
+| `anchor_pr_lane_expand` | secondary lane expansion on the unified PR page | rename later | `pr_lane_expand` |
+| `anchor_pr_recovery_accept` | recovery-lane action telemetry | retire with the remaining recovery compatibility cleanup | none |
+| `anchor_pr_secondary_action_click` | secondary action telemetry, including share-trigger taps | rename later | `pr_secondary_action_click` |
+| `community_pr_*` event family | not present as a real analytics family; only route/share keys and old paths remain | no telemetry event rename needed | continue route-key and alias cleanup in later slices |
+
+## Slice 7G - Share Telemetry Vocabulary Cleanup
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - remove `prKind` from share telemetry payloads and route-share lifecycle telemetry
+  - keep the existing `anchor_pr_*` event family as temporary vocabulary, while documenting its rename or retire path explicitly
+  - keep share session and replay diagnostics stable during the cleanup
+- Artifacts:
+  - `apps/frontend/src/shared/telemetry/events.ts`
+  - `apps/frontend/src/domains/share/use-cases/route-share-controller.ts`
+  - `apps/frontend/src/domains/share/use-cases/useShareCarousel.ts`
+  - `apps/frontend/src/domains/share/use-cases/as-link/useShareAsLink.ts`
+  - `apps/frontend/src/shared/wechat/useWeChatShare.ts`
+- Decisions implemented:
+  - `share_method_switch`, `share_link_*`, and `share_*` lifecycle events no longer accept or emit `prKind`
+  - route-share lifecycle telemetry now extracts only `prId` from descriptor `entityKey` and leaves subtype inference behind
+  - WeChat share replay telemetry follows the same rule, so `prKind` has left both browser-share and WeChat-share payloads
+  - share-triggered `anchor_pr_secondary_action_click` remains temporarily in place, but its payload no longer carries `prKind`
+  - telemetry rename and retire follow-up work is now tracked in the decision map above
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `rg -n "prKind" apps/frontend/src/shared/telemetry apps/frontend/src/domains/share apps/frontend/src/shared/wechat` now leaves only PR-page telemetry type support outside the share stack
+- Verification gap:
+  - `anchor_pr_*` event names still remain on unified PR page interactions and need a later rename slice after route and page vocabulary finish converging
+
 ## Handoff Source
 
 This packet spins out of:

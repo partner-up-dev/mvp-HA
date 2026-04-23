@@ -3,7 +3,6 @@ import type {
   RouteShareDescriptor,
   RouteSharePhase,
 } from "@/domains/share/model/types";
-import type { PRKind } from "@/shared/telemetry/events";
 import { trackEvent } from "@/shared/telemetry/track";
 import { useWeChatShareCard } from "@/shared/wechat/useWeChatShareCard";
 
@@ -48,7 +47,6 @@ type ShareTelemetryPayload = {
   entityKey?: string | null;
   revision?: string;
   prId?: number;
-  prKind?: PRKind;
 };
 
 const toTelemetryPayload = (
@@ -61,11 +59,7 @@ const toTelemetryPayload = (
   };
 
   if (descriptor.entityKey) {
-    const [rawKind, rawPrId] = descriptor.entityKey.split(":");
-    if (rawKind === "ANCHOR" || rawKind === "COMMUNITY") {
-      payload.prKind = rawKind;
-    }
-
+    const [, rawPrId] = descriptor.entityKey.split(":");
     const prId = Number(rawPrId);
     if (Number.isInteger(prId) && prId > 0) {
       payload.prId = prId;

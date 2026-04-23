@@ -55,17 +55,24 @@ export const LEGACY_ANALYTICS_EVENT_NAME_MAP: Record<
   share_clicked: "share_method_switch",
 };
 
-type PRContextPayload = {
-  prId?: number;
-  prKind?: PRKind;
+type AnalyticsContextPayload = {
   scenarioType?: string;
   actorId?: string;
   spm?: string;
 };
 
+type PRContextPayload = AnalyticsContextPayload & {
+  prId?: number;
+  prKind?: PRKind;
+};
+
+type ShareContextPayload = AnalyticsContextPayload & {
+  prId?: number;
+};
+
 type ShareRoutePhase = "FALLBACK" | "BASE" | "ENRICHED";
 
-type ShareLifecyclePayload = PRContextPayload & {
+type ShareLifecyclePayload = ShareContextPayload & {
   routeSessionId: string;
   entityKey?: string | null;
   revision?: string;
@@ -94,16 +101,16 @@ type CanonicalAnalyticsPayloadMap = {
     didAttend: boolean;
     wouldJoinAgain: boolean;
   };
-  share_method_switch: PRContextPayload & {
+  share_method_switch: ShareContextPayload & {
     methodId: string;
   };
-  share_link_native_success: PRContextPayload & {
+  share_link_native_success: ShareContextPayload & {
     url: string;
   };
-  share_link_copy_success: PRContextPayload & {
+  share_link_copy_success: ShareContextPayload & {
     url: string;
   };
-  share_link_failed: PRContextPayload & {
+  share_link_failed: ShareContextPayload & {
     url: string;
     stage: "native" | "copy";
   };

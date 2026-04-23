@@ -29,14 +29,6 @@ const resolveCurrentPRId = (): number | undefined => {
   return parsePRIdFromPathname(window.location.pathname) ?? undefined;
 };
 
-const resolvePRKindFromSpmRouteKey = (
-  routeKey: ShareSpmRouteKey | null | undefined,
-): "ANCHOR" | "COMMUNITY" | undefined => {
-  if (routeKey === "anchor_pr") return "ANCHOR";
-  if (routeKey === "community_pr") return "COMMUNITY";
-  return undefined;
-};
-
 export const useShareCarousel = ({
   allMethods,
   defaultMethodId = "XIAOHONGSHU",
@@ -100,16 +92,13 @@ export const useShareCarousel = ({
     markUserInteraction();
     moveMethod(-1);
     const prId = resolveCurrentPRId();
-    const prKind = resolvePRKindFromSpmRouteKey(spmRouteKey);
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
       prId,
-      prKind,
     });
-    if (prKind === "ANCHOR" && prId !== undefined) {
+    if (spmRouteKey === "anchor_pr" && prId !== undefined) {
       trackEvent("anchor_pr_secondary_action_click", {
         prId,
-        prKind,
         actionType: "SHARE_METHOD_SWITCH",
         methodId: currentMethodId.value,
       });
@@ -120,16 +109,13 @@ export const useShareCarousel = ({
     markUserInteraction();
     moveMethod(1);
     const prId = resolveCurrentPRId();
-    const prKind = resolvePRKindFromSpmRouteKey(spmRouteKey);
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
       prId,
-      prKind,
     });
-    if (prKind === "ANCHOR" && prId !== undefined) {
+    if (spmRouteKey === "anchor_pr" && prId !== undefined) {
       trackEvent("anchor_pr_secondary_action_click", {
         prId,
-        prKind,
         actionType: "SHARE_METHOD_SWITCH",
         methodId: currentMethodId.value,
       });

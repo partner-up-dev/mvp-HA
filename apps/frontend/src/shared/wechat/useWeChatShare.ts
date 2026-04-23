@@ -1,7 +1,6 @@
 import { computed, ref } from "vue";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { isWeChatMiniProgramWebView } from "@/shared/browser/isWeChatMiniProgramWebView";
-import type { PRKind } from "@/shared/telemetry/events";
 import { trackEvent } from "@/shared/telemetry/track";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
@@ -27,7 +26,6 @@ type ShareCardTelemetryPayload = {
   entityKey?: string | null;
   revision?: string;
   prId?: number;
-  prKind?: PRKind;
   phase?: ShareCardPhase;
 };
 
@@ -195,11 +193,7 @@ const toShareCardTelemetryPayload = (
 
   if (data.entityKey) {
     payload.entityKey = data.entityKey;
-    const [rawKind, rawPrId] = data.entityKey.split(":");
-    if (rawKind === "ANCHOR" || rawKind === "COMMUNITY") {
-      payload.prKind = rawKind;
-    }
-
+    const [, rawPrId] = data.entityKey.split(":");
     const prId = Number(rawPrId);
     if (Number.isInteger(prId) && prId > 0) {
       payload.prId = prId;
