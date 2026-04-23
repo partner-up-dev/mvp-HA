@@ -1,7 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { updatePRContent } from "../../pr";
 import {
   normalizeSystemLocationPool,
@@ -9,12 +8,11 @@ import {
 } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
-import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr/services";
+import { countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource } from "../../pr/services";
 import type { PRId } from "../../../entities";
 
 const anchorPRRepo = new AnchorPRRepository();
 const anchorEventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 
 export interface UpdateAdminAnchorPRContentInput {
   title: string | null;
@@ -38,11 +36,6 @@ export async function updateAdminAnchorPRContent(
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
 
-  const batch = await batchRepo.findById(anchorRecord.anchor.batchId);
-  if (!batch) {
-    throw new HTTPException(500, { message: "Anchor event batch missing" });
-  }
-
   const event = await anchorEventRepo.findById(anchorRecord.anchor.anchorEventId);
   if (!event) {
     throw new HTTPException(500, { message: "Anchor event missing" });
@@ -63,9 +56,10 @@ export async function updateAdminAnchorPRContent(
 
     if (matchedUserLocation) {
       const effectiveActiveCount =
-        await countActiveVisibleAnchorPRsByBatchAndLocationSource(
+        await countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource(
           {
-            batchId: batch.id,
+            anchorEventId: event.id,
+            timeWindow: anchorRecord.anchor.timeWindow,
             location: input.location,
             locationSource: "USER",
             excludePrId: anchorRecord.root.id,
@@ -89,7 +83,7 @@ export async function updateAdminAnchorPRContent(
     {
       title: input.title ?? undefined,
       type: input.type,
-      time: batch.timeWindow,
+      time: anchorRecord.anchor.timeWindow,
       location: input.location,
       minPartners: input.minPartners,
       maxPartners: input.maxPartners,
@@ -110,9 +104,8 @@ export async function updateAdminAnchorPRContent(
   await materializePRSupportResources({
     prId,
     anchorEventId: anchorRecord.anchor.anchorEventId,
-    batchId: anchorRecord.anchor.batchId,
     location: input.location,
-    timeWindow: batch.timeWindow,
+    timeWindow: anchorRecord.anchor.timeWindow,
   });
 
   return updated;

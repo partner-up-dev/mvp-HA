@@ -6,10 +6,8 @@
 
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
-  AnchorEvent,
   AnchorEventId,
   TimeWindowEntry,
   UserLocationEntry,
@@ -23,14 +21,10 @@ import {
   isActiveVisibleAnchorPRStatus,
   readVisiblePartnerRequestsByTypeAndTime,
 } from "../../pr/services";
-import {
-  buildDiscoverableTimeWindowPoolFromBatches,
-  listDiscoverableAnchorEventBatches,
-} from "../services/time-window-pool";
+import { listAnchorEventTimeWindows } from "../services/time-window-pool";
 import { isEventScopedLocation } from "../services/event-scope";
 
 const eventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 const partnerRepo = new PartnerRepository();
 
 export interface AnchorPRSummary {
@@ -114,10 +108,7 @@ const toTimeWindowDetail = (
 export async function getAnchorEventDetail(
   eventId: AnchorEventId,
 ): Promise<AnchorEventDetail> {
-  const [event, batches] = await Promise.all([
-    eventRepo.findById(eventId),
-    batchRepo.findByAnchorEventId(eventId),
-  ]);
+  const event = await eventRepo.findById(eventId);
   if (!event) {
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
@@ -126,10 +117,7 @@ export async function getAnchorEventDetail(
     event.systemLocationPool,
   );
   const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
-  const discoverableBatches = listDiscoverableAnchorEventBatches(batches);
-  const timeWindowPool = buildDiscoverableTimeWindowPoolFromBatches(
-    discoverableBatches,
-  );
+  const timeWindowPool = listAnchorEventTimeWindows(event);
 
   const timeWindowDetails: TimeWindowDetail[] = [];
   const allPRIds: number[] = [];

@@ -1,7 +1,5 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type {
-  AnchorEvent,
   AnchorEventId,
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
@@ -12,11 +10,10 @@ import {
 import type { PartnerRequest } from "../../../entities/partner-request";
 import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr/services";
 import { isJoinableStatus } from "../../pr/services";
-import { buildDiscoverableTimeWindowPoolFromBatches } from "./time-window-pool";
+import { listAnchorEventTimeWindows } from "./time-window-pool";
 import { isEventScopedLocation } from "./event-scope";
 
 const eventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 
 const trimNullable = (value: string | null | undefined): string | null => {
   if (typeof value !== "string") {
@@ -187,16 +184,13 @@ const buildCandidateGroup = ({
 const groupJoinableCandidates = async (
   eventId: AnchorEventId,
 ): Promise<CandidateGroup[]> => {
-  const [event, batches] = await Promise.all([
-    eventRepo.findById(eventId),
-    batchRepo.findByAnchorEventId(eventId),
-  ]);
+  const event = await eventRepo.findById(eventId);
 
   if (!event) {
     return [];
   }
 
-  const timeWindowPool = buildDiscoverableTimeWindowPoolFromBatches(batches);
+  const timeWindowPool = listAnchorEventTimeWindows(event);
   const groupMap = new Map<string, CandidateGroup>();
 
   for (const timeWindow of timeWindowPool) {

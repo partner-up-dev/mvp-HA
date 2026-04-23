@@ -10,7 +10,6 @@ import {
 } from "../../../repositories/AnchorPRRepository";
 import type { AnchorLocationSource } from "../../../entities/anchor-partner-request";
 import type { AnchorEventId } from "../../../entities/anchor-event";
-import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
 import type { TimeWindowEntry } from "../../../entities/anchor-event";
 import type { PRId, PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -103,11 +102,15 @@ const applyConsistencyToAnchorRecords = async (
   }));
 };
 
-export async function readVisibleAnchorPRRecordsByBatchId(
-  batchId: AnchorEventBatchId,
+export async function readVisibleAnchorPRRecordsByEventTimeWindow(
+  anchorEventId: AnchorEventId,
+  timeWindow: TimeWindowEntry,
   options: { consistency?: PRReadConsistency } = {},
 ): Promise<AnchorPRRecord[]> {
-  const records = await anchorPRRepo.findVisibleByBatchId(batchId);
+  const records = await anchorPRRepo.findVisibleByAnchorEventAndTimeWindow(
+    anchorEventId,
+    timeWindow,
+  );
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
@@ -119,41 +122,50 @@ export async function readVisibleAnchorPRRecordsByAnchorEventId(
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
-export async function readAnchorPRRecordsByBatchId(
-  batchId: AnchorEventBatchId,
+export async function readAnchorPRRecordsByEventTimeWindow(
+  anchorEventId: AnchorEventId,
+  timeWindow: TimeWindowEntry,
   options: { consistency?: PRReadConsistency } = {},
 ): Promise<AnchorPRRecord[]> {
-  const records = await anchorPRRepo.findByBatchId(batchId);
+  const records = await anchorPRRepo.findByAnchorEventAndTimeWindow(
+    anchorEventId,
+    timeWindow,
+  );
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
-export async function readVisibleAnchorPRRecordsByBatchIdAndLocation(
-  batchId: AnchorEventBatchId,
+export async function readVisibleAnchorPRRecordsByEventTimeWindowAndLocation(
+  anchorEventId: AnchorEventId,
+  timeWindow: TimeWindowEntry,
   location: string,
   options: { consistency?: PRReadConsistency } = {},
 ): Promise<AnchorPRRecord[]> {
-  const records = await anchorPRRepo.findVisibleByBatchIdAndLocation(
-    batchId,
+  const records = await anchorPRRepo.findVisibleByAnchorEventTimeWindowAndLocation(
+    anchorEventId,
+    timeWindow,
     location,
   );
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
-export async function countActiveVisibleAnchorPRsByBatchAndLocationSource({
-  batchId,
+export async function countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource({
+  anchorEventId,
+  timeWindow,
   location,
   locationSource,
   excludePrId,
   consistency,
 }: {
-  batchId: AnchorEventBatchId;
+  anchorEventId: AnchorEventId;
+  timeWindow: TimeWindowEntry;
   location: string;
   locationSource: AnchorLocationSource;
   excludePrId?: PRId;
   consistency?: PRReadConsistency;
 }): Promise<number> {
-  const records = await readVisibleAnchorPRRecordsByBatchIdAndLocation(
-    batchId,
+  const records = await readVisibleAnchorPRRecordsByEventTimeWindowAndLocation(
+    anchorEventId,
+    timeWindow,
     location,
     { consistency },
   );

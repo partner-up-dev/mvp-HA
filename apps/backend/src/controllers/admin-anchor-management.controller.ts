@@ -3,8 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   anchorEventStatusSchema,
-  anchorEventBatchEarliestLeadMinutesSchema,
-  anchorEventBatchStatusSchema,
+  anchorEventTimePoolConfigSchema,
   normalizeSystemLocationPool,
   normalizeUserLocationPool,
   userLocationEntrySchema,
@@ -17,13 +16,11 @@ import {
 } from "../auth/admin-middleware";
 import {
   createAdminAnchorEvent,
-  createAdminAnchorEventBatch,
   createAdminAnchorPR,
   createAdminAnchorPRMessage,
   getAdminAnchorWorkspace,
   releaseAdminAnchorPRPartner,
   updateAdminAnchorEvent,
-  updateAdminAnchorEventBatch,
   updateAdminAnchorPRContent,
   updateAdminAnchorPRStatus,
   updateAdminAnchorPRVisibility,
@@ -34,10 +31,6 @@ const app = new Hono<AdminAuthEnv>();
 
 const eventIdParamSchema = z.object({
   eventId: z.coerce.number().int().positive(),
-});
-
-const batchIdParamSchema = z.object({
-  batchId: z.coerce.number().int().positive(),
 });
 
 const prIdParamSchema = z.object({
@@ -59,6 +52,7 @@ const adminAnchorEventInputSchema = z.object({
   description: z.string().trim().nullable(),
   systemLocationPool: z.array(z.string().trim().min(1)),
   userLocationPool: z.array(userLocationEntrySchema),
+  timePoolConfig: anchorEventTimePoolConfigSchema,
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
   coverImage: z.string().trim().nullable(),
@@ -66,14 +60,8 @@ const adminAnchorEventInputSchema = z.object({
   status: anchorEventStatusSchema,
 });
 
-const adminAnchorBatchInputSchema = z.object({
-  timeWindow: timeWindowSchema,
-  status: anchorEventBatchStatusSchema,
-  description: z.string().trim().nullable(),
-  earliestLeadMinutes: anchorEventBatchEarliestLeadMinutesSchema.nullable(),
-});
-
 const adminCreateAnchorPRInputSchema = z.object({
+  timeWindow: timeWindowSchema,
   title: z.string().trim().nullable(),
   type: z.string().trim().nullable(),
   location: z.string().trim().min(1),
@@ -155,41 +143,13 @@ export const adminAnchorManagementRoute = app
     },
   )
   .post(
-    "/anchor-events/:eventId/batches",
+    "/anchor-events/:eventId/anchor-prs",
     zValidator("param", eventIdParamSchema),
-    zValidator("json", adminAnchorBatchInputSchema),
+    zValidator("json", adminCreateAnchorPRInputSchema),
     async (c) => {
       const { eventId } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await createAdminAnchorEventBatch(eventId, {
-        ...payload,
-        description: payload.description || null,
-      });
-      return c.json(result);
-    },
-  )
-  .patch(
-    "/batches/:batchId",
-    zValidator("param", batchIdParamSchema),
-    zValidator("json", adminAnchorBatchInputSchema),
-    async (c) => {
-      const { batchId } = c.req.valid("param");
-      const payload = c.req.valid("json");
-      const result = await updateAdminAnchorEventBatch(batchId, {
-        ...payload,
-        description: payload.description || null,
-      });
-      return c.json(result);
-    },
-  )
-  .post(
-    "/batches/:batchId/anchor-prs",
-    zValidator("param", batchIdParamSchema),
-    zValidator("json", adminCreateAnchorPRInputSchema),
-    async (c) => {
-      const { batchId } = c.req.valid("param");
-      const payload = c.req.valid("json");
-      const result = await createAdminAnchorPR(batchId, {
+      const result = await createAdminAnchorPR(eventId, payload.timeWindow, {
         ...payload,
         title: payload.title || null,
         type: payload.type || null,

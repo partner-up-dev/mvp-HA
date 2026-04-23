@@ -8,8 +8,6 @@ type AdminApi = typeof adminClient.api.admin;
 type AnchorWorkspaceRoute = AdminApi["anchor-pr"]["workspace"];
 type AnchorEventsRoute = AdminApi["anchor-events"];
 type AnchorEventRoute = AnchorEventsRoute[":eventId"];
-type BatchesRoute = AdminApi["batches"];
-type BatchRoute = BatchesRoute[":batchId"];
 type AnchorPRsRoute = AdminApi["anchor-prs"];
 type AnchorPRRoute = AnchorPRsRoute[":id"];
 
@@ -33,16 +31,8 @@ export type UpdateAdminAnchorEventResponse = InferResponseType<
   AnchorEventRoute["$patch"]
 >;
 
-export type CreateAdminAnchorBatchResponse = InferResponseType<
-  AnchorEventRoute["batches"]["$post"]
->;
-
-export type UpdateAdminAnchorBatchResponse = InferResponseType<
-  BatchRoute["$patch"]
->;
-
 export type CreateAdminAnchorPRResponse = InferResponseType<
-  BatchRoute["anchor-prs"]["$post"]
+  AnchorEventRoute["anchor-prs"]["$post"]
 >;
 
 export type UpdateAdminAnchorPRContentResponse = InferResponseType<
@@ -61,6 +51,27 @@ export type CreateAdminAnchorPRMessageResponse = InferResponseType<
   AnchorPRRoute["messages"]["$post"]
 >;
 
+export type AdminAnchorRecurringStartRuleInput = {
+  id: string;
+  kind: "RECURRING";
+  weekdays: number[];
+  timeOfDay: string;
+};
+
+export type AdminAnchorAbsoluteStartRuleInput = {
+  id: string;
+  kind: "ABSOLUTE";
+  startAt: string;
+};
+
+export type AdminAnchorTimePoolConfigInput = {
+  durationMinutes: number | null;
+  earliestLeadMinutes: number | null;
+  startRules: Array<
+    AdminAnchorRecurringStartRuleInput | AdminAnchorAbsoluteStartRuleInput
+  >;
+};
+
 export type AdminAnchorEventInput = {
   title: string;
   type: string;
@@ -70,6 +81,7 @@ export type AdminAnchorEventInput = {
     id: string;
     perBatchCap: number;
   }>;
+  timePoolConfig: AdminAnchorTimePoolConfigInput;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   coverImage: string | null;
@@ -77,14 +89,8 @@ export type AdminAnchorEventInput = {
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 
-export type AdminAnchorBatchInput = {
-  timeWindow: [string | null, string | null];
-  status: "OPEN" | "FULL" | "EXPIRED";
-  description: string | null;
-  earliestLeadMinutes: number | null;
-};
-
 export type AdminCreateAnchorPRInput = {
+  timeWindow: [string | null, string | null];
   title: string | null;
   type: string | null;
   location: string;
@@ -190,77 +196,23 @@ export const useUpdateAdminAnchorEvent = () => {
   });
 };
 
-export const useCreateAdminAnchorBatch = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    CreateAdminAnchorBatchResponse,
-    Error,
-    { eventId: number; input: AdminAnchorBatchInput }
-  >({
-    mutationFn: async ({ eventId, input }) => {
-      const res = await adminClient.api.admin["anchor-events"][
-        ":eventId"
-      ].batches.$post({
-        param: { eventId: eventId.toString() },
-        json: input,
-      });
-      if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "创建批次失败"));
-      }
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
-      });
-    },
-  });
-};
-
-export const useUpdateAdminAnchorBatch = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    UpdateAdminAnchorBatchResponse,
-    Error,
-    { batchId: number; input: AdminAnchorBatchInput }
-  >({
-    mutationFn: async ({ batchId, input }) => {
-      const res = await adminClient.api.admin.batches[":batchId"].$patch({
-        param: { batchId: batchId.toString() },
-        json: input,
-      });
-      if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "更新批次失败"));
-      }
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
-      });
-    },
-  });
-};
-
 export const useCreateAdminAnchorPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
     CreateAdminAnchorPRResponse,
     Error,
-    { batchId: number; input: AdminCreateAnchorPRInput }
+    { eventId: number; input: AdminCreateAnchorPRInput }
   >({
-    mutationFn: async ({ batchId, input }) => {
-      const res = await adminClient.api.admin.batches[":batchId"][
-        "anchor-prs"
-      ].$post({
-        param: { batchId: batchId.toString() },
+    mutationFn: async ({ eventId, input }) => {
+      const res = await adminClient.api.admin["anchor-events"][
+        ":eventId"
+      ]["anchor-prs"].$post({
+        param: { eventId: eventId.toString() },
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "创建 Anchor PR 失败"));
+        throw new Error(await readErrorMessage(res, "创建 PR 失败"));
       }
       return await res.json();
     },
@@ -288,7 +240,7 @@ export const useUpdateAdminAnchorPRContent = () => {
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "更新 Anchor PR 内容失败"));
+        throw new Error(await readErrorMessage(res, "更新 PR 内容失败"));
       }
       return await res.json();
     },
@@ -316,7 +268,7 @@ export const useUpdateAdminAnchorPRStatus = () => {
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "更新 Anchor PR 状态失败"));
+        throw new Error(await readErrorMessage(res, "更新 PR 状态失败"));
       }
       return await res.json();
     },
@@ -344,9 +296,7 @@ export const useUpdateAdminAnchorPRVisibility = () => {
         json: input,
       });
       if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, "更新 Anchor PR 可见性失败"),
-        );
+        throw new Error(await readErrorMessage(res, "更新 PR 可见性失败"));
       }
       return await res.json();
     },
@@ -383,7 +333,7 @@ export const useCreateAdminAnchorPRMessage = () => {
         queryKey: queryKeys.admin.anchorWorkspace(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.messages(variables.prId),
+        queryKey: queryKeys.pr.messages(variables.prId),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.anchorPRMessages(variables.prId),

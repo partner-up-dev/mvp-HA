@@ -1,22 +1,23 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type { AnchorPRContext } from "../../../repositories/AnchorPRRepository";
 import { initializeSlotsForPR } from "../../pr/services";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import {
   normalizeSystemLocationPool,
   normalizeUserLocationPool,
+  type AnchorEventId,
+  type TimeWindowEntry,
 } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
-import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr/services";
+import { countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource } from "../../pr/services";
 import { assertManualPartnerBoundsValid } from "../../pr/services";
-import type { AnchorEventBatchId, PartnerRequest } from "../../../entities";
+import type { PartnerRequest } from "../../../entities";
+import { eventOwnsTimeWindow } from "../../anchor-event/services/time-window-pool";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 
 export interface CreateAdminAnchorPRInput {
   title: string | null;
@@ -37,17 +38,18 @@ export interface CreateAdminAnchorPROutput {
 }
 
 export async function createAdminAnchorPR(
-  batchId: AnchorEventBatchId,
+  anchorEventId: AnchorEventId,
+  timeWindow: TimeWindowEntry,
   input: CreateAdminAnchorPRInput,
 ): Promise<CreateAdminAnchorPROutput> {
-  const batch = await batchRepo.findById(batchId);
-  if (!batch) {
-    throw new HTTPException(404, { message: "Anchor event batch not found" });
-  }
-
-  const event = await anchorEventRepo.findById(batch.anchorEventId);
+  const event = await anchorEventRepo.findById(anchorEventId);
   if (!event) {
     throw new HTTPException(404, { message: "Anchor event not found" });
+  }
+  if (!eventOwnsTimeWindow(event, timeWindow)) {
+    throw new HTTPException(400, {
+      message: "Anchor event time window is not available",
+    });
   }
 
   const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
@@ -64,9 +66,10 @@ export async function createAdminAnchorPR(
   const locationSource = matchedUserLocation ? "USER" : "SYSTEM";
   if (matchedUserLocation) {
     const activeCount =
-      await countActiveVisibleAnchorPRsByBatchAndLocationSource(
+      await countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource(
         {
-          batchId: batch.id,
+          anchorEventId: event.id,
+          timeWindow,
           location: input.location,
           locationSource: "USER",
         },
@@ -87,7 +90,7 @@ export async function createAdminAnchorPR(
   const createdRoot = await prRepo.create({
     title: input.title,
     type: input.type?.trim() || event.type,
-    time: batch.timeWindow,
+    time: timeWindow,
     location: input.location,
     status: "OPEN",
     visibilityStatus: "VISIBLE",
@@ -108,7 +111,6 @@ export async function createAdminAnchorPR(
   await materializePRSupportResources({
     prId: createdRoot.id,
     anchorEventId: event.id,
-    batchId: batch.id,
     location: createdRoot.location,
     timeWindow: createdRoot.time,
   });
@@ -118,7 +120,7 @@ export async function createAdminAnchorPR(
     anchor: {
       prId: createdRoot.id,
       anchorEventId: event.id,
-      batchId: batch.id,
+      timeWindow,
       locationSource,
       visibilityStatus: "VISIBLE",
       confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,

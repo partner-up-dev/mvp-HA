@@ -39,6 +39,14 @@ export class AnchorEventRepository {
     return this.findByStatuses(["ACTIVE"]);
   }
 
+  async findByType(type: string): Promise<AnchorEvent[]> {
+    return await db
+      .select()
+      .from(anchorEvents)
+      .where(eq(anchorEvents.type, type))
+      .orderBy(desc(anchorEvents.createdAt));
+  }
+
   async updateStatus(
     id: AnchorEventId,
     status: AnchorEventStatus,
@@ -61,7 +69,7 @@ export class AnchorEventRepository {
         | "description"
         | "systemLocationPool"
         | "userLocationPool"
-        | "timeWindowPool"
+        | "timePoolConfig"
         | "defaultMinPartners"
         | "defaultMaxPartners"
         | "coverImage"

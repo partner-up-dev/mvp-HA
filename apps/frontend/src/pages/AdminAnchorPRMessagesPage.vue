@@ -27,24 +27,27 @@
 
         <section class="panel">
           <div class="stack">
-            <h2 class="card-title">{{ t("adminAnchorPRMessages.batchesTitle") }}</h2>
+            <h2 class="card-title">{{ t("adminAnchorPRMessages.timeWindowsTitle") }}</h2>
             <div v-if="selectedEvent === null" class="hint">
               {{ t("adminAnchorPRMessages.selectEventHint") }}
             </div>
-            <div v-else-if="selectedEvent.batches.length === 0" class="hint">
-              {{ t("adminAnchorPRMessages.emptyBatches") }}
+            <div v-else-if="selectedEvent.timeWindows.length === 0" class="hint">
+              {{ t("adminAnchorPRMessages.emptyTimeWindows") }}
             </div>
             <div v-else class="selection-list">
               <ChoiceCard
-                v-for="batch in selectedEvent.batches"
-                :key="batch.id"
+                v-for="batch in selectedEvent.timeWindows"
+                :key="batch.key"
                 class="selection-btn"
-                :active="selectedBatchId === batch.id"
-                @click="selectBatch(batch.id)"
+                :active="selectedBatchId === batch.key"
+                @click="selectBatch(batch.key)"
               >
                 <span>{{ formatWindow(batch.timeWindow) }}</span>
-                <small v-if="batch.description">{{ batch.description }}</small>
-                <small>{{ batch.status }}</small>
+                <small>{{
+                  t("adminAnchorPRMessages.generatedPRCount", {
+                    count: batch.prs.length,
+                  })
+                }}</small>
               </ChoiceCard>
             </div>
           </div>
@@ -214,7 +217,7 @@ import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
-type BatchRecord = EventRecord["batches"][number];
+type BatchRecord = EventRecord["timeWindows"][number];
 type PRRecord = BatchRecord["prs"][number];
 
 const { t } = useI18n();
@@ -240,14 +243,15 @@ const selectedEvent = computed<EventRecord | null>(
   () => events.value.find((event) => event.id === selectedEventId.value) ?? null,
 );
 
-const selectedBatchId = computed<number | null>(() => {
-  const parsed = Number(selectedBatchIdRaw.value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-});
+const selectedBatchId = computed<string | null>(() =>
+  selectedBatchIdRaw.value.trim() || null,
+);
 
 const selectedBatch = computed<BatchRecord | null>(
   () =>
-    selectedEvent.value?.batches.find((batch) => batch.id === selectedBatchId.value) ??
+    selectedEvent.value?.timeWindows.find(
+      (batch) => batch.key === selectedBatchId.value,
+    ) ??
     null,
 );
 
@@ -288,8 +292,8 @@ watch(
       return;
     }
 
-    if (!event.batches.some((batch) => String(batch.id) === selectedBatchIdRaw.value)) {
-      selectedBatchIdRaw.value = event.batches[0] ? String(event.batches[0].id) : "";
+    if (!event.timeWindows.some((batch) => batch.key === selectedBatchIdRaw.value)) {
+      selectedBatchIdRaw.value = event.timeWindows[0]?.key ?? "";
     }
   },
   { immediate: true },
@@ -319,8 +323,8 @@ const selectEvent = (eventId: number) => {
   selectedEventIdRaw.value = String(eventId);
 };
 
-const selectBatch = (batchId: number) => {
-  selectedBatchIdRaw.value = String(batchId);
+const selectBatch = (batchId: string) => {
+  selectedBatchIdRaw.value = batchId;
 };
 
 const selectPR = (prId: number) => {

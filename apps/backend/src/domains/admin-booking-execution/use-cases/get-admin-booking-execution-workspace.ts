@@ -1,13 +1,11 @@
 import type {
   AnchorEvent,
-  AnchorEventBatch,
   OperationLogRow,
   PRId,
   User,
   UserId,
 } from "../../../entities";
 import { operationLogService } from "../../../infra/operation-log";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
 import { AnchorPRBookingExecutionRepository } from "../../../repositories/AnchorPRBookingExecutionRepository";
@@ -31,7 +29,6 @@ const MANUAL_RELEASE_ACTION = "partner.admin_manual_release";
 
 const anchorPRRepo = new AnchorPRRepository();
 const anchorEventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
 const bookingContactRepo = new AnchorPRBookingContactRepository();
 const bookingExecutionRepo = new AnchorPRBookingExecutionRepository();
@@ -41,7 +38,6 @@ const userRepo = new UserRepository();
 type BookingExecutionContext = {
   record: AnchorPRRecord | null;
   event: AnchorEvent | null;
-  batch: AnchorEventBatch | null;
 };
 
 export type AdminBookingExecutionPendingItem = {
@@ -54,8 +50,6 @@ export type AdminBookingExecutionPendingItem = {
   partnerCount: number;
   eventId: number | null;
   eventTitle: string | null;
-  batchId: number | null;
-  batchTimeWindow: [string | null, string | null] | null;
   bookingTriggeredAt: string | null;
   effectiveBookingDeadlineAt: string | null;
   eligibleResources: Array<{
@@ -87,8 +81,6 @@ type BookingExecutionAuditBase = {
   timeWindow: [string | null, string | null] | null;
   eventId: number | null;
   eventTitle: string | null;
-  batchId: number | null;
-  batchTimeWindow: [string | null, string | null] | null;
   actorUserId: string | null;
   actorLabel: string | null;
   bookingContactPhone: string | null;
@@ -207,16 +199,11 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
         return {
           record: null,
           event: null,
-          batch: null,
         };
       }
 
-      const [event, batch] = await Promise.all([
-        anchorEventRepo.findById(record.anchor.anchorEventId),
-        batchRepo.findById(record.anchor.batchId),
-      ]);
-
-      return { record, event, batch };
+      const event = await anchorEventRepo.findById(record.anchor.anchorEventId);
+      return { record, event };
     })();
 
     contextCache.set(prId, promise);
@@ -276,10 +263,7 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
               (participant) =>
                 participant.partnerId === bookingContactState.ownerPartnerId,
             ) ?? null;
-      const [event, batch] = await Promise.all([
-        anchorEventRepo.findById(record.anchor.anchorEventId),
-        batchRepo.findById(record.anchor.batchId),
-      ]);
+      const event = await anchorEventRepo.findById(record.anchor.anchorEventId);
 
       return {
         prId: record.root.id,
@@ -291,8 +275,6 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
         partnerCount: activeParticipants.length,
         eventId: event?.id ?? null,
         eventTitle: event?.title ?? null,
-        batchId: batch?.id ?? null,
-        batchTimeWindow: batch?.timeWindow ?? null,
         bookingTriggeredAt: toIsoString(record.anchor.bookingTriggeredAt),
         effectiveBookingDeadlineAt: toIsoString(effectiveBookingDeadlineAt),
         eligibleResources: eligibleResources.map((resource) => ({
@@ -351,8 +333,6 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
         timeWindow: context.record?.root.time ?? null,
         eventId: context.event?.id ?? null,
         eventTitle: context.event?.title ?? null,
-        batchId: context.batch?.id ?? null,
-        batchTimeWindow: context.batch?.timeWindow ?? null,
         actorUserId: row.actorUserId,
         actorLabel: buildActorLabel(actor, row.actorUserId),
         bookingContactPhone: row.bookingContactPhone ?? null,
@@ -377,7 +357,6 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
           ? {
               record: null,
               event: null,
-              batch: null,
             }
           : await loadContext(prId);
       const actor = await loadActor(row.actorId);
@@ -393,8 +372,6 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
         timeWindow: context.record?.root.time ?? null,
         eventId: context.event?.id ?? null,
         eventTitle: context.event?.title ?? null,
-        batchId: context.batch?.id ?? null,
-        batchTimeWindow: context.batch?.timeWindow ?? null,
         actorUserId: row.actorId,
         actorLabel: buildActorLabel(actor, row.actorId),
         bookingContactPhone: readStringDetail(detail, "bookingContactPhone"),

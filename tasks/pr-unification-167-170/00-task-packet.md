@@ -97,6 +97,40 @@
   - Anchor Event page
   - time-pool driven PR discovery
 
+## Issue 170 Target Topology
+
+- `Anchor Event` owns one event-side `timePoolConfig` strategy
+  - `durationMinutes`
+  - `earliestLeadMinutes`
+  - `startRules`
+    - recurring start rules with minute-level granularity
+    - absolute start rules
+- generated `timeWindows` become a derived view rather than a persisted batch row set
+- public event detail, demand-card projection, admin workspace preview, and assisted-create all consume canonical generated `timeWindow` values
+- `PR.time_window` remains a root PR fact with only the PR-side invariant `start <= end`
+- booking-support resource templates stay event-owned, and batch-specific support overrides leave the model
+- admin operator surfaces move from `batch` editing to event-owned time-pool editing plus generated time-window preview
+
+## Issue 170 Migration Plan
+
+1. add event-owned `timePoolConfig` storage on `anchor_events`
+2. backfill `timePoolConfig` from existing `anchor_event_batches`
+   - `durationMinutes` from the event's migrated absolute windows
+   - `earliestLeadMinutes` from the event's migrated lead limit
+   - migrated `startRules` begin as absolute rules
+3. switch public discovery and assisted-create to generated `timeWindows`
+4. switch admin workspace and admin PR creation to event-owned time windows
+5. remove batch-specific booking-support overrides and batch-specific PR support materialization
+6. contract schema by dropping `anchor_event_batches`, `anchor_event_batch_support_overrides`, and any surviving batch-owned columns or foreign keys
+
+## Issue 170 Invariants
+
+- `earliestLeadMinutes` gates generated windows by `window.endTime <= now + earliestLeadMinutes`
+- discoverable time windows remain date-grouped on the public Anchor Event page
+- event-assisted create reuses canonical `POST /api/pr/new/form`
+- root PR storage remains single-table and batch-free
+- Demand Card generation remains batch-independent and keyed by `event.type + time_window`
+
 ## Semantic Ownership Target
 
 - `PR` is the only durable collaboration object name
@@ -1113,14 +1147,15 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
   - `apps/frontend/src/domains/pr/ui/sections/AnchorPRPrimaryActionLane.vue`
 - Decisions implemented:
-  - public Anchor Event discovery now treats `earliestLeadMinutes` as an event-batch gate on generated `timeWindow` visibility, with the decision taken from generated window end-time against `now + earliestLeadMinutes`
-  - `event.timeWindowPool` sync remains a raw cached pool of batch windows, while public discovery and demand-card projection use the discoverable pool derived from live batches
-  - admin batch create and update contracts now accept `earliestLeadMinutes`, and admin Anchor PR workspace exposes that field
-  - `AnchorPRRepository` now resolves anchor context from root PR facts plus event and batch scope instead of reading `anchor_partner_requests`
+  - public Anchor Event discovery now treats `earliestLeadMinutes` as an event-owned gate on generated `timeWindow` visibility, with the decision taken from generated window end-time against `now + earliestLeadMinutes`
+  - event-owned `timePoolConfig` now replaces persisted `timeWindowPool` and batch shells in live runtime
+  - admin Anchor Event management now edits `timePoolConfig` and previews generated `timeWindows`
+  - `AnchorPRRepository` now resolves anchor context from root PR facts plus event and generated `timeWindow` scope instead of reading `anchor_partner_requests`
   - admin anchor PR create, user anchor PR create, and auto-expand no longer write subtype rows
   - `community_partner_requests` and `anchor_partner_requests` source files have left the live code path
   - analytics daily aggregation now derives anchor/community line kind from explicit partner-admission policy on root PRs, while `scenario_type_metrics` uses `line_kind` instead of `pr_kind`
-  - `0025_single_pr_contract.sql` adds root `budget`, adds batch `earliest_lead_minutes`, renames analytics `line_kind`, drops `partner_requests.pr_kind`, and removes subtype tables
+  - `0025_single_pr_contract.sql` adds root `budget`, renames analytics `line_kind`, drops `partner_requests.pr_kind`, and removes subtype tables
+  - `0026_anchor_event_time_pool_contract.sql` adds event-owned `time_pool_config`, backfills it from legacy batch windows, drops `time_window_pool`, and removes batch and batch-support-override tables
   - frontend live PR route and create telemetry no longer attach `prKind`
 - Verification completed:
   - `pnpm --filter @partner-up-dev/backend typecheck`
@@ -1131,7 +1166,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Residual follow-up:
   - telemetry event-family rename such as `anchor_pr_* -> pr_*`
   - issue `#175` local credential and generated PIN cleanup
-  - admin vocabulary still carries `Anchor PR` / `batch` naming on operator pages even though storage and public contracts are already converged
+  - admin vocabulary still carries `Anchor PR` naming on operator pages even though storage and public contracts are already converged
 
 ## Slice 12B - pr-core Rewrite And Issue 167 Final Convergence
 
@@ -1181,9 +1216,53 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `pnpm --filter @partner-up-dev/backend exec tsx --test src/infra/notifications/wechat-pr-message.test.ts`
   - `pnpm --filter @partner-up-dev/frontend build`
 - Residual follow-up:
-  - `#170` still has one remaining event-side scheduling contract cut around the legacy batch shell and canonical time-window normalization
   - `#175` still owns generated PIN and local credential retirement
   - telemetry event-family rename remains separate from the structural convergence completed here
+
+## Slice 13 - Issue 170 Final Convergence
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this convergence slice:
+  - finish issue `#170` by replacing the legacy Anchor Event batch shell with event-owned time-pool configuration
+  - make public discovery, admin management, and event-assisted create consume generated canonical `timeWindow` values
+  - remove batch-specific booking-support overrides and remaining batch-owned runtime dependencies
+- Artifacts:
+  - `apps/backend/src/entities/anchor-event.ts`
+  - `apps/backend/src/domains/anchor-event/services/time-window-pool.ts`
+  - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
+  - `apps/backend/src/repositories/AnchorEventRepository.ts`
+  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/backend/src/domains/admin-anchor-management/*`
+  - `apps/backend/src/domains/pr-booking-support/*`
+  - `apps/backend/src/domains/admin-booking-execution/use-cases/get-admin-booking-execution-workspace.ts`
+  - `apps/backend/src/infra/events/event-types.ts`
+  - `apps/backend/drizzle/0026_anchor_event_time_pool_contract.sql`
+  - `apps/backend/seeds/0001_anchor_event_bootstrap.sql`
+  - `apps/frontend/src/domains/admin/queries/useAdminAnchorManagement.ts`
+  - `apps/frontend/src/domains/admin/queries/useAdminBookingSupport.ts`
+  - `apps/frontend/src/pages/AdminAnchorPRPage.vue`
+  - `apps/frontend/src/pages/AdminAnchorPRMessagesPage.vue`
+  - `apps/frontend/src/pages/AdminBookingSupportPage.vue`
+  - `apps/frontend/src/pages/AdminBookingExecutionPage.vue`
+  - `apps/frontend/src/locales/zh-CN.jsonc`
+- Decisions implemented:
+  - `Anchor Event` now owns one persisted `timePoolConfig` with `durationMinutes`, `earliestLeadMinutes`, and `startRules`
+  - generated `timeWindows` are now the only live event-side scheduling output used by public discovery, demand cards, admin preview, and event-assisted PR creation
+  - `earliestLeadMinutes` now gates generated windows by `window.endTime <= now + earliestLeadMinutes`
+  - legacy `anchor_event_batches`, `anchor_event_batch_support_overrides`, and batch-derived support overrides have left live runtime and schema contract
+  - admin booking-support configuration is now event-owned only
+  - canonical PR create still requires canonical datetime values, while event-side generation now guarantees those values
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/backend db:lint`
+  - `pnpm --filter @partner-up-dev/backend exec tsx --test src/infra/notifications/wechat-pr-message.test.ts`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Residual follow-up:
+  - telemetry event-family rename remains separate from issue `#170`
+  - issue `#175` still owns generated PIN and local credential retirement
 
 ## Handoff Source
 

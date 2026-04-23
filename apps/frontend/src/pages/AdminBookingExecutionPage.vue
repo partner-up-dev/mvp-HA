@@ -116,16 +116,6 @@
                   </div>
                   <div class="meta-item">
                     <span class="meta-label">{{
-                      t("adminBookingExecution.batchLabel")
-                    }}</span>
-                    <strong>{{
-                      item.batchTimeWindow
-                        ? formatWindow(item.batchTimeWindow)
-                        : t("adminBookingExecution.noneText")
-                    }}</strong>
-                  </div>
-                  <div class="meta-item">
-                    <span class="meta-label">{{
                       t("adminBookingExecution.timeLabel")
                     }}</span>
                     <strong>{{ formatWindow(item.timeWindow) }}</strong>

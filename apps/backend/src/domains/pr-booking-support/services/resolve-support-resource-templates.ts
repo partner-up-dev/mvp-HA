@@ -1,5 +1,4 @@
 import type {
-  AnchorEventBatchSupportOverride,
   AnchorEventSupportResource,
   NewAnchorPRSupportResource,
 } from "../../../entities";
@@ -57,7 +56,6 @@ const normalizeDetailRules = (
 
 export interface ResolveSupportTemplatesInput {
   eventResources: AnchorEventSupportResource[];
-  batchOverrides: AnchorEventBatchSupportOverride[];
   prId: number;
   location: string | null;
   timeWindow: TimeWindow;
@@ -65,60 +63,37 @@ export interface ResolveSupportTemplatesInput {
 
 export const resolveSupportResourceTemplates = ({
   eventResources,
-  batchOverrides,
   prId,
   location,
   timeWindow,
 }: ResolveSupportTemplatesInput): NewAnchorPRSupportResource[] => {
-  const overridesByResourceId = new Map<number, AnchorEventBatchSupportOverride>();
-  for (const override of batchOverrides) {
-    overridesByResourceId.set(override.eventSupportResourceId, override);
-  }
-
   const resolved: NewAnchorPRSupportResource[] = [];
 
   for (const resource of eventResources) {
     if (!matchesLocation(resource, location)) continue;
-    const override = overridesByResourceId.get(resource.id);
-    if (override?.disabled) continue;
-
-    const bookingRequired =
-      override?.bookingRequiredOverride ?? resource.bookingRequired;
-    const bookingDeadlineRule =
-      override?.bookingDeadlineRuleOverride ?? resource.bookingDeadlineRule;
+    const bookingRequired = resource.bookingRequired;
+    const bookingDeadlineRule = resource.bookingDeadlineRule;
 
     resolved.push({
       prId,
       sourceEventSupportResourceId: resource.id,
-      sourceBatchSupportOverrideId: override?.id ?? null,
-      title: override?.titleOverride ?? resource.title,
-      resourceKind: override?.resourceKindOverride ?? resource.resourceKind,
+      title: resource.title,
+      resourceKind: resource.resourceKind,
       bookingRequired,
       bookingHandledBy:
-        bookingRequired
-          ? (override?.bookingHandledByOverride ?? resource.bookingHandledBy ?? null)
-          : null,
+        bookingRequired ? (resource.bookingHandledBy ?? null) : null,
       bookingDeadlineAt: bookingRequired
         ? resolveBookingDeadlineAt(bookingDeadlineRule, timeWindow)
         : null,
-      bookingLocksParticipant:
-        override?.bookingLocksParticipantOverride ??
-        resource.bookingLocksParticipant,
-      cancellationPolicy:
-        override?.cancellationPolicyOverride ?? resource.cancellationPolicy ?? null,
-      settlementMode:
-        override?.settlementModeOverride ?? resource.settlementMode,
-      subsidyRate: override?.subsidyRateOverride ?? resource.subsidyRate ?? null,
-      subsidyCap: override?.subsidyCapOverride ?? resource.subsidyCap ?? null,
-      requiresUserTransferToPlatform:
-        override?.requiresUserTransferToPlatformOverride ??
-        resource.requiresUserTransferToPlatform,
-      summaryText: override?.summaryTextOverride ?? resource.summaryText,
-      detailRules: normalizeDetailRules(
-        override?.detailRulesOverride,
-        resource.detailRules,
-      ),
-      displayOrder: override?.displayOrderOverride ?? resource.displayOrder,
+      bookingLocksParticipant: resource.bookingLocksParticipant,
+      cancellationPolicy: resource.cancellationPolicy ?? null,
+      settlementMode: resource.settlementMode,
+      subsidyRate: resource.subsidyRate ?? null,
+      subsidyCap: resource.subsidyCap ?? null,
+      requiresUserTransferToPlatform: resource.requiresUserTransferToPlatform,
+      summaryText: resource.summaryText,
+      detailRules: normalizeDetailRules(undefined, resource.detailRules),
+      displayOrder: resource.displayOrder,
     });
   }
 

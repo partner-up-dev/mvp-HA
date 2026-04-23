@@ -1,7 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import type { AnchorEventId } from "../../../entities/anchor-event";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { readVisibleAnchorPRRecordsByAnchorEventId } from "../../pr/services";
 import {
@@ -10,7 +9,7 @@ import {
 } from "../../pr/services";
 import {
   buildTimeWindowKey,
-  listDiscoverableAnchorEventBatches,
+  listAnchorEventTimeWindows,
 } from "../../anchor-event/services/time-window-pool";
 
 const ISO_DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -18,7 +17,6 @@ const SEARCH_VISIBLE_WEEK_COUNT = 4;
 const DAYS_PER_WEEK = 7;
 
 const anchorEventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 const partnerRepo = new PartnerRepository();
 
 export type AnchorPRSearchResponse = {
@@ -43,7 +41,7 @@ export type AnchorPRSearchResponse = {
     };
     anchor: {
       eventId: number;
-      batchId: number;
+      timeWindow: [string | null, string | null];
     };
   }>;
 };
@@ -175,20 +173,14 @@ export async function searchPRs(input: {
     });
   }
 
-  const [batches, records] = await Promise.all([
-    batchRepo.findByAnchorEventId(input.eventId),
+  const [timeWindowPool, records] = await Promise.all([
+    Promise.resolve(listAnchorEventTimeWindows(event)),
     readVisibleAnchorPRRecordsByAnchorEventId(input.eventId, {
       consistency: "strong",
     }),
   ]);
-  const discoverableBatches = listDiscoverableAnchorEventBatches(batches).filter(
-    (batch) => batch.status !== "EXPIRED",
-  );
-  const representativeBatchByTimeWindowKey = new Map(
-    discoverableBatches.map((batch) => [
-      buildTimeWindowKey(batch.timeWindow),
-      batch,
-    ]),
+  const discoverableTimeWindowKeySet = new Set(
+    timeWindowPool.map((timeWindow) => buildTimeWindowKey(timeWindow)),
   );
   const partnerCounts = await partnerRepo.countActiveByPrIds(
     records.map((record) => record.root.id),
@@ -197,10 +189,8 @@ export async function searchPRs(input: {
 
   const results = records
     .flatMap((record) => {
-      const batch = representativeBatchByTimeWindowKey.get(
-        buildTimeWindowKey(record.root.time),
-      );
-      if (!batch) {
+      const timeWindowKey = buildTimeWindowKey(record.root.time);
+      if (!discoverableTimeWindowKeySet.has(timeWindowKey)) {
         return [];
       }
 
@@ -219,7 +209,6 @@ export async function searchPRs(input: {
         {
           sortKey: {
             prStart: resolveSortTimestamp(record.root.time[0]),
-            batchStart: resolveSortTimestamp(batch.timeWindow[0]),
             createdAt: record.root.createdAt.getTime(),
             prId: record.root.id,
           },
@@ -242,7 +231,7 @@ export async function searchPRs(input: {
             },
             anchor: {
               eventId: record.anchor.anchorEventId,
-              batchId: record.anchor.batchId,
+              timeWindow: record.anchor.timeWindow,
             },
           },
         },
@@ -251,9 +240,6 @@ export async function searchPRs(input: {
     .sort((left, right) => {
       if (left.sortKey.prStart !== right.sortKey.prStart) {
         return left.sortKey.prStart - right.sortKey.prStart;
-      }
-      if (left.sortKey.batchStart !== right.sortKey.batchStart) {
-        return left.sortKey.batchStart - right.sortKey.batchStart;
       }
       if (left.sortKey.createdAt !== right.sortKey.createdAt) {
         return right.sortKey.createdAt - left.sortKey.createdAt;

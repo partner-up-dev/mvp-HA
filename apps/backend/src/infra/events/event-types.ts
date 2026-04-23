@@ -57,7 +57,7 @@ export interface AnchorPRAutoCreatedPayload {
   sourcePrId: number;
   createdPrId: number;
   anchorEventId: number | null;
-  batchId: number | null;
+  timeWindow: [string | null, string | null] | null;
   location: string | null;
   activeCountAtSource: number;
 }

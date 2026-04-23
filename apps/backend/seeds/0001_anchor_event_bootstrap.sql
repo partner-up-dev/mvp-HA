@@ -5,7 +5,7 @@ insert into anchor_events (
   description,
   system_location_pool,
   user_location_pool,
-  time_window_pool,
+  time_pool_config,
   cover_image,
   beta_group_qr_code,
   status,
@@ -20,7 +20,14 @@ values
     '就在校内，场地费用我们出，你只管玩得开心！',
     $$["广外南体育馆羽毛球场1号场", "广外南体育馆羽毛球场2号场"]$$::jsonb,
     $$[]$$::jsonb,
-    $$[["2026-03-10T17:00:00+08:00", "2026-03-10T18:00:00+08:00"], ["2026-03-11T17:00:00+08:00", "2026-03-11T18:00:00+08:00"]]$$::jsonb,
+    $${
+      "durationMinutes": 60,
+      "earliestLeadMinutes": null,
+      "startRules": [
+        { "id": "absolute-1", "kind": "ABSOLUTE", "startAt": "2026-03-10T17:00:00+08:00" },
+        { "id": "absolute-2", "kind": "ABSOLUTE", "startAt": "2026-03-11T17:00:00+08:00" }
+      ]
+    }$$::jsonb,
     null,
     null,
     'ACTIVE',
@@ -34,7 +41,14 @@ values
     '互相陪伴，独立学习',
     $$["图书馆自习区A桌", "图书馆自习区B桌"]$$::jsonb,
     $$[]$$::jsonb,
-    $$[["2026-03-12T19:00:00+08:00", "2026-03-12T21:00:00+08:00"], ["2026-03-13T19:00:00+08:00", "2026-03-13T21:00:00+08:00"]]$$::jsonb,
+    $${
+      "durationMinutes": 120,
+      "earliestLeadMinutes": null,
+      "startRules": [
+        { "id": "absolute-1", "kind": "ABSOLUTE", "startAt": "2026-03-12T19:00:00+08:00" },
+        { "id": "absolute-2", "kind": "ABSOLUTE", "startAt": "2026-03-13T19:00:00+08:00" }
+      ]
+    }$$::jsonb,
     null,
     null,
     'ACTIVE',
@@ -48,7 +62,7 @@ set
   description = excluded.description,
   system_location_pool = excluded.system_location_pool,
   user_location_pool = excluded.user_location_pool,
-  time_window_pool = excluded.time_window_pool,
+  time_pool_config = excluded.time_pool_config,
   cover_image = excluded.cover_image,
   beta_group_qr_code = excluded.beta_group_qr_code,
   status = excluded.status,
@@ -58,55 +72,6 @@ set
 select setval(
   pg_get_serial_sequence('anchor_events', 'id'),
   coalesce((select max(id) from anchor_events), 1),
-  true
-);
-
-insert into anchor_event_batches (
-  id,
-  anchor_event_id,
-  time_window,
-  status,
-  created_at
-)
-values
-  (
-    1,
-    1,
-    array['2026-03-10T17:00:00+08:00', '2026-03-10T18:00:00+08:00']::text[],
-    'OPEN',
-    '2026-03-01 12:35:51.25299'::timestamp
-  ),
-  (
-    2,
-    1,
-    array['2026-03-11T17:00:00+08:00', '2026-03-11T18:00:00+08:00']::text[],
-    'OPEN',
-    '2026-03-01 12:36:51.25299'::timestamp
-  ),
-  (
-    3,
-    2,
-    array['2026-03-12T19:00:00+08:00', '2026-03-12T21:00:00+08:00']::text[],
-    'OPEN',
-    '2026-03-02 07:51:08.314932'::timestamp
-  ),
-  (
-    4,
-    2,
-    array['2026-03-13T19:00:00+08:00', '2026-03-13T21:00:00+08:00']::text[],
-    'OPEN',
-    '2026-03-02 07:52:08.314932'::timestamp
-  )
-on conflict (id) do update
-set
-  anchor_event_id = excluded.anchor_event_id,
-  time_window = excluded.time_window,
-  status = excluded.status,
-  created_at = excluded.created_at;
-
-select setval(
-  pg_get_serial_sequence('anchor_event_batches', 'id'),
-  coalesce((select max(id) from anchor_event_batches), 1),
   true
 );
 
@@ -231,46 +196,6 @@ set
 select setval(
   pg_get_serial_sequence('anchor_event_support_resources', 'id'),
   coalesce((select max(id) from anchor_event_support_resources), 1),
-  true
-);
-
-insert into anchor_event_batch_support_overrides (
-  id,
-  batch_id,
-  event_support_resource_id,
-  disabled,
-  booking_deadline_rule_override,
-  summary_text_override,
-  detail_rules_override,
-  created_at
-)
-values
-  (
-    1,
-    1,
-    1,
-    false,
-    'T-3h',
-    '本场由平台统一协助预订，场地费用按规则全额报销。',
-    array[
-      '该场次会优先统一处理预订，请至少提前 3 小时确认。',
-      '若你已经自行订场，也可以保留凭证后走报销流程。'
-    ]::text[],
-    '2026-03-01 12:45:00'::timestamp
-  )
-on conflict (id) do update
-set
-  batch_id = excluded.batch_id,
-  event_support_resource_id = excluded.event_support_resource_id,
-  disabled = excluded.disabled,
-  booking_deadline_rule_override = excluded.booking_deadline_rule_override,
-  summary_text_override = excluded.summary_text_override,
-  detail_rules_override = excluded.detail_rules_override,
-  created_at = excluded.created_at;
-
-select setval(
-  pg_get_serial_sequence('anchor_event_batch_support_overrides', 'id'),
-  coalesce((select max(id) from anchor_event_batch_support_overrides), 1),
   true
 );
 

@@ -32,11 +32,11 @@ export {
   isActiveVisibleAnchorPRStatus,
   readPartnerRequestById,
   readVisiblePartnerRequestsByTypeAndTime,
-  readVisibleAnchorPRRecordsByBatchId,
-  readVisibleAnchorPRRecordsByBatchIdAndLocation,
+  readVisibleAnchorPRRecordsByEventTimeWindow,
+  readVisibleAnchorPRRecordsByEventTimeWindowAndLocation,
   readVisibleAnchorPRRecordsByAnchorEventId,
-  readAnchorPRRecordsByBatchId,
-  countActiveVisibleAnchorPRsByBatchAndLocationSource,
+  readAnchorPRRecordsByEventTimeWindow,
+  countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource,
 } from "../../pr-core/services/pr-read.service";
 export {
   initializeSlotsForPR,

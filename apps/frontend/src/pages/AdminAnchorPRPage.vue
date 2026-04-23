@@ -149,16 +149,62 @@
                 ></textarea>
               </label>
               <label class="field">
-                <span class="field-label"
-                  >用户可创建地点池（每行: 地点ID,上限）</span
-                >
+                <span class="field-label">{{
+                  t("adminAnchorPR.userLocationPoolLabel")
+                }}</span>
                 <textarea
                   v-model="eventForm.userLocationPoolText"
                   class="field-input field-textarea"
                 ></textarea>
               </label>
               <p class="hint">{{ t("adminAnchorPR.eventPoiHint") }}</p>
-              <p class="hint">{{ t("adminAnchorPR.eventTimeWindowHint") }}</p>
+              <div class="grid-2">
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorPR.timePoolDurationLabel")
+                  }}</span>
+                  <input
+                    v-model.number="eventForm.durationMinutes"
+                    class="field-input"
+                    type="number"
+                    min="1"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorPR.timePoolEarliestLeadLabel")
+                  }}</span>
+                  <input
+                    v-model.number="eventForm.earliestLeadMinutes"
+                    class="field-input"
+                    type="number"
+                    min="0"
+                  />
+                </label>
+              </div>
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminAnchorPR.absoluteRulesLabel")
+                }}</span>
+                <textarea
+                  v-model="eventForm.absoluteRulesText"
+                  class="field-input field-textarea"
+                ></textarea>
+              </label>
+              <p class="hint">{{ t("adminAnchorPR.absoluteRulesHint") }}</p>
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminAnchorPR.recurringRulesLabel")
+                }}</span>
+                <textarea
+                  v-model="eventForm.recurringRulesText"
+                  class="field-input field-textarea"
+                ></textarea>
+              </label>
+              <p class="hint">{{ t("adminAnchorPR.recurringRulesHint") }}</p>
+              <p v-if="timePoolValidationMessage" class="error-message">
+                {{ timePoolValidationMessage }}
+              </p>
               <Button
                 appearance="pill"
                 size="sm"
@@ -166,7 +212,8 @@
                 :disabled="
                   createEventMutation.isPending.value ||
                   updateEventMutation.isPending.value ||
-                  Boolean(eventBoundsValidationMessage)
+                  Boolean(eventBoundsValidationMessage) ||
+                  Boolean(timePoolValidationMessage)
                 "
                 @click="handleSaveEvent"
               >
@@ -186,109 +233,33 @@
             <div class="stack">
               <div class="section-header">
                 <h2 class="card-title">
-                  {{ t("adminAnchorPR.batchesTitle") }}
+                  {{ t("adminAnchorPR.timeWindowsTitle") }}
                 </h2>
-                <Button
-                  appearance="pill"
-                  tone="outline"
-                  size="sm"
-                  type="button"
-                  :disabled="selectedEventId === null"
-                  @click="prepareNewBatch"
-                >
-                  {{ t("adminAnchorPR.newBatchAction") }}
-                </Button>
               </div>
               <div v-if="selectedEvent === null" class="hint">
-                {{ t("adminAnchorPR.emptyEvents") }}
+                {{ t("adminAnchorPR.selectEventForTimeWindowHint") }}
               </div>
-              <div v-else-if="selectedEvent.batches.length === 0" class="hint">
-                {{ t("adminAnchorPR.emptyBatches") }}
+              <div
+                v-else-if="selectedEvent.timeWindows.length === 0"
+                class="hint"
+              >
+                {{ t("adminAnchorPR.emptyTimeWindows") }}
               </div>
               <div v-else class="selection-list">
                 <ChoiceCard
-                  v-for="batch in selectedEvent.batches"
-                  :key="batch.id"
+                  v-for="batch in selectedEvent.timeWindows"
+                  :key="batch.key"
                   class="selection-btn"
-                  :active="!isCreatingBatch && selectedBatchId === batch.id"
-                  @click="selectBatch(batch.id)"
+                  :active="selectedBatchId === batch.key"
+                  @click="selectBatch(batch.key)"
                 >
                   <span>{{ formatWindow(batch.timeWindow) }}</span>
-                  <small v-if="batch.description">{{
-                    batch.description
+                  <small>{{
+                    t("adminAnchorPR.generatedPRCount", {
+                      count: batch.prs.length,
+                    })
                   }}</small>
-                  <small>{{ batch.status }}</small>
                 </ChoiceCard>
-              </div>
-              <div v-if="selectedEvent !== null" class="stack inset">
-                <h3 class="card-title">
-                  {{ t("adminAnchorPR.batchFormTitle") }}
-                </h3>
-                <label class="field"
-                  ><span class="field-label">{{
-                    t("adminAnchorPR.batchStartLabel")
-                  }}</span
-                  ><input v-model="batchForm.start" class="field-input"
-                /></label>
-                <label class="field"
-                  ><span class="field-label">{{
-                    t("adminAnchorPR.batchEndLabel")
-                  }}</span
-                  ><input v-model="batchForm.end" class="field-input"
-                /></label>
-                <label class="field"
-                  ><span class="field-label">{{
-                    t("adminAnchorPR.batchDescriptionLabel")
-                  }}</span
-                  ><textarea
-                    v-model="batchForm.description"
-                    class="field-input field-textarea"
-                  ></textarea>
-                </label>
-                <label class="field">
-                  <span class="field-label">最早提前時間（分鐘）</span>
-                  <input
-                    v-model.number="batchForm.earliestLeadMinutes"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminAnchorPR.batchStatusLabel")
-                  }}</span>
-                  <select v-model="batchForm.status" class="field-input">
-                    <option value="OPEN">
-                      {{ t("adminAnchorPR.batchStatusOpen") }}
-                    </option>
-                    <option value="FULL">
-                      {{ t("adminAnchorPR.batchStatusFull") }}
-                    </option>
-                    <option value="EXPIRED">
-                      {{ t("adminAnchorPR.batchStatusExpired") }}
-                    </option>
-                  </select>
-                </label>
-                <Button
-                  appearance="pill"
-                  size="sm"
-                  type="button"
-                  :disabled="
-                    createBatchMutation.isPending.value ||
-                    updateBatchMutation.isPending.value
-                  "
-                  @click="handleSaveBatch"
-                >
-                  {{
-                    createBatchMutation.isPending.value ||
-                    updateBatchMutation.isPending.value
-                      ? t("adminAnchorPR.saving")
-                      : isCreatingBatch
-                        ? t("adminAnchorPR.createBatchAction")
-                        : t("adminAnchorPR.saveBatchAction")
-                  }}
-                </Button>
               </div>
             </div>
           </section>
@@ -313,7 +284,7 @@
             </div>
 
             <div v-if="selectedBatch === null" class="hint">
-              {{ t("adminAnchorPR.emptyBatches") }}
+              {{ t("adminAnchorPR.selectTimeWindowHint") }}
             </div>
             <div v-else-if="selectedBatch.prs.length === 0" class="hint">
               {{ t("adminAnchorPR.emptyAnchorPRs") }}
@@ -526,12 +497,11 @@ import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
+  type AdminAnchorTimePoolConfigInput,
   useAdminAnchorWorkspace,
   useCreateAdminAnchorEvent,
-  useCreateAdminAnchorBatch,
   useCreateAdminAnchorPR,
   useUpdateAdminAnchorEvent,
-  useUpdateAdminAnchorBatch,
   useUpdateAdminAnchorPRContent,
   useUpdateAdminAnchorPRStatus,
   useUpdateAdminAnchorPRVisibility,
@@ -547,7 +517,7 @@ import { validateManualPartnerBounds } from "@/lib/validation";
 
 type Workspace = NonNullable<AdminAnchorWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
-type BatchRecord = EventRecord["batches"][number];
+type BatchRecord = EventRecord["timeWindows"][number];
 type PRRecord = BatchRecord["prs"][number];
 type EventForm = {
   title: string;
@@ -560,13 +530,10 @@ type EventForm = {
   defaultMaxPartners: number | null;
   systemLocationPoolText: string;
   userLocationPoolText: string;
-};
-type BatchForm = {
-  start: string;
-  end: string;
-  description: string;
+  durationMinutes: number | null;
   earliestLeadMinutes: number | null;
-  status: "OPEN" | "FULL" | "EXPIRED";
+  absoluteRulesText: string;
+  recurringRulesText: string;
 };
 type PRForm = {
   title: string;
@@ -599,13 +566,10 @@ const emptyEventForm = (): EventForm => ({
   defaultMaxPartners: null,
   systemLocationPoolText: "",
   userLocationPoolText: "",
-});
-const emptyBatchForm = (): BatchForm => ({
-  start: "",
-  end: "",
-  description: "",
+  durationMinutes: null,
   earliestLeadMinutes: null,
-  status: "OPEN",
+  absoluteRulesText: "",
+  recurringRulesText: "",
 });
 const emptyPRForm = (location = "", type = "", minPartners = 2): PRForm => ({
   title: "",
@@ -634,13 +598,16 @@ const toEventForm = (event: EventRecord): EventForm => ({
   userLocationPoolText: event.userLocationPool
     .map((entry) => `${entry.id},${entry.perBatchCap}`)
     .join("\n"),
-});
-const toBatchForm = (batch: BatchRecord): BatchForm => ({
-  start: batch.timeWindow[0] ?? "",
-  end: batch.timeWindow[1] ?? "",
-  description: batch.description ?? "",
-  earliestLeadMinutes: batch.earliestLeadMinutes ?? null,
-  status: batch.status as BatchForm["status"],
+  durationMinutes: event.timePoolConfig.durationMinutes ?? null,
+  earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
+  absoluteRulesText: event.timePoolConfig.startRules
+    .filter((rule) => rule.kind === "ABSOLUTE")
+    .map((rule) => rule.startAt)
+    .join("\n"),
+  recurringRulesText: event.timePoolConfig.startRules
+    .filter((rule) => rule.kind === "RECURRING")
+    .map((rule) => `${rule.weekdays.join(",")} ${rule.timeOfDay}`)
+    .join("\n"),
 });
 const toPRForm = (pr: PRRecord): PRForm => ({
   title: pr.title ?? "",
@@ -662,8 +629,6 @@ const { isAdmin, logout } = useAdminAccess();
 const workspaceQuery = useAdminAnchorWorkspace(isAdmin);
 const createEventMutation = useCreateAdminAnchorEvent();
 const updateEventMutation = useUpdateAdminAnchorEvent();
-const createBatchMutation = useCreateAdminAnchorBatch();
-const updateBatchMutation = useUpdateAdminAnchorBatch();
 const createPRMutation = useCreateAdminAnchorPR();
 const updatePRContentMutation = useUpdateAdminAnchorPRContent();
 const updatePRStatusMutation = useUpdateAdminAnchorPRStatus();
@@ -672,10 +637,8 @@ const selectedEventIdRaw = ref("");
 const selectedBatchIdRaw = ref("");
 const selectedPRIdRaw = ref("");
 const isCreatingEvent = ref(false);
-const isCreatingBatch = ref(false);
 const isCreatingPR = ref(false);
 const eventForm = ref<EventForm>(emptyEventForm());
-const batchForm = ref<BatchForm>(emptyBatchForm());
 const prForm = ref<PRForm>(emptyPRForm());
 const workspace = computed<Workspace | null>(
   () => workspaceQuery.data.value ?? null,
@@ -689,14 +652,13 @@ const selectedEvent = computed<EventRecord | null>(
   () =>
     events.value.find((event) => event.id === selectedEventId.value) ?? null,
 );
-const selectedBatchId = computed<number | null>(() => {
-  const parsed = Number(selectedBatchIdRaw.value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-});
+const selectedBatchId = computed<string | null>(() =>
+  selectedBatchIdRaw.value.trim() || null,
+);
 const selectedBatch = computed<BatchRecord | null>(
   () =>
-    selectedEvent.value?.batches.find(
-      (batch) => batch.id === selectedBatchId.value,
+    selectedEvent.value?.timeWindows.find(
+      (batch) => batch.key === selectedBatchId.value,
     ) ?? null,
 );
 const selectedPRId = computed<number | null>(() => {
@@ -781,6 +743,47 @@ const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
   }
   return null;
 };
+const buildTimePoolConfig = (
+  form: EventForm,
+): AdminAnchorTimePoolConfigInput => {
+  const absoluteRules = normalizeLines(form.absoluteRulesText).map(
+    (startAt, index) => ({
+      id: `absolute-${index + 1}`,
+      kind: "ABSOLUTE" as const,
+      startAt,
+    }),
+  );
+  const recurringRules = normalizeLines(form.recurringRulesText)
+    .map((line, index) => {
+      const [weekdaysRaw = "", timeOfDayRaw = ""] = line.split(/\s+/, 2);
+      const weekdays = weekdaysRaw
+        .split(",")
+        .map((value) => Number(value.trim()))
+        .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
+      const timeOfDay = timeOfDayRaw.trim();
+      if (weekdays.length === 0 || !/^\d{2}:\d{2}$/.test(timeOfDay)) {
+        return null;
+      }
+      return {
+        id: `recurring-${index + 1}`,
+        kind: "RECURRING" as const,
+        weekdays,
+        timeOfDay,
+      };
+    })
+    .filter((value): value is Extract<
+      AdminAnchorTimePoolConfigInput["startRules"][number],
+      { kind: "RECURRING" }
+    > => value !== null);
+
+  return {
+    durationMinutes: normalizeNullableNonNegativeInteger(form.durationMinutes),
+    earliestLeadMinutes: normalizeNullableNonNegativeInteger(
+      form.earliestLeadMinutes,
+    ),
+    startRules: [...absoluteRules, ...recurringRules],
+  };
+};
 const formatWindow = (windowValue: [string | null, string | null]) =>
   formatLocalDateTimeWindowLabel(windowValue, {}, "?");
 const formatDateTime = (value: string | null) =>
@@ -797,12 +800,30 @@ const prBoundsValidationMessage = computed(() =>
     normalizeNullableNonNegativeInteger(prForm.value.maxPartners),
   ),
 );
+const timePoolValidationMessage = computed(() => {
+  const config = buildTimePoolConfig(eventForm.value);
+  if (config.startRules.length > 0 && config.durationMinutes === null) {
+    return t("adminAnchorPR.timePoolDurationRequired");
+  }
+  if (
+    config.startRules.some((rule) => rule.kind === "RECURRING") &&
+    config.earliestLeadMinutes === null
+  ) {
+    return t("adminAnchorPR.timePoolEarliestLeadRequired");
+  }
+  if (
+    normalizeLines(eventForm.value.recurringRulesText).length > 0 &&
+    config.startRules.filter((rule) => rule.kind === "RECURRING").length !==
+      normalizeLines(eventForm.value.recurringRulesText).length
+  ) {
+    return t("adminAnchorPR.recurringRulesFormatError");
+  }
+  return null;
+});
 const mutationErrorMessage = computed(
   () =>
     createEventMutation.error.value?.message ||
     updateEventMutation.error.value?.message ||
-    createBatchMutation.error.value?.message ||
-    updateBatchMutation.error.value?.message ||
     createPRMutation.error.value?.message ||
     updatePRContentMutation.error.value?.message ||
     updatePRStatusMutation.error.value?.message ||
@@ -896,7 +917,6 @@ watch(
       eventForm.value = emptyEventForm();
       selectedBatchIdRaw.value = "";
       selectedPRIdRaw.value = "";
-      batchForm.value = emptyBatchForm();
       prForm.value = emptyPRForm();
       return;
     }
@@ -904,37 +924,25 @@ watch(
       eventForm.value = emptyEventForm();
       selectedBatchIdRaw.value = "";
       selectedPRIdRaw.value = "";
-      batchForm.value = emptyBatchForm();
       prForm.value = emptyPRForm();
       return;
     }
     eventForm.value = toEventForm(event);
     if (
-      !event.batches.some(
-        (batch) => String(batch.id) === selectedBatchIdRaw.value,
+      !event.timeWindows.some(
+        (batch) => batch.key === selectedBatchIdRaw.value,
       )
     )
-      selectedBatchIdRaw.value = event.batches[0]
-        ? String(event.batches[0].id)
+      selectedBatchIdRaw.value = event.timeWindows[0]
+        ? event.timeWindows[0].key
         : "";
   },
   { immediate: true },
 );
 watch(
-  [selectedBatch, isCreatingBatch, selectedEvent],
-  ([batch, creating, event]) => {
-    if (creating) {
-      batchForm.value = emptyBatchForm();
-      selectedPRIdRaw.value = "";
-      prForm.value = emptyPRForm(
-        firstEventLocation(event),
-        event?.type ?? "",
-        resolveDefaultMinPartners(event?.defaultMinPartners),
-      );
-      return;
-    }
+  [selectedBatch, selectedEvent],
+  ([batch, event]) => {
     if (!batch || !event) {
-      batchForm.value = emptyBatchForm();
       selectedPRIdRaw.value = "";
       prForm.value = emptyPRForm(
         firstEventLocation(event),
@@ -943,7 +951,6 @@ watch(
       );
       return;
     }
-    batchForm.value = toBatchForm(batch);
     if (!batch.prs.some((pr) => String(pr.prId) === selectedPRIdRaw.value))
       selectedPRIdRaw.value = batch.prs[0] ? String(batch.prs[0].prId) : "";
   },
@@ -979,38 +986,21 @@ watch(
 
 const prepareNewEvent = () => {
   isCreatingEvent.value = true;
-  isCreatingBatch.value = false;
   isCreatingPR.value = false;
   selectedEventIdRaw.value = "";
   selectedBatchIdRaw.value = "";
   selectedPRIdRaw.value = "";
   eventForm.value = emptyEventForm();
-  batchForm.value = emptyBatchForm();
   prForm.value = emptyPRForm();
 };
 const selectEvent = (eventId: number) => {
   isCreatingEvent.value = false;
-  isCreatingBatch.value = false;
   isCreatingPR.value = false;
   selectedEventIdRaw.value = String(eventId);
 };
-const prepareNewBatch = () => {
-  if (!selectedEvent.value) return;
-  isCreatingBatch.value = true;
+const selectBatch = (batchId: string) => {
   isCreatingPR.value = false;
-  selectedBatchIdRaw.value = "";
-  selectedPRIdRaw.value = "";
-  batchForm.value = emptyBatchForm();
-  prForm.value = emptyPRForm(
-    firstEventLocation(selectedEvent.value),
-    selectedEvent.value.type,
-    resolveDefaultMinPartners(selectedEvent.value.defaultMinPartners),
-  );
-};
-const selectBatch = (batchId: number) => {
-  isCreatingBatch.value = false;
-  isCreatingPR.value = false;
-  selectedBatchIdRaw.value = String(batchId);
+  selectedBatchIdRaw.value = batchId;
 };
 const prepareNewPR = () => {
   if (!selectedEvent.value || selectedBatchId.value === null) return;
@@ -1029,8 +1019,6 @@ const selectPR = (prId: number) => {
 const resetMutationErrors = () => {
   createEventMutation.reset();
   updateEventMutation.reset();
-  createBatchMutation.reset();
-  updateBatchMutation.reset();
   createPRMutation.reset();
   updatePRContentMutation.reset();
   updatePRStatusMutation.reset();
@@ -1038,7 +1026,8 @@ const resetMutationErrors = () => {
 };
 
 const handleSaveEvent = async () => {
-  if (eventBoundsValidationMessage.value) return;
+  if (eventBoundsValidationMessage.value || timePoolValidationMessage.value)
+    return;
   const input = {
     title: eventForm.value.title.trim(),
     type: eventForm.value.type.trim(),
@@ -1047,6 +1036,7 @@ const handleSaveEvent = async () => {
     userLocationPool: normalizeUserLocationLines(
       eventForm.value.userLocationPoolText,
     ),
+    timePoolConfig: buildTimePoolConfig(eventForm.value),
     defaultMinPartners: normalizeNullableNonNegativeInteger(
       eventForm.value.defaultMinPartners,
     ),
@@ -1071,36 +1061,6 @@ const handleSaveEvent = async () => {
     // Mutation state already drives the page-level error toast.
   }
 };
-const handleSaveBatch = async () => {
-  if (selectedEventId.value === null) return;
-  const input = {
-    timeWindow: [
-      batchForm.value.start.trim() || null,
-      batchForm.value.end.trim() || null,
-    ] as [string | null, string | null],
-    status: batchForm.value.status,
-    description: batchForm.value.description.trim() || null,
-    earliestLeadMinutes: normalizeNullableNonNegativeInteger(
-      batchForm.value.earliestLeadMinutes,
-    ),
-  };
-  try {
-    const result =
-      isCreatingBatch.value || selectedBatchId.value === null
-        ? await createBatchMutation.mutateAsync({
-            eventId: selectedEventId.value,
-            input,
-          })
-        : await updateBatchMutation.mutateAsync({
-            batchId: selectedBatchId.value,
-            input,
-          });
-    isCreatingBatch.value = false;
-    selectedBatchIdRaw.value = String(result.id);
-  } catch {
-    // Mutation state already drives the page-level error toast.
-  }
-};
 const handleSavePR = async () => {
   if (
     !selectedEvent.value ||
@@ -1120,8 +1080,9 @@ const handleSavePR = async () => {
   ) {
     try {
       const result = await createPRMutation.mutateAsync({
-        batchId: selectedBatchId.value,
+        eventId: selectedEvent.value.id,
         input: {
+          timeWindow: selectedBatch.value!.timeWindow,
           title: prForm.value.title.trim() || null,
           type: prForm.value.type.trim() || null,
           location: prForm.value.location,

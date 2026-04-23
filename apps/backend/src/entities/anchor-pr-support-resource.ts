@@ -21,10 +21,6 @@ import {
   type SupportSettlementMode,
 } from "./anchor-event-support-resource";
 import {
-  anchorEventBatchSupportOverrides,
-  type AnchorEventBatchSupportOverrideId,
-} from "./anchor-event-batch-support-override";
-import {
   anchorEventSupportResources,
   type AnchorEventSupportResourceId,
 } from "./anchor-event-support-resource";
@@ -42,13 +38,6 @@ export const anchorPRSupportResources = pgTable(
     })
       .$type<AnchorEventSupportResourceId | null>()
       .references(() => anchorEventSupportResources.id, {
-        onDelete: "set null",
-      }),
-    sourceBatchSupportOverrideId: bigint("source_batch_support_override_id", {
-      mode: "number",
-    })
-      .$type<AnchorEventBatchSupportOverrideId | null>()
-      .references(() => anchorEventBatchSupportOverrides.id, {
         onDelete: "set null",
       }),
     title: text("title").notNull(),

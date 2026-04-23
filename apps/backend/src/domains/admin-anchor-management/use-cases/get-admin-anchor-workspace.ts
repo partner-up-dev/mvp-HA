@@ -1,12 +1,14 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
 import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
-import { readAnchorPRRecordsByBatchId } from "../../pr/services";
+import { readAnchorPRRecordsByEventTimeWindow } from "../../pr/services";
+import {
+  listAnchorEventTimeWindows,
+  buildTimeWindowKey,
+} from "../../anchor-event/services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 
 type AdminAnchorPRSummary = {
   prId: number;
@@ -29,12 +31,9 @@ type AdminAnchorPRSummary = {
   createdAt: string;
 };
 
-type AdminAnchorBatchSummary = {
-  id: number;
+type AdminAnchorTimeWindowSummary = {
+  key: string;
   timeWindow: [string | null, string | null];
-  status: string;
-  description: string | null;
-  earliestLeadMinutes: number | null;
   prs: AdminAnchorPRSummary[];
 };
 
@@ -48,6 +47,23 @@ export type AdminAnchorEventSummary = {
     id: string;
     perBatchCap: number;
   }>;
+  timePoolConfig: {
+    durationMinutes: number | null;
+    earliestLeadMinutes: number | null;
+    startRules: Array<
+      | {
+          id: string;
+          kind: "ABSOLUTE";
+          startAt: string;
+        }
+      | {
+          id: string;
+          kind: "RECURRING";
+          weekdays: number[];
+          timeOfDay: string;
+        }
+    >;
+  };
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   timeWindowPool: [string | null, string | null][];
@@ -56,7 +72,7 @@ export type AdminAnchorEventSummary = {
   status: string;
   createdAt: string;
   updatedAt: string;
-  batches: AdminAnchorBatchSummary[];
+  timeWindows: AdminAnchorTimeWindowSummary[];
 };
 
 export interface AdminAnchorWorkspace {
@@ -92,31 +108,26 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
 
   const eventSummaries = await Promise.all(
     events.map(async (event) => {
-      const batches = await batchRepo.findByAnchorEventId(event.id);
-      const batchSummaries = await Promise.all(
-        [...batches]
-          .sort((left, right) => {
-            const leftStart = left.timeWindow[0] ?? "";
-            const rightStart = right.timeWindow[0] ?? "";
-            return leftStart.localeCompare(rightStart);
-          })
-          .map(async (batch) => {
-            const prs = await readAnchorPRRecordsByBatchId(batch.id, {
+      const timeWindowPool = listAnchorEventTimeWindows(event);
+      const timeWindowSummaries = await Promise.all(
+        timeWindowPool.map(async (timeWindow) => {
+          const prs = await readAnchorPRRecordsByEventTimeWindow(
+            event.id,
+            timeWindow,
+            {
               consistency: "strong",
-            });
-            const prSummaries = await Promise.all(
-              prs.map((record) => toAdminAnchorPRSummary(record)),
-            );
+            },
+          );
+          const prSummaries = await Promise.all(
+            prs.map((record) => toAdminAnchorPRSummary(record)),
+          );
 
-            return {
-              id: batch.id,
-              timeWindow: batch.timeWindow,
-              status: batch.status,
-              description: batch.description,
-              earliestLeadMinutes: batch.earliestLeadMinutes ?? null,
-              prs: prSummaries,
-            };
-          }),
+          return {
+            key: buildTimeWindowKey(timeWindow),
+            timeWindow,
+            prs: prSummaries,
+          };
+        }),
       );
 
       return {
@@ -133,19 +144,16 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
               perBatchCap: entry.perBatchCap,
             }))
           : [],
+        timePoolConfig: event.timePoolConfig,
         defaultMinPartners: event.defaultMinPartners ?? null,
         defaultMaxPartners: event.defaultMaxPartners ?? null,
-        timeWindowPool: Array.isArray(event.timeWindowPool)
-          ? event.timeWindowPool.map(
-              (entry): [string | null, string | null] => [entry[0], entry[1]],
-            )
-          : [],
+        timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,
         status: event.status,
         createdAt: event.createdAt.toISOString(),
         updatedAt: event.updatedAt.toISOString(),
-        batches: batchSummaries,
+        timeWindows: timeWindowSummaries,
       };
     }),
   );

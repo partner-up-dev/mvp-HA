@@ -4,9 +4,11 @@ import type {
   AnchorEvent,
   AnchorEventId,
   AnchorEventStatus,
+  AnchorEventTimePoolConfig,
   SystemLocationEntry,
   UserLocationEntry,
 } from "../../../entities";
+import { normalizeAnchorEventTimePoolConfig } from "../../../entities";
 import { assertManualPartnerBoundsValid } from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
@@ -17,6 +19,7 @@ export interface UpdateAdminAnchorEventInput {
   description: string | null;
   systemLocationPool: SystemLocationEntry[];
   userLocationPool: UserLocationEntry[];
+  timePoolConfig: AnchorEventTimePoolConfig;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   coverImage: string | null;
@@ -40,6 +43,7 @@ export async function updateAdminAnchorEvent(
     description: input.description,
     systemLocationPool: input.systemLocationPool,
     userLocationPool: input.userLocationPool,
+    timePoolConfig: normalizeAnchorEventTimePoolConfig(input.timePoolConfig),
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
     coverImage: input.coverImage,

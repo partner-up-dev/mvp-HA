@@ -1,7 +1,6 @@
 export * from "./partner-request";
 export * from "./anchor-partner-request";
 export * from "./anchor-event-support-resource";
-export * from "./anchor-event-batch-support-override";
 export * from "./anchor-pr-support-resource";
 export * from "./anchor-pr-booking-contact";
 export * from "./anchor-pr-booking-execution";
@@ -16,7 +15,6 @@ export * from "./domain-event";
 export * from "./outbox-event";
 export * from "./operation-log";
 export * from "./anchor-event";
-export * from "./anchor-event-batch";
 export * from "./job";
 export * from "./notification-delivery";
 export * from "./notification-opportunity";

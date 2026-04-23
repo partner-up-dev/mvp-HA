@@ -1,8 +1,4 @@
-import type { AnchorEvent, AnchorEventId } from "../entities/anchor-event";
-import type {
-  AnchorEventBatch,
-  AnchorEventBatchId,
-} from "../entities/anchor-event-batch";
+import type { AnchorEvent, AnchorEventId, TimeWindowEntry } from "../entities/anchor-event";
 import type {
   PRId,
   PRStatus,
@@ -10,7 +6,6 @@ import type {
   VisibilityStatus,
 } from "../entities/partner-request";
 import type { AnchorLocationSource } from "../entities/anchor-partner-request";
-import { AnchorEventBatchRepository } from "./AnchorEventBatchRepository";
 import { AnchorEventRepository } from "./AnchorEventRepository";
 import { PartnerRequestRepository } from "./PartnerRequestRepository";
 import {
@@ -22,11 +17,12 @@ import {
   isEventScopedLocation,
   resolveEventLocationSource,
 } from "../domains/anchor-event/services/event-scope";
+import { eventOwnsTimeWindow, listAnchorEventTimeWindows } from "../domains/anchor-event/services/time-window-pool";
 
 export type AnchorPRContext = {
   prId: PRId;
   anchorEventId: AnchorEventId;
-  batchId: AnchorEventBatchId;
+  timeWindow: TimeWindowEntry;
   locationSource: AnchorLocationSource;
   visibilityStatus: VisibilityStatus;
   confirmationStartOffsetMinutes: number;
@@ -59,7 +55,6 @@ const dedupeRecordsByPrId = (records: AnchorPRRecord[]): AnchorPRRecord[] => {
 const buildAnchorContext = (
   root: PartnerRequest,
   event: AnchorEvent,
-  batch: AnchorEventBatch,
 ): AnchorPRContext | null => {
   const locationSource = resolveEventLocationSource(event, root.location);
   if (!locationSource) {
@@ -69,7 +64,7 @@ const buildAnchorContext = (
   return {
     prId: root.id,
     anchorEventId: event.id,
-    batchId: batch.id,
+    timeWindow: root.time,
     locationSource,
     visibilityStatus: root.visibilityStatus,
     confirmationStartOffsetMinutes:
@@ -91,52 +86,22 @@ const isRecordVisible = (root: PartnerRequest): boolean =>
 export class AnchorPRRepository {
   private readonly prRootRepo = new PartnerRequestRepository();
 
-  private readonly batchRepo = new AnchorEventBatchRepository();
-
   private readonly eventRepo = new AnchorEventRepository();
-
-  private async resolveEventBatch(
-    batchId: AnchorEventBatchId,
-  ): Promise<{ event: AnchorEvent; batch: AnchorEventBatch } | null> {
-    const batch = await this.batchRepo.findById(batchId);
-    if (!batch) {
-      return null;
-    }
-
-    const event = await this.eventRepo.findById(batch.anchorEventId);
-    if (!event) {
-      return null;
-    }
-
-    return { event, batch };
-  }
 
   private async buildRecordForRequest(
     root: PartnerRequest,
   ): Promise<AnchorPRRecord | null> {
-    const candidateBatches = await this.batchRepo.findByTimeWindow(root.time);
-    if (candidateBatches.length === 0) {
-      return null;
-    }
+    const candidateEvents = await this.eventRepo.findByType(root.type);
 
-    const eventCache = new Map<AnchorEventId, AnchorEvent | null>();
-    for (const batch of candidateBatches) {
-      let event = eventCache.get(batch.anchorEventId);
-      if (event === undefined) {
-        event = await this.eventRepo.findById(batch.anchorEventId);
-        eventCache.set(batch.anchorEventId, event);
-      }
-      if (!event) {
-        continue;
-      }
-      if (event.type !== root.type) {
-        continue;
-      }
+    for (const event of candidateEvents) {
       if (!isEventScopedLocation(event, root.location)) {
         continue;
       }
+      if (!eventOwnsTimeWindow(event, root.time)) {
+        continue;
+      }
 
-      const anchor = buildAnchorContext(root, event, batch);
+      const anchor = buildAnchorContext(root, event);
       if (!anchor) {
         continue;
       }
@@ -147,17 +112,20 @@ export class AnchorPRRepository {
     return null;
   }
 
-  private async listRecordsByBatchId(
-    batchId: AnchorEventBatchId,
+  private async listRecordsByEventAndTimeWindow(
+    eventId: AnchorEventId,
+    timeWindow: TimeWindowEntry,
     options: { visibleOnly: boolean; location?: string } = { visibleOnly: true },
   ): Promise<AnchorPRRecord[]> {
-    const resolved = await this.resolveEventBatch(batchId);
-    if (!resolved) {
+    const event = await this.eventRepo.findById(eventId);
+    if (!event) {
+      return [];
+    }
+    if (!eventOwnsTimeWindow(event, timeWindow)) {
       return [];
     }
 
-    const { event, batch } = resolved;
-    const roots = await this.prRootRepo.findByTypeAndTime(event.type, batch.timeWindow);
+    const roots = await this.prRootRepo.findByTypeAndTime(event.type, timeWindow);
 
     const records = roots.flatMap((root) => {
       if (!isEventScopedLocation(event, root.location)) {
@@ -173,7 +141,7 @@ export class AnchorPRRepository {
         return [];
       }
 
-      const anchor = buildAnchorContext(root, event, batch);
+      const anchor = buildAnchorContext(root, event);
       return anchor ? [{ root, anchor }] : [];
     });
 
@@ -194,32 +162,46 @@ export class AnchorPRRepository {
     return this.buildRecordForRequest(root);
   }
 
-  async findVisibleByBatchId(
-    batchId: AnchorEventBatchId,
+  async findVisibleByAnchorEventAndTimeWindow(
+    anchorEventId: AnchorEventId,
+    timeWindow: TimeWindowEntry,
   ): Promise<AnchorPRRecord[]> {
-    return this.listRecordsByBatchId(batchId, { visibleOnly: true });
+    return this.listRecordsByEventAndTimeWindow(anchorEventId, timeWindow, {
+      visibleOnly: true,
+    });
   }
 
-  async findByBatchId(batchId: AnchorEventBatchId): Promise<AnchorPRRecord[]> {
-    return this.listRecordsByBatchId(batchId, { visibleOnly: false });
+  async findByAnchorEventAndTimeWindow(
+    anchorEventId: AnchorEventId,
+    timeWindow: TimeWindowEntry,
+  ): Promise<AnchorPRRecord[]> {
+    return this.listRecordsByEventAndTimeWindow(anchorEventId, timeWindow, {
+      visibleOnly: false,
+    });
   }
 
-  async findVisibleByBatchIdAndLocation(
-    batchId: AnchorEventBatchId,
+  async findVisibleByAnchorEventTimeWindowAndLocation(
+    anchorEventId: AnchorEventId,
+    timeWindow: TimeWindowEntry,
     location: string,
   ): Promise<AnchorPRRecord[]> {
-    return this.listRecordsByBatchId(batchId, {
+    return this.listRecordsByEventAndTimeWindow(anchorEventId, timeWindow, {
       visibleOnly: true,
       location,
     });
   }
 
-  async countActiveVisibleByBatchAndLocationSource(
-    batchId: AnchorEventBatchId,
+  async countActiveVisibleByEventTimeWindowAndLocationSource(
+    anchorEventId: AnchorEventId,
+    timeWindow: TimeWindowEntry,
     location: string,
     locationSource: AnchorLocationSource,
   ): Promise<number> {
-    const records = await this.findVisibleByBatchIdAndLocation(batchId, location);
+    const records = await this.findVisibleByAnchorEventTimeWindowAndLocation(
+      anchorEventId,
+      timeWindow,
+      location,
+    );
     return records.filter((record) => {
       if (record.anchor.locationSource !== locationSource) {
         return false;
@@ -231,18 +213,30 @@ export class AnchorPRRepository {
   async findVisibleByAnchorEventId(
     anchorEventId: AnchorEventId,
   ): Promise<AnchorPRRecord[]> {
-    const batches = await this.batchRepo.findByAnchorEventId(anchorEventId);
+    const event = await this.eventRepo.findById(anchorEventId);
+    if (!event) {
+      return [];
+    }
+
     const nested = await Promise.all(
-      batches.map((batch) => this.findVisibleByBatchId(batch.id)),
+      listAnchorEventTimeWindows(event).map((timeWindow) =>
+        this.findVisibleByAnchorEventAndTimeWindow(anchorEventId, timeWindow),
+      ),
     );
     return dedupeRecordsByPrId(nested.flat());
   }
 
-  async findByAnchorEventId(
-    anchorEventId: AnchorEventId,
-  ): Promise<AnchorPRRecord[]> {
-    const batches = await this.batchRepo.findByAnchorEventId(anchorEventId);
-    const nested = await Promise.all(batches.map((batch) => this.findByBatchId(batch.id)));
+  async findByAnchorEventId(anchorEventId: AnchorEventId): Promise<AnchorPRRecord[]> {
+    const event = await this.eventRepo.findById(anchorEventId);
+    if (!event) {
+      return [];
+    }
+
+    const nested = await Promise.all(
+      listAnchorEventTimeWindows(event).map((timeWindow) =>
+        this.findByAnchorEventAndTimeWindow(anchorEventId, timeWindow),
+      ),
+    );
     return dedupeRecordsByPrId(nested.flat());
   }
 
@@ -252,7 +246,9 @@ export class AnchorPRRepository {
     }
 
     const roots = await this.prRootRepo.findByStatuses(statuses);
-    const records = await Promise.all(roots.map((root) => this.buildRecordForRequest(root)));
+    const records = await Promise.all(
+      roots.map((root) => this.buildRecordForRequest(root)),
+    );
     return dedupeRecordsByPrId(
       records.filter((record): record is AnchorPRRecord => record !== null),
     );

@@ -1,7 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import {
   type AnchorPRContext,
   AnchorPRRepository,
@@ -16,14 +15,13 @@ import { materializePRSupportResources } from "../../pr-booking-support";
 import { hasAnchorParticipationPolicy } from "../../pr/services";
 import {
   isActiveVisibleAnchorPRStatus,
-  readVisibleAnchorPRRecordsByBatchId,
-  readVisibleAnchorPRRecordsByBatchIdAndLocation,
+  readVisibleAnchorPRRecordsByEventTimeWindow,
+  readVisibleAnchorPRRecordsByEventTimeWindowAndLocation,
 } from "../../pr/services";
 import { normalizeAutomaticPartnerBounds } from "../../pr/services";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
 const anchorPRRepo = new AnchorPRRepository();
 const partnerRepo = new PartnerRepository();
 
@@ -39,7 +37,7 @@ const findNextAvailableLocation = (
 
 /**
  * Phase 2: when an Anchor PR becomes FULL, auto-create a new Anchor PR under
- * the same batch (same time window), using a different location in the same
+ * the same event time window, using a different location in the same
  * Anchor Event location pool.
  */
 export async function expandFullAnchorPR(prId: PRId): Promise<void> {
@@ -62,14 +60,13 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   if (!event || event.status !== "ACTIVE") {
     return;
   }
-  const batch = await batchRepo.findById(fullPR.anchor.batchId);
-  if (!batch) return;
 
-  const batchPRs = await readVisibleAnchorPRRecordsByBatchId(
-    fullPR.anchor.batchId,
+  const siblingPRs = await readVisibleAnchorPRRecordsByEventTimeWindow(
+    fullPR.anchor.anchorEventId,
+    fullPR.anchor.timeWindow,
   );
   const occupiedLocations = new Set<string>(
-    batchPRs
+    siblingPRs
       .filter(
         (record) =>
           isActiveVisibleAnchorPRStatus(record.root.status) &&
@@ -90,8 +87,9 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   // Best-effort idempotency: if a visible PR already exists at target location,
   // do not create a duplicate.
   const existingAtTarget =
-    await readVisibleAnchorPRRecordsByBatchIdAndLocation(
-      fullPR.anchor.batchId,
+    await readVisibleAnchorPRRecordsByEventTimeWindowAndLocation(
+      fullPR.anchor.anchorEventId,
+      fullPR.anchor.timeWindow,
       targetLocation,
     );
   if (
@@ -126,7 +124,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   const createdAnchor: AnchorPRContext = {
     prId: createdRoot.id,
     anchorEventId: fullPR.anchor.anchorEventId,
-    batchId: fullPR.anchor.batchId,
+    timeWindow: fullPR.anchor.timeWindow,
     locationSource: "SYSTEM",
     visibilityStatus: "VISIBLE",
     confirmationStartOffsetMinutes:
@@ -145,7 +143,6 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   await materializePRSupportResources({
     prId: createdRoot.id,
     anchorEventId: fullPR.anchor.anchorEventId,
-    batchId: fullPR.anchor.batchId,
     location: createdRoot.location,
     timeWindow: createdRoot.time,
   });
@@ -159,7 +156,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
       sourcePrId: prId,
       createdPrId: createdRoot.id,
       anchorEventId: createdAnchor.anchorEventId,
-      batchId: createdAnchor.batchId,
+      timeWindow: createdAnchor.timeWindow,
       location: createdRoot.location,
       activeCountAtSource: activeCount,
     },
@@ -173,7 +170,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     aggregateId: String(createdRoot.id),
     detail: {
       sourcePrId: prId,
-      batchId: createdAnchor.batchId,
+      timeWindow: createdAnchor.timeWindow,
       location: createdRoot.location,
     },
   });
