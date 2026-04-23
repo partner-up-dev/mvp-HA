@@ -3,14 +3,7 @@ import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/telemetry/track";
-import {
-  useExitAnchorPR,
-  useJoinAnchorPR,
-} from "@/domains/pr/queries/useAnchorPR";
-import {
-  useExitCommunityPR,
-  useJoinCommunityPR,
-} from "@/domains/pr/queries/useCommunityPR";
+import { useExitPR, useJoinPR } from "@/domains/pr/queries/usePRActions";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import type { ApiError } from "@/shared/api/error";
 
@@ -39,16 +32,11 @@ export const useSharedPRActions = ({
 }: UseSharedPRActionsOptions) => {
   const { t } = useI18n();
 
-  const communityJoinMutation = useJoinCommunityPR();
-  const communityExitMutation = useExitCommunityPR();
-  const anchorJoinMutation = useJoinAnchorPR();
-  const anchorExitMutation = useExitAnchorPR();
+  const joinMutation = useJoinPR();
+  const exitMutation = useExitPR();
   const scenario = computed<"ANCHOR" | "COMMUNITY">(() =>
     pr.value?.prKind === "ANCHOR" ? "ANCHOR" : "COMMUNITY",
   );
-
-  const getExitMutation = () =>
-    scenario.value === "ANCHOR" ? anchorExitMutation : communityExitMutation;
 
   const hasJoined = computed(
     () => pr.value?.partnerSection.viewer.isParticipant ?? false,
@@ -85,16 +73,11 @@ export const useSharedPRActions = ({
   );
 
   const joinPending = computed(() =>
-    scenario.value === "ANCHOR"
-      ? anchorJoinMutation.isPending.value
-      : communityJoinMutation.isPending.value,
+    joinMutation.isPending.value,
   );
-  const exitPending = computed(() => getExitMutation().isPending.value);
+  const exitPending = computed(() => exitMutation.isPending.value);
   const joinErrorMessage = computed(() => {
-    const error =
-      scenario.value === "ANCHOR"
-        ? (anchorJoinMutation.error.value as ApiError | null)
-        : (communityJoinMutation.error.value as ApiError | null);
+    const error = joinMutation.getError(scenario.value) as ApiError | null;
     if (!error) return null;
     if (error.code === JOIN_TIME_WINDOW_CONFLICT_CODE) {
       return t("prPage.partnerSection.blockedTimeWindowConflict");
@@ -120,12 +103,11 @@ export const useSharedPRActions = ({
     try {
       await ensureAuthSessionBootstrapped();
       const result =
-        scenario.value === "ANCHOR"
-          ? await anchorJoinMutation.mutateAsync({
-              id: id.value,
-              bookingContactPhone: options.bookingContactPhone ?? null,
-            })
-          : await communityJoinMutation.mutateAsync({ id: id.value });
+        await joinMutation.mutateAsync({
+          scenario: scenario.value,
+          id: id.value,
+          bookingContactPhone: options.bookingContactPhone ?? null,
+        });
       trackEvent("pr_join_success", {
         prId: id.value,
         ...analyticsPRContext.value,
@@ -140,7 +122,10 @@ export const useSharedPRActions = ({
   const handleExit = async () => {
     if (id.value === null) return;
 
-    const result = await getExitMutation().mutateAsync({ id: id.value });
+    const result = await exitMutation.mutateAsync({
+      scenario: scenario.value,
+      id: id.value,
+    });
     trackEvent("pr_exit_success", {
       prId: id.value,
       ...analyticsPRContext.value,

@@ -341,21 +341,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
-import type { CommunityPRDetailResponse } from "@/domains/pr/queries/useCommunityPR";
-import {
-  anchorPRPartnerProfilePath,
-  communityPRPartnerProfilePath,
-  prDetailPath,
-} from "@/domains/pr/routing/routes";
+import type { PRDetailView } from "@/domains/pr/model/types";
+import { prDetailPath, prPartnerProfilePath } from "@/domains/pr/routing/routes";
 import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type PartnerSectionView =
-  | AnchorPRDetailResponse["partnerSection"]
-  | CommunityPRDetailResponse["partnerSection"];
+type PartnerSectionView = PRDetailView["partnerSection"];
 
 type TimeWindow = [string | null, string | null];
 
@@ -476,12 +469,8 @@ const formatWindow = (start: string | null, end: string | null): string => {
   return startLabel ?? endLabel ?? t("prPage.partnerSection.notSet");
 };
 
-const partnerProfilePath = (partnerId: number): string => {
-  if (props.section.scenario === "ANCHOR") {
-    return anchorPRPartnerProfilePath(props.prId, partnerId);
-  }
-  return communityPRPartnerProfilePath(props.prId, partnerId);
-};
+const partnerProfilePath = (partnerId: number): string =>
+  prPartnerProfilePath(props.prId, partnerId);
 
 const rosterItemProfilePath = (
   item: PartnerSectionView["roster"][number],

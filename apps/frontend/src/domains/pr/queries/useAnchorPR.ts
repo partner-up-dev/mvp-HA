@@ -102,7 +102,7 @@ const isBookingContactPhoneInvalidError = (
 ): boolean => payload?.code === BOOKING_CONTACT_PHONE_INVALID_CODE;
 
 export const useAnchorPR = (id: Ref<PRId | null>) => {
-  const queryKey = computed(() => queryKeys.anchorPR.detail(id.value));
+  const queryKey = computed(() => queryKeys.pr.detail(id.value));
 
   return useQuery<AnchorPRDetailView>({
     queryKey,
@@ -216,9 +216,6 @@ export const useJoinAnchorPR = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
@@ -268,9 +265,6 @@ export const useExitAnchorPR = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
@@ -318,9 +312,6 @@ export const useConfirmAnchorPRSlot = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
     },
@@ -365,9 +356,6 @@ export const useUpdateAnchorPRBookingContactPhone = () => {
       return await res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
@@ -422,9 +410,6 @@ export const useCheckInAnchorPRSlot = () => {
       return await res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
@@ -517,9 +502,6 @@ export const useUpdateAnchorPRContent = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
     },
@@ -550,9 +532,6 @@ export const useUpdateAnchorPRStatus = () => {
       return await res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.anchorPR.detail(variables.id),
-      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });

@@ -3,10 +3,7 @@ import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { AnchorPRDetailView } from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/telemetry/track";
-import {
-  useCheckInAnchorPRSlot,
-  useConfirmAnchorPRSlot,
-} from "@/domains/pr/queries/useAnchorPR";
+import { useCheckInPRSlot, useConfirmPRSlot } from "@/domains/pr/queries/usePRActions";
 
 type UseAnchorAttendanceActionsOptions = {
   id: ComputedRef<PRId | null>;
@@ -20,8 +17,8 @@ export const useAnchorAttendanceActions = ({
   onActionSuccess,
 }: UseAnchorAttendanceActionsOptions) => {
   const { t } = useI18n();
-  const confirmSlotMutation = useConfirmAnchorPRSlot();
-  const checkInSlotMutation = useCheckInAnchorPRSlot();
+  const confirmSlotMutation = useConfirmPRSlot();
+  const checkInSlotMutation = useCheckInPRSlot();
   const checkInFollowupOpen = ref(false);
 
   const hasJoined = computed(

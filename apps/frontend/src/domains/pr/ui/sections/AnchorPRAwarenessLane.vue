@@ -92,11 +92,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
-import { anchorPRPartnerProfilePath } from "@/domains/pr/routing/routes";
+import type { AnchorPRDetailView } from "@/domains/pr/model/types";
+import { prPartnerProfilePath } from "@/domains/pr/routing/routes";
 import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 
-type AnchorPartnerSection = AnchorPRDetailResponse["partnerSection"];
+type AnchorPartnerSection = AnchorPRDetailView["partnerSection"];
 
 const props = defineProps<{
   prId: number;
@@ -136,7 +136,7 @@ const historyRoster = computed(() =>
 );
 
 const partnerProfilePath = (partnerId: number): string =>
-  anchorPRPartnerProfilePath(props.prId, partnerId);
+  prPartnerProfilePath(props.prId, partnerId);
 
 const rosterItemProfilePath = (item: RosterItem): string | null =>
   isRosterLinkable(item.state) ? partnerProfilePath(item.partnerId) : null;

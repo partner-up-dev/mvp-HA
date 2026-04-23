@@ -15,13 +15,7 @@ export const queryKeys = {
     partnerProfile: (prId: PRId | null, partnerId: number | null) =>
       ["partner-request", "partner-profile", prId, partnerId] as const,
   },
-  communityPR: {
-    detail: (id: PRId | null) => ["community-pr", "detail", id] as const,
-  },
   anchorPR: {
-    detail: (id: PRId | null) => ["anchor-pr", "detail", id] as const,
-    search: (eventId: number | null, dates: string[]) =>
-      ["anchor-pr", "search", eventId, ...dates] as const,
     messages: (id: PRId | null) => ["partner-request", "messages", id] as const,
     bookingSupport: (id: PRId | null) =>
       ["partner-request", "booking-support", id] as const,

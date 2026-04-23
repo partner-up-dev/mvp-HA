@@ -57,8 +57,7 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import PinInput from "@/shared/ui/forms/PinInput.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
-import { useUpdateAnchorPRStatus } from "@/domains/pr/queries/useAnchorPR";
-import { useUpdateCommunityPRStatus } from "@/domains/pr/queries/useCommunityPR";
+import { useUpdatePRStatus } from "@/domains/pr/queries/usePRActions";
 import type { PRId, PRKind, PRStatusManual } from "@partner-up-dev/backend";
 import {
   useUserSessionStore,
@@ -88,17 +87,14 @@ const statusOptions: StatusOption[] = [
   { value: "CLOSED", label: t("status.closed") },
 ];
 
-const communityUpdateMutation = useUpdateCommunityPRStatus();
-const anchorUpdateMutation = useUpdateAnchorPRStatus();
+const updateMutation = useUpdatePRStatus();
 const userSessionStore = useUserSessionStore();
 const selectedStatus = ref<PRStatusManual>("OPEN");
 const modifyPin = ref("");
 const requiresPin = computed(() => userSessionStore.role === "anonymous");
-const getUpdateMutation = () =>
-  props.scenario === "ANCHOR" ? anchorUpdateMutation : communityUpdateMutation;
-const isUpdatePending = computed(() => getUpdateMutation().isPending.value);
-const hasUpdateError = computed(() => getUpdateMutation().isError.value);
-const updateError = computed(() => getUpdateMutation().error.value);
+const isUpdatePending = computed(() => updateMutation.isPending.value);
+const updateError = computed(() => updateMutation.getError(props.scenario));
+const hasUpdateError = computed(() => Boolean(updateError.value));
 
 const handleClose = () => {
   selectedStatus.value = "OPEN";
@@ -112,7 +108,8 @@ const handleConfirm = async () => {
     return;
   }
 
-  const result = await getUpdateMutation().mutateAsync({
+  const result = await updateMutation.mutateAsync({
+    scenario: props.scenario,
     id: props.prId,
     status: selectedStatus.value,
     pin,
@@ -127,7 +124,7 @@ const handleConfirm = async () => {
 };
 
 const resetUpdateMutation = () => {
-  getUpdateMutation().reset();
+  updateMutation.reset(props.scenario);
 };
 </script>
 

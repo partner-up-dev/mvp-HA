@@ -8,10 +8,10 @@
 </template>
 
 <script setup lang="ts">
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
+import type { AnchorPRDetailView } from "@/domains/pr/model/types";
 import AnchorPRRosterModal from "@/domains/pr/ui/modals/AnchorPRRosterModal.vue";
 
-type PartnerSection = AnchorPRDetailResponse["partnerSection"];
+type PartnerSection = AnchorPRDetailView["partnerSection"];
 
 defineEmits<{
   (e: "close"): void;

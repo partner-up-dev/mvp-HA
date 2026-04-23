@@ -57,7 +57,7 @@ const readErrorMessage = async (
 };
 
 export const useCommunityPR = (id: Ref<PRId | null>) => {
-  const queryKey = computed(() => queryKeys.communityPR.detail(id.value));
+  const queryKey = computed(() => queryKeys.pr.detail(id.value));
 
   return useQuery<CommunityPRDetailResponse>({
     queryKey,
@@ -115,9 +115,6 @@ export const usePublishCommunityPR = () => {
     },
     onSuccess: (_payload, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.communityPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
@@ -162,9 +159,6 @@ export const useJoinCommunityPR = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.communityPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
@@ -199,9 +193,6 @@ export const useExitCommunityPR = () => {
       return await res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.communityPR.detail(variables.id),
-      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
@@ -239,9 +230,6 @@ export const useUpdateCommunityPRContent = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.communityPR.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
     },
@@ -274,9 +262,6 @@ export const useUpdateCommunityPRStatus = () => {
       return await res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.communityPR.detail(variables.id),
-      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });

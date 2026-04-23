@@ -1005,6 +1005,45 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `useAnchorPR.ts`, `useCommunityPR.ts`, `useAnchorPRMessages.ts`, and several `AnchorPR*` component files still remain as compatibility seams
   - telemetry event names and some share descriptors still carry legacy anchor/community vocabulary and remain outside this slice
 
+## Slice 11B - Frontend Compatibility Hook And Path Contraction
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - move live PR action consumers onto canonical `usePR*` wrappers
+  - converge live partner-profile path consumers onto `prPartnerProfilePath`
+  - contract detail cache ownership onto `queryKeys.pr.detail`
+  - remove unused frontend route-helper alias exports now that live emission has converged
+- Artifacts:
+  - `apps/frontend/src/domains/pr/queries/usePRActions.ts`
+  - `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
+  - `apps/frontend/src/domains/pr/queries/useCommunityPR.ts`
+  - `apps/frontend/src/domains/pr/routing/routes.ts`
+  - `apps/frontend/src/domains/pr/use-cases/useSharedPRActions.ts`
+  - `apps/frontend/src/domains/pr/use-cases/useAnchorAttendanceActions.ts`
+  - `apps/frontend/src/domains/pr/ui/modals/EditPRContentModal.vue`
+  - `apps/frontend/src/domains/pr/ui/modals/UpdatePRStatusModal.vue`
+  - `apps/frontend/src/domains/pr/ui/composites/AnchorPRFactsCard.vue`
+  - `apps/frontend/src/domains/pr/ui/composites/PRFactsCard.vue`
+  - `apps/frontend/src/domains/pr/ui/modals/PRRosterModal.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRAwarenessLane.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRNextStepLane.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRPrimaryActionLane.vue`
+  - `apps/frontend/src/domains/pr/ui/sections/PRPartnerSection.vue`
+  - `apps/frontend/src/shared/api/query-keys.ts`
+- Decisions implemented:
+  - live join, exit, content-update, status-update, confirm, and check-in consumers now read through canonical `usePRActions` or `usePRAttendanceActions` surfaces
+  - `useAnchorPR.ts` and `useCommunityPR.ts` now share canonical `queryKeys.pr.detail` ownership for detail invalidation
+  - live partner-profile links now emit through `prPartnerProfilePath`
+  - unused route-helper alias exports for `anchorPR*` and `communityPR*` paths have been removed from `routes.ts`
+  - type-only imports in live PR UI moved away from split query files and toward canonical PR model types
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - source scan confirms no remaining live consumer references to removed frontend route-helper aliases or split detail query keys
+- Verification gap:
+  - `useAnchorPR.ts` and `useCommunityPR.ts` still remain as compatibility hook files for anchor-only or community-only behavior and type guards
+  - `AnchorPR*` component files still remain in the tree as compatibility-owned component shells and internal naming residue
+
 ## Handoff Source
 
 This packet spins out of:

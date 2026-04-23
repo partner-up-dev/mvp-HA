@@ -124,11 +124,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
+import type { AnchorPRDetailView } from "@/domains/pr/model/types";
 import Button from "@/shared/ui/actions/Button.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type AnchorPartnerSection = AnchorPRDetailResponse["partnerSection"];
+type AnchorPartnerSection = AnchorPRDetailView["partnerSection"];
 
 const props = withDefaults(
   defineProps<{

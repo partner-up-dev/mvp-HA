@@ -52,8 +52,7 @@ import { computed, isRef, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRId, PRKind } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
-import { useUpdateAnchorPRContent } from "@/domains/pr/queries/useAnchorPR";
-import { useUpdateCommunityPRContent } from "@/domains/pr/queries/useCommunityPR";
+import { useUpdatePRContent } from "@/domains/pr/queries/usePRActions";
 import {
   useUserSessionStore,
   type AuthSessionPayload,
@@ -83,17 +82,14 @@ const emit = defineEmits<{
   success: [];
 }>();
 
-const communityUpdateMutation = useUpdateCommunityPRContent();
-const anchorUpdateMutation = useUpdateAnchorPRContent();
+const updateMutation = useUpdatePRContent();
 const userSessionStore = useUserSessionStore();
 const formRef = ref<InstanceType<typeof PRForm> | null>(null);
 const editPin = ref("");
 const requiresPin = computed(() => userSessionStore.role === "anonymous");
-const getUpdateMutation = () =>
-  props.scenario === "ANCHOR" ? anchorUpdateMutation : communityUpdateMutation;
-const isUpdatePending = computed(() => getUpdateMutation().isPending.value);
-const hasUpdateError = computed(() => getUpdateMutation().isError.value);
-const updateError = computed(() => getUpdateMutation().error.value);
+const isUpdatePending = computed(() => updateMutation.isPending.value);
+const updateError = computed(() => updateMutation.getError(props.scenario));
+const hasUpdateError = computed(() => Boolean(updateError.value));
 const isFormValid = computed(() => {
   const canSubmit = formRef.value?.canSubmit;
   const formOk = isRef(canSubmit) ? canSubmit.value : Boolean(canSubmit);
@@ -107,18 +103,15 @@ const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
   const pin = requiresPin.value ? editPin.value : undefined;
   if (requiresPin.value && (!pin || pin.length !== 4)) return;
 
-  const result =
-    props.scenario === "ANCHOR"
-      ? await anchorUpdateMutation.mutateAsync({
-          id: props.prId,
-          fields: toAnchorPRFields(fields),
-          pin,
-        })
-      : await communityUpdateMutation.mutateAsync({
-          id: props.prId,
-          fields: toCommunityPRFields(fields),
-          pin,
-        });
+  const result = await updateMutation.mutateAsync({
+    scenario: props.scenario,
+    id: props.prId,
+    fields:
+      props.scenario === "ANCHOR"
+        ? toAnchorPRFields(fields)
+        : toCommunityPRFields(fields),
+    pin,
+  });
 
   const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
   if (authPayload) {
@@ -135,7 +128,7 @@ const handleClose = () => {
 };
 
 const resetUpdateMutation = () => {
-  getUpdateMutation().reset();
+  updateMutation.reset(props.scenario);
 };
 </script>
 

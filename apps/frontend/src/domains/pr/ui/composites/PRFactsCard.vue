@@ -15,11 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
+import type { AnchorPRDetailView } from "@/domains/pr/model/types";
 import AnchorPRFactsCard from "@/domains/pr/ui/composites/AnchorPRFactsCard.vue";
 
 type RosterPreviewItem =
-  AnchorPRDetailResponse["partnerSection"]["roster"][number];
+  AnchorPRDetailView["partnerSection"]["roster"][number];
 
 defineEmits<{
   (e: "view-location-gallery"): void;

@@ -10,28 +10,6 @@ export const prPartnerProfilePath = (
   partnerId: number,
 ): string => `/pr/${id}/partners/${partnerId}`;
 
-export const communityPRCreatePath = (): string => prCreatePath();
-
-export const communityPRDetailPath = (id: PRId): string => prDetailPath(id);
-
-export const anchorPRDetailPath = (id: PRId): string => prDetailPath(id);
-
-export const anchorPRBookingSupportPath = (id: PRId): string =>
-  prBookingSupportPath(id);
-
-export const anchorPRMessagesPath = (id: PRId): string =>
-  prMessagesPath(id);
-
-export const communityPRPartnerProfilePath = (
-  id: PRId,
-  partnerId: number,
-): string => prPartnerProfilePath(id, partnerId);
-
-export const anchorPRPartnerProfilePath = (
-  id: PRId,
-  partnerId: number,
-): string => prPartnerProfilePath(id, partnerId);
-
 export const resolvePRDetailPath = (input: {
   id: PRId;
   prKind: PRKind;

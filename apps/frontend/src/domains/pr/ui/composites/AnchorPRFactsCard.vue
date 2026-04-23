@@ -115,11 +115,11 @@ import InfoRow from "@/shared/ui/display/InfoRow.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
 import ChipGroup from "@/shared/ui/display/ChipGroup.vue";
 import Button from "@/shared/ui/actions/Button.vue";
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
-import { anchorPRPartnerProfilePath } from "@/domains/pr/routing/routes";
+import type { AnchorPRDetailView } from "@/domains/pr/model/types";
+import { prPartnerProfilePath } from "@/domains/pr/routing/routes";
 
 type RosterPreviewItem =
-  AnchorPRDetailResponse["partnerSection"]["roster"][number];
+  AnchorPRDetailView["partnerSection"]["roster"][number];
 
 defineEmits<{
   "view-location-gallery": [];
@@ -146,7 +146,7 @@ const normalizedNotes = computed(() => {
 });
 
 const partnerProfilePath = (partnerId: number): string =>
-  anchorPRPartnerProfilePath(props.prId, partnerId);
+  prPartnerProfilePath(props.prId, partnerId);
 
 const isRosterLinkable = (state: RosterPreviewItem["state"]): boolean =>
   state !== "RELEASED" && state !== "EXITED";

@@ -82,13 +82,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
+import type { AnchorPRDetailView } from "@/domains/pr/model/types";
 import Button from "@/shared/ui/actions/Button.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
 import { trackEvent } from "@/shared/telemetry/track";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type AnchorPartnerSection = AnchorPRDetailResponse["partnerSection"];
+type AnchorPartnerSection = AnchorPRDetailView["partnerSection"];
 type BlockedReason = AnchorPartnerSection["viewer"]["joinBlockedReason"];
 type PrimaryActionType = "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT" | "NONE";
 type PrimaryActionTrackType = Exclude<PrimaryActionType, "NONE">;
