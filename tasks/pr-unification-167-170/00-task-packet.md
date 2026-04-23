@@ -253,6 +253,40 @@ Fields leaving PR core:
   - booking-support compatibility surfaces
   - admin batch-oriented Anchor Event internals
 
+## Compatibility Retention Cost Map
+
+- keep `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - value:
+    - preserves live `/apr/*` mutation and message route compatibility
+    - keeps anchor-only action surfaces stable while canonical `/pr/*` mutation routes are still incomplete
+  - cost:
+    - keeps Anchor PR naming alive in controller and DTO vocabulary
+    - adds one extra protocol surface whenever PR message or booking-support behavior changes
+- keep `apps/backend/src/controllers/community-pr.controller.ts`
+  - value:
+    - preserves live `/cpr/*` publish, join, and exit compatibility
+    - keeps rollout pressure low while community-specific mutation behavior still exists
+  - cost:
+    - keeps Community PR wording and legacy credential behavior reachable
+    - slows the final cut required by issue `#167`
+- keep `apps/backend/src/domains/pr-community/use-cases/join-community-pr.ts` and `exit-community-pr.ts`
+  - value:
+    - isolates the remaining community-specific mutation behavior behind a small seam
+  - cost:
+    - extends old terminology and legacy auth assumptions
+- keep `/apr/*` and `/cpr/*` route families
+  - value:
+    - preserves shared-link and bookmarked-link compatibility
+  - cost:
+    - duplicates route families and telemetry naming pressure
+    - delays final vocabulary convergence on `/pr/*`
+- remove read-model shells under `pr-anchor/use-cases` and `pr-community/use-cases`
+  - value:
+    - no live behavior is lost because canonical `domains/pr/read-models/*` already owns the implementation
+    - the import graph becomes shallower and the compatibility surface becomes more honest
+  - cost:
+    - any consumer importing those exact file paths would break, so the cut requires an import scan first
+
 ## Slice Ownership For "Anchor PR 即 PR"
 
 - Slice 5 established one canonical PR detail route and removed `CommunityPRPage` from the routed detail surface.
@@ -699,6 +733,32 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `rg -n 'pr-core/use-cases/list-pr-messages|pr-core/use-cases/create-pr-message|pr-core/use-cases/advance-pr-message-read-marker|pr-core/services/pr-view.service|pr-core/services/pr-share-metadata.service' apps/backend/src` returned no direct ownership imports outside the compatibility shells themselves
 - Verification gap:
   - deeper `pr-core` internal callers still import the compatibility shells and remain candidates for a later cleanup slice
+
+## Slice 7D - Remove Obsolete Read-Model Compatibility Shells
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - delete `pr-anchor` and `pr-community` read-model files that only re-export canonical implementations
+  - retarget compatibility namespace indices directly to canonical `domains/pr/read-models/*`
+  - record the remaining route and controller compatibility retention costs explicitly
+- Artifacts:
+  - `apps/backend/src/domains/pr-anchor/use-cases/index.ts`
+  - `apps/backend/src/domains/pr-community/use-cases/index.ts`
+  - deleted:
+    - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
+    - `apps/backend/src/domains/pr-anchor/use-cases/search-anchor-prs.ts`
+    - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
+- Decisions implemented:
+  - obsolete read-model shells under `pr-anchor` and `pr-community` are removed
+  - compatibility namespace indices now point directly at canonical `domains/pr/read-models/*`
+  - route-level and mutation-level compatibility stays in place, and its retention trade-offs are now documented separately
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `rg -n "pr-anchor/use-cases/get-anchor-pr|pr-anchor/use-cases/search-anchor-prs|pr-community/use-cases/get-community-pr" apps/backend/src` returned no remaining source references
+- Verification gap:
+  - route and controller compatibility plus community-specific mutation compatibility remain for later slices
 
 ## Handoff Source
 

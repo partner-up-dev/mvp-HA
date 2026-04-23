@@ -1,5 +1,5 @@
-export { getAnchorPRDetail } from "./get-anchor-pr";
-export { searchAnchorPRs } from "./search-anchor-prs";
+export { getAnchorPRDetail } from "../../pr/read-models/get-anchor-pr-detail";
+export { searchAnchorPRs } from "../../pr/read-models/search-anchor-prs";
 export { getAnchorPRBookingSupport } from "../../pr-booking-support";
 export { confirmSlot } from "../../pr-core/use-cases/confirm-slot";
 export { checkIn } from "../../pr-core/use-cases/check-in";
