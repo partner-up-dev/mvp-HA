@@ -287,6 +287,29 @@ Fields leaving PR core:
   - cost:
     - any consumer importing those exact file paths would break, so the cut requires an import scan first
 
+## Compatibility Decision Table
+
+| Surface | Current role | Recommended retention horizon | Canonical replacement | Removal preconditions | Removal order |
+| --- | --- | --- | --- | --- | --- |
+| frontend `/apr/:id` | detail alias that still renders the single PR page | short | `/pr/:id` | telemetry and shared-link generation stop emitting `/apr/*`; old inbound links are acceptable through redirect | 3 |
+| frontend `/apr/:id/messages` | only live route for PR message page | medium | `/pr/:id/messages` | add canonical PR messages page route and move frontend route helpers off `anchorPRMessagesPath` | 5 |
+| frontend `/apr/:id/booking-support` | only live route for PR booking-support page | medium | `/pr/:id/booking-support` | add canonical PR booking-support page route and move frontend route helpers off `anchorPRBookingSupportPath` | 6 |
+| frontend `/apr/:id/partners/:partnerId` | anchor partner profile path used by roster and awareness UI | short to medium | `/pr/:id/partners/:partnerId` | add canonical PR partner profile route and remove `prKind`-based path branching in frontend components | 4 |
+| frontend `/cpr/:id` | redirect alias into `/pr/:id` | short | `/pr/:id` | confirm no product surface still emits `/cpr/:id`; keep server-side redirect only if link compatibility still matters | 2 |
+| frontend `/cpr/new` | create-page alias into the same PR create page | short | `/pr/new` | home, landing, share, and event surfaces all emit `/pr/new`; link compatibility decision made explicitly | 1 |
+| frontend `/cpr/:id/partners/:partnerId` | community-specific partner profile path | medium | `/pr/:id/partners/:partnerId` | add canonical PR partner profile route and remove `communityPRPartnerProfilePath` calls | 4 |
+| backend `/api/apr` via `anchor-pr.controller.ts` | anchor-only read, message, booking-support, join, exit, confirm, and check-in surface | medium | split across `/api/pr/:id*` and event-side routes where needed | canonical PR message, booking-support, join, exit, confirm, check-in, and search APIs exist; frontend no longer calls `/api/apr/*` | 8 |
+| backend `/api/cpr` via `community-pr.controller.ts` | legacy community create, publish, detail, partner-profile, join, exit, and update surface | short to medium | `/api/pr/new/*`, `/api/pr/:id`, `/api/pr/:id/partners/:partnerId/profile`, plus new canonical publish and mutation commands | canonical PR publish, join, exit, and update APIs exist; legacy auth payload behavior is either retired or intentionally preserved elsewhere | 7 |
+| `community-pr.controller.ts` | protocol shell for the remaining community-specific API behavior | short to medium | `partner-request.controller.ts` plus canonical PR mutation controllers | same as `/api/cpr`; no frontend RPC client still imports community controller routes | 7 |
+| `join-community-pr.ts` | last seam that still provisions local users and generated PIN during community join | short | canonical `joinPR` command with the final identity policy | issue `#175` outcome applied; anonymous join semantics are either removed or redefined under canonical PR policy | 9 |
+
+Decision notes:
+
+- `/cpr/:id` and `/cpr/new` have the lowest retention value because they already map onto canonical PR page surfaces.
+- `/apr/*` retains more value because messages, booking-support, and partner-profile still lack canonical `/pr/*` route surfaces.
+- `community-pr.controller.ts` and `join-community-pr.ts` are coupled to the legacy local-credential path, so their removal should be coordinated with issue `#175`.
+- `anchor-pr.controller.ts` should stay until canonical PR mutation and subpage APIs exist. Its read-only detail/search compatibility value is already much lower than its mutation and subpage value.
+
 ## Slice Ownership For "Anchor PR 即 PR"
 
 - Slice 5 established one canonical PR detail route and removed `CommunityPRPage` from the routed detail surface.
