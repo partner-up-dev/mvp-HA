@@ -4,25 +4,23 @@ import { z } from "zod";
 import {
   checkIn,
   confirmSlot,
-  getReimbursementStatus,
-  getAnchorPRBookingSupport,
   getAnchorPRDetail,
   searchAnchorPRs,
-} from "../domains/pr-anchor";
-import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
-import {
+  getAnchorPRBookingSupport,
+  getPRPartnerProfile,
+  getReimbursementStatus,
   advancePRMessageReadMarker,
   exitPR,
   createPRMessage,
-  getPRPartnerProfile,
   joinPR,
   listPRMessages,
   updatePRContent,
   updatePRStatus,
-} from "../domains/pr-core";
+  authorizeCreatorMutation,
+} from "../domains/pr";
+import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
-import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mutation-auth.service";
 import { HTTPException } from "hono/http-exception";
 import {
   anchorUpdateContentSchema,

@@ -1,12 +1,12 @@
 /**
  * PartnerRequestService — thin facade.
  *
- * Delegates all business logic to domain use-cases under `domains/pr-core`.
+ * Delegates all business logic to the canonical `domains/pr` surface.
  * Kept for backward-compatibility with consumers that haven't migrated
  * to importing use-cases directly (ShareService, llm.controller,
  * wecom.controller).
  *
- * New code should import use-cases directly from `domains/pr-core`.
+ * New code should import use-cases directly from `domains/pr`.
  */
 
 import {
@@ -21,8 +21,8 @@ import {
   updatePRContent as updatePRContentUseCase,
   joinPR as joinPRUseCase,
   exitPR as exitPRUseCase,
-} from "../domains/pr-core";
-import type { PublicPR } from "../domains/pr-core";
+} from "../domains/pr";
+import type { CreatorIdentityInput, PublicPR } from "../domains/pr";
 import type {
   PartnerRequestFields,
   PRId,
@@ -30,7 +30,6 @@ import type {
   WeekdayLabel,
 } from "../entities/partner-request";
 import type { UserId } from "../entities/user";
-import type { CreatorIdentityInput } from "../domains/pr-core/services/creator-identity.service";
 
 export class PartnerRequestService {
   async createPRFromNaturalLanguage(

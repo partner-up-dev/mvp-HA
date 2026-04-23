@@ -528,6 +528,43 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - admin Anchor Event management and other private compatibility code still retain batch-oriented internals
   - backend anchor detail responses still carry legacy compatibility fields that are no longer used by the public page
 
+## Slice 7A - Backend Canonical PR Domain Entry Surface
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - introduce backend canonical `domains/pr` entrypoints and sub-namespaces
+  - switch controller and legacy facade imports onto that canonical PR surface
+  - keep old `pr-core`, `pr-anchor`, and `pr-community` folders as compatibility internals during the transition
+- Artifacts:
+  - `apps/backend/src/domains/pr/index.ts`
+  - `apps/backend/src/domains/pr/model/pr/index.ts`
+  - `apps/backend/src/domains/pr/model/partner/index.ts`
+  - `apps/backend/src/domains/pr/message/index.ts`
+  - `apps/backend/src/domains/pr/sharing/index.ts`
+  - `apps/backend/src/domains/pr/read-models/index.ts`
+  - `apps/backend/src/domains/pr/services/index.ts`
+  - `apps/backend/src/controllers/partner-request.controller.ts`
+  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/community-pr.controller.ts`
+  - `apps/backend/src/services/PartnerRequestService.ts`
+  - `apps/backend/src/domains/pr-core/index.ts`
+  - `apps/backend/src/domains/pr-anchor/index.ts`
+  - `apps/backend/src/domains/pr-community/index.ts`
+- Decisions implemented:
+  - backend now has one canonical `domains/pr` import surface with `model/pr`, `model/partner`, `message`, `sharing`, `read-models`, and `services` namespaces
+  - PR-owned backend controllers now import canonical PR use-cases from `domains/pr` rather than directly from `pr-core`, `pr-anchor`, or `pr-community`
+  - the legacy `PartnerRequestService` facade now delegates to `domains/pr`
+  - old split domain indices are now explicitly marked as compatibility entrypoints
+  - identity helpers for PIN and WeChat user resolution remain in their current files until Slice 8 moves them into `domains/user`
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `rg -n "../domains/pr-core|../domains/pr-anchor|../domains/pr-community|domains/pr-core|domains/pr-anchor|domains/pr-community" apps/backend/src/controllers apps/backend/src/services apps/backend/src` now leaves only auth and wechat identity-helper imports for the planned Slice 8 move
+- Verification gap:
+  - internal use-case and service files still physically live under `pr-core`, `pr-anchor`, and `pr-community`
+  - controller route names and response DTO names still carry legacy `Anchor PR` / `Community PR` wording where compatibility remains necessary
+
 ## Handoff Source
 
 This packet spins out of:

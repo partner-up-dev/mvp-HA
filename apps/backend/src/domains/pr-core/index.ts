@@ -1,6 +1,6 @@
-// Domain: pr-core — PartnerRequest lifecycle
+// Compatibility entrypoint: pr-core
 //
-// Re-exports use-cases and domain services for external consumption.
+// Canonical external imports should move to `domains/pr`.
 
 export * from "./use-cases";
 export type { PublicPR } from "./services/pr-view.service";

@@ -7,7 +7,7 @@ import {
   getPRPartnerProfile,
   getMyCreatedPRs,
   getMyJoinedPRs,
-} from "../domains/pr-core";
+} from "../domains/pr";
 import {
   buildCreatorIdentity,
   getAuthenticatedUserId,

@@ -8,14 +8,12 @@ import {
   publishPR,
   updatePRStatus,
   updatePRContent,
-} from "../domains/pr-core";
-import {
-  exitCommunityPR,
   getCommunityPRDetail,
+  exitCommunityPR,
   joinCommunityPR,
-} from "../domains/pr-community";
+  authorizeCreatorMutation,
+} from "../domains/pr";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
-import { authorizeCreatorMutation } from "../domains/pr-core/services/creator-mutation-auth.service";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 import {
   buildCreatorIdentity,
