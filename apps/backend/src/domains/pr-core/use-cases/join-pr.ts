@@ -1,13 +1,13 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { PartnerStatus } from "../../../entities/partner";
 import type { User } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../user";
 import {
+  hasAnchorParticipationPolicy,
   isJoinLockedByPolicy,
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,
@@ -37,7 +37,6 @@ import {
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 const bookingContactRepo = new AnchorPRBookingContactRepository();
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
@@ -73,21 +72,16 @@ export async function joinPRAsUser(
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
+  const hasParticipationPolicy = hasAnchorParticipationPolicy(refreshedRequest);
 
   let targetStatus: Extract<PartnerStatus, "JOINED" | "CONFIRMED"> = "JOINED";
-  const bookingContactRequired =
-    refreshedRequest.prKind === "ANCHOR"
-      ? await isBookingContactRequiredForPR(id)
-      : false;
+  const bookingContactRequired = await isBookingContactRequiredForPR(id);
 
-  if (refreshedRequest.prKind === "ANCHOR") {
-    const anchor = await anchorPRRepo.findByPrId(id);
-    if (!anchor) {
-      throw new HTTPException(500, {
-        message: "Anchor PR subtype row missing",
-      });
-    }
-    const policy = resolveAnchorParticipationPolicy(anchor, refreshedRequest.time);
+  if (hasParticipationPolicy) {
+    const policy = resolveAnchorParticipationPolicy(
+      refreshedRequest,
+      refreshedRequest.time,
+    );
     if (isJoinLockedByPolicy(policy)) {
       throw new HTTPException(400, {
         message: "Cannot join - event is locked after join lock",
@@ -117,7 +111,7 @@ export async function joinPRAsUser(
         message: "Failed to reload partner request",
       });
     }
-    if (latest.prKind === "ANCHOR") {
+    if (hasAnchorParticipationPolicy(latest)) {
       await scheduleWeChatReminderJobsForParticipant(latest, user.id);
       await scheduleWeChatActivityStartReminderJobForParticipant(latest, user.id);
     }
@@ -138,7 +132,7 @@ export async function joinPRAsUser(
       }
     | null = null;
 
-  if (refreshedRequest.prKind === "ANCHOR" && bookingContactRequired) {
+  if (bookingContactRequired) {
     const isFirstActiveOwnerJoin = activeCount === 0;
 
     if (isFirstActiveOwnerJoin) {
@@ -190,12 +184,7 @@ export async function joinPRAsUser(
   }
   const assignedPartnerId = joinedSlot.id;
 
-  if (
-    refreshedRequest.prKind === "ANCHOR" &&
-    bookingContactRequired &&
-    activeCount === 0 &&
-    bookingContactPhoneInput
-  ) {
+  if (bookingContactRequired && activeCount === 0 && bookingContactPhoneInput) {
     await bookingContactRepo.upsertByPrId({
       prId: id,
       ownerPartnerId: assignedPartnerId,
@@ -217,7 +206,7 @@ export async function joinPRAsUser(
   const afterRecalculate = await prRepo.findById(id);
   if (
     afterRecalculate &&
-    afterRecalculate.prKind === "ANCHOR" &&
+    hasAnchorParticipationPolicy(afterRecalculate) &&
     afterRecalculate.status === "FULL"
   ) {
     await expandFullAnchorPR(id);
@@ -251,7 +240,7 @@ export async function joinPRAsUser(
       message: "Failed to reload partner request",
     });
   }
-  if (latest.prKind === "ANCHOR") {
+  if (hasAnchorParticipationPolicy(latest)) {
     await scheduleWeChatNewPartnerNotificationsForJoin({
       request: latest,
       joinedUserId: user.id,

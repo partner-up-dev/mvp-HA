@@ -8,13 +8,15 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import type { PRKind } from "./partner-request";
+
+export const scenarioLineKindValues = ["ANCHOR", "COMMUNITY"] as const;
+export type ScenarioLineKind = (typeof scenarioLineKindValues)[number];
 
 export const scenarioTypeMetrics = pgTable(
   "scenario_type_metrics",
   {
     dateKey: date("date_key", { mode: "string" }).notNull(),
-    prKind: text("pr_kind").$type<PRKind>().notNull(),
+    lineKind: text("line_kind").$type<ScenarioLineKind>().notNull(),
     scenarioType: text("scenario_type").notNull(),
     prCount: integer("pr_count").notNull().default(0),
     pageViews: integer("page_views").notNull().default(0),
@@ -28,7 +30,7 @@ export const scenarioTypeMetrics = pgTable(
   },
   (table) => ({
     pk: primaryKey({
-      columns: [table.dateKey, table.prKind, table.scenarioType],
+      columns: [table.dateKey, table.lineKind, table.scenarioType],
     }),
   }),
 );

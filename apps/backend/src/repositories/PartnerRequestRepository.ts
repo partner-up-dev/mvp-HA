@@ -63,6 +63,22 @@ export class PartnerRequestRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async findByTypeAndTime(
+    type: string,
+    timeWindow: TimeWindowEntry,
+  ): Promise<PartnerRequest[]> {
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(
+        and(
+          eq(partnerRequests.type, type),
+          eq(partnerRequests.time, timeWindow),
+        ),
+      )
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async findByCreatorId(userId: UserId) {
     return await db
       .select()
@@ -119,6 +135,7 @@ export class PartnerRequestRepository {
         location: fields.location,
         minPartners: fields.minPartners,
         maxPartners: fields.maxPartners,
+        budget: fields.budget,
         preferences: fields.preferences,
         notes: fields.notes,
       })

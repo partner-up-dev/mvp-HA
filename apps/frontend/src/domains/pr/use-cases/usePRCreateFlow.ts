@@ -76,7 +76,6 @@ export const usePRCreateFlow = () => {
     trackEvent("pr_create_success", {
       prId: result.id,
       status: createdStatus,
-      prKind: "COMMUNITY",
       scenarioType: fields.type,
     });
     if (createdStatus === "OPEN") {

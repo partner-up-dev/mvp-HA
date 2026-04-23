@@ -6,6 +6,7 @@ const SPM_VALUE_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
 
 export type ShareSpmRouteKey =
   | "home"
+  | "pr"
   | "community_pr_create"
   | "contact_support"
   | "contact_author"

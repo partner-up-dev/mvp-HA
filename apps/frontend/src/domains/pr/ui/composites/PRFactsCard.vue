@@ -115,11 +115,11 @@ import InfoRow from "@/shared/ui/display/InfoRow.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
 import ChipGroup from "@/shared/ui/display/ChipGroup.vue";
 import Button from "@/shared/ui/actions/Button.vue";
-import type { AnchorPRDetailView } from "@/domains/pr/model/types";
+import type { PRPartnerSectionView } from "@/domains/pr/model/types";
 import { prPartnerProfilePath } from "@/domains/pr/routing/routes";
 
 type RosterPreviewItem =
-  AnchorPRDetailView["partnerSection"]["roster"][number];
+  PRPartnerSectionView["roster"][number];
 
 defineEmits<{
   "view-location-gallery": [];

@@ -9,6 +9,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { UserNotificationOptRepository } from "../../../repositories/UserNotificationOptRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { ACTIVITY_START_REMINDER_NOTIFICATION_KIND } from "../model/notification-kind";
+import { hasAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -77,8 +78,7 @@ const resolvePrUrl = (request: PartnerRequest): string | null => {
   if (!frontendUrl) return null;
   try {
     const url = new URL(frontendUrl);
-    url.pathname =
-      request.prKind === "ANCHOR" ? `/apr/${request.id}` : `/cpr/${request.id}`;
+    url.pathname = `/pr/${request.id}`;
     url.search = "";
     url.hash = "";
     return url.toString();
@@ -118,7 +118,7 @@ export const shouldScheduleActivityStartReminderNotification = async (input: {
   request: PartnerRequest;
   userId: UserId;
 }): Promise<boolean> => {
-  if (input.request.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(input.request)) {
     return false;
   }
 
@@ -159,11 +159,11 @@ export const prepareActivityStartReminderNotificationDispatch = async (
   }
 
   const request = await prRepo.findById(payload.prId);
-  if (!request || request.prKind !== "ANCHOR") {
+  if (!request || !hasAnchorParticipationPolicy(request)) {
     return {
       status: "SKIPPED",
       errorCode: "PR_MISSING_OR_UNSUPPORTED",
-      errorMessage: "Anchor partner request not found",
+      errorMessage: "Partner request has no activity reminder support",
     };
   }
 
@@ -246,4 +246,3 @@ export const clearActivityStartReminderNotificationCredits = async (
     ACTIVITY_START_REMINDER_NOTIFICATION_KIND,
   );
 };
-

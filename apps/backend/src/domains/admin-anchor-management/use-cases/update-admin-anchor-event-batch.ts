@@ -13,6 +13,7 @@ export interface UpdateAdminAnchorEventBatchInput {
   timeWindow: [string | null, string | null];
   status: AnchorEventBatchStatus;
   description: string | null;
+  earliestLeadMinutes: number | null;
 }
 
 export async function updateAdminAnchorEventBatch(
@@ -28,6 +29,7 @@ export async function updateAdminAnchorEventBatch(
     timeWindow: input.timeWindow,
     status: input.status,
     description: input.description,
+    earliestLeadMinutes: input.earliestLeadMinutes,
   });
 
   if (!updated) {

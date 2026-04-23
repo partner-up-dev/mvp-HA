@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import type { AnchorPartnerRequest } from "../../../entities/anchor-partner-request";
-import type { PartnerRequestFields } from "../../../entities/partner-request";
+import type { PartnerRequest } from "../../../entities/partner-request";
 import { getTimeWindowStart } from "./time-window.service";
 
 export const DEFAULT_CONFIRMATION_START_OFFSET_MINUTES = 120;
@@ -18,7 +17,6 @@ export type ResolvedAnchorParticipationPolicy = AnchorParticipationPolicyOffsets
   confirmationStartAt: Date | null;
   confirmationEndAt: Date | null;
   joinLockAt: Date | null;
-  bookingTriggeredAt: Date | null;
 };
 
 export function validateAnchorParticipationPolicyOffsets(
@@ -57,23 +55,22 @@ export function validateAnchorParticipationPolicyOffsets(
 }
 
 export function resolveAnchorParticipationPolicy(
-  anchor: Pick<
-    AnchorPartnerRequest,
+  request: Pick<
+    PartnerRequest,
     | "confirmationStartOffsetMinutes"
     | "confirmationEndOffsetMinutes"
     | "joinLockOffsetMinutes"
-    | "bookingTriggeredAt"
   >,
-  timeWindow: PartnerRequestFields["time"],
+  timeWindow: PartnerRequest["time"],
 ): ResolvedAnchorParticipationPolicy {
   const confirmationStartOffsetMinutes =
-    anchor.confirmationStartOffsetMinutes ??
+    request.confirmationStartOffsetMinutes ??
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES;
   const confirmationEndOffsetMinutes =
-    anchor.confirmationEndOffsetMinutes ??
+    request.confirmationEndOffsetMinutes ??
     DEFAULT_CONFIRMATION_END_OFFSET_MINUTES;
   const joinLockOffsetMinutes =
-    anchor.joinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES;
+    request.joinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES;
 
   validateAnchorParticipationPolicyOffsets({
     confirmationStartOffsetMinutes,
@@ -94,7 +91,6 @@ export function resolveAnchorParticipationPolicy(
     confirmationStartAt: resolveOffsetDate(confirmationStartOffsetMinutes),
     confirmationEndAt: resolveOffsetDate(confirmationEndOffsetMinutes),
     joinLockAt: resolveOffsetDate(joinLockOffsetMinutes),
-    bookingTriggeredAt: anchor.bookingTriggeredAt ?? null,
   };
 }
 
@@ -132,4 +128,19 @@ export function isJoinLockedByPolicy(
 ): boolean {
   if (!policy.joinLockAt) return false;
   return Date.now() >= policy.joinLockAt.getTime();
+}
+
+export function hasAnchorParticipationPolicy(
+  request: Pick<
+    PartnerRequest,
+    | "confirmationStartOffsetMinutes"
+    | "confirmationEndOffsetMinutes"
+    | "joinLockOffsetMinutes"
+  >,
+): boolean {
+  return (
+    request.confirmationStartOffsetMinutes !== null &&
+    request.confirmationEndOffsetMinutes !== null &&
+    request.joinLockOffsetMinutes !== null
+  );
 }

@@ -1,11 +1,11 @@
 import { HTTPException } from "hono/http-exception";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../../user";
 import {
+  hasAnchorParticipationPolicy,
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,
 } from "../services/anchor-participation-policy.service";
@@ -17,7 +17,6 @@ import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trig
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 
 export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
@@ -26,18 +25,15 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
-  if (refreshedRequest.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(refreshedRequest)) {
     throw new HTTPException(400, {
-      message: "Slot confirmation is only available for anchor PR",
+      message: "Slot confirmation is not available for this partner request",
     });
   }
-  const anchor = await anchorPRRepo.findByPrId(id);
-  if (!anchor) {
-    throw new HTTPException(500, {
-      message: "Anchor PR subtype row missing",
-    });
-  }
-  const policy = resolveAnchorParticipationPolicy(anchor, refreshedRequest.time);
+  const policy = resolveAnchorParticipationPolicy(
+    refreshedRequest,
+    refreshedRequest.time,
+  );
   if (!isWithinConfirmationWindow(policy)) {
     throw new HTTPException(400, {
       message: "Cannot confirm - outside confirmation window",

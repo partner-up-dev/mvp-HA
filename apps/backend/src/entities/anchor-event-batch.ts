@@ -2,6 +2,7 @@ import {
   pgTable,
   bigserial,
   bigint,
+  integer,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -17,6 +18,13 @@ import { anchorEvents, type AnchorEventId } from "./anchor-event";
 export const anchorEventBatchStatusSchema = z.enum(["OPEN", "FULL", "EXPIRED"]);
 export type AnchorEventBatchStatus = z.infer<
   typeof anchorEventBatchStatusSchema
+>;
+export const anchorEventBatchEarliestLeadMinutesSchema = z
+  .number()
+  .int()
+  .nonnegative();
+export type AnchorEventBatchEarliestLeadMinutes = z.infer<
+  typeof anchorEventBatchEarliestLeadMinutesSchema
 >;
 
 // ---------------------------------------------------------------------------
@@ -40,6 +48,7 @@ export const anchorEventBatches = pgTable("anchor_event_batches", {
     .notNull()
     .default("OPEN"),
   description: text("description"),
+  earliestLeadMinutes: integer("earliest_lead_minutes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -48,9 +57,13 @@ export const anchorEventBatches = pgTable("anchor_event_batches", {
 // ---------------------------------------------------------------------------
 
 export const insertAnchorEventBatchSchema =
-  createInsertSchema(anchorEventBatches);
+  createInsertSchema(anchorEventBatches, {
+    earliestLeadMinutes: anchorEventBatchEarliestLeadMinutesSchema.nullable(),
+  });
 export const selectAnchorEventBatchSchema =
-  createSelectSchema(anchorEventBatches);
+  createSelectSchema(anchorEventBatches, {
+    earliestLeadMinutes: anchorEventBatchEarliestLeadMinutesSchema.nullable(),
+  });
 
 // ---------------------------------------------------------------------------
 // Types

@@ -4,6 +4,7 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../../user";
+import { hasAnchorParticipationPolicy } from "../services/anchor-participation-policy.service";
 import { hasEventStarted } from "../services/time-window.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
@@ -24,9 +25,9 @@ export async function checkIn(
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
-  if (refreshedRequest.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(refreshedRequest)) {
     throw new HTTPException(400, {
-      message: "Check-in is only available for anchor PR",
+      message: "Check-in is not available for this partner request",
     });
   }
 

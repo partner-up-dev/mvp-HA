@@ -82,13 +82,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailView } from "@/domains/pr/model/types";
+import type { PRPartnerSectionView } from "@/domains/pr/model/types";
 import Button from "@/shared/ui/actions/Button.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
 import { trackEvent } from "@/shared/telemetry/track";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type AnchorPartnerSection = AnchorPRDetailView["partnerSection"];
+type AnchorPartnerSection = PRPartnerSectionView;
 type BlockedReason = AnchorPartnerSection["viewer"]["joinBlockedReason"];
 type PrimaryActionType = "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT" | "NONE";
 type PrimaryActionTrackType = Exclude<PrimaryActionType, "NONE">;
@@ -218,7 +218,6 @@ watch(
 
     trackEvent("anchor_pr_primary_cta_impression", {
       prId,
-      prKind: "ANCHOR",
       ctaType,
       viewerState: currentViewerState,
     });
@@ -267,7 +266,6 @@ const handlePrimaryAction = () => {
   if (props.prId !== null && primaryActionType.value !== "NONE") {
     trackEvent("anchor_pr_primary_cta_click", {
       prId: props.prId,
-      prKind: "ANCHOR",
       ctaType: primaryActionType.value as PrimaryActionTrackType,
       viewerState: viewerState.value,
     });
@@ -295,7 +293,6 @@ const handleRecoveryShortcut = () => {
   if (props.prId !== null) {
     trackEvent("anchor_pr_lane_expand", {
       prId: props.prId,
-      prKind: "ANCHOR",
       laneId: "RECOVERY",
       entry: "PRIMARY_SHORTCUT",
     });

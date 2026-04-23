@@ -49,8 +49,7 @@ const resolvePrUrl = (request: PartnerRequest): string | null => {
 
   try {
     const url = new URL(frontendUrl);
-    url.pathname =
-      request.prKind === "ANCHOR" ? `/apr/${request.id}` : `/cpr/${request.id}`;
+    url.pathname = `/pr/${request.id}`;
     url.search = "";
     url.hash = "";
     return url.toString();
@@ -235,4 +234,3 @@ export const clearPRMessageNotificationCredits = async (
     PR_MESSAGE_NOTIFICATION_KIND,
   );
 };
-

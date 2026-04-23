@@ -33,11 +33,6 @@ export async function getReimbursementStatus(
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
-  if (request.prKind !== "ANCHOR") {
-    throw new HTTPException(400, {
-      message: "Reimbursement is only available for anchor PR",
-    });
-  }
   const supportRows = await prSupportRepo.findByPrId(id);
   const supportsPostpaidSettlement = supportRows.some(
     (row) => row.settlementMode === "PLATFORM_POSTPAID",

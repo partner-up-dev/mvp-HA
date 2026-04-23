@@ -19,7 +19,7 @@ export const applyAnchorParticipantReleaseEffects = async (input: {
   releasedUserIds: UserId[];
 }): Promise<AnchorParticipantReleaseEffects> => {
   const request = await prRepo.findById(input.prId);
-  if (!request || request.prKind !== "ANCHOR") {
+  if (!request) {
     return {
       creatorTransferredToUserId: null,
       creatorTransferApplied: false,

@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   anchorEventStatusSchema,
+  anchorEventBatchEarliestLeadMinutesSchema,
   anchorEventBatchStatusSchema,
   normalizeSystemLocationPool,
   normalizeUserLocationPool,
@@ -69,6 +70,7 @@ const adminAnchorBatchInputSchema = z.object({
   timeWindow: timeWindowSchema,
   status: anchorEventBatchStatusSchema,
   description: z.string().trim().nullable(),
+  earliestLeadMinutes: anchorEventBatchEarliestLeadMinutesSchema.nullable(),
 });
 
 const adminCreateAnchorPRInputSchema = z.object({

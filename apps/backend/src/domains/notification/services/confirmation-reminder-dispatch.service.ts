@@ -6,9 +6,11 @@ import {
 } from "../../../entities/notification-delivery";
 import { userIdSchema, type User, type UserId } from "../../../entities/user";
 import { getTimeWindowStart } from "../../pr-core/services/time-window.service";
-import { resolveAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
+import {
+  hasAnchorParticipationPolicy,
+  resolveAnchorParticipationPolicy,
+} from "../../pr-core/services/anchor-participation-policy.service";
 import { env } from "../../../lib/env";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { NotificationDeliveryRepository } from "../../../repositories/NotificationDeliveryRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
@@ -18,7 +20,6 @@ import { REMINDER_CONFIRMATION_NOTIFICATION_KIND } from "../model/notification-k
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const anchorPRRepo = new AnchorPRRepository();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
 const deliveryRepo = new NotificationDeliveryRepository();
@@ -102,8 +103,7 @@ const resolvePrUrl = (request: PartnerRequest): string | null => {
   if (!frontendUrl) return null;
   try {
     const url = new URL(frontendUrl);
-    url.pathname =
-      request.prKind === "ANCHOR" ? `/apr/${request.id}` : `/cpr/${request.id}`;
+    url.pathname = `/pr/${request.id}`;
     url.search = "";
     url.hash = "";
     return url.toString();
@@ -155,16 +155,10 @@ const resolveReminderRemark = (
 export const resolveConfirmationReminderPolicyForRequest = async (
   request: PartnerRequest,
 ): Promise<ReturnType<typeof resolveAnchorParticipationPolicy> | null> => {
-  if (request.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(request)) {
     return null;
   }
-
-  const anchor = await anchorPRRepo.findByPrId(request.id);
-  if (!anchor) {
-    return null;
-  }
-
-  return resolveAnchorParticipationPolicy(anchor, request.time);
+  return resolveAnchorParticipationPolicy(request, request.time);
 };
 
 export const shouldScheduleConfirmationReminderNotification = async (input: {
@@ -300,4 +294,3 @@ export const clearConfirmationReminderNotificationCredits = async (
     REMINDER_CONFIRMATION_NOTIFICATION_KIND,
   );
 };
-

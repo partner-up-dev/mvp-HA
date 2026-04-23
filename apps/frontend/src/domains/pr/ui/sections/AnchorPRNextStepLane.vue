@@ -42,14 +42,6 @@
           formatDateTime(section.timeline.bookingDeadlineAt)
         }}</span>
       </div>
-      <div v-if="section.timeline.bookingTriggeredAt" class="timeline-item">
-        <span class="timeline-label">{{
-          t("prPage.partnerSection.timelineBookingTriggered")
-        }}</span>
-        <span class="timeline-value">{{
-          formatDateTime(section.timeline.bookingTriggeredAt)
-        }}</span>
-      </div>
     </div>
 
     <section
@@ -124,11 +116,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailView } from "@/domains/pr/model/types";
+import type { PRPartnerSectionView } from "@/domains/pr/model/types";
 import Button from "@/shared/ui/actions/Button.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type AnchorPartnerSection = AnchorPRDetailView["partnerSection"];
+type AnchorPartnerSection = PRPartnerSectionView;
 
 const props = withDefaults(
   defineProps<{

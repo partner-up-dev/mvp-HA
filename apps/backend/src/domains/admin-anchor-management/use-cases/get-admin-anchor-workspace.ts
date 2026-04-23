@@ -34,6 +34,7 @@ type AdminAnchorBatchSummary = {
   timeWindow: [string | null, string | null];
   status: string;
   description: string | null;
+  earliestLeadMinutes: number | null;
   prs: AdminAnchorPRSummary[];
 };
 
@@ -112,6 +113,7 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
               timeWindow: batch.timeWindow,
               status: batch.status,
               description: batch.description,
+              earliestLeadMinutes: batch.earliestLeadMinutes ?? null,
               prs: prSummaries,
             };
           }),

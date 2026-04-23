@@ -34,7 +34,7 @@ export async function updateAdminAnchorPRContent(
   input: UpdateAdminAnchorPRContentInput,
 ) {
   const anchorRecord = await anchorPRRepo.findRecordByPrId(prId);
-  if (!anchorRecord || anchorRecord.root.prKind !== "ANCHOR") {
+  if (!anchorRecord) {
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
 
@@ -48,7 +48,6 @@ export async function updateAdminAnchorPRContent(
     throw new HTTPException(500, { message: "Anchor event missing" });
   }
 
-  let nextLocationSource = anchorRecord.anchor.locationSource;
   if (input.location) {
     const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
     const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
@@ -62,7 +61,6 @@ export async function updateAdminAnchorPRContent(
       });
     }
 
-    nextLocationSource = matchedUserLocation ? "USER" : "SYSTEM";
     if (matchedUserLocation) {
       const effectiveActiveCount =
         await countActiveVisibleAnchorPRsByBatchAndLocationSource(
@@ -108,9 +106,6 @@ export async function updateAdminAnchorPRContent(
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
-  if (input.location) {
-    await anchorPRRepo.updateLocationSource(prId, nextLocationSource);
-  }
 
   await materializePRSupportResources({
     prId,

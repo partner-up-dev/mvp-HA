@@ -246,6 +246,15 @@
                   ></textarea>
                 </label>
                 <label class="field">
+                  <span class="field-label">最早提前時間（分鐘）</span>
+                  <input
+                    v-model.number="batchForm.earliestLeadMinutes"
+                    class="field-input"
+                    type="number"
+                    min="0"
+                  />
+                </label>
+                <label class="field">
                   <span class="field-label">{{
                     t("adminAnchorPR.batchStatusLabel")
                   }}</span>
@@ -556,6 +565,7 @@ type BatchForm = {
   start: string;
   end: string;
   description: string;
+  earliestLeadMinutes: number | null;
   status: "OPEN" | "FULL" | "EXPIRED";
 };
 type PRForm = {
@@ -594,6 +604,7 @@ const emptyBatchForm = (): BatchForm => ({
   start: "",
   end: "",
   description: "",
+  earliestLeadMinutes: null,
   status: "OPEN",
 });
 const emptyPRForm = (location = "", type = "", minPartners = 2): PRForm => ({
@@ -628,6 +639,7 @@ const toBatchForm = (batch: BatchRecord): BatchForm => ({
   start: batch.timeWindow[0] ?? "",
   end: batch.timeWindow[1] ?? "",
   description: batch.description ?? "",
+  earliestLeadMinutes: batch.earliestLeadMinutes ?? null,
   status: batch.status as BatchForm["status"],
 });
 const toPRForm = (pr: PRRecord): PRForm => ({
@@ -1068,6 +1080,9 @@ const handleSaveBatch = async () => {
     ] as [string | null, string | null],
     status: batchForm.value.status,
     description: batchForm.value.description.trim() || null,
+    earliestLeadMinutes: normalizeNullableNonNegativeInteger(
+      batchForm.value.earliestLeadMinutes,
+    ),
   };
   try {
     const result =

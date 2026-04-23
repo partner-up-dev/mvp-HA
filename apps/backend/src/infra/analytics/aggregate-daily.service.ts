@@ -3,10 +3,20 @@ import { db } from "../../lib/db";
 import { analyticsDailyAnchor } from "../../entities/analytics-daily-anchor";
 import { analyticsDailyCommunity } from "../../entities/analytics-daily-community";
 import { scenarioTypeMetrics } from "../../entities/scenario-type-metric";
-import type { PRKind } from "../../entities/partner-request";
 import { addDaysUtc8, getUtcRangeForDateKey } from "./time-window";
 
-const PR_KINDS: readonly PRKind[] = ["ANCHOR", "COMMUNITY"];
+type AnalyticsLineKind = "ANCHOR" | "COMMUNITY";
+
+const PR_KINDS: readonly AnalyticsLineKind[] = ["ANCHOR", "COMMUNITY"];
+const ANALYTICS_LINE_KIND_SQL = sql`
+  case
+    when pr.confirmation_start_offset_minutes is not null
+      and pr.confirmation_end_offset_minutes is not null
+      and pr.join_lock_offset_minutes is not null
+    then 'ANCHOR'
+    else 'COMMUNITY'
+  end
+`;
 
 type NumericLike = number | string | null | undefined;
 
@@ -30,7 +40,7 @@ interface LineMetrics {
 }
 
 interface ScenarioMetrics {
-  prKind: PRKind;
+  lineKind: AnalyticsLineKind;
   scenarioType: string;
   prCount: number;
   pageViews: number;
@@ -41,7 +51,7 @@ interface ScenarioMetrics {
 }
 
 interface DailyEventCountRow extends Record<string, unknown> {
-  kind: PRKind;
+  kind: AnalyticsLineKind;
   page_views: NumericLike;
   join_successes: NumericLike;
   confirmation_successes: NumericLike;
@@ -51,23 +61,23 @@ interface DailyEventCountRow extends Record<string, unknown> {
 }
 
 interface MinGroupRow extends Record<string, unknown> {
-  kind: PRKind;
+  kind: AnalyticsLineKind;
   min_group_successes: NumericLike;
 }
 
 interface EligiblePRRow extends Record<string, unknown> {
-  kind: PRKind;
+  kind: AnalyticsLineKind;
   eligible_pr_count: NumericLike;
 }
 
 interface RepeatJoinRow extends Record<string, unknown> {
-  kind: PRKind;
+  kind: AnalyticsLineKind;
   unique_join_users_14d: NumericLike;
   repeat_join_users_14d: NumericLike;
 }
 
 interface ScenarioEventRow extends Record<string, unknown> {
-  kind: PRKind;
+  kind: AnalyticsLineKind;
   scenario_type: string;
   page_views: NumericLike;
   join_successes: NumericLike;
@@ -75,7 +85,7 @@ interface ScenarioEventRow extends Record<string, unknown> {
 }
 
 interface ScenarioFillRow extends Record<string, unknown> {
-  kind: PRKind;
+  kind: AnalyticsLineKind;
   scenario_type: string;
   pr_count: NumericLike;
   fill_rate: NumericLike;
@@ -114,17 +124,20 @@ const safeRate = (numerator: number, denominator: number): number => {
   return numerator / denominator;
 };
 
-const buildScenarioKey = (prKind: PRKind, scenarioType: string): string =>
-  `${prKind}::${scenarioType}`;
+const buildScenarioKey = (
+  lineKind: AnalyticsLineKind,
+  scenarioType: string,
+): string =>
+  `${lineKind}::${scenarioType}`;
 
-const resolveLineKind = (kind: string): PRKind | null => {
+const resolveLineKind = (kind: string): AnalyticsLineKind | null => {
   if (kind === "ANCHOR" || kind === "COMMUNITY") return kind;
   return null;
 };
 
 const upsertLineMetrics = async (
   dateKey: string,
-  kind: PRKind,
+  kind: AnalyticsLineKind,
   metrics: LineMetrics,
   computedAt: Date,
 ): Promise<void> => {
@@ -176,7 +189,7 @@ const upsertScenarioMetrics = async (
   await db.insert(scenarioTypeMetrics).values(
     rows.map((row) => ({
       dateKey,
-      prKind: row.prKind,
+      lineKind: row.lineKind,
       scenarioType: row.scenarioType,
       prCount: row.prCount,
       pageViews: row.pageViews,
@@ -195,7 +208,7 @@ const loadDailyEventCounts = async (
 ): Promise<DailyEventCountRow[]> => {
   return db.execute<DailyEventCountRow>(sql`
     select
-      coalesce(nullif(de.payload->>'prKind', ''), pr.pr_kind) as kind,
+      coalesce(nullif(de.payload->>'prKind', ''), ${ANALYTICS_LINE_KIND_SQL}) as kind,
       count(*) filter (where de.type = 'analytics.page_view')::int as page_views,
       count(*) filter (where de.type = 'analytics.pr_join_success')::int as join_successes,
       count(*) filter (where de.type = 'analytics.pr_confirm_success')::int as confirmation_successes,
@@ -223,7 +236,7 @@ const loadDailyEventCounts = async (
     )
       and de.occurred_at >= ${startUtc}
       and de.occurred_at < ${endUtc}
-      and coalesce(nullif(de.payload->>'prKind', ''), pr.pr_kind) in ('ANCHOR', 'COMMUNITY')
+      and coalesce(nullif(de.payload->>'prKind', ''), ${ANALYTICS_LINE_KIND_SQL}) in ('ANCHOR', 'COMMUNITY')
     group by kind
   `);
 };
@@ -234,7 +247,7 @@ const loadMinGroupSuccesses = async (
 ): Promise<MinGroupRow[]> => {
   return db.execute<MinGroupRow>(sql`
     select
-      pr.pr_kind as kind,
+      ${ANALYTICS_LINE_KIND_SQL} as kind,
       count(distinct pr.id)::int as min_group_successes
     from domain_events de
     join partner_requests pr
@@ -247,7 +260,7 @@ const loadMinGroupSuccesses = async (
       and de.occurred_at < ${endUtc}
       and de.payload->>'toStatus' = 'READY'
       and coalesce(de.payload->>'trigger', '') = 'capacity'
-    group by pr.pr_kind
+    group by kind
   `);
 };
 
@@ -257,12 +270,12 @@ const loadEligiblePRCounts = async (
 ): Promise<EligiblePRRow[]> => {
   return db.execute<EligiblePRRow>(sql`
     select
-      pr_kind as kind,
+      ${ANALYTICS_LINE_KIND_SQL} as kind,
       count(*)::int as eligible_pr_count
-    from partner_requests
+    from partner_requests pr
     where created_at >= ${startUtc}
       and created_at < ${endUtc}
-    group by pr_kind
+    group by kind
   `);
 };
 
@@ -273,7 +286,7 @@ const loadRepeatJoinStats = async (
   return db.execute<RepeatJoinRow>(sql`
     with joined as (
       select
-        coalesce(nullif(de.payload->>'prKind', ''), pr.pr_kind) as kind,
+        coalesce(nullif(de.payload->>'prKind', ''), ${ANALYTICS_LINE_KIND_SQL}) as kind,
         coalesce(nullif(de.payload->>'actorId', ''), nullif(de.aggregate_id, 'anonymous')) as actor_id,
         count(*)::int as join_count
       from domain_events de
@@ -285,7 +298,7 @@ const loadRepeatJoinStats = async (
       where de.type = 'analytics.pr_join_success'
         and de.occurred_at >= ${windowStartUtc}
         and de.occurred_at < ${endUtc}
-        and coalesce(nullif(de.payload->>'prKind', ''), pr.pr_kind) in ('ANCHOR', 'COMMUNITY')
+        and coalesce(nullif(de.payload->>'prKind', ''), ${ANALYTICS_LINE_KIND_SQL}) in ('ANCHOR', 'COMMUNITY')
       group by kind, actor_id
     )
     select
@@ -304,7 +317,7 @@ const loadScenarioEventRows = async (
 ): Promise<ScenarioEventRow[]> => {
   return db.execute<ScenarioEventRow>(sql`
     select
-      pr.pr_kind as kind,
+      ${ANALYTICS_LINE_KIND_SQL} as kind,
       pr.type as scenario_type,
       count(*) filter (where de.type = 'analytics.page_view')::int as page_views,
       count(*) filter (where de.type = 'analytics.pr_join_success')::int as join_successes,
@@ -325,7 +338,7 @@ const loadScenarioEventRows = async (
         'analytics.share_link_native_success',
         'analytics.share_link_copy_success'
       )
-    group by pr.pr_kind, pr.type
+    group by kind, pr.type
   `);
 };
 
@@ -335,7 +348,7 @@ const loadScenarioFillRows = async (
 ): Promise<ScenarioFillRow[]> => {
   return db.execute<ScenarioFillRow>(sql`
     select
-      pr_kind as kind,
+      ${ANALYTICS_LINE_KIND_SQL} as kind,
       type as scenario_type,
       count(*)::int as pr_count,
       coalesce(avg(
@@ -344,10 +357,10 @@ const loadScenarioFillRows = async (
           else least(coalesce(array_length(partners, 1), 0)::double precision / max_partners::double precision, 1.0)
         end
       ), 0)::double precision as fill_rate
-    from partner_requests
+    from partner_requests pr
     where created_at >= ${startUtc}
       and created_at < ${endUtc}
-    group by pr_kind, type
+    group by kind, type
   `);
 };
 
@@ -357,7 +370,7 @@ export async function aggregateDailyAnalyticsForDate(
   const { startUtc, endUtc } = getUtcRangeForDateKey(dateKey);
   const window14StartUtc = getUtcRangeForDateKey(addDaysUtc8(dateKey, -13)).startUtc;
 
-  const lineMetricsByKind: Record<PRKind, LineMetrics> = {
+  const lineMetricsByKind: Record<AnalyticsLineKind, LineMetrics> = {
     ANCHOR: createEmptyLineMetrics(),
     COMMUNITY: createEmptyLineMetrics(),
   };
@@ -430,7 +443,7 @@ export async function aggregateDailyAnalyticsForDate(
     if (!kind || !scenarioType) continue;
     const key = buildScenarioKey(kind, scenarioType);
     const existing = scenarioMetricMap.get(key) ?? {
-      prKind: kind,
+      lineKind: kind,
       scenarioType,
       prCount: 0,
       pageViews: 0,
@@ -452,7 +465,7 @@ export async function aggregateDailyAnalyticsForDate(
     if (!kind || !scenarioType) continue;
     const key = buildScenarioKey(kind, scenarioType);
     const existing = scenarioMetricMap.get(key) ?? {
-      prKind: kind,
+      lineKind: kind,
       scenarioType,
       prCount: 0,
       pageViews: 0,

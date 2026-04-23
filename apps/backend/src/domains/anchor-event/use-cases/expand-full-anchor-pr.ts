@@ -2,7 +2,10 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
+import {
+  type AnchorPRContext,
+  AnchorPRRepository,
+} from "../../../repositories/AnchorPRRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
 import type { PRId } from "../../../entities/partner-request";
@@ -10,6 +13,7 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { normalizeSystemLocationPool } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
+import { hasAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 import {
   isActiveVisibleAnchorPRStatus,
   readVisibleAnchorPRRecordsByBatchId,
@@ -43,7 +47,7 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
-  if (request.prKind !== "ANCHOR" || request.status !== "FULL") {
+  if (!hasAnchorParticipationPolicy(request) || request.status !== "FULL") {
     return;
   }
 
@@ -114,16 +118,25 @@ export async function expandFullAnchorPR(prId: PRId): Promise<void> {
     maxPartners: partnerBounds.maxPartners,
     preferences: fullPR.root.preferences,
     notes: fullPR.root.notes,
-    prKind: "ANCHOR",
+    confirmationStartOffsetMinutes:
+      fullPR.root.confirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: fullPR.root.confirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: fullPR.root.joinLockOffsetMinutes,
   });
-  const createdAnchor = await anchorPRRepo.create({
+  const createdAnchor: AnchorPRContext = {
     prId: createdRoot.id,
     anchorEventId: fullPR.anchor.anchorEventId,
     batchId: fullPR.anchor.batchId,
     locationSource: "SYSTEM",
     visibilityStatus: "VISIBLE",
-    autoHideAt: fullPR.anchor.autoHideAt,
-  });
+    confirmationStartOffsetMinutes:
+      createdRoot.confirmationStartOffsetMinutes ?? 120,
+    confirmationEndOffsetMinutes:
+      createdRoot.confirmationEndOffsetMinutes ?? 30,
+    joinLockOffsetMinutes: createdRoot.joinLockOffsetMinutes ?? 30,
+    bookingTriggeredAt: null,
+    autoHideAt: null,
+  };
 
   await initializeSlotsForPR(
     createdRoot.id,

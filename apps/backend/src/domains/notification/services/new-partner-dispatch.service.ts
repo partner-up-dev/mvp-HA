@@ -9,6 +9,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { UserNotificationOptRepository } from "../../../repositories/UserNotificationOptRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { NEW_PARTNER_NOTIFICATION_KIND } from "../model/notification-kind";
+import { hasAnchorParticipationPolicy } from "../../pr-core/services/anchor-participation-policy.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -68,8 +69,7 @@ const resolvePrUrl = (request: PartnerRequest): string | null => {
   if (!frontendUrl) return null;
   try {
     const url = new URL(frontendUrl);
-    url.pathname =
-      request.prKind === "ANCHOR" ? `/apr/${request.id}` : `/cpr/${request.id}`;
+    url.pathname = `/pr/${request.id}`;
     url.search = "";
     url.hash = "";
     return url.toString();
@@ -102,7 +102,7 @@ export const collectNewPartnerNotificationRecipients = async (input: {
   request: PartnerRequest;
   joinedUserId: UserId;
 }): Promise<UserId[]> => {
-  if (input.request.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(input.request)) {
     return [];
   }
 
@@ -194,11 +194,11 @@ export const prepareNewPartnerNotificationDispatch = async (
   }
 
   const request = await prRepo.findById(payload.prId);
-  if (!request || request.prKind !== "ANCHOR") {
+  if (!request || !hasAnchorParticipationPolicy(request)) {
     return {
       status: "SKIPPED",
       errorCode: "PR_MISSING_OR_UNSUPPORTED",
-      errorMessage: "Anchor partner request not found",
+      errorMessage: "Partner request has no participation notification support",
     };
   }
 
@@ -259,4 +259,3 @@ export const clearNewPartnerNotificationCredits = async (
     NEW_PARTNER_NOTIFICATION_KIND,
   );
 };
-

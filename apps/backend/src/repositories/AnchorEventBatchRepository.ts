@@ -62,6 +62,16 @@ export class AnchorEventBatchRepository {
     return matched ?? null;
   }
 
+  async findByTimeWindow(
+    timeWindow: [string | null, string | null],
+  ): Promise<AnchorEventBatch[]> {
+    return await db
+      .select()
+      .from(anchorEventBatches)
+      .where(eq(anchorEventBatches.timeWindow, timeWindow))
+      .orderBy(desc(anchorEventBatches.createdAt));
+  }
+
   async updateStatus(
     id: AnchorEventBatchId,
     status: AnchorEventBatchStatus,
@@ -77,7 +87,10 @@ export class AnchorEventBatchRepository {
   async update(
     id: AnchorEventBatchId,
     data: Partial<
-      Pick<AnchorEventBatch, "timeWindow" | "status" | "description">
+      Pick<
+        AnchorEventBatch,
+        "timeWindow" | "status" | "description" | "earliestLeadMinutes"
+      >
     >,
   ): Promise<AnchorEventBatch | null> {
     const result = await db

@@ -58,9 +58,6 @@ export const prStatusManualSchema = z.enum([
 ]);
 export type PRStatusManual = z.infer<typeof prStatusManualSchema>;
 
-export const prKindSchema = z.enum(["ANCHOR", "COMMUNITY"]);
-export type PRKind = z.infer<typeof prKindSchema>;
-
 export const visibilityStatusSchema = z.enum(["VISIBLE", "HIDDEN"]);
 export type VisibilityStatus = z.infer<typeof visibilityStatusSchema>;
 
@@ -88,7 +85,6 @@ export const createNaturalLanguagePRSchema = z.object({
 
 export const partnerRequestSummarySchema = z.object({
   id: z.number().int().positive(),
-  prKind: prKindSchema,
   canonicalPath: z.string(),
   status: prStatusSchema,
   minPartners: z.number().int().nonnegative().nullable(),
@@ -139,6 +135,7 @@ export const partnerRequests = pgTable("partner_requests", {
   joinLockOffsetMinutes: integer("join_lock_offset_minutes"),
   minPartners: integer("min_partners"),
   maxPartners: integer("max_partners"),
+  budget: text("budget"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   preferences: text("preferences")
     .array()
@@ -154,7 +151,6 @@ export const partnerRequests = pgTable("partner_requests", {
   wechatThumbnail: jsonb("wechat_thumbnail")
     .$type<WechatThumbnailCache | null>()
     .default(null),
-  prKind: text("pr_kind").$type<PRKind>().notNull().default("COMMUNITY"),
 });
 
 // Zod schemas for validation
@@ -170,6 +166,7 @@ export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   time: partnerRequestFieldsSchema.shape.time,
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
+  budget: partnerRequestFieldsSchema.shape.budget,
   status: prStatusSchema,
   visibilityStatus: visibilityStatusSchema,
 });

@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import type {
   PRId,
   PartnerRequestFields,
@@ -20,7 +19,6 @@ import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
-const communityPRRepo = new CommunityPRRepository();
 
 export async function updatePRContent(
   id: PRId,
@@ -74,14 +72,6 @@ export async function updatePRContent(
   const updated = await prRepo.updateFields(id, fields);
   if (!updated) {
     throw new HTTPException(500, { message: "Failed to update content" });
-  }
-  if (refreshedRequest.prKind === "COMMUNITY") {
-    const updatedCommunity = await communityPRRepo.updateBudget(id, fields.budget);
-    if (!updatedCommunity) {
-      throw new HTTPException(500, {
-        message: "Failed to update community PR content",
-      });
-    }
   }
 
   if (minMaxChanged) {

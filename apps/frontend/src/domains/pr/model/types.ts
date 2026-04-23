@@ -4,15 +4,10 @@ import { client } from "@/lib/rpc";
 
 type CanonicalPRDetailView = InferResponseType<(typeof client.api.pr)[":id"]["$get"]>;
 
-export type CommunityPRDetailView = Extract<
-  CanonicalPRDetailView,
-  { prKind: "COMMUNITY" }
->;
-
-export type AnchorPRDetailView = Extract<
-  CanonicalPRDetailView,
-  { prKind: "ANCHOR" }
->;
+export type CommunityPRDetailView = CanonicalPRDetailView;
+export type AnchorPRDetailView = CanonicalPRDetailView;
+export type PRPartnerSectionView = CanonicalPRDetailView["partnerSection"];
+export type PRScenario = "ANCHOR" | "COMMUNITY";
 
 export type AnchorPRBookingSupportView = InferResponseType<
   (typeof client.api.pr)[":id"]["booking-support"]["$get"]
@@ -66,10 +61,6 @@ export const toAnchorPRFields = (
   notes: fields.notes,
 });
 
-export const isCommunityPRDetail = (
-  value: PRDetailView,
-): value is CommunityPRDetailView => value.prKind === "COMMUNITY";
-
-export const isAnchorPRDetail = (
-  value: PRDetailView,
-): value is AnchorPRDetailView => value.prKind === "ANCHOR";
+export const resolvePRScenario = (
+  value: PRDetailView | undefined,
+): PRScenario => (value?.partnerSection.reminder.supported ? "ANCHOR" : "COMMUNITY");

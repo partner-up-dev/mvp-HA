@@ -40,7 +40,6 @@ export type PartnerSectionRosterItem = {
 };
 
 export type PartnerSectionView = {
-  scenario: "COMMUNITY" | "ANCHOR";
   capacity: {
     current: number;
     min: number | null;
@@ -91,7 +90,6 @@ export type PartnerSectionView = {
     confirmationEndAt: string | null;
     joinLockAt: string | null;
     bookingDeadlineAt: string | null;
-    bookingTriggeredAt: string | null;
   };
   bookingContact: {
     required: boolean;
@@ -171,7 +169,7 @@ const buildBaseSection = (
   releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
 ): Omit<
   PartnerSectionView,
-  "scenario" | "reminder" | "timeline" | "bookingContact" | "fallbacks"
+  "reminder" | "timeline" | "bookingContact" | "fallbacks"
 > => {
   const current = activeParticipants.length;
   const min = publicPR.minPartners;
@@ -267,109 +265,32 @@ const buildBaseSection = (
   };
 };
 
-export function buildCommunityPartnerSection(
-  publicPR: PublicPR,
-  activeParticipants: ActiveParticipantSummary[],
-  viewerUserId: UserId | null,
-  options: {
-    rosterParticipants?: RosterParticipantSummary[];
-    releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
-  } = {},
-): PartnerSectionView {
-  const rosterParticipants = options.rosterParticipants ?? activeParticipants;
-  const releaseStateByPartnerId = options.releaseStateByPartnerId ?? new Map();
-  const base = buildBaseSection(
-    publicPR,
-    activeParticipants,
-    rosterParticipants,
-    viewerUserId,
-    releaseStateByPartnerId,
-  );
-  const current = activeParticipants.length;
+type PartnerSectionBookingContact = PartnerSectionView["bookingContact"];
 
-  let canJoin = true;
-  let joinBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (base.viewer.isParticipant) {
-    canJoin = false;
-    joinBlockedReason = "ALREADY_JOINED";
-  } else if (!isJoinableStatus(publicPR.status)) {
-    canJoin = false;
-    joinBlockedReason = "NOT_JOINABLE_STATUS";
-  } else if (publicPR.maxPartners !== null && current >= publicPR.maxPartners) {
-    canJoin = false;
-    joinBlockedReason = "FULL";
-  }
+const DEFAULT_BOOKING_CONTACT_STATE: PartnerSectionBookingContact = {
+  required: false,
+  state: "NOT_REQUIRED",
+  ownerPartnerId: null,
+  ownerIsCurrentViewer: false,
+  maskedPhone: null,
+  verifiedAt: null,
+  deadlineAt: null,
+};
 
-  let canExit = true;
-  let exitBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (base.viewer.isCreator) {
-    canExit = false;
-    exitBlockedReason = "NOT_JOINABLE_STATUS";
-  } else if (!base.viewer.isParticipant) {
-    canExit = false;
-    exitBlockedReason = "NOT_JOINED";
-  } else if (!isExitAllowedStatus(publicPR.status)) {
-    canExit = false;
-    exitBlockedReason = "NOT_JOINABLE_STATUS";
-  }
-
-  return {
-    scenario: "COMMUNITY",
-    ...base,
-    viewer: {
-      ...base.viewer,
-      canJoin,
-      canExit,
-      canConfirm: false,
-      canCheckIn: false,
-      joinBlockedReason,
-      exitBlockedReason,
-      confirmBlockedReason: "NONE",
-      checkInBlockedReason: "CHECKIN_NOT_OPEN",
-    },
-    reminder: {
-      supported: false,
-      visible: false,
-    },
-    timeline: null,
-    bookingContact: {
-      required: false,
-      state: "NOT_REQUIRED",
-      ownerPartnerId: null,
-      ownerIsCurrentViewer: false,
-      maskedPhone: null,
-      verifiedAt: null,
-      deadlineAt: null,
-    },
-    fallbacks: {
-      sameBatchAlternatives: [],
-      alternativeBatches: [],
-    },
-  };
-}
-
-export function buildAnchorPartnerSection(params: {
+export function buildPRPartnerSection(params: {
   publicPR: PublicPR;
   activeParticipants: ActiveParticipantSummary[];
   rosterParticipants: RosterParticipantSummary[];
   viewerUserId: UserId | null;
-  policy: ResolvedAnchorParticipationPolicy;
-  bookingDeadlineAt: Date | null;
-  bookingContact: {
-    required: boolean;
-    state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
-    ownerPartnerId: number | null;
-    ownerIsCurrentViewer: boolean;
-    maskedPhone: string | null;
-    verifiedAt: string | null;
-    deadlineAt: string | null;
-  };
-  sameBatchAlternatives: Array<{
+  policy?: ResolvedAnchorParticipationPolicy | null;
+  bookingDeadlineAt?: Date | null;
+  bookingContact?: PartnerSectionBookingContact;
+  sameBatchAlternatives?: Array<{
     id: PRId;
     location: string;
     status: PRStatus;
   }>;
-  alternativeBatches: AlternativeBatchRecommendation[];
+  alternativeBatches?: AlternativeBatchRecommendation[];
   releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
 }): PartnerSectionView {
   const {
@@ -377,13 +298,14 @@ export function buildAnchorPartnerSection(params: {
     activeParticipants,
     rosterParticipants,
     viewerUserId,
-    policy,
-    bookingDeadlineAt,
-    bookingContact,
-    sameBatchAlternatives,
-    alternativeBatches,
+    policy = null,
+    bookingDeadlineAt = null,
+    bookingContact = DEFAULT_BOOKING_CONTACT_STATE,
+    sameBatchAlternatives = [],
+    alternativeBatches = [],
     releaseStateByPartnerId = new Map(),
   } = params;
+
   const base = buildBaseSection(
     publicPR,
     activeParticipants,
@@ -392,14 +314,17 @@ export function buildAnchorPartnerSection(params: {
     releaseStateByPartnerId,
   );
   const current = activeParticipants.length;
-  const joinLocked = policy.joinLockAt
-    ? Date.now() >= policy.joinLockAt.getTime()
-    : false;
+  const hasParticipationPolicy = policy !== null;
+  const joinLocked =
+    hasParticipationPolicy && policy?.joinLockAt
+      ? Date.now() >= policy.joinLockAt.getTime()
+      : false;
   const bookingLocked = isBookingDeadlineReached(bookingDeadlineAt);
   const started = hasEventStarted(publicPR.time);
   const withinConfirmationWindow =
-    policy.confirmationStartAt !== null &&
-    policy.confirmationEndAt !== null &&
+    hasParticipationPolicy &&
+    policy?.confirmationStartAt !== null &&
+    policy?.confirmationEndAt !== null &&
     Date.now() >= policy.confirmationStartAt.getTime() &&
     Date.now() < policy.confirmationEndAt.getTime();
 
@@ -430,12 +355,14 @@ export function buildAnchorPartnerSection(params: {
   } else if (!isExitAllowedStatus(publicPR.status)) {
     canExit = false;
     exitBlockedReason = "NOT_JOINABLE_STATUS";
-  } else if (started) {
+  } else if (hasParticipationPolicy && started) {
     canExit = false;
     exitBlockedReason = "EVENT_STARTED";
   } else if (
+    hasParticipationPolicy &&
     bookingLocked &&
-    (base.viewer.slotState === "CONFIRMED" || base.viewer.slotState === "ATTENDED")
+    (base.viewer.slotState === "CONFIRMED" ||
+      base.viewer.slotState === "ATTENDED")
   ) {
     canExit = false;
     exitBlockedReason = "BOOKING_LOCKED";
@@ -443,10 +370,16 @@ export function buildAnchorPartnerSection(params: {
 
   let canConfirm = true;
   let confirmBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!base.viewer.isParticipant) {
+  if (!hasParticipationPolicy) {
+    canConfirm = false;
+    confirmBlockedReason = "OUTSIDE_CONFIRM_WINDOW";
+  } else if (!base.viewer.isParticipant) {
     canConfirm = false;
     confirmBlockedReason = "NOT_JOINED";
-  } else if (base.viewer.slotState === "CONFIRMED" || base.viewer.slotState === "ATTENDED") {
+  } else if (
+    base.viewer.slotState === "CONFIRMED" ||
+    base.viewer.slotState === "ATTENDED"
+  ) {
     canConfirm = false;
     confirmBlockedReason = "ALREADY_CONFIRMED";
   } else if (!withinConfirmationWindow) {
@@ -456,7 +389,10 @@ export function buildAnchorPartnerSection(params: {
 
   let canCheckIn = true;
   let checkInBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!base.viewer.isParticipant) {
+  if (!hasParticipationPolicy) {
+    canCheckIn = false;
+    checkInBlockedReason = "CHECKIN_NOT_OPEN";
+  } else if (!base.viewer.isParticipant) {
     canCheckIn = false;
     checkInBlockedReason = "NOT_JOINED";
   } else if (!started) {
@@ -465,7 +401,6 @@ export function buildAnchorPartnerSection(params: {
   }
 
   return {
-    scenario: "ANCHOR",
     ...base,
     viewer: {
       ...base.viewer,
@@ -478,22 +413,86 @@ export function buildAnchorPartnerSection(params: {
       confirmBlockedReason,
       checkInBlockedReason,
     },
-    reminder: {
-      supported: true,
-      visible: base.viewer.isParticipant,
-    },
-    timeline: {
-      eventStartAt: publicPR.time[0],
-      confirmationStartAt: toIsoString(policy.confirmationStartAt),
-      confirmationEndAt: toIsoString(policy.confirmationEndAt),
-      joinLockAt: toIsoString(policy.joinLockAt),
-      bookingDeadlineAt: toIsoString(bookingDeadlineAt),
-      bookingTriggeredAt: toIsoString(policy.bookingTriggeredAt),
-    },
+    reminder: hasParticipationPolicy
+      ? {
+          supported: true,
+          visible: base.viewer.isParticipant,
+        }
+      : {
+          supported: false,
+          visible: false,
+        },
+    timeline: hasParticipationPolicy
+      ? {
+          eventStartAt: publicPR.time[0],
+          confirmationStartAt: toIsoString(policy?.confirmationStartAt),
+          confirmationEndAt: toIsoString(policy?.confirmationEndAt),
+          joinLockAt: toIsoString(policy?.joinLockAt),
+          bookingDeadlineAt: toIsoString(bookingDeadlineAt),
+        }
+      : null,
     bookingContact,
     fallbacks: {
       sameBatchAlternatives,
       alternativeBatches,
     },
   };
+}
+
+export function buildCommunityPartnerSection(
+  publicPR: PublicPR,
+  activeParticipants: ActiveParticipantSummary[],
+  viewerUserId: UserId | null,
+  options: {
+    rosterParticipants?: RosterParticipantSummary[];
+    releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+  } = {},
+): PartnerSectionView {
+  const rosterParticipants = options.rosterParticipants ?? activeParticipants;
+  const releaseStateByPartnerId = options.releaseStateByPartnerId ?? new Map();
+  return buildPRPartnerSection({
+    publicPR,
+    activeParticipants,
+    rosterParticipants,
+    viewerUserId,
+    releaseStateByPartnerId,
+  });
+}
+
+export function buildAnchorPartnerSection(params: {
+  publicPR: PublicPR;
+  activeParticipants: ActiveParticipantSummary[];
+  rosterParticipants: RosterParticipantSummary[];
+  viewerUserId: UserId | null;
+  policy: ResolvedAnchorParticipationPolicy;
+  bookingDeadlineAt: Date | null;
+  bookingContact: {
+    required: boolean;
+    state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
+    ownerPartnerId: number | null;
+    ownerIsCurrentViewer: boolean;
+    maskedPhone: string | null;
+    verifiedAt: string | null;
+    deadlineAt: string | null;
+  };
+  sameBatchAlternatives: Array<{
+    id: PRId;
+    location: string;
+    status: PRStatus;
+  }>;
+  alternativeBatches: AlternativeBatchRecommendation[];
+  releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+}): PartnerSectionView {
+  return buildPRPartnerSection({
+    publicPR: params.publicPR,
+    activeParticipants: params.activeParticipants,
+    rosterParticipants: params.rosterParticipants,
+    viewerUserId: params.viewerUserId,
+    policy: params.policy,
+    bookingDeadlineAt: params.bookingDeadlineAt,
+    bookingContact: params.bookingContact,
+    sameBatchAlternatives: params.sameBatchAlternatives,
+    alternativeBatches: params.alternativeBatches,
+    releaseStateByPartnerId: params.releaseStateByPartnerId,
+  });
 }

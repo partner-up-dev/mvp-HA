@@ -81,6 +81,7 @@ export type AdminAnchorBatchInput = {
   timeWindow: [string | null, string | null];
   status: "OPEN" | "FULL" | "EXPIRED";
   description: string | null;
+  earliestLeadMinutes: number | null;
 };
 
 export type AdminCreateAnchorPRInput = {

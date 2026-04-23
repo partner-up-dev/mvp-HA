@@ -1,8 +1,9 @@
-import type { PRId, PRKind, PRStatusManual } from "@partner-up-dev/backend";
+import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
 import { computed } from "vue";
 import type {
   AnchorPRFormFields,
   CommunityPRFormFields,
+  PRScenario,
 } from "@/domains/pr/model/types";
 import {
   useCheckInAnchorPRSlot,
@@ -21,7 +22,7 @@ import {
 
 type PRScenarioActionInput = {
   id: PRId;
-  scenario: PRKind;
+  scenario: PRScenario;
 };
 
 type PRJoinInput = PRScenarioActionInput & {
@@ -46,7 +47,7 @@ export const useJoinPR = () => {
     isPending: computed(
       () => anchorMutation.isPending.value || communityMutation.isPending.value,
     ),
-    getError: (scenario: PRKind) =>
+    getError: (scenario: PRScenario) =>
       scenario === "ANCHOR"
         ? anchorMutation.error.value
         : communityMutation.error.value,
@@ -80,11 +81,11 @@ export const useUpdatePRContent = () => {
     isPending: computed(
       () => anchorMutation.isPending.value || communityMutation.isPending.value,
     ),
-    getError: (scenario: PRKind) =>
+    getError: (scenario: PRScenario) =>
       scenario === "ANCHOR"
         ? anchorMutation.error.value
         : communityMutation.error.value,
-    reset: (scenario: PRKind) => {
+    reset: (scenario: PRScenario) => {
       if (scenario === "ANCHOR") {
         anchorMutation.reset();
         return;
@@ -114,11 +115,11 @@ export const useUpdatePRStatus = () => {
     isPending: computed(
       () => anchorMutation.isPending.value || communityMutation.isPending.value,
     ),
-    getError: (scenario: PRKind) =>
+    getError: (scenario: PRScenario) =>
       scenario === "ANCHOR"
         ? anchorMutation.error.value
         : communityMutation.error.value,
-    reset: (scenario: PRKind) => {
+    reset: (scenario: PRScenario) => {
       if (scenario === "ANCHOR") {
         anchorMutation.reset();
         return;

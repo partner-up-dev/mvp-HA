@@ -92,11 +92,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailView } from "@/domains/pr/model/types";
+import type { PRPartnerSectionView } from "@/domains/pr/model/types";
 import { prPartnerProfilePath } from "@/domains/pr/routing/routes";
 import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 
-type AnchorPartnerSection = AnchorPRDetailView["partnerSection"];
+type AnchorPartnerSection = PRPartnerSectionView;
 
 const props = defineProps<{
   prId: number;

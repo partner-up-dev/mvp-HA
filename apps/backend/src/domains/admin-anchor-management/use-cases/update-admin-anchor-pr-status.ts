@@ -10,7 +10,7 @@ export async function updateAdminAnchorPRStatus(
   status: PRStatusManual,
 ) {
   const record = await anchorPRRepo.findRecordByPrId(prId);
-  if (!record || record.root.prKind !== "ANCHOR") {
+  if (!record) {
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
 

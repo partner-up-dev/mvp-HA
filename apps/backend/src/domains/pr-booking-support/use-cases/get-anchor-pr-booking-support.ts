@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
 import type { PRStatus } from "../../../entities";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
 import { buildBookingSupportPreview } from "../services/build-booking-support-preview";
 import type {
@@ -13,14 +12,11 @@ import type { UserId } from "../../../entities/user";
 import { resolveBookingContactState } from "../services/resolve-booking-contact-state";
 import { readPartnerRequestById } from "../../pr-core/services/pr-read.service";
 
-const anchorPRRepo = new AnchorPRRepository();
 const prSupportRepo = new AnchorPRSupportResourceRepository();
 
-export interface AnchorPRBookingSupportDetail {
+export interface PRBookingSupportDetail {
   prId: number;
   status: PRStatus;
-  anchorEventId: number;
-  batchId: number;
   bookingSupport: {
     overview: {
       title: string;
@@ -63,22 +59,20 @@ export interface AnchorPRBookingSupportDetail {
 export async function getAnchorPRBookingSupport(
   id: PRId,
   viewerUserId: UserId | null = null,
-): Promise<AnchorPRBookingSupportDetail> {
+): Promise<PRBookingSupportDetail> {
   const root = await readPartnerRequestById(id, {
     consistency: "strong",
   });
-  if (!root || root.prKind !== "ANCHOR") {
-    throw new HTTPException(404, { message: "Anchor PR not found" });
-  }
-
-  const anchor = await anchorPRRepo.findByPrId(id);
-  if (!anchor) {
-    throw new HTTPException(500, {
-      message: "Anchor PR subtype row missing",
-    });
+  if (!root) {
+    throw new HTTPException(404, { message: "Partner request not found" });
   }
 
   const resources = await prSupportRepo.findByPrId(id);
+  if (resources.length === 0) {
+    throw new HTTPException(404, {
+      message: "Booking support is not configured for this partner request",
+    });
+  }
   const overview = buildBookingSupportPreview(resources);
   const bookingContact = await resolveBookingContactState({
     prId: id,
@@ -89,8 +83,6 @@ export async function getAnchorPRBookingSupport(
   return {
     prId: id,
     status: root.status,
-    anchorEventId: anchor.anchorEventId,
-    batchId: anchor.batchId,
     bookingSupport: {
       overview: {
         title: "预订与资助",

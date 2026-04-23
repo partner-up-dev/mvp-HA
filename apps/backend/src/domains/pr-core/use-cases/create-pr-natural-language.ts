@@ -1,5 +1,4 @@
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import { PartnerRequestAIService } from "../../../services/PartnerRequestAIService";
 import type {
   WeekdayLabel,
@@ -20,7 +19,6 @@ import {
 } from "./create-pr.shared";
 
 const prRepo = new PartnerRequestRepository();
-const communityPRRepo = new CommunityPRRepository();
 const aiService = new PartnerRequestAIService();
 
 export async function createPRFromNaturalLanguage(
@@ -46,17 +44,11 @@ export async function createPRFromNaturalLanguage(
     location: fields.location,
     minPartners: partnerBounds.minPartners,
     maxPartners: partnerBounds.maxPartners,
+    budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
     status: "DRAFT",
     createdBy,
-    prKind: "COMMUNITY",
-  });
-  await communityPRRepo.create({
-    prId: request.id,
-    rawText,
-    budget: fields.budget,
-    creationSource: "NATURAL_LANGUAGE",
   });
 
   await initializeSlotsForPR(

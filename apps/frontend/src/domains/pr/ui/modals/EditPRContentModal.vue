@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { computed, isRef, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PRId, PRKind } from "@partner-up-dev/backend";
+import type { PRId } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useUpdatePRContent } from "@/domains/pr/queries/usePRActions";
 import {
@@ -65,6 +65,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 import {
   toAnchorPRFields,
   toCommunityPRFields,
+  type PRScenario,
   type PRFormFields,
 } from "@/domains/pr/model/types";
 
@@ -72,7 +73,7 @@ interface Props {
   open: boolean;
   initialFields: PRFormFields;
   prId: PRId;
-  scenario: PRKind;
+  scenario: PRScenario;
 }
 
 const props = defineProps<Props>();

@@ -440,8 +440,7 @@ import {
 } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
 import {
-  isAnchorPRDetail,
-  isCommunityPRDetail,
+  resolvePRScenario,
   type PRFormFields,
 } from "@/domains/pr/model/types";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
@@ -568,28 +567,16 @@ const formatFactsTimePoint = (
 
 const { data, isLoading, error, refetch } = usePRDetail(id);
 const prDetail = computed(() => data.value);
-const anchorDetail = computed(() =>
-  prDetail.value && isAnchorPRDetail(prDetail.value) ? prDetail.value : undefined,
-);
-const isAnchorPR = computed(() => Boolean(anchorDetail.value));
-const isCommunityPR = computed(
-  () => Boolean(prDetail.value && isCommunityPRDetail(prDetail.value)),
-);
+const anchorDetail = computed(() => prDetail.value);
+const prScenario = computed(() => resolvePRScenario(prDetail.value));
+const isAnchorPR = computed(() => prScenario.value === "ANCHOR");
+const isCommunityPR = computed(() => prScenario.value === "COMMUNITY");
 const backFallbackTo = computed(() => {
   const routeEventIdRaw = route.query.fromEvent;
   const routeEventId =
     typeof routeEventIdRaw === "string" ? Number(routeEventIdRaw) : null;
   if (routeEventId !== null && Number.isFinite(routeEventId) && routeEventId > 0) {
     return `/events/${routeEventId}`;
-  }
-
-  const anchorEventId = anchorDetail.value?.anchor.anchorEventId ?? null;
-  if (
-    anchorEventId !== null &&
-    Number.isFinite(anchorEventId) &&
-    anchorEventId > 0
-  ) {
-    return `/events/${anchorEventId}`;
   }
   return "/";
 });
@@ -614,10 +601,6 @@ const joinFlowPhoneInput = ref("");
 const exitActionError = ref<string | null>(null);
 const lastPrimaryImpressionKey = ref("");
 
-const prScenario = computed(() =>
-  prDetail.value?.prKind === "ANCHOR" ? "ANCHOR" : "COMMUNITY",
-);
-
 const editableFields = computed<PRFormFields>(() => ({
   title: prDetail.value?.title,
   type: prDetail.value?.core.type ?? "",
@@ -626,10 +609,7 @@ const editableFields = computed<PRFormFields>(() => ({
   minPartners: prDetail.value?.core.minPartners ?? null,
   maxPartners: prDetail.value?.core.maxPartners ?? null,
   partners: prDetail.value?.core.partners ?? [],
-  budget:
-    prDetail.value && isCommunityPRDetail(prDetail.value)
-      ? prDetail.value.core.budget ?? null
-      : undefined,
+  budget: prDetail.value?.core.budget ?? null,
   preferences: prDetail.value?.core.preferences ?? [],
   notes: prDetail.value?.core.notes ?? null,
 }));
@@ -671,10 +651,10 @@ const creationEntry = computed(() => {
   return null;
 });
 const showDraftPublishCard = computed(
-  () => isCommunityPR.value && prDetail.value?.status === "DRAFT",
+  () => prDetail.value?.status === "DRAFT",
 );
 const showPinHelpCard = computed(() => {
-  if (!isCommunityPR.value) return false;
+  if (prDetail.value?.status !== "DRAFT") return false;
   if (creationEntry.value === "join") {
     return Boolean(userSessionStore.userPin);
   }
@@ -899,7 +879,6 @@ watch(
     lastPrimaryImpressionKey.value = impressionKey;
     trackEvent("anchor_pr_primary_cta_impression", {
       prId,
-      prKind: "ANCHOR",
       ctaType,
       viewerState: state,
     });
@@ -995,7 +974,7 @@ const handleDirectJoin = async () => {
 };
 
 const handlePublishDraft = async () => {
-  if (id.value === null || !isCommunityPR.value) return;
+  if (id.value === null || prDetail.value?.status !== "DRAFT") return;
   const result = await publishMutation.mutateAsync({ id: id.value });
   const authPayload = (result as { auth?: AuthSessionPayload | null } | null)
     ?.auth;
@@ -1103,7 +1082,6 @@ const handleDockAction = async (action: DockActionItem) => {
     if (ctaType !== null && isAnchorPR.value) {
       trackEvent("anchor_pr_primary_cta_click", {
         prId: id.value,
-        prKind: "ANCHOR",
         ctaType,
         viewerState: viewerState.value,
       });
@@ -1160,9 +1138,8 @@ const handleEditSuccess = () => {
 };
 const handleOpenCreatorEdit = () => {
   if (id.value !== null && isAnchorPR.value) {
-      trackEvent("anchor_pr_secondary_action_click", {
+    trackEvent("anchor_pr_secondary_action_click", {
       prId: id.value,
-      prKind: "ANCHOR",
       actionType: "CREATOR_EDIT_CONTENT",
     });
   }
@@ -1172,7 +1149,6 @@ const handleOpenCreatorModifyStatus = () => {
   if (id.value !== null && isAnchorPR.value) {
     trackEvent("anchor_pr_secondary_action_click", {
       prId: id.value,
-      prKind: "ANCHOR",
       actionType: "CREATOR_MODIFY_STATUS",
     });
   }

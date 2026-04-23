@@ -49,11 +49,6 @@ const resolveTitle = (pr: PublicPR): string => {
 };
 
 const resolveDescription = (pr: PublicPR): string => {
-  const rawText = truncate(pr.rawText ?? "", 80);
-  if (rawText.length > 0) {
-    return rawText;
-  }
-
   const summary = joinSummaryParts([
     pr.type,
     pr.location,
@@ -71,7 +66,6 @@ const resolveDescription = (pr: PublicPR): string => {
 const buildRevision = (pr: PublicPR): string => {
   const revisionSource = JSON.stringify({
     id: pr.id,
-    prKind: pr.prKind,
     status: pr.status,
     title: pr.title ?? null,
     type: pr.type,
@@ -79,10 +73,9 @@ const buildRevision = (pr: PublicPR): string => {
     location: pr.location,
     minPartners: pr.minPartners,
     maxPartners: pr.maxPartners,
+    budget: pr.budget,
     preferences: pr.preferences,
     notes: pr.notes,
-    rawText: pr.rawText,
-    budget: pr.budget,
     createdAt: pr.createdAt.toISOString(),
     wechatThumbnailCreatedAt: pr.wechatThumbnail?.createdAt ?? null,
   });

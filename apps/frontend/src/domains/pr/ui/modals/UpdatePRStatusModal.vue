@@ -58,11 +58,12 @@ import PinInput from "@/shared/ui/forms/PinInput.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import { useUpdatePRStatus } from "@/domains/pr/queries/usePRActions";
-import type { PRId, PRKind, PRStatusManual } from "@partner-up-dev/backend";
+import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
 import {
   useUserSessionStore,
   type AuthSessionPayload,
 } from "@/shared/auth/useUserSessionStore";
+import type { PRScenario } from "@/domains/pr/model/types";
 
 interface StatusOption {
   value: PRStatusManual;
@@ -72,7 +73,7 @@ interface StatusOption {
 const props = defineProps<{
   open: boolean;
   prId: PRId;
-  scenario: PRKind;
+  scenario: PRScenario;
 }>();
 const { t } = useI18n();
 

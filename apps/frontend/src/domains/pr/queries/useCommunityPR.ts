@@ -82,12 +82,7 @@ export const useCommunityPR = (id: Ref<PRId | null>) => {
         throw new Error(i18n.global.t("errors.fetchRequestFailed"));
       }
 
-      const detail = (await res.json()) as PRDetailResponse;
-      if (detail.prKind !== "COMMUNITY") {
-        throw new Error("Community PR not found");
-      }
-
-      return detail as CommunityPRDetailResponse;
+      return (await res.json()) as CommunityPRDetailResponse;
     },
     enabled: () => id.value !== null,
   });

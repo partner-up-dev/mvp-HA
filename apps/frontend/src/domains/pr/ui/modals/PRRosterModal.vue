@@ -28,9 +28,9 @@ import { useI18n } from "vue-i18n";
 import Modal from "@/shared/ui/overlay/Modal.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import AnchorPRAwarenessLane from "@/domains/pr/ui/sections/AnchorPRAwarenessLane.vue";
-import type { AnchorPRDetailView } from "@/domains/pr/model/types";
+import type { PRPartnerSectionView } from "@/domains/pr/model/types";
 
-type PartnerSection = AnchorPRDetailView["partnerSection"];
+type PartnerSection = PRPartnerSectionView;
 
 defineProps<{
   open: boolean;

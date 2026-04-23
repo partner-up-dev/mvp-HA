@@ -4,7 +4,6 @@ import { AnchorEventRepository } from "../../../repositories/AnchorEventReposito
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { resolveUserByOpenId } from "../../user";
 import { partnerRequests } from "../../../entities/partner-request";
-import { anchorPartnerRequests } from "../../../entities/anchor-partner-request";
 import { partners } from "../../../entities/partner";
 import { assertNoUserTimeWindowConflict } from "../../pr-core/services/participation-time-conflict.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
@@ -164,16 +163,12 @@ export const createUserAnchorPR = async ({
 
     const quotaRows = await tx
       .select({ value: count() })
-      .from(anchorPartnerRequests)
-      .innerJoin(
-        partnerRequests,
-        eq(partnerRequests.id, anchorPartnerRequests.prId),
-      )
+      .from(partnerRequests)
       .where(
         and(
-          eq(anchorPartnerRequests.batchId, batch.id),
-          eq(anchorPartnerRequests.locationSource, "USER"),
-          eq(anchorPartnerRequests.visibilityStatus, "VISIBLE"),
+          eq(partnerRequests.type, event.type),
+          eq(partnerRequests.time, batch.timeWindow),
+          eq(partnerRequests.visibilityStatus, "VISIBLE"),
           eq(partnerRequests.location, locationId),
           notInArray(partnerRequests.status, ["CLOSED", "EXPIRED"]),
         ),
@@ -201,23 +196,9 @@ export const createUserAnchorPR = async ({
         preferences: [],
         notes: null,
         createdBy: user.id,
-        prKind: "ANCHOR",
       })
       .returning();
     const root = insertedRoots[0];
-
-    await tx.insert(anchorPartnerRequests).values({
-      prId: root.id,
-      anchorEventId: event.id,
-      batchId: batch.id,
-      locationSource: "USER",
-      visibilityStatus: "VISIBLE",
-      confirmationStartOffsetMinutes: 120,
-      confirmationEndOffsetMinutes: 30,
-      joinLockOffsetMinutes: 30,
-      bookingTriggeredAt: null,
-      autoHideAt: null,
-    });
 
     await tx.insert(partners).values({
       prId: root.id,
@@ -251,6 +232,6 @@ export const createUserAnchorPR = async ({
 
   return {
     id: createdRoot.id,
-    canonicalPath: `/apr/${createdRoot.id}`,
+    canonicalPath: `/pr/${createdRoot.id}`,
   };
 };

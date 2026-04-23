@@ -1,7 +1,10 @@
 import { computed, type ComputedRef } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
-import type { PRDetailView } from "@/domains/pr/model/types";
+import {
+  resolvePRScenario,
+  type PRDetailView,
+} from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/telemetry/track";
 import { useExitPR, useJoinPR } from "@/domains/pr/queries/usePRActions";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
@@ -34,15 +37,12 @@ export const useSharedPRActions = ({
 
   const joinMutation = useJoinPR();
   const exitMutation = useExitPR();
-  const scenario = computed<"ANCHOR" | "COMMUNITY">(() =>
-    pr.value?.prKind === "ANCHOR" ? "ANCHOR" : "COMMUNITY",
-  );
+  const scenario = computed(() => resolvePRScenario(pr.value));
 
   const hasJoined = computed(
     () => pr.value?.partnerSection.viewer.isParticipant ?? false,
   );
   const analyticsPRContext = computed(() => ({
-    prKind: pr.value?.prKind,
     scenarioType: pr.value?.core.type,
   }));
 

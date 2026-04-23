@@ -15,6 +15,7 @@ export interface CreateAdminAnchorEventBatchInput {
   timeWindow: [string | null, string | null];
   status: AnchorEventBatchStatus;
   description: string | null;
+  earliestLeadMinutes: number | null;
 }
 
 export async function createAdminAnchorEventBatch(
@@ -31,6 +32,7 @@ export async function createAdminAnchorEventBatch(
     timeWindow: input.timeWindow,
     status: input.status,
     description: input.description,
+    earliestLeadMinutes: input.earliestLeadMinutes,
   });
 
   await syncAnchorEventTimeWindowPool(eventId);

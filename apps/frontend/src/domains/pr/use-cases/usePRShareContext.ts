@@ -1,6 +1,6 @@
 import { computed, type ComputedRef } from "vue";
 import type { PRId } from "@partner-up-dev/backend";
-import { isCommunityPRDetail, type PRDetailView } from "@/domains/pr/model/types";
+import type { PRDetailView } from "@/domains/pr/model/types";
 import type { PRShareData } from "@/domains/share/model/types";
 import {
   normalizePublicUrl,
@@ -24,7 +24,7 @@ export const usePRShareContext = ({ id, pr }: UsePRShareContextOptions) => {
 
   const spmRouteKey = computed<ShareSpmRouteKey | null>(() => {
     if (!pr.value) return null;
-    return isCommunityPRDetail(pr.value) ? "community_pr" : "anchor_pr";
+    return "pr";
   });
 
   const prShareData = computed<PRShareData | null>(() => {
@@ -43,16 +43,8 @@ export const usePRShareContext = ({ id, pr }: UsePRShareContextOptions) => {
       canonicalShare: pr.value.share.canonical,
       xiaohongshuPoster: pr.value.share.xiaohongshuPoster ?? null,
       wechatThumbnail: pr.value.share.wechatThumbnail ?? null,
+      budget: pr.value.core.budget ?? null,
     };
-
-    if (isCommunityPRDetail(pr.value)) {
-      return {
-        ...sharedFields,
-        budget: pr.value.core.budget,
-        rawText: pr.value.rawText,
-      };
-    }
-
     return sharedFields;
   });
 

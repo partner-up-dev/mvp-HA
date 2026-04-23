@@ -9,7 +9,7 @@ export async function updateAdminAnchorPRVisibility(
   visibilityStatus: VisibilityStatus,
 ): Promise<void> {
   const record = await anchorPRRepo.findRecordByPrId(prId);
-  if (!record || record.root.prKind !== "ANCHOR") {
+  if (!record) {
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
 

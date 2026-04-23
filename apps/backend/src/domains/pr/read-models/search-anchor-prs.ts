@@ -8,6 +8,10 @@ import {
   getProductLocalDateKey,
   getProductLocalDateKeyForTimeWindowStart,
 } from "../../pr-core/services/time-window.service";
+import {
+  buildTimeWindowKey,
+  listDiscoverableAnchorEventBatches,
+} from "../../anchor-event/services/time-window-pool";
 
 const ISO_DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SEARCH_VISIBLE_WEEK_COUNT = 4;
@@ -177,7 +181,15 @@ export async function searchAnchorPRs(input: {
       consistency: "strong",
     }),
   ]);
-  const batchById = new Map(batches.map((batch) => [batch.id, batch]));
+  const discoverableBatches = listDiscoverableAnchorEventBatches(batches).filter(
+    (batch) => batch.status !== "EXPIRED",
+  );
+  const representativeBatchByTimeWindowKey = new Map(
+    discoverableBatches.map((batch) => [
+      buildTimeWindowKey(batch.timeWindow),
+      batch,
+    ]),
+  );
   const partnerCounts = await partnerRepo.countActiveByPrIds(
     records.map((record) => record.root.id),
   );
@@ -185,8 +197,10 @@ export async function searchAnchorPRs(input: {
 
   const results = records
     .flatMap((record) => {
-      const batch = batchById.get(record.anchor.batchId);
-      if (!batch || batch.status === "EXPIRED") {
+      const batch = representativeBatchByTimeWindowKey.get(
+        buildTimeWindowKey(record.root.time),
+      );
+      if (!batch) {
         return [];
       }
 
@@ -212,7 +226,7 @@ export async function searchAnchorPRs(input: {
           payload: {
             pr: {
               id: record.root.id,
-              canonicalPath: `/apr/${record.root.id}`,
+              canonicalPath: `/pr/${record.root.id}`,
               title: record.root.title,
               location: record.root.location,
               preferences: Array.isArray(record.root.preferences)

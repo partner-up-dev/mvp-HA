@@ -238,7 +238,7 @@ export type {
   AnchorEventBatchId,
   AnchorEventBatchStatus,
 } from "./entities/anchor-event-batch";
-export type { PRKind, VisibilityStatus } from "./entities/partner-request";
+export type { VisibilityStatus } from "./entities/partner-request";
 export type {
   AnchorEventSummary,
   AnchorEventDetail,

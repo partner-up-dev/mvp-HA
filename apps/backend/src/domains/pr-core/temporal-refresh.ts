@@ -5,7 +5,6 @@
 
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../repositories/PartnerRepository";
-import { AnchorPRRepository } from "../../repositories/AnchorPRRepository";
 import { UserReliabilityRepository } from "../../repositories/UserReliabilityRepository";
 import type { PartnerRequest } from "../../entities/partner-request";
 import {
@@ -14,6 +13,7 @@ import {
   isBookingDeadlineReached,
 } from "./services/time-window.service";
 import {
+  hasAnchorParticipationPolicy,
   hasConfirmationWindowEnded,
   resolveAnchorParticipationPolicy,
 } from "./services/anchor-participation-policy.service";
@@ -36,7 +36,6 @@ import { applyAnchorParticipantReleaseEffects } from "./services/anchor-particip
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 
 /**
@@ -47,7 +46,7 @@ export async function refreshTemporalStatus(
   request: PartnerRequest,
 ): Promise<PartnerRequest> {
   const effectiveBookingDeadlineAt =
-    request.prKind === "ANCHOR"
+    hasAnchorParticipationPolicy(request)
       ? await getEffectiveBookingDeadline(request.id)
       : null;
 
@@ -113,7 +112,7 @@ function shouldLockToStart(
   request: PartnerRequest,
   resourceBookingDeadlineAt: Date | null,
 ): boolean {
-  if (request.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(request)) {
     return false;
   }
   if (
@@ -152,7 +151,7 @@ async function expireIfUnderMinAfterBookingDeadline(
   request: PartnerRequest,
   resourceBookingDeadlineAt: Date | null,
 ): Promise<void> {
-  if (request.prKind !== "ANCHOR") return;
+  if (!hasAnchorParticipationPolicy(request)) return;
   if (!isBookingDeadlineReached(resourceBookingDeadlineAt)) return;
 
   const slots = await partnerRepo.findByPrId(request.id);
@@ -185,13 +184,10 @@ async function expireIfUnderMinAfterBookingDeadline(
 async function resolveReleaseTrigger(
   request: PartnerRequest,
 ): Promise<"confirmation_end" | null> {
-  if (request.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(request)) {
     return null;
   }
-
-  const anchor = await anchorPRRepo.findByPrId(request.id);
-  if (!anchor) return null;
-  const policy = resolveAnchorParticipationPolicy(anchor, request.time);
+  const policy = resolveAnchorParticipationPolicy(request, request.time);
   if (!hasConfirmationWindowEnded(policy)) return null;
   return "confirmation_end";
 }
@@ -229,7 +225,7 @@ async function releaseUnconfirmedSlotsIfNeeded(
   }
 
   await recalculatePRStatus(request.id);
-  if (request.prKind === "ANCHOR") {
+  if (hasAnchorParticipationPolicy(request)) {
     await applyAnchorParticipantReleaseEffects({
       prId: request.id,
       releasedUserIds,

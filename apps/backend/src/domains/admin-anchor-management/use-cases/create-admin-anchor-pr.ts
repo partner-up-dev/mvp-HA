@@ -2,7 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
+import type { AnchorPRContext } from "../../../repositories/AnchorPRRepository";
 import { initializeSlotsForPR } from "../../pr-core/services/slot-management.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import {
@@ -12,16 +12,11 @@ import {
 import { validateAnchorParticipationPolicyOffsets } from "../../pr-core/services/anchor-participation-policy.service";
 import { countActiveVisibleAnchorPRsByBatchAndLocationSource } from "../../pr-core/services/pr-read.service";
 import { assertManualPartnerBoundsValid } from "../../pr-core/services/partner-bounds.service";
-import type {
-  AnchorPartnerRequest,
-  AnchorEventBatchId,
-  PartnerRequest,
-} from "../../../entities";
+import type { AnchorEventBatchId, PartnerRequest } from "../../../entities";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const batchRepo = new AnchorEventBatchRepository();
-const anchorPRRepo = new AnchorPRRepository();
 
 export interface CreateAdminAnchorPRInput {
   title: string | null;
@@ -38,7 +33,7 @@ export interface CreateAdminAnchorPRInput {
 
 export interface CreateAdminAnchorPROutput {
   root: PartnerRequest;
-  anchor: AnchorPartnerRequest;
+  anchor: AnchorPRContext;
 }
 
 export async function createAdminAnchorPR(
@@ -100,20 +95,9 @@ export async function createAdminAnchorPR(
     maxPartners: input.maxPartners,
     preferences: input.preferences,
     notes: input.notes,
-    prKind: "ANCHOR",
-  });
-
-  const createdAnchor = await anchorPRRepo.create({
-    prId: createdRoot.id,
-    anchorEventId: event.id,
-    batchId: batch.id,
-    locationSource,
-    visibilityStatus: "VISIBLE",
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
-    bookingTriggeredAt: null,
-    autoHideAt: null,
   });
 
   await initializeSlotsForPR(
@@ -131,6 +115,17 @@ export async function createAdminAnchorPR(
 
   return {
     root: createdRoot,
-    anchor: createdAnchor,
+    anchor: {
+      prId: createdRoot.id,
+      anchorEventId: event.id,
+      batchId: batch.id,
+      locationSource,
+      visibilityStatus: "VISIBLE",
+      confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
+      confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
+      joinLockOffsetMinutes: input.joinLockOffsetMinutes,
+      bookingTriggeredAt: null,
+      autoHideAt: null,
+    },
   };
 }

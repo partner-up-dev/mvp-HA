@@ -5,6 +5,7 @@ import { UserReliabilityRepository } from "../../../repositories/UserReliability
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../user";
+import { hasAnchorParticipationPolicy } from "../services/anchor-participation-policy.service";
 import { isExitAllowedStatus } from "../services/status-rules";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import {
@@ -36,6 +37,7 @@ export async function exitPRByUserId(
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
+  const hasParticipationPolicy = hasAnchorParticipationPolicy(refreshedRequest);
 
   if (refreshedRequest.createdBy === userId) {
     throw new HTTPException(400, {
@@ -57,7 +59,7 @@ export async function exitPRByUserId(
   }
 
   if (
-    refreshedRequest.prKind === "ANCHOR" &&
+    hasParticipationPolicy &&
     (activeSlot.status === "CONFIRMED" || activeSlot.status === "ATTENDED")
   ) {
     const effectiveBookingDeadlineAt = await getEffectiveBookingDeadline(id);
@@ -68,7 +70,7 @@ export async function exitPRByUserId(
     }
   }
 
-  if (refreshedRequest.prKind === "ANCHOR" && hasEventStarted(refreshedRequest.time)) {
+  if (hasParticipationPolicy && hasEventStarted(refreshedRequest.time)) {
     throw new HTTPException(400, {
       message: "Cannot exit - event has already started",
     });
@@ -76,7 +78,7 @@ export async function exitPRByUserId(
 
   await partnerRepo.updateStatus(activeSlot.id, "EXITED");
   await userReliabilityRepo.applyDelta(userId, { released: 1 });
-  if (refreshedRequest.prKind === "ANCHOR") {
+  if (hasParticipationPolicy) {
     await cancelWeChatReminderJobsForParticipant(id, userId);
     await cancelWeChatActivityStartReminderJobsForParticipant(id, userId);
     await resolveBookingContactState({

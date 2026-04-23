@@ -13,7 +13,7 @@ export async function createAdminAnchorPRMessage(input: {
   actorUserId: UserId;
 }) {
   const request = await prRepo.findById(input.prId);
-  if (!request || request.prKind !== "ANCHOR") {
+  if (!request) {
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
 

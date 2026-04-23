@@ -55,7 +55,7 @@ export const usePRRouteShareDescriptor = ({
 
     return {
       routeSessionId,
-      entityKey: `${detail.prKind}:${detail.id}`,
+      entityKey: `pr:${detail.id}`,
       revision: canonicalShare.revision,
       phase: detail.share.wechatThumbnail ? "ENRICHED" : "BASE",
       signatureUrl: window.location.href,

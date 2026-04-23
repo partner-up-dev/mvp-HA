@@ -40,7 +40,7 @@ export async function releaseAdminAnchorPRPartner(input: {
 }) {
   const reason = normalizeManualReason(input.reason);
   const record = await anchorPRRepo.findRecordByPrId(input.prId);
-  if (!record || record.root.prKind !== "ANCHOR") {
+  if (!record) {
     throw new HTTPException(404, { message: "Anchor PR not found" });
   }
 

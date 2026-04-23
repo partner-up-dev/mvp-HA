@@ -1,5 +1,4 @@
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import type {
   PartnerRequestFields,
 } from "../../../entities/partner-request";
@@ -17,19 +16,8 @@ import {
 } from "./create-pr.shared";
 
 const prRepo = new PartnerRequestRepository();
-const communityPRRepo = new CommunityPRRepository();
 
 export type StructuredCreateSource = "FORM" | "EVENT_ASSISTED";
-
-function buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
-  const parts: string[] = [];
-  if (fields.title?.trim()) parts.push(fields.title.trim());
-  parts.push(`类型:${fields.type}`);
-  if (fields.location?.trim()) parts.push(`地点:${fields.location.trim()}`);
-  const [start, end] = fields.time;
-  if (start || end) parts.push(`时间:${start ?? "待定"}-${end ?? "待定"}`);
-  return parts.join(" | ");
-}
 
 export async function createPRFromStructured(
   fields: PartnerRequestFields,
@@ -44,7 +32,6 @@ export async function createPRFromStructured(
   const createdBy = creator?.id ?? null;
   const createSource = options.createSource ?? "FORM";
 
-  const rawText = buildStructuredFallbackRawText(fields);
   const request = await prRepo.create({
     title: fields.title,
     type: fields.type,
@@ -52,17 +39,11 @@ export async function createPRFromStructured(
     location: fields.location,
     minPartners: fields.minPartners,
     maxPartners: fields.maxPartners,
+    budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
     status: "DRAFT",
     createdBy,
-    prKind: "COMMUNITY",
-  });
-  await communityPRRepo.create({
-    prId: request.id,
-    rawText,
-    budget: fields.budget,
-    creationSource: "STRUCTURED",
   });
 
   await initializeSlotsForPR(

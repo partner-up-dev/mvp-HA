@@ -1,4 +1,5 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
@@ -11,8 +12,11 @@ import {
 import type { PartnerRequest } from "../../../entities/partner-request";
 import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr-core/services/pr-read.service";
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
+import { buildDiscoverableTimeWindowPoolFromBatches } from "./time-window-pool";
+import { isEventScopedLocation } from "./event-scope";
 
 const eventRepo = new AnchorEventRepository();
+const batchRepo = new AnchorEventBatchRepository();
 
 const trimNullable = (value: string | null | undefined): string | null => {
   if (typeof value !== "string") {
@@ -123,24 +127,6 @@ type CandidateGroup = {
   candidates: DemandCardCandidate[];
 };
 
-const isEventScopedLocation = (
-  event: AnchorEvent,
-  location: string | null,
-): boolean => {
-  const normalized = location?.trim() ?? "";
-  if (!normalized) {
-    return false;
-  }
-
-  const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
-  if (systemLocationPool.includes(normalized)) {
-    return true;
-  }
-
-  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
-  return userLocationPool.some((entry) => entry.id === normalized);
-};
-
 const compareCandidates = (
   left: DemandCardCandidate,
   right: DemandCardCandidate,
@@ -201,15 +187,16 @@ const buildCandidateGroup = ({
 const groupJoinableCandidates = async (
   eventId: AnchorEventId,
 ): Promise<CandidateGroup[]> => {
-  const event = await eventRepo.findById(eventId);
+  const [event, batches] = await Promise.all([
+    eventRepo.findById(eventId),
+    batchRepo.findByAnchorEventId(eventId),
+  ]);
 
   if (!event) {
     return [];
   }
 
-  const timeWindowPool = Array.isArray(event.timeWindowPool)
-    ? event.timeWindowPool
-    : [];
+  const timeWindowPool = buildDiscoverableTimeWindowPoolFromBatches(batches);
   const groupMap = new Map<string, CandidateGroup>();
 
   for (const timeWindow of timeWindowPool) {

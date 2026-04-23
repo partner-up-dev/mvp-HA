@@ -8,7 +8,7 @@ import {
   createPRFromNaturalLanguage,
   createPRFromStructured,
   createPRMessage,
-  exitCommunityPR,
+  exitPRByUserId,
   exitPR,
   getPRDetail,
   getAnchorPRBookingSupport,
@@ -98,14 +98,6 @@ const getPROr404 = async (id: number) => {
   return request;
 };
 
-const ensureAnchorPR = async (id: number) => {
-  const request = await getPROr404(id);
-  if (request.prKind !== "ANCHOR") {
-    throw new HTTPException(404, { message: "Anchor PR not found" });
-  }
-  return request;
-};
-
 export const partnerRequestRoute = app
   .use("*", authMiddleware)
   .get("/search", zValidator("query", anchorPRSearchQuerySchema), async (c) => {
@@ -177,8 +169,8 @@ export const partnerRequestRoute = app
   })
   .get("/:id/messages", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    await ensureAnchorPR(id);
-    const { userId } = await requireAnchorAuthenticatedIdentity(c);
+    await getPROr404(id);
+    const userId = requireSessionUserId(c);
     const result = await listPRMessages(id, userId);
 
     return c.json({
@@ -199,8 +191,8 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       const { body } = c.req.valid("json");
-      await ensureAnchorPR(id);
-      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      await getPROr404(id);
+      const userId = requireSessionUserId(c);
       const result = await createPRMessage({
         prId: id,
         authorUserId: userId,
@@ -229,8 +221,8 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       const { lastReadMessageId } = c.req.valid("json");
-      await ensureAnchorPR(id);
-      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      await getPROr404(id);
+      const userId = requireSessionUserId(c);
       const result = await advancePRMessageReadMarker({
         prId: id,
         userId,
@@ -241,9 +233,11 @@ export const partnerRequestRoute = app
   )
   .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    await ensureAnchorPR(id);
-    const identity = await tryReadAnchorAuthenticatedIdentity(c);
-    const result = await getAnchorPRBookingSupport(id, identity?.userId ?? null);
+    await getPROr404(id);
+    const result = await getAnchorPRBookingSupport(
+      id,
+      getAuthenticatedUserId(c),
+    );
     return c.json(result);
   })
   .put(
@@ -253,8 +247,8 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       const { phone } = c.req.valid("json");
-      await ensureAnchorPR(id);
-      const { userId } = await requireAnchorAuthenticatedIdentity(c);
+      await getPROr404(id);
+      const userId = requireSessionUserId(c);
       const result = await updateAnchorPRBookingContactPhone({
         prId: id,
         userId,
@@ -265,7 +259,7 @@ export const partnerRequestRoute = app
   )
   .get("/:id/reimbursement/status", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    await ensureAnchorPR(id);
+    await getPROr404(id);
     const userId = requireSessionUserId(c);
     const result = await getReimbursementStatus(id, userId);
     return c.json(result);
@@ -317,8 +311,8 @@ export const partnerRequestRoute = app
     zValidator("json", canonicalUpdateContentSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      const request = await getPROr404(id);
-      const payload = c.req.valid("json");
+      await getPROr404(id);
+      const payload = updateContentSchema.parse(c.req.valid("json"));
       const auth = c.get("auth");
 
       const creatorAuth = await authorizeCreatorMutation(
@@ -331,46 +325,9 @@ export const partnerRequestRoute = app
         c.set("auth", creatorAuth.upgradedAuth);
       }
 
-      if (request.prKind === "ANCHOR") {
-        const parsed = anchorUpdateContentSchema.safeParse(payload);
-        if (!parsed.success) {
-          throw new HTTPException(400, {
-            message: parsed.error.issues[0]?.message ?? "Invalid request body",
-          });
-        }
-
-        const result = await updatePRContent(
-          id,
-          {
-            ...parsed.data.fields,
-            time: creatorAuth.request.time,
-            budget: null,
-          },
-          creatorAuth.actorUserId,
-        );
-        return c.json({
-          ...result,
-          auth: creatorAuth.upgradedAuth
-            ? {
-                role: creatorAuth.upgradedAuth.role,
-                userId: creatorAuth.upgradedAuth.userId,
-                userPin: parsed.data.pin ?? null,
-                accessToken: creatorAuth.upgradedAuth.token,
-              }
-            : null,
-        });
-      }
-
-      const parsed = updateContentSchema.safeParse(payload);
-      if (!parsed.success) {
-        throw new HTTPException(400, {
-          message: parsed.error.issues[0]?.message ?? "Invalid request body",
-        });
-      }
-
       const result = await updatePRContent(
         id,
-        parsed.data.fields,
+        payload.fields,
         creatorAuth.actorUserId,
       );
       return c.json({
@@ -379,7 +336,7 @@ export const partnerRequestRoute = app
           ? {
               role: creatorAuth.upgradedAuth.role,
               userId: creatorAuth.upgradedAuth.userId,
-              userPin: parsed.data.pin ?? null,
+              userPin: payload.pin ?? null,
               accessToken: creatorAuth.upgradedAuth.token,
             }
           : null,
@@ -392,43 +349,29 @@ export const partnerRequestRoute = app
     zValidator("json", anchorJoinSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      const request = await getPROr404(id);
+      await getPROr404(id);
       const { bookingContactPhone } = c.req.valid("json");
-
-      if (request.prKind === "COMMUNITY") {
-        const participantIdentity = await buildCreatorIdentity(c);
-        const result = await joinCommunityPR(id, participantIdentity);
-        const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);
-        return c.json({
-          ...result.pr,
-          auth,
-        });
-      }
-
-      const openId = await requireAuthenticatedOpenId(c);
-      const result = await joinPR(id, openId, {
+      const participantIdentity = await buildCreatorIdentity(c);
+      const result = await joinCommunityPR(id, participantIdentity, {
         bookingContactPhone: bookingContactPhone ?? null,
       });
-      return c.json(result);
+      const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);
+      return c.json({
+        ...result.pr,
+        auth,
+      });
     },
   )
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    const request = await getPROr404(id);
-
-    if (request.prKind === "COMMUNITY") {
-      const userId = requireAuthenticatedUserId(c);
-      const result = await exitCommunityPR(id, userId);
-      return c.json(result);
-    }
-
-    const { openId } = await requireAnchorAuthenticatedIdentity(c);
-    const result = await exitPR(id, openId);
+    await getPROr404(id);
+    const userId = requireAuthenticatedUserId(c);
+    const result = await exitPRByUserId(id, userId);
     return c.json(result);
   })
   .post("/:id/confirm", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
-    await ensureAnchorPR(id);
+    await getPROr404(id);
     const { openId } = await requireAnchorAuthenticatedIdentity(c);
     const result = await confirmSlot(id, openId);
     return c.json(result);
@@ -439,7 +382,7 @@ export const partnerRequestRoute = app
     zValidator("json", slotCheckInSchema),
     async (c) => {
       const { id } = c.req.valid("param");
-      await ensureAnchorPR(id);
+      await getPROr404(id);
       const { openId } = await requireAnchorAuthenticatedIdentity(c);
       const { didAttend, wouldJoinAgain } = c.req.valid("json");
       if (didAttend === false) {

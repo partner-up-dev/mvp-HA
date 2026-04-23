@@ -6,6 +6,7 @@
 
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type {
   AnchorEvent,
@@ -22,8 +23,14 @@ import {
   isActiveVisibleAnchorPRStatus,
   readVisiblePartnerRequestsByTypeAndTime,
 } from "../../pr-core/services/pr-read.service";
+import {
+  buildDiscoverableTimeWindowPoolFromBatches,
+  listDiscoverableAnchorEventBatches,
+} from "../services/time-window-pool";
+import { isEventScopedLocation } from "../services/event-scope";
 
 const eventRepo = new AnchorEventRepository();
+const batchRepo = new AnchorEventBatchRepository();
 const partnerRepo = new PartnerRepository();
 
 export interface AnchorPRSummary {
@@ -104,28 +111,13 @@ const toTimeWindowDetail = (
   locationOptions,
 });
 
-const isEventScopedLocation = (
-  event: AnchorEvent,
-  location: string | null,
-): boolean => {
-  const normalized = location?.trim() ?? "";
-  if (!normalized) {
-    return false;
-  }
-
-  const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
-  if (systemLocationPool.includes(normalized)) {
-    return true;
-  }
-
-  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
-  return userLocationPool.some((entry) => entry.id === normalized);
-};
-
 export async function getAnchorEventDetail(
   eventId: AnchorEventId,
 ): Promise<AnchorEventDetail> {
-  const event = await eventRepo.findById(eventId);
+  const [event, batches] = await Promise.all([
+    eventRepo.findById(eventId),
+    batchRepo.findByAnchorEventId(eventId),
+  ]);
   if (!event) {
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
@@ -134,9 +126,10 @@ export async function getAnchorEventDetail(
     event.systemLocationPool,
   );
   const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
-  const timeWindowPool = Array.isArray(event.timeWindowPool)
-    ? event.timeWindowPool
-    : [];
+  const discoverableBatches = listDiscoverableAnchorEventBatches(batches);
+  const timeWindowPool = buildDiscoverableTimeWindowPoolFromBatches(
+    discoverableBatches,
+  );
 
   const timeWindowDetails: TimeWindowDetail[] = [];
   const allPRIds: number[] = [];
@@ -216,9 +209,7 @@ export async function getAnchorEventDetail(
     defaultMaxPartners: event.defaultMaxPartners ?? null,
     systemLocationPool,
     userLocationPool,
-    timeWindowPool: Array.isArray(event.timeWindowPool)
-      ? event.timeWindowPool
-      : [],
+    timeWindowPool,
     coverImage: event.coverImage,
     betaGroupQrCode: event.betaGroupQrCode,
     status: event.status,

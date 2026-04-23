@@ -68,7 +68,7 @@
       </Button>
 
       <Button
-        v-if="section.scenario === 'ANCHOR' && section.viewer.canConfirm"
+        v-if="section.viewer.canConfirm"
         tone="secondary"
         type="button"
         :disabled="confirmPending"
@@ -80,7 +80,7 @@
       </Button>
 
       <Button
-        v-if="section.scenario === 'ANCHOR' && section.viewer.canCheckIn"
+        v-if="section.viewer.canCheckIn"
         tone="secondary"
         type="button"
         :disabled="checkInPending"
@@ -217,17 +217,6 @@
             formatDateTime(section.timeline.bookingDeadlineAt)
           }}</span>
         </div>
-        <div
-          v-if="section.timeline.bookingTriggeredAt"
-          class="partner-section__timeline-item"
-        >
-          <span class="partner-section__timeline-label">{{
-            t("prPage.partnerSection.timelineBookingTriggered")
-          }}</span>
-          <span class="partner-section__timeline-value">{{
-            formatDateTime(section.timeline.bookingTriggeredAt)
-          }}</span>
-        </div>
       </div>
     </section>
 
@@ -268,87 +257,20 @@
       </Button>
     </section>
 
-    <section
-      v-if="
-        section.scenario === 'ANCHOR' &&
-        section.fallbacks.sameBatchAlternatives.length > 0
-      "
-      class="partner-section__panel"
-    >
-      <div class="partner-section__panel-header">
-        <h3 class="partner-section__panel-title">
-          {{ t("prPage.sameBatch.title") }}
-        </h3>
-      </div>
-      <p class="partner-section__note">{{ t("prPage.sameBatch.subtitle") }}</p>
-
-      <div class="partner-section__links">
-        <router-link
-          v-for="item in section.fallbacks.sameBatchAlternatives"
-          :key="item.id"
-          :to="prDetailPath(item.id)"
-          class="partner-section__link-card"
-        >
-          <span>{{ item.location }}</span>
-          <span class="partner-section__link-meta">{{
-            t(`prStatus.${item.status}`)
-          }}</span>
-        </router-link>
-      </div>
-    </section>
-
-    <section
-      v-if="
-        section.scenario === 'ANCHOR' &&
-        section.fallbacks.alternativeBatches.length > 0
-      "
-      class="partner-section__panel"
-    >
-      <div class="partner-section__panel-header">
-        <h3 class="partner-section__panel-title">
-          {{ t("prPage.alternativeBatch.title") }}
-        </h3>
-      </div>
-      <p class="partner-section__note">
-        {{ t("prPage.alternativeBatch.subtitle") }}
-      </p>
-
-      <div class="partner-section__alternatives">
-        <article
-          v-for="item in section.fallbacks.alternativeBatches"
-          :key="`${item.timeWindow[0]}-${item.timeWindow[1]}`"
-          class="partner-section__alternative-item"
-        >
-          <div class="partner-section__alternative-meta">
-            <strong>{{
-              formatWindow(item.timeWindow[0], item.timeWindow[1])
-            }}</strong>
-            <span class="partner-section__note">{{ item.location }}</span>
-          </div>
-          <Button
-            type="button"
-            :disabled="acceptAlternativeBatchPending"
-            @click="emit('accept-alternative-batch', item.timeWindow)"
-          >
-            {{ t("prPage.alternativeBatch.accept") }}
-          </Button>
-        </article>
-      </div>
-    </section>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PRDetailView } from "@/domains/pr/model/types";
-import { prDetailPath, prPartnerProfilePath } from "@/domains/pr/routing/routes";
+import type { PRPartnerSectionView } from "@/domains/pr/model/types";
+import { prPartnerProfilePath } from "@/domains/pr/routing/routes";
 import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type PartnerSectionView = PRDetailView["partnerSection"];
+type PartnerSectionView = PRPartnerSectionView;
 
 type TimeWindow = [string | null, string | null];
 
@@ -407,7 +329,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const subtitleText = computed(() => {
-  if (props.section.scenario === "ANCHOR") {
+  if (props.section.reminder.supported || props.section.timeline) {
     return t("prPage.partnerSection.subtitleAnchor");
   }
   return t("prPage.partnerSection.subtitleCommunity");
@@ -440,7 +362,7 @@ const availabilityNote = computed(() => {
       return blockedReasonText(props.section.viewer.exitBlockedReason);
     }
     if (
-      props.section.scenario === "ANCHOR" &&
+      props.section.reminder.supported &&
       !props.section.viewer.canConfirm &&
       props.section.viewer.slotState === "JOINED"
     ) {
@@ -479,7 +401,7 @@ const rosterItemProfilePath = (
 
 const confirmWindowText = computed(() => {
   const notSet = t("prPage.partnerSection.notSet");
-  if (props.section.scenario !== "ANCHOR" || !props.section.timeline) {
+  if (!props.section.reminder.supported || !props.section.timeline) {
     return { confirmStart: notSet, confirmEnd: notSet };
   }
   return {

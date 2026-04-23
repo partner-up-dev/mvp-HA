@@ -1074,6 +1074,65 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Verification completed:
   - `pnpm --filter @partner-up-dev/frontend build`
 
+## Slice 12A - Event Time-Window Lead Limit, Live Convergence, And Schema Contract
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this convergence slice:
+  - wire `earliestLeadMinutes` into Anchor Event time-window discovery
+  - retire remaining live dependency on `anchor_partner_requests`, `community_partner_requests`, and `partner_requests.pr_kind`
+  - contract live admin/event/private flows onto single-root PR storage
+  - add the contract migration for subtype-table removal
+- Artifacts:
+  - `apps/backend/src/domains/anchor-event/services/time-window-pool.ts`
+  - `apps/backend/src/domains/anchor-event/services/event-scope.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
+  - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
+  - `apps/backend/src/domains/pr/read-models/search-anchor-prs.ts`
+  - `apps/backend/src/domains/admin-anchor-management/services/sync-anchor-event-time-window-pool.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-event-batch.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/update-admin-anchor-event-batch.ts`
+  - `apps/backend/src/controllers/admin-anchor-management.controller.ts`
+  - `apps/backend/src/repositories/AnchorEventBatchRepository.ts`
+  - `apps/backend/src/repositories/PartnerRequestRepository.ts`
+  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/create-user-anchor-pr.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/expand-full-anchor-pr.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-pr.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/update-admin-anchor-pr-content.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/get-admin-anchor-workspace.ts`
+  - `apps/backend/src/entities/anchor-event-batch.ts`
+  - `apps/backend/src/entities/partner-request.ts`
+  - `apps/backend/src/entities/anchor-partner-request.ts`
+  - `apps/backend/src/entities/scenario-type-metric.ts`
+  - `apps/backend/src/infra/analytics/aggregate-daily.service.ts`
+  - `apps/backend/drizzle/0025_single_pr_contract.sql`
+  - `apps/frontend/src/domains/admin/queries/useAdminAnchorManagement.ts`
+  - `apps/frontend/src/pages/AdminAnchorPRPage.vue`
+  - `apps/frontend/src/domains/pr/routing/routes.ts`
+  - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
+  - `apps/frontend/src/domains/pr/ui/sections/AnchorPRPrimaryActionLane.vue`
+- Decisions implemented:
+  - public Anchor Event discovery now treats `earliestLeadMinutes` as an event-batch gate on generated `timeWindow` visibility, with the decision taken from generated window end-time against `now + earliestLeadMinutes`
+  - `event.timeWindowPool` sync remains a raw cached pool of batch windows, while public discovery and demand-card projection use the discoverable pool derived from live batches
+  - admin batch create and update contracts now accept `earliestLeadMinutes`, and admin Anchor PR workspace exposes that field
+  - `AnchorPRRepository` now resolves anchor context from root PR facts plus event and batch scope instead of reading `anchor_partner_requests`
+  - admin anchor PR create, user anchor PR create, and auto-expand no longer write subtype rows
+  - `community_partner_requests` and `anchor_partner_requests` source files have left the live code path
+  - analytics daily aggregation now derives anchor/community line kind from explicit partner-admission policy on root PRs, while `scenario_type_metrics` uses `line_kind` instead of `pr_kind`
+  - `0025_single_pr_contract.sql` adds root `budget`, adds batch `earliest_lead_minutes`, renames analytics `line_kind`, drops `partner_requests.pr_kind`, and removes subtype tables
+  - frontend live PR route and create telemetry no longer attach `prKind`
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/backend db:lint`
+  - `pnpm --filter @partner-up-dev/backend exec tsx --test src/infra/notifications/wechat-pr-message.test.ts`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Residual follow-up:
+  - telemetry event-family rename such as `anchor_pr_* -> pr_*`
+  - issue `#175` local credential and generated PIN cleanup
+  - admin vocabulary still carries `Anchor PR` / `batch` naming on operator pages even though storage and public contracts are already converged
+
 ## Handoff Source
 
 This packet spins out of:

@@ -57,9 +57,14 @@ const resolveParticipantUser = async (
 export async function joinCommunityPR(
   id: PRId,
   identity: ParticipantIdentityInput,
+  options: {
+    bookingContactPhone?: string | null;
+  } = {},
 ): Promise<JoinCommunityPRResult> {
   const participant = await resolveParticipantUser(identity);
-  const pr = await joinPRAsUser(id, participant.user);
+  const pr = await joinPRAsUser(id, participant.user, {
+    bookingContactPhone: options.bookingContactPhone ?? null,
+  });
 
   return {
     pr,
