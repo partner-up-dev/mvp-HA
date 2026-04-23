@@ -822,6 +822,27 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `/apr/:id` and `/cpr/new` still remain as compatibility routes
   - share-surface pathname classification still contains `/apr/*` and `/cpr/*` assumptions and should be cleaned in a later slice
 
+## Slice 7F - Share Surface Canonical Path Inference Cleanup
+
+- Status:
+  - completed on 2026-04-23
+- Scope for this narrowed slice:
+  - remove share-surface telemetry and share-link logic that infers PR kind from `/apr/*` and `/cpr/*` pathname prefixes
+  - switch that inference to explicit route/share metadata while keeping PR id parsing compatible with alias paths
+- Artifacts:
+  - `apps/frontend/src/domains/share/use-cases/useShareCarousel.ts`
+  - `apps/frontend/src/domains/share/use-cases/as-link/useShareAsLink.ts`
+  - `apps/frontend/src/domains/share/ui/composites/PRShareCarousel.vue`
+- Decisions implemented:
+  - share carousel now derives `prKind` telemetry enrichment from `spmRouteKey` instead of current pathname aliases
+  - share-as-link now derives `prKind` telemetry enrichment from `spmRouteKey` instead of share URL pathname aliases
+  - PR id parsing remains compatibility-tolerant through `parsePRIdFromPathname`, so old alias links still work
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/frontend build`
+  - `rg -n 'startsWith\\(\"/apr/\"\\)|startsWith\\(\"/cpr/\"\\)|/apr/|/cpr/' apps/frontend/src/domains/share` returned no remaining share-surface pathname assumptions
+- Verification gap:
+  - route-share fallback naming still contains anchor/community route keys and remains part of a later vocabulary cleanup slice
+
 ## Handoff Source
 
 This packet spins out of:

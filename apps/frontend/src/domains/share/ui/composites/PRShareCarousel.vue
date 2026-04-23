@@ -126,6 +126,7 @@ const {
   allMethods,
   defaultMethodId: props.defaultMethodId,
   autoRotateIntervalMs: props.autoRotateIntervalMs,
+  spmRouteKey: props.spmRouteKey,
 });
 </script>
 

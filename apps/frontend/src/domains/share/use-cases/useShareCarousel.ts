@@ -1,6 +1,7 @@
 import { computed, ref, watchEffect, type ComputedRef } from "vue";
 import { trackEvent } from "@/shared/telemetry/track";
 import { parsePRIdFromPathname } from "@/domains/pr/routing/routes";
+import type { ShareSpmRouteKey } from "@/shared/url/spm";
 
 export type ShareMethodId = "WEB_SHARE" | "XIAOHONGSHU" | "WECHAT_CHAT";
 
@@ -14,6 +15,7 @@ type UseShareCarouselOptions = {
   allMethods: ComputedRef<ShareMethod[]>;
   defaultMethodId?: ShareMethodId;
   autoRotateIntervalMs?: number | null;
+  spmRouteKey?: ShareSpmRouteKey | null;
 };
 
 const FALLBACK_METHOD: ShareMethod = {
@@ -27,10 +29,11 @@ const resolveCurrentPRId = (): number | undefined => {
   return parsePRIdFromPathname(window.location.pathname) ?? undefined;
 };
 
-const resolveCurrentPRKind = (): "ANCHOR" | "COMMUNITY" | undefined => {
-  if (typeof window === "undefined") return undefined;
-  if (window.location.pathname.startsWith("/apr/")) return "ANCHOR";
-  if (window.location.pathname.startsWith("/cpr/")) return "COMMUNITY";
+const resolvePRKindFromSpmRouteKey = (
+  routeKey: ShareSpmRouteKey | null | undefined,
+): "ANCHOR" | "COMMUNITY" | undefined => {
+  if (routeKey === "anchor_pr") return "ANCHOR";
+  if (routeKey === "community_pr") return "COMMUNITY";
   return undefined;
 };
 
@@ -38,6 +41,7 @@ export const useShareCarousel = ({
   allMethods,
   defaultMethodId = "XIAOHONGSHU",
   autoRotateIntervalMs = 3000,
+  spmRouteKey = null,
 }: UseShareCarouselOptions) => {
   const enabledMethods = computed(() =>
     allMethods.value.filter((m) => m.enabled ?? true),
@@ -96,7 +100,7 @@ export const useShareCarousel = ({
     markUserInteraction();
     moveMethod(-1);
     const prId = resolveCurrentPRId();
-    const prKind = resolveCurrentPRKind();
+    const prKind = resolvePRKindFromSpmRouteKey(spmRouteKey);
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
       prId,
@@ -116,7 +120,7 @@ export const useShareCarousel = ({
     markUserInteraction();
     moveMethod(1);
     const prId = resolveCurrentPRId();
-    const prKind = resolveCurrentPRKind();
+    const prKind = resolvePRKindFromSpmRouteKey(spmRouteKey);
     trackEvent("share_method_switch", {
       methodId: currentMethodId.value,
       prId,
