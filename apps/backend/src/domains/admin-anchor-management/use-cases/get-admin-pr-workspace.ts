@@ -35,6 +35,7 @@ export type AdminPRWorkspaceSummary = {
 export type AdminPRTypeOption = {
   type: string;
   eventTitle: string;
+  locationOptions: string[];
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   defaultConfirmationStartOffsetMinutes: number;
@@ -93,6 +94,12 @@ export async function getAdminPRWorkspace(): Promise<AdminPRWorkspace> {
     typeOptionsByType.set(event.type, {
       type: event.type,
       eventTitle: event.title,
+      locationOptions: Array.from(
+        new Set([
+          ...event.systemLocationPool,
+          ...event.userLocationPool.map((entry) => entry.id),
+        ]),
+      ),
       defaultMinPartners: event.defaultMinPartners ?? null,
       defaultMaxPartners: event.defaultMaxPartners ?? null,
       defaultConfirmationStartOffsetMinutes:

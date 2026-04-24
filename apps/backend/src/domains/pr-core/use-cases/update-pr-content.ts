@@ -20,10 +20,16 @@ import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
 
+export interface UpdatePRContentOptions {
+  bypassEditableStatusGuard?: boolean;
+  preserveStatus?: boolean;
+}
+
 export async function updatePRContent(
   id: PRId,
   fields: PartnerRequestFields,
   actorUserId: UserId | null,
+  options: UpdatePRContentOptions = {},
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -32,6 +38,7 @@ export async function updatePRContent(
   const refreshedRequest = await refreshTemporalStatus(request);
 
   if (
+    !options.bypassEditableStatusGuard &&
     refreshedRequest.status !== "OPEN" &&
     refreshedRequest.status !== "DRAFT"
   ) {
@@ -79,7 +86,11 @@ export async function updatePRContent(
   }
   await prRepo.clearPosterCache(id);
 
-  if (minMaxChanged && refreshedRequest.status !== "DRAFT") {
+  if (
+    minMaxChanged &&
+    refreshedRequest.status !== "DRAFT" &&
+    !options.preserveStatus
+  ) {
     await recalculatePRStatus(id);
   }
 

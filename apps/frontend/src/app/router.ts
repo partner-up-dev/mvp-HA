@@ -21,8 +21,6 @@ const AdminLoginPage = () => import("@/pages/AdminLoginPage.vue");
 const AdminAnchorEventPage = () =>
   import("@/pages/AdminAnchorEventPage.vue");
 const AdminPRPage = () => import("@/pages/AdminPRPage.vue");
-const AdminPRMessagesPage = () =>
-  import("@/pages/AdminPRMessagesPage.vue");
 const AdminBookingSupportPage = () =>
   import("@/pages/AdminBookingSupportPage.vue");
 const AdminBookingExecutionPage = () =>
@@ -134,11 +132,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/admin/pr-messages",
     name: "admin-pr-messages",
-    component: AdminPRMessagesPage,
-    meta: {
-      wechatSharePolicy: "route",
-      requiresAdminAuth: true,
-    },
+    redirect: { name: "admin-pr" },
   },
   {
     path: "/admin/booking-support",

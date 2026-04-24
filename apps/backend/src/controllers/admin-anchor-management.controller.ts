@@ -18,9 +18,12 @@ import {
   createAdminAnchorEvent,
   createAdminPR,
   createAdminPRMessage,
+  deleteAdminPRMessage,
   getAdminAnchorEventWorkspace,
+  listAdminPRMessages,
   getAdminPRWorkspace,
   releaseAdminPRPartner,
+  updateAdminPRMessage,
   updateAdminAnchorEvent,
   updateAdminPRContent,
   updateAdminPRStatus,
@@ -36,6 +39,10 @@ const eventIdParamSchema = z.object({
 
 const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
+});
+const prMessageIdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  messageId: z.coerce.number().int().positive(),
 });
 const partnerIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -164,6 +171,15 @@ export const adminAnchorManagementRoute = app
       return c.json(result);
     },
   )
+  .get(
+    "/prs/:id/messages",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const result = await listAdminPRMessages(id);
+      return c.json(result);
+    },
+  )
   .post(
     "/prs/:id/messages",
     zValidator("param", prIdParamSchema),
@@ -179,6 +195,37 @@ export const adminAnchorManagementRoute = app
         prId: id,
         body,
         actorUserId: auth.userId,
+      });
+      return c.json(result);
+    },
+  )
+  .patch(
+    "/prs/:id/messages/:messageId",
+    zValidator("param", prMessageIdParamSchema),
+    zValidator("json", prMessageCreateSchema),
+    async (c) => {
+      const { id, messageId } = c.req.valid("param");
+      const { body } = c.req.valid("json");
+      const auth = c.get("auth");
+      const result = await updateAdminPRMessage({
+        prId: id,
+        messageId,
+        body,
+        actorUserId: auth.userId ?? null,
+      });
+      return c.json(result);
+    },
+  )
+  .delete(
+    "/prs/:id/messages/:messageId",
+    zValidator("param", prMessageIdParamSchema),
+    async (c) => {
+      const { id, messageId } = c.req.valid("param");
+      const auth = c.get("auth");
+      const result = await deleteAdminPRMessage({
+        prId: id,
+        messageId,
+        actorUserId: auth.userId ?? null,
       });
       return c.json(result);
     },

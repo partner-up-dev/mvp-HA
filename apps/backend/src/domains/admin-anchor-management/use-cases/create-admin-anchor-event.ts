@@ -7,6 +7,7 @@ import type {
   UserLocationEntry,
 } from "../../../entities";
 import { normalizeAnchorEventTimePoolConfig } from "../../../entities";
+import { HTTPException } from "hono/http-exception";
 import {
   assertManualPartnerBoundsValid,
   validateAnchorParticipationPolicyOffsets,
@@ -45,6 +46,13 @@ export async function createAdminAnchorEvent(
     confirmationEndOffsetMinutes: input.defaultConfirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
   });
+
+  const existing = await anchorEventRepo.findOneByType(input.type);
+  if (existing) {
+    throw new HTTPException(409, {
+      message: `Anchor event type already exists: ${input.type}`,
+    });
+  }
 
   return await anchorEventRepo.create({
     title: input.title,

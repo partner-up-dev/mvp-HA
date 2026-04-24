@@ -32,7 +32,11 @@
               <span class="field-label">{{
                 t("adminPR.searchLocationLabel")
               }}</span>
-              <input v-model="filters.location" class="field-input" />
+              <input
+                v-model="filters.location"
+                class="field-input"
+                list="admin-pr-filter-location-options"
+              />
             </label>
 
             <label class="field">
@@ -100,9 +104,23 @@
             {{ typeOption.eventTitle }}
           </option>
         </datalist>
+        <datalist id="admin-pr-filter-location-options">
+          <option
+            v-for="locationOption in filterLocationOptions"
+            :key="locationOption"
+            :value="locationOption"
+          />
+        </datalist>
+        <datalist id="admin-pr-form-location-options">
+          <option
+            v-for="locationOption in formLocationOptions"
+            :key="locationOption"
+            :value="locationOption"
+          />
+        </datalist>
 
-        <div class="grid-2">
-          <section class="panel">
+        <div class="stack stack--main">
+          <section class="panel panel--list">
             <div class="stack">
               <div class="section-header">
                 <h2 class="card-title">{{ t("adminPR.prsTitle") }}</h2>
@@ -119,7 +137,10 @@
                 {{ t("adminPR.emptySearchResults") }}
               </div>
 
-              <div v-else class="selection-list selection-list--grid">
+              <div
+                v-else
+                class="selection-list selection-list--grid selection-list--scroll"
+              >
                 <ChoiceCard
                   v-for="pr in filteredPRs"
                   :key="pr.prId"
@@ -135,7 +156,7 @@
             </div>
           </section>
 
-          <section class="panel">
+          <section class="panel panel--form">
             <div class="stack">
               <h2 class="card-title">{{ t("adminPR.prFormTitle") }}</h2>
 
@@ -174,7 +195,11 @@
 
               <label class="field">
                 <span class="field-label">{{ t("adminPR.prLocationLabel") }}</span>
-                <input v-model="prForm.location" class="field-input" />
+                <input
+                  v-model="prForm.location"
+                  class="field-input"
+                  list="admin-pr-form-location-options"
+                />
               </label>
 
               <div class="grid-2">
@@ -289,6 +314,158 @@
               </Button>
             </div>
           </section>
+
+          <section class="panel panel--form">
+            <div class="stack">
+              <div class="stack stack--tight">
+                <h2 class="card-title">{{ t("adminPRMessages.panelTitle") }}</h2>
+                <p class="hint">{{ t("adminPRMessages.panelHint") }}</p>
+              </div>
+
+              <div v-if="selectedPR === null" class="empty-state">
+                {{ t("adminPRMessages.selectPRHint") }}
+              </div>
+
+              <template v-else>
+                <p v-if="messagesQuery.isLoading.value" class="hint">
+                  {{ t("common.loading") }}
+                </p>
+                <p v-else-if="messagesQuery.error.value" class="error-message">
+                  {{ messagesQuery.error.value.message }}
+                </p>
+                <div v-else-if="messageItems.length === 0" class="empty-state">
+                  {{ t("adminPRMessages.emptyMessages") }}
+                </div>
+                <div v-else class="admin-message-list">
+                  <article
+                    v-for="item in messageItems"
+                    :key="item.id"
+                    class="admin-message-item"
+                  >
+                    <div class="section-header section-header--top">
+                      <div class="stack stack--tight">
+                        <strong class="message-author">
+                          {{ resolveMessageAuthor(item) }}
+                        </strong>
+                        <span class="hint">
+                          {{ formatMessageTime(item.createdAt) }}
+                          <template v-if="isMessageEdited(item)">
+                            ·
+                            {{
+                              t("adminPRMessages.editedAt", {
+                                time: formatMessageTime(item.updatedAt),
+                              })
+                            }}
+                          </template>
+                        </span>
+                      </div>
+
+                      <div class="actions actions--inline">
+                        <template v-if="editingMessageId === item.id">
+                          <Button
+                            appearance="pill"
+                            tone="outline"
+                            size="sm"
+                            type="button"
+                            :disabled="
+                              updateMessageMutation.isPending.value ||
+                              editingMessageBody.trim().length === 0
+                            "
+                            @click="handleSaveMessageEdit(item.id)"
+                          >
+                            {{
+                              updateMessageMutation.isPending.value
+                                ? t("adminPRMessages.messageSaving")
+                                : t("adminPRMessages.saveEditAction")
+                            }}
+                          </Button>
+                          <Button
+                            appearance="pill"
+                            tone="ghost"
+                            size="sm"
+                            type="button"
+                            :disabled="updateMessageMutation.isPending.value"
+                            @click="cancelEditMessage"
+                          >
+                            {{ t("common.cancel") }}
+                          </Button>
+                        </template>
+                        <template v-else>
+                          <Button
+                            appearance="pill"
+                            tone="outline"
+                            size="sm"
+                            type="button"
+                            :disabled="deleteMessageMutation.isPending.value"
+                            @click="beginEditMessage(item.id, item.body)"
+                          >
+                            {{ t("adminPRMessages.editAction") }}
+                          </Button>
+                          <Button
+                            appearance="pill"
+                            tone="danger"
+                            size="sm"
+                            type="button"
+                            :disabled="deleteMessageMutation.isPending.value"
+                            @click="handleDeleteMessage(item.id)"
+                          >
+                            {{
+                              deleteMessageMutation.isPending.value
+                                ? t("adminPRMessages.messageDeleting")
+                                : t("adminPRMessages.deleteAction")
+                            }}
+                          </Button>
+                        </template>
+                      </div>
+                    </div>
+
+                    <textarea
+                      v-if="editingMessageId === item.id"
+                      v-model="editingMessageBody"
+                      class="field-input field-textarea"
+                      :placeholder="t('adminPRMessages.messagePlaceholder')"
+                    ></textarea>
+                    <p v-else class="message-body">
+                      {{ item.body }}
+                    </p>
+                  </article>
+                </div>
+
+                <label class="field">
+                  <span class="field-label">{{ t("adminPRMessages.messageLabel") }}</span>
+                  <textarea
+                    v-model="messageDraftBody"
+                    class="field-input field-textarea"
+                    :placeholder="t('adminPRMessages.messagePlaceholder')"
+                    :disabled="createMessageMutation.isPending.value"
+                  ></textarea>
+                </label>
+
+                <p v-if="messageActionError" class="error-message">
+                  {{ messageActionError }}
+                </p>
+
+                <div class="actions">
+                  <Button
+                    appearance="pill"
+                    size="sm"
+                    type="button"
+                    :disabled="
+                      createMessageMutation.isPending.value ||
+                      messageDraftBody.trim().length === 0
+                    "
+                    @click="handleSendSystemMessage"
+                  >
+                    {{
+                      createMessageMutation.isPending.value
+                        ? t('adminPRMessages.messageSending')
+                        : t('adminPRMessages.messageAction')
+                    }}
+                  </Button>
+                </div>
+              </template>
+            </div>
+          </section>
         </div>
 
         <ErrorToast
@@ -314,13 +491,22 @@ import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   type AdminPRWorkspaceResponse,
+  type AdminPRMessagesResponse,
+  useAdminPRMessages,
   useAdminPRWorkspace,
   useCreateAdminPR,
+  useCreateAdminPRMessage,
+  useDeleteAdminPRMessage,
   useUpdateAdminPRContent,
+  useUpdateAdminPRMessage,
   useUpdateAdminPRStatus,
   useUpdateAdminPRVisibility,
 } from "@/domains/admin/queries/useAdminPRManagement";
-import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
+import { useAdminPois } from "@/domains/admin/queries/useAdminPoiManagement";
+import {
+  formatLocalDateTimeValue,
+  formatLocalDateTimeWindowLabel,
+} from "@/shared/datetime/formatLocalDateTime";
 import { validateManualPartnerBounds } from "@/lib/validation";
 
 type Workspace = NonNullable<AdminPRWorkspaceResponse>;
@@ -410,7 +596,11 @@ const toPRForm = (pr: PRRecord): PRForm => ({
 const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
 const workspaceQuery = useAdminPRWorkspace(isAdmin);
+const poisQuery = useAdminPois(isAdmin);
 const createPRMutation = useCreateAdminPR();
+const createMessageMutation = useCreateAdminPRMessage();
+const updateMessageMutation = useUpdateAdminPRMessage();
+const deleteMessageMutation = useDeleteAdminPRMessage();
 const updatePRContentMutation = useUpdateAdminPRContent();
 const updatePRStatusMutation = useUpdateAdminPRStatus();
 const updatePRVisibilityMutation = useUpdateAdminPRVisibility();
@@ -427,10 +617,19 @@ const selectedPRIdRaw = ref("");
 const isCreatingPR = ref(false);
 const prForm = ref<PRForm>(emptyPRForm());
 const lastAppliedType = ref<string | null>(null);
+const messageDraftBody = ref("");
+const messageActionError = ref<string | null>(null);
+const editingMessageId = ref<number | null>(null);
+const editingMessageBody = ref("");
 
 const workspace = computed<Workspace | null>(() => workspaceQuery.data.value ?? null);
 const prs = computed<PRRecord[]>(() => workspace.value?.prs ?? []);
 const typeOptions = computed(() => workspace.value?.typeOptions ?? []);
+const poiOptions = computed<string[]>(() =>
+  [...(poisQuery.data.value ?? [])]
+    .map((poi) => poi.id)
+    .sort((left, right) => left.localeCompare(right, "zh-CN")),
+);
 
 const selectedPRId = computed<number | null>(() => {
   const parsed = Number(selectedPRIdRaw.value);
@@ -440,6 +639,7 @@ const selectedPRId = computed<number | null>(() => {
 const selectedPR = computed<PRRecord | null>(
   () => prs.value.find((pr) => pr.prId === selectedPRId.value) ?? null,
 );
+const messagesQuery = useAdminPRMessages(selectedPRId);
 
 const matchedTypeOption = computed(
   () =>
@@ -447,6 +647,16 @@ const matchedTypeOption = computed(
       (option) => option.type.trim() === prForm.value.type.trim(),
     ) ?? null,
 );
+
+const filterLocationOptions = computed(() => poiOptions.value);
+
+const formLocationOptions = computed(() => {
+  const matchedLocations = matchedTypeOption.value?.locationOptions ?? [];
+  if (matchedLocations.length > 0) {
+    return matchedLocations;
+  }
+  return poiOptions.value;
+});
 
 const filteredPRs = computed(() => {
   const normalizedType = filters.value.type.trim().toLowerCase();
@@ -489,6 +699,8 @@ const filteredPRs = computed(() => {
     return true;
   });
 });
+
+const messageItems = computed(() => messagesQuery.data.value?.items ?? []);
 
 const resolvedTimeWindow = computed<[string | null, string | null]>(() => [
   toIsoDateTime(prForm.value.startAt),
@@ -561,6 +773,10 @@ const mutationErrorMessage = computed(
     null,
 );
 
+watch([messageDraftBody, editingMessageBody], () => {
+  messageActionError.value = null;
+});
+
 watch(
   prs,
   (nextPRs) => {
@@ -580,6 +796,10 @@ watch(
 watch(
   [selectedPR, isCreatingPR],
   ([pr, creating]) => {
+    messageDraftBody.value = "";
+    messageActionError.value = null;
+    editingMessageId.value = null;
+    editingMessageBody.value = "";
     if (creating || !pr) {
       prForm.value = emptyPRForm();
       lastAppliedType.value = null;
@@ -638,6 +858,85 @@ const resetMutationErrors = () => {
   updatePRContentMutation.reset();
   updatePRStatusMutation.reset();
   updatePRVisibilityMutation.reset();
+};
+
+const handleSendSystemMessage = async () => {
+  if (selectedPRId.value === null) return;
+
+  const body = messageDraftBody.value.trim();
+  if (!body) return;
+
+  messageActionError.value = null;
+  try {
+    await createMessageMutation.mutateAsync({
+      prId: selectedPRId.value,
+      input: { body },
+    });
+    messageDraftBody.value = "";
+  } catch (error) {
+    messageActionError.value =
+      error instanceof Error ? error.message : t("common.operationFailed");
+  }
+};
+
+const resolveMessageAuthor = (
+  item: AdminPRMessagesResponse["items"][number],
+) => item.author.nickname?.trim() || item.author.label;
+
+const formatMessageTime = (iso: string) => formatLocalDateTimeValue(iso) ?? iso;
+
+const isMessageEdited = (item: AdminPRMessagesResponse["items"][number]) =>
+  item.updatedAt !== item.createdAt;
+
+const beginEditMessage = (messageId: number, body: string) => {
+  editingMessageId.value = messageId;
+  editingMessageBody.value = body;
+  messageActionError.value = null;
+};
+
+const cancelEditMessage = () => {
+  editingMessageId.value = null;
+  editingMessageBody.value = "";
+  messageActionError.value = null;
+};
+
+const handleSaveMessageEdit = async (messageId: number) => {
+  if (selectedPRId.value === null) return;
+
+  const body = editingMessageBody.value.trim();
+  if (!body) return;
+
+  messageActionError.value = null;
+  try {
+    await updateMessageMutation.mutateAsync({
+      prId: selectedPRId.value,
+      messageId,
+      input: { body },
+    });
+    cancelEditMessage();
+  } catch (error) {
+    messageActionError.value =
+      error instanceof Error ? error.message : t("common.operationFailed");
+  }
+};
+
+const handleDeleteMessage = async (messageId: number) => {
+  if (selectedPRId.value === null) return;
+  if (!window.confirm(t("adminPRMessages.deleteConfirm"))) return;
+
+  messageActionError.value = null;
+  try {
+    await deleteMessageMutation.mutateAsync({
+      prId: selectedPRId.value,
+      messageId,
+    });
+    if (editingMessageId.value === messageId) {
+      cancelEditMessage();
+    }
+  } catch (error) {
+    messageActionError.value =
+      error instanceof Error ? error.message : t("common.operationFailed");
+  }
 };
 
 const handleSavePR = async () => {
@@ -734,6 +1033,10 @@ const handleSavePR = async () => {
   color: var(--sys-color-on-surface-variant);
 }
 
+.stack--main {
+  width: 100%;
+}
+
 .panel {
   padding: var(--sys-spacing-lg);
   border: 1px solid var(--sys-color-outline-variant);
@@ -752,6 +1055,12 @@ const handleSavePR = async () => {
   color: var(--sys-color-on-surface-variant);
 }
 
+.empty-state {
+  padding: var(--sys-spacing-med);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface-container-low);
+}
+
 .error-message {
   margin: 0;
   @include mx.pu-font(body-medium);
@@ -766,10 +1075,20 @@ const handleSavePR = async () => {
   flex-wrap: wrap;
 }
 
+.section-header--top {
+  align-items: flex-start;
+}
+
 .selection-list--grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--sys-spacing-sm);
+}
+
+.selection-list--scroll {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: var(--sys-spacing-xs);
 }
 
 .field {
@@ -795,6 +1114,52 @@ const handleSavePR = async () => {
 .field-textarea {
   min-height: 96px;
   resize: vertical;
+}
+
+.stack--tight {
+  gap: var(--sys-spacing-xs);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actions--inline {
+  gap: var(--sys-spacing-xs);
+  flex-wrap: wrap;
+}
+
+.admin-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+  max-height: 24rem;
+  overflow-y: auto;
+  padding-right: var(--sys-spacing-xs);
+}
+
+.admin-message-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-sm);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-sm);
+  background: var(--sys-color-surface);
+}
+
+.message-author {
+  @include mx.pu-font(label-medium);
+  color: var(--sys-color-on-surface);
+}
+
+.message-body {
+  margin: 0;
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .grid-2 {

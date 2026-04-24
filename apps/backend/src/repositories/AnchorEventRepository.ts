@@ -47,6 +47,14 @@ export class AnchorEventRepository {
       .orderBy(desc(anchorEvents.createdAt));
   }
 
+  async findOneByType(type: string): Promise<AnchorEvent | null> {
+    const result = await db
+      .select()
+      .from(anchorEvents)
+      .where(eq(anchorEvents.type, type));
+    return result[0] ?? null;
+  }
+
   async updateStatus(
     id: AnchorEventId,
     status: AnchorEventStatus,

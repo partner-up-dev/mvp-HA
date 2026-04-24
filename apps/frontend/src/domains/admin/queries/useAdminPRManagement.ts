@@ -8,6 +8,8 @@ type AdminApi = typeof adminClient.api.admin;
 type PRWorkspaceRoute = AdminApi["pr"]["workspace"];
 type PRsRoute = AdminApi["prs"];
 type PRRoute = PRsRoute[":id"];
+type PRMessagesRoute = PRRoute["messages"];
+type PRMessageRoute = PRMessagesRoute[":messageId"];
 
 const readErrorMessage = async (
   response: Response,
@@ -37,6 +39,13 @@ export type UpdateAdminPRVisibilityResponse = InferResponseType<
 
 export type CreateAdminPRMessageResponse = InferResponseType<
   PRRoute["messages"]["$post"]
+>;
+export type AdminPRMessagesResponse = InferResponseType<PRMessagesRoute["$get"]>;
+export type UpdateAdminPRMessageResponse = InferResponseType<
+  PRMessageRoute["$patch"]
+>;
+export type DeleteAdminPRMessageResponse = InferResponseType<
+  PRMessageRoute["$delete"]
 >;
 
 export type AdminCreatePRInput = {
@@ -79,6 +88,10 @@ export type AdminCreatePRMessageInput = {
   body: string;
 };
 
+export type AdminUpdatePRMessageInput = {
+  body: string;
+};
+
 export const useAdminPRWorkspace = (enabled: MaybeRef<boolean> = true) =>
   useQuery<AdminPRWorkspaceResponse>({
     queryKey: queryKeys.admin.prWorkspace(),
@@ -90,6 +103,25 @@ export const useAdminPRWorkspace = (enabled: MaybeRef<boolean> = true) =>
       return await res.json();
     },
     enabled: computed(() => unref(enabled)),
+  });
+
+export const useAdminPRMessages = (prId: MaybeRef<number | null>) =>
+  useQuery<AdminPRMessagesResponse>({
+    queryKey: computed(() => queryKeys.admin.prMessages(unref(prId))),
+    queryFn: async () => {
+      const resolvedPrId = unref(prId);
+      if (resolvedPrId === null) {
+        throw new Error("缺少 PR");
+      }
+      const res = await adminClient.api.admin.prs[":id"].messages.$get({
+        param: { id: resolvedPrId.toString() },
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "取得 PR 留言失敗"));
+      }
+      return await res.json();
+    },
+    enabled: computed(() => unref(prId) !== null),
   });
 
 export const useCreateAdminPR = () => {
@@ -233,6 +265,67 @@ export const useCreateAdminPRMessage = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.prMessages(variables.prId),
+      });
+    },
+  });
+};
+
+export const useUpdateAdminPRMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    UpdateAdminPRMessageResponse,
+    Error,
+    { prId: number; messageId: number; input: AdminUpdatePRMessageInput }
+  >({
+    mutationFn: async ({ prId, messageId, input }) => {
+      const res = await adminClient.api.admin.prs[":id"].messages[
+        ":messageId"
+      ].$patch({
+        param: { id: prId.toString(), messageId: messageId.toString() },
+        json: input,
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "更新留言失敗"));
+      }
+      return await res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.prMessages(variables.prId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.messages(variables.prId),
+      });
+    },
+  });
+};
+
+export const useDeleteAdminPRMessage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    DeleteAdminPRMessageResponse,
+    Error,
+    { prId: number; messageId: number }
+  >({
+    mutationFn: async ({ prId, messageId }) => {
+      const res = await adminClient.api.admin.prs[":id"].messages[
+        ":messageId"
+      ].$delete({
+        param: { id: prId.toString(), messageId: messageId.toString() },
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "刪除留言失敗"));
+      }
+      return await res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.prMessages(variables.prId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.messages(variables.prId),
       });
     },
   });

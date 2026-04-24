@@ -1,8 +1,8 @@
 # AGENTS.md of PartnerUp MVP
 
-PartnerUp helps users find a partner (da zi) effectively and safely.
+PartnerUp helps users find a partner (搭子) effectively and safely.
 
-This repository is a pnpm workspace with two product units:
+This repository is a pnpm workspace with two units:
 
 - `apps/backend`
 - `apps/frontend`
@@ -106,7 +106,7 @@ Pause and ask for human confirmation when:
 - Use GitHub CLI (`gh`) for GitHub operations and issue workflows.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
 - Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.
-- Read commit and release policy at `./CONTRIBUTING.md`
+- Follow `./CONTRIBUTING.md` for commit message format and release policy.
 
 ## Coding Guidelines
 

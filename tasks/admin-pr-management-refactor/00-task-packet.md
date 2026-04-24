@@ -66,6 +66,11 @@
   - `location`
   - `status`
 - `PR.type` remains arbitrary text with selector-style suggestions from known `AnchorEvent.type`.
+- `AnchorEvent.type` is unique across events.
+- Admin PR location candidates follow:
+  - search filter location suggestions come from global POIs
+  - PR form location suggestions come from the matched `AnchorEvent` location pool when `PR.type` matches an event type
+  - PR form falls back to global POIs when `PR.type` does not match any event type
 
 ## Implemented Surface Changes
 
@@ -88,13 +93,20 @@
     - PR content editing
     - PR status updates
     - PR visibility updates
+    - sending system messages for the currently selected PR
+  - admin content editing bypasses the normal PR status editability guard and preserves the current PR status
   - `type` input is `input + datalist`
   - matching `AnchorEvent.type` suggestions prefill:
     - default min/max partners
     - default participation policy values
 - `PR 系统留言`
-  - route remains `/admin/pr-messages`
-  - continues to work from anchor-event workspace context for now
+  - merged into the `PR 管理` page as a dedicated `留言` card under PR create/edit
+  - `/admin/pr-messages` remains only as a redirect alias to `/admin/pr`
+  - the card now owns:
+    - PR message listing
+    - admin message editing
+    - admin message deletion
+    - sending system messages
 
 ## Backend Reality
 
@@ -108,6 +120,9 @@
   - `PATCH /api/admin/prs/:id/status`
   - `PATCH /api/admin/prs/:id/visibility`
   - `POST /api/admin/prs/:id/messages`
+  - `GET /api/admin/prs/:id/messages`
+  - `PATCH /api/admin/prs/:id/messages/:messageId`
+  - `DELETE /api/admin/prs/:id/messages/:messageId`
   - `POST /api/admin/prs/:id/partners/:partnerId/release`
 - New admin PR workspace use-case:
   - `getAdminPRWorkspace`
@@ -133,6 +148,9 @@
   - `status`
   - `startAt`
   - `endAt`
+- `AdminPRPage` location inputs use `input + datalist`
+  - filter location suggestions come from POI ids
+  - form location suggestions come from event-scoped location pool or POI fallback
 - `AdminPRPage` edit form controls:
   - title
   - type
@@ -149,4 +167,7 @@
 
 - Added schema migration:
   - `apps/backend/drizzle/0028_admin_anchor_event_participation_defaults.sql`
+  - `apps/backend/drizzle/0029_anchor_event_type_unique.sql`
+  - `apps/backend/drizzle/0030_pr_messages_admin_edit.sql`
 - Migration adds and backfills event-level default participation policy columns.
+- Migration enforces unique `AnchorEvent.type`.

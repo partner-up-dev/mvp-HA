@@ -1058,6 +1058,8 @@ export interface MessageSchema {
   adminPRMessages: {
     title: string;
     subtitle: string;
+    panelTitle: string;
+    panelHint: string;
     eventsTitle: string;
     batchesTitle: string;
     prsTitle: string;
@@ -1065,6 +1067,7 @@ export interface MessageSchema {
     composerHint: string;
     emptyEvents: string;
     emptyBatches: string;
+    emptyMessages: string;
     emptyPRs: string;
     selectEventHint: string;
     selectBatchHint: string;
@@ -1079,6 +1082,13 @@ export interface MessageSchema {
     messagePlaceholder: string;
     messageAction: string;
     messageSending: string;
+    editAction: string;
+    deleteAction: string;
+    saveEditAction: string;
+    messageSaving: string;
+    messageDeleting: string;
+    editedAt: string;
+    deleteConfirm: string;
   };
   adminBookingExecution: {
     title: string;

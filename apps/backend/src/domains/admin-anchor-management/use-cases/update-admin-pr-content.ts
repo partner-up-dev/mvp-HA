@@ -70,6 +70,10 @@ export async function updateAdminPRContent(
       notes: input.notes,
     },
     null,
+    {
+      bypassEditableStatusGuard: true,
+      preserveStatus: true,
+    },
   );
 
   await prRepo.updatePartnerRules(prId, {

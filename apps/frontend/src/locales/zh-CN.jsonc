@@ -758,6 +758,8 @@
   "adminPRMessages": {
     "title": "PR 系统留言",
     "subtitle": "选择一个具体 PR，向当前参与者发送系统消息。",
+    "panelTitle": "留言",
+    "panelHint": "查阅、编辑、删除当前 PR 下的留言，并发送系统留言。",
     "eventsTitle": "活动列表",
     "timeWindowsTitle": "时间窗口列表",
     "prsTitle": "PR 列表",
@@ -765,6 +767,7 @@
     "composerHint": "发送后，用户会在对应 PR 的留言页中看到这条系统消息。",
     "emptyEvents": "当前还没有活动。",
     "emptyTimeWindows": "当前活动还没有时间窗口。",
+    "emptyMessages": "当前 PR 还没有留言。",
     "emptyPRs": "当前时间窗口还没有 PR。",
     "selectEventHint": "请先选择一个活动。",
     "selectBatchHint": "请先选择一个时间窗口。",
@@ -778,7 +781,14 @@
     "messageLabel": "留言内容",
     "messagePlaceholder": "例如：本场已完成预订，请提前 10 分钟到场集合。",
     "messageAction": "发送系统留言",
-    "messageSending": "发送中..."
+    "messageSending": "发送中...",
+    "editAction": "编辑",
+    "deleteAction": "删除",
+    "saveEditAction": "保存修改",
+    "messageSaving": "保存中...",
+    "messageDeleting": "删除中...",
+    "editedAt": "已编辑 {time}",
+    "deleteConfirm": "确认删除这条留言？"
   },
   "adminBookingExecution": {
     "title": "预订执行控制台",

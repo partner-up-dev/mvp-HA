@@ -21,12 +21,6 @@
         {{ t("adminCommon.navPR") }}
       </ChoiceCard>
       <ChoiceCard
-        :to="{ name: 'admin-pr-messages' }"
-        class="admin-navigation-card__link"
-      >
-        {{ t("adminCommon.navPRMessages") }}
-      </ChoiceCard>
-      <ChoiceCard
         :to="{ name: 'admin-booking-support' }"
         class="admin-navigation-card__link"
       >

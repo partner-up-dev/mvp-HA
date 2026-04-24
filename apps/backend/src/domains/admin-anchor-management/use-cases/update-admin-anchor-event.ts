@@ -49,6 +49,13 @@ export async function updateAdminAnchorEvent(
     joinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
   });
 
+  const existing = await anchorEventRepo.findOneByType(input.type);
+  if (existing && existing.id !== eventId) {
+    throw new HTTPException(409, {
+      message: `Anchor event type already exists: ${input.type}`,
+    });
+  }
+
   const updated = await anchorEventRepo.update(eventId, {
     title: input.title,
     type: input.type,
