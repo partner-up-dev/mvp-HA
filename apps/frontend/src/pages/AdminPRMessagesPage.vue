@@ -203,10 +203,10 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCard.vue";
 import {
-  type AdminPRWorkspaceResponse,
-  useAdminPRWorkspace,
-  useCreateAdminPRMessage,
-} from "@/domains/admin/queries/useAdminAnchorManagement";
+  type AdminAnchorEventWorkspaceResponse,
+  useAdminAnchorEventWorkspace,
+} from "@/domains/admin/queries/useAdminAnchorEvents";
+import { useCreateAdminPRMessage } from "@/domains/admin/queries/useAdminPRManagement";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
@@ -215,14 +215,14 @@ import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 
-type Workspace = NonNullable<AdminPRWorkspaceResponse>;
+type Workspace = NonNullable<AdminAnchorEventWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
 type BatchRecord = EventRecord["timeWindows"][number];
 type PRRecord = BatchRecord["prs"][number];
 
 const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
-const workspaceQuery = useAdminPRWorkspace(isAdmin);
+const workspaceQuery = useAdminAnchorEventWorkspace(isAdmin);
 const createMessageMutation = useCreateAdminPRMessage();
 
 const selectedEventIdRaw = ref("");

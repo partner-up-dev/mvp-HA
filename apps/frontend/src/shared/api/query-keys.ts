@@ -32,6 +32,7 @@ export const queryKeys = {
     byIds: (idsCsv: string) => ["poi", "by-ids", idsCsv] as const,
   },
   admin: {
+    anchorEventWorkspace: () => ["admin", "anchor-events", "workspace"] as const,
     pois: () => ["admin", "pois"] as const,
     poisByIds: (idsCsv: string) => ["admin", "pois", "by-ids", idsCsv] as const,
     bookingSupport: (eventId: number | null) =>

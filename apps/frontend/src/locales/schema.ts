@@ -868,6 +868,7 @@ export interface MessageSchema {
   adminCommon: {
     title: string;
     subtitle: string;
+    navAnchorEvents: string;
     navPR: string;
     navPRMessages: string;
     navBookingSupport: string;
@@ -956,6 +957,19 @@ export interface MessageSchema {
     removeImageAction: string;
     imageAlt: string;
   };
+  adminAnchorEvents: {
+    title: string;
+    subtitle: string;
+    eventsTitle: string;
+    newEventAction: string;
+    emptyEvents: string;
+    activityInfoTitle: string;
+    locationPoolsTitle: string;
+    timePoolStrategyTitle: string;
+    timeWindowsTitle: string;
+    participationDefaultsTitle: string;
+    participationDefaultsDescription: string;
+  };
   adminPR: {
     title: string;
     subtitle: string;
@@ -1017,6 +1031,20 @@ export interface MessageSchema {
     createPRAction: string;
     prListTitle: string;
     partnerCountWithValue: string;
+    filtersTitle: string;
+    filteredCountLabel: string;
+    searchTypeLabel: string;
+    searchLocationLabel: string;
+    searchStatusLabel: string;
+    searchStatusAll: string;
+    searchStartLabel: string;
+    searchEndLabel: string;
+    emptySearchResults: string;
+    prTimeStartLabel: string;
+    prTimeEndLabel: string;
+    typeDefaultsHint: string;
+    timeWindowRequired: string;
+    timeWindowValidationStartBeforeEnd: string;
     statusActive: string;
     statusArchived: string;
     statusPaused: string;

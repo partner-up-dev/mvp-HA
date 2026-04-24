@@ -126,9 +126,9 @@ import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
-  type AdminPRWorkspaceResponse,
-  useAdminPRWorkspace,
-} from "@/domains/admin/queries/useAdminAnchorManagement";
+  type AdminAnchorEventWorkspaceResponse,
+  useAdminAnchorEventWorkspace,
+} from "@/domains/admin/queries/useAdminAnchorEvents";
 import {
   type AdminBookingSupportConfigResponse,
   type EventSupportResourceInput,
@@ -141,12 +141,12 @@ import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDat
 type EditableEventResource = EventSupportResourceInput & { detailRulesText: string };
 type AdminConfig = NonNullable<AdminBookingSupportConfigResponse>;
 type AdminEventResource = AdminConfig["resources"][number];
-type AdminWorkspace = NonNullable<AdminPRWorkspaceResponse>;
+type AdminWorkspace = NonNullable<AdminAnchorEventWorkspaceResponse>;
 type AdminAnchorEventRecord = AdminWorkspace["events"][number];
 
 const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
-const workspaceQuery = useAdminPRWorkspace(isAdmin);
+const workspaceQuery = useAdminAnchorEventWorkspace(isAdmin);
 const replaceEventResourcesMutation = useReplaceEventBookingSupportResources();
 const selectedEventIdRaw = ref("");
 const editableResources = ref<EditableEventResource[]>([]);

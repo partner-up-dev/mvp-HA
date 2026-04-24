@@ -18,6 +18,8 @@ const UserProfilePage = () => import("@/pages/UserProfilePage.vue");
 const PRBookingSupportPage = () =>
   import("@/pages/PRBookingSupportPage.vue");
 const AdminLoginPage = () => import("@/pages/AdminLoginPage.vue");
+const AdminAnchorEventPage = () =>
+  import("@/pages/AdminAnchorEventPage.vue");
 const AdminPRPage = () => import("@/pages/AdminPRPage.vue");
 const AdminPRMessagesPage = () =>
   import("@/pages/AdminPRMessagesPage.vue");
@@ -109,6 +111,15 @@ const routes: RouteRecordRaw[] = [
     component: AdminLoginPage,
     meta: {
       wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/admin/anchor-events",
+    name: "admin-anchor-events",
+    component: AdminAnchorEventPage,
+    meta: {
+      wechatSharePolicy: "route",
+      requiresAdminAuth: true,
     },
   },
   {

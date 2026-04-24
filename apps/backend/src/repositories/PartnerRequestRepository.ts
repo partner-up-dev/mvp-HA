@@ -46,6 +46,13 @@ export class PartnerRequestRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async listAll(): Promise<PartnerRequest[]> {
+    return await db
+      .select()
+      .from(partnerRequests)
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async findVisibleByType(type: string): Promise<PartnerRequest[]> {
     return await db
       .select()

@@ -2,6 +2,7 @@ export * from "./use-cases/create-admin-anchor-event";
 export * from "./use-cases/create-admin-pr";
 export * from "./use-cases/create-admin-pr-message";
 export * from "./use-cases/get-admin-anchor-workspace";
+export * from "./use-cases/get-admin-pr-workspace";
 export * from "./use-cases/update-admin-anchor-event";
 export * from "./use-cases/update-admin-pr-content";
 export * from "./use-cases/release-admin-pr-partner";

@@ -1,27 +1,18 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import type { AnchorEventPRContext } from "../../../repositories/AnchorEventPRContextRepository";
 import { initializeSlotsForPR } from "../../pr/services";
-import { materializePRSupportResources } from "../../pr-booking-support";
+import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import {
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
-  type AnchorEventId,
-  type TimeWindowEntry,
-} from "../../../entities/anchor-event";
-import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
-import { countActiveVisiblePRsByEventTimeWindowAndLocationSource } from "../../pr/services";
-import { assertManualPartnerBoundsValid } from "../../pr/services";
+  assertManualPartnerBoundsValid,
+  validateAnchorParticipationPolicyOffsets,
+} from "../../pr/services";
 import type { PartnerRequest } from "../../../entities";
-import { eventOwnsTimeWindow } from "../../anchor-event/services/time-window-pool";
 
 const prRepo = new PartnerRequestRepository();
-const anchorEventRepo = new AnchorEventRepository();
 
 export interface CreateAdminPRInput {
   title: string | null;
-  type: string | null;
+  type: string;
   location: string;
   minPartners: number | null;
   maxPartners: number | null;
@@ -34,52 +25,31 @@ export interface CreateAdminPRInput {
 
 export interface CreateAdminPROutput {
   root: PartnerRequest;
-  anchor: AnchorEventPRContext;
 }
 
+const assertTimeWindowValid = (timeWindow: TimeWindowEntry) => {
+  if (timeWindow[0] === null || timeWindow[1] === null) {
+    return;
+  }
+
+  const startAt = new Date(timeWindow[0]);
+  const endAt = new Date(timeWindow[1]);
+  if (
+    Number.isNaN(startAt.getTime()) ||
+    Number.isNaN(endAt.getTime()) ||
+    startAt.getTime() > endAt.getTime()
+  ) {
+    throw new HTTPException(400, {
+      message: "PR time window is invalid",
+    });
+  }
+};
+
 export async function createAdminPR(
-  anchorEventId: AnchorEventId,
   timeWindow: TimeWindowEntry,
   input: CreateAdminPRInput,
 ): Promise<CreateAdminPROutput> {
-  const event = await anchorEventRepo.findById(anchorEventId);
-  if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
-  }
-  if (!eventOwnsTimeWindow(event, timeWindow)) {
-    throw new HTTPException(400, {
-      message: "Anchor event time window is not available",
-    });
-  }
-
-  const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
-  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
-  const matchedUserLocation = userLocationPool.find(
-    (entry) => entry.id === input.location,
-  );
-  const inSystemPool = systemLocationPool.includes(input.location);
-  if (!matchedUserLocation && !inSystemPool) {
-    throw new HTTPException(400, {
-      message: "PR location must belong to the selected event location pool",
-    });
-  }
-  const locationSource = matchedUserLocation ? "USER" : "SYSTEM";
-  if (matchedUserLocation) {
-    const activeCount =
-      await countActiveVisiblePRsByEventTimeWindowAndLocationSource(
-        {
-          anchorEventId: event.id,
-          timeWindow,
-          location: input.location,
-          locationSource: "USER",
-        },
-      );
-    if (activeCount >= matchedUserLocation.perBatchCap) {
-      throw new HTTPException(409, {
-        message: "Selected location has reached per-batch cap",
-      });
-    }
-  }
+  assertTimeWindowValid(timeWindow);
   validateAnchorParticipationPolicyOffsets({
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
@@ -89,7 +59,7 @@ export async function createAdminPR(
 
   const createdRoot = await prRepo.create({
     title: input.title,
-    type: input.type?.trim() || event.type,
+    type: input.type.trim(),
     time: timeWindow,
     location: input.location,
     status: "OPEN",
@@ -103,31 +73,9 @@ export async function createAdminPR(
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
 
-  await initializeSlotsForPR(
-    createdRoot.id,
-    null,
-  );
-
-  await materializePRSupportResources({
-    prId: createdRoot.id,
-    anchorEventId: event.id,
-    location: createdRoot.location,
-    timeWindow: createdRoot.time,
-  });
+  await initializeSlotsForPR(createdRoot.id, null);
 
   return {
     root: createdRoot,
-    anchor: {
-      prId: createdRoot.id,
-      anchorEventId: event.id,
-      timeWindow,
-      locationSource,
-      visibilityStatus: "VISIBLE",
-      confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
-      confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
-      joinLockOffsetMinutes: input.joinLockOffsetMinutes,
-      bookingTriggeredAt: null,
-      autoHideAt: null,
-    },
   };
 }

@@ -18,7 +18,8 @@ import {
   createAdminAnchorEvent,
   createAdminPR,
   createAdminPRMessage,
-  getAdminAnchorWorkspace,
+  getAdminAnchorEventWorkspace,
+  getAdminPRWorkspace,
   releaseAdminPRPartner,
   updateAdminAnchorEvent,
   updateAdminPRContent,
@@ -55,6 +56,9 @@ const adminAnchorEventInputSchema = z.object({
   timePoolConfig: anchorEventTimePoolConfigSchema,
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
+  defaultConfirmationStartOffsetMinutes: z.number().int().nonnegative(),
+  defaultConfirmationEndOffsetMinutes: z.number().int().nonnegative(),
+  defaultJoinLockOffsetMinutes: z.number().int().nonnegative(),
   coverImage: z.string().trim().nullable(),
   betaGroupQrCode: z.string().trim().nullable(),
   status: anchorEventStatusSchema,
@@ -63,7 +67,7 @@ const adminAnchorEventInputSchema = z.object({
 const adminCreatePRInputSchema = z.object({
   timeWindow: timeWindowSchema,
   title: z.string().trim().nullable(),
-  type: z.string().trim().nullable(),
+  type: z.string().trim().min(1),
   location: z.string().trim().min(1),
   minPartners: z.number().int().nonnegative().nullable(),
   maxPartners: z.number().int().nonnegative().nullable(),
@@ -77,6 +81,7 @@ const adminCreatePRInputSchema = z.object({
 const adminUpdatePRContentSchema = z.object({
   title: z.string().trim().nullable(),
   type: z.string().trim().min(1),
+  timeWindow: timeWindowSchema,
   location: z.string().trim().nullable(),
   minPartners: z.number().int().nonnegative().nullable(),
   maxPartners: z.number().int().nonnegative().nullable(),
@@ -100,8 +105,12 @@ const adminManualReleaseSchema = z.object({
 
 export const adminAnchorManagementRoute = app
   .use("*", adminAuthMiddleware)
+  .get("/anchor-events/workspace", async (c) => {
+    const result = await getAdminAnchorEventWorkspace();
+    return c.json(result);
+  })
   .get("/pr/workspace", async (c) => {
-    const result = await getAdminAnchorWorkspace();
+    const result = await getAdminPRWorkspace();
     return c.json(result);
   })
   .post(
@@ -143,16 +152,13 @@ export const adminAnchorManagementRoute = app
     },
   )
   .post(
-    "/anchor-events/:eventId/prs",
-    zValidator("param", eventIdParamSchema),
+    "/prs",
     zValidator("json", adminCreatePRInputSchema),
     async (c) => {
-      const { eventId } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await createAdminPR(eventId, payload.timeWindow, {
+      const result = await createAdminPR(payload.timeWindow, {
         ...payload,
         title: payload.title || null,
-        type: payload.type || null,
         notes: payload.notes || null,
       });
       return c.json(result);

@@ -66,6 +66,9 @@ export type AdminAnchorEventSummary = {
   };
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationStartOffsetMinutes: number | null;
+  defaultConfirmationEndOffsetMinutes: number | null;
+  defaultJoinLockOffsetMinutes: number | null;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   betaGroupQrCode: string | null;
@@ -75,7 +78,7 @@ export type AdminAnchorEventSummary = {
   timeWindows: AdminAnchorTimeWindowSummary[];
 };
 
-export interface AdminAnchorWorkspace {
+export interface AdminAnchorEventWorkspace {
   events: AdminAnchorEventSummary[];
 }
 
@@ -103,7 +106,7 @@ const toAdminPRSummary = async (
   createdAt: record.root.createdAt.toISOString(),
 });
 
-export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
+export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWorkspace> {
   const events = await anchorEventRepo.listAll();
 
   const eventSummaries = await Promise.all(
@@ -147,6 +150,11 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
         timePoolConfig: event.timePoolConfig,
         defaultMinPartners: event.defaultMinPartners ?? null,
         defaultMaxPartners: event.defaultMaxPartners ?? null,
+        defaultConfirmationStartOffsetMinutes:
+          event.defaultConfirmationStartOffsetMinutes ?? null,
+        defaultConfirmationEndOffsetMinutes:
+          event.defaultConfirmationEndOffsetMinutes ?? null,
+        defaultJoinLockOffsetMinutes: event.defaultJoinLockOffsetMinutes ?? null,
         timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,

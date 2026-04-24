@@ -7,7 +7,10 @@ import type {
   UserLocationEntry,
 } from "../../../entities";
 import { normalizeAnchorEventTimePoolConfig } from "../../../entities";
-import { assertManualPartnerBoundsValid } from "../../pr/services";
+import {
+  assertManualPartnerBoundsValid,
+  validateAnchorParticipationPolicyOffsets,
+} from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
 
@@ -20,6 +23,9 @@ export interface CreateAdminAnchorEventInput {
   timePoolConfig: AnchorEventTimePoolConfig;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationStartOffsetMinutes: number;
+  defaultConfirmationEndOffsetMinutes: number;
+  defaultJoinLockOffsetMinutes: number;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: AnchorEventStatus;
@@ -33,6 +39,12 @@ export async function createAdminAnchorEvent(
     input.defaultMaxPartners,
     0,
   );
+  validateAnchorParticipationPolicyOffsets({
+    confirmationStartOffsetMinutes:
+      input.defaultConfirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: input.defaultConfirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
+  });
 
   return await anchorEventRepo.create({
     title: input.title,
@@ -43,6 +55,11 @@ export async function createAdminAnchorEvent(
     timePoolConfig: normalizeAnchorEventTimePoolConfig(input.timePoolConfig),
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
+    defaultConfirmationStartOffsetMinutes:
+      input.defaultConfirmationStartOffsetMinutes,
+    defaultConfirmationEndOffsetMinutes:
+      input.defaultConfirmationEndOffsetMinutes,
+    defaultJoinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     status: input.status,

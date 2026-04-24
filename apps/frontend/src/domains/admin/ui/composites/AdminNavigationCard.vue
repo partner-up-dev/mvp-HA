@@ -9,6 +9,12 @@
 
     <nav class="admin-navigation-card__nav">
       <ChoiceCard
+        :to="{ name: 'admin-anchor-events' }"
+        class="admin-navigation-card__link"
+      >
+        {{ t("adminCommon.navAnchorEvents") }}
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-pr' }"
         class="admin-navigation-card__link"
       >

@@ -1,22 +1,16 @@
 import { HTTPException } from "hono/http-exception";
-import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
-import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { updatePRContent } from "../../pr";
-import {
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
-} from "../../../entities/anchor-event";
-import { materializePRSupportResources } from "../../pr-booking-support";
+import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
-import { countActiveVisiblePRsByEventTimeWindowAndLocationSource } from "../../pr/services";
+import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId } from "../../../entities";
 
-const eventContextRepo = new AnchorEventPRContextRepository();
-const anchorEventRepo = new AnchorEventRepository();
+const prRepo = new PartnerRequestRepository();
 
 export interface UpdateAdminPRContentInput {
   title: string | null;
   type: string;
+  timeWindow: TimeWindowEntry;
   location: string | null;
   minPartners: number | null;
   maxPartners: number | null;
@@ -27,53 +21,34 @@ export interface UpdateAdminPRContentInput {
   joinLockOffsetMinutes: number;
 }
 
+const assertTimeWindowValid = (timeWindow: TimeWindowEntry) => {
+  if (timeWindow[0] === null || timeWindow[1] === null) {
+    return;
+  }
+
+  const startAt = new Date(timeWindow[0]);
+  const endAt = new Date(timeWindow[1]);
+  if (
+    Number.isNaN(startAt.getTime()) ||
+    Number.isNaN(endAt.getTime()) ||
+    startAt.getTime() > endAt.getTime()
+  ) {
+    throw new HTTPException(400, {
+      message: "PR time window is invalid",
+    });
+  }
+};
+
 export async function updateAdminPRContent(
   prId: PRId,
   input: UpdateAdminPRContentInput,
 ) {
-  const eventContextRecord = await eventContextRepo.findRecordByPrId(prId);
-  if (!eventContextRecord) {
+  const existing = await prRepo.findById(prId);
+  if (!existing) {
     throw new HTTPException(404, { message: "PR not found" });
   }
 
-  const event = await anchorEventRepo.findById(
-    eventContextRecord.anchor.anchorEventId,
-  );
-  if (!event) {
-    throw new HTTPException(500, { message: "Anchor event missing" });
-  }
-
-  if (input.location) {
-    const systemLocationPool = normalizeSystemLocationPool(event.systemLocationPool);
-    const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
-    const matchedUserLocation = userLocationPool.find(
-      (entry) => entry.id === input.location,
-    );
-    const inSystemPool = systemLocationPool.includes(input.location);
-    if (!matchedUserLocation && !inSystemPool) {
-      throw new HTTPException(400, {
-        message: "PR location must belong to the selected event location pool",
-      });
-    }
-
-    if (matchedUserLocation) {
-      const effectiveActiveCount =
-        await countActiveVisiblePRsByEventTimeWindowAndLocationSource(
-          {
-            anchorEventId: event.id,
-            timeWindow: eventContextRecord.anchor.timeWindow,
-            location: input.location,
-            locationSource: "USER",
-            excludePrId: eventContextRecord.root.id,
-          },
-        );
-      if (effectiveActiveCount >= matchedUserLocation.perBatchCap) {
-        throw new HTTPException(409, {
-          message: "Selected location has reached per-batch cap",
-        });
-      }
-    }
-  }
+  assertTimeWindowValid(input.timeWindow);
   validateAnchorParticipationPolicyOffsets({
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
@@ -85,7 +60,7 @@ export async function updateAdminPRContent(
     {
       title: input.title ?? undefined,
       type: input.type,
-      time: eventContextRecord.anchor.timeWindow,
+      time: input.timeWindow,
       location: input.location,
       minPartners: input.minPartners,
       maxPartners: input.maxPartners,
@@ -97,17 +72,10 @@ export async function updateAdminPRContent(
     null,
   );
 
-  await eventContextRepo.updateParticipationPolicy(prId, {
+  await prRepo.updatePartnerRules(prId, {
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
-  });
-
-  await materializePRSupportResources({
-    prId,
-    anchorEventId: eventContextRecord.anchor.anchorEventId,
-    location: input.location,
-    timeWindow: eventContextRecord.anchor.timeWindow,
   });
 
   return updated;
