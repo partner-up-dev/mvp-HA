@@ -1,14 +1,15 @@
 <template>
-  <div v-if="hasTimeWindows" class="date-section">
+  <div class="date-section">
     <TabBar
+      v-if="dateTabs.length > 0"
       :items="dateTabs"
       :model-value="selectedDateKey ?? 'none'"
       :aria-label="t('anchorEvent.dateLabel')"
       @update:model-value="handleDateTabChange"
     />
 
-    <div v-if="selectedDateGroup" class="date-content" role="tabpanel">
-      <div class="batch-list" data-region="anchor-pr-list">
+    <div class="date-content" role="tabpanel">
+      <div class="batch-list" data-region="pr-list">
         <div v-if="visiblePRItems.length > 0" class="pr-list">
           <AnchorEventPRCard
             v-for="item in visiblePRItems"
@@ -19,12 +20,16 @@
           />
         </div>
         <div v-else class="empty-batch">
-          {{ t("anchorEvent.noPRsInSelectedDate") }}
+          {{
+            hasBrowseTimeWindows
+              ? t("anchorEvent.noPRsInSelectedDate")
+              : t("anchorEvent.noBatches")
+          }}
         </div>
       </div>
 
       <div class="batch-action-cards">
-        <AnchorPRCreateCard
+        <EventPRCreateCard
           :title="createCardTitle"
           :time-window-label="createCardSubtitleTimeLabel"
           :event-title="eventTitle"
@@ -37,7 +42,7 @@
           :error-message="createActionErrorMessage"
           @update:selected-time-window-key="handleSelectedTimeWindowChange"
           @create="handleCreateInList"
-          data-region="create-anchor-pr"
+          data-region="create-pr"
         />
         <AnchorEventBetaGroupCard
           :event-id="eventId"
@@ -54,10 +59,6 @@
       </div>
     </div>
   </div>
-
-  <div v-else class="empty-state">
-    {{ t("anchorEvent.noBatches") }}
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -65,7 +66,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
-import AnchorPRCreateCard from "@/domains/event/ui/primitives/AnchorPRCreateCard.vue";
+import EventPRCreateCard from "@/domains/event/ui/primitives/EventPRCreateCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
@@ -76,7 +77,9 @@ type DateTabItem = {
   tabClass?: string;
 };
 
-type AnchorEventTimeWindow = AnchorEventDetailResponse["timeWindows"][number];
+type AnchorEventTimeWindow =
+  AnchorEventDetailResponse["browseTimeWindows"][number];
+type CreateTimeWindow = AnchorEventDetailResponse["createTimeWindows"][number];
 type AnchorEventTimeWindowPR = AnchorEventTimeWindow["prs"][number];
 
 type DateGroupTimeWindowItem = {
@@ -97,13 +100,13 @@ type VisiblePRItem = {
 };
 
 type CreateTimeWindowChoice = {
-  entry: AnchorEventTimeWindow;
+  entry: CreateTimeWindow;
   optionLabel: string;
   subtitleLabel: string;
 };
 
 const props = defineProps<{
-  hasTimeWindows: boolean;
+  hasBrowseTimeWindows: boolean;
   dateTabs: DateTabItem[];
   selectedDateKey: string | null;
   selectedDateGroup: DateGroup | null;
@@ -148,36 +151,51 @@ const visiblePRItems = computed<VisiblePRItem[]>(() => {
   return items;
 });
 
-const isAvailableAnchorPR = (pr: AnchorEventTimeWindowPR): boolean =>
+const isJoinablePR = (pr: AnchorEventTimeWindowPR): boolean =>
   pr.status === "OPEN" || pr.status === "READY";
 
-const timeWindowHasAvailableAnchorPR = (entry: AnchorEventTimeWindow): boolean =>
-  entry.prs.some(isAvailableAnchorPR);
+const timeWindowHasJoinablePR = (entry: AnchorEventTimeWindow): boolean =>
+  entry.prs.some(isJoinablePR);
+
+const hasJoinablePRAtBrowseTimeWindowKey = (
+  group: DateGroup | null,
+  timeWindowKey: string,
+): boolean => {
+  const browseTimeWindow = group?.timeWindows.find(
+    ({ entry }) => entry.key === timeWindowKey,
+  )?.entry;
+  if (!browseTimeWindow) {
+    return false;
+  }
+
+  return timeWindowHasJoinablePR(browseTimeWindow);
+};
 
 const resolveDefaultCreateTimeWindowKey = (
   group: DateGroup | null,
+  createTimeWindowChoices: CreateTimeWindowChoice[],
 ): string | null => {
-  if (!group) {
+  if (createTimeWindowChoices.length === 0) {
     return null;
   }
 
-  const firstCreatableTimeWindowWithoutAvailablePR = group.timeWindows.find(
+  const firstCreatableTimeWindowWithoutAvailablePR = createTimeWindowChoices.find(
     ({ entry }) =>
       entry.locationOptions.some((option) => !option.disabled) &&
-      !timeWindowHasAvailableAnchorPR(entry),
+      !hasJoinablePRAtBrowseTimeWindowKey(group, entry.key),
   );
   if (firstCreatableTimeWindowWithoutAvailablePR) {
     return firstCreatableTimeWindowWithoutAvailablePR.entry.key;
   }
 
-  const firstCreatableTimeWindow = group.timeWindows.find(({ entry }) =>
+  const firstCreatableTimeWindow = createTimeWindowChoices.find(({ entry }) =>
     entry.locationOptions.some((option) => !option.disabled),
   );
   if (firstCreatableTimeWindow) {
     return firstCreatableTimeWindow.entry.key;
   }
 
-  return group.timeWindows[0]?.entry.key ?? null;
+  return createTimeWindowChoices[0]?.entry.key ?? null;
 };
 
 watch(
@@ -191,7 +209,10 @@ watch(
       return;
     }
 
-    const preferredTimeWindowKey = resolveDefaultCreateTimeWindowKey(group);
+    const preferredTimeWindowKey = resolveDefaultCreateTimeWindowKey(
+      group,
+      createTimeWindowChoices,
+    );
     if (
       preferredTimeWindowKey !== null &&
       createTimeWindowChoices.some(({ entry }) => entry.key === preferredTimeWindowKey)
@@ -249,26 +270,17 @@ const createTimeWindowLocationOptions = computed(
   () => selectedTimeWindowEntry.value?.locationOptions ?? [],
 );
 
-const hasAvailableAnchorPRInSelectedTimeWindow = computed(() => {
-  const entry = selectedTimeWindowEntry.value;
-  if (!entry) {
-    return false;
-  }
-
-  return timeWindowHasAvailableAnchorPR(entry);
-});
-
-const hasAvailableAnchorPRInSelectedDate = computed(() => {
+const hasJoinablePRInSelectedDate = computed(() => {
   const group = props.selectedDateGroup;
   if (!group) {
     return false;
   }
 
-  return group.timeWindows.some(({ entry }) => timeWindowHasAvailableAnchorPR(entry));
+  return group.timeWindows.some(({ entry }) => timeWindowHasJoinablePR(entry));
 });
 
 const createCardTitle = computed(() => {
-  if (hasAvailableAnchorPRInSelectedDate.value) {
+  if (hasJoinablePRInSelectedDate.value) {
     return t("anchorEvent.createCard.title");
   }
 
@@ -276,11 +288,11 @@ const createCardTitle = computed(() => {
 });
 
 const shouldAutoExpandCreateCard = computed(() => {
-  if (!props.selectedDateGroup) {
+  if (props.createTimeWindowChoices.length === 0) {
     return false;
   }
 
-  return !hasAvailableAnchorPRInSelectedDate.value;
+  return !hasJoinablePRInSelectedDate.value;
 });
 
 const createCardAutoExpandContextKey = computed(

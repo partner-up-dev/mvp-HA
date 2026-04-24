@@ -1,7 +1,6 @@
 /**
- * Use-case: Get a single Anchor Event with its discoverable PRs.
- * Public event detail groups discoverable PRs by time-window facts rather than
- * exposing batch rows as the public contract.
+ * Use-case: Get a single Anchor Event with event-owned create assistance and
+ * same-type PR browsing data.
  */
 
 import { HTTPException } from "hono/http-exception";
@@ -18,16 +17,16 @@ import {
 } from "../../../entities/anchor-event";
 import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import {
-  isActiveVisibleAnchorPRStatus,
+  isActiveVisiblePRStatus,
+  readVisiblePartnerRequestsByType,
   readVisiblePartnerRequestsByTypeAndTime,
 } from "../../pr/services";
 import { listAnchorEventTimeWindows } from "../services/time-window-pool";
-import { isEventScopedLocation } from "../services/event-scope";
 
 const eventRepo = new AnchorEventRepository();
 const partnerRepo = new PartnerRepository();
 
-export interface AnchorPRSummary {
+export interface EventPRSummary {
   id: number;
   title: string | null;
   type: string;
@@ -42,10 +41,15 @@ export interface AnchorPRSummary {
   createdAt: string;
 }
 
-export interface TimeWindowDetail {
+export interface BrowseTimeWindowDetail {
   key: string;
   timeWindow: [string | null, string | null];
-  prs: AnchorPRSummary[];
+  prs: EventPRSummary[];
+}
+
+export interface CreateTimeWindowDetail {
+  key: string;
+  timeWindow: [string | null, string | null];
   locationOptions: LocationOption[];
 }
 
@@ -69,12 +73,22 @@ export interface AnchorEventDetail {
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: string;
-  timeWindows: TimeWindowDetail[];
+  browseTimeWindows: BrowseTimeWindowDetail[];
+  createTimeWindows: CreateTimeWindowDetail[];
   exhausted: boolean;
   createdAt: string;
 }
 
-const toPRSummary = (pr: PartnerRequest): AnchorPRSummary => ({
+const trimNullable = (value: string | null | undefined): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const toPRSummary = (pr: PartnerRequest): EventPRSummary => ({
   id: pr.id,
   title: pr.title,
   type: pr.type,
@@ -94,16 +108,51 @@ const buildTimeWindowKey = (timeWindow: TimeWindowEntry): string => {
   return `${start ?? "_"}::${end ?? "_"}`;
 };
 
-const toTimeWindowDetail = (
-  timeWindow: TimeWindowEntry,
+const resolveTimeWindowSortTimestamp = (timeWindow: TimeWindowEntry): number => {
+  const [start] = timeWindow;
+  if (!start) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const parsed = new Date(start).getTime();
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+};
+
+const sortBrowseTimeWindows = (
+  left: BrowseTimeWindowDetail,
+  right: BrowseTimeWindowDetail,
+): number => {
+  const leftTimestamp = resolveTimeWindowSortTimestamp(left.timeWindow);
+  const rightTimestamp = resolveTimeWindowSortTimestamp(right.timeWindow);
+  if (leftTimestamp !== rightTimestamp) {
+    return leftTimestamp - rightTimestamp;
+  }
+
+  return left.key.localeCompare(right.key);
+};
+
+const buildBrowseTimeWindowDetails = (
   prs: PartnerRequest[],
-  locationOptions: LocationOption[],
-): TimeWindowDetail => ({
-  key: buildTimeWindowKey(timeWindow),
-  timeWindow,
-  prs: prs.map(toPRSummary),
-  locationOptions,
-});
+): BrowseTimeWindowDetail[] => {
+  const byKey = new Map<string, BrowseTimeWindowDetail>();
+
+  for (const pr of prs) {
+    const key = buildTimeWindowKey(pr.time);
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.prs.push(toPRSummary(pr));
+      continue;
+    }
+
+    byKey.set(key, {
+      key,
+      timeWindow: pr.time,
+      prs: [toPRSummary(pr)],
+    });
+  }
+
+  return Array.from(byKey.values()).sort(sortBrowseTimeWindows);
+};
 
 export async function getAnchorEventDetail(
   eventId: AnchorEventId,
@@ -119,20 +168,47 @@ export async function getAnchorEventDetail(
   const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
   const timeWindowPool = listAnchorEventTimeWindows(event);
 
-  const timeWindowDetails: TimeWindowDetail[] = [];
-  const allPRIds: number[] = [];
+  const browsePRs = await readVisiblePartnerRequestsByType(event.type);
+  const browseTimeWindows = buildBrowseTimeWindowDetails(browsePRs);
+  const activePartnerCounts = await partnerRepo.countActiveByPrIds(
+    browsePRs.map((pr) => pr.id),
+  );
+
+  for (const browseTimeWindow of browseTimeWindows) {
+    for (const pr of browseTimeWindow.prs) {
+      pr.partnerCount = activePartnerCounts.get(pr.id) ?? 0;
+    }
+  }
+
+  const createTimeWindows: CreateTimeWindowDetail[] = [];
+  let occupiedSlots = 0;
+  let hasUserManagedCapacity = false;
 
   for (const timeWindow of timeWindowPool) {
-    const prs = (
-      await readVisiblePartnerRequestsByTypeAndTime(event.type, timeWindow)
-    ).filter((pr) => isEventScopedLocation(event, pr.location));
-
+    const sameTypePRs = await readVisiblePartnerRequestsByTypeAndTime(
+      event.type,
+      timeWindow,
+    );
     const activeUserCountsByLocation = new Map<string, number>();
-    for (const pr of prs) {
-      if (!isActiveVisibleAnchorPRStatus(pr.status)) continue;
-      const location = pr.location?.trim();
-      if (!location) continue;
-      if (!userLocationPool.some((entry) => entry.id === location)) continue;
+    const occupiedSystemLocationIds = new Set<string>();
+
+    for (const pr of sameTypePRs) {
+      if (!isActiveVisiblePRStatus(pr.status)) {
+        continue;
+      }
+
+      const location = trimNullable(pr.location);
+      if (!location) {
+        continue;
+      }
+
+      if (systemLocationPool.includes(location)) {
+        occupiedSystemLocationIds.add(location);
+      }
+
+      if (!userLocationPool.some((entry) => entry.id === location)) {
+        continue;
+      }
 
       activeUserCountsByLocation.set(
         location,
@@ -140,52 +216,38 @@ export async function getAnchorEventDetail(
       );
     }
 
-    const locationOptions: LocationOption[] = [];
-    for (const userLocation of userLocationPool) {
-      const activeCount = activeUserCountsByLocation.get(userLocation.id) ?? 0;
-      const remainingQuota = Math.max(
-        userLocation.perBatchCap - activeCount,
-        0,
-      );
-      const disabled = remainingQuota === 0;
-      locationOptions.push({
-        locationId: userLocation.id,
-        remainingQuota,
-        disabled,
-        disabledReason: disabled ? "MAX_REACHED" : "NONE",
-      });
-    }
+    occupiedSlots += occupiedSystemLocationIds.size;
 
-    const detail = toTimeWindowDetail(timeWindow, prs, locationOptions);
-    allPRIds.push(...detail.prs.map((pr) => pr.id));
-    timeWindowDetails.push(detail);
-  }
+    const locationOptions: LocationOption[] = userLocationPool.map(
+      (userLocation) => {
+        const activeCount = activeUserCountsByLocation.get(userLocation.id) ?? 0;
+        const remainingQuota = Math.max(
+          userLocation.perBatchCap - activeCount,
+          0,
+        );
+        const disabled = remainingQuota === 0;
+        if (remainingQuota > 0) {
+          hasUserManagedCapacity = true;
+        }
 
-  const activePartnerCounts = await partnerRepo.countActiveByPrIds(allPRIds);
-  for (const timeWindowDetail of timeWindowDetails) {
-    for (const pr of timeWindowDetail.prs) {
-      pr.partnerCount = activePartnerCounts.get(pr.id) ?? 0;
-    }
-  }
-
-  const totalLocations = systemLocationPool.length;
-  const totalTimeWindows = timeWindowPool.length;
-  const totalSlots = totalLocations * totalTimeWindows;
-
-  let occupiedSlots = 0;
-  for (const timeWindowDetail of timeWindowDetails) {
-    const activePRs = timeWindowDetail.prs.filter((pr) =>
-      isActiveVisibleAnchorPRStatus(pr.status),
+        return {
+          locationId: userLocation.id,
+          remainingQuota,
+          disabled,
+          disabledReason: disabled ? "MAX_REACHED" : "NONE",
+        };
+      },
     );
-    occupiedSlots += activePRs.filter((pr) =>
-      systemLocationPool.includes(pr.location ?? ""),
-    ).length;
+
+    createTimeWindows.push({
+      key: buildTimeWindowKey(timeWindow),
+      timeWindow,
+      locationOptions,
+    });
   }
 
+  const totalSlots = systemLocationPool.length * timeWindowPool.length;
   const systemExhausted = totalSlots > 0 && occupiedSlots >= totalSlots;
-  const hasUserManagedCapacity = timeWindowDetails.some((timeWindowDetail) =>
-    timeWindowDetail.locationOptions.some((option) => option.remainingQuota > 0),
-  );
   const exhausted = systemExhausted && !hasUserManagedCapacity;
 
   return {
@@ -201,7 +263,8 @@ export async function getAnchorEventDetail(
     coverImage: event.coverImage,
     betaGroupQrCode: event.betaGroupQrCode,
     status: event.status,
-    timeWindows: timeWindowDetails,
+    browseTimeWindows,
+    createTimeWindows,
     exhausted,
     createdAt: event.createdAt.toISOString(),
   };

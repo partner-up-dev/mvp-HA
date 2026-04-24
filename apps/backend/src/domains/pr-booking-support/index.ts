@@ -8,6 +8,6 @@ export * from "./services/resolve-booking-contact-owner";
 export * from "./services/resolve-booking-contact-state";
 export * from "./services/resolve-support-resource-templates";
 export * from "./use-cases/get-admin-booking-support-config";
-export * from "./use-cases/get-anchor-pr-booking-support";
+export * from "./use-cases/get-pr-booking-support";
 export * from "./use-cases/replace-event-booking-support-resources";
-export * from "./use-cases/update-anchor-pr-booking-contact-phone";
+export * from "./use-cases/update-pr-booking-contact-phone";

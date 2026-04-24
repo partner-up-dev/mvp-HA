@@ -111,8 +111,8 @@ export const useShareAsLink = ({
     const prId = resolvePRIdFromShareUrl(normalizedUrl.value);
     const analyticsContext = prId ? { prId } : {};
 
-    if (spmRouteKey === "anchor_pr" && prId !== undefined) {
-      trackEvent("anchor_pr_secondary_action_click", {
+    if (spmRouteKey === "pr" && prId !== undefined) {
+      trackEvent("pr_secondary_action_click", {
         prId,
         actionType: "SHARE_LINK_TRIGGER",
       });

@@ -6,7 +6,7 @@
     >
       <template #top-actions>
         <ActionLink
-          :to="{ name: 'anchor-pr-search' }"
+          :to="{ name: 'event-pr-search' }"
           class="event-plaza-page__search-link"
           appearance="pill"
           tone="outline"

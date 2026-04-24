@@ -1,11 +1,11 @@
 import type { PartnerRequestFields, PRId } from "../../../entities";
 import { AnchorEventSupportResourceRepository } from "../../../repositories/AnchorEventSupportResourceRepository";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { type AnchorEventId } from "../../../entities/anchor-event";
 import { resolveSupportResourceTemplates } from "./resolve-support-resource-templates";
 
 const eventSupportRepo = new AnchorEventSupportResourceRepository();
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const prSupportRepo = new PRSupportResourceRepository();
 
 export interface MaterializePRSupportResourcesInput {
   prId: PRId;

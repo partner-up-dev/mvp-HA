@@ -29,14 +29,14 @@ export {
   type TimeWindow,
 } from "../../pr-core/services/time-window.service";
 export {
-  isActiveVisibleAnchorPRStatus,
+  isActiveVisiblePRStatus,
+  readVisiblePartnerRequestsByType,
   readPartnerRequestById,
   readVisiblePartnerRequestsByTypeAndTime,
-  readVisibleAnchorPRRecordsByEventTimeWindow,
-  readVisibleAnchorPRRecordsByEventTimeWindowAndLocation,
-  readVisibleAnchorPRRecordsByAnchorEventId,
-  readAnchorPRRecordsByEventTimeWindow,
-  countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource,
+  readVisibleAnchorEventPRContextRecordsByEventTimeWindow,
+  readVisibleAnchorEventPRContextRecordsByEventTimeWindowAndLocation,
+  readAnchorEventPRContextRecordsByEventTimeWindow,
+  countActiveVisiblePRsByEventTimeWindowAndLocationSource,
 } from "../../pr-core/services/pr-read.service";
 export {
   initializeSlotsForPR,

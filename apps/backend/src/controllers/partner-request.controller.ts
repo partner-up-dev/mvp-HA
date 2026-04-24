@@ -24,7 +24,7 @@ import {
   updatePRContent,
   updatePRStatus,
 } from "../domains/pr";
-import { updateAnchorPRBookingContactPhone } from "../domains/pr-booking-support";
+import { updatePRBookingContactPhone } from "../domains/pr-booking-support";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 import {
@@ -54,7 +54,7 @@ import { z } from "zod";
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
 const isoDateSearchParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const anchorPRSearchQuerySchema = z.object({
+const eventPRSearchQuerySchema = z.object({
   eventId: z.coerce.number().int().positive(),
   date: z.preprocess(
     (value) => {
@@ -100,7 +100,7 @@ const getPROr404 = async (id: number) => {
 
 export const partnerRequestRoute = app
   .use("*", authMiddleware)
-  .get("/search", zValidator("query", anchorPRSearchQuerySchema), async (c) => {
+  .get("/search", zValidator("query", eventPRSearchQuerySchema), async (c) => {
     const { eventId, date } = c.req.valid("query");
     const result = await searchPRs({
       eventId,
@@ -246,7 +246,7 @@ export const partnerRequestRoute = app
       const { phone } = c.req.valid("json");
       await getPROr404(id);
       const userId = requireSessionUserId(c);
-      const result = await updateAnchorPRBookingContactPhone({
+      const result = await updatePRBookingContactPhone({
         prId: id,
         userId,
         phone,

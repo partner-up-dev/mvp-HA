@@ -16,14 +16,14 @@ import {
 } from "../auth/admin-middleware";
 import {
   createAdminAnchorEvent,
-  createAdminAnchorPR,
-  createAdminAnchorPRMessage,
+  createAdminPR,
+  createAdminPRMessage,
   getAdminAnchorWorkspace,
-  releaseAdminAnchorPRPartner,
+  releaseAdminPRPartner,
   updateAdminAnchorEvent,
-  updateAdminAnchorPRContent,
-  updateAdminAnchorPRStatus,
-  updateAdminAnchorPRVisibility,
+  updateAdminPRContent,
+  updateAdminPRStatus,
+  updateAdminPRVisibility,
 } from "../domains/admin-anchor-management";
 import { prMessageCreateSchema } from "./pr-controller.shared";
 
@@ -60,7 +60,7 @@ const adminAnchorEventInputSchema = z.object({
   status: anchorEventStatusSchema,
 });
 
-const adminCreateAnchorPRInputSchema = z.object({
+const adminCreatePRInputSchema = z.object({
   timeWindow: timeWindowSchema,
   title: z.string().trim().nullable(),
   type: z.string().trim().nullable(),
@@ -74,7 +74,7 @@ const adminCreateAnchorPRInputSchema = z.object({
   joinLockOffsetMinutes: z.number().int().nonnegative(),
 });
 
-const adminUpdateAnchorPRContentSchema = z.object({
+const adminUpdatePRContentSchema = z.object({
   title: z.string().trim().nullable(),
   type: z.string().trim().min(1),
   location: z.string().trim().nullable(),
@@ -87,11 +87,11 @@ const adminUpdateAnchorPRContentSchema = z.object({
   joinLockOffsetMinutes: z.number().int().nonnegative(),
 });
 
-const adminUpdateAnchorPRStatusSchema = z.object({
+const adminUpdatePRStatusSchema = z.object({
   status: prStatusManualSchema,
 });
 
-const adminUpdateAnchorPRVisibilitySchema = z.object({
+const adminUpdatePRVisibilitySchema = z.object({
   visibilityStatus: visibilityStatusSchema,
 });
 const adminManualReleaseSchema = z.object({
@@ -100,7 +100,7 @@ const adminManualReleaseSchema = z.object({
 
 export const adminAnchorManagementRoute = app
   .use("*", adminAuthMiddleware)
-  .get("/anchor-pr/workspace", async (c) => {
+  .get("/pr/workspace", async (c) => {
     const result = await getAdminAnchorWorkspace();
     return c.json(result);
   })
@@ -143,13 +143,13 @@ export const adminAnchorManagementRoute = app
     },
   )
   .post(
-    "/anchor-events/:eventId/anchor-prs",
+    "/anchor-events/:eventId/prs",
     zValidator("param", eventIdParamSchema),
-    zValidator("json", adminCreateAnchorPRInputSchema),
+    zValidator("json", adminCreatePRInputSchema),
     async (c) => {
       const { eventId } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await createAdminAnchorPR(eventId, payload.timeWindow, {
+      const result = await createAdminPR(eventId, payload.timeWindow, {
         ...payload,
         title: payload.title || null,
         type: payload.type || null,
@@ -159,7 +159,7 @@ export const adminAnchorManagementRoute = app
     },
   )
   .post(
-    "/anchor-prs/:id/messages",
+    "/prs/:id/messages",
     zValidator("param", prIdParamSchema),
     zValidator("json", prMessageCreateSchema),
     async (c) => {
@@ -169,7 +169,7 @@ export const adminAnchorManagementRoute = app
       if (!auth.userId) {
         throw new Error("Admin user id missing after admin auth");
       }
-      const result = await createAdminAnchorPRMessage({
+      const result = await createAdminPRMessage({
         prId: id,
         body,
         actorUserId: auth.userId,
@@ -178,13 +178,13 @@ export const adminAnchorManagementRoute = app
     },
   )
   .patch(
-    "/anchor-prs/:id/content",
+    "/prs/:id/content",
     zValidator("param", prIdParamSchema),
-    zValidator("json", adminUpdateAnchorPRContentSchema),
+    zValidator("json", adminUpdatePRContentSchema),
     async (c) => {
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await updateAdminAnchorPRContent(id, {
+      const result = await updateAdminPRContent(id, {
         ...payload,
         title: payload.title || null,
         location: payload.location || null,
@@ -194,36 +194,36 @@ export const adminAnchorManagementRoute = app
     },
   )
   .patch(
-    "/anchor-prs/:id/status",
+    "/prs/:id/status",
     zValidator("param", prIdParamSchema),
-    zValidator("json", adminUpdateAnchorPRStatusSchema),
+    zValidator("json", adminUpdatePRStatusSchema),
     async (c) => {
       const { id } = c.req.valid("param");
       const { status } = c.req.valid("json");
-      const result = await updateAdminAnchorPRStatus(id, status);
+      const result = await updateAdminPRStatus(id, status);
       return c.json(result);
     },
   )
   .patch(
-    "/anchor-prs/:id/visibility",
+    "/prs/:id/visibility",
     zValidator("param", prIdParamSchema),
-    zValidator("json", adminUpdateAnchorPRVisibilitySchema),
+    zValidator("json", adminUpdatePRVisibilitySchema),
     async (c) => {
       const { id } = c.req.valid("param");
       const { visibilityStatus } = c.req.valid("json");
-      await updateAdminAnchorPRVisibility(id, visibilityStatus);
+      await updateAdminPRVisibility(id, visibilityStatus);
       return c.json({ ok: true });
     },
   )
   .post(
-    "/anchor-prs/:id/partners/:partnerId/release",
+    "/prs/:id/partners/:partnerId/release",
     zValidator("param", partnerIdParamSchema),
     zValidator("json", adminManualReleaseSchema),
     async (c) => {
       const { id, partnerId } = c.req.valid("param");
       const { reason } = c.req.valid("json");
       const auth = c.get("auth");
-      const result = await releaseAdminAnchorPRPartner({
+      const result = await releaseAdminPRPartner({
         prId: id,
         partnerId,
         reason,

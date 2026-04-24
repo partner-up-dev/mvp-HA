@@ -46,6 +46,27 @@ export class PartnerRequestRepository {
       .orderBy(desc(partnerRequests.createdAt));
   }
 
+  async findVisibleByType(type: string): Promise<PartnerRequest[]> {
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(
+        and(
+          eq(partnerRequests.type, type),
+          eq(partnerRequests.visibilityStatus, "VISIBLE"),
+        ),
+      )
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
+  async findByType(type: string): Promise<PartnerRequest[]> {
+    return await db
+      .select()
+      .from(partnerRequests)
+      .where(eq(partnerRequests.type, type))
+      .orderBy(desc(partnerRequests.createdAt));
+  }
+
   async findVisibleByTypeAndTime(
     type: string,
     timeWindow: TimeWindowEntry,

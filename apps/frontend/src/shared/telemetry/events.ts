@@ -29,11 +29,11 @@ export type CanonicalAnalyticsEventName =
   | "home_create_entry_click"
   | "home_bookmark_nudge_shown"
   | "home_bookmark_action_click"
-  | "anchor_pr_primary_cta_impression"
-  | "anchor_pr_primary_cta_click"
-  | "anchor_pr_lane_expand"
-  | "anchor_pr_recovery_accept"
-  | "anchor_pr_secondary_action_click";
+  | "pr_primary_cta_impression"
+  | "pr_primary_cta_click"
+  | "pr_lane_expand"
+  | "pr_recovery_accept"
+  | "pr_secondary_action_click";
 
 export type LegacyAnalyticsEventName =
   | "join_success"
@@ -191,7 +191,7 @@ type CanonicalAnalyticsPayloadMap = {
       | "dismiss";
     environment: "wechat" | "browser";
   };
-  anchor_pr_primary_cta_impression: PRContextPayload & {
+  pr_primary_cta_impression: PRContextPayload & {
     prId: number;
     ctaType: "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT";
     viewerState:
@@ -200,7 +200,7 @@ type CanonicalAnalyticsPayloadMap = {
       | "VISITOR_JOINABLE"
       | "VISITOR_BLOCKED";
   };
-  anchor_pr_primary_cta_click: PRContextPayload & {
+  pr_primary_cta_click: PRContextPayload & {
     prId: number;
     ctaType: "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT";
     viewerState:
@@ -209,7 +209,7 @@ type CanonicalAnalyticsPayloadMap = {
       | "VISITOR_JOINABLE"
       | "VISITOR_BLOCKED";
   };
-  anchor_pr_lane_expand: PRContextPayload & {
+  pr_lane_expand: PRContextPayload & {
     prId: number;
     laneId: "RECOVERY" | "AWARENESS" | "LOGISTICS" | "SECONDARY";
     entry:
@@ -218,14 +218,14 @@ type CanonicalAnalyticsPayloadMap = {
       | "DIRECT_INTERACTION"
       | "UNKNOWN";
   };
-  anchor_pr_recovery_accept: PRContextPayload & {
+  pr_recovery_accept: PRContextPayload & {
     prId: number;
     targetType: "SAME_BATCH" | "ALTERNATIVE_BATCH";
     targetPrId?: number;
     targetTimeWindowStart?: string | null;
     targetTimeWindowEnd?: string | null;
   };
-  anchor_pr_secondary_action_click: PRContextPayload & {
+  pr_secondary_action_click: PRContextPayload & {
     prId: number;
     actionType:
       | "SHARE_METHOD_SWITCH"

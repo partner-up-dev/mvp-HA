@@ -239,8 +239,9 @@ export type {
   AnchorEventSummary,
   AnchorEventDetail,
   AnchorEventDemandCard,
-  TimeWindowDetail,
-  AnchorPRSummary,
+  BrowseTimeWindowDetail,
+  CreateTimeWindowDetail,
+  EventPRSummary,
 } from "./domains/anchor-event";
 export {
   partnerRequestFieldsSchema,

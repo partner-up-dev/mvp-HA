@@ -1,4 +1,4 @@
-import type { AnchorPRSupportResource } from "../../../entities";
+import type { PRSupportResource } from "../../../entities";
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -10,7 +10,7 @@ export interface BookingSupportPreview {
 }
 
 export function buildBookingSupportPreview(
-  rows: AnchorPRSupportResource[],
+  rows: PRSupportResource[],
 ): BookingSupportPreview {
   const orderedRows = [...rows].sort(
     (a, b) => a.displayOrder - b.displayOrder || a.id - b.id,

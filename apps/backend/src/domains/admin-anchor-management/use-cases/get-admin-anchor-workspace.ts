@@ -1,8 +1,8 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
+import type { AnchorEventPRContextRecord } from "../../../repositories/AnchorEventPRContextRepository";
 import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
-import { readAnchorPRRecordsByEventTimeWindow } from "../../pr/services";
+import { readAnchorEventPRContextRecordsByEventTimeWindow } from "../../pr/services";
 import {
   listAnchorEventTimeWindows,
   buildTimeWindowKey,
@@ -10,7 +10,7 @@ import {
 
 const anchorEventRepo = new AnchorEventRepository();
 
-type AdminAnchorPRSummary = {
+type AdminPRSummary = {
   prId: number;
   title: string | null;
   type: string;
@@ -34,7 +34,7 @@ type AdminAnchorPRSummary = {
 type AdminAnchorTimeWindowSummary = {
   key: string;
   timeWindow: [string | null, string | null];
-  prs: AdminAnchorPRSummary[];
+  prs: AdminPRSummary[];
 };
 
 export type AdminAnchorEventSummary = {
@@ -79,9 +79,9 @@ export interface AdminAnchorWorkspace {
   events: AdminAnchorEventSummary[];
 }
 
-const toAdminAnchorPRSummary = async (
-  record: AnchorPRRecord,
-): Promise<AdminAnchorPRSummary> => ({
+const toAdminPRSummary = async (
+  record: AnchorEventPRContextRecord,
+): Promise<AdminPRSummary> => ({
   prId: record.root.id,
   title: record.root.title,
   type: record.root.type,
@@ -111,7 +111,7 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
       const timeWindowPool = listAnchorEventTimeWindows(event);
       const timeWindowSummaries = await Promise.all(
         timeWindowPool.map(async (timeWindow) => {
-          const prs = await readAnchorPRRecordsByEventTimeWindow(
+          const prs = await readAnchorEventPRContextRecordsByEventTimeWindow(
             event.id,
             timeWindow,
             {
@@ -119,7 +119,7 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
             },
           );
           const prSummaries = await Promise.all(
-            prs.map((record) => toAdminAnchorPRSummary(record)),
+            prs.map((record) => toAdminPRSummary(record)),
           );
 
           return {

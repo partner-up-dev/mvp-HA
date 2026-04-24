@@ -2,7 +2,7 @@
 
 ## MVT Core
 
-- Objective & Hypothesis: Execute the `pr-core` rewrite together with issue `#167` and issue `#170`, and converge the repository on one single `PR` domain, one single `PR` vocabulary, and one single durable PR table. Hypothesis: unifying `Community PR` and `Anchor PR` as `PR`, removing PR-side `anchorEventId` / `batchId`, and treating `Anchor Event` as one optional discovery and assisted-create mode will reduce semantic duplication, shrink schema and repository surface, and produce a cleaner domain split between `PR`, `Anchor Event`, `Partner`, `PR Message`, `PR Sharing`, and Booking Support.
+- Objective & Hypothesis: Execute the `pr-core` rewrite together with issue `#167` and issue `#170`, and converge the repository on one single `PR` domain, one single `PR` vocabulary, and one single durable PR table. Hypothesis: unifying split PR lines as `PR`, removing PR-side `anchorEventId` / `batchId`, and treating `Anchor Event` as one optional discovery and assisted-create mode will reduce semantic duplication, shrink schema and repository surface, and produce a cleaner domain split between `PR`, `Anchor Event`, `Partner`, `PR Message`, `PR Sharing`, and Booking Support.
 - Guardrails Touched:
   - `docs/10-prd/*` PR and Anchor Event product vocabulary
   - `docs/20-product-tdd/*` cross-unit contracts, state authority, and route/API contracts
@@ -15,7 +15,7 @@
   - frontend build passes
   - PR creation flows still work for user/admin Anchor Event initiated creation
   - PR detail, partner section, message thread, and sharing reads still work
-  - Anchor Event page still shows discoverable PRs under the same type and time-pool rules
+  - Anchor Event page still shows discoverable PRs under the same type
   - booking-support derivation still works after PR-side `anchorEventId` / `batchId` leave storage
 
 ## Solidify Notes
@@ -44,11 +44,11 @@
   - `apps/backend/src/domains/pr-community`
   - `apps/backend/src/domains/anchor-event`
   - `apps/backend/src/domains/user`
-  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/backend/src/repositories/AnchorEventPRContextRepository.ts`
   - `apps/frontend/src/domains/pr`
   - `apps/frontend/src/domains/event`
 - State Diff:
-  - From: repo vocabulary, schema, and code still carry `Community PR`, `Anchor PR`, `prKind`, subtype tables, batch-centered creation, and event-id/batch-id keyed PR queries.
+  - From: repo vocabulary, schema, and code still carry split PR terms, `prKind`, subtype tables, batch-centered creation, and event-id/batch-id keyed PR queries.
   - To: repo vocabulary converges on `PR`; `partner_requests` becomes the single durable PR table; `anchor_partner_requests` and `community_partner_requests` retire; `Anchor Event` offers one discovery and assisted-create mode; PR reads and writes center on one `PR` domain.
 - Blast Radius Forecast:
   - PR schema, migration artifacts, repositories, controller params, DTOs, use-case names, route names, frontend query keys, and UI copy
@@ -59,18 +59,17 @@
   - `PR` remains the durable collaboration object
   - PR message visibility remains PR-owned
   - notification policy remains in `domains/notification`
-  - Anchor Event page shows discoverable PRs under the same type and time-pool rules
+  - Anchor Event page shows discoverable PRs under the same type
   - partner lifecycle semantics remain backend-authoritative
   - rollout may keep temporary redirect compatibility, while canonical naming and ownership converge on one `PR`
 
 ## Semantic Cleanup Target
 
-- retire `Community PR` as a business term
-- retire `Anchor PR` as a business term
+- retire split PR business terms
 - retire `prKind`, `ANCHOR`, and `COMMUNITY`
 - retire backend split domains such as `pr-anchor` and `pr-community`
 - retire subtype tables `community_partner_requests` and `anchor_partner_requests`
-- retire repositories, DTOs, and use cases centered on `Anchor PR` / `Community PR`
+- retire repositories, DTOs, and use cases centered on split PR terms
 - converge frontend PR types, queries, pages, and components on one `PR` model
 - converge canonical routes on one `PR` route family
 
@@ -106,7 +105,8 @@
     - recurring start rules with minute-level granularity
     - absolute start rules
 - generated `timeWindows` become a derived view rather than a persisted batch row set
-- public event detail, demand-card projection, admin workspace preview, and assisted-create all consume canonical generated `timeWindow` values
+- public event-assisted create and admin workspace preview consume canonical generated `timeWindow` values
+- Anchor Event page browsing organization is computed from the PR set where `PR.type == Event.type`
 - `PR.time_window` remains a root PR fact with only the PR-side invariant `start <= end`
 - booking-support resource templates stay event-owned, and batch-specific support overrides leave the model
 - admin operator surfaces move from `batch` editing to event-owned time-pool editing plus generated time-window preview
@@ -126,10 +126,27 @@
 ## Issue 170 Invariants
 
 - `earliestLeadMinutes` gates generated windows by `window.endTime <= now + earliestLeadMinutes`
-- discoverable time windows remain date-grouped on the public Anchor Event page
+- public Anchor Event page browsing remains date-grouped where appropriate, and that grouping is computed from same-type PRs rather than from event-owned generated windows
 - event-assisted create reuses canonical `POST /api/pr/new/form`
 - root PR storage remains single-table and batch-free
 - Demand Card generation remains batch-independent and keyed by `event.type + time_window`
+
+## Anchor Event Page Model Correction
+
+- `Anchor Event page` is one entry surface for one `type`
+- its responsibilities are:
+  - browse PRs under the same `type`
+  - assist creating PRs from the event surface
+  - carry event-owned marketing or operator content such as `beta-group`
+- public discoverability on the Anchor Event page is `type`-only
+- Anchor Event page browsing organization is computed from PRs where `PR.type == Event.type`
+- List Mode date aggregation, Demand Card key computation, Card Mode ordering, and similar browsing structures are derived from that same-type PR set
+- event-owned `timeWindows` and location pools are create-side suggestions and event-side operator context
+- PR does not need a durable event-scoped identity after creation
+- current implementation residue still uses stronger event-scoped matching in some runtime paths:
+  - `type + time_window + location scope`
+  - explicit `anchorEventId` in some admin and booking-support flows
+- this model correction remains inside the current task and should be completed before the task is considered fully closed
 
 ## Semantic Ownership Target
 
@@ -258,7 +275,7 @@ Fields leaving PR core:
 
 - retire `apps/backend/src/domains/pr-anchor`
 - retire `apps/backend/src/domains/pr-community`
-- retire `AnchorPRRepository`
+- retire `AnchorEventPRContextRepository`
 - retire `Anchor PR` and `Community PR` DTO / response names
 - retire frontend `ANCHOR` / `COMMUNITY` PR model branching
 - retire `/apr/*` and `/cpr/*` as canonical route families
@@ -266,11 +283,11 @@ Fields leaving PR core:
 ## Compatibility Shell Trade-off Map
 
 - retire early, because the canonical owner already exists and the shell only adds indirection
-  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
-  - `apps/backend/src/domains/pr-anchor/use-cases/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-pr-legacy.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/search-prs.ts`
   - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
 - keep temporarily, because live route or mutation compatibility still exists
-  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/pr-legacy.controller.ts`
   - `apps/backend/src/controllers/community-pr.controller.ts`
   - `apps/backend/src/domains/pr-community/use-cases/join-community-pr.ts`
   - `apps/backend/src/domains/pr-community/use-cases/exit-community-pr.ts`
@@ -289,7 +306,7 @@ Fields leaving PR core:
 
 ## Compatibility Retention Cost Map
 
-- keep `apps/backend/src/controllers/anchor-pr.controller.ts`
+- keep `apps/backend/src/controllers/pr-legacy.controller.ts`
   - value:
     - preserves live `/apr/*` mutation and message route compatibility
     - keeps anchor-only action surfaces stable while canonical `/pr/*` mutation routes are still incomplete
@@ -332,7 +349,7 @@ Fields leaving PR core:
 | frontend `/cpr/:id` | redirect alias into `/pr/:id` | short | `/pr/:id` | confirm no product surface still emits `/cpr/:id`; keep server-side redirect only if link compatibility still matters | 2 |
 | frontend `/cpr/new` | create-page alias into the same PR create page | short | `/pr/new` | home, landing, share, and event surfaces all emit `/pr/new`; link compatibility decision made explicitly | 1 |
 | frontend `/cpr/:id/partners/:partnerId` | community-specific partner profile path | medium | `/pr/:id/partners/:partnerId` | add canonical PR partner profile route and remove `communityPRPartnerProfilePath` calls | 4 |
-| backend `/api/apr` via `anchor-pr.controller.ts` | anchor-only read, message, booking-support, join, exit, confirm, and check-in surface | medium | split across `/api/pr/:id*` and event-side routes where needed | canonical PR message, booking-support, join, exit, confirm, check-in, and search APIs exist; frontend no longer calls `/api/apr/*` | 8 |
+| backend `/api/apr` via `pr-legacy.controller.ts` | anchor-only read, message, booking-support, join, exit, confirm, and check-in surface | medium | split across `/api/pr/:id*` and event-side routes where needed | canonical PR message, booking-support, join, exit, confirm, check-in, and search APIs exist; frontend no longer calls `/api/apr/*` | 8 |
 | backend `/api/cpr` via `community-pr.controller.ts` | legacy community create, publish, detail, partner-profile, join, exit, and update surface | short to medium | `/api/pr/new/*`, `/api/pr/:id`, `/api/pr/:id/partners/:partnerId/profile`, plus new canonical publish and mutation commands | canonical PR publish, join, exit, and update APIs exist; legacy auth payload behavior is either retired or intentionally preserved elsewhere | 7 |
 | `community-pr.controller.ts` | protocol shell for the remaining community-specific API behavior | short to medium | `partner-request.controller.ts` plus canonical PR mutation controllers | same as `/api/cpr`; no frontend RPC client still imports community controller routes | 7 |
 | `join-community-pr.ts` | last seam that still provisions local users and generated PIN during community join | short | canonical `joinPR` command with the final identity policy | issue `#175` outcome applied; anonymous join semantics are either removed or redefined under canonical PR policy | 9 |
@@ -342,7 +359,7 @@ Decision notes:
 - `/cpr/:id` and `/cpr/new` have the lowest retention value because they already map onto canonical PR page surfaces.
 - `/apr/*` retains more value because messages, booking-support, and partner-profile still lack canonical `/pr/*` route surfaces.
 - `community-pr.controller.ts` and `join-community-pr.ts` are coupled to the legacy local-credential path, so their removal should be coordinated with issue `#175`.
-- `anchor-pr.controller.ts` should stay until canonical PR mutation and subpage APIs exist. Its read-only detail/search compatibility value is already much lower than its mutation and subpage value.
+- `pr-legacy.controller.ts` should stay until canonical PR mutation and subpage APIs exist. Its read-only detail/search compatibility value is already much lower than its mutation and subpage value.
 
 ## Slice Ownership For "Anchor PR 即 PR"
 
@@ -447,12 +464,12 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Local repair artifact:
   - `tasks/pr-unification-167-170/21-local-db-realign-after-0024-rewrite.sql`
 - Compatibility write artifacts:
-  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/backend/src/repositories/AnchorEventPRContextRepository.ts`
   - `apps/backend/src/repositories/PartnerRequestRepository.ts`
   - `apps/backend/src/repositories/PRRootRepository.ts`
-  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-pr.ts`
-  - `apps/backend/src/domains/anchor-event/use-cases/create-user-anchor-pr.ts`
-  - `apps/backend/src/domains/anchor-event/use-cases/expand-full-anchor-pr.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-pr.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/create-user-pr-legacy.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/expand-full-pr-legacy.ts`
   - `apps/backend/src/domains/pr-core/use-cases/accept-alternative-batch.ts`
 - Decisions implemented:
   - `partner_requests.visibility_status` is added with default `VISIBLE`
@@ -522,10 +539,10 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/frontend/src/domains/pr/use-cases/useSharedPRActions.ts`
   - `apps/frontend/src/domains/pr/ui/sections/AnchorPRRecoveryLane.vue`
   - `apps/frontend/src/domains/pr/ui/sections/PRPartnerSection.vue`
-  - `apps/frontend/src/domains/pr/ui/primitives/AnchorPRSearchResultCard.vue`
+  - `apps/frontend/src/domains/pr/ui/primitives/PRSearchResultCard.vue`
   - `apps/frontend/src/domains/event/ui/primitives/AnchorEventPRCard.vue`
   - `apps/frontend/src/pages/AnchorEventPage.vue`
-  - `apps/frontend/src/pages/AnchorPRSearchPage.vue`
+  - `apps/frontend/src/pages/EventPRSearchPage.vue`
   - `apps/frontend/src/pages/AnchorPRMessagesPage.vue`
   - `apps/frontend/src/pages/AnchorPRBookingSupportPage.vue`
   - `apps/frontend/src/pages/UserProfilePage.vue`
@@ -611,16 +628,16 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - contract public Anchor Event detail from batch-shaped grouping into time-window discovery
 - Artifacts:
   - `apps/backend/src/controllers/anchor-event.controller.ts`
-  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/pr-legacy.controller.ts`
   - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
   - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
   - `apps/backend/src/domains/anchor-event/use-cases/index.ts`
-  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-pr-legacy.ts`
   - `apps/backend/src/domains/pr-anchor/use-cases/index.ts`
   - `apps/backend/src/index.ts`
   - `apps/frontend/src/domains/event/model/types.ts`
   - `apps/frontend/src/domains/event/ui/primitives/AnchorEventPRCard.vue`
-  - `apps/frontend/src/domains/event/ui/primitives/AnchorPRCreateCard.vue`
+  - `apps/frontend/src/domains/event/ui/primitives/EventPRCreateCard.vue`
   - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
   - `apps/frontend/src/domains/event/ui/sections/AnchorEventListModeSection.vue`
   - `apps/frontend/src/pages/AnchorEventPage.vue`
@@ -660,7 +677,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/domains/pr/read-models/index.ts`
   - `apps/backend/src/domains/pr/services/index.ts`
   - `apps/backend/src/controllers/partner-request.controller.ts`
-  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/pr-legacy.controller.ts`
   - `apps/backend/src/controllers/community-pr.controller.ts`
   - `apps/backend/src/services/PartnerRequestService.ts`
   - `apps/backend/src/domains/pr-core/index.ts`
@@ -696,8 +713,8 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/controllers/auth.controller.ts`
   - `apps/backend/src/controllers/wechat.controller.ts`
   - `apps/backend/src/domains/user/use-cases/register-local-user.ts`
-  - `apps/backend/src/domains/anchor-event/use-cases/create-user-anchor-pr.ts`
-  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/create-user-pr-legacy.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-pr-legacy.ts`
   - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
   - `apps/backend/src/domains/pr-community/use-cases/join-community-pr.ts`
   - `apps/backend/src/domains/pr-core/use-cases/check-in.ts`
@@ -731,16 +748,16 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - keep old `pr-anchor` and `pr-community` read-model files as compatibility re-export shells
   - point canonical PR detail dispatch at the new canonical read-model files
 - Artifacts:
-  - `apps/backend/src/domains/pr/read-models/get-anchor-pr-detail.ts`
+  - `apps/backend/src/domains/pr/read-models/get-pr-legacy-detail.ts`
   - `apps/backend/src/domains/pr/read-models/get-community-pr-detail.ts`
-  - `apps/backend/src/domains/pr/read-models/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr/read-models/search-prs.ts`
   - `apps/backend/src/domains/pr/read-models/index.ts`
   - `apps/backend/src/domains/pr-core/use-cases/get-pr-detail.ts`
-  - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
-  - `apps/backend/src/domains/pr-anchor/use-cases/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/get-pr-legacy.ts`
+  - `apps/backend/src/domains/pr-anchor/use-cases/search-prs.ts`
   - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
 - Decisions implemented:
-  - canonical `domains/pr/read-models` now owns `getAnchorPRDetail`, `getCommunityPRDetail`, and `searchAnchorPRs`
+  - canonical `domains/pr/read-models` now owns `getPRDetailAlias`, `getCommunityPRDetail`, and `searchAnchorPRs`
   - `getPRDetail` now dispatches to the canonical PR read-model files instead of importing from split anchor/community domain folders
   - old `pr-anchor` and `pr-community` read-model files remain in place only as compatibility re-export seams
   - route shape and response shape remain unchanged in this slice
@@ -774,8 +791,8 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/domains/pr-core/use-cases/advance-pr-message-read-marker.ts`
   - `apps/backend/src/domains/pr-core/services/pr-view.service.ts`
   - `apps/backend/src/domains/pr-core/services/pr-share-metadata.service.ts`
-  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-pr-message.ts`
-  - `apps/backend/src/domains/pr/read-models/get-anchor-pr-detail.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-pr-message.ts`
+  - `apps/backend/src/domains/pr/read-models/get-pr-legacy-detail.ts`
   - `apps/backend/src/domains/pr/read-models/get-community-pr-detail.ts`
 - Decisions implemented:
   - canonical `domains/pr/message` now owns message thread listing, message creation, system-message persistence, and read-marker advancement
@@ -803,8 +820,8 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/domains/pr-anchor/use-cases/index.ts`
   - `apps/backend/src/domains/pr-community/use-cases/index.ts`
   - deleted:
-    - `apps/backend/src/domains/pr-anchor/use-cases/get-anchor-pr.ts`
-    - `apps/backend/src/domains/pr-anchor/use-cases/search-anchor-prs.ts`
+    - `apps/backend/src/domains/pr-anchor/use-cases/get-pr-legacy.ts`
+    - `apps/backend/src/domains/pr-anchor/use-cases/search-prs.ts`
     - `apps/backend/src/domains/pr-community/use-cases/get-community-pr.ts`
 - Decisions implemented:
   - obsolete read-model shells under `pr-anchor` and `pr-community` are removed
@@ -813,7 +830,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Verification completed:
   - `pnpm --filter @partner-up-dev/backend typecheck`
   - `pnpm --filter @partner-up-dev/backend build`
-  - `rg -n "pr-anchor/use-cases/get-anchor-pr|pr-anchor/use-cases/search-anchor-prs|pr-community/use-cases/get-community-pr" apps/backend/src` returned no remaining source references
+  - `rg -n "pr-anchor/use-cases/get-pr-legacy|pr-anchor/use-cases/search-prs|pr-community/use-cases/get-community-pr" apps/backend/src` returned no remaining source references
 - Verification gap:
   - route and controller compatibility plus community-specific mutation compatibility remain for later slices
 
@@ -883,11 +900,11 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 | --- | --- | --- | --- |
 | share telemetry field `prKind` | legacy subtype analytics field on share method, share link, and share lifecycle events | retire now | use `prId`, `spm`, `routeSessionId`, and `revision` for share analysis |
 | share lifecycle field `entityKey` | route-share replay and stale-descriptor debugging key | keep temporarily | converge later on a generic PR entity key once route-share descriptor vocabulary is rewritten |
-| `anchor_pr_primary_cta_impression` | primary CTA impression on the unified PR page | rename later | `pr_primary_cta_impression` |
-| `anchor_pr_primary_cta_click` | primary CTA click on the unified PR page | rename later | `pr_primary_cta_click` |
-| `anchor_pr_lane_expand` | secondary lane expansion on the unified PR page | rename later | `pr_lane_expand` |
-| `anchor_pr_recovery_accept` | recovery-lane action telemetry | retire with the remaining recovery compatibility cleanup | none |
-| `anchor_pr_secondary_action_click` | secondary action telemetry, including share-trigger taps | rename later | `pr_secondary_action_click` |
+| `pr_primary_cta_impression` | primary CTA impression on the unified PR page | rename later | `pr_primary_cta_impression` |
+| `pr_primary_cta_click` | primary CTA click on the unified PR page | rename later | `pr_primary_cta_click` |
+| `pr_lane_expand` | secondary lane expansion on the unified PR page | rename later | `pr_lane_expand` |
+| `pr_recovery_accept` | recovery-lane action telemetry | retire with the remaining recovery compatibility cleanup | none |
+| `pr_secondary_action_click` | secondary action telemetry, including share-trigger taps | rename later | `pr_secondary_action_click` |
 | `community_pr_*` event family | not present as a real analytics family; only route/share keys and old paths remain | no telemetry event rename needed | continue route-key and alias cleanup in later slices |
 
 ## Slice 7G - Share Telemetry Vocabulary Cleanup
@@ -908,7 +925,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `share_method_switch`, `share_link_*`, and `share_*` lifecycle events no longer accept or emit `prKind`
   - route-share lifecycle telemetry now extracts only `prId` from descriptor `entityKey` and leaves subtype inference behind
   - WeChat share replay telemetry follows the same rule, so `prKind` has left both browser-share and WeChat-share payloads
-  - share-triggered `anchor_pr_secondary_action_click` remains temporarily in place, but its payload no longer carries `prKind`
+  - share-triggered `pr_secondary_action_click` remains temporarily in place, but its payload no longer carries `prKind`
   - telemetry rename and retire follow-up work is now tracked in the decision map above
 - Verification completed:
   - `pnpm --filter @partner-up-dev/frontend build`
@@ -923,7 +940,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
 - Scope for this narrowed slice:
   - add canonical `/api/pr/:id/*` mutation routes for publish, status, content, join, exit, confirm, and check-in
   - switch frontend PR mutation hooks from `/api/apr/*` and `/api/cpr/*` to canonical `/api/pr/*`
-  - keep `anchor-pr.controller.ts` and `community-pr.controller.ts` as compatibility shells while canonical mutation traffic moves away from them
+  - keep `pr-legacy.controller.ts` and `community-pr.controller.ts` as compatibility shells while canonical mutation traffic moves away from them
 - Artifacts:
   - `apps/backend/src/controllers/partner-request.controller.ts`
   - `apps/frontend/src/domains/pr/queries/useAnchorPR.ts`
@@ -940,7 +957,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `pnpm --filter @partner-up-dev/backend build`
   - `pnpm --filter @partner-up-dev/frontend build`
 - Verification gap:
-  - `anchor-pr.controller.ts` and `community-pr.controller.ts` still exist as live compatibility route shells
+  - `pr-legacy.controller.ts` and `community-pr.controller.ts` still exist as live compatibility route shells
   - frontend and backend symbol names still retain `AnchorPR*` and `CommunityPR*` vocabulary around those hooks and controllers
 
 ## Slice 7I - Controller Compatibility Shell Contraction
@@ -952,7 +969,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - contract `/api/apr` down to the still-live search endpoint
   - move remaining frontend detail type anchors off `/api/cpr/:id` and `/api/apr/:id`
 - Artifacts:
-  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/pr-legacy.controller.ts`
   - `apps/backend/src/controllers/community-pr.controller.ts`
   - `apps/backend/src/index.ts`
   - `apps/frontend/src/domains/pr/model/detail.ts`
@@ -980,14 +997,14 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - remove the last live `/api/apr` controller shell
 - Artifacts:
   - `apps/backend/src/controllers/partner-request.controller.ts`
-  - `apps/backend/src/controllers/anchor-pr.controller.ts`
+  - `apps/backend/src/controllers/pr-legacy.controller.ts`
   - `apps/backend/src/index.ts`
-  - `apps/frontend/src/domains/pr/queries/useAnchorPRSearch.ts`
+  - `apps/frontend/src/domains/pr/queries/useEventPRSearch.ts`
   - `apps/frontend/src/domains/pr/model/types.ts`
 - Decisions implemented:
   - canonical PR controller now owns `GET /api/pr/search`
   - frontend anchor-event search flow now consumes canonical `/api/pr/search`
-  - `anchor-pr.controller.ts` has been removed
+  - `pr-legacy.controller.ts` has been removed
   - `/api/apr` is no longer mounted on the backend
 - Verification completed:
   - `pnpm --filter @partner-up-dev/backend typecheck`
@@ -1023,7 +1040,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
   - `apps/frontend/src/domains/pr/ui/forms/NLPRForm.vue`
   - `apps/frontend/src/domains/pr/ui/sections/InlineNLPRForm.vue`
-  - `apps/frontend/src/domains/pr/queries/useAnchorPRSearch.ts`
+  - `apps/frontend/src/domains/pr/queries/useEventPRSearch.ts`
   - `apps/frontend/src/shared/api/query-keys.ts`
 - Decisions implemented:
   - canonical live page files are now `PRPage.vue`, `PRMessagesPage.vue`, `PRBookingSupportPage.vue`, and `PRCreatePage.vue`
@@ -1122,18 +1139,18 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/domains/anchor-event/services/event-scope.ts`
   - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
   - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
-  - `apps/backend/src/domains/pr/read-models/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr/read-models/search-prs.ts`
   - `apps/backend/src/domains/admin-anchor-management/services/sync-anchor-event-time-window-pool.ts`
   - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-event-batch.ts`
   - `apps/backend/src/domains/admin-anchor-management/use-cases/update-admin-anchor-event-batch.ts`
   - `apps/backend/src/controllers/admin-anchor-management.controller.ts`
   - `apps/backend/src/repositories/AnchorEventBatchRepository.ts`
   - `apps/backend/src/repositories/PartnerRequestRepository.ts`
-  - `apps/backend/src/repositories/AnchorPRRepository.ts`
-  - `apps/backend/src/domains/anchor-event/use-cases/create-user-anchor-pr.ts`
-  - `apps/backend/src/domains/anchor-event/use-cases/expand-full-anchor-pr.ts`
-  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-anchor-pr.ts`
-  - `apps/backend/src/domains/admin-anchor-management/use-cases/update-admin-anchor-pr-content.ts`
+  - `apps/backend/src/repositories/AnchorEventPRContextRepository.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/create-user-pr-legacy.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/expand-full-pr-legacy.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/create-admin-pr.ts`
+  - `apps/backend/src/domains/admin-anchor-management/use-cases/update-admin-pr-content.ts`
   - `apps/backend/src/domains/admin-anchor-management/use-cases/get-admin-anchor-workspace.ts`
   - `apps/backend/src/entities/anchor-event-batch.ts`
   - `apps/backend/src/entities/partner-request.ts`
@@ -1142,7 +1159,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/infra/analytics/aggregate-daily.service.ts`
   - `apps/backend/drizzle/0025_single_pr_contract.sql`
   - `apps/frontend/src/domains/admin/queries/useAdminAnchorManagement.ts`
-  - `apps/frontend/src/pages/AdminAnchorPRPage.vue`
+  - `apps/frontend/src/pages/AdminPRPage.vue`
   - `apps/frontend/src/domains/pr/routing/routes.ts`
   - `apps/frontend/src/domains/pr/use-cases/usePRCreateFlow.ts`
   - `apps/frontend/src/domains/pr/ui/sections/AnchorPRPrimaryActionLane.vue`
@@ -1150,7 +1167,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - public Anchor Event discovery now treats `earliestLeadMinutes` as an event-owned gate on generated `timeWindow` visibility, with the decision taken from generated window end-time against `now + earliestLeadMinutes`
   - event-owned `timePoolConfig` now replaces persisted `timeWindowPool` and batch shells in live runtime
   - admin Anchor Event management now edits `timePoolConfig` and previews generated `timeWindows`
-  - `AnchorPRRepository` now resolves anchor context from root PR facts plus event and generated `timeWindow` scope instead of reading `anchor_partner_requests`
+  - `AnchorEventPRContextRepository` now resolves anchor context from root PR facts plus event and generated `timeWindow` scope instead of reading `anchor_partner_requests`
   - admin anchor PR create, user anchor PR create, and auto-expand no longer write subtype rows
   - `community_partner_requests` and `anchor_partner_requests` source files have left the live code path
   - analytics daily aggregation now derives anchor/community line kind from explicit partner-admission policy on root PRs, while `scenario_type_metrics` uses `line_kind` instead of `pr_kind`
@@ -1181,13 +1198,13 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/domains/pr/model/partner/join-pr-by-identity.ts`
   - `apps/backend/src/domains/pr/model/partner/index.ts`
   - `apps/backend/src/domains/pr/read-models/index.ts`
-  - `apps/backend/src/domains/pr/read-models/search-anchor-prs.ts`
+  - `apps/backend/src/domains/pr/read-models/search-prs.ts`
   - `apps/backend/src/domains/pr/services/index.ts`
   - `apps/backend/src/domains/anchor-event/*`
   - `apps/backend/src/domains/admin-anchor-management/*`
   - `apps/backend/src/domains/notification/*`
   - `apps/backend/src/domains/pr-booking-support/*`
-  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/backend/src/repositories/AnchorEventPRContextRepository.ts`
   - `apps/frontend/src/domains/pr/model/types.ts`
   - `apps/frontend/src/domains/pr/model/detail.ts`
   - `apps/frontend/src/domains/pr/queries/usePRActions.ts`
@@ -1233,7 +1250,7 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
   - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
   - `apps/backend/src/repositories/AnchorEventRepository.ts`
-  - `apps/backend/src/repositories/AnchorPRRepository.ts`
+  - `apps/backend/src/repositories/AnchorEventPRContextRepository.ts`
   - `apps/backend/src/domains/admin-anchor-management/*`
   - `apps/backend/src/domains/pr-booking-support/*`
   - `apps/backend/src/domains/admin-booking-execution/use-cases/get-admin-booking-execution-workspace.ts`
@@ -1242,8 +1259,8 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - `apps/backend/seeds/0001_anchor_event_bootstrap.sql`
   - `apps/frontend/src/domains/admin/queries/useAdminAnchorManagement.ts`
   - `apps/frontend/src/domains/admin/queries/useAdminBookingSupport.ts`
-  - `apps/frontend/src/pages/AdminAnchorPRPage.vue`
-  - `apps/frontend/src/pages/AdminAnchorPRMessagesPage.vue`
+  - `apps/frontend/src/pages/AdminPRPage.vue`
+  - `apps/frontend/src/pages/AdminPRMessagesPage.vue`
   - `apps/frontend/src/pages/AdminBookingSupportPage.vue`
   - `apps/frontend/src/pages/AdminBookingExecutionPage.vue`
   - `apps/frontend/src/locales/zh-CN.jsonc`
@@ -1264,6 +1281,43 @@ The single `PRPage` must continue carrying these still-valid branches while voca
   - telemetry event-family rename remains separate from issue `#170`
   - issue `#175` still owns generated PIN and local credential retirement
 
+## Slice 14 - Anchor Event Page Model Correction
+
+- Status:
+  - completed on 2026-04-24
+- Scope for this correction slice:
+  - align public Anchor Event page runtime with the decided model that the page is one entry for one `type`
+  - make event-page discoverability and browsing organization depend on same-type PRs
+  - reduce repository drift by removing event-page and search ownership from `AnchorEventPRContextRepository`
+- Artifacts:
+  - `apps/backend/src/domains/anchor-event/use-cases/get-event-detail.ts`
+  - `apps/backend/src/domains/anchor-event/services/demand-card-projection.service.ts`
+  - `apps/backend/src/domains/anchor-event/use-cases/index.ts`
+  - `apps/backend/src/domains/pr/read-models/search-prs.ts`
+  - `apps/backend/src/domains/pr-core/services/pr-read.service.ts`
+  - `apps/backend/src/domains/pr/services/index.ts`
+  - `apps/backend/src/repositories/PartnerRequestRepository.ts`
+  - `apps/backend/src/repositories/AnchorEventPRContextRepository.ts`
+  - `apps/backend/src/index.ts`
+  - `apps/frontend/src/pages/AnchorEventPage.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventListModeSection.vue`
+  - `apps/frontend/src/domains/event/model/types.ts`
+- Decisions implemented:
+  - public Anchor Event detail now exposes `browseTimeWindows` derived from visible PRs where `PR.type == Event.type`
+  - public Anchor Event detail now exposes `createTimeWindows` derived from event-owned time-pool assistance
+  - List Mode date aggregation now starts from `browseTimeWindows`
+  - create-pr-card options now start from `createTimeWindows`
+  - demand-card projection now groups joinable same-type PRs directly from the PR set instead of from event-owned generated windows
+  - PR search under an Anchor Event now searches same-type visible PRs filtered by requested dates instead of event-owned generated windows
+  - `AnchorEventPRContextRepository` no longer owns event-wide browse/search collection methods; it remains focused on time-window and admin-oriented anchor context reads
+- Verification completed:
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/frontend build`
+- Residual follow-up:
+  - admin event-owned time-window/operator panels stay in the separate `tasks/admin-pr-management-refactor/00-task-packet.md`
+  - runtime admin flows still keep stronger event-scoped logic where operator workflows explicitly need event-owned context
+
 ## Handoff Source
 
 This packet spins out of:
@@ -1275,3 +1329,48 @@ This packet spins out of:
 
 - `tasks/pr-unification-167-170/10-action-preflight-problem-details-lld.md`
 - `tasks/pr-unification-167-170/20-single-pr-data-model-blueprint.md`
+
+## Slice 15 - PR Vocabulary Eradication
+
+- Status:
+  - completed on 2026-04-24
+- Scope for this cleanup slice:
+  - remove live `Anchor PR` vocabulary from backend and frontend source
+  - converge operator/admin/search/message/booking-support naming on `PR`
+  - align support-resource storage names with the current `PR*` entity surface
+- Artifacts:
+  - `apps/backend/src/domains/admin-anchor-management/*`
+  - `apps/backend/src/domains/admin-booking-execution/*`
+  - `apps/backend/src/domains/anchor-event/use-cases/expand-full-pr.ts`
+  - `apps/backend/src/domains/pr-core/services/pr-read.service.ts`
+  - `apps/backend/src/services/WeChatOAuthService.ts`
+  - `apps/backend/src/entities/pr-support-resource.ts`
+  - `apps/backend/src/entities/pr-booking-contact.ts`
+  - `apps/backend/src/entities/pr-booking-execution.ts`
+  - `apps/backend/src/repositories/AnchorEventPRContextRepository.ts`
+  - `apps/backend/drizzle/0027_pr_support_contract.sql`
+  - `apps/frontend/src/pages/AdminPRPage.vue`
+  - `apps/frontend/src/pages/AdminPRMessagesPage.vue`
+  - `apps/frontend/src/pages/AdminBookingExecutionPage.vue`
+  - `apps/frontend/src/pages/AdminLoginPage.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventListModeSection.vue`
+  - `apps/frontend/src/domains/event/ui/sections/AnchorEventCardModeSection.vue`
+  - `apps/frontend/src/domains/event/ui/primitives/AnchorEventPRCard.vue`
+  - `apps/frontend/src/domains/pr/queries/useEventPRSearch.ts`
+  - `apps/frontend/src/domains/share/use-cases/useRouteShareOrchestrator.ts`
+  - `apps/frontend/src/shared/url/spm.ts`
+  - `apps/frontend/src/shared/api/query-keys.ts`
+  - `apps/frontend/src/locales/schema.ts`
+  - `apps/frontend/src/locales/zh-CN.jsonc`
+- Decisions implemented:
+  - live source under `apps/backend/src` and `apps/frontend/src` no longer contains `Anchor PR` / `AnchorPR` / `pr-legacy` / `community-pr` vocabulary
+  - admin and operator flows now speak in `PR` terms while event-owned context stays under `Anchor Event`
+  - share route-key vocabulary now uses canonical `pr` and `pr-create`
+  - support-resource runtime storage now uses `pr_support_resources`, `pr_booking_contacts`, and `pr_booking_executions`
+- Verification completed:
+  - `rg -n "Anchor PR|AnchorPR|anchorPR|anchor-pr|anchor_pr|pr-legacy|pr-legacys|community-pr|community_pr|Community PR" apps/backend/src apps/frontend/src`
+  - `pnpm --filter @partner-up-dev/backend typecheck`
+  - `pnpm --filter @partner-up-dev/backend build`
+  - `pnpm --filter @partner-up-dev/backend db:lint`
+  - `pnpm --filter @partner-up-dev/backend exec tsx --test src/infra/notifications/wechat-pr-message.test.ts`
+  - `pnpm --filter @partner-up-dev/frontend build`

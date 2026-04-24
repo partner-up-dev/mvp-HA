@@ -6,8 +6,8 @@ import { queryKeys } from "@/shared/api/query-keys";
 
 type AdminApi = typeof adminClient.api.admin;
 type BookingExecutionWorkspaceRoute = AdminApi["booking-execution"]["workspace"];
-type AnchorPRsRoute = AdminApi["anchor-prs"];
-type AnchorPRRoute = AnchorPRsRoute[":id"];
+type PRsRoute = AdminApi["prs"];
+type PRRoute = PRsRoute[":id"];
 
 const readErrorMessage = async (
   response: Response,
@@ -22,11 +22,11 @@ export type AdminBookingExecutionWorkspaceResponse = InferResponseType<
 >;
 
 export type SubmitAdminBookingExecutionResponse = InferResponseType<
-  AnchorPRRoute["booking-execution"]["$post"]
+  PRRoute["booking-execution"]["$post"]
 >;
 
-export type ReleaseAdminAnchorPRPartnerResponse = InferResponseType<
-  AnchorPRRoute["partners"][":partnerId"]["release"]["$post"]
+export type ReleaseAdminPRPartnerResponse = InferResponseType<
+  PRRoute["partners"][":partnerId"]["release"]["$post"]
 >;
 
 export type AdminBookingExecutionInput = {
@@ -35,7 +35,7 @@ export type AdminBookingExecutionInput = {
   reason: string | null;
 };
 
-export type AdminAnchorPRPartnerReleaseInput = {
+export type AdminPRPartnerReleaseInput = {
   reason: string;
 };
 
@@ -47,14 +47,14 @@ export const useAdminBookingExecutionWorkspace = (
     queryFn: async () => {
       const res = await adminClient.api.admin["booking-execution"].workspace.$get();
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "获取预订执行工作台失败"));
+        throw new Error(await readErrorMessage(res, "取得預訂執行工作台失敗"));
       }
       return await res.json();
     },
     enabled: computed(() => unref(enabled)),
   });
 
-export const useSubmitAdminAnchorPRBookingExecution = () => {
+export const useSubmitAdminPRBookingExecution = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -63,14 +63,12 @@ export const useSubmitAdminAnchorPRBookingExecution = () => {
     { prId: number; input: AdminBookingExecutionInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][":id"][
-        "booking-execution"
-      ].$post({
+      const res = await adminClient.api.admin.prs[":id"]["booking-execution"].$post({
         param: { id: prId.toString() },
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "提交预订处理结果失败"));
+        throw new Error(await readErrorMessage(res, "提交預訂處理結果失敗"));
       }
       return await res.json();
     },
@@ -79,22 +77,22 @@ export const useSubmitAdminAnchorPRBookingExecution = () => {
         queryKey: queryKeys.admin.bookingExecutionWorkspace(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });
 };
 
-export const useReleaseAdminAnchorPRPartnerForExecution = () => {
+export const useReleaseAdminPRPartnerForExecution = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    ReleaseAdminAnchorPRPartnerResponse,
+    ReleaseAdminPRPartnerResponse,
     Error,
-    { prId: number; partnerId: number; input: AdminAnchorPRPartnerReleaseInput }
+    { prId: number; partnerId: number; input: AdminPRPartnerReleaseInput }
   >({
     mutationFn: async ({ prId, partnerId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][":id"].partners[
+      const res = await adminClient.api.admin.prs[":id"].partners[
         ":partnerId"
       ].release.$post({
         param: {
@@ -104,7 +102,7 @@ export const useReleaseAdminAnchorPRPartnerForExecution = () => {
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "释放预订联系人失败"));
+        throw new Error(await readErrorMessage(res, "釋放預訂聯絡人失敗"));
       }
       return await res.json();
     },
@@ -113,7 +111,7 @@ export const useReleaseAdminAnchorPRPartnerForExecution = () => {
         queryKey: queryKeys.admin.bookingExecutionWorkspace(),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });

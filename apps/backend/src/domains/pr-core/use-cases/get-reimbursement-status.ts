@@ -2,11 +2,11 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { readPartnerRequestById } from "../services/pr-read.service";
 
 const partnerRepo = new PartnerRepository();
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const prSupportRepo = new PRSupportResourceRepository();
 
 type ReimbursementReason =
   | "NO_POSTPAID_SUPPORT"

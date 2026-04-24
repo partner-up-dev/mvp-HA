@@ -1,7 +1,7 @@
 import type { PRId } from "../../../entities";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const prSupportRepo = new PRSupportResourceRepository();
 
 export async function getEffectiveBookingDeadline(
   prId: PRId,

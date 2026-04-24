@@ -498,7 +498,7 @@ export interface MessageSchema {
     noEvents: string;
     loadFailed: string;
   };
-  anchorPRSearch: {
+  eventPRSearch: {
     title: string;
     resultTitle: string;
     resultSubtitleFallback: string;
@@ -868,8 +868,8 @@ export interface MessageSchema {
   adminCommon: {
     title: string;
     subtitle: string;
-    navAnchorPR: string;
-    navAnchorPRMessages: string;
+    navPR: string;
+    navPRMessages: string;
     navBookingSupport: string;
     navBookingExecution: string;
     navPois: string;
@@ -956,7 +956,7 @@ export interface MessageSchema {
     removeImageAction: string;
     imageAlt: string;
   };
-  adminAnchorPR: {
+  adminPR: {
     title: string;
     subtitle: string;
     loginTitle: string;
@@ -990,31 +990,31 @@ export interface MessageSchema {
     batchStatusLabel: string;
     saveBatchAction: string;
     createBatchAction: string;
-    anchorPRsTitle: string;
-    newAnchorPRAction: string;
-    emptyAnchorPRs: string;
-    anchorPRFormTitle: string;
-    anchorPRTitleLabel: string;
-    anchorPRTypeLabel: string;
-    anchorPRLocationLabel: string;
+    prsTitle: string;
+    newPRAction: string;
+    emptyPRs: string;
+    prFormTitle: string;
+    prTitleLabel: string;
+    prTypeLabel: string;
+    prLocationLabel: string;
     noLocationOption: string;
-    anchorPRStatusLabel: string;
-    anchorPRVisibilityLabel: string;
-    anchorPRMinPartnersLabel: string;
-    anchorPRMaxPartnersLabel: string;
-    anchorPRPreferencesLabel: string;
-    anchorPRNotesLabel: string;
-    anchorPRLocationHint: string;
-    anchorPRTimeHint: string;
-    anchorPRContentLockedHint: string;
+    prStatusLabel: string;
+    prVisibilityLabel: string;
+    prMinPartnersLabel: string;
+    prMaxPartnersLabel: string;
+    prPreferencesLabel: string;
+    prNotesLabel: string;
+    prLocationHint: string;
+    prTimeHint: string;
+    prContentLockedHint: string;
     participationPolicyTitle: string;
     participationPolicyDescription: string;
     bookingTriggeredAtLabel: string;
     policyValidationStartBeforeEnd: string;
     policyValidationJoinLockAfterConfirmationEnd: string;
     policyValidationDeadlineAfterConfirmationEnd: string;
-    saveAnchorPRAction: string;
-    createAnchorPRAction: string;
+    savePRAction: string;
+    createPRAction: string;
     prListTitle: string;
     partnerCountWithValue: string;
     statusActive: string;
@@ -1027,17 +1027,17 @@ export interface MessageSchema {
     visibilityHidden: string;
     saving: string;
   };
-  adminAnchorPRMessages: {
+  adminPRMessages: {
     title: string;
     subtitle: string;
     eventsTitle: string;
     batchesTitle: string;
-    anchorPRsTitle: string;
+    prsTitle: string;
     composerTitle: string;
     composerHint: string;
     emptyEvents: string;
     emptyBatches: string;
-    emptyAnchorPRs: string;
+    emptyPRs: string;
     selectEventHint: string;
     selectBatchHint: string;
     selectPRHint: string;

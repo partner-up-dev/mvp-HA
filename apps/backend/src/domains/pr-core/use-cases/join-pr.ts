@@ -22,14 +22,14 @@ import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
-import { expandFullAnchorPR } from "../../anchor-event";
+import { expandFullPR } from "../../anchor-event";
 import {
   scheduleWeChatActivityStartReminderJobForParticipant,
   scheduleWeChatNewPartnerNotificationsForJoin,
   scheduleWeChatReminderJobsForParticipant,
 } from "../../../infra/notifications";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
-import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
+import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import {
   isBookingContactRequiredForPR,
   normalizeMainlandChinaMobilePhone,
@@ -38,7 +38,7 @@ import {
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
-const bookingContactRepo = new AnchorPRBookingContactRepository();
+const bookingContactRepo = new PRBookingContactRepository();
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
@@ -209,7 +209,7 @@ export async function joinPRAsUser(
     hasAnchorParticipationPolicy(afterRecalculate) &&
     afterRecalculate.status === "FULL"
   ) {
-    await expandFullAnchorPR(id);
+    await expandFullPR(id);
   }
 
   // Emit domain event

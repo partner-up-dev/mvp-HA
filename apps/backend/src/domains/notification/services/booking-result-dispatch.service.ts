@@ -1,18 +1,18 @@
 import { z } from "zod";
 import type {
-  AnchorPRBookingExecution,
-  AnchorPRBookingExecutionResult,
+  PRBookingExecution,
+  PRBookingExecutionResult,
   PRId,
 } from "../../../entities";
 import { userIdSchema, type User, type UserId } from "../../../entities/user";
 import { env } from "../../../lib/env";
-import { AnchorPRBookingExecutionRepository } from "../../../repositories/AnchorPRBookingExecutionRepository";
+import { PRBookingExecutionRepository } from "../../../repositories/PRBookingExecutionRepository";
 import { NotificationDeliveryRepository } from "../../../repositories/NotificationDeliveryRepository";
 import { UserNotificationOptRepository } from "../../../repositories/UserNotificationOptRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { BOOKING_RESULT_NOTIFICATION_KIND } from "../model/notification-kind";
 
-const bookingExecutionRepo = new AnchorPRBookingExecutionRepository();
+const bookingExecutionRepo = new PRBookingExecutionRepository();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
 const deliveryRepo = new NotificationDeliveryRepository();
@@ -66,7 +66,7 @@ export type BookingResultDispatchPreparation =
   | BookingResultDispatchBlocked;
 
 export const buildBookingResultDedupeKey = (
-  executionId: AnchorPRBookingExecution["id"],
+  executionId: PRBookingExecution["id"],
 ): string => `${BOOKING_RESULT_DEDUPE_PREFIX}:${executionId}`;
 
 export const createBookingResultNotificationSummary = (
@@ -145,7 +145,7 @@ export const prepareBookingResultNotificationDispatch = async (input: {
 };
 
 export const persistBookingResultNotificationSummary = async (
-  executionId: AnchorPRBookingExecution["id"],
+  executionId: PRBookingExecution["id"],
   summary: BookingResultNotificationSummary,
 ): Promise<void> => {
   const updated = await bookingExecutionRepo.updateNotificationSummary(
@@ -198,6 +198,6 @@ export const clearBookingResultNotificationCredits = async (
 };
 
 export const resolveBookingResultStatusLabel = (
-  result: AnchorPRBookingExecutionResult,
+  result: PRBookingExecutionResult,
 ): string => (result === "SUCCESS" ? "预订成功" : "预订失败");
 

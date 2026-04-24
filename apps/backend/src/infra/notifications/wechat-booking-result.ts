@@ -1,4 +1,4 @@
-import type { AnchorPRBookingExecution, PRId } from "../../entities";
+import type { PRBookingExecution, PRId } from "../../entities";
 import type { UserId } from "../../entities/user";
 import {
   BOOKING_RESULT_NOTIFICATION_KIND,
@@ -137,7 +137,7 @@ export function registerWeChatBookingResultJobs(): void {
 }
 
 export async function scheduleWeChatBookingResultNotifications(input: {
-  executionId: AnchorPRBookingExecution["id"];
+  executionId: PRBookingExecution["id"];
   prId: PRId;
   recipientUserIds: UserId[];
   bookingItem: string;

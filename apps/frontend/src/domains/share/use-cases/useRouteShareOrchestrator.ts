@@ -47,11 +47,10 @@ const resolveFallbackText = (
         routeKey: "home",
       };
     case "pr-create":
-    case "community-pr-create":
       return {
         title: `${i18n.global.t("createPage.title")} - ${i18n.global.t("app.name")}`,
         desc: i18n.global.t("share.wechat.pageDescriptionCreate"),
-        routeKey: "community_pr_create",
+        routeKey: "pr-create",
       };
     case "contact-support":
       return {
@@ -66,12 +65,10 @@ const resolveFallbackText = (
         routeKey: "contact_author",
       };
     case "pr-detail":
-    case "anchor-pr":
-    case "community-pr":
       return {
         title: i18n.global.t("prPage.metaFallbackTitle"),
         desc: i18n.global.t("prPage.metaFallbackDescription"),
-        routeKey: "anchor_pr",
+        routeKey: "pr",
       };
     default:
       return null;

@@ -15,6 +15,7 @@ export type AnchorEventDemandCardsResponse = InferResponseType<
   (typeof client.api.events)[":eventId"]["demand-cards"]["$get"]
 >;
 
-export type AnchorEventTimeWindow = AnchorEventDetailResponse["timeWindows"][number];
+export type AnchorEventTimeWindow =
+  AnchorEventDetailResponse["browseTimeWindows"][number];
 
 export type AnchorEventTimeWindowPR = AnchorEventTimeWindow["prs"][number];

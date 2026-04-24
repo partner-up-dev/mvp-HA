@@ -3,15 +3,9 @@ import type {
   AnchorEventId,
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
-import {
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
-} from "../../../entities/anchor-event";
 import type { PartnerRequest } from "../../../entities/partner-request";
-import { readVisiblePartnerRequestsByTypeAndTime } from "../../pr/services";
+import { readVisiblePartnerRequestsByType } from "../../pr/services";
 import { isJoinableStatus } from "../../pr/services";
-import { listAnchorEventTimeWindows } from "./time-window-pool";
-import { isEventScopedLocation } from "./event-scope";
 
 const eventRepo = new AnchorEventRepository();
 
@@ -190,47 +184,41 @@ const groupJoinableCandidates = async (
     return [];
   }
 
-  const timeWindowPool = listAnchorEventTimeWindows(event);
   const groupMap = new Map<string, CandidateGroup>();
+  const records = await readVisiblePartnerRequestsByType(event.type);
 
-  for (const timeWindow of timeWindowPool) {
-    const records = (
-      await readVisiblePartnerRequestsByTypeAndTime(event.type, timeWindow)
-    ).filter((record) => isEventScopedLocation(event, record.location));
+  for (const record of records) {
+    if (!isJoinableStatus(record.status)) {
+      continue;
+    }
 
-    for (const record of records) {
-      if (!isJoinableStatus(record.status)) {
-        continue;
-      }
+    const displayLocationName = trimNullable(record.location);
+    if (!displayLocationName) {
+      continue;
+    }
 
-      const displayLocationName = trimNullable(record.location);
-      if (!displayLocationName) {
-        continue;
-      }
+    const preferences = Array.isArray(record.preferences)
+      ? record.preferences
+      : [];
+    const preferenceTags = resolvePreferenceTags(preferences);
+    const preferenceFingerprint = normalizePreferenceFingerprint(preferenceTags);
+    const cardKey = buildDemandCardKey(
+      record.time,
+      displayLocationName,
+      preferenceFingerprint,
+    );
 
-      const preferences = Array.isArray(record.preferences)
-        ? record.preferences
-        : [];
-      const preferenceTags = resolvePreferenceTags(preferences);
-      const preferenceFingerprint = normalizePreferenceFingerprint(preferenceTags);
-      const cardKey = buildDemandCardKey(
-        timeWindow,
+    const existing =
+      groupMap.get(cardKey) ??
+      buildCandidateGroup({
+        timeWindow: record.time,
         displayLocationName,
         preferenceFingerprint,
-      );
+        preferenceTags,
+      });
 
-      const existing =
-        groupMap.get(cardKey) ??
-        buildCandidateGroup({
-          timeWindow,
-          displayLocationName,
-          preferenceFingerprint,
-          preferenceTags,
-        });
-
-      existing.candidates.push(toDemandCardCandidate(record));
-      groupMap.set(cardKey, existing);
-    }
+    existing.candidates.push(toDemandCardCandidate(record));
+    groupMap.set(cardKey, existing);
   }
 
   return Array.from(groupMap.values());

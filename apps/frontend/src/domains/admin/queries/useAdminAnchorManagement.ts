@@ -5,11 +5,11 @@ import { adminClient } from "@/lib/admin-rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
 type AdminApi = typeof adminClient.api.admin;
-type AnchorWorkspaceRoute = AdminApi["anchor-pr"]["workspace"];
+type PRWorkspaceRoute = AdminApi["pr"]["workspace"];
 type AnchorEventsRoute = AdminApi["anchor-events"];
 type AnchorEventRoute = AnchorEventsRoute[":eventId"];
-type AnchorPRsRoute = AdminApi["anchor-prs"];
-type AnchorPRRoute = AnchorPRsRoute[":id"];
+type PRsRoute = AdminApi["prs"];
+type PRRoute = PRsRoute[":id"];
 
 const readErrorMessage = async (
   response: Response,
@@ -19,8 +19,8 @@ const readErrorMessage = async (
   return payload.error || fallback;
 };
 
-export type AdminAnchorWorkspaceResponse = InferResponseType<
-  AnchorWorkspaceRoute["$get"]
+export type AdminPRWorkspaceResponse = InferResponseType<
+  PRWorkspaceRoute["$get"]
 >;
 
 export type CreateAdminAnchorEventResponse = InferResponseType<
@@ -31,24 +31,24 @@ export type UpdateAdminAnchorEventResponse = InferResponseType<
   AnchorEventRoute["$patch"]
 >;
 
-export type CreateAdminAnchorPRResponse = InferResponseType<
-  AnchorEventRoute["anchor-prs"]["$post"]
+export type CreateAdminPRResponse = InferResponseType<
+  AnchorEventRoute["prs"]["$post"]
 >;
 
-export type UpdateAdminAnchorPRContentResponse = InferResponseType<
-  AnchorPRRoute["content"]["$patch"]
+export type UpdateAdminPRContentResponse = InferResponseType<
+  PRRoute["content"]["$patch"]
 >;
 
-export type UpdateAdminAnchorPRStatusResponse = InferResponseType<
-  AnchorPRRoute["status"]["$patch"]
+export type UpdateAdminPRStatusResponse = InferResponseType<
+  PRRoute["status"]["$patch"]
 >;
 
-export type UpdateAdminAnchorPRVisibilityResponse = InferResponseType<
-  AnchorPRRoute["visibility"]["$patch"]
+export type UpdateAdminPRVisibilityResponse = InferResponseType<
+  PRRoute["visibility"]["$patch"]
 >;
 
-export type CreateAdminAnchorPRMessageResponse = InferResponseType<
-  AnchorPRRoute["messages"]["$post"]
+export type CreateAdminPRMessageResponse = InferResponseType<
+  PRRoute["messages"]["$post"]
 >;
 
 export type AdminAnchorRecurringStartRuleInput = {
@@ -89,7 +89,7 @@ export type AdminAnchorEventInput = {
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 
-export type AdminCreateAnchorPRInput = {
+export type AdminCreatePRInput = {
   timeWindow: [string | null, string | null];
   title: string | null;
   type: string | null;
@@ -103,7 +103,7 @@ export type AdminCreateAnchorPRInput = {
   joinLockOffsetMinutes: number;
 };
 
-export type AdminUpdateAnchorPRContentInput = {
+export type AdminUpdatePRContentInput = {
   title: string | null;
   type: string;
   location: string | null;
@@ -116,27 +116,25 @@ export type AdminUpdateAnchorPRContentInput = {
   joinLockOffsetMinutes: number;
 };
 
-export type AdminUpdateAnchorPRStatusInput = {
+export type AdminUpdatePRStatusInput = {
   status: "OPEN" | "READY" | "ACTIVE" | "CLOSED";
 };
 
-export type AdminUpdateAnchorPRVisibilityInput = {
+export type AdminUpdatePRVisibilityInput = {
   visibilityStatus: "VISIBLE" | "HIDDEN";
 };
 
-export type AdminCreateAnchorPRMessageInput = {
+export type AdminCreatePRMessageInput = {
   body: string;
 };
 
-export const useAdminAnchorWorkspace = (enabled: MaybeRef<boolean> = true) =>
-  useQuery<AdminAnchorWorkspaceResponse>({
-    queryKey: queryKeys.admin.anchorWorkspace(),
+export const useAdminPRWorkspace = (enabled: MaybeRef<boolean> = true) =>
+  useQuery<AdminPRWorkspaceResponse>({
+    queryKey: queryKeys.admin.prWorkspace(),
     queryFn: async () => {
-      const res = await adminClient.api.admin["anchor-pr"].workspace.$get();
+      const res = await adminClient.api.admin.pr.workspace.$get();
       if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(res, "获取 Anchor 管理数据失败"),
-        );
+        throw new Error(await readErrorMessage(res, "取得 PR 管理資料失敗"));
       }
       return await res.json();
     },
@@ -156,13 +154,13 @@ export const useCreateAdminAnchorEvent = () => {
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "创建活动失败"));
+        throw new Error(await readErrorMessage(res, "建立活動失敗"));
       }
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });
@@ -184,159 +182,151 @@ export const useUpdateAdminAnchorEvent = () => {
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "更新活动失败"));
+        throw new Error(await readErrorMessage(res, "更新活動失敗"));
       }
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });
 };
 
-export const useCreateAdminAnchorPR = () => {
+export const useCreateAdminPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    CreateAdminAnchorPRResponse,
+    CreateAdminPRResponse,
     Error,
-    { eventId: number; input: AdminCreateAnchorPRInput }
+    { eventId: number; input: AdminCreatePRInput }
   >({
     mutationFn: async ({ eventId, input }) => {
       const res = await adminClient.api.admin["anchor-events"][
         ":eventId"
-      ]["anchor-prs"].$post({
+      ].prs.$post({
         param: { eventId: eventId.toString() },
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "创建 PR 失败"));
+        throw new Error(await readErrorMessage(res, "建立 PR 失敗"));
       }
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });
 };
 
-export const useUpdateAdminAnchorPRContent = () => {
+export const useUpdateAdminPRContent = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    UpdateAdminAnchorPRContentResponse,
+    UpdateAdminPRContentResponse,
     Error,
-    { prId: number; input: AdminUpdateAnchorPRContentInput }
+    { prId: number; input: AdminUpdatePRContentInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][
-        ":id"
-      ].content.$patch({
+      const res = await adminClient.api.admin.prs[":id"].content.$patch({
         param: { id: prId.toString() },
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "更新 PR 内容失败"));
+        throw new Error(await readErrorMessage(res, "更新 PR 內容失敗"));
       }
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });
 };
 
-export const useUpdateAdminAnchorPRStatus = () => {
+export const useUpdateAdminPRStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    UpdateAdminAnchorPRStatusResponse,
+    UpdateAdminPRStatusResponse,
     Error,
-    { prId: number; input: AdminUpdateAnchorPRStatusInput }
+    { prId: number; input: AdminUpdatePRStatusInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][
-        ":id"
-      ].status.$patch({
+      const res = await adminClient.api.admin.prs[":id"].status.$patch({
         param: { id: prId.toString() },
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "更新 PR 状态失败"));
+        throw new Error(await readErrorMessage(res, "更新 PR 狀態失敗"));
       }
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });
 };
 
-export const useUpdateAdminAnchorPRVisibility = () => {
+export const useUpdateAdminPRVisibility = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    UpdateAdminAnchorPRVisibilityResponse,
+    UpdateAdminPRVisibilityResponse,
     Error,
-    { prId: number; input: AdminUpdateAnchorPRVisibilityInput }
+    { prId: number; input: AdminUpdatePRVisibilityInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][
-        ":id"
-      ].visibility.$patch({
+      const res = await adminClient.api.admin.prs[":id"].visibility.$patch({
         param: { id: prId.toString() },
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "更新 PR 可见性失败"));
+        throw new Error(await readErrorMessage(res, "更新 PR 可見性失敗"));
       }
       return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
     },
   });
 };
 
-export const useCreateAdminAnchorPRMessage = () => {
+export const useCreateAdminPRMessage = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
-    CreateAdminAnchorPRMessageResponse,
+    CreateAdminPRMessageResponse,
     Error,
-    { prId: number; input: AdminCreateAnchorPRMessageInput }
+    { prId: number; input: AdminCreatePRMessageInput }
   >({
     mutationFn: async ({ prId, input }) => {
-      const res = await adminClient.api.admin["anchor-prs"][":id"].messages.$post(
-        {
-          param: { id: prId.toString() },
-          json: input,
-        },
-      );
+      const res = await adminClient.api.admin.prs[":id"].messages.$post({
+        param: { id: prId.toString() },
+        json: input,
+      });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "发送系统留言失败"));
+        throw new Error(await readErrorMessage(res, "發送系統留言失敗"));
       }
       return await res.json();
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorWorkspace(),
+        queryKey: queryKeys.admin.prWorkspace(),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.messages(variables.prId),
       });
       queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.anchorPRMessages(variables.prId),
+        queryKey: queryKeys.admin.prMessages(variables.prId),
       });
     },
   });

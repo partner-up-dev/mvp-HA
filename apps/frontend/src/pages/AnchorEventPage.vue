@@ -85,7 +85,7 @@
 
       <template v-else>
         <AnchorEventListModeSection
-          :has-time-windows="detail.timeWindows.length > 0"
+          :has-browse-time-windows="detail.browseTimeWindows.length > 0"
           :date-tabs="dateTabs"
           :selected-date-key="selectedDateKey"
           :selected-date-group="selectedDateGroup"
@@ -161,7 +161,13 @@ type EventViewMode = "LIST" | "CARD";
 type TimeWindow = [string | null, string | null];
 
 type LocationOption =
-  AnchorEventDetailResponse["timeWindows"][number]["locationOptions"][number];
+  AnchorEventDetailResponse["createTimeWindows"][number]["locationOptions"][number];
+
+type BrowseTimeWindowEntry =
+  AnchorEventDetailResponse["browseTimeWindows"][number];
+
+type CreateTimeWindowEntry =
+  AnchorEventDetailResponse["createTimeWindows"][number];
 
 type CardTimeWindowOption = {
   key: string;
@@ -175,7 +181,7 @@ type CardCreateLocationOptionViewModel = {
 };
 
 type ListModeTimeWindowViewModel = {
-  entry: AnchorEventDetailResponse["timeWindows"][number];
+  entry: BrowseTimeWindowEntry;
   timeLabel: string;
 };
 
@@ -187,7 +193,7 @@ type ListModeDateGroupViewModel = {
 };
 
 type ListModeCreateTimeWindowChoice = {
-  entry: AnchorEventDetailResponse["timeWindows"][number];
+  entry: CreateTimeWindowEntry;
   optionLabel: string;
   subtitleLabel: string;
 };
@@ -410,8 +416,17 @@ const resolveTimeWindowEndTimestamp = (timeWindow: TimeWindow): number => {
   return timestamp;
 };
 
-const sortedTimeWindows = computed(() => {
-  const timeWindows = detail.value?.timeWindows ?? [];
+const sortedBrowseTimeWindows = computed(() => {
+  const timeWindows = detail.value?.browseTimeWindows ?? [];
+  return [...timeWindows].sort((left, right) => {
+    const leftTimestamp = resolveTimeWindowStartTimestamp(left.timeWindow);
+    const rightTimestamp = resolveTimeWindowStartTimestamp(right.timeWindow);
+    return leftTimestamp - rightTimestamp;
+  });
+});
+
+const sortedCreateTimeWindows = computed(() => {
+  const timeWindows = detail.value?.createTimeWindows ?? [];
   return [...timeWindows].sort((left, right) => {
     const leftTimestamp = resolveTimeWindowStartTimestamp(left.timeWindow);
     const rightTimestamp = resolveTimeWindowStartTimestamp(right.timeWindow);
@@ -437,8 +452,8 @@ const isEndedTimeWindow = (timeWindow: TimeWindow): boolean => {
   return hasTimeWindowStarted(timeWindow);
 };
 
-const upcomingSortedTimeWindows = computed(() =>
-  sortedTimeWindows.value.filter(
+const upcomingSortedCreateTimeWindows = computed(() =>
+  sortedCreateTimeWindows.value.filter(
     (entry) => !hasTimeWindowStarted(entry.timeWindow),
   ),
 );
@@ -554,7 +569,7 @@ function formatTimeWindowTimeLabel(timeWindow: TimeWindow, index: number): strin
 }
 
 const formatTimeWindowOptionLabel = (
-  entry: AnchorEventDetailResponse["timeWindows"][number],
+  entry: CreateTimeWindowEntry,
   index: number,
 ): string => formatTimeWindowLabel(entry.timeWindow, index);
 
@@ -562,7 +577,7 @@ const dateGroups = computed<ListModeDateGroupViewModel[]>(() => {
   const groups: ListModeDateGroupViewModel[] = [];
   const groupIndexByKey = new Map<string, number>();
 
-  sortedTimeWindows.value.forEach((entry, index) => {
+  sortedBrowseTimeWindows.value.forEach((entry, index) => {
     const groupKey =
       resolveTimeWindowDateKey(entry.timeWindow) ?? `time-window:${entry.key}`;
     const existingIndex = groupIndexByKey.get(groupKey);
@@ -612,7 +627,7 @@ const dateTabs = computed(() =>
 
 const listModeCreateTimeWindowChoices = computed<ListModeCreateTimeWindowChoice[]>(
   () =>
-    upcomingSortedTimeWindows.value.map((entry, index) => ({
+    upcomingSortedCreateTimeWindows.value.map((entry, index) => ({
       entry,
       optionLabel: formatTimeWindowOptionLabel(entry, index),
       subtitleLabel: formatTimeWindowLabel(entry.timeWindow, index),
@@ -661,7 +676,7 @@ watch(
 const allPoiIdsCsv = computed(() => {
   const uniqueLocationIds = new Set<string>();
 
-  for (const entry of sortedTimeWindows.value) {
+  for (const entry of sortedBrowseTimeWindows.value) {
     for (const pr of entry.prs) {
       const location = pr.location?.trim() ?? "";
       if (location.length > 0) {
@@ -950,24 +965,24 @@ const handleCreateInList = async ({
 };
 
 const cardCreateTimeWindowOptions = computed<CardTimeWindowOption[]>(() =>
-  upcomingSortedTimeWindows.value.map((entry, index) => ({
+  upcomingSortedCreateTimeWindows.value.map((entry, index) => ({
     key: entry.key,
     label: formatTimeWindowOptionLabel(entry, index),
   })),
 );
 
 const resolveFirstCreatableTimeWindowKey = (): string | null => {
-  for (const entry of upcomingSortedTimeWindows.value) {
+  for (const entry of upcomingSortedCreateTimeWindows.value) {
     if (entry.locationOptions.some((option) => !option.disabled)) {
       return entry.key;
     }
   }
 
-  return upcomingSortedTimeWindows.value[0]?.key ?? null;
+  return upcomingSortedCreateTimeWindows.value[0]?.key ?? null;
 };
 
 watch(
-  upcomingSortedTimeWindows,
+  upcomingSortedCreateTimeWindows,
   (timeWindows) => {
     if (timeWindows.length === 0) {
       cardCreateTimeWindowKey.value = null;
@@ -992,7 +1007,10 @@ const selectedCardCreateTimeWindow = computed(() => {
     return null;
   }
 
-  return upcomingSortedTimeWindows.value.find((entry) => entry.key === key) ?? null;
+  return (
+    upcomingSortedCreateTimeWindows.value.find((entry) => entry.key === key) ??
+    null
+  );
 });
 
 const cardCreateLocationOptions = computed<LocationOption[]>(() => {

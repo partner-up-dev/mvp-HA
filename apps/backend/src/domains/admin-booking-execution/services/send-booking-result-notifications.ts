@@ -1,6 +1,6 @@
 import type {
-  AnchorPRBookingExecution,
-  AnchorPRBookingExecutionResult,
+  PRBookingExecution,
+  PRBookingExecutionResult,
   PRId,
 } from "../../../entities";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -60,7 +60,7 @@ const formatActivityTime = (
 };
 
 const resolveBookingDetail = (input: {
-  result: AnchorPRBookingExecutionResult;
+  result: PRBookingExecutionResult;
   reason: string | null;
   resourceSummaryText: string;
   resourceDetailRules: string[];
@@ -83,14 +83,14 @@ const resolveBookingDetail = (input: {
 export type { BookingResultNotificationSummary };
 
 export async function sendBookingResultNotifications(input: {
-  executionId: AnchorPRBookingExecution["id"];
+  executionId: PRBookingExecution["id"];
   prId: PRId;
   prTimeWindow: [string | null, string | null];
   location: string | null;
   resourceTitle: string;
   resourceSummaryText: string;
   resourceDetailRules: string[];
-  result: AnchorPRBookingExecutionResult;
+  result: PRBookingExecutionResult;
   reason: string | null;
 }): Promise<BookingResultNotificationSummary> {
   const activeParticipants =

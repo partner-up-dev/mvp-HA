@@ -83,7 +83,7 @@ const resolveRedirectTarget = (): string => {
     return redirect;
   }
 
-  return "/admin/anchor-pr";
+  return "/admin/pr";
 };
 
 const handleSubmit = async () => {

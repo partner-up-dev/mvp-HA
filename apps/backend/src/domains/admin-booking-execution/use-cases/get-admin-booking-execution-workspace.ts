@@ -7,13 +7,13 @@ import type {
 } from "../../../entities";
 import { operationLogService } from "../../../infra/operation-log";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
-import { AnchorPRBookingExecutionRepository } from "../../../repositories/AnchorPRBookingExecutionRepository";
+import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
+import { PRBookingExecutionRepository } from "../../../repositories/PRBookingExecutionRepository";
 import {
-  AnchorPRRepository,
-  type AnchorPRRecord,
-} from "../../../repositories/AnchorPRRepository";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+  AnchorEventPRContextRepository,
+  type AnchorEventPRContextRecord,
+} from "../../../repositories/AnchorEventPRContextRepository";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
 import {
@@ -27,16 +27,16 @@ import {
 const BOOKING_EXECUTION_LOG_LIMIT = 200;
 const MANUAL_RELEASE_ACTION = "partner.admin_manual_release";
 
-const anchorPRRepo = new AnchorPRRepository();
+const eventContextRepo = new AnchorEventPRContextRepository();
 const anchorEventRepo = new AnchorEventRepository();
-const prSupportRepo = new AnchorPRSupportResourceRepository();
-const bookingContactRepo = new AnchorPRBookingContactRepository();
-const bookingExecutionRepo = new AnchorPRBookingExecutionRepository();
+const prSupportRepo = new PRSupportResourceRepository();
+const bookingContactRepo = new PRBookingContactRepository();
+const bookingExecutionRepo = new PRBookingExecutionRepository();
 const partnerRepo = new PartnerRepository();
 const userRepo = new UserRepository();
 
 type BookingExecutionContext = {
-  record: AnchorPRRecord | null;
+  record: AnchorEventPRContextRecord | null;
   event: AnchorEvent | null;
 };
 
@@ -46,7 +46,7 @@ export type AdminBookingExecutionPendingItem = {
   prType: string;
   location: string | null;
   timeWindow: [string | null, string | null];
-  status: AnchorPRRecord["root"]["status"];
+  status: AnchorEventPRContextRecord["root"]["status"];
   partnerCount: number;
   eventId: number | null;
   eventTitle: string | null;
@@ -176,11 +176,11 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
     MANUAL_RELEASE_ACTION,
     BOOKING_EXECUTION_LOG_LIMIT,
   );
-  const candidateRecords = await anchorPRRepo.findByRootStatuses([
+  const candidateRecords = await eventContextRepo.findByRootStatuses([
     ...BOOKING_EXECUTION_PENDING_STATUSES,
   ]);
 
-  const seededContextMap = new Map<PRId, AnchorPRRecord>(
+  const seededContextMap = new Map<PRId, AnchorEventPRContextRecord>(
     candidateRecords.map((record) => [record.root.id, record]),
   );
   const contextCache = new Map<PRId, Promise<BookingExecutionContext>>();
@@ -194,7 +194,8 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
 
     const promise = (async (): Promise<BookingExecutionContext> => {
       const record =
-        seededContextMap.get(prId) ?? (await anchorPRRepo.findRecordByPrId(prId));
+        seededContextMap.get(prId) ??
+        (await eventContextRepo.findRecordByPrId(prId));
       if (!record) {
         return {
           record: null,

@@ -884,7 +884,7 @@ watch(
     const impressionKey = `${prId}:${actionKey}:${state}`;
     if (lastPrimaryImpressionKey.value === impressionKey) return;
     lastPrimaryImpressionKey.value = impressionKey;
-    trackEvent("anchor_pr_primary_cta_impression", {
+    trackEvent("pr_primary_cta_impression", {
       prId,
       ctaType,
       viewerState: state,
@@ -1087,7 +1087,7 @@ const handleDockAction = async (action: DockActionItem) => {
   const ctaType = mapDockActionToTrackType(action.key);
   if (id.value !== null) {
     if (ctaType !== null && supportsEventContextFeatures.value) {
-      trackEvent("anchor_pr_primary_cta_click", {
+      trackEvent("pr_primary_cta_click", {
         prId: id.value,
         ctaType,
         viewerState: viewerState.value,
@@ -1145,7 +1145,7 @@ const handleEditSuccess = () => {
 };
 const handleOpenCreatorEdit = () => {
   if (id.value !== null && supportsEventContextFeatures.value) {
-    trackEvent("anchor_pr_secondary_action_click", {
+    trackEvent("pr_secondary_action_click", {
       prId: id.value,
       actionType: "CREATOR_EDIT_CONTENT",
     });
@@ -1154,7 +1154,7 @@ const handleOpenCreatorEdit = () => {
 };
 const handleOpenCreatorModifyStatus = () => {
   if (id.value !== null && supportsEventContextFeatures.value) {
-    trackEvent("anchor_pr_secondary_action_click", {
+    trackEvent("pr_secondary_action_click", {
       prId: id.value,
       actionType: "CREATOR_MODIFY_STATUS",
     });

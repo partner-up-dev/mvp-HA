@@ -1,6 +1,6 @@
 import type {
   AnchorEventSupportResource,
-  NewAnchorPRSupportResource,
+  NewPRSupportResource,
 } from "../../../entities";
 import { getTimeWindowStart, type TimeWindow } from "../../pr/services";
 
@@ -66,8 +66,8 @@ export const resolveSupportResourceTemplates = ({
   prId,
   location,
   timeWindow,
-}: ResolveSupportTemplatesInput): NewAnchorPRSupportResource[] => {
-  const resolved: NewAnchorPRSupportResource[] = [];
+}: ResolveSupportTemplatesInput): NewPRSupportResource[] => {
+  const resolved: NewPRSupportResource[] = [];
 
   for (const resource of eventResources) {
     if (!matchesLocation(resource, location)) continue;

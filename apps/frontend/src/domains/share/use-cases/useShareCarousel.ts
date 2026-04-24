@@ -96,8 +96,8 @@ export const useShareCarousel = ({
       methodId: currentMethodId.value,
       prId,
     });
-    if (spmRouteKey === "anchor_pr" && prId !== undefined) {
-      trackEvent("anchor_pr_secondary_action_click", {
+    if (spmRouteKey === "pr" && prId !== undefined) {
+      trackEvent("pr_secondary_action_click", {
         prId,
         actionType: "SHARE_METHOD_SWITCH",
         methodId: currentMethodId.value,
@@ -113,8 +113,8 @@ export const useShareCarousel = ({
       methodId: currentMethodId.value,
       prId,
     });
-    if (spmRouteKey === "anchor_pr" && prId !== undefined) {
-      trackEvent("anchor_pr_secondary_action_click", {
+    if (spmRouteKey === "pr" && prId !== undefined) {
+      trackEvent("pr_secondary_action_click", {
         prId,
         actionType: "SHARE_METHOD_SWITCH",
         methodId: currentMethodId.value,

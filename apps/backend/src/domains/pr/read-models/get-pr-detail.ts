@@ -2,7 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import type { PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../user";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import {
   buildBookingSupportPreview,
@@ -24,7 +24,7 @@ import {
 } from "../sharing/pr-share-metadata.service";
 import { toPublicPR } from "./public-pr-view.service";
 
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const prSupportRepo = new PRSupportResourceRepository();
 const partnerRepo = new PartnerRepository();
 
 export type PRDetail = {

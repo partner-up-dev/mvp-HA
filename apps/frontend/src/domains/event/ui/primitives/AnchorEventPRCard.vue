@@ -1,32 +1,32 @@
 <template>
-  <RouterLink :to="prDetailPath(pr.id)" class="anchor-pr-card">
+  <RouterLink :to="prDetailPath(pr.id)" class="event-pr-card">
     <div
       v-if="coverImage"
-      class="anchor-pr-card__cover"
+      class="event-pr-card__cover"
       :style="{ backgroundImage: `url(${coverImage})` }"
     />
-    <div class="anchor-pr-card__content">
-      <div class="anchor-pr-card__header">
-        <div class="anchor-pr-card__headline">
-          <span class="anchor-pr-card__title">
+    <div class="event-pr-card__content">
+      <div class="event-pr-card__header">
+        <div class="event-pr-card__headline">
+          <span class="event-pr-card__title">
             {{ prTitle }}
           </span>
         </div>
         <PRStatusBadge
-          class="anchor-pr-card__status"
+          class="event-pr-card__status"
           :status="pr.status"
           size="sm"
           appearance="pill"
         />
       </div>
-      <div class="anchor-pr-card__meta">
-        <span v-if="timeLabel" class="anchor-pr-card__time">
+      <div class="event-pr-card__meta">
+        <span v-if="timeLabel" class="event-pr-card__time">
           🕒 {{ timeLabel }}
         </span>
-        <span v-if="pr.location" class="anchor-pr-card__location">
+        <span v-if="pr.location" class="event-pr-card__location">
           📍 {{ pr.location }}
         </span>
-        <span class="anchor-pr-card__partners">
+        <span class="event-pr-card__partners">
           👥 {{ pr.partnerCount }}
           <template v-if="pr.maxPartners">
             / {{ pr.maxPartners }}
@@ -59,7 +59,7 @@ const prTitle = computed(() => props.pr.title || props.pr.type);
 </script>
 
 <style lang="scss" scoped>
-.anchor-pr-card {
+.event-pr-card {
   display: block;
   border-radius: 10px;
   background: var(--sys-color-surface-container);
@@ -73,18 +73,18 @@ const prTitle = computed(() => props.pr.title || props.pr.type);
   }
 }
 
-.anchor-pr-card__cover {
+.event-pr-card__cover {
   width: 100%;
   height: 108px;
   background-size: cover;
   background-position: center;
 }
 
-.anchor-pr-card__content {
+.event-pr-card__content {
   padding: 0.75rem 1rem;
 }
 
-.anchor-pr-card__header {
+.event-pr-card__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -92,23 +92,23 @@ const prTitle = computed(() => props.pr.title || props.pr.type);
   gap: 0.5rem;
 }
 
-.anchor-pr-card__headline {
+.event-pr-card__headline {
   display: flex;
   flex-direction: column;
   gap: calc(var(--sys-spacing-xs) / 2);
   min-width: 0;
 }
 
-.anchor-pr-card__title {
+.event-pr-card__title {
   @include mx.pu-font(title-small);
   overflow-wrap: anywhere;
 }
 
-.anchor-pr-card__status {
+.event-pr-card__status {
   flex-shrink: 0;
 }
 
-.anchor-pr-card__meta {
+.event-pr-card__meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sys-spacing-med);

@@ -9,16 +9,16 @@
 
     <nav class="admin-navigation-card__nav">
       <ChoiceCard
-        :to="{ name: 'admin-anchor-pr' }"
+        :to="{ name: 'admin-pr' }"
         class="admin-navigation-card__link"
       >
-        {{ t("adminCommon.navAnchorPR") }}
+        {{ t("adminCommon.navPR") }}
       </ChoiceCard>
       <ChoiceCard
-        :to="{ name: 'admin-anchor-pr-messages' }"
+        :to="{ name: 'admin-pr-messages' }"
         class="admin-navigation-card__link"
       >
-        {{ t("adminCommon.navAnchorPRMessages") }}
+        {{ t("adminCommon.navPRMessages") }}
       </ChoiceCard>
       <ChoiceCard
         :to="{ name: 'admin-booking-support' }"

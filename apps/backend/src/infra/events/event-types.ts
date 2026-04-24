@@ -15,8 +15,8 @@ export type DomainEventType =
   | "pr.status_changed"
   | "pr.content_updated"
   | "pr.message_created"
-  | "anchor.pr.auto_created"
-  | "anchor.pr.booking_triggered"
+  | "pr.auto_created"
+  | "pr.booking_triggered"
   | "partner.joined"
   | "partner.exited"
   | "partner.confirmed"
@@ -53,7 +53,7 @@ export interface PRMessageCreatedPayload {
   authorUserId: string;
 }
 
-export interface AnchorPRAutoCreatedPayload {
+export interface PRAutoCreatedPayload {
   sourcePrId: number;
   createdPrId: number;
   anchorEventId: number | null;
@@ -62,7 +62,7 @@ export interface AnchorPRAutoCreatedPayload {
   activeCountAtSource: number;
 }
 
-export interface AnchorPRBookingTriggeredPayload {
+export interface PRBookingTriggeredPayload {
   prId: number;
   activePartnerCount: number;
   bookingTriggeredAt: string;
@@ -142,8 +142,8 @@ export interface DomainEventPayloadMap {
   "pr.status_changed": PRStatusChangedPayload;
   "pr.content_updated": PRContentUpdatedPayload;
   "pr.message_created": PRMessageCreatedPayload;
-  "anchor.pr.auto_created": AnchorPRAutoCreatedPayload;
-  "anchor.pr.booking_triggered": AnchorPRBookingTriggeredPayload;
+  "pr.auto_created": PRAutoCreatedPayload;
+  "pr.booking_triggered": PRBookingTriggeredPayload;
   "partner.joined": PartnerJoinedPayload;
   "partner.exited": PartnerExitedPayload;
   "partner.confirmed": PartnerConfirmedPayload;

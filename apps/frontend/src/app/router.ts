@@ -18,9 +18,9 @@ const UserProfilePage = () => import("@/pages/UserProfilePage.vue");
 const PRBookingSupportPage = () =>
   import("@/pages/PRBookingSupportPage.vue");
 const AdminLoginPage = () => import("@/pages/AdminLoginPage.vue");
-const AdminAnchorPRPage = () => import("@/pages/AdminAnchorPRPage.vue");
-const AdminAnchorPRMessagesPage = () =>
-  import("@/pages/AdminAnchorPRMessagesPage.vue");
+const AdminPRPage = () => import("@/pages/AdminPRPage.vue");
+const AdminPRMessagesPage = () =>
+  import("@/pages/AdminPRMessagesPage.vue");
 const AdminBookingSupportPage = () =>
   import("@/pages/AdminBookingSupportPage.vue");
 const AdminBookingExecutionPage = () =>
@@ -30,7 +30,7 @@ const ContactAuthorPage = () => import("@/pages/ContactAuthorPage.vue");
 const ContactSupportPage = () => import("@/pages/ContactSupportPage.vue");
 const AboutPage = () => import("@/pages/AboutPage.vue");
 const EventPlazaPage = () => import("@/pages/EventPlazaPage.vue");
-const AnchorPRSearchPage = () => import("@/pages/AnchorPRSearchPage.vue");
+const EventPRSearchPage = () => import("@/pages/EventPRSearchPage.vue");
 const AnchorEventPage = () => import("@/pages/AnchorEventPage.vue");
 const WeChatOAuthCallbackPage = () =>
   import("@/pages/WeChatOAuthCallbackPage.vue");
@@ -104,65 +104,6 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/cpr/:id",
-    name: "community-pr",
-    redirect: (to) => ({
-      name: "pr-detail",
-      params: to.params,
-      query: to.query,
-      hash: to.hash,
-    }),
-  },
-  {
-    path: "/cpr/:id/partners/:partnerId",
-    name: "community-partner-profile",
-    redirect: (to) => ({
-      name: "pr-partner-profile",
-      params: to.params,
-      query: to.query,
-      hash: to.hash,
-    }),
-  },
-  {
-    path: "/apr/:id",
-    name: "anchor-pr",
-    component: PRPage,
-    meta: {
-      wechatSharePolicy: "route",
-      wechatAutoLoginPolicy: "route",
-    },
-  },
-  {
-    path: "/apr/:id/partners/:partnerId",
-    name: "anchor-partner-profile",
-    redirect: (to) => ({
-      name: "pr-partner-profile",
-      params: to.params,
-      query: to.query,
-      hash: to.hash,
-    }),
-  },
-  {
-    path: "/apr/:id/messages",
-    name: "anchor-pr-messages",
-    redirect: (to) => ({
-      name: "pr-messages",
-      params: to.params,
-      query: to.query,
-      hash: to.hash,
-    }),
-  },
-  {
-    path: "/apr/:id/booking-support",
-    name: "anchor-pr-booking-support",
-    redirect: (to) => ({
-      name: "pr-booking-support",
-      params: to.params,
-      query: to.query,
-      hash: to.hash,
-    }),
-  },
-  {
     path: "/admin/login",
     name: "admin-login",
     component: AdminLoginPage,
@@ -171,18 +112,18 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/admin/anchor-pr",
-    name: "admin-anchor-pr",
-    component: AdminAnchorPRPage,
+    path: "/admin/pr",
+    name: "admin-pr",
+    component: AdminPRPage,
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,
     },
   },
   {
-    path: "/admin/anchor-pr-messages",
-    name: "admin-anchor-pr-messages",
-    component: AdminAnchorPRMessagesPage,
+    path: "/admin/pr-messages",
+    name: "admin-pr-messages",
+    component: AdminPRMessagesPage,
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,
@@ -213,14 +154,6 @@ const routes: RouteRecordRaw[] = [
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,
-    },
-  },
-  {
-    path: "/cpr/new",
-    name: "community-pr-create",
-    component: PRCreatePage,
-    meta: {
-      wechatSharePolicy: "route",
     },
   },
   {
@@ -257,8 +190,8 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: "/events/search",
-    name: "anchor-pr-search",
-    component: AnchorPRSearchPage,
+    name: "event-pr-search",
+    component: EventPRSearchPage,
     meta: {
       wechatSharePolicy: "route",
     },

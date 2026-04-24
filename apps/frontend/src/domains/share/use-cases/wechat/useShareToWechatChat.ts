@@ -163,7 +163,7 @@ export const useShareToWechatChat = ({
     routeSessionAtStart === routeShareSessionId.value;
 
   const toEntityKey = (): string =>
-    currentSpmRouteKey.value === "anchor_pr"
+    currentSpmRouteKey.value === "pr"
       ? `ANCHOR:${currentPrId.value}`
       : `COMMUNITY:${currentPrId.value}`;
 

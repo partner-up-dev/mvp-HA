@@ -475,8 +475,8 @@ import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCa
 import {
   type AdminBookingExecutionWorkspaceResponse,
   useAdminBookingExecutionWorkspace,
-  useReleaseAdminAnchorPRPartnerForExecution,
-  useSubmitAdminAnchorPRBookingExecution,
+  useReleaseAdminPRPartnerForExecution,
+  useSubmitAdminPRBookingExecution,
 } from "@/domains/admin/queries/useAdminBookingExecution";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import { formatLocalDateTimeValue, formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
@@ -501,8 +501,8 @@ type PendingDraft = {
 const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
 const workspaceQuery = useAdminBookingExecutionWorkspace(isAdmin);
-const submitMutation = useSubmitAdminAnchorPRBookingExecution();
-const releaseMutation = useReleaseAdminAnchorPRPartnerForExecution();
+const submitMutation = useSubmitAdminPRBookingExecution();
+const releaseMutation = useReleaseAdminPRPartnerForExecution();
 
 const searchText = ref("");
 const drafts = reactive<Record<number, PendingDraft>>({});

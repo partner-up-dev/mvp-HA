@@ -1,12 +1,12 @@
-import type { PRId, UserId, AnchorPRSupportResource } from "../../../entities";
-import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import type { PRId, UserId, PRSupportResource } from "../../../entities";
+import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { getEffectiveBookingDeadline } from "./get-effective-booking-deadline";
 import { isBookingContactRequiredFromResources } from "./is-booking-contact-required";
 import { resolveBookingContactOwner } from "./resolve-booking-contact-owner";
 
-const bookingContactRepo = new AnchorPRBookingContactRepository();
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const bookingContactRepo = new PRBookingContactRepository();
+const prSupportRepo = new PRSupportResourceRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -24,7 +24,7 @@ export type BookingContactState = {
 export const resolveBookingContactState = async (params: {
   prId: PRId;
   viewerUserId: UserId | null;
-  supportResources?: AnchorPRSupportResource[];
+  supportResources?: PRSupportResource[];
   effectiveBookingDeadlineAt?: Date | null;
 }): Promise<BookingContactState> => {
   const supportResources =

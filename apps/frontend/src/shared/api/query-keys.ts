@@ -15,13 +15,6 @@ export const queryKeys = {
     partnerProfile: (prId: PRId | null, partnerId: number | null) =>
       ["partner-request", "partner-profile", prId, partnerId] as const,
   },
-  anchorPR: {
-    messages: (id: PRId | null) => ["partner-request", "messages", id] as const,
-    bookingSupport: (id: PRId | null) =>
-      ["partner-request", "booking-support", id] as const,
-    reimbursementStatus: (id: PRId | null) =>
-      ["partner-request", "reimbursement-status", id] as const,
-  },
   config: {
     public: (key: string) => ["config", "public", key] as const,
   },
@@ -45,9 +38,9 @@ export const queryKeys = {
       ["admin", "booking-support", eventId] as const,
     bookingExecutionWorkspace: () =>
       ["admin", "booking-execution", "workspace"] as const,
-    anchorWorkspace: () => ["admin", "anchor-workspace"] as const,
-    anchorPRMessages: (id: PRId | null) =>
-      ["admin", "anchor-pr", "messages", id] as const,
+    prWorkspace: () => ["admin", "pr-workspace"] as const,
+    prMessages: (id: PRId | null) =>
+      ["admin", "pr", "messages", id] as const,
   },
   wechat: {
     notificationSubscriptions: () =>

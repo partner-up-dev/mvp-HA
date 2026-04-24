@@ -1,11 +1,11 @@
-import type { AnchorPRSupportResource, PRId } from "../../../entities";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import type { PRSupportResource, PRId } from "../../../entities";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { requiresBookingContactForHandledBy } from "./booking-handling.service";
 
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const prSupportRepo = new PRSupportResourceRepository();
 
 export const isBookingContactRequiredFromResources = (
-  resources: AnchorPRSupportResource[],
+  resources: PRSupportResource[],
 ): boolean =>
   resources.some(
     (row) =>

@@ -5,9 +5,9 @@
  */
 
 import {
-  AnchorPRRepository,
-  type AnchorPRRecord,
-} from "../../../repositories/AnchorPRRepository";
+  AnchorEventPRContextRepository,
+  type AnchorEventPRContextRecord,
+} from "../../../repositories/AnchorEventPRContextRepository";
 import type { AnchorLocationSource } from "../../../entities/anchor-partner-request";
 import type { AnchorEventId } from "../../../entities/anchor-event";
 import type { TimeWindowEntry } from "../../../entities/anchor-event";
@@ -18,7 +18,7 @@ import { refreshTemporalStatus } from "../temporal-refresh";
 
 export type PRReadConsistency = "strong" | "eventual";
 
-const anchorPRRepo = new AnchorPRRepository();
+const eventContextRepo = new AnchorEventPRContextRepository();
 const prRepo = new PartnerRequestRepository();
 
 const applyEventualRefresh = (request: PartnerRequest): void => {
@@ -51,7 +51,7 @@ const applyConsistencyToRequests = async (
   return Promise.all(requests.map((request) => refreshTemporalStatus(request)));
 };
 
-export const isActiveVisibleAnchorPRStatus = (status: PRStatus | string): boolean =>
+export const isActiveVisiblePRStatus = (status: PRStatus | string): boolean =>
   status !== "CLOSED" && status !== "EXPIRED";
 
 export async function readPartnerRequestById(
@@ -79,6 +79,14 @@ export async function readPartnerRequestsByCreatorId(
   return applyConsistencyToRequests(rows, options.consistency ?? "strong");
 }
 
+export async function readVisiblePartnerRequestsByType(
+  type: string,
+  options: { consistency?: PRReadConsistency } = {},
+): Promise<PartnerRequest[]> {
+  const rows = await prRepo.findVisibleByType(type);
+  return applyConsistencyToRequests(rows, options.consistency ?? "strong");
+}
+
 export async function readVisiblePartnerRequestsByTypeAndTime(
   type: string,
   timeWindow: TimeWindowEntry,
@@ -89,9 +97,9 @@ export async function readVisiblePartnerRequestsByTypeAndTime(
 }
 
 const applyConsistencyToAnchorRecords = async (
-  records: AnchorPRRecord[],
+  records: AnchorEventPRContextRecord[],
   consistency: PRReadConsistency,
-): Promise<AnchorPRRecord[]> => {
+): Promise<AnchorEventPRContextRecord[]> => {
   const syncedRoots = await applyConsistencyToRequests(
     records.map((record) => record.root),
     consistency,
@@ -102,45 +110,37 @@ const applyConsistencyToAnchorRecords = async (
   }));
 };
 
-export async function readVisibleAnchorPRRecordsByEventTimeWindow(
+export async function readVisibleAnchorEventPRContextRecordsByEventTimeWindow(
   anchorEventId: AnchorEventId,
   timeWindow: TimeWindowEntry,
   options: { consistency?: PRReadConsistency } = {},
-): Promise<AnchorPRRecord[]> {
-  const records = await anchorPRRepo.findVisibleByAnchorEventAndTimeWindow(
+): Promise<AnchorEventPRContextRecord[]> {
+  const records = await eventContextRepo.findVisibleByAnchorEventAndTimeWindow(
     anchorEventId,
     timeWindow,
   );
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
-export async function readVisibleAnchorPRRecordsByAnchorEventId(
-  anchorEventId: AnchorEventId,
-  options: { consistency?: PRReadConsistency } = {},
-): Promise<AnchorPRRecord[]> {
-  const records = await anchorPRRepo.findVisibleByAnchorEventId(anchorEventId);
-  return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
-}
-
-export async function readAnchorPRRecordsByEventTimeWindow(
+export async function readAnchorEventPRContextRecordsByEventTimeWindow(
   anchorEventId: AnchorEventId,
   timeWindow: TimeWindowEntry,
   options: { consistency?: PRReadConsistency } = {},
-): Promise<AnchorPRRecord[]> {
-  const records = await anchorPRRepo.findByAnchorEventAndTimeWindow(
+): Promise<AnchorEventPRContextRecord[]> {
+  const records = await eventContextRepo.findByAnchorEventAndTimeWindow(
     anchorEventId,
     timeWindow,
   );
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
-export async function readVisibleAnchorPRRecordsByEventTimeWindowAndLocation(
+export async function readVisibleAnchorEventPRContextRecordsByEventTimeWindowAndLocation(
   anchorEventId: AnchorEventId,
   timeWindow: TimeWindowEntry,
   location: string,
   options: { consistency?: PRReadConsistency } = {},
-): Promise<AnchorPRRecord[]> {
-  const records = await anchorPRRepo.findVisibleByAnchorEventTimeWindowAndLocation(
+): Promise<AnchorEventPRContextRecord[]> {
+  const records = await eventContextRepo.findVisibleByAnchorEventTimeWindowAndLocation(
     anchorEventId,
     timeWindow,
     location,
@@ -148,7 +148,7 @@ export async function readVisibleAnchorPRRecordsByEventTimeWindowAndLocation(
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
-export async function countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSource({
+export async function countActiveVisiblePRsByEventTimeWindowAndLocationSource({
   anchorEventId,
   timeWindow,
   location,
@@ -163,7 +163,7 @@ export async function countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSou
   excludePrId?: PRId;
   consistency?: PRReadConsistency;
 }): Promise<number> {
-  const records = await readVisibleAnchorPRRecordsByEventTimeWindowAndLocation(
+  const records = await readVisibleAnchorEventPRContextRecordsByEventTimeWindowAndLocation(
     anchorEventId,
     timeWindow,
     location,
@@ -172,6 +172,6 @@ export async function countActiveVisibleAnchorPRsByEventTimeWindowAndLocationSou
   return records.filter((record) => {
     if (record.anchor.locationSource !== locationSource) return false;
     if (excludePrId !== undefined && record.root.id === excludePrId) return false;
-    return isActiveVisibleAnchorPRStatus(record.root.status);
+    return isActiveVisiblePRStatus(record.root.status);
   }).length;
 }

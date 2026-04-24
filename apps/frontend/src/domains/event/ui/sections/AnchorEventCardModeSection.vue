@@ -1,5 +1,5 @@
 <template>
-  <div v-if="activeDemandCard" class="card-mode" data-region="anchor-pr-list">
+  <div v-if="activeDemandCard" class="card-mode" data-region="pr-list">
     <div class="card-stage">
       <div class="card-stage__label-rail" aria-hidden="true">
         <span
@@ -125,7 +125,7 @@
         {{ t("anchorEvent.card.emptySubtitle") }}
       </p>
 
-      <div class="card-empty__create" data-region="create-anchor-pr">
+      <div class="card-empty__create" data-region="create-pr">
         <label
           v-if="cardCreateTimeWindowOptions.length > 0"
           class="card-empty__field"

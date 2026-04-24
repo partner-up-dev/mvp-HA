@@ -8,7 +8,7 @@ import {
 } from "../auth/admin-middleware";
 import {
   getAdminBookingExecutionWorkspace,
-  submitAdminAnchorPRBookingExecution,
+  submitAdminPRBookingExecution,
 } from "../domains/admin-booking-execution";
 
 const app = new Hono<AdminAuthEnv>();
@@ -30,7 +30,7 @@ export const adminBookingExecutionRoute = app
     return c.json(result);
   })
   .post(
-    "/anchor-prs/:id/booking-execution",
+    "/prs/:id/booking-execution",
     zValidator("param", prIdParamSchema),
     zValidator("json", submitBookingExecutionSchema),
     async (c) => {
@@ -40,7 +40,7 @@ export const adminBookingExecutionRoute = app
       if (!auth.userId) {
         throw new HTTPException(401, { message: "Unauthorized" });
       }
-      const result = await submitAdminAnchorPRBookingExecution({
+      const result = await submitAdminPRBookingExecution({
         prId: id,
         targetResourceId: payload.targetResourceId,
         result: payload.result,
