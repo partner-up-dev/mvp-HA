@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/vue-query";
-import { computed, type Ref } from "vue";
+import { computed, unref, type MaybeRef, type Ref } from "vue";
 import { client } from "@/lib/rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 import type { AnchorEventDemandCardsResponse } from "@/domains/event/model/types";
 
-export const useAnchorEventDemandCards = (eventId: Ref<number | null>) => {
+export const useAnchorEventDemandCards = (
+  eventId: Ref<number | null>,
+  enabled: MaybeRef<boolean> = true,
+) => {
   return useQuery<AnchorEventDemandCardsResponse>({
     queryKey: computed(() => queryKeys.anchorEvent.demandCards(eventId.value)),
     queryFn: async () => {
@@ -22,6 +25,6 @@ export const useAnchorEventDemandCards = (eventId: Ref<number | null>) => {
 
       return await res.json();
     },
-    enabled: () => eventId.value !== null,
+    enabled: () => eventId.value !== null && unref(enabled),
   });
 };

@@ -23,6 +23,9 @@
 - User-created PR from Anchor Event context uses the controlled event-page flow and remains constrained by that event page's local rules. The persisted PR still keeps only PR-owned facts.
 - Publishing a `DRAFT` PR requires an authenticated account.
 - Direct creation of an `OPEN` PR, including event-assisted create, requires an authenticated account.
+- `/e/:eventId` is an Anchor Event landing entry distinct from `/events/:eventId`; the two routes address the same event object with different product roles.
+- The same user should keep a stable landing mode for the same event until the operator changes that event's landing assignment revision.
+- If `/e/:eventId` cannot obtain its landing mode decision in time, it should still enter a usable `FORM` fallback experience.
 - The Anchor Event page shows discoverable PRs under the same activity type and time-pool rules.
 - Event-page discovery reads root PR facts by activity type, resolved time window, and event-owned location rules rather than by durable PR-side event linkage.
 

@@ -287,6 +287,97 @@
           </section>
         </div>
 
+        <section class="panel">
+          <div class="stack">
+            <div class="section-header">
+              <h2 class="card-title">
+                {{ t("adminAnchorEvents.landingRolloutTitle") }}
+              </h2>
+            </div>
+
+            <p class="hint">
+              {{ t("adminAnchorEvents.landingRolloutDescription") }}
+            </p>
+
+            <div v-if="isCreatingEvent || selectedEventId === null" class="hint">
+              {{ t("adminAnchorEvents.selectEventForLandingConfigHint") }}
+            </div>
+
+            <LoadingIndicator
+              v-else-if="landingConfigQuery.isLoading.value"
+              :message="t('common.loading')"
+            />
+
+            <p v-else-if="landingConfigQuery.error.value" class="error-message">
+              {{ landingConfigQuery.error.value.message }}
+            </p>
+
+            <template v-else>
+              <div class="grid-2">
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorEvents.formRatioLabel")
+                  }}</span>
+                  <input
+                    v-model.number="landingConfigForm.formRatio"
+                    class="field-input"
+                    type="number"
+                    min="0"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorEvents.cardRichRatioLabel")
+                  }}</span>
+                  <input
+                    v-model.number="landingConfigForm.cardRichRatio"
+                    class="field-input"
+                    type="number"
+                    min="0"
+                  />
+                </label>
+              </div>
+
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminAnchorEvents.assignmentRevisionLabel")
+                }}</span>
+                <input
+                  v-model.number="landingConfigForm.assignmentRevision"
+                  class="field-input"
+                  type="number"
+                  min="1"
+                />
+              </label>
+
+              <p class="hint">
+                {{ t("adminAnchorEvents.landingFallbackHint") }}
+              </p>
+
+              <p v-if="landingConfigValidationMessage" class="error-message">
+                {{ landingConfigValidationMessage }}
+              </p>
+
+              <Button
+                appearance="pill"
+                size="sm"
+                type="button"
+                :disabled="
+                  replaceLandingConfigMutation.isPending.value ||
+                  Boolean(landingConfigValidationMessage)
+                "
+                @click="handleSaveLandingConfig"
+              >
+                {{
+                  replaceLandingConfigMutation.isPending.value
+                    ? t("adminPR.saving")
+                    : t("adminAnchorEvents.saveLandingConfigAction")
+                }}
+              </Button>
+            </template>
+          </div>
+        </section>
+
         <ErrorToast
           v-if="mutationErrorMessage"
           :message="mutationErrorMessage"
@@ -316,6 +407,10 @@ import {
   useCreateAdminAnchorEvent,
   useUpdateAdminAnchorEvent,
 } from "@/domains/admin/queries/useAdminAnchorEvents";
+import {
+  useAdminAnchorEventLandingConfig,
+  useReplaceAdminAnchorEventLandingConfig,
+} from "@/domains/admin/queries/useAdminAnchorEventLandingConfig";
 import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 import { validateManualPartnerBounds } from "@/lib/validation";
 
@@ -342,6 +437,12 @@ type EventForm = {
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 
+type LandingConfigForm = {
+  formRatio: number;
+  cardRichRatio: number;
+  assignmentRevision: number;
+};
+
 const DEFAULT_CONFIRMATION_START_OFFSET_MINUTES = 120;
 const DEFAULT_CONFIRMATION_END_OFFSET_MINUTES = 30;
 const DEFAULT_JOIN_LOCK_OFFSET_MINUTES = 30;
@@ -365,6 +466,12 @@ const emptyEventForm = (): EventForm => ({
   coverImage: "",
   betaGroupQrCode: "",
   status: "ACTIVE",
+});
+
+const emptyLandingConfigForm = (): LandingConfigForm => ({
+  formRatio: 50,
+  cardRichRatio: 50,
+  assignmentRevision: 1,
 });
 
 const toEventForm = (event: EventRecord): EventForm => ({
@@ -405,10 +512,12 @@ const { isAdmin, logout } = useAdminAccess();
 const workspaceQuery = useAdminAnchorEventWorkspace(isAdmin);
 const createEventMutation = useCreateAdminAnchorEvent();
 const updateEventMutation = useUpdateAdminAnchorEvent();
+const replaceLandingConfigMutation = useReplaceAdminAnchorEventLandingConfig();
 
 const selectedEventIdRaw = ref("");
 const isCreatingEvent = ref(false);
 const eventForm = ref<EventForm>(emptyEventForm());
+const landingConfigForm = ref<LandingConfigForm>(emptyLandingConfigForm());
 
 const workspace = computed<Workspace | null>(
   () => workspaceQuery.data.value ?? null,
@@ -425,9 +534,19 @@ const selectedEvent = computed<EventRecord | null>(
     events.value.find((event) => event.id === selectedEventId.value) ?? null,
 );
 
+const landingConfigQuery = useAdminAnchorEventLandingConfig(selectedEventId, isAdmin);
+
 const previewStartAt = computed(
   () => selectedEvent.value?.timeWindows[0]?.timeWindow[0] ?? null,
 );
+
+const toLandingConfigForm = (
+  config: NonNullable<typeof landingConfigQuery.data.value>["config"],
+): LandingConfigForm => ({
+  formRatio: config.variantRatioOverride?.FORM ?? 50,
+  cardRichRatio: config.variantRatioOverride?.CARD_RICH ?? 50,
+  assignmentRevision: config.assignmentRevision,
+});
 
 const normalizeLines = (value: string): string[] =>
   value
@@ -583,10 +702,37 @@ const policyValidationMessage = computed(() => {
   return null;
 });
 
+const landingConfigValidationMessage = computed(() => {
+  const formRatio = normalizeNullableNonNegativeInteger(
+    landingConfigForm.value.formRatio,
+  );
+  const cardRichRatio = normalizeNullableNonNegativeInteger(
+    landingConfigForm.value.cardRichRatio,
+  );
+  const assignmentRevision = normalizeNullableNonNegativeInteger(
+    landingConfigForm.value.assignmentRevision,
+  );
+
+  if (assignmentRevision === null || assignmentRevision <= 0) {
+    return t("adminAnchorEvents.assignmentRevisionValidation");
+  }
+
+  if (formRatio === null || cardRichRatio === null) {
+    return t("adminAnchorEvents.landingRatioValidation");
+  }
+
+  if (formRatio + cardRichRatio !== 100) {
+    return t("adminAnchorEvents.landingRatioValidation");
+  }
+
+  return null;
+});
+
 const mutationErrorMessage = computed(
   () =>
     createEventMutation.error.value?.message ||
     updateEventMutation.error.value?.message ||
+    replaceLandingConfigMutation.error.value?.message ||
     null,
 );
 
@@ -620,6 +766,19 @@ watch(
   { immediate: true },
 );
 
+watch(
+  [() => landingConfigQuery.data.value, isCreatingEvent],
+  ([landingConfig, creating]) => {
+    if (creating || !landingConfig) {
+      landingConfigForm.value = emptyLandingConfigForm();
+      return;
+    }
+
+    landingConfigForm.value = toLandingConfigForm(landingConfig.config);
+  },
+  { immediate: true },
+);
+
 const prepareNewEvent = () => {
   isCreatingEvent.value = true;
   selectedEventIdRaw.value = "";
@@ -634,6 +793,7 @@ const selectEvent = (eventId: number) => {
 const resetMutationErrors = () => {
   createEventMutation.reset();
   updateEventMutation.reset();
+  replaceLandingConfigMutation.reset();
 };
 
 const handleSaveEvent = async () => {
@@ -680,6 +840,40 @@ const handleSaveEvent = async () => {
           });
     isCreatingEvent.value = false;
     selectedEventIdRaw.value = String(result.id);
+  } catch {
+    // Mutation state already drives page-level feedback.
+  }
+};
+
+const handleSaveLandingConfig = async () => {
+  if (
+    landingConfigValidationMessage.value ||
+    selectedEventId.value === null ||
+    isCreatingEvent.value
+  ) {
+    return;
+  }
+
+  const formRatio =
+    normalizeNullableNonNegativeInteger(landingConfigForm.value.formRatio) ?? 100;
+  const cardRichRatio =
+    normalizeNullableNonNegativeInteger(landingConfigForm.value.cardRichRatio) ?? 0;
+  const assignmentRevision =
+    normalizeNullableNonNegativeInteger(
+      landingConfigForm.value.assignmentRevision,
+    ) ?? 1;
+
+  try {
+    await replaceLandingConfigMutation.mutateAsync({
+      eventId: selectedEventId.value,
+      input: {
+        variantRatioOverride: {
+          FORM: formRatio,
+          CARD_RICH: cardRichRatio,
+        },
+        assignmentRevision,
+      },
+    });
   } catch {
     // Mutation state already drives page-level feedback.
   }

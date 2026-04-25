@@ -5,6 +5,7 @@ import {
   listAnchorEvents,
   getAnchorEventDetail,
   getAnchorEventDemandCards,
+  assignAnchorEventLandingMode,
 } from "../domains/anchor-event";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 
@@ -27,6 +28,15 @@ export const anchorEventRoute = app
     const detail = await getAnchorEventDetail(eventId);
     return c.json(detail);
   })
+  .get(
+    "/:eventId/landing-assignment",
+    zValidator("param", eventIdParamSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const assignment = await assignAnchorEventLandingMode(eventId);
+      return c.json(assignment);
+    },
+  )
   .get(
     "/:eventId/demand-cards",
     zValidator("param", eventIdParamSchema),

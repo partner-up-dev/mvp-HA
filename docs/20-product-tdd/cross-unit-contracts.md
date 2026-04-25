@@ -51,6 +51,7 @@ Stable user-facing route families that materially affect coordination include:
 - `/events`
 - `/events/search`
 - `/events/:eventId`
+- `/e/:eventId`
 - `/pr/mine`
 - `/me`
 - `/contact-support`
@@ -82,8 +83,10 @@ Important coordination note:
 - structured PR creation accepts arbitrary `type` input with event-type suggestions and accepts one resolved `time_window`; batch and free are UI modes rather than separate persisted PR models
 - `/pr/:id` remains the primary PR detail route for read, join, exit, confirm, check-in, share, and booking-support handoff; it keeps the persistent notification-subscriptions section mounted there when reminder registration is relevant for that PR and links into adjacent PR sub-routes instead of absorbing all secondary actions inline
 - `/events/search` is a PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
+- `/e/:eventId` is the ad-scan-first Anchor Event landing entry; it may render `FORM` or `CARD_RICH` mode while `/events/:eventId` keeps the existing rich page responsibility
 - `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative display policy, so frontend should treat it as opaque instead of hardcoded ranking truth; it does not own PR search results
 - `GET /api/events` and `GET /api/events/:eventId` expose each Anchor Event's beta-group QR code when configured; `/about` and `/events/:eventId` use that event-owned value for beta-group entry instead of reading a generic beta-group public config key
+- `GET /api/events/:eventId/landing-assignment` returns the backend-authored landing mode plus `assignmentRevision` for `/e/:eventId`
 - `GET /api/events/:eventId/demand-cards` is the backend-authored card-mode demand projection contract; it returns only joinable (`OPEN` / `READY`) demand-card groups for that event.
 - the old public demand-card join route is retired from the public contract surface
 - `GET /api/events/:eventId` exposes public event discovery through `timeWindows`. Discoverable PRs inside those time-window groups come from root PR reads keyed by `event.type + time_window` plus event-owned location constraints.
@@ -92,6 +95,7 @@ Important coordination note:
 - if PR search has exactly one result, frontend may replace-route to `/pr/:id` while avoiding a browser-back auto-redirect loop
 - `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`
 - that `mode` query is a frontend route-state hint for initial rendering only in the current version; switching modes in-page does not rewrite the URL, and `spm` remains attribution-only rather than a UI-mode switch
+- frontend stabilizes `/e/:eventId` landing mode through local storage keyed by `eventId + assignmentRevision`; timeout fallback enters `FORM`
 - `/pr/:id` participant roster UI should use the existing `/pr/:id/partners/:partnerId` profile route for participant-badge navigation rather than introducing a second profile-route family
 - `GET /api/pr/:id/actions/preflight` is the batch action-availability contract for PR detail UX. It evaluates one viewer against one PR and returns action entries such as `join`, `confirm`, `check_in`, and booking-contact actions through one stable minimal shape:
   - `evaluatedAt`
@@ -120,6 +124,8 @@ Important coordination note:
 - Backend exposes build metadata through `/api/meta/build`.
 - Frontend relies on those endpoints to avoid hardcoding operationally managed values.
 - Event-specific beta-group QR codes are not public config values; they are Anchor Event fields and flow through the Anchor Event read and admin contracts.
+- Event-owned landing rollout config is persisted through the infra `config` table while Anchor Event owns the namespace, payload schema, parse / serialize rules, and admin contract. Product-side rollout control is expressed through landing ratio override plus assignment revision; `CARD_RICH` ratio `0` means pure `FORM` rollout.
+- Admin edits event-owned landing rollout config through `GET /api/admin/events/:eventId/landing-config` and `PUT /api/admin/events/:eventId/landing-config`.
 
 ## 8. Share Descriptor Contract
 

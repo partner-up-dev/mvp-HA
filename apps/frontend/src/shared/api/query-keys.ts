@@ -25,6 +25,8 @@ export const queryKeys = {
     list: () => ["anchor-event", "list"] as const,
     detail: (eventId: number | null) =>
       ["anchor-event", "detail", eventId] as const,
+    landingAssignment: (eventId: number | null) =>
+      ["anchor-event", "landing-assignment", eventId] as const,
     demandCards: (eventId: number | null) =>
       ["anchor-event", "demand-cards", eventId] as const,
   },
@@ -33,6 +35,8 @@ export const queryKeys = {
   },
   admin: {
     anchorEventWorkspace: () => ["admin", "anchor-events", "workspace"] as const,
+    anchorEventLandingConfig: (eventId: number | null) =>
+      ["admin", "anchor-events", "landing-config", eventId] as const,
     pois: () => ["admin", "pois"] as const,
     poisByIds: (idsCsv: string) => ["admin", "pois", "by-ids", idsCsv] as const,
     bookingSupport: (eventId: number | null) =>

@@ -578,6 +578,11 @@ export interface MessageSchema {
       title: string;
       action: string;
     };
+    landing: {
+      eyebrow: string;
+      placeholderTitle: string;
+      placeholderBody: string;
+    };
     discoverOthers: string;
     createCard: {
       title: string;
@@ -969,6 +974,16 @@ export interface MessageSchema {
     timeWindowsTitle: string;
     participationDefaultsTitle: string;
     participationDefaultsDescription: string;
+    landingRolloutTitle: string;
+    landingRolloutDescription: string;
+    selectEventForLandingConfigHint: string;
+    formRatioLabel: string;
+    cardRichRatioLabel: string;
+    assignmentRevisionLabel: string;
+    landingFallbackHint: string;
+    landingRatioValidation: string;
+    assignmentRevisionValidation: string;
+    saveLandingConfigAction: string;
   };
   adminPR: {
     title: string;

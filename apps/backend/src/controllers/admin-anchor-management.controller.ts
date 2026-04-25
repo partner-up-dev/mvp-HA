@@ -19,10 +19,12 @@ import {
   createAdminPR,
   createAdminPRMessage,
   deleteAdminPRMessage,
+  getAdminAnchorLandingConfig,
   getAdminAnchorEventWorkspace,
   listAdminPRMessages,
   getAdminPRWorkspace,
   releaseAdminPRPartner,
+  updateAdminAnchorLandingConfig,
   updateAdminPRMessage,
   updateAdminAnchorEvent,
   updateAdminPRContent,
@@ -30,6 +32,7 @@ import {
   updateAdminPRVisibility,
 } from "../domains/admin-anchor-management";
 import { prMessageCreateSchema } from "./pr-controller.shared";
+import { anchorEventLandingConfigSchema } from "../domains/anchor-event/landing-config";
 
 const app = new Hono<AdminAuthEnv>();
 
@@ -116,10 +119,30 @@ export const adminAnchorManagementRoute = app
     const result = await getAdminAnchorEventWorkspace();
     return c.json(result);
   })
+  .get(
+    "/events/:eventId/landing-config",
+    zValidator("param", eventIdParamSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const result = await getAdminAnchorLandingConfig(eventId);
+      return c.json(result);
+    },
+  )
   .get("/pr/workspace", async (c) => {
     const result = await getAdminPRWorkspace();
     return c.json(result);
   })
+  .put(
+    "/events/:eventId/landing-config",
+    zValidator("param", eventIdParamSchema),
+    zValidator("json", anchorEventLandingConfigSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const payload = c.req.valid("json");
+      const result = await updateAdminAnchorLandingConfig(eventId, payload);
+      return c.json(result);
+    },
+  )
   .post(
     "/anchor-events",
     zValidator("json", adminAnchorEventInputSchema),

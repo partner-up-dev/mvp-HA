@@ -654,7 +654,17 @@
     "timePoolStrategyTitle": "时间窗口策略",
     "timeWindowsTitle": "时间窗口预览",
     "participationDefaultsTitle": "默认参与策略",
-    "participationDefaultsDescription": "这些默认值会在创建同类型 PR 时作为初始值带入。"
+    "participationDefaultsDescription": "这些默认值会在创建同类型 PR 时作为初始值带入。",
+    "landingRolloutTitle": "Landing Rollout",
+    "landingRolloutDescription": "为当前活动配置 /e/:eventId 的 FORM / CARD_RICH 比例与 assignment revision。",
+    "selectEventForLandingConfigHint": "请先选择一个已有活动，再编辑 landing rollout。",
+    "formRatioLabel": "FORM 比例",
+    "cardRichRatioLabel": "CARD_RICH 比例",
+    "assignmentRevisionLabel": "Assignment Revision",
+    "landingFallbackHint": "当 CARD_RICH 比例为 0 时，当前活动会进入纯 FORM rollout；landing assignment 超时或失败时，系统也仍会进入 FORM fallback。",
+    "landingRatioValidation": "FORM 与 CARD_RICH 比例总和需要等于 100。",
+    "assignmentRevisionValidation": "Assignment revision 需要是大于 0 的整数。",
+    "saveLandingConfigAction": "保存 Landing Rollout"
   },
   "adminPR": {
     "title": "PR 管理",
@@ -1284,6 +1294,11 @@
     "otherEvents": {
       "title": "看看其它活动",
       "action": "看看其它活动"
+    },
+    "landing": {
+      "eyebrow": "Landing Entry",
+      "placeholderTitle": "活动 Landing",
+      "placeholderBody": "FORM 模式会在后续 issue 接上完整流程；当前先交付 landing foundation。"
     },
     "discoverOthers": "看看其它活动",
     "createCard": {
