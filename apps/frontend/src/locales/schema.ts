@@ -591,6 +591,8 @@ export interface MessageSchema {
       locationAriaLabel: string;
       timeEyebrow: string;
       timeTitle: string;
+      dateWheelAriaLabel: string;
+      timeWheelAriaLabel: string;
       advancedModeLabel: string;
       preferenceEyebrow: string;
       preferenceTitle: string;

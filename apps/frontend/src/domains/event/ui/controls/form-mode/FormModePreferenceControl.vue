@@ -1,26 +1,14 @@
 <template>
   <section class="form-mode-preference-control">
-    <button
+    <Cell
+      as="button"
       class="preference-cell"
       type="button"
+      :title="t('anchorEvent.formMode.preferencePlaceholder')"
+      :value="preferenceCellValue"
+      suffix-icon="i-mdi-chevron-right"
       @click="openPreferenceDrawer"
-    >
-      <div class="preference-cell__content">
-        <span class="preference-cell__label">
-          {{
-            props.modelValue.length > 0
-              ? t("anchorEvent.formMode.preferenceSelectedCount", {
-                  count: props.modelValue.length,
-                })
-              : t("anchorEvent.formMode.preferencePlaceholder")
-          }}
-        </span>
-      </div>
-      <span
-        class="preference-cell__icon i-mdi-chevron-right"
-        aria-hidden="true"
-      />
-    </button>
+    />
 
     <p
       v-if="preferenceSubmissionMessage"
@@ -153,6 +141,7 @@ import {
 } from "@/domains/event/model/form-mode";
 import { useAnchorEventPreferenceTagSubmissions } from "@/domains/event/queries/useAnchorEventPreferenceTagSubmissions";
 import Button from "@/shared/ui/actions/Button.vue";
+import Cell from "@/shared/ui/display/Cell.vue";
 import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
 
 type FormModePresetTag = AnchorEventFormModeResponse["presetTags"][number];
@@ -197,6 +186,14 @@ const effectivePresetTags = computed<FormModePresetTag[]>(() => {
 const drawerTagGroups = computed(() =>
   buildPreferenceTagGroups(effectivePresetTags.value),
 );
+
+const preferenceCellValue = computed(() => {
+  if (props.modelValue.length === 0) {
+    return "";
+  }
+
+  return props.modelValue.join("、");
+});
 
 const openPreferenceDrawer = () => {
   drawerCustomTagMessage.value = null;
@@ -351,39 +348,7 @@ const handleSavePreferenceDrawer = async () => {
 }
 
 .preference-cell {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-spacing-sm);
-  width: 100%;
-  padding: var(--sys-spacing-sm) 0;
-  border: none;
   border-top: 1px solid var(--sys-color-outline-variant);
-  border-bottom: 1px solid var(--sys-color-outline-variant);
-  border-radius: 0;
-  background: transparent;
-  color: var(--sys-color-on-surface);
-  text-align: left;
-  cursor: pointer;
-}
-
-.preference-cell__content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xs);
-  min-width: 0;
-}
-
-.preference-cell__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  @include mx.pu-font(body-large);
-}
-
-.preference-cell__icon {
-  flex-shrink: 0;
-  @include mx.pu-icon(md);
 }
 
 .preference-drawer {

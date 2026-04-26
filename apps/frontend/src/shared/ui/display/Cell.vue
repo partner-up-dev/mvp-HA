@@ -10,17 +10,19 @@
       </slot>
     </div>
 
-    <div v-if="hasValue" class="ui-cell__value">
-      <slot>
-        {{ props.value }}
-      </slot>
-    </div>
+    <div v-if="hasRight" class="ui-cell__right">
+      <div v-if="hasValue" class="ui-cell__value">
+        <slot>
+          {{ props.value }}
+        </slot>
+      </div>
 
-    <span v-if="hasSuffix" class="ui-cell__suffix" aria-hidden="true">
-      <slot name="suffix">
-        <span v-if="props.suffixIcon" :class="props.suffixIcon"></span>
-      </slot>
-    </span>
+      <span v-if="hasSuffix" class="ui-cell__suffix" aria-hidden="true">
+        <slot name="suffix">
+          <span v-if="props.suffixIcon" :class="props.suffixIcon"></span>
+        </slot>
+      </span>
+    </div>
   </component>
 </template>
 
@@ -57,6 +59,7 @@ const hasValue = computed(
 const hasSuffix = computed(
   () => Boolean(slots.suffix) || Boolean(props.suffixIcon),
 );
+const hasRight = computed(() => hasValue.value || hasSuffix.value);
 </script>
 
 <style lang="scss" scoped>
@@ -110,9 +113,18 @@ const hasSuffix = computed(
   color: var(--sys-color-on-surface);
 }
 
+.ui-cell__right {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sys-spacing-xs);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .ui-cell__value {
   @include mx.pu-font(body-medium);
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   color: var(--sys-color-on-surface-variant);
   text-align: right;
 }
@@ -127,6 +139,6 @@ const hasSuffix = computed(
 
 .ui-cell__suffix :deep([class^="i-"]),
 .ui-cell__suffix :deep([class*=" i-"]) {
-  @include mx.pu-icon(md);
+  @include mx.pu-icon(medium);
 }
 </style>

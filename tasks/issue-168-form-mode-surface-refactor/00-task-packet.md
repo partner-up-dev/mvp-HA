@@ -179,6 +179,7 @@ Constraint:
 - Extract `FormModeTimeControl`.
 - Extract `FormModePreferenceControl`.
 - Keep selection layout inside `AnchorEventFormModeSurface.vue`.
+- `FormModeTimeControl` uses shared `shared/ui/forms/WheelPicker.vue` for both date and time columns.
 - Move local control state into the owning controls according to the ownership rules above.
 - Keep parent-owned state limited to:
   - bootstrap data

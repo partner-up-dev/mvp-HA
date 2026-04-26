@@ -50,6 +50,17 @@ Use the architecture rules in `src/ARCHITECTURE.md`.
 - Domain-owned UI should move toward `src/domains/<domain>/ui/*`.
 - Do not add new usage-specific components back into `components/common`.
 
+### Component Splitting And State Ownership
+
+Split large Vue components along behavior ownership, not only along template shape.
+
+- A child component should own the state, derived values, validation, and handlers that are fully local to its user interaction.
+- A parent surface should own only cross-control flow state, route coordination, backend query / mutation orchestration, analytics, and handoff behavior that spans multiple child components.
+- A pure presentation extraction is useful when it creates real reuse or isolates a repeated visual primitive. It is usually insufficient as the main answer to an oversized component when the parent still owns every interactive detail.
+- Prefer component boundaries that let data move through explicit `v-model` / event contracts. Avoid child components that need to know sibling state or parent internals.
+- When a child gathers draft input through a drawer, modal, picker, or editor, keep that draft state inside the child and emit the committed value to the parent.
+- Keep backend-authoritative writes in the parent or a domain composable when the write affects cross-section flow, cache invalidation, routing, or telemetry.
+
 ### Styling
 
 All components MUST follow `src/styles/AGENTS.md`.
@@ -99,6 +110,7 @@ Prohibited:
 - `shared/ui/layout/FooterRevealPageScaffold.vue`: Viewport-first page scaffold with `header`, content, and `footer` regions where `header + content` fill the first screen and the footer appears only after continued page scroll.
 - `shared/ui/forms/FormField.vue`: Label + control + hint/error wrapper for plain form rows. It does not own the input shell; pair it with native controls or existing form primitives that already style the control.
 - `shared/ui/forms/TextareaInput.vue`: Shared textarea primitive with stable shell, optional char count, and configurable rows/max length. Prefer it when multiple screens need the same textarea treatment instead of re-implementing native `<textarea>` styling locally.
+- `shared/ui/forms/ToggleSwitch.vue`: Shared labeled boolean switch primitive with `v-model` and switch semantics. Keep domain copy and workflow behavior in the consuming component.
 - `shared/ui/forms/WheelPicker.vue`: Shared finite vertical option picker for single-value choices. Use `modelValue`, `options`, `itemHeight`, `visibleCount`, and `tone`/`variant` values `surface`, `outline`, `primary`, `secondary`, `tertiary`; `teritary` is accepted as a compatibility alias.
 - `shared/ui/forms/ProductLocalDateCalendarPicker.vue`: Product-local date-key calendar grid for visible-window multi-select flows. Keep search policy such as defaults, fallback, and allowed-date derivation in the owning page or domain component.
 - `shared/ui/display/InfoRow.vue`: Generic label/value row with inline or stacked layout. Use it for neutral metadata presentation, not domain-specific timeline or status logic.

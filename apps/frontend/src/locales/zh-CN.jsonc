@@ -1322,6 +1322,8 @@
       "locationAriaLabel": "地点选择",
       "timeEyebrow": "开始时间",
       "timeTitle": "开始时间",
+      "dateWheelAriaLabel": "选择日期",
+      "timeWheelAriaLabel": "选择时间",
       "advancedModeLabel": "高级模式",
       "preferenceEyebrow": "偏好",
       "preferenceTitle": "希望遇到什么样的搭子",

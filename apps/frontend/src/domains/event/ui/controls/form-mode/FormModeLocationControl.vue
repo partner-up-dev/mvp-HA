@@ -130,7 +130,7 @@ watch(
 .location-card {
   position: relative;
   overflow: hidden;
-  height: clamp(9rem, 24vh, 13rem);
+  height: clamp(7.2rem, 19.2vh, 10.4rem);
   border-radius: var(--sys-radius-sm);
   background: linear-gradient(
     160deg,
