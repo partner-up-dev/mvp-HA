@@ -60,9 +60,10 @@ Suggested subfolders:
 - `commands`
 - `use-cases`
 - `routing`
-- `ui/primitives`
-- `ui/composites`
+- `ui/surfaces`
 - `ui/sections`
+- `ui/composites`
+- `ui/primitives`
 - `adapters`
 
 ### `src/processes`
@@ -99,12 +100,13 @@ Preferred direction:
 
 Within a domain:
 
-1. `ui/sections` -> `ui/composites`, `use-cases`, `queries`, `model`
-2. `ui/composites` -> `ui/primitives`, `model`
-3. `ui/primitives` -> `model` only when domain-owned
-4. `use-cases` -> `queries`, `commands`, `model`, `shared`
-5. `queries` / `commands` -> transport and shared infrastructure
-6. `model` -> domain logic and generic shared helpers only
+1. `ui/surfaces` -> `ui/sections`, `ui/composites`, `use-cases`, `queries`, `model`
+2. `ui/sections` -> `ui/composites`, `use-cases`, `queries`, `model`
+3. `ui/composites` -> `ui/primitives`, `model`
+4. `ui/primitives` -> `model` only when domain-owned
+5. `use-cases` -> `queries`, `commands`, `model`, `shared`
+6. `queries` / `commands` -> transport and shared infrastructure
+7. `model` -> domain logic and generic shared helpers only
 
 Forbidden:
 

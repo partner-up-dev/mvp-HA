@@ -9,7 +9,7 @@
   - `apps/frontend/src/pages/AnchorEventPage.vue`
   - `apps/frontend/src/pages/AnchorEventLandingPage.vue`
   - `apps/frontend/src/domains/event/ui/sections/*`
-  - future `apps/frontend/src/domains/event/ui/surfaces/*`
+  - `apps/frontend/src/domains/event/ui/surfaces/*`
   - future `apps/frontend/src/domains/event/ui/controls/form-mode/*` or equivalent local event-domain control folder
 - Verification:
   - `pnpm --filter @partner-up-dev/frontend build`
@@ -159,10 +159,11 @@ Constraint:
 
 ### Slice A - UI Surface Vocabulary And Card/List Rename
 
+- Status: completed.
 - Update frontend architecture docs to introduce `ui/surfaces`.
 - Move or rename Card/List mode components:
-  - `domains/event/ui/sections/AnchorEventCardModeSection.vue`
-  - `domains/event/ui/sections/AnchorEventListModeSection.vue`
+  - `domains/event/ui/surfaces/AnchorEventCardModeSurface.vue`
+  - `domains/event/ui/surfaces/AnchorEventListModeSurface.vue`
 - Update live imports in:
   - `apps/frontend/src/pages/AnchorEventPage.vue`
   - `apps/frontend/src/pages/AnchorEventLandingPage.vue`

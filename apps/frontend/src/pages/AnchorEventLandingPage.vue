@@ -40,7 +40,7 @@
     />
 
     <template v-else-if="detail">
-      <AnchorEventCardModeSection
+      <AnchorEventCardModeSurface
         :active-demand-card="activeDemandCard"
         :stack-preview-cards="stackPreviewCards"
         :is-card-routing="isCardRouting"
@@ -98,7 +98,7 @@ import { useI18n } from "vue-i18n";
 import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
-import AnchorEventCardModeSection from "@/domains/event/ui/sections/AnchorEventCardModeSection.vue";
+import AnchorEventCardModeSurface from "@/domains/event/ui/surfaces/AnchorEventCardModeSurface.vue";
 import AnchorEventFormModeSection from "@/domains/event/ui/sections/AnchorEventFormModeSection.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";

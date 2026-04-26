@@ -59,7 +59,7 @@
     </div>
     <template v-else-if="detail">
       <template v-if="viewMode === 'CARD'">
-        <AnchorEventCardModeSection
+        <AnchorEventCardModeSurface
           :active-demand-card="activeDemandCard"
           :stack-preview-cards="stackPreviewCards"
           :is-card-routing="isCardRouting"
@@ -84,7 +84,7 @@
       </template>
 
       <template v-else>
-        <AnchorEventListModeSection
+        <AnchorEventListModeSurface
           :has-browse-time-windows="detail.browseTimeWindows.length > 0"
           :date-tabs="dateTabs"
           :selected-date-key="selectedDateKey"
@@ -125,8 +125,8 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
-import AnchorEventCardModeSection from "@/domains/event/ui/sections/AnchorEventCardModeSection.vue";
-import AnchorEventListModeSection from "@/domains/event/ui/sections/AnchorEventListModeSection.vue";
+import AnchorEventCardModeSurface from "@/domains/event/ui/surfaces/AnchorEventCardModeSurface.vue";
+import AnchorEventListModeSurface from "@/domains/event/ui/surfaces/AnchorEventListModeSurface.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
