@@ -1,28 +1,16 @@
-# AGENTS.md of PartnerUp MVP
+# AGENTS.md of PartnerUp MVP Hypothesis-A
 
 PartnerUp helps users find a partner (搭子) effectively and safely.
-
-This repository is a pnpm workspace with two units:
-
-- `apps/backend`
-- `apps/frontend`
 
 ## Repository Layout
 
 ```text
 /
-|-- AGENTS.md
 |-- apps/
 |   |-- backend/
 |   `-- frontend/
-|-- docs/
-|   |-- 00-meta/
-|   |-- 10-prd/
-|   |-- 15-alignment/
-|   |-- 20-product-tdd/
-|   |-- 30-unit-tdd/
-|   `-- 40-deployment/
-|-- tasks/
+|-- docs/                 # Durable product and technical truth
+|-- tasks/                # Volatile work, diagnosis, and temporary reasoning
 `-- scripts/
 ```
 
@@ -31,12 +19,10 @@ This repository is a pnpm workspace with two units:
 - Monorepo: pnpm workspace
 - Backend: Hono + Drizzle ORM + Postgres-oriented schema / migration workflow
 - Frontend: Vue 3 + Vite + TanStack Vue Query + Hono RPC client
-- Durable product and technical truth live under `docs/`
-- Volatile work, diagnosis, and temporary reasoning live under `tasks/`
 
 ## Documentation
 
-Read only what is needed for the current work and keep durable docs current.
+Read following documents for the current work when needed and keep them current.
 
 - `docs/00-meta/`: typed input routes, mode SOPs, and framework concepts.
 - `docs/00-meta/concepts.md`: load only when boundary language or owner terminology is unclear.
