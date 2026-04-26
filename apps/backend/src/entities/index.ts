@@ -23,3 +23,5 @@ export * from "./analytics-daily-anchor";
 export * from "./analytics-daily-community";
 export * from "./scenario-type-metric";
 export * from "./poi";
+export * from "./anchor-event-preference-tag";
+export * from "./anchor-event-pr-attachment";

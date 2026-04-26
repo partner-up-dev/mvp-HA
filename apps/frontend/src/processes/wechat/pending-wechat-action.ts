@@ -29,6 +29,7 @@ type PendingAnchorCreateAction = PendingActionBase & {
     location: string;
     minPartners: number | null;
     maxPartners: number | null;
+    preferences: string[];
   };
 };
 
@@ -60,6 +61,7 @@ type NewPendingWeChatAction =
         location: string;
         minPartners: number | null;
         maxPartners: number | null;
+        preferences: string[];
       };
     };
 
@@ -102,6 +104,8 @@ const isPendingWeChatAction = (value: unknown): value is PendingWeChatAction => 
       (fields.time[1] === null || typeof fields.time[1] === "string") &&
       typeof fields.location === "string" &&
       fields.location.trim().length > 0 &&
+      Array.isArray(fields.preferences) &&
+      fields.preferences.every((entry) => typeof entry === "string") &&
       (fields.minPartners === null || isPositiveInteger(fields.minPartners)) &&
       (fields.maxPartners === null || isPositiveInteger(fields.maxPartners))
     );

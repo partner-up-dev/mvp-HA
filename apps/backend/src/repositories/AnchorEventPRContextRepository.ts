@@ -7,6 +7,7 @@ import type {
 } from "../entities/partner-request";
 import type { AnchorLocationSource } from "../entities/anchor-partner-request";
 import { AnchorEventRepository } from "./AnchorEventRepository";
+import { AnchorEventPRAttachmentRepository } from "./AnchorEventPRAttachmentRepository";
 import { PartnerRequestRepository } from "./PartnerRequestRepository";
 import {
   DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
@@ -78,9 +79,22 @@ export class AnchorEventPRContextRepository {
 
   private readonly eventRepo = new AnchorEventRepository();
 
+  private readonly attachmentRepo = new AnchorEventPRAttachmentRepository();
+
   private async buildRecordForRequest(
     root: PartnerRequest,
   ): Promise<AnchorEventPRContextRecord | null> {
+    const attachment = await this.attachmentRepo.findByPrId(root.id);
+    if (attachment) {
+      const attachedEvent = await this.eventRepo.findById(attachment.anchorEventId);
+      if (attachedEvent && isEventScopedLocation(attachedEvent, root.location)) {
+        const anchor = buildAnchorContext(root, attachedEvent);
+        if (anchor) {
+          return { root, anchor };
+        }
+      }
+    }
+
     const candidateEvents = await this.eventRepo.findByType(root.type);
 
     for (const event of candidateEvents) {
@@ -219,6 +233,27 @@ export class AnchorEventPRContextRepository {
       }
     }
     return Array.from(byId.values()).sort(sortRecordsByCreatedAtDesc);
+  }
+
+  async findVisibleByAnchorEventId(
+    anchorEventId: AnchorEventId,
+  ): Promise<AnchorEventPRContextRecord[]> {
+    const event = await this.eventRepo.findById(anchorEventId);
+    if (!event) {
+      return [];
+    }
+
+    const roots = await this.prRootRepo.findVisibleByType(event.type);
+    const records = await Promise.all(
+      roots.map((root) => this.buildRecordForRequest(root)),
+    );
+
+    return records
+      .filter(
+        (record): record is AnchorEventPRContextRecord =>
+          record !== null && record.anchor.anchorEventId === anchorEventId,
+      )
+      .sort(sortRecordsByCreatedAtDesc);
   }
 
   async updateVisibilityStatus(

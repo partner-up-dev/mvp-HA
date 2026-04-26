@@ -42,6 +42,7 @@ export const useCreateEventAssistedPR = () => {
           json: {
             fields,
             createSource: "EVENT_ASSISTED",
+            anchorEventId: eventId,
           },
         },
         {
@@ -66,6 +67,7 @@ export const useCreateEventAssistedPR = () => {
               location: fields.location ?? "",
               minPartners: fields.minPartners,
               maxPartners: fields.maxPartners,
+              preferences: [...fields.preferences],
             },
           });
           handleWeChatAuthRequiredError(
@@ -91,6 +93,9 @@ export const useCreateEventAssistedPR = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.anchorEvent.demandCards(variables.eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.anchorEvent.formMode(variables.eventId),
       });
     },
   });

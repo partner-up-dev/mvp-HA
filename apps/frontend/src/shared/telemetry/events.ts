@@ -29,6 +29,11 @@ export type CanonicalAnalyticsEventName =
   | "home_create_entry_click"
   | "home_bookmark_nudge_shown"
   | "home_bookmark_action_click"
+  | "anchor_event_form_impression"
+  | "anchor_event_form_recommendation_impression"
+  | "anchor_event_form_result_action_click"
+  | "anchor_event_form_create_fallback_click"
+  | "anchor_event_form_join_longpress_complete"
   | "pr_primary_cta_impression"
   | "pr_primary_cta_click"
   | "pr_lane_expand"
@@ -190,6 +195,34 @@ type CanonicalAnalyticsPayloadMap = {
       | "open_official_account_qr"
       | "dismiss";
     environment: "wechat" | "browser";
+  };
+  anchor_event_form_impression: AnalyticsContextPayload & {
+    eventId: number;
+  };
+  anchor_event_form_recommendation_impression: AnalyticsContextPayload & {
+    eventId: number;
+    hasPrimaryRecommendation: boolean;
+    candidateCount: number;
+    advancedMode: boolean;
+    locationId: string;
+    startAt: string;
+    preferenceCount: number;
+  };
+  anchor_event_form_result_action_click: AnalyticsContextPayload & {
+    eventId: number;
+    action: "PRIMARY_DETAIL" | "CANDIDATE_DETAIL";
+    prId: number;
+    candidateRank: number | null;
+  };
+  anchor_event_form_create_fallback_click: AnalyticsContextPayload & {
+    eventId: number;
+    locationId: string;
+    startAt: string;
+    preferenceCount: number;
+  };
+  anchor_event_form_join_longpress_complete: AnalyticsContextPayload & {
+    eventId: number;
+    prId: number;
   };
   pr_primary_cta_impression: PRContextPayload & {
     prId: number;

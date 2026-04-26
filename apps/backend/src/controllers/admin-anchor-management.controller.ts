@@ -20,10 +20,14 @@ import {
   createAdminPRMessage,
   deleteAdminPRMessage,
   getAdminAnchorLandingConfig,
+  getAdminAnchorEventPreferenceTags,
   getAdminAnchorEventWorkspace,
   listAdminPRMessages,
+  publishAdminAnchorEventPreferenceTag,
   getAdminPRWorkspace,
+  rejectAdminAnchorEventPreferenceTag,
   releaseAdminPRPartner,
+  replaceAdminAnchorEventPreferenceTags,
   updateAdminAnchorLandingConfig,
   updateAdminPRMessage,
   updateAdminAnchorEvent,
@@ -46,6 +50,10 @@ const prIdParamSchema = z.object({
 const prMessageIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
   messageId: z.coerce.number().int().positive(),
+});
+const preferenceTagIdParamSchema = z.object({
+  eventId: z.coerce.number().int().positive(),
+  tagId: z.coerce.number().int().positive(),
 });
 const partnerIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -109,6 +117,14 @@ const adminUpdatePRStatusSchema = z.object({
 const adminUpdatePRVisibilitySchema = z.object({
   visibilityStatus: visibilityStatusSchema,
 });
+const adminPreferenceTagsReplaceSchema = z.object({
+  tags: z.array(
+    z.object({
+      label: z.string().trim().min(1).max(80),
+      description: z.string().trim().max(280).nullable(),
+    }),
+  ),
+});
 const adminManualReleaseSchema = z.object({
   reason: z.string().trim().min(1),
 });
@@ -128,6 +144,15 @@ export const adminAnchorManagementRoute = app
       return c.json(result);
     },
   )
+  .get(
+    "/events/:eventId/preference-tags",
+    zValidator("param", eventIdParamSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const result = await getAdminAnchorEventPreferenceTags(eventId);
+      return c.json(result);
+    },
+  )
   .get("/pr/workspace", async (c) => {
     const result = await getAdminPRWorkspace();
     return c.json(result);
@@ -140,6 +165,41 @@ export const adminAnchorManagementRoute = app
       const { eventId } = c.req.valid("param");
       const payload = c.req.valid("json");
       const result = await updateAdminAnchorLandingConfig(eventId, payload);
+      return c.json(result);
+    },
+  )
+  .put(
+    "/events/:eventId/preference-tags/published",
+    zValidator("param", eventIdParamSchema),
+    zValidator("json", adminPreferenceTagsReplaceSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const { tags } = c.req.valid("json");
+      const result = await replaceAdminAnchorEventPreferenceTags(eventId, tags);
+      return c.json(result);
+    },
+  )
+  .post(
+    "/events/:eventId/preference-tags/:tagId/publish",
+    zValidator("param", preferenceTagIdParamSchema),
+    async (c) => {
+      const { eventId, tagId } = c.req.valid("param");
+      const result = await publishAdminAnchorEventPreferenceTag({
+        eventId,
+        tagId,
+      });
+      return c.json(result);
+    },
+  )
+  .post(
+    "/events/:eventId/preference-tags/:tagId/reject",
+    zValidator("param", preferenceTagIdParamSchema),
+    async (c) => {
+      const { eventId, tagId } = c.req.valid("param");
+      const result = await rejectAdminAnchorEventPreferenceTag({
+        eventId,
+        tagId,
+      });
       return c.json(result);
     },
   )

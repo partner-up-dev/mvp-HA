@@ -87,6 +87,9 @@ Important coordination note:
 - `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative display policy, so frontend should treat it as opaque instead of hardcoded ranking truth; it does not own PR search results
 - `GET /api/events` and `GET /api/events/:eventId` expose each Anchor Event's beta-group QR code when configured; `/about` and `/events/:eventId` use that event-owned value for beta-group entry instead of reading a generic beta-group public config key
 - `GET /api/events/:eventId/landing-assignment` returns the backend-authored landing mode plus `assignmentRevision` for `/e/:eventId`
+- `GET /api/events/:eventId/form-mode` is the Form Mode bootstrap contract; it returns the event snapshot, location gallery projection, available start options, and published preset preference tags for that event
+- `POST /api/events/:eventId/form-mode/recommendation` accepts one selected location, one selected start time, and the current preference labels, then returns one primary recommendation plus an ordered candidate list
+- `POST /api/events/:eventId/preference-tags/submissions` accepts visitor-authored label-only tags, records them as pending event-owned preference-tag moderation items, and does not automatically expose them to later visitors
 - `GET /api/events/:eventId/demand-cards` is the backend-authored card-mode demand projection contract; it returns only joinable (`OPEN` / `READY`) demand-card groups for that event.
 - the old public demand-card join route is retired from the public contract surface
 - `GET /api/events/:eventId` exposes public event discovery through `timeWindows`. Discoverable PRs inside those time-window groups come from root PR reads keyed by `event.type + time_window` plus event-owned location constraints.
@@ -126,6 +129,7 @@ Important coordination note:
 - Event-specific beta-group QR codes are not public config values; they are Anchor Event fields and flow through the Anchor Event read and admin contracts.
 - Event-owned landing rollout config is persisted through the infra `config` table while Anchor Event owns the namespace, payload schema, parse / serialize rules, and admin contract. Product-side rollout control is expressed through landing ratio override plus assignment revision; `CARD_RICH` ratio `0` means pure `FORM` rollout.
 - Admin edits event-owned landing rollout config through `GET /api/admin/events/:eventId/landing-config` and `PUT /api/admin/events/:eventId/landing-config`.
+- Event-owned preset preference tags and their moderation state are persisted through dedicated Anchor Event tables instead of config blobs; admin reads them through `GET /api/admin/events/:eventId/preference-tags`, replaces published tags through `PUT /api/admin/events/:eventId/preference-tags/published`, and moderates pending tags through `POST /api/admin/events/:eventId/preference-tags/:tagId/publish|reject`.
 
 ## 8. Share Descriptor Contract
 

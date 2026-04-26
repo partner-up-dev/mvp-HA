@@ -378,6 +378,156 @@
           </div>
         </section>
 
+        <section class="panel">
+          <div class="stack">
+            <div class="section-header">
+              <h2 class="card-title">
+                {{ t("adminAnchorEvents.preferenceTagsTitle") }}
+              </h2>
+              <Button
+                appearance="pill"
+                tone="outline"
+                size="sm"
+                type="button"
+                @click="handleAddPreferenceTagRow"
+              >
+                {{ t("adminAnchorEvents.addPreferenceTagAction") }}
+              </Button>
+            </div>
+
+            <p class="hint">
+              {{ t("adminAnchorEvents.preferenceTagsDescription") }}
+            </p>
+
+            <div v-if="isCreatingEvent || selectedEventId === null" class="hint">
+              {{ t("adminAnchorEvents.selectEventForPreferenceTagsHint") }}
+            </div>
+
+            <LoadingIndicator
+              v-else-if="preferenceTagsQuery.isLoading.value"
+              :message="t('common.loading')"
+            />
+
+            <p v-else-if="preferenceTagsQuery.error.value" class="error-message">
+              {{ preferenceTagsQuery.error.value.message }}
+            </p>
+
+            <template v-else>
+              <div
+                v-if="publishedPreferenceTagRows.length === 0"
+                class="selection-list"
+              >
+                <p class="hint">
+                  {{ t("adminAnchorEvents.emptyPublishedPreferenceTags") }}
+                </p>
+              </div>
+
+              <div v-else class="selection-list">
+                <div
+                  v-for="row in publishedPreferenceTagRows"
+                  :key="row.id"
+                  class="panel"
+                >
+                  <div class="stack">
+                    <label class="field">
+                      <span class="field-label">{{
+                        t("adminAnchorEvents.preferenceTagLabel")
+                      }}</span>
+                      <input v-model="row.label" class="field-input" />
+                    </label>
+
+                    <label class="field">
+                      <span class="field-label">{{
+                        t("adminAnchorEvents.preferenceTagDescription")
+                      }}</span>
+                      <input v-model="row.description" class="field-input" />
+                    </label>
+
+                    <Button
+                      appearance="pill"
+                      tone="outline"
+                      size="sm"
+                      type="button"
+                      @click="handleRemovePreferenceTagRow(row.id)"
+                    >
+                      {{ t("adminAnchorEvents.removePreferenceTagAction") }}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                appearance="pill"
+                size="sm"
+                type="button"
+                :disabled="replacePreferenceTagsMutation.isPending.value"
+                @click="handleSavePreferenceTags"
+              >
+                {{
+                  replacePreferenceTagsMutation.isPending.value
+                    ? t("adminPR.saving")
+                    : t("adminAnchorEvents.savePreferenceTagsAction")
+                }}
+              </Button>
+
+              <div class="stack">
+                <h3 class="card-title">
+                  {{ t("adminAnchorEvents.pendingPreferenceTagsTitle") }}
+                </h3>
+
+                <div
+                  v-if="
+                    (preferenceTagsQuery.data.value?.pendingTags.length ?? 0) === 0
+                  "
+                  class="hint"
+                >
+                  {{ t("adminAnchorEvents.emptyPendingPreferenceTags") }}
+                </div>
+
+                <div v-else class="selection-list">
+                  <div
+                    v-for="tag in preferenceTagsQuery.data.value?.pendingTags ?? []"
+                    :key="tag.id"
+                    class="panel"
+                  >
+                    <div class="stack">
+                      <p class="card-title">{{ tag.label }}</p>
+                      <p class="hint">
+                        {{
+                          tag.description ||
+                          t("adminAnchorEvents.preferenceTagDescriptionEmpty")
+                        }}
+                      </p>
+
+                      <div class="section-header">
+                        <Button
+                          appearance="pill"
+                          size="sm"
+                          type="button"
+                          :disabled="publishPreferenceTagMutation.isPending.value"
+                          @click="handlePublishPreferenceTag(tag.id)"
+                        >
+                          {{ t("adminAnchorEvents.publishPreferenceTagAction") }}
+                        </Button>
+                        <Button
+                          appearance="pill"
+                          tone="outline"
+                          size="sm"
+                          type="button"
+                          :disabled="rejectPreferenceTagMutation.isPending.value"
+                          @click="handleRejectPreferenceTag(tag.id)"
+                        >
+                          {{ t("adminAnchorEvents.rejectPreferenceTagAction") }}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </section>
+
         <ErrorToast
           v-if="mutationErrorMessage"
           :message="mutationErrorMessage"
@@ -411,6 +561,12 @@ import {
   useAdminAnchorEventLandingConfig,
   useReplaceAdminAnchorEventLandingConfig,
 } from "@/domains/admin/queries/useAdminAnchorEventLandingConfig";
+import {
+  useAdminAnchorEventPreferenceTags,
+  usePublishAdminAnchorEventPreferenceTag,
+  useRejectAdminAnchorEventPreferenceTag,
+  useReplaceAdminAnchorEventPreferenceTags,
+} from "@/domains/admin/queries/useAdminAnchorEventPreferenceTags";
 import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 import { validateManualPartnerBounds } from "@/lib/validation";
 
@@ -441,6 +597,12 @@ type LandingConfigForm = {
   formRatio: number;
   cardRichRatio: number;
   assignmentRevision: number;
+};
+
+type PreferenceTagFormRow = {
+  id: number | string;
+  label: string;
+  description: string;
 };
 
 const DEFAULT_CONFIRMATION_START_OFFSET_MINUTES = 120;
@@ -518,6 +680,7 @@ const selectedEventIdRaw = ref("");
 const isCreatingEvent = ref(false);
 const eventForm = ref<EventForm>(emptyEventForm());
 const landingConfigForm = ref<LandingConfigForm>(emptyLandingConfigForm());
+const publishedPreferenceTagRows = ref<PreferenceTagFormRow[]>([]);
 
 const workspace = computed<Workspace | null>(
   () => workspaceQuery.data.value ?? null,
@@ -535,6 +698,13 @@ const selectedEvent = computed<EventRecord | null>(
 );
 
 const landingConfigQuery = useAdminAnchorEventLandingConfig(selectedEventId, isAdmin);
+const preferenceTagsQuery = useAdminAnchorEventPreferenceTags(
+  selectedEventId,
+  isAdmin,
+);
+const replacePreferenceTagsMutation = useReplaceAdminAnchorEventPreferenceTags();
+const publishPreferenceTagMutation = usePublishAdminAnchorEventPreferenceTag();
+const rejectPreferenceTagMutation = useRejectAdminAnchorEventPreferenceTag();
 
 const previewStartAt = computed(
   () => selectedEvent.value?.timeWindows[0]?.timeWindow[0] ?? null,
@@ -728,11 +898,24 @@ const landingConfigValidationMessage = computed(() => {
   return null;
 });
 
+const normalizePreferenceTagRows = (
+  rows: PreferenceTagFormRow[],
+): Array<{ label: string; description: string | null }> =>
+  rows
+    .map((row) => ({
+      label: row.label.trim(),
+      description: row.description.trim() || null,
+    }))
+    .filter((row) => row.label.length > 0);
+
 const mutationErrorMessage = computed(
   () =>
     createEventMutation.error.value?.message ||
     updateEventMutation.error.value?.message ||
     replaceLandingConfigMutation.error.value?.message ||
+    replacePreferenceTagsMutation.error.value?.message ||
+    publishPreferenceTagMutation.error.value?.message ||
+    rejectPreferenceTagMutation.error.value?.message ||
     null,
 );
 
@@ -779,6 +962,23 @@ watch(
   { immediate: true },
 );
 
+watch(
+  [() => preferenceTagsQuery.data.value, isCreatingEvent],
+  ([preferenceTags, creating]) => {
+    if (creating || !preferenceTags) {
+      publishedPreferenceTagRows.value = [];
+      return;
+    }
+
+    publishedPreferenceTagRows.value = preferenceTags.publishedTags.map((tag) => ({
+      id: tag.id,
+      label: tag.label,
+      description: tag.description,
+    }));
+  },
+  { immediate: true },
+);
+
 const prepareNewEvent = () => {
   isCreatingEvent.value = true;
   selectedEventIdRaw.value = "";
@@ -794,6 +994,9 @@ const resetMutationErrors = () => {
   createEventMutation.reset();
   updateEventMutation.reset();
   replaceLandingConfigMutation.reset();
+  replacePreferenceTagsMutation.reset();
+  publishPreferenceTagMutation.reset();
+  rejectPreferenceTagMutation.reset();
 };
 
 const handleSaveEvent = async () => {
@@ -873,6 +1076,68 @@ const handleSaveLandingConfig = async () => {
         },
         assignmentRevision,
       },
+    });
+  } catch {
+    // Mutation state already drives page-level feedback.
+  }
+};
+
+const handleAddPreferenceTagRow = () => {
+  publishedPreferenceTagRows.value = [
+    ...publishedPreferenceTagRows.value,
+    {
+      id: `draft-${Date.now()}`,
+      label: "",
+      description: "",
+    },
+  ];
+};
+
+const handleRemovePreferenceTagRow = (rowId: number | string) => {
+  publishedPreferenceTagRows.value = publishedPreferenceTagRows.value.filter(
+    (row) => row.id !== rowId,
+  );
+};
+
+const handleSavePreferenceTags = async () => {
+  if (selectedEventId.value === null || isCreatingEvent.value) {
+    return;
+  }
+
+  try {
+    await replacePreferenceTagsMutation.mutateAsync({
+      eventId: selectedEventId.value,
+      tags: normalizePreferenceTagRows(publishedPreferenceTagRows.value),
+    });
+  } catch {
+    // Mutation state already drives page-level feedback.
+  }
+};
+
+const handlePublishPreferenceTag = async (tagId: number) => {
+  if (selectedEventId.value === null) {
+    return;
+  }
+
+  try {
+    await publishPreferenceTagMutation.mutateAsync({
+      eventId: selectedEventId.value,
+      tagId,
+    });
+  } catch {
+    // Mutation state already drives page-level feedback.
+  }
+};
+
+const handleRejectPreferenceTag = async (tagId: number) => {
+  if (selectedEventId.value === null) {
+    return;
+  }
+
+  try {
+    await rejectPreferenceTagMutation.mutateAsync({
+      eventId: selectedEventId.value,
+      tagId,
     });
   } catch {
     // Mutation state already drives page-level feedback.

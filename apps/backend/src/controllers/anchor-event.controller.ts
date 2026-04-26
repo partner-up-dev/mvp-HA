@@ -6,6 +6,9 @@ import {
   getAnchorEventDetail,
   getAnchorEventDemandCards,
   assignAnchorEventLandingMode,
+  getAnchorEventFormModeData,
+  submitAnchorEventFormModePreferenceTags,
+  recommendAnchorEventFormModePRs,
 } from "../domains/anchor-event";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 
@@ -13,6 +16,16 @@ const app = new Hono<AuthEnv>();
 
 const eventIdParamSchema = z.object({
   eventId: z.coerce.number().int().positive(),
+});
+
+const formModePreferenceSubmissionSchema = z.object({
+  labels: z.array(z.string().trim().min(1).max(80)).max(16),
+});
+
+const formModeRecommendationSchema = z.object({
+  locationId: z.string().trim().min(1),
+  startAt: z.string().datetime(),
+  preferences: z.array(z.string().trim().min(1).max(80)).max(16),
 });
 
 export const anchorEventRoute = app
@@ -26,6 +39,11 @@ export const anchorEventRoute = app
   .get("/:eventId", zValidator("param", eventIdParamSchema), async (c) => {
     const { eventId } = c.req.valid("param");
     const detail = await getAnchorEventDetail(eventId);
+    return c.json(detail);
+  })
+  .get("/:eventId/form-mode", zValidator("param", eventIdParamSchema), async (c) => {
+    const { eventId } = c.req.valid("param");
+    const detail = await getAnchorEventFormModeData(eventId);
     return c.json(detail);
   })
   .get(
@@ -44,5 +62,30 @@ export const anchorEventRoute = app
       const { eventId } = c.req.valid("param");
       const cards = await getAnchorEventDemandCards(eventId);
       return c.json(cards);
+    },
+  )
+  .post(
+    "/:eventId/preference-tags/submissions",
+    zValidator("param", eventIdParamSchema),
+    zValidator("json", formModePreferenceSubmissionSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const { labels } = c.req.valid("json");
+      const result = await submitAnchorEventFormModePreferenceTags(eventId, labels);
+      return c.json(result);
+    },
+  )
+  .post(
+    "/:eventId/form-mode/recommendation",
+    zValidator("param", eventIdParamSchema),
+    zValidator("json", formModeRecommendationSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const payload = c.req.valid("json");
+      const result = await recommendAnchorEventFormModePRs({
+        eventId,
+        ...payload,
+      });
+      return c.json(result);
     },
   );

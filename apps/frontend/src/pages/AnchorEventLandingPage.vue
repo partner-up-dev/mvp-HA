@@ -7,7 +7,20 @@
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
         :back-fallback-to="{ name: 'event-plaza' }"
-      />
+      >
+        <template #top-actions>
+          <Button
+            v-if="resolvedMode === 'FORM'"
+            appearance="pill"
+            tone="outline"
+            size="sm"
+            type="button"
+            @click="showOtherEventsDrawer = true"
+          >
+            {{ t("anchorEvent.otherEvents.action") }}
+          </Button>
+        </template>
+      </PageHeader>
     </template>
 
     <div v-if="isLoading" class="loading-state">
@@ -21,17 +34,10 @@
       </router-link>
     </div>
 
-    <section v-else-if="resolvedMode === 'FORM'" class="landing-placeholder">
-      <p class="landing-placeholder__eyebrow">
-        {{ t("anchorEvent.landing.eyebrow") }}
-      </p>
-      <h1 class="landing-placeholder__title">
-        {{ detail?.title ?? t("anchorEvent.landing.placeholderTitle") }}
-      </h1>
-      <p class="landing-placeholder__body">
-        {{ t("anchorEvent.landing.placeholderBody") }}
-      </p>
-    </section>
+    <AnchorEventFormModeSection
+      v-else-if="resolvedMode === 'FORM' && eventId !== null"
+      :event-id="eventId"
+    />
 
     <template v-else-if="detail">
       <AnchorEventCardModeSection
@@ -62,6 +68,27 @@
       <FullCommonFooter />
     </template>
   </FooterRevealPageScaffold>
+
+  <BottomDrawer
+    :open="showOtherEventsDrawer"
+    :title="t('anchorEvent.otherEvents.title')"
+    @close="showOtherEventsDrawer = false"
+  >
+    <LoadingIndicator
+      v-if="otherEventsQuery.isLoading.value"
+      :message="t('common.loading')"
+    />
+    <div v-else-if="otherEventsQuery.error.value" class="error-state">
+      {{ t("anchorEvent.formMode.otherEventsLoadFailed") }}
+    </div>
+    <AnchorEventRadioCardCarousel
+      v-else
+      :model-value="selectedOtherEventId"
+      :events="otherEventCandidates"
+      :aria-label="t('anchorEvent.otherEvents.title')"
+      @update:model-value="handleSelectOtherEvent"
+    />
+  </BottomDrawer>
 </template>
 
 <script setup lang="ts">
@@ -72,8 +99,10 @@ import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import AnchorEventCardModeSection from "@/domains/event/ui/sections/AnchorEventCardModeSection.vue";
+import AnchorEventFormModeSection from "@/domains/event/ui/sections/AnchorEventFormModeSection.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
+import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
 import { useResolvedAnchorEventLandingMode } from "@/domains/event/use-cases/useResolvedAnchorEventLandingMode";
 import {
   useCreateEventAssistedPR,
@@ -92,6 +121,10 @@ import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
 } from "@/processes/wechat/pending-wechat-action";
+import Button from "@/shared/ui/actions/Button.vue";
+import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
+import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import AnchorEventRadioCardCarousel from "@/domains/event/ui/composites/AnchorEventRadioCardCarousel.vue";
 
 type TimeWindow = [string | null, string | null];
 type LocationOption =
@@ -113,6 +146,7 @@ type CardCreateLocationOptionViewModel = {
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const showOtherEventsDrawer = ref(false);
 
 const noop = () => undefined;
 
@@ -126,6 +160,13 @@ const { assignmentQuery, resolvedMode, isTimeoutFallback } =
   useResolvedAnchorEventLandingMode(eventId);
 const { data: detail, isLoading: isDetailLoading, isError: isDetailError } =
   useAnchorEventDetail(eventId);
+const otherEventsQuery = useAnchorEvents();
+const selectedOtherEventId = computed(() => eventId.value);
+const otherEventCandidates = computed(() =>
+  (otherEventsQuery.data.value ?? []).filter(
+    (item) => item.id !== null && item.id !== eventId.value,
+  ),
+);
 
 const isCardRichMode = computed(() => resolvedMode.value === "CARD_RICH");
 
@@ -569,7 +610,7 @@ const attemptPendingCreateReplay = async () => {
         maxPartners: pending.fields.maxPartners,
         partners: [],
         budget: null,
-        preferences: [],
+        preferences: pending.fields.preferences,
         notes: null,
       },
     });
@@ -604,6 +645,19 @@ const handleCreateFromCardEmpty = async () => {
     locationId: cardCreateLocationId.value || null,
   });
 };
+
+const handleSelectOtherEvent = async (nextEventId: number | null) => {
+  if (nextEventId === null || nextEventId === eventId.value) {
+    return;
+  }
+  showOtherEventsDrawer.value = false;
+  await router.push({
+    name: "anchor-event-landing",
+    params: {
+      eventId: nextEventId.toString(),
+    },
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -615,29 +669,6 @@ const handleCreateFromCardEmpty = async () => {
 
 .anchor-event-landing-page__header {
   flex-shrink: 0;
-}
-
-.landing-placeholder {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--sys-spacing-sm);
-  padding: clamp(2rem, 8vw, 4rem) 0;
-}
-
-.landing-placeholder__eyebrow {
-  margin: 0;
-  color: var(--sys-color-primary);
-}
-
-.landing-placeholder__title {
-  margin: 0;
-}
-
-.landing-placeholder__body {
-  margin: 0;
-  color: var(--sys-color-on-surface-variant);
 }
 
 .loading-state,

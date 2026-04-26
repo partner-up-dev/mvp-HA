@@ -651,6 +651,7 @@ const creationEntry = computed(() => {
   if (Array.isArray(raw)) return raw[0] ?? null;
   return null;
 });
+const hasAppliedLandingJoinEntry = ref(false);
 const showDraftPublishCard = computed(
   () => prDetail.value?.status === "DRAFT",
 );
@@ -933,6 +934,29 @@ const openJoinFlowModal = () => {
   joinFlowPhoneInput.value = "";
   showJoinFlowModal.value = true;
 };
+
+watch(
+  [creationEntry, () => prDetail.value?.partnerSection.viewer.canJoin],
+  async ([entry, canJoin]) => {
+    if (entry !== "landing_join") {
+      hasAppliedLandingJoinEntry.value = false;
+      return;
+    }
+    if (!canJoin || hasAppliedLandingJoinEntry.value) {
+      return;
+    }
+
+    hasAppliedLandingJoinEntry.value = true;
+    openJoinFlowModal();
+    await router.replace({
+      query: {
+        ...route.query,
+        entry: "join",
+      },
+    });
+  },
+  { immediate: true },
+);
 
 const finalizeJoinFlow = async (bookingContactPhone?: string | null) => {
   joinFlowPending.value = true;

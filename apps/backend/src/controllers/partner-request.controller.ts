@@ -24,6 +24,7 @@ import {
   updatePRContent,
   updatePRStatus,
 } from "../domains/pr";
+import { createEventAssistedPR } from "../domains/anchor-event";
 import { updatePRBookingContactPhone } from "../domains/pr-booking-support";
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
@@ -72,6 +73,7 @@ const eventPRSearchQuerySchema = z.object({
 const createStructuredPRCommandSchema = z.object({
   fields: partnerRequestFieldsSchema,
   createSource: z.enum(["FORM", "EVENT_ASSISTED"]).optional(),
+  anchorEventId: z.coerce.number().int().positive().optional(),
 });
 const canonicalUpdateContentSchema = z.union([
   updateContentSchema,
@@ -112,7 +114,7 @@ export const partnerRequestRoute = app
     "/new/form",
     zValidator("json", createStructuredPRCommandSchema),
     async (c) => {
-      const { fields, createSource } = c.req.valid("json");
+      const { fields, createSource, anchorEventId } = c.req.valid("json");
 
       const creatorIdentity =
         createSource === "EVENT_ASSISTED"
@@ -125,9 +127,16 @@ export const partnerRequestRoute = app
             })()
           : await buildCreatorIdentity(c);
 
-      const result = await createPRFromStructured(fields, creatorIdentity, {
-        createSource,
-      });
+      const result =
+        createSource === "EVENT_ASSISTED" && anchorEventId
+          ? await createEventAssistedPR({
+              anchorEventId,
+              fields,
+              creatorIdentity,
+            })
+          : await createPRFromStructured(fields, creatorIdentity, {
+              createSource,
+            });
 
       return c.json(result, 201);
     },

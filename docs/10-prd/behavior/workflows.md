@@ -37,17 +37,22 @@
 2. `/e/:eventId` is the ad-scan-first Anchor Event landing entry. It keeps a lighter landing role than `/events/:eventId` and may enter a `FORM` or `CARD_RICH` landing mode for the same event.
 3. The same user should keep a stable landing mode for the same event until the operator applies a new landing revision for that event.
 4. If the landing mode cannot be resolved in time, `/e/:eventId` still enters a usable `FORM` fallback experience.
-5. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `PR` results.
-6. Search results follow the chosen Anchor Event's activity type and time-pool rules; result cards identify candidate PRs by time, location, visible status, and participant count rather than repeating event-side context.
-7. If the search has exactly one result, the system may route directly to `/pr/:id`; otherwise, the user chooses one result from the list.
-8. The user enters an existing `PR` from event card or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint. In card mode, the active demand card itself is also a detail-entry affordance, so tapping it should resolve to the same detail intent as the rightward action. In list mode, top-level tabs aggregate by local date while still preserving time-window grouping and location context inside the selected date panel; list rows should hide `EXPIRED` PRs while still allowing completed `CLOSED` rows to remain visible. Card-mode drag feedback should reveal directional skip versus detail cues in exposed stage space instead of covering the card body with opaque action stamps.
-9. The Anchor Event page exposes that event's beta-group entry as an independent card. List mode defaults the card to a collapsed kicker and description; card mode defaults it to an expanded state with the QR code. The group is for event-specific support such as requesting new sessions, getting booking/subsidy support, and coordinating activity context.
-10. If the current local date, time-pool rule, or location does not have a suitable PR and creation is still allowed, the user can create one through the controlled event-page flow.
-11. The event page resolves its assisted-create choices into the same structured PR create payload shape used by `/pr/new` and may carry transient event referral context for route continuity.
-12. The event page submits the same structured create command used by the form path. If the user already has an authenticated account, the backend creates and publishes the PR inside that same command.
-13. The current Anchor Event and downstream PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-context collaboration journey entirely.
-14. The user may then join, continue browsing other visible PRs in that event context, or view booking-support information.
-15. The resulting PR may continue through timing and reliability loops such as confirmation, reminders, and attendance follow-up when the corresponding modules are active.
+5. In `FORM` mode, the user selects one location, one start time, and optional preferences before the system reveals candidate `PR`s.
+6. Form Mode preferences come from the event-specific preset tag pool plus the current visitor's session-local custom labels; the same derived category is mutually exclusive while uncategorized labels can coexist.
+7. Form Mode submission returns one backend-authored primary recommendation plus an ordered candidate list instead of bypassing directly into join or create.
+8. If Form Mode has no suitable visible candidate, the page offers create fallback through `都不合适，帮我找`; the same selected conditions feed that assisted-create path.
+9. Entering a recommended candidate from Form Mode continues into canonical `/pr/:id` while preserving event-context handoff continuity for join confirmation.
+10. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `PR` results.
+11. Search results follow the chosen Anchor Event's activity type and time-pool rules; result cards identify candidate PRs by time, location, visible status, and participant count rather than repeating event-side context.
+12. If the search has exactly one result, the system may route directly to `/pr/:id`; otherwise, the user chooses one result from the list.
+13. The user enters an existing `PR` from event card or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint. In card mode, the active demand card itself is also a detail-entry affordance, so tapping it should resolve to the same detail intent as the rightward action. In list mode, top-level tabs aggregate by local date while still preserving time-window grouping and location context inside the selected date panel; list rows should hide `EXPIRED` PRs while still allowing completed `CLOSED` rows to remain visible. Card-mode drag feedback should reveal directional skip versus detail cues in exposed stage space instead of covering the card body with opaque action stamps.
+14. The Anchor Event page exposes that event's beta-group entry as an independent card. List mode defaults the card to a collapsed kicker and description; card mode defaults it to an expanded state with the QR code. The group is for event-specific support such as requesting new sessions, getting booking/subsidy support, and coordinating activity context.
+15. If the current local date, time-pool rule, or location does not have a suitable PR and creation is still allowed, the user can create one through the controlled event-page flow.
+16. The event page resolves its assisted-create choices into the same structured PR create payload shape used by `/pr/new` and may carry transient event referral context for route continuity.
+17. The event page submits the same structured create command used by the form path. If the user already has an authenticated account, the backend creates and publishes the PR inside that same command.
+18. The current Anchor Event and downstream PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-context collaboration journey entirely.
+19. The user may then join, continue browsing other visible PRs in that event context, or view booking-support information.
+20. The resulting PR may continue through timing and reliability loops such as confirmation, reminders, and attendance follow-up when the corresponding modules are active.
 
 ## 5. Revisit and History Entry
 

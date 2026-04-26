@@ -26,6 +26,9 @@
 - `/e/:eventId` is an Anchor Event landing entry distinct from `/events/:eventId`; the two routes address the same event object with different product roles.
 - The same user should keep a stable landing mode for the same event until the operator changes that event's landing assignment revision.
 - If `/e/:eventId` cannot obtain its landing mode decision in time, it should still enter a usable `FORM` fallback experience.
+- Form Mode recommendation and candidate ordering are backend-authored even though the user chooses location, start time, and preferences on the page.
+- Anchor Event owns the event-specific preset preference tag pool, its moderation state, and which published tags later visitors may see in Form Mode.
+- In Form Mode, derived preference categories come from the substring before the first `:` in the tag label; the same derived category is mutually exclusive while uncategorized labels may coexist.
 - The Anchor Event page shows discoverable PRs under the same activity type and time-pool rules.
 - Event-page discovery reads root PR facts by activity type, resolved time window, and event-owned location rules rather than by durable PR-side event linkage.
 
