@@ -22,6 +22,7 @@ Do not move a component into `shared/ui` just because two pages happen to look s
 - `forms/TextareaInput.vue`: shared textarea primitive with the governed shell used by cross-domain text-entry surfaces.
 - `forms/ProductLocalDateCalendarPicker.vue`: product-local date-key calendar grid for fixed-window multi-select flows; keep date-window policy in the owning page or domain.
 - `display/InfoRow.vue`: neutral label/value layout for metadata.
+- `display/Cell.vue`: compact title/value row with optional suffix icon or suffix slot for generic list and settings surfaces.
 - `display/Chip.vue` and `display/ChipGroup.vue`: lightweight shared tag/group primitives.
 - `feedback/InlineNotice.vue`: inline notice banner for page-level or section-level feedback.
 - `feedback/EmptyState.vue`: empty/not-found shell with optional icon and actions.

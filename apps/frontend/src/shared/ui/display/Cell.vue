@@ -1,0 +1,132 @@
+<template>
+  <component
+    :is="props.as"
+    class="ui-cell"
+    :type="props.as === 'button' ? props.type : undefined"
+  >
+    <div v-if="hasTitle" class="ui-cell__title">
+      <slot name="title">
+        {{ props.title }}
+      </slot>
+    </div>
+
+    <div v-if="hasValue" class="ui-cell__value">
+      <slot>
+        {{ props.value }}
+      </slot>
+    </div>
+
+    <span v-if="hasSuffix" class="ui-cell__suffix" aria-hidden="true">
+      <slot name="suffix">
+        <span v-if="props.suffixIcon" :class="props.suffixIcon"></span>
+      </slot>
+    </span>
+  </component>
+</template>
+
+<script setup lang="ts">
+import { computed, useSlots } from "vue";
+
+const props = withDefaults(
+  defineProps<{
+    as?: string;
+    type?: "button" | "submit" | "reset";
+    title?: string;
+    value?: string | number | null;
+    suffixIcon?: string;
+  }>(),
+  {
+    as: "div",
+    type: "button",
+    title: undefined,
+    value: null,
+    suffixIcon: undefined,
+  },
+);
+
+const slots = useSlots();
+
+const hasTitle = computed(() => Boolean(slots.title) || Boolean(props.title));
+const hasValue = computed(
+  () =>
+    Boolean(slots.default) ||
+    (props.value !== null &&
+      props.value !== undefined &&
+      String(props.value).length > 0),
+);
+const hasSuffix = computed(
+  () => Boolean(slots.suffix) || Boolean(props.suffixIcon),
+);
+</script>
+
+<style lang="scss" scoped>
+.ui-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--sys-spacing-sm);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--sys-size-large);
+  box-sizing: border-box;
+  padding: var(--sys-spacing-sm) 0;
+  border: 0;
+  border-bottom: 1px solid var(--sys-color-outline-variant);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sys-color-on-surface);
+  text-decoration: none;
+}
+
+.ui-cell:is(button) {
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
+}
+
+.ui-cell:is(a) {
+  cursor: pointer;
+}
+
+.ui-cell:is(button, a):hover {
+  background: var(--sys-color-surface-container-low);
+}
+
+.ui-cell:is(button, a):focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
+}
+
+.ui-cell__title,
+.ui-cell__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-cell__title {
+  @include mx.pu-font(body-large);
+  flex: 0 1 auto;
+  color: var(--sys-color-on-surface);
+}
+
+.ui-cell__value {
+  @include mx.pu-font(body-medium);
+  flex: 1 1 auto;
+  color: var(--sys-color-on-surface-variant);
+  text-align: right;
+}
+
+.ui-cell__suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.ui-cell__suffix :deep([class^="i-"]),
+.ui-cell__suffix :deep([class*=" i-"]) {
+  @include mx.pu-icon(md);
+}
+</style>
