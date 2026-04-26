@@ -20,6 +20,7 @@ Do not move a component into `shared/ui` just because two pages happen to look s
 - `layout/FooterRevealPageScaffold.vue`: viewport-first page shell with dedicated header/content/footer slots for pages that should keep `header + content` in the first screen and reveal the footer through normal page scrolling.
 - `forms/FormField.vue`: label + control + hint/error wrapper for plain field rows.
 - `forms/TextareaInput.vue`: shared textarea primitive with the governed shell used by cross-domain text-entry surfaces.
+- `forms/WheelPicker.vue`: finite vertical option picker with centered snap selection for generic single-value choices.
 - `forms/ProductLocalDateCalendarPicker.vue`: product-local date-key calendar grid for fixed-window multi-select flows; keep date-window policy in the owning page or domain.
 - `display/InfoRow.vue`: neutral label/value layout for metadata.
 - `display/Cell.vue`: compact title/value row with optional suffix icon or suffix slot for generic list and settings surfaces.
