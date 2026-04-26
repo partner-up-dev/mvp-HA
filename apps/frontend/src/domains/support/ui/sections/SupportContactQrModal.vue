@@ -69,7 +69,7 @@ useBodyScrollLock(computed(() => props.open));
 .support-contact-qr-modal {
   display: grid;
   justify-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .support-contact-qr-modal__description,
@@ -86,21 +86,21 @@ useBodyScrollLock(computed(() => props.open));
   width: min(100%, 280px);
   aspect-ratio: 1;
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container-lowest);
 }
 
 .support-contact-qr-modal__qr-image {
   width: min(100%, 260px);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
 }
 
 .support-contact-qr-modal__url {
   @include mx.pu-font(label-medium);
   width: 100%;
   margin: 0;
-  padding: var(--sys-spacing-xs);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-xsmall);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface-variant);
   overflow-wrap: anywhere;

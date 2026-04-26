@@ -458,16 +458,16 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .anchor-event-horizontal-list {
-  --event-rail-inset: var(--sys-spacing-lg);
+  --event-rail-inset: var(--sys-spacing-large);
 
   list-style: none;
   display: flex;
   flex-direction: row;
   min-width: 0;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   margin: 0;
-  padding-top: var(--sys-spacing-sm);
-  padding-bottom: var(--sys-spacing-sm);
+  padding-top: var(--sys-spacing-small);
+  padding-bottom: var(--sys-spacing-small);
   overflow-x: auto;
   overflow-y: visible;
   scroll-snap-type: x mandatory;
@@ -524,8 +524,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .anchor-event-horizontal-list {
-    --event-rail-inset: var(--sys-spacing-sm);
-    gap: var(--sys-spacing-sm);
+    --event-rail-inset: var(--sys-spacing-small);
+    gap: var(--sys-spacing-small);
   }
 
   .anchor-event-horizontal-list__item {

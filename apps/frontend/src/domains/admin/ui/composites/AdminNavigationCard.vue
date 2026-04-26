@@ -73,10 +73,10 @@ const { t } = useI18n();
 .admin-navigation-card {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  padding: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
+  padding: var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
     var(--sys-color-surface-container);
@@ -85,7 +85,7 @@ const { t } = useI18n();
 .admin-navigation-card__header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .admin-navigation-card__eyebrow {
@@ -105,7 +105,7 @@ const { t } = useI18n();
 .admin-navigation-card__nav {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .admin-navigation-card__link {

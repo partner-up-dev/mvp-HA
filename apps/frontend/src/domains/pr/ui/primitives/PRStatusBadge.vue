@@ -53,16 +53,16 @@ const statusText = computed(() => {
 
   &--size-md {
     @include mx.pu-font(label-large);
-    padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+    padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   }
 
   &--size-sm {
     @include mx.pu-font(label-medium);
-    padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
+    padding: calc(var(--sys-spacing-xsmall) / 2) var(--sys-spacing-small);
   }
 
   &--appearance-rounded {
-    border-radius: var(--sys-radius-sm);
+    border-radius: var(--sys-radius-small);
   }
 
   &--appearance-pill {

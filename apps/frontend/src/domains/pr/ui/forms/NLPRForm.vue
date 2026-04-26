@@ -187,13 +187,13 @@ const handleVoiceToggle = async (): Promise<void> => {
 .nl-form {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .field-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .nl-actions {
@@ -201,17 +201,17 @@ const handleVoiceToggle = async (): Promise<void> => {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .voice-action {
   @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
-  gap: var(--sys-spacing-xs);
-  padding: 0 var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall);
+  padding: 0 var(--sys-spacing-small);
   height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   border: 1px dashed var(--sys-color-primary);
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);

@@ -192,17 +192,17 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   min-height: var(--pu-vh);
-  padding: var(--sys-spacing-lg) var(--sys-spacing-med);
+  padding: var(--sys-spacing-large) var(--sys-spacing-medium);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
 
 .wechat-oauth-handoff__content {
   display: flex;
-  width: min(100%, calc(var(--sys-size-xLarge) * 6));
+  width: min(100%, calc(var(--sys-size-xlarge) * 6));
   flex-direction: column;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   text-align: center;
 }
 
@@ -210,7 +210,7 @@ onBeforeUnmount(() => {
 .wechat-oauth-handoff__mark {
   width: var(--sys-size-large);
   height: var(--sys-size-large);
-  margin-bottom: var(--sys-spacing-sm);
+  margin-bottom: var(--sys-spacing-small);
   border-radius: 50%;
 }
 
@@ -255,8 +255,8 @@ onBeforeUnmount(() => {
   width: 100%;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  margin-top: var(--sys-spacing-medium);
 }
 
 @media (prefers-reduced-motion: reduce) {

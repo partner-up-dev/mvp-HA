@@ -95,7 +95,7 @@ const prTitle = computed(() => props.pr.title || props.pr.type);
 .event-pr-card__headline {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--sys-spacing-xs) / 2);
+  gap: calc(var(--sys-spacing-xsmall) / 2);
   min-width: 0;
 }
 
@@ -111,7 +111,7 @@ const prTitle = computed(() => props.pr.title || props.pr.type);
 .event-pr-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
 }

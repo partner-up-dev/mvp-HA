@@ -501,14 +501,14 @@ const goEventPlaza = async () => {
 }
 
 .event-pr-search-page__state {
-  padding: var(--sys-spacing-xl) 0;
+  padding: var(--sys-spacing-xlarge) 0;
   text-align: center;
   color: var(--sys-color-on-surface-variant);
   @include mx.pu-font(body-medium);
 }
 
 .event-pr-search-page__summary {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
   color: var(--sys-color-on-surface-variant);
   @include mx.pu-font(body-medium);
 }
@@ -516,13 +516,13 @@ const goEventPlaza = async () => {
 .event-pr-search-page__result-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .event-pr-search-page__footer-actions,
 .event-pr-search-page__drawer-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 </style>

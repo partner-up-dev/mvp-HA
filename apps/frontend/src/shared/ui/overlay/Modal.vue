@@ -69,21 +69,21 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
+  padding: calc(var(--sys-spacing-medium) + var(--pu-safe-top))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-right))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-left));
   z-index: 1000;
 }
 
 .modal {
   background: var(--sys-color-surface);
-  border-radius: var(--sys-radius-lg);
-  padding: var(--sys-spacing-lg);
+  border-radius: var(--sys-radius-large);
+  padding: var(--sys-spacing-large);
   width: 100%;
   max-height: calc(
     var(--pu-vh) -
-      (2 * var(--sys-spacing-med)) - var(--pu-safe-top) - var(--pu-safe-bottom)
+      (2 * var(--sys-spacing-medium)) - var(--pu-safe-top) - var(--pu-safe-bottom)
   );
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -91,6 +91,6 @@ onBeforeUnmount(() => {
 
 .modal-title {
   @include mx.pu-font(title-large);
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 }
 </style>

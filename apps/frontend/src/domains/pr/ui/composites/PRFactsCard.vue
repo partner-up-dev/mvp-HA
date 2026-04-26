@@ -165,7 +165,7 @@ const isRosterLinkable = (state: RosterPreviewItem["state"]): boolean =>
 .facts-entry {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 
@@ -179,7 +179,7 @@ const isRosterLinkable = (state: RosterPreviewItem["state"]): boolean =>
 .facts-entry__stack {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 
@@ -198,7 +198,7 @@ const isRosterLinkable = (state: RosterPreviewItem["state"]): boolean =>
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   text-align: left;
 }
 
@@ -210,7 +210,7 @@ const isRosterLinkable = (state: RosterPreviewItem["state"]): boolean =>
 .facts-entry-button__trailing {
   display: inline-flex;
   align-items: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   flex-shrink: 0;
 }
 
@@ -219,7 +219,7 @@ const isRosterLinkable = (state: RosterPreviewItem["state"]): boolean =>
 }
 
 .facts-entry-button__icon {
-  @include mx.pu-icon(small);
+  @include mx.pu-icon(smallall);
 }
 
 .facts-empty {
@@ -252,7 +252,7 @@ const isRosterLinkable = (state: RosterPreviewItem["state"]): boolean =>
   align-items: center;
   justify-content: center;
   min-height: var(--sys-size-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   border-radius: 999px;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);

@@ -135,8 +135,8 @@ const {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  margin-bottom: var(--sys-spacing-medium);
 }
 
 .nav-btn {
@@ -221,11 +221,11 @@ const {
 }
 
 .empty-state {
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
   text-align: center;
   color: var(--sys-color-on-surface-variant);
   background: var(--sys-color-surface-container);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
 
   p {
     margin: 0;

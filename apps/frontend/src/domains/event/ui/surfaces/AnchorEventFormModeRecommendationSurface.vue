@@ -648,16 +648,16 @@ onMounted(() => {
 .anchor-event-form-recommendation__stack {
   flex: 1 1 auto;
   min-height: 0;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .selection-summary,
 .recommendation-panel,
 .recommendation-list {
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
 }
 
@@ -665,7 +665,7 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
@@ -688,13 +688,13 @@ onMounted(() => {
 .recommendation-panel__actions,
 .result-actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .selection-summary__chips,
 .recommendation-panel__chips {
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 .recommendation-panel__header,
@@ -719,20 +719,20 @@ onMounted(() => {
 }
 
 .recommendation-list {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .candidate-card {
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-med);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface);
 }
 
 .candidate-card__copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .candidate-card__title {

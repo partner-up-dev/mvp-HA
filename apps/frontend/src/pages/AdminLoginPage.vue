@@ -124,7 +124,7 @@ watchEffect(() => {
 }
 
 .admin-login-page__header {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: center;
   text-align: center;
 }
@@ -161,7 +161,7 @@ watchEffect(() => {
   width: min(100%, 30rem);
   overflow: hidden;
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background:
     radial-gradient(
       circle at top left,
@@ -188,12 +188,12 @@ watchEffect(() => {
 
 .admin-login-card__content {
   position: relative;
-  gap: var(--sys-spacing-med);
-  padding: calc(var(--sys-spacing-med) + var(--sys-spacing-sm));
+  gap: var(--sys-spacing-medium);
+  padding: calc(var(--sys-spacing-medium) + var(--sys-spacing-small));
 }
 
 .field {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .field__label {
@@ -202,9 +202,9 @@ watchEffect(() => {
 
 .field__input {
   width: 100%;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }

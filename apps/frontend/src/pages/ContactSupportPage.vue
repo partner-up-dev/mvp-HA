@@ -204,15 +204,15 @@ const usesMiniProgramQrEntry = computed(() => isMiniProgramWebView.value);
   width: min(100%, 33rem);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .contact-card {
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
   display: grid;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   background: var(--sys-color-surface);
 }
 
@@ -238,7 +238,7 @@ const usesMiniProgramQrEntry = computed(() => isMiniProgramWebView.value);
 
 .contact-copy {
   display: grid;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h2 {
     @include mx.pu-font(title-small);
@@ -267,7 +267,7 @@ const usesMiniProgramQrEntry = computed(() => isMiniProgramWebView.value);
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm) var(--sys-spacing-med);
+  gap: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .support-entry-link {
@@ -282,7 +282,7 @@ const usesMiniProgramQrEntry = computed(() => isMiniProgramWebView.value);
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: 2px;
-    border-radius: var(--sys-radius-xs);
+    border-radius: var(--sys-radius-xsmall);
   }
 }
 

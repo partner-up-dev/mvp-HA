@@ -211,7 +211,7 @@ const openSubscribeButtonTemplate = `
 .subscription-card {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-2xs);
+  gap: var(--sys-spacing-xsmall);
   padding: 0;
   border: 0;
   background: transparent;
@@ -222,7 +222,7 @@ const openSubscribeButtonTemplate = `
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   width: 100%;
 }
 
@@ -230,7 +230,7 @@ const openSubscribeButtonTemplate = `
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 
@@ -271,7 +271,7 @@ const openSubscribeButtonTemplate = `
 
 @media (max-width: 768px) {
   .subscription-head {
-    gap: var(--sys-spacing-2xs);
+    gap: var(--sys-spacing-xsmall);
   }
 }
 </style>

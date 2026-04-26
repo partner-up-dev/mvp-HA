@@ -1,7 +1,7 @@
 .wechat-chat-method {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   height: 100%;
   min-height: 0;
 }
@@ -10,16 +10,16 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   min-height: 0;
 }
 
 .mini-program-webview-state {
   display: grid;
   place-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-height: 100%;
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
   text-align: center;
 }
 
@@ -43,17 +43,17 @@
 .preview-title {
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
-  margin: 0 0 var(--sys-spacing-xs);
+  margin: 0 0 var(--sys-spacing-xsmall);
 }
 
 .poster-preview {
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   overflow: hidden;
 }
 
 .generating-state,
 .empty-state {
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
   text-align: center;
   color: var(--sys-color-on-surface-variant);
 }
@@ -67,7 +67,7 @@
 .action-section {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex: 0 0 auto;
 }
 
@@ -75,14 +75,14 @@
   @include mx.pu-font(body-small);
   color: var(--sys-color-error);
   background: var(--sys-color-error-container);
-  border-radius: var(--sys-radius-sm);
-  padding: var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-small);
+  padding: var(--sys-spacing-small);
 }
 
 .guidance-text {
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   background: var(--sys-color-surface-container);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   color: var(--sys-color-on-surface);
 
   p {
@@ -93,13 +93,13 @@
 .sub-text {
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  margin: 0 auto var(--sys-spacing-sm);
+  margin: 0 auto var(--sys-spacing-small);
   border-radius: 999px;
   border: 3px solid var(--sys-color-outline-variant);
   border-top-color: var(--sys-color-primary);

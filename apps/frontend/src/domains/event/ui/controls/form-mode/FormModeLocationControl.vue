@@ -114,7 +114,7 @@ watch(
 .form-mode-location-control {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .form-mode-location-control__header {
@@ -131,7 +131,7 @@ watch(
   position: relative;
   overflow: hidden;
   height: clamp(7.2rem, 19.2vh, 10.4rem);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: linear-gradient(
     160deg,
     color-mix(in srgb, var(--sys-color-primary) 24%, white),
@@ -165,7 +165,7 @@ watch(
   box-sizing: border-box;
   align-items: flex-end;
   justify-content: flex-start;
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
   color: var(--sys-color-on-primary-container);
   @include mx.pu-font(title-medium);
 }

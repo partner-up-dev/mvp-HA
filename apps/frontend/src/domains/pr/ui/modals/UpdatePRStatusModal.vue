@@ -129,8 +129,8 @@ const resetUpdateMutation = () => {
 <style lang="scss" scoped>
 .status-options {
   display: flex;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  margin-bottom: var(--sys-spacing-medium);
 }
 
 .status-option {
@@ -141,19 +141,19 @@ const resetUpdateMutation = () => {
 }
 
 .pin-input {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 
   label {
     @include mx.pu-font(label-medium);
     display: block;
-    margin-bottom: var(--sys-spacing-xs);
+    margin-bottom: var(--sys-spacing-xsmall);
     color: var(--sys-color-on-surface-variant);
   }
 }
 
 .modal-actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   :deep(.ui-button) {
     flex: 1;

@@ -86,13 +86,13 @@ const footerNavLinks = computed(() => [
 .footer-brand {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .footer-brand-main {
   display: inline-flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   h2 {
     @include mx.pu-font(title-large);
@@ -105,7 +105,7 @@ const footerNavLinks = computed(() => [
 .footer-brand-logo {
   width: var(--sys-size-large);
   height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   object-fit: cover;
 }
 
@@ -119,7 +119,7 @@ const footerNavLinks = computed(() => [
 .footer-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .footer-nav-link {
@@ -149,7 +149,7 @@ const footerNavLinks = computed(() => [
   }
 
   .footer-nav-icon {
-    margin-left: var(--sys-spacing-xs);
+    margin-left: var(--sys-spacing-xsmall);
     display: inline-block;
     vertical-align: middle;
     // color: var(--sys-color-secondary);
@@ -178,7 +178,7 @@ const footerNavLinks = computed(() => [
 .footer-legal {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   color: var(--sys-color-on-surface-variant);
 }
 
@@ -217,17 +217,17 @@ const footerNavLinks = computed(() => [
   }
 
   .footer-nav {
-    gap: var(--sys-spacing-xs) var(--sys-spacing-med);
+    gap: var(--sys-spacing-xsmall) var(--sys-spacing-medium);
   }
 
   .footer-nav-link {
     @include mx.pu-font(title-small);
     min-height: 3rem;
-    padding: var(--sys-spacing-xs);
+    padding: var(--sys-spacing-xsmall);
   }
 
   .footer-legal {
-    gap: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-xsmall);
   }
 
   .footer-copyright,

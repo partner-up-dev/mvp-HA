@@ -180,8 +180,8 @@ onUnmounted(() => {
   justify-content: center;
   gap: var(--landing-section-gap);
   padding-block: var(--landing-section-padding-block);
-  padding-left: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-right: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+  padding-left: calc(var(--sys-spacing-medium) + var(--pu-safe-left));
+  padding-right: calc(var(--sys-spacing-medium) + var(--pu-safe-right));
   opacity: 0;
   transform: translate3d(0, 0.8rem, 0);
   animation: section-enter 620ms cubic-bezier(0.22, 0.72, 0.2, 1) forwards;
@@ -229,14 +229,14 @@ onUnmounted(() => {
 
 .section-stack--creator {
   max-width: min(100%, 32rem);
-  padding-top: var(--sys-spacing-sm);
+  padding-top: var(--sys-spacing-small);
   border-top: 1px dashed var(--sys-color-outline-variant);
 }
 
 .section-header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h2 {
     @include mx.pu-font(headline-small);
@@ -259,7 +259,7 @@ onUnmounted(() => {
 .section-paper {
   width: 100%;
   min-width: 0;
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   border: 1px solid var(--sys-color-outline);
   display: flex;
   flex-direction: column;
@@ -282,9 +282,9 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   border: 1px dashed var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container-low);
   transition:
     transform 210ms ease,
@@ -310,7 +310,7 @@ onUnmounted(() => {
 .creator-copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h3 {
     @include mx.pu-font(headline-small);
@@ -334,7 +334,7 @@ onUnmounted(() => {
     color 180ms ease;
 
   .creator-action-icon {
-    margin-left: var(--sys-spacing-xs);
+    margin-left: var(--sys-spacing-xsmall);
     display: inline-block;
     vertical-align: middle;
     @include mx.pu-icon(medium);

@@ -84,12 +84,12 @@ Exception: explicitly exempted visual surfaces such as the Landing Page may keep
 - Mixins are auto-injected by Vite config for all components, use them directly:
   - `@include mx.pu-font($key)` - Typography (e.g., `body-large`, `label-small`)
   - `@include mx.pu-elevation($level)` - Shadows (levels 1-5)
-  - `@include mx.pu-icon($size)` - Icon sizing (`sm`, `md`, `lg`)
+  - `@include mx.pu-icon($size)` - Icon sizing (`small`, `medium`, `large`)
 
 - CSS Variables prefixed with `--sys-`:
   - Colors: `--sys-color-primary`, `--sys-color-surface-container`, etc.
-  - Spacing: `--sys-spacing-xs`, `--sys-spacing-med`, etc.
-  - Radius: `--sys-radius-sm`, `--sys-radius-lg`, etc.
+  - Spacing: `--sys-spacing-xsmall`, `--sys-spacing-medium`, etc.
+  - Radius: `--sys-radius-small`, `--sys-radius-large`, etc.
 
 Learn available tokens in `src/styles/_sys.scss`, governance rules in `src/styles/AGENTS.md`, and low-level typography/elevation/icon mixins in `src/styles/_mixins.scss`.
 

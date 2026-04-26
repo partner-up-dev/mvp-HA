@@ -1279,32 +1279,32 @@ function buttonToneForAction(
 .header-quick-actions {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .type-badge {
   @include mx.pu-font(label-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   border-radius: 999px;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
 }
 
 .facts-card {
-  margin-top: var(--sys-spacing-lg);
+  margin-top: var(--sys-spacing-large);
 }
 
 .contextual-area {
-  margin-top: var(--sys-spacing-lg);
+  margin-top: var(--sys-spacing-large);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .primary-action {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .primary-action__button {
@@ -1314,14 +1314,14 @@ function buttonToneForAction(
 .secondary-danger-action {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .utility-area {
-  margin-top: var(--sys-spacing-lg);
+  margin-top: var(--sys-spacing-large);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 
 .utility-actions,
@@ -1329,7 +1329,7 @@ function buttonToneForAction(
 .utility-section__content {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .utility-section__title {
@@ -1359,7 +1359,7 @@ function buttonToneForAction(
 }
 
 .utility-link__icon {
-  margin-left: var(--sys-spacing-xs);
+  margin-left: var(--sys-spacing-xsmall);
   display: inline-block;
   vertical-align: middle;
   @include mx.pu-icon(medium);
@@ -1385,11 +1385,11 @@ function buttonToneForAction(
 }
 
 .page-action-error {
-  margin-top: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
 }
 
 .modal-text {
-  margin: 0 0 var(--sys-spacing-sm);
+  margin: 0 0 var(--sys-spacing-small);
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
@@ -1401,14 +1401,14 @@ function buttonToneForAction(
 .notification-modal {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .modal-phone-input {
   width: 100%;
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-small);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   @include mx.pu-font(body-medium);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
@@ -1417,7 +1417,7 @@ function buttonToneForAction(
 .join-phone-step {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .join-phone-step .modal-text {
@@ -1426,7 +1426,7 @@ function buttonToneForAction(
 
 .modal-actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 

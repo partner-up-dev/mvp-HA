@@ -339,27 +339,27 @@ const handleCreateInList = (locationId: string | null) => {
 .batch-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .pr-list {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--sys-spacing-sm) + var(--sys-spacing-xs));
+  gap: calc(var(--sys-spacing-small) + var(--sys-spacing-xsmall));
 }
 
 .batch-action-cards {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   margin-top: auto;
-  padding-top: var(--sys-spacing-med);
+  padding-top: var(--sys-spacing-medium);
 }
 
 .empty-state,
 .empty-batch {
   text-align: center;
-  padding: calc(var(--sys-spacing-lg) + var(--sys-spacing-med)) 0;
+  padding: calc(var(--sys-spacing-large) + var(--sys-spacing-medium)) 0;
   color: var(--sys-color-on-surface-variant);
 }
 </style>

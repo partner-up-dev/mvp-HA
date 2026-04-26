@@ -90,18 +90,18 @@ const hasTags = computed(
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   color: inherit;
 }
 
 .pr-roster-item--plain {
-  padding: var(--sys-spacing-sm) 0;
+  padding: var(--sys-spacing-small) 0;
 }
 
 .pr-roster-item--card {
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: transparent;
 }
 
@@ -138,14 +138,14 @@ const hasTags = computed(
 .pr-roster-item__main {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 
 .pr-roster-item__identity {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-width: 0;
 }
 
@@ -178,7 +178,7 @@ const hasTags = computed(
 .pr-roster-item__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .pr-roster-item__tag,
@@ -193,7 +193,7 @@ const hasTags = computed(
 
 .pr-roster-item--card .pr-roster-item__tag,
 .pr-roster-item--card .pr-roster-item__state {
-  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
+  padding: calc(var(--sys-spacing-xsmall) / 2) var(--sys-spacing-small);
   border-radius: 999px;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);

@@ -48,8 +48,8 @@ const { t } = useI18n();
 <style lang="scss" scoped>
 .page-footer {
   display: flex;
-  gap: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-small);
+  margin-top: var(--sys-spacing-large);
 }
 
 .page-footer > button {

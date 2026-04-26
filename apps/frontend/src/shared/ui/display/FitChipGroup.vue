@@ -213,14 +213,14 @@ onBeforeUnmount(() => {
 }
 
 .fit-chip-group--gap-xs {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .fit-chip-group--gap-sm {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .fit-chip-group--gap-md {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 </style>

@@ -45,7 +45,7 @@ withDefaults(
 <style lang="scss" scoped>
 .info-row {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-width: 0;
 }
 

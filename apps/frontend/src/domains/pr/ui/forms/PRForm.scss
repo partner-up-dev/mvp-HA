@@ -1,10 +1,10 @@
 .form-field {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 
   label {
     @include mx.pu-font(label-medium);
     display: block;
-    margin-bottom: var(--sys-spacing-xs);
+    margin-bottom: var(--sys-spacing-xsmall);
     color: var(--sys-color-on-surface-variant);
 
     .required {
@@ -16,9 +16,9 @@
   textarea {
     @include mx.pu-font(body-large);
     width: 100%;
-    padding: var(--sys-spacing-sm);
+    padding: var(--sys-spacing-small);
     border: 1px solid var(--sys-color-outline);
-    border-radius: var(--sys-radius-sm);
+    border-radius: var(--sys-radius-small);
     color: var(--sys-color-on-surface);
     background: var(--sys-color-surface-container);
 
@@ -40,7 +40,7 @@
 }
 
 .advanced-toggle {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 
   &:hover {
     background: var(--sys-color-surface-container);
@@ -54,9 +54,9 @@
 
 .tags-input {
   width: 100%;
-  padding: var(--sys-spacing-xs);
+  padding: var(--sys-spacing-xsmall);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   color: var(--sys-color-on-surface);
   background: var(--sys-color-surface-container);
 
@@ -68,25 +68,25 @@
   .tags {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sys-spacing-xs);
-    margin-bottom: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-xsmall);
+    margin-bottom: var(--sys-spacing-xsmall);
   }
 
   .tag {
     @include mx.pu-font(label-small);
     display: inline-flex;
     align-items: center;
-    gap: var(--sys-spacing-xs);
-    padding: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-xsmall);
+    padding: var(--sys-spacing-xsmall);
     background: var(--sys-color-primary-container);
     color: var(--sys-color-on-primary-container);
-    border-radius: var(--sys-radius-sm);
+    border-radius: var(--sys-radius-small);
   }
 
   input {
     border: none;
     background: none;
-    padding: var(--sys-spacing-xs);
+    padding: var(--sys-spacing-xsmall);
     width: 100%;
 
     &:focus {
@@ -104,7 +104,7 @@
 
 .error-message {
   display: block;
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
   color: var(--sys-color-error);
   @include mx.pu-font(label-medium);
 }

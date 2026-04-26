@@ -365,11 +365,11 @@ const handleSaveGallery = async () => {
 .sidebar,
 .stack,
 .header {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .header {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .title,
@@ -390,9 +390,9 @@ const handleSaveGallery = async () => {
 }
 
 .panel {
-  padding: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-large);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
 }
 
@@ -405,14 +405,14 @@ const handleSaveGallery = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .field-label {
@@ -422,9 +422,9 @@ const handleSaveGallery = async () => {
 
 .field-input {
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
@@ -432,22 +432,22 @@ const handleSaveGallery = async () => {
 .manual-url-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .gallery-item {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
-  padding: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface);
 }
 

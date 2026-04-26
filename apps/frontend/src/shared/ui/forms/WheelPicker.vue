@@ -603,7 +603,7 @@ function clearWheelTimer(): void {
   width: 100%;
   min-width: 0;
   border: 0;
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--wheel-picker-fade-background);
   color: var(--sys-color-on-surface);
   overflow: hidden;
@@ -665,12 +665,12 @@ function clearWheelTimer(): void {
   position: absolute;
   z-index: 1;
   top: 50%;
-  left: var(--sys-spacing-sm);
-  right: var(--sys-spacing-sm);
+  left: var(--sys-spacing-small);
+  right: var(--sys-spacing-small);
   height: var(--wheel-picker-item-height);
   transform: translateY(-50%);
   border: 1px solid var(--wheel-picker-highlight-border);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-medium);
   background: var(--wheel-picker-highlight-background);
   opacity: var(--wheel-picker-highlight-opacity);
   pointer-events: none;
@@ -721,7 +721,7 @@ function clearWheelTimer(): void {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: 0 var(--sys-spacing-med);
+  padding: 0 var(--sys-spacing-medium);
   border: 0;
   background: transparent;
   color: var(--wheel-picker-muted-color);
@@ -777,7 +777,7 @@ function clearWheelTimer(): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 var(--sys-spacing-med);
+  padding: 0 var(--sys-spacing-medium);
   color: var(--sys-color-on-surface-variant);
   text-align: center;
   @include mx.pu-font(body-medium);

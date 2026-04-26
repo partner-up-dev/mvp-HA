@@ -11,19 +11,19 @@
   margin: 0 auto;
   padding-top: var(
     --pu-page-padding-top,
-    calc(var(--sys-spacing-med) + var(--pu-safe-top))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-top))
   );
   padding-right: var(
     --pu-page-padding-right,
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-right))
   );
   padding-bottom: var(
     --pu-page-padding-bottom,
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-bottom))
   );
   padding-left: var(
     --pu-page-padding-left,
-    calc(var(--sys-spacing-med) + var(--pu-safe-left))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-left))
   );
 }
 </style>

@@ -802,15 +802,15 @@ const handleRelease = async (item: PendingItem) => {
 .stack,
 .header,
 .card-list {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .stack--tight {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .header {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .title,
@@ -840,14 +840,14 @@ const handleRelease = async (item: PendingItem) => {
 
 .panel,
 .card {
-  padding: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-large);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
 }
 
 .card {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .section-header,
@@ -856,12 +856,12 @@ const handleRelease = async (item: PendingItem) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .stats-list {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .stat-line {
@@ -870,13 +870,13 @@ const handleRelease = async (item: PendingItem) => {
 
 .resource-chip-list {
   display: flex;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   flex-wrap: wrap;
 }
 
 .resource-chip {
   @include mx.pu-font(label-small);
-  padding: var(--sys-spacing-2xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   border-radius: var(--sys-radius-pill);
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-primary);
@@ -885,13 +885,13 @@ const handleRelease = async (item: PendingItem) => {
 .meta-grid,
 .field-grid {
   display: grid;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .meta-item {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-2xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .meta-label,
@@ -901,7 +901,7 @@ const handleRelease = async (item: PendingItem) => {
 }
 
 .field {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .field--full {
@@ -910,9 +910,9 @@ const handleRelease = async (item: PendingItem) => {
 
 .field-input {
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }

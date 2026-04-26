@@ -156,7 +156,7 @@ watch(
 .form-mode-time-control {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .form-mode-time-control__header {
@@ -172,14 +172,14 @@ watch(
 .time-wheel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .time-mode-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: nowrap;
   color: var(--sys-color-on-surface-variant);
 }
@@ -192,7 +192,7 @@ watch(
 
 @media (max-width: 720px) {
   .time-mode-row {
-    gap: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-xsmall);
   }
 }
 </style>

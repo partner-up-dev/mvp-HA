@@ -110,14 +110,14 @@ watch(
 <style lang="scss" scoped>
 .tab-bar {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: flex-start;
   min-width: 0;
 }
 
 .tab-bar__list {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex: 1 1 auto;
   min-width: 0;
   overflow-x: auto;
@@ -134,10 +134,10 @@ watch(
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   flex-shrink: 0;
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline);
   border-radius: 999px;
   background: transparent;

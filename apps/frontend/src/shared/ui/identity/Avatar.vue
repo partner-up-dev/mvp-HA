@@ -111,7 +111,7 @@ const fallbackAriaHidden = computed(() => resolvedAlt.value.length === 0);
 .ui-avatar--shape-rounded,
 .ui-avatar--shape-rounded .ui-avatar__image,
 .ui-avatar--shape-rounded .ui-avatar__fallback {
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
 }
 
 .ui-avatar--bordered .ui-avatar__image,

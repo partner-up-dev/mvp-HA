@@ -272,19 +272,19 @@ const handleSubmitMessage = async () => {
 }
 
 .message-thread--card {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .message-thread--page {
   flex: 1 1 auto;
   min-height: 0;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 
 .message-thread__header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-2xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .message-thread__title,
@@ -311,7 +311,7 @@ const handleSubmitMessage = async () => {
 .message-thread__viewport {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .message-thread__viewport--page {
@@ -322,11 +322,11 @@ const handleSubmitMessage = async () => {
 .message-thread__empty {
   display: flex;
   align-items: flex-start;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .message-thread__empty-icon {
-  @include mx.pu-icon(lg, true);
+  @include mx.pu-icon(large, true);
   color: var(--sys-color-primary);
   flex-shrink: 0;
 }
@@ -346,7 +346,7 @@ const handleSubmitMessage = async () => {
 }
 
 .message-thread__empty-description {
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
@@ -357,12 +357,12 @@ const handleSubmitMessage = async () => {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .message-list__item {
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
   border: 1px solid var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-lowest);
 }
@@ -375,7 +375,7 @@ const handleSubmitMessage = async () => {
 .message-list--page {
   flex: 1 1 auto;
   min-height: 0;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
@@ -394,7 +394,7 @@ const handleSubmitMessage = async () => {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .message-list__author {
@@ -412,7 +412,7 @@ const handleSubmitMessage = async () => {
 }
 
 .message-list__body {
-  margin: var(--sys-spacing-xs) 0 0;
+  margin: var(--sys-spacing-xsmall) 0 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface);
   white-space: pre-wrap;
@@ -424,7 +424,7 @@ const handleSubmitMessage = async () => {
 }
 
 .message-thread__composer {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .message-thread__actions {
@@ -436,7 +436,7 @@ const handleSubmitMessage = async () => {
   .message-list__meta {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--sys-spacing-2xs);
+    gap: var(--sys-spacing-xsmall);
   }
 }
 </style>

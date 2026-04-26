@@ -110,29 +110,31 @@ $color: (
 
 /* Spacing Tokens */
 $spacing: (
-  xs: 4px,
-  sm: 8px,
-  med: 16px,
-  lg: 32px,
+  xsmall: 4px,
+  small: 8px,
+  medium: 16px,
+  large: 32px,
+  xlarge: 32px,
 );
 
 /* Border Radius Tokens */
 $radius: (
   none: 0px,
-  xs: 0px,
-  sm: 0px,
-  med: 8px,
-  lg: 16px,
+  xsmall: 0px,
+  small: 0px,
+  medium: 8px,
+  large: 16px,
   full: 50%,
+  pill: 999px,
 );
 
 /* Size Tokens */
 $size: (
-  xSmall: 20px,
+  xsmall: 20px,
   small: 24px,
   medium: 32px,
   large: 44px,
-  xLarge: 60px,
+  xlarge: 60px,
 );
 
 /* Icon Tokens */

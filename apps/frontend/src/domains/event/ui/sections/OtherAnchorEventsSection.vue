@@ -92,7 +92,7 @@ const shouldRenderSection = computed(() => {
 .other-anchor-events {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .other-anchor-events__panel-shell {
@@ -100,7 +100,7 @@ const shouldRenderSection = computed(() => {
 }
 
 .other-anchor-events--embedded {
-  padding-top: var(--sys-spacing-med);
+  padding-top: var(--sys-spacing-medium);
   border-top: 1px solid var(--sys-color-outline-variant);
 }
 

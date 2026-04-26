@@ -292,19 +292,19 @@ const removeEventResource = (index: number) => { editableResources.value.splice(
 .stack,
 .header,
 .editor-list {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .editor-block {
-  gap: var(--sys-spacing-med);
-  padding: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
+  padding: var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface);
 }
 
 .header {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .title,
@@ -323,9 +323,9 @@ const removeEventResource = (index: number) => { editableResources.value.splice(
 }
 
 .panel {
-  padding: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-large);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
 }
 
@@ -338,21 +338,21 @@ const removeEventResource = (index: number) => { editableResources.value.splice(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .field,
 .checkbox-field {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .checkbox-field {
@@ -377,9 +377,9 @@ const removeEventResource = (index: number) => { editableResources.value.splice(
 
 .field-input {
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }

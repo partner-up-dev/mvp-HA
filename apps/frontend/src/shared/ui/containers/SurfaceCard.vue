@@ -34,21 +34,21 @@ withDefaults(
 }
 
 .surface-card--tone-section {
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-med);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container);
 }
 
 .surface-card--tone-inset-high {
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-high);
 }
 
 .surface-card--tone-outline {
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: transparent;
 }
 
@@ -57,18 +57,18 @@ withDefaults(
 }
 
 .surface-card--gap-xs {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .surface-card--gap-sm {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .surface-card--gap-md {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .surface-card--gap-lg {
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 </style>

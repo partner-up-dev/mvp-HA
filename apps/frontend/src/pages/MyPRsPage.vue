@@ -149,7 +149,7 @@ const formatDate = (dateStr: string) => {
 .page-main {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 
 .auth-hint,
@@ -171,7 +171,7 @@ const formatDate = (dateStr: string) => {
 .list-section {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .section-header {
@@ -190,8 +190,8 @@ const formatDate = (dateStr: string) => {
   @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
   background: var(--sys-color-surface-container);
-  border-radius: var(--sys-radius-lg);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-large);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .list {
@@ -200,7 +200,7 @@ const formatDate = (dateStr: string) => {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .list-item {
@@ -213,13 +213,13 @@ const formatDate = (dateStr: string) => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .item-text {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="chat-window">
     <div class="chat-row">
       <div class="chat-bubble" :class="{ 'bubble-loading': !posterUrl }">
@@ -48,12 +48,12 @@ defineEmits<{
 <style scoped lang="scss">
 .chat-window {
   background: var(--sys-color-surface);
-  padding: var(--sys-spacing-lg) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-large) var(--sys-spacing-small);
 }
 
 .chat-row {
   display: flex;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   justify-content: center;
   align-items: flex-end;
 }
@@ -61,8 +61,8 @@ defineEmits<{
 .chat-bubble {
   max-width: 82%;
   background: var(--sys-color-surface-container-lowest);
-  border-radius: var(--sys-radius-sm);
-  padding: var(--sys-spacing-lg) var(--sys-spacing-med);
+  border-radius: var(--sys-radius-small);
+  padding: var(--sys-spacing-large) var(--sys-spacing-medium);
   position: relative;
 
   &.bubble-loading {
@@ -73,13 +73,13 @@ defineEmits<{
 .share-card {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .share-card-text {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .share-card-title {
@@ -98,7 +98,7 @@ defineEmits<{
   margin-top: auto;
   width: 48px;
   height: 48px;
-  border-radius: var(--sys-radius-xs);
+  border-radius: var(--sys-radius-xsmall);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -128,7 +128,7 @@ defineEmits<{
 .avatar-circle {
   width: 40px;
   height: 40px;
-  border-radius: var(--sys-radius-xs);
+  border-radius: var(--sys-radius-xsmall);
   background: var(--sys-color-surface-container);
   color: var(--sys-color-on-surface);
   display: grid;

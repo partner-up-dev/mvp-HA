@@ -69,12 +69,12 @@ const hasRight = computed(() => hasValue.value || hasSuffix.value);
 .ui-cell {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   width: 100%;
   min-width: 0;
   min-height: var(--sys-size-large);
   box-sizing: border-box;
-  padding: var(--sys-spacing-sm) 0;
+  padding: var(--sys-spacing-small) 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -123,7 +123,7 @@ const hasRight = computed(() => hasValue.value || hasSuffix.value);
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   flex: 1 1 auto;
   min-width: 0;
 }

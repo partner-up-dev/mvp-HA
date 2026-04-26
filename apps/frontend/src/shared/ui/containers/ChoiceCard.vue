@@ -76,12 +76,12 @@ const handleClick = (event: MouseEvent) => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   width: 100%;
   min-width: 0;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
   font: inherit;

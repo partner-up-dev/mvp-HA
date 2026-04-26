@@ -83,8 +83,8 @@ const { t } = useI18n();
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
+  margin-top: var(--sys-spacing-small);
 }
 
 .actions > button {
@@ -99,14 +99,14 @@ const { t } = useI18n();
 }
 
 .checkin-followup {
-  margin-top: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-low);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .checkin-followup-text {
@@ -117,7 +117,7 @@ const { t } = useI18n();
 .checkin-followup-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .checkin-followup-btn.cancel {

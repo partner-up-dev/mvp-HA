@@ -132,22 +132,22 @@ const resetUpdateMutation = () => {
 .modal-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  margin-top: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-medium);
+  margin-top: var(--sys-spacing-large);
 }
 
 .pin-input {
   label {
     @include mx.pu-font(label-medium);
     display: block;
-    margin-bottom: var(--sys-spacing-xs);
+    margin-bottom: var(--sys-spacing-xsmall);
     color: var(--sys-color-on-surface-variant);
   }
 }
 
 .action-buttons {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   :deep(.ui-button) {
     flex: 1;
@@ -159,9 +159,9 @@ const resetUpdateMutation = () => {
   @include mx.pu-font(label-large);
   flex: 1;
   min-width: 66px;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-xs);
+  border-radius: var(--sys-radius-xsmall);
   background: transparent;
   cursor: pointer;
 }

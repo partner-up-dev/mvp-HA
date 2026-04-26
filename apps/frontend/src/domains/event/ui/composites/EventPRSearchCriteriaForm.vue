@@ -100,19 +100,19 @@ const selectedDateKeys = computed(() =>
 .event-pr-search-form {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 
 .event-pr-search-form__section {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .event-pr-search-form__section-header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h2,
   p {

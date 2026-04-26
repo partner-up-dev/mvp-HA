@@ -100,18 +100,18 @@ const description = computed(() => t("anchorEvent.betaGroupCard.description"));
 
 <style lang="scss" scoped>
 .anchor-event-beta-group-card--card {
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-lg);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .anchor-event-beta-group-card__summary {
   display: grid;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .anchor-event-beta-group-card__kicker {
@@ -131,7 +131,7 @@ const description = computed(() => t("anchorEvent.betaGroupCard.description"));
 
 .anchor-event-beta-group-card__qr {
   width: min(100%, 220px);
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
 }
 
 .anchor-event-beta-group-card__missing {

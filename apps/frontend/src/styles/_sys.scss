@@ -125,20 +125,20 @@ $base: (
 /* Mobile token overrides (responsive semantics) */
 $mobile: (
   spacing: (
-    xs: 6px,
-    sm: 10px,
-    med: 18px,
-    lg: 32px,
+    xsmall: 6px,
+    small: 10px,
+    medium: 18px,
+    large: 32px,
   ),
   radius: (
-    med: 10px,
-    lg: 18px,
+    medium: 10px,
+    large: 18px,
   ),
   size: (
     small: 28px,
     medium: 36px,
     large: 48px,
-    xLarge: 64px,
+    xlarge: 64px,
   ),
   typo: (
     title-large: (

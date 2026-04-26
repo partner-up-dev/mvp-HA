@@ -157,22 +157,22 @@ const handleModeChange = (value: string | number) => {
 .page-main {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .mode-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-med);
+  gap: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
 }
 
 .mode-panel-header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h2 {
     @include mx.pu-font(title-medium);

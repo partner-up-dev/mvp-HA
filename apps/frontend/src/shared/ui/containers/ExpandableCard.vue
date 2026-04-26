@@ -43,7 +43,7 @@ const expanded = ref(props.defaultExpanded);
 <style lang="scss" scoped>
 .expandable-card {
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface);
 }
 
@@ -54,18 +54,18 @@ const expanded = ref(props.defaultExpanded);
   background: transparent;
   color: inherit;
   cursor: pointer;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   text-align: left;
 }
 
 .expandable-card__header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .expandable-card__title {
@@ -89,7 +89,7 @@ const expanded = ref(props.defaultExpanded);
 }
 
 .expandable-card__content {
-  padding: 0 var(--sys-spacing-med) var(--sys-spacing-med);
+  padding: 0 var(--sys-spacing-medium) var(--sys-spacing-medium);
 }
 
 .expandable-card-content-enter-active,

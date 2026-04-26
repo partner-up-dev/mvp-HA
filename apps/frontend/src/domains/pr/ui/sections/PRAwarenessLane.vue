@@ -155,14 +155,14 @@ const rosterAvatarFallback = (displayName: string): string => {
 .awareness-lane {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .lane-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .lane-title {
@@ -187,20 +187,20 @@ const rosterAvatarFallback = (displayName: string): string => {
 }
 
 .roster-list--history {
-  margin-top: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
 }
 
 .roster-group {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .roster-group__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .roster-group__title,
@@ -218,7 +218,7 @@ const rosterAvatarFallback = (displayName: string): string => {
 }
 
 .roster-history {
-  padding-top: var(--sys-spacing-sm);
+  padding-top: var(--sys-spacing-small);
   border-top: 1px solid var(--sys-color-outline-variant);
 }
 

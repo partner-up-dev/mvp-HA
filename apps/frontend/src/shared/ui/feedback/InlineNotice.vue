@@ -73,10 +73,10 @@ const iconClass = computed(() => {
 .inline-notice {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: start;
-  border-radius: var(--sys-radius-md);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-medium);
+  padding: var(--sys-spacing-small) var(--sys-spacing-small);
 }
 
 .inline-notice--info {
@@ -100,7 +100,7 @@ const iconClass = computed(() => {
 }
 
 .inline-notice__icon {
-  @include mx.pu-icon(md, true);
+  @include mx.pu-icon(medium, true);
   margin-top: 2px;
 }
 
@@ -123,11 +123,11 @@ const iconClass = computed(() => {
 }
 
 .inline-notice__body {
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 .inline-notice__close {
-  @include mx.pu-icon(sm, true);
+  @include mx.pu-icon(small, true);
   width: var(--sys-size-medium);
   height: var(--sys-size-medium);
   border: none;

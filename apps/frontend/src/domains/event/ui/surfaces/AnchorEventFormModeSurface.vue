@@ -200,28 +200,28 @@ const handleSubmitRecommendation = async () => {
 .anchor-event-form-mode {
   flex: 1 1 auto;
   min-height: 0;
-  padding-bottom: var(--sys-spacing-lg);
+  padding-bottom: var(--sys-spacing-large);
 }
 
 .anchor-event-form-mode__stack {
   flex: 1 1 auto;
   min-height: 0;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .form-mode-selection {
   flex: 1 1 auto;
   min-height: 0;
   justify-content: space-between;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .form-actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
   margin-top: auto;
-  padding-top: var(--sys-spacing-sm);
+  padding-top: var(--sys-spacing-small);
 }
 
 .form-actions > :deep(button) {

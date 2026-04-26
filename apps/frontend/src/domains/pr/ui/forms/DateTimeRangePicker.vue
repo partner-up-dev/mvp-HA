@@ -197,45 +197,45 @@ const clearEndTime = () => {
 
 <style lang="scss" scoped>
 .form-field {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 
   label {
     @include mx.pu-font(label-medium);
     display: block;
-    margin-bottom: var(--sys-spacing-xs);
+    margin-bottom: var(--sys-spacing-xsmall);
     color: var(--sys-color-on-surface-variant);
   }
 }
 
 .time-range {
   display: grid;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .time-block {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .time-actions {
   display: grid;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .time-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex: 1;
 }
 
 input {
   @include mx.pu-font(body-large);
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   color: var(--sys-color-on-surface);
   background: var(--sys-color-surface-container);
   min-height: var(--sys-size-large);
@@ -258,7 +258,7 @@ input {
 .time-hint {
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 @media (max-width: 480px) {

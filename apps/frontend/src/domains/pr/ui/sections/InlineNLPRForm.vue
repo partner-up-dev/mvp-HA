@@ -201,14 +201,14 @@ const handleVoiceToggle = async (): Promise<void> => {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: flex-start;
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .row--input {
@@ -221,10 +221,10 @@ const handleVoiceToggle = async (): Promise<void> => {
   width: 100%;
   height: var(--sys-size-large);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container);
   color: var(--sys-color-on-surface);
-  padding: 0 var(--sys-spacing-med);
+  padding: 0 var(--sys-spacing-medium);
   transition:
     border-color 180ms ease,
     background-color 180ms ease;
@@ -249,14 +249,14 @@ const handleVoiceToggle = async (): Promise<void> => {
   min-width: 4.8rem;
   height: var(--sys-size-large);
   border: 1px solid var(--sys-color-primary);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
-  padding: 0 var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall);
+  padding: 0 var(--sys-spacing-small);
   cursor: pointer;
   transition:
     opacity 180ms ease,
@@ -285,7 +285,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 }
 
 .send-icon {
-  @include mx.pu-icon(small, true);
+  @include mx.pu-icon(smallall, true);
 }
 
 .spinner {
@@ -302,7 +302,7 @@ const handleVoiceToggle = async (): Promise<void> => {
   min-width: var(--sys-size-large);
   height: var(--sys-size-large);
   border: 1px dashed var(--sys-color-primary);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
   display: inline-flex;
@@ -341,7 +341,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 }
 
 .voice-icon {
-  @include mx.pu-icon(small, true);
+  @include mx.pu-icon(smallall, true);
 }
 
 .error-message {
@@ -355,7 +355,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 
 @media (max-width: 768px) {
   .inline-nl-pr-form {
-    gap: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-xsmall);
   }
 
   .send-button {

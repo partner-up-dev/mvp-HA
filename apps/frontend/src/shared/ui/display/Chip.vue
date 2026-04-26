@@ -45,19 +45,19 @@ withDefaults(
 
 .ui-chip--size-sm {
   @include mx.pu-font(label-small);
-  padding: 0 calc(var(--sys-spacing-sm) - 2px);
+  padding: 0 calc(var(--sys-spacing-small) - 2px);
   min-height: var(--sys-size-small);
 }
 
 .ui-chip--size-md {
   @include mx.pu-font(label-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   min-height: var(--sys-size-medium);
 }
 
 .ui-chip--size-lg {
   @include mx.pu-font(label-large);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-med);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-medium);
   min-height: var(--sys-size-medium);
 }
 

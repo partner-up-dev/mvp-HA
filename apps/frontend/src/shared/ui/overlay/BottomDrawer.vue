@@ -124,20 +124,20 @@ onBeforeUnmount(() => {
   align-items: flex-end;
   justify-content: center;
   padding:
-    calc(var(--sys-spacing-med) + var(--pu-safe-top))
-    calc(var(--sys-spacing-med) + var(--pu-safe-right))
-    calc(var(--sys-spacing-med) + var(--pu-safe-bottom))
-    calc(var(--sys-spacing-med) + var(--pu-safe-left));
+    calc(var(--sys-spacing-medium) + var(--pu-safe-top))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-right))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-bottom))
+    calc(var(--sys-spacing-medium) + var(--pu-safe-left));
   background: rgba(0, 0, 0, 0.48);
 }
 
 .bottom-drawer {
   width: 100%;
   max-height: calc(
-    var(--pu-vh) - var(--pu-safe-top) - (2 * var(--sys-spacing-med))
+    var(--pu-vh) - var(--pu-safe-top) - (2 * var(--sys-spacing-medium))
   );
-  border-radius: var(--sys-radius-lg) var(--sys-radius-lg) var(--sys-radius-med)
-    var(--sys-radius-med);
+  border-radius: var(--sys-radius-large) var(--sys-radius-large) var(--sys-radius-medium)
+    var(--sys-radius-medium);
   background: var(--sys-color-surface);
   display: flex;
   flex-direction: column;
@@ -149,8 +149,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small);
 }
 
 .bottom-drawer-title {
@@ -162,8 +162,8 @@ onBeforeUnmount(() => {
   flex: 1 1 auto;
   min-height: 0;
   padding:
-    var(--sys-spacing-xs) var(--sys-spacing-xs)
-    calc(var(--sys-spacing-xs) + var(--pu-safe-bottom));
+    var(--sys-spacing-xsmall) var(--sys-spacing-xsmall)
+    calc(var(--sys-spacing-xsmall) + var(--pu-safe-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -172,8 +172,8 @@ onBeforeUnmount(() => {
 
 .bottom-drawer-footer {
   padding:
-    0 var(--sys-spacing-sm)
-    calc(var(--sys-spacing-sm) + var(--pu-safe-bottom));
+    0 var(--sys-spacing-small)
+    calc(var(--sys-spacing-small) + var(--pu-safe-bottom));
 }
 
 .bottom-drawer-enter-active,
@@ -193,7 +193,7 @@ onBeforeUnmount(() => {
 
 .bottom-drawer-enter-from .bottom-drawer,
 .bottom-drawer-leave-to .bottom-drawer {
-  transform: translateY(calc(100% + var(--sys-spacing-lg)));
+  transform: translateY(calc(100% + var(--sys-spacing-large)));
 }
 
 @media (prefers-reduced-motion: reduce) {

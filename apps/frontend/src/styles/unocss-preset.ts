@@ -35,10 +35,11 @@ const colors = {
 };
 
 const spacing = {
-  xs: "4px",
-  sm: "8px",
-  med: "16px",
-  lg: "32px",
+  xsmall: "4px",
+  small: "8px",
+  medium: "16px",
+  large: "32px",
+  xlarge: "32px",
 };
 
 const shadows = {
@@ -55,26 +56,27 @@ const shadows = {
 };
 
 const sizes = {
-  xSmall: "20px",
+  xsmall: "20px",
   small: "24px",
   medium: "32px",
   large: "48px",
-  xLarge: "60px",
+  xlarge: "60px",
 };
 
 const iconSizes = {
-  sm: "20px",
-  med: "24px",
-  lg: "40px",
+  small: "20px",
+  medium: "24px",
+  large: "40px",
 };
 
 const borderRadius = {
   none: "0px",
-  xs: "0px",
-  sm: "0px",
-  med: "8px",
-  lg: "16px",
+  xsmall: "0px",
+  small: "0px",
+  medium: "8px",
+  large: "16px",
   full: "50%",
+  pill: "999px",
 };
 
 const fonts = {
@@ -194,13 +196,13 @@ export default definePreset(() => ({
     ],
     // Shape utilities
     [
-      /^radius-(none|sm|med|lg|full)$/,
+      /^radius-(none|xsmall|small|medium|large|full|pill)$/,
       ([, size]) => ({
         "border-radius": borderRadius[size as keyof typeof borderRadius],
       }),
     ],
     [
-      /^radius-(x|y|lt|rt|rb|lb)-(none|sm|med|lg|full)$/,
+      /^radius-(x|y|lt|rt|rb|lb)-(none|xsmall|small|medium|large|full|pill)$/,
       ([, pos, size]) => {
         const value = borderRadius[size as keyof typeof borderRadius];
         if (pos === "x") {
@@ -242,25 +244,25 @@ export default definePreset(() => ({
     ],
     // Spacing utilities
     [
-      /^space-p-(xs|sm|med|lg)$/,
+      /^space-p-(xsmall|small|medium|large|xlarge)$/,
       ([, size]) => ({
         padding: spacing[size as keyof typeof spacing],
       }),
     ],
     [
-      /^space-m-(xs|sm|med|lg)$/,
+      /^space-m-(xsmall|small|medium|large|xlarge)$/,
       ([, size]) => ({
         margin: spacing[size as keyof typeof spacing],
       }),
     ],
     [
-      /^space-g-(xs|sm|med|lg)$/,
+      /^space-g-(xsmall|small|medium|large|xlarge)$/,
       ([, size]) => ({
         gap: spacing[size as keyof typeof spacing],
       }),
     ],
     [
-      /^space-p-(x|y|lt|rt|rb|lb)-(xs|sm|med|lg)$/,
+      /^space-p-(x|y|lt|rt|rb|lb)-(xsmall|small|medium|large|xlarge)$/,
       ([, pos, size]) => {
         const properties = paddingPropertyMap[pos];
         if (properties) {
@@ -275,7 +277,7 @@ export default definePreset(() => ({
       },
     ],
     [
-      /^space-m-(x|y|lt|rt|rb|lb|t|r|l|b)-(xs|sm|med|lg)$/,
+      /^space-m-(x|y|lt|rt|rb|lb|t|r|l|b)-(xsmall|small|medium|large|xlarge)$/,
       ([, pos, size]) => {
         const properties = marginPropertyMap[pos];
         if (properties) {
@@ -291,7 +293,7 @@ export default definePreset(() => ({
     ],
     // Icon utilities
     [
-      /^icon-(sm|med|lg)$/,
+      /^icon-(small|medium|large)$/,
       ([, size]) => {
         const sizeValue = iconSizes[size as keyof typeof iconSizes];
         if (sizeValue) {

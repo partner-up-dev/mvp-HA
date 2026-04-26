@@ -89,15 +89,15 @@ async function handleBack(): Promise<void> {
 
 <style lang="scss" scoped>
 .page-header {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 }
 
 .page-header__top {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-width: 0;
-  margin-bottom: var(--sys-spacing-sm);
+  margin-bottom: var(--sys-spacing-small);
 }
 
 .page-header__back-btn {
@@ -146,8 +146,8 @@ async function handleBack(): Promise<void> {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: var(--sys-spacing-sm);
-  gap: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
+  gap: var(--sys-spacing-small);
 }
 
 .page-header__meta--vertical {

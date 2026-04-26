@@ -527,7 +527,7 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 
 <style lang="scss" scoped>
 .card {
-  margin-top: var(--sys-spacing-med);
+  margin-top: var(--sys-spacing-medium);
 }
 
 .card-title {
@@ -537,19 +537,19 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 
 .headline,
 .summary-text {
-  margin: var(--sys-spacing-xs) 0 0;
+  margin: var(--sys-spacing-xsmall) 0 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface);
 }
 
 .hint {
-  margin: var(--sys-spacing-xs) 0 0;
+  margin: var(--sys-spacing-xsmall) 0 0;
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
 }
 
 .error-text {
-  margin: var(--sys-spacing-xs) 0 0;
+  margin: var(--sys-spacing-xsmall) 0 0;
   @include mx.pu-font(body-small);
   color: var(--sys-color-error);
 }
@@ -557,12 +557,12 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 .tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
-  margin-top: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall);
+  margin-top: var(--sys-spacing-small);
 }
 
 .tag {
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   border-radius: 999px;
   background: var(--sys-color-surface-container-high);
   @include mx.pu-font(body-small);
@@ -571,7 +571,7 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 .resource-header {
   display: flex;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: flex-start;
 }
 
@@ -583,14 +583,14 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 .rows {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
-  margin-top: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall);
+  margin-top: var(--sys-spacing-small);
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .row-label {
@@ -605,7 +605,7 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 }
 
 .rules-list {
-  margin: var(--sys-spacing-sm) 0 0;
+  margin: var(--sys-spacing-small) 0 0;
   padding-left: 1.1rem;
 }
 
@@ -615,28 +615,28 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 }
 
 .request-btn {
-  margin-top: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
 }
 
 .phone-form {
-  margin-top: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .phone-input {
   width: min(100%, 280px);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  border-radius: var(--sys-radius-small);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   @include mx.pu-font(body-medium);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
 
 .reimburse-prompt-card {
-  margin-top: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
 }
 
 .reimburse-prompt-title {
@@ -645,7 +645,7 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
 }
 
 .reimburse-prompt-desc {
-  margin: var(--sys-spacing-xs) 0 0;
+  margin: var(--sys-spacing-xsmall) 0 0;
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
 }
@@ -659,6 +659,6 @@ const resourceFlowNotes = (resource: BookingSupportResource): string[] => {
   width: min(100%, 280px);
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
 }
 </style>

@@ -49,7 +49,7 @@ const { t } = useI18n();
 .roster-modal {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .roster-modal__meta {

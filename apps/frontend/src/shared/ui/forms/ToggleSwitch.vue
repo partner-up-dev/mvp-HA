@@ -58,7 +58,7 @@ const handleClick = () => {
 
   display: inline-flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-width: 0;
   border: none;
   background: transparent;
@@ -70,7 +70,7 @@ const handleClick = () => {
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: 2px;
-    border-radius: var(--sys-radius-med);
+    border-radius: var(--sys-radius-medium);
   }
 }
 
@@ -89,7 +89,7 @@ const handleClick = () => {
   flex: 0 0 auto;
   width: var(--toggle-switch-track-width);
   height: var(--toggle-switch-track-height);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container-highest);
   transition: background-color 180ms ease;
 }

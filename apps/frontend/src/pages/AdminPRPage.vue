@@ -1015,11 +1015,11 @@ const handleSavePR = async () => {
 .stack,
 .header,
 .selection-list {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .header {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .title {
@@ -1038,9 +1038,9 @@ const handleSavePR = async () => {
 }
 
 .panel {
-  padding: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-large);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
 }
 
@@ -1056,8 +1056,8 @@ const handleSavePR = async () => {
 }
 
 .empty-state {
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-low);
 }
 
@@ -1071,7 +1071,7 @@ const handleSavePR = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
@@ -1082,19 +1082,19 @@ const handleSavePR = async () => {
 .selection-list--grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .selection-list--scroll {
   max-height: 60vh;
   overflow-y: auto;
-  padding-right: var(--sys-spacing-xs);
+  padding-right: var(--sys-spacing-xsmall);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .field-label {
@@ -1104,9 +1104,9 @@ const handleSavePR = async () => {
 
 .field-input {
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
@@ -1117,7 +1117,7 @@ const handleSavePR = async () => {
 }
 
 .stack--tight {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .actions {
@@ -1126,26 +1126,26 @@ const handleSavePR = async () => {
 }
 
 .actions--inline {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   flex-wrap: wrap;
 }
 
 .admin-message-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   max-height: 24rem;
   overflow-y: auto;
-  padding-right: var(--sys-spacing-xs);
+  padding-right: var(--sys-spacing-xsmall);
 }
 
 .admin-message-item {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
 }
 
@@ -1164,7 +1164,7 @@ const handleSavePR = async () => {
 
 .grid-2 {
   display: grid;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 @media (min-width: 880px) {

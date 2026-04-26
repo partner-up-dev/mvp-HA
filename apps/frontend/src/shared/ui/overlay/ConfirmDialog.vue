@@ -82,7 +82,7 @@ const cancelLabelText = computed(() => props.cancelLabel ?? t("common.cancel"));
 .confirm-dialog {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 
 .confirm-dialog__message,
@@ -102,7 +102,7 @@ const cancelLabelText = computed(() => props.cancelLabel ?? t("common.cancel"));
 
 .confirm-dialog__actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .confirm-dialog__actions :deep(.ui-button) {

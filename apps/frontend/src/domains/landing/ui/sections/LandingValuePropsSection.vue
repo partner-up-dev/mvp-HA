@@ -114,7 +114,7 @@ const passiveValueItems = computed(() => [
 .value-props {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 h2 {
@@ -136,7 +136,7 @@ h2.is-visible {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   padding: 0;
   margin: 0;
 }
@@ -157,14 +157,14 @@ h2.is-visible {
 }
 
 .value-link {
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   width: 100%;
   border: none;
   background: transparent;
   text-align: left;
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
@@ -202,11 +202,11 @@ h2.is-visible {
 .value-text-wrap {
   display: inline-flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .value-icon {
-  @include mx.pu-icon(small, true);
+  @include mx.pu-icon(smallall, true);
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
 }
@@ -229,8 +229,8 @@ h2.is-visible {
 
 .value-panel {
   overflow: hidden;
-  padding: 0 var(--sys-spacing-med) var(--sys-spacing-med);
-  margin-top: calc(var(--sys-spacing-xs) * -1);
+  padding: 0 var(--sys-spacing-medium) var(--sys-spacing-medium);
+  margin-top: calc(var(--sys-spacing-xsmall) * -1);
 }
 
 .value-panel-expand-enter-active,
@@ -266,11 +266,11 @@ h2.is-visible {
   }
 
   .value-list {
-    gap: var(--sys-spacing-sm);
+    gap: var(--sys-spacing-small);
   }
 
   .value-link {
-    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+    padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   }
 
   .value-order {
@@ -286,7 +286,7 @@ h2.is-visible {
   }
 
   .value-panel {
-    padding-bottom: var(--sys-spacing-sm);
+    padding-bottom: var(--sys-spacing-small);
   }
 }
 

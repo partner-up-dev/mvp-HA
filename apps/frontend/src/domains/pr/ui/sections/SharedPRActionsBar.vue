@@ -74,7 +74,7 @@ const { t } = useI18n();
 
 <style lang="scss" scoped>
 .slot-state {
-  margin-top: var(--sys-spacing-med);
+  margin-top: var(--sys-spacing-medium);
 }
 
 .slot-state-text {
@@ -85,8 +85,8 @@ const { t } = useI18n();
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-small);
+  margin-top: var(--sys-spacing-large);
 }
 
 .actions > button {

@@ -133,15 +133,15 @@ defineEmits<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
-  border-radius: var(--sys-radius-sm);
+  gap: var(--sys-spacing-xsmall);
+  border-radius: var(--sys-radius-small);
 }
 
 .ui-button--appearance-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   border-radius: 999px;
 }
 
@@ -256,32 +256,32 @@ defineEmits<{
 
 .ui-button--appearance-rect.ui-button--size-sm {
   min-height: var(--sys-size-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .ui-button--appearance-rect.ui-button--size-md {
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .ui-button--appearance-rect.ui-button--size-lg {
-  min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-  padding: var(--sys-spacing-med) var(--sys-spacing-lg);
+  min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+  padding: var(--sys-spacing-medium) var(--sys-spacing-large);
 }
 
 .ui-button--appearance-pill.ui-button--size-sm {
   min-height: var(--sys-size-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .ui-button--appearance-pill.ui-button--size-md {
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .ui-button--appearance-pill.ui-button--size-lg {
-  min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-  padding: var(--sys-spacing-sm) var(--sys-spacing-lg);
+  min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+  padding: var(--sys-spacing-small) var(--sys-spacing-large);
 }
 
 .ui-button--appearance-pill.ui-button--tone-surface:hover:not(:disabled),
@@ -320,7 +320,7 @@ defineEmits<{
 .ui-button__leading :deep([class*=" i-"]),
 .ui-button__trailing :deep([class^="i-"]),
 .ui-button__trailing :deep([class*=" i-"]) {
-  @include mx.pu-icon(sm);
+  @include mx.pu-icon(small);
 }
 
 .ui-button__spinner {

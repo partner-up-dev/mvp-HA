@@ -1,7 +1,7 @@
 <template>
   <PRShareCarousel
     v-if="prId !== null && prData !== null && spmRouteKey !== null"
-    class="space-m-t-lg space-p-x-sm"
+    class="space-m-t-large space-p-x-small"
     :share-url="shareUrl"
     :spm-route-key="spmRouteKey"
     :pr-id="prId"

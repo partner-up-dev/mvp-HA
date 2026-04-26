@@ -108,7 +108,7 @@ useBodyScrollLock(openRef);
 .mini-program-jssdk-notice {
   display: grid;
   justify-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .mini-program-jssdk-notice__description,
@@ -130,21 +130,21 @@ useBodyScrollLock(openRef);
   width: min(100%, 280px);
   aspect-ratio: 1;
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container-lowest);
 }
 
 .mini-program-jssdk-notice__qr-image {
   width: min(100%, 260px);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
 }
 
 .mini-program-jssdk-notice__url {
   @include mx.pu-font(label-medium);
   width: 100%;
   margin: 0;
-  padding: var(--sys-spacing-xs);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-xsmall);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface-variant);
   overflow-wrap: anywhere;
@@ -153,7 +153,7 @@ useBodyScrollLock(openRef);
 .mini-program-jssdk-notice__actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   width: 100%;
 }
 

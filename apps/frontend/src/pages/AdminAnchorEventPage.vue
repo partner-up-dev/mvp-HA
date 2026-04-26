@@ -1159,11 +1159,11 @@ const handleRejectPreferenceTag = async (tagId: number) => {
 .stack,
 .header,
 .selection-list {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .header {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .title {
@@ -1178,9 +1178,9 @@ const handleRejectPreferenceTag = async (tagId: number) => {
 }
 
 .panel {
-  padding: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-large);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
 }
 
@@ -1205,14 +1205,14 @@ const handleRejectPreferenceTag = async (tagId: number) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .field-label {
@@ -1222,9 +1222,9 @@ const handleRejectPreferenceTag = async (tagId: number) => {
 
 .field-input {
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
@@ -1236,7 +1236,7 @@ const handleRejectPreferenceTag = async (tagId: number) => {
 
 .grid-2 {
   display: grid;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 @media (min-width: 880px) {

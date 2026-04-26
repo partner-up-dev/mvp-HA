@@ -733,7 +733,7 @@ defineExpose({
 .demand-card {
   position: absolute;
   inset: 0;
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   overflow: hidden;
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
@@ -766,24 +766,24 @@ defineExpose({
 }
 
 .demand-card--preview .demand-card__content {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .demand-card__cover {
-  min-height: calc(var(--sys-size-xLarge) * 4);
+  min-height: calc(var(--sys-size-xlarge) * 4);
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
 }
 
 .demand-card__cover--fallback {
   align-items: center;
   justify-content: center;
   background: var(--sys-color-primary-container);
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
 }
 
 .demand-card__fallback-location {
@@ -798,7 +798,7 @@ defineExpose({
   @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   border-radius: 999px;
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface);
@@ -807,10 +807,10 @@ defineExpose({
 }
 
 .demand-card__content {
-  padding: calc(var(--sys-spacing-med) + var(--sys-spacing-xs));
+  padding: calc(var(--sys-spacing-medium) + var(--sys-spacing-xsmall));
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   flex: 1;
   min-height: 0;
 }
@@ -818,7 +818,7 @@ defineExpose({
 .demand-card__primary {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .demand-card__time {
@@ -830,14 +830,14 @@ defineExpose({
 .demand-card__preference-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .demand-card__preference-chip {
   @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   border-radius: 999px;
   border: 1px solid var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-high);

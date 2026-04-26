@@ -155,13 +155,13 @@ const backFallbackTo = computed(() => {
 .profile-row {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .profile-copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 

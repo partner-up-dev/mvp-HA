@@ -15,8 +15,8 @@ defineProps<{
 .loading-state {
   @include mx.flex-center;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  padding: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-medium);
+  padding: var(--sys-spacing-large);
 
   p {
     @include mx.pu-font(body-large);

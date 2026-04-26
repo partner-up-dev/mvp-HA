@@ -72,7 +72,7 @@ withDefaults(
 }
 
 .empty-state__icon {
-  @include mx.pu-icon(lg, true);
+  @include mx.pu-icon(large, true);
   color: var(--sys-color-primary);
 }
 
@@ -97,12 +97,12 @@ withDefaults(
 }
 
 .empty-state__body {
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 .empty-state__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 </style>

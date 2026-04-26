@@ -481,14 +481,14 @@ function blockedReasonText(
 
 <style lang="scss" scoped>
 .partner-section {
-  margin-top: var(--sys-spacing-lg);
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-med);
+  margin-top: var(--sys-spacing-large);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container);
   border-top: 3px solid var(--sys-color-primary);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .partner-section__header,
@@ -496,13 +496,13 @@ function blockedReasonText(
 .partner-section__alternative-item {
   display: flex;
   justify-content: space-between;
-  margin-bottom: var(--sys-spacing-sm);
+  margin-bottom: var(--sys-spacing-small);
 }
 
 .partner-section__panel,
 .partner-section__followup {
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-high);
   border: 1px solid var(--sys-color-outline-variant);
 }
@@ -510,15 +510,15 @@ function blockedReasonText(
 .partner-section__header {
   align-items: flex-start;
   flex-wrap: wrap;
-  row-gap: var(--sys-spacing-xs);
-  padding-bottom: var(--sys-spacing-sm);
+  row-gap: var(--sys-spacing-xsmall);
+  padding-bottom: var(--sys-spacing-small);
   border-bottom: 1px solid var(--sys-color-outline-variant);
 }
 
 .partner-section__header-main {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-width: 0;
 }
 
@@ -556,32 +556,32 @@ function blockedReasonText(
 .partner-section__summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .partner-section__availability-note {
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-high);
   border-inline-start: 3px solid var(--sys-color-primary);
-  margin-top: var(--sys-spacing-xs);
-  margin-bottom: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
+  margin-bottom: var(--sys-spacing-xsmall);
 }
 
 .partner-section__summary-card {
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-high);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .partner-section__summary-label,
 .partner-section__timeline-label {
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
-  margin-right: var(--sys-spacing-sm);
+  margin-right: var(--sys-spacing-small);
 }
 
 .partner-section__summary-value,
@@ -602,25 +602,25 @@ function blockedReasonText(
 .partner-section__timeline {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .partner-section__alternative-meta {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .partner-section__roster {
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 .partner-section__link-card,
 .partner-section__alternative-item,
 .partner-section__timeline-item {
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: transparent;
 }
 
@@ -631,7 +631,7 @@ function blockedReasonText(
 
 .partner-section__link-meta {
   @include mx.pu-font(label-small);
-  padding: calc(var(--sys-spacing-xs) / 2) var(--sys-spacing-sm);
+  padding: calc(var(--sys-spacing-xsmall) / 2) var(--sys-spacing-small);
   border-radius: 999px;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
@@ -640,7 +640,7 @@ function blockedReasonText(
 .partner-section__link-card {
   display: flex;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   text-decoration: none;
   color: inherit;
 }

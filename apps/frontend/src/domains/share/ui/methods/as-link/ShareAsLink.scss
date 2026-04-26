@@ -1,7 +1,7 @@
 .share-as-link {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   height: 100%;
   min-height: 0;
 }
@@ -19,12 +19,12 @@
 .preview-title {
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
-  margin: 0 0 var(--sys-spacing-xs);
+  margin: 0 0 var(--sys-spacing-xsmall);
 }
 
 .preview-content {
-  padding: var(--sys-spacing-sm);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   border: 1px solid var(--sys-color-outline-variant);
   overflow-x: auto;

@@ -579,12 +579,12 @@ const handleCopyCredential = async (
 .page-main {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 
 .history-link {
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-med);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container);
 }
 
@@ -592,7 +592,7 @@ const handleCopyCredential = async (
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   h2,
   p {
@@ -605,7 +605,7 @@ const handleCopyCredential = async (
   }
 
   p {
-    margin-top: var(--sys-spacing-xs);
+    margin-top: var(--sys-spacing-xsmall);
     @include mx.pu-font(body-medium);
     color: var(--sys-color-on-surface-variant);
   }
@@ -618,7 +618,7 @@ const handleCopyCredential = async (
 .profile-panel {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   align-items: center;
 }
 
@@ -626,18 +626,18 @@ const handleCopyCredential = async (
 .pin-login-fields {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .pin-login-fields {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .text-input {
   width: 100%;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
@@ -646,30 +646,30 @@ const handleCopyCredential = async (
 .credential-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .credential-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .credential-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-md);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  border-radius: var(--sys-radius-medium);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   background: var(--sys-color-surface-container-lowest);
 }
 
 .credential-copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 
@@ -688,7 +688,7 @@ const handleCopyCredential = async (
   text-decoration: none;
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: center;
   color: inherit;
   transition:
@@ -709,7 +709,7 @@ const handleCopyCredential = async (
 .history-link__copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h2,
   p {
@@ -733,7 +733,7 @@ const handleCopyCredential = async (
 }
 
 .history-link__icon {
-  margin-left: var(--sys-spacing-xs);
+  margin-left: var(--sys-spacing-xsmall);
   display: inline-block;
   vertical-align: middle;
   @include mx.pu-icon(medium);

@@ -1095,7 +1095,7 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
   @include mx.pu-font(label-medium);
   border: none;
   min-height: 44px;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   background: transparent;
   color: var(--sys-color-on-surface-variant);
   cursor: pointer;

@@ -72,9 +72,9 @@ const partnerCountLabel = computed(() => {
 .event-pr-search-result-card {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-med);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container);
   text-decoration: none;
   color: inherit;
@@ -97,7 +97,7 @@ const partnerCountLabel = computed(() => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .event-pr-search-result-card__title,
@@ -116,7 +116,7 @@ const partnerCountLabel = computed(() => {
 .event-pr-search-result-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   color: var(--sys-color-on-surface-variant);
   @include mx.pu-font(body-medium);
 }

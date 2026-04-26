@@ -29,8 +29,8 @@ const { t } = useI18n();
 
 <style lang="scss" scoped>
 .minium-common-footer {
-  margin-top: var(--sys-spacing-lg);
-  padding-top: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-large);
+  padding-top: var(--sys-spacing-small);
   border-top: 1px solid var(--sys-color-outline-variant);
 }
 
@@ -39,7 +39,7 @@ const { t } = useI18n();
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm) var(--sys-spacing-med);
+  gap: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .minium-common-footer__link {
@@ -54,7 +54,7 @@ const { t } = useI18n();
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: 2px;
-    border-radius: var(--sys-radius-xs);
+    border-radius: var(--sys-radius-xsmall);
   }
 }
 </style>

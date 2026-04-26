@@ -100,7 +100,7 @@ onMounted(() => {
 .pin-input-container {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .label {
@@ -116,7 +116,7 @@ onMounted(() => {
 
 .pin-display {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: center;
 }
 
@@ -126,10 +126,10 @@ onMounted(() => {
   border: 1px solid var(--sys-color-outline);
   color: var(--sys-color-on-surface);
   background: transparent;
-  padding: 0 var(--sys-spacing-sm);
+  padding: 0 var(--sys-spacing-small);
   height: var(--sys-size-large);
   box-sizing: border-box;
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   text-align: center;
   transition: border-color 0.2s;
   letter-spacing: 0.5rem;

@@ -368,11 +368,11 @@ const handleSendSystemMessage = async () => {
 .stack,
 .header,
 .selection-list {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .stack--tight {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .stack--align-end {
@@ -380,7 +380,7 @@ const handleSendSystemMessage = async () => {
 }
 
 .header {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .title {
@@ -395,9 +395,9 @@ const handleSendSystemMessage = async () => {
 }
 
 .panel {
-  padding: var(--sys-spacing-lg);
+  padding: var(--sys-spacing-large);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
 }
 
@@ -414,8 +414,8 @@ const handleSendSystemMessage = async () => {
 }
 
 .empty-state {
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-sm);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-low);
 }
 
@@ -429,20 +429,20 @@ const handleSendSystemMessage = async () => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .selection-list--grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .field-label,
@@ -453,9 +453,9 @@ const handleSendSystemMessage = async () => {
 
 .field-input {
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
 }
@@ -467,13 +467,13 @@ const handleSendSystemMessage = async () => {
 
 .meta-grid {
   display: grid;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .meta-item {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-2xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .actions {

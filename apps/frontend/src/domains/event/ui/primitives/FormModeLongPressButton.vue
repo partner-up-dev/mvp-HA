@@ -230,7 +230,7 @@ const buttonStyle = computed(() => ({
   justify-content: center;
   width: 100%;
   min-height: 3.5rem;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   border: none;
   border-radius: 0;
   background: color-mix(

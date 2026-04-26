@@ -72,7 +72,7 @@ const controlStyle = computed(() =>
 .textarea-input {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   width: 100%;
   min-width: 0;
 }
@@ -83,8 +83,8 @@ const controlStyle = computed(() =>
   border: 1px solid var(--sys-color-outline);
   color: var(--sys-color-on-surface);
   background: transparent;
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-xs);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-xsmall);
   resize: vertical;
   min-height: var(--textarea-input-min-height, 7.5rem);
 

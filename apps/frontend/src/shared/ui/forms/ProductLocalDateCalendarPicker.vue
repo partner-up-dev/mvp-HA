@@ -180,9 +180,9 @@ const toggleDate = (dateKey: ProductLocalDateKey) => {
 .product-local-date-calendar-picker {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-med);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container-low);
 }
 
@@ -190,7 +190,7 @@ const toggleDate = (dateKey: ProductLocalDateKey) => {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
   @include mx.pu-font(label-large);
 }
@@ -204,7 +204,7 @@ const toggleDate = (dateKey: ProductLocalDateKey) => {
 .product-local-date-calendar-picker__grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .product-local-date-calendar-picker__weekday {
@@ -219,9 +219,9 @@ const toggleDate = (dateKey: ProductLocalDateKey) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: calc(var(--sys-spacing-xs) / 2);
+  gap: calc(var(--sys-spacing-xsmall) / 2);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
   cursor: pointer;

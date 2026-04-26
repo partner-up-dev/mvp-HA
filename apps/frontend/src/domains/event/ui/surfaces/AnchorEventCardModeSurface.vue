@@ -506,11 +506,11 @@ watch(
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-height: 0;
   --card-mode-inline-breathing-room: 10px;
-  margin-left: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-left)));
-  margin-right: calc(-1 * (var(--sys-spacing-med) + var(--pu-safe-right)));
+  margin-left: calc(-1 * (var(--sys-spacing-medium) + var(--pu-safe-left)));
+  margin-right: calc(-1 * (var(--sys-spacing-medium) + var(--pu-safe-right)));
 }
 
 .card-stage {
@@ -521,21 +521,21 @@ watch(
   min-height: 0;
   --card-stage-top-inset: 2%;
   --card-stage-bottom-inset: 10%;
-  --card-stage-label-gap: calc(var(--sys-spacing-sm) + 12px);
+  --card-stage-label-gap: calc(var(--sys-spacing-small) + 12px);
   --card-stage-page-width: min(100vw, var(--dcs-layout-page-max-width));
   --card-stage-card-width: calc(
-    var(--card-stage-page-width) - (var(--sys-spacing-med) * 2) -
+    var(--card-stage-page-width) - (var(--sys-spacing-medium) * 2) -
       (var(--card-mode-inline-breathing-room) * 2) - var(--pu-safe-left) - var(
         --pu-safe-right
       )
   );
   isolation: isolate;
   padding-inline-start: calc(
-    var(--sys-spacing-med) + var(--pu-safe-left) +
+    var(--sys-spacing-medium) + var(--pu-safe-left) +
       var(--card-mode-inline-breathing-room)
   );
   padding-inline-end: calc(
-    var(--sys-spacing-med) + var(--pu-safe-right) +
+    var(--sys-spacing-medium) + var(--pu-safe-right) +
       var(--card-mode-inline-breathing-room)
   );
 }
@@ -561,7 +561,7 @@ watch(
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
-  column-gap: var(--sys-spacing-sm);
+  column-gap: var(--sys-spacing-small);
   padding-block-end: var(--card-stage-label-gap);
   pointer-events: none;
 }
@@ -778,11 +778,11 @@ watch(
   margin: 0;
   color: var(--sys-color-error);
   padding-inline-start: calc(
-    var(--sys-spacing-med) + var(--pu-safe-left) +
+    var(--sys-spacing-medium) + var(--pu-safe-left) +
       var(--card-mode-inline-breathing-room)
   );
   padding-inline-end: calc(
-    var(--sys-spacing-med) + var(--pu-safe-right) +
+    var(--sys-spacing-medium) + var(--pu-safe-right) +
       var(--card-mode-inline-breathing-room)
   );
 }
@@ -790,16 +790,16 @@ watch(
 .card-mode__actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   padding-inline-start: calc(
-    var(--sys-spacing-med) + var(--pu-safe-left) +
+    var(--sys-spacing-medium) + var(--pu-safe-left) +
       var(--card-mode-inline-breathing-room)
   );
   padding-inline-end: calc(
-    var(--sys-spacing-med) + var(--pu-safe-right) +
+    var(--sys-spacing-medium) + var(--pu-safe-right) +
       var(--card-mode-inline-breathing-room)
   );
-  padding-bottom: var(--sys-spacing-sm);
+  padding-bottom: var(--sys-spacing-small);
 }
 
 .card-mode__action {
@@ -809,18 +809,18 @@ watch(
 .card-empty-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding-bottom: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  padding-bottom: var(--sys-spacing-medium);
 }
 
 .card-empty {
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-lg);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .card-empty__title {
@@ -838,13 +838,13 @@ watch(
 .card-empty__create {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .card-empty__field {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .card-empty__label {
@@ -854,9 +854,9 @@ watch(
 
 .card-empty__input {
   width: 100%;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
   min-height: var(--sys-size-large);

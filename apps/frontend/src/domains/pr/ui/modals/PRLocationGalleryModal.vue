@@ -97,7 +97,7 @@ watch(
 .location-gallery-modal {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .empty-text {
@@ -108,7 +108,7 @@ watch(
 
 .preview-image {
   width: 100%;
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container);
   object-fit: cover;
   aspect-ratio: 4 / 3;
@@ -118,7 +118,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .counter {

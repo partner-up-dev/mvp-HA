@@ -25,8 +25,8 @@ const { t } = useI18n();
 .page-header {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  margin-bottom: var(--sys-spacing-medium);
 
   h1 {
     @include mx.pu-font(headline-medium);

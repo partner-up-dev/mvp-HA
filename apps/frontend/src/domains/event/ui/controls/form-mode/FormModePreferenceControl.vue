@@ -344,16 +344,16 @@ const handleSavePreferenceDrawer = async () => {
 }
 
 .form-mode-preference-control {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 
 .preference-drawer {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .preference-group {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .preference-group__title {
@@ -364,7 +364,7 @@ const handleSavePreferenceDrawer = async () => {
 .preference-group__list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .tag-pill {
@@ -372,9 +372,9 @@ const handleSavePreferenceDrawer = async () => {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
   cursor: pointer;
@@ -406,16 +406,16 @@ const handleSavePreferenceDrawer = async () => {
 
 .custom-tag-row {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .custom-tag-row__input {
   flex: 1 1 14rem;
   min-height: 2.75rem;
-  padding: 0 var(--sys-spacing-sm);
+  padding: 0 var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-med);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
   @include mx.pu-font(body-medium);
@@ -423,7 +423,7 @@ const handleSavePreferenceDrawer = async () => {
 
 .drawer-actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 

@@ -161,15 +161,15 @@ const handleClick = (event: MouseEvent) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
-  border-radius: var(--sys-radius-sm);
+  gap: var(--sys-spacing-xsmall);
+  border-radius: var(--sys-radius-small);
 }
 
 .ui-action-link--appearance-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   border-radius: 999px;
 }
 
@@ -280,32 +280,32 @@ const handleClick = (event: MouseEvent) => {
 
 .ui-action-link--appearance-rect.ui-action-link--size-sm {
   min-height: var(--sys-size-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .ui-action-link--appearance-rect.ui-action-link--size-md {
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .ui-action-link--appearance-rect.ui-action-link--size-lg {
-  min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-  padding: var(--sys-spacing-med) var(--sys-spacing-lg);
+  min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+  padding: var(--sys-spacing-medium) var(--sys-spacing-large);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--size-sm {
   min-height: var(--sys-size-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--size-md {
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--size-lg {
-  min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-  padding: var(--sys-spacing-sm) var(--sys-spacing-lg);
+  min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+  padding: var(--sys-spacing-small) var(--sys-spacing-large);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--tone-surface:hover,
@@ -343,7 +343,7 @@ const handleClick = (event: MouseEvent) => {
 .ui-action-link__leading :deep([class*=" i-"]),
 .ui-action-link__trailing :deep([class^="i-"]),
 .ui-action-link__trailing :deep([class*=" i-"]) {
-  @include mx.pu-icon(sm);
+  @include mx.pu-icon(small);
 }
 
 @media (prefers-reduced-motion: reduce) {

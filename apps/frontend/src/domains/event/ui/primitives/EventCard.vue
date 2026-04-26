@@ -267,7 +267,7 @@ const handleClick = () => {
   width: 100%;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   background: var(--sys-color-surface-container);
   text-decoration: none;
   color: inherit;
@@ -340,7 +340,7 @@ const handleClick = () => {
 
 .event-cover-locations {
   position: absolute;
-  inset: auto var(--sys-spacing-sm) var(--sys-spacing-sm);
+  inset: auto var(--sys-spacing-small) var(--sys-spacing-small);
   z-index: 1;
   min-width: 0;
 }
@@ -349,8 +349,8 @@ const handleClick = () => {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .event-available-locations-row {
@@ -392,13 +392,13 @@ const handleClick = () => {
   @include mx.pu-font(label-medium);
   display: inline-flex;
   align-items: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   margin-top: auto;
   color: var(--sys-color-secondary);
 }
 
 .event-cta-icon {
-  @include mx.pu-icon(small);
+  @include mx.pu-icon(smallall);
 }
 
 .event-card--shorter .event-cover {
@@ -406,8 +406,8 @@ const handleClick = () => {
 }
 
 .event-card--shorter .event-info {
-  gap: var(--sys-spacing-xs);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med) var(--sys-spacing-med);
+  gap: var(--sys-spacing-xsmall);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium) var(--sys-spacing-medium);
 }
 
 .event-card--outline:hover,

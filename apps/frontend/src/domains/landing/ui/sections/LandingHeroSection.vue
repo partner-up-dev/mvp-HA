@@ -215,7 +215,7 @@ onUnmounted(() => {
   padding: var(--landing-hero-padding-block) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .hero-title {
@@ -265,8 +265,8 @@ onUnmounted(() => {
 .hero-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  margin-top: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-medium);
+  margin-top: var(--sys-spacing-small);
   z-index: 1;
   opacity: 0;
   transform: translate3d(0, 0.6rem, 0);
@@ -287,7 +287,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   width: fit-content;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -315,7 +315,7 @@ onUnmounted(() => {
   border-color: var(--sys-color-primary);
   background: var(--sys-color-primary-container);
   min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .hero-action--secondary {
@@ -323,7 +323,7 @@ onUnmounted(() => {
   border-color: var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-low);
   min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .hero-action:hover {
@@ -402,7 +402,7 @@ onUnmounted(() => {
   }
 
   .hero-actions {
-    gap: var(--sys-spacing-sm);
+    gap: var(--sys-spacing-small);
   }
 
   .hero-action {
@@ -411,8 +411,8 @@ onUnmounted(() => {
 
   .hero-action--primary,
   .hero-action--secondary {
-    min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+    min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+    padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   }
 
   .hero-art-ring {
