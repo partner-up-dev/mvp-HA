@@ -347,9 +347,6 @@ const handleSavePreferenceDrawer = async () => {
   gap: var(--sys-spacing-xs);
 }
 
-.preference-cell {
-  border-top: 1px solid var(--sys-color-outline-variant);
-}
 
 .preference-drawer {
   gap: var(--sys-spacing-med);

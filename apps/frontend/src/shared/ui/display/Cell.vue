@@ -2,6 +2,7 @@
   <component
     :is="props.as"
     class="ui-cell"
+    :class="{ 'ui-cell--border': props.border }"
     :type="props.as === 'button' ? props.type : undefined"
   >
     <div v-if="hasTitle" class="ui-cell__title">
@@ -33,6 +34,7 @@ const props = withDefaults(
   defineProps<{
     as?: string;
     type?: "button" | "submit" | "reset";
+    border?: boolean;
     title?: string;
     value?: string | number | null;
     suffixIcon?: string;
@@ -40,6 +42,7 @@ const props = withDefaults(
   {
     as: "div",
     type: "button",
+    border: false,
     title: undefined,
     value: null,
     suffixIcon: undefined,
@@ -73,11 +76,14 @@ const hasRight = computed(() => hasValue.value || hasSuffix.value);
   box-sizing: border-box;
   padding: var(--sys-spacing-sm) 0;
   border: 0;
-  border-bottom: 1px solid var(--sys-color-outline-variant);
   border-radius: 0;
   background: transparent;
   color: var(--sys-color-on-surface);
   text-decoration: none;
+}
+
+.ui-cell--border {
+  border-bottom: 1px solid var(--sys-color-outline-variant);
 }
 
 .ui-cell:is(button) {
