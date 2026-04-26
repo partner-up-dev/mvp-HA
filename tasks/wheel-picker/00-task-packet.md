@@ -30,6 +30,12 @@ Hypothesis: placing the picker under `apps/frontend/src/shared/ui/forms` gives d
 ## Follow-up: Outline Tone
 
 - Added `outline` as an explicit neutral bordered tone.
-- Changed `surface` to render without a persistent border in its resting state while keeping keyboard focus indication.
+- Changed `surface` to render without a persistent border in its resting state.
 - Verification: `pnpm --filter @partner-up-dev/frontend build` passed.
 - Verification: `pnpm --filter @partner-up-dev/frontend lint:tokens` completed successfully; remaining findings are pre-existing form-mode / landing surfaces.
+
+## Follow-up: Focus Treatment
+
+- Removed WheelPicker-specific focus visuals so focus does not introduce a primary-color border or selected-color text treatment.
+- Verification: `pnpm --filter @partner-up-dev/frontend build` passed.
+- Verification: `pnpm --filter @partner-up-dev/frontend lint:tokens` completed successfully; remaining findings are pre-existing form-mode / landing / ToggleSwitch surfaces.

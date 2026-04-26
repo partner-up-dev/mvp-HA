@@ -612,10 +612,6 @@ function clearWheelTimer(): void {
   -webkit-user-select: none;
   touch-action: none;
 
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
 }
 
 .wheel-picker--tone-primary {
@@ -739,10 +735,6 @@ function clearWheelTimer(): void {
 
 .wheel-picker__option:focus {
   outline: none;
-}
-
-.wheel-picker__option:focus-visible {
-  color: var(--wheel-picker-selected-color);
 }
 
 .wheel-picker__option:hover:not(:disabled) {
