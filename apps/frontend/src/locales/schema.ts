@@ -607,6 +607,7 @@ export interface MessageSchema {
       viewAllSessions: string;
       primaryCtaFallback: string;
       primaryCta: string;
+      primaryCtaPending: string;
       primaryRecommendationEyebrow: string;
       joinPrimaryRecommendation: string;
       openingPrimaryRecommendation: string;

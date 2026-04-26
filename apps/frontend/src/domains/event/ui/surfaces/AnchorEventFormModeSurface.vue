@@ -12,7 +12,18 @@
     />
 
     <div v-else-if="formModeData" class="anchor-event-form-mode__stack">
-      <div class="form-mode-selection">
+      <FormModeNoPrimaryResult
+        v-if="noPrimaryRecommendationResult"
+        :candidates="noPrimaryRecommendationResult.orderedCandidates"
+        :create-pending="createMutation.isPending.value"
+        :create-disabled="!canCreateFallback"
+        :create-error-message="createActionErrorMessage"
+        :resolve-cover-image="resolveCoverImage"
+        @join-candidate="handleJoinCandidate"
+        @create-fallback="handleCreateFallback"
+      />
+
+      <div v-else class="form-mode-selection">
         <FormModeLocationControl
           v-model="selectedLocationId"
           :locations="formModeData.locations"
@@ -48,14 +59,13 @@
             {{ t("anchorEvent.formMode.viewAllSessions") }}
           </Button>
 
-          <Button
-            appearance="rect"
-            type="button"
+          <FormModeLongPressButton
+            :label="primaryCtaLabel"
+            :pending="recommendationSubmissionPending"
+            :pending-label="t('anchorEvent.formMode.primaryCtaPending')"
             :disabled="!canSubmitRecommendation"
-            @click="handleSubmitRecommendation"
-          >
-            {{ primaryCtaLabel }}
-          </Button>
+            @complete="handleSubmitRecommendation"
+          />
         </div>
       </div>
     </div>
@@ -63,23 +73,36 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import type { PartnerRequestFields } from "@partner-up-dev/backend";
 import Button from "@/shared/ui/actions/Button.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import { trackEvent } from "@/shared/telemetry/track";
 import { useAnchorEventFormModeData } from "@/domains/event/queries/useAnchorEventFormModeData";
+import { useAnchorEventFormModeRecommendation } from "@/domains/event/queries/useAnchorEventFormModeRecommendation";
+import {
+  useCreateEventAssistedPR,
+  type CreateEventAssistedPRError,
+} from "@/domains/event/queries/useCreateEventAssistedPR";
 import FormModeLocationControl from "@/domains/event/ui/controls/form-mode/FormModeLocationControl.vue";
 import FormModeTimeControl from "@/domains/event/ui/controls/form-mode/FormModeTimeControl.vue";
 import FormModePreferenceControl from "@/domains/event/ui/controls/form-mode/FormModePreferenceControl.vue";
+import FormModeNoPrimaryResult from "@/domains/event/ui/composites/FormModeNoPrimaryResult.vue";
+import FormModeLongPressButton from "@/domains/event/ui/primitives/FormModeLongPressButton.vue";
 import {
-  buildFormModeRouteDateKey,
-  buildFormModeRouteTimeKey,
   formatFormModeDateLabel,
   formatFormModeTimeLabel,
+  pickStableGalleryImage,
 } from "@/domains/event/model/form-mode";
+import type { AnchorEventFormModeRecommendationResponse } from "@/domains/event/model/types";
+import { prDetailPath } from "@/domains/pr/routing/routes";
+import {
+  clearPendingWeChatAction,
+  readPendingWeChatAction,
+} from "@/processes/wechat/pending-wechat-action";
 
 const props = defineProps<{
   eventId: number;
@@ -90,12 +113,19 @@ const { t } = useI18n();
 
 const eventId = computed(() => props.eventId);
 const formModeQuery = useAnchorEventFormModeData(eventId);
+const recommendationMutation = useAnchorEventFormModeRecommendation();
+const createMutation = useCreateEventAssistedPR();
 
 const selectedLocationId = ref<string | null>(null);
 const selectedStartAt = ref<string | null>(null);
 const selectedPreferences = ref<string[]>([]);
+const noPrimaryRecommendationResult =
+  ref<AnchorEventFormModeRecommendationResponse | null>(null);
 const selectionErrorMessage = ref<string | null>(null);
+const createReplayErrorMessage = ref<string | null>(null);
 const hasTrackedFormImpression = ref(false);
+const isRoutingToPrimaryRecommendation = ref(false);
+const pendingCreateReplayRunning = ref(false);
 
 const formModeData = computed(() => formModeQuery.data.value ?? null);
 
@@ -126,9 +156,43 @@ const primaryCtaLabel = computed(() => {
   });
 });
 
-const canSubmitRecommendation = computed(() =>
-  Boolean(selectedLocationId.value && selectedStartAt.value),
+const recommendationSubmissionPending = computed(
+  () =>
+    recommendationMutation.isPending.value ||
+    isRoutingToPrimaryRecommendation.value,
 );
+
+const canSubmitRecommendation = computed(() =>
+  Boolean(
+    selectedLocationId.value &&
+      selectedStartAt.value &&
+      !recommendationSubmissionPending.value,
+  ),
+);
+
+const canCreateFallback = computed(() =>
+  Boolean(selectedLocationId.value && selectedStartAt.value && formModeData.value),
+);
+
+const createActionErrorMessage = computed(() => {
+  if (createReplayErrorMessage.value) {
+    return createReplayErrorMessage.value;
+  }
+
+  const error = createMutation.error.value as CreateEventAssistedPRError | null;
+  if (!error) {
+    return null;
+  }
+
+  switch (error.code) {
+    case "ANCHOR_EVENT_NOT_FOUND":
+      return t("anchorEvent.createCard.errors.eventUnavailable");
+    case "WECHAT_AUTH_REQUIRED":
+      return t("anchorEvent.createCard.errors.wechatAuthRequired");
+    default:
+      return t("anchorEvent.createCard.errors.createFailed");
+  }
+});
 
 watch(
   formModeData,
@@ -145,6 +209,11 @@ watch(
   { immediate: true },
 );
 
+watch([selectedLocationId, selectedStartAt, selectedPreferences], () => {
+  noPrimaryRecommendationResult.value = null;
+  selectionErrorMessage.value = null;
+});
+
 const handleViewAllSessions = async () => {
   await router.push({
     name: "anchor-event",
@@ -157,29 +226,99 @@ const handleViewAllSessions = async () => {
   });
 };
 
+const resolveCoverImage = (location: string | null): string | null => {
+  if (!location) {
+    return null;
+  }
+
+  const matchedLocation = formModeData.value?.locations.find(
+    (item) => item.id === location,
+  );
+  return pickStableGalleryImage(matchedLocation?.gallery ?? [], location);
+};
+
+const isAdvancedStartValue = (startAt: string): boolean => {
+  const options = formModeData.value?.startOptions ?? [];
+  return !options.some((option) => option.startAt === startAt);
+};
+
+const trackRecommendationExposure = (
+  result: AnchorEventFormModeRecommendationResponse,
+) => {
+  const locationId = selectedLocationId.value;
+  const startAt = selectedStartAt.value;
+  if (!locationId || !startAt) {
+    return;
+  }
+
+  trackEvent("anchor_event_form_recommendation_impression", {
+    eventId: props.eventId,
+    hasPrimaryRecommendation: Boolean(result.primaryRecommendation),
+    candidateCount:
+      result.orderedCandidates.length + (result.primaryRecommendation ? 1 : 0),
+    advancedMode: isAdvancedStartValue(startAt),
+    locationId,
+    startAt,
+    preferenceCount: selectedPreferences.value.length,
+  });
+};
+
+const routeToPRJoin = async (
+  prId: number,
+  action: "PRIMARY_JOIN" | "CANDIDATE_JOIN",
+  candidateRank: number | null = null,
+) => {
+  trackEvent("anchor_event_form_result_action_click", {
+    eventId: props.eventId,
+    action,
+    prId,
+    candidateRank,
+  });
+
+  await router.push(
+    `${prDetailPath(prId)}?fromEvent=${props.eventId}&entry=landing_join`,
+  );
+};
+
 const handleSubmitRecommendation = async () => {
-  if (!selectedLocationId.value || !selectedStartAt.value) {
+  const locationId = selectedLocationId.value;
+  const startAt = selectedStartAt.value;
+  if (!locationId || !startAt) {
     return;
   }
 
   selectionErrorMessage.value = null;
-  const query: Record<string, string | string[]> = {
-    l: selectedLocationId.value,
-    d: buildFormModeRouteDateKey(selectedStartAt.value),
-    t: buildFormModeRouteTimeKey(selectedStartAt.value),
-  };
-  if (selectedPreferences.value.length > 0) {
-    query.p = [...selectedPreferences.value];
-  }
+  noPrimaryRecommendationResult.value = null;
 
   try {
-    await router.push({
-      name: "anchor-event-form-recommendation",
-      params: {
-        eventId: props.eventId.toString(),
-      },
-      query,
+    const result = await recommendationMutation.mutateAsync({
+      eventId: props.eventId,
+      locationId,
+      startAt,
+      preferences: [...selectedPreferences.value],
     });
+    trackRecommendationExposure(result);
+
+    const primaryPRId = result.primaryRecommendation?.pr.id ?? null;
+    trackEvent("anchor_event_form_join_longpress_complete", {
+      eventId: props.eventId,
+      prId: primaryPRId,
+      locationId,
+      startAt,
+      preferenceCount: selectedPreferences.value.length,
+    });
+
+    if (primaryPRId !== null) {
+      isRoutingToPrimaryRecommendation.value = true;
+      window.setTimeout(() => {
+        void routeToPRJoin(primaryPRId, "PRIMARY_JOIN").finally(() => {
+          isRoutingToPrimaryRecommendation.value = false;
+        });
+      }, 120);
+      return;
+    }
+
+    noPrimaryRecommendationResult.value = result;
   } catch (error) {
     selectionErrorMessage.value =
       error instanceof Error
@@ -187,6 +326,161 @@ const handleSubmitRecommendation = async () => {
         : t("anchorEvent.formMode.recommendationFailed");
   }
 };
+
+const resolveSelectedTimeWindow = (): [string | null, string | null] => {
+  if (!selectedStartAt.value) {
+    return [null, null];
+  }
+
+  const defaultOption = formModeData.value?.startOptions.find(
+    (option) => option.startAt === selectedStartAt.value,
+  );
+  if (defaultOption) {
+    return [defaultOption.startAt, defaultOption.endAt];
+  }
+
+  const durationMinutes = formModeData.value?.event.durationMinutes ?? null;
+  if (durationMinutes === null) {
+    return [selectedStartAt.value, null];
+  }
+
+  const endAt = new Date(
+    new Date(selectedStartAt.value).getTime() + durationMinutes * 60 * 1000,
+  ).toISOString();
+  return [selectedStartAt.value, endAt];
+};
+
+const buildCreateFields = (): PartnerRequestFields | null => {
+  const timeWindow = resolveSelectedTimeWindow();
+  if (!selectedLocationId.value || !timeWindow[0] || !timeWindow[1]) {
+    return null;
+  }
+  if (!formModeData.value) {
+    return null;
+  }
+
+  return {
+    title: undefined,
+    type: formModeData.value.event.type,
+    time: timeWindow,
+    location: selectedLocationId.value,
+    minPartners: formModeData.value.event.defaultMinPartners ?? 2,
+    maxPartners: formModeData.value.event.defaultMaxPartners ?? null,
+    partners: [],
+    budget: null,
+    preferences: [...selectedPreferences.value],
+    notes: null,
+  };
+};
+
+const handleCreateFallback = async () => {
+  const locationId = selectedLocationId.value;
+  const startAt = selectedStartAt.value;
+  if (!locationId || !startAt) {
+    return;
+  }
+
+  const fields = buildCreateFields();
+  if (!fields) {
+    return;
+  }
+
+  trackEvent("anchor_event_form_create_fallback_click", {
+    eventId: props.eventId,
+    locationId,
+    startAt,
+    preferenceCount: selectedPreferences.value.length,
+  });
+
+  try {
+    const created = await createMutation.mutateAsync({
+      eventId: props.eventId,
+      fields,
+    });
+
+    await router.push(
+      `${created.canonicalPath}?entry=create&fromEvent=${props.eventId}`,
+    );
+  } catch (error) {
+    if (isWeChatAuthBlockingError(error)) {
+      return;
+    }
+  }
+};
+
+const handleJoinCandidate = async (prId: number, rank: number) => {
+  await routeToPRJoin(prId, "CANDIDATE_JOIN", rank);
+};
+
+const WECHAT_AUTH_BLOCKING_CODES = new Set([
+  "WECHAT_AUTH_REQUIRED",
+  "WECHAT_BIND_REQUIRED",
+]);
+
+const isWeChatAuthBlockingError = (
+  error: unknown,
+): error is CreateEventAssistedPRError => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const apiError = error as CreateEventAssistedPRError;
+  return (
+    apiError.status === 401 &&
+    typeof apiError.code === "string" &&
+    WECHAT_AUTH_BLOCKING_CODES.has(apiError.code)
+  );
+};
+
+const attemptPendingCreateReplay = async () => {
+  if (pendingCreateReplayRunning.value) {
+    return;
+  }
+
+  const pending = readPendingWeChatAction();
+  if (
+    !pending ||
+    pending.kind !== "EVENT_ASSISTED_PR_CREATE" ||
+    pending.eventId !== props.eventId
+  ) {
+    return;
+  }
+
+  pendingCreateReplayRunning.value = true;
+  clearPendingWeChatAction();
+  try {
+    const created = await createMutation.mutateAsync({
+      eventId: props.eventId,
+      fields: {
+        title: undefined,
+        type: pending.fields.type,
+        time: pending.fields.time,
+        location: pending.fields.location,
+        minPartners: pending.fields.minPartners,
+        maxPartners: pending.fields.maxPartners,
+        partners: [],
+        budget: null,
+        preferences: pending.fields.preferences,
+        notes: null,
+      },
+    });
+    await router.push(
+      `${created.canonicalPath}?entry=create&fromEvent=${props.eventId}`,
+    );
+  } catch (error) {
+    if (!isWeChatAuthBlockingError(error)) {
+      createReplayErrorMessage.value =
+        error instanceof Error
+          ? error.message
+          : t("anchorEvent.createCard.errors.createFailed");
+    }
+  } finally {
+    pendingCreateReplayRunning.value = false;
+  }
+};
+
+onMounted(() => {
+  void attemptPendingCreateReplay();
+});
 </script>
 
 <style lang="scss" scoped>

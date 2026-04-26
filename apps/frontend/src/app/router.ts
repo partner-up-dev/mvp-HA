@@ -33,8 +33,6 @@ const EventPlazaPage = () => import("@/pages/EventPlazaPage.vue");
 const EventPRSearchPage = () => import("@/pages/EventPRSearchPage.vue");
 const AnchorEventPage = () => import("@/pages/AnchorEventPage.vue");
 const AnchorEventLandingPage = () => import("@/pages/AnchorEventLandingPage.vue");
-const AnchorEventFormModeRecommendationPage = () =>
-  import("@/pages/AnchorEventFormModeRecommendationPage.vue");
 const WeChatOAuthCallbackPage = () =>
   import("@/pages/WeChatOAuthCallbackPage.vue");
 
@@ -217,15 +215,6 @@ const routes: RouteRecordRaw[] = [
     path: "/e/:eventId",
     name: "anchor-event-landing",
     component: AnchorEventLandingPage,
-    meta: {
-      wechatSharePolicy: "skip",
-      wechatAutoLoginPolicy: "skip",
-    },
-  },
-  {
-    path: "/er/:eventId",
-    name: "anchor-event-form-recommendation",
-    component: AnchorEventFormModeRecommendationPage,
     meta: {
       wechatSharePolicy: "skip",
       wechatAutoLoginPolicy: "skip",

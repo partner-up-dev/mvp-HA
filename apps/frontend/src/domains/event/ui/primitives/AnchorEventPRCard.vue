@@ -1,51 +1,68 @@
 <template>
-  <RouterLink :to="prDetailPath(pr.id)" class="event-pr-card">
-    <div
-      v-if="coverImage"
-      class="event-pr-card__cover"
-      :style="{ backgroundImage: `url(${coverImage})` }"
-    />
-    <div class="event-pr-card__content">
-      <div class="event-pr-card__header">
-        <div class="event-pr-card__headline">
-          <span class="event-pr-card__title">
-            {{ prTitle }}
+  <article class="event-pr-card">
+    <RouterLink :to="prDetailPath(pr.id)" class="event-pr-card__link">
+      <div
+        v-if="coverImage"
+        class="event-pr-card__cover"
+        :style="{ backgroundImage: `url(${coverImage})` }"
+      />
+      <div class="event-pr-card__content">
+        <div class="event-pr-card__header">
+          <div class="event-pr-card__headline">
+            <span class="event-pr-card__title">
+              {{ prTitle }}
+            </span>
+          </div>
+          <PRStatusBadge
+            class="event-pr-card__status"
+            :status="pr.status"
+            size="sm"
+            appearance="pill"
+          />
+        </div>
+        <div class="event-pr-card__meta">
+          <span v-if="timeLabel" class="event-pr-card__time">
+            🕒 {{ timeLabel }}
+          </span>
+          <span v-if="pr.location" class="event-pr-card__location">
+            📍 {{ pr.location }}
+          </span>
+          <span class="event-pr-card__partners">
+            👥 {{ pr.partnerCount }}
+            <template v-if="pr.maxPartners">
+              / {{ pr.maxPartners }}
+            </template>
           </span>
         </div>
-        <PRStatusBadge
-          class="event-pr-card__status"
-          :status="pr.status"
-          size="sm"
-          appearance="pill"
-        />
       </div>
-      <div class="event-pr-card__meta">
-        <span v-if="timeLabel" class="event-pr-card__time">
-          🕒 {{ timeLabel }}
-        </span>
-        <span v-if="pr.location" class="event-pr-card__location">
-          📍 {{ pr.location }}
-        </span>
-        <span class="event-pr-card__partners">
-          👥 {{ pr.partnerCount }}
-          <template v-if="pr.maxPartners">
-            / {{ pr.maxPartners }}
-          </template>
-        </span>
-      </div>
+    </RouterLink>
+
+    <div v-if="hasActions" class="event-pr-card__actions">
+      <slot name="actions" />
     </div>
-  </RouterLink>
+  </article>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, useSlots } from "vue";
 import { RouterLink } from "vue-router";
 import type { AnchorEventTimeWindowPR } from "@/domains/event/model/types";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 
+type AnchorEventPRCardPR = Pick<
+  AnchorEventTimeWindowPR,
+  | "id"
+  | "title"
+  | "type"
+  | "location"
+  | "status"
+  | "maxPartners"
+  | "partnerCount"
+>;
+
 interface AnchorEventPRCardProps {
-  pr: AnchorEventTimeWindowPR;
+  pr: AnchorEventPRCardPR;
   coverImage?: string | null;
   timeLabel?: string | null;
 }
@@ -55,17 +72,24 @@ const props = withDefaults(defineProps<AnchorEventPRCardProps>(), {
   timeLabel: null,
 });
 
+const slots = useSlots();
 const prTitle = computed(() => props.pr.title || props.pr.type);
+const hasActions = computed(() => Boolean(slots.actions));
 </script>
 
 <style lang="scss" scoped>
 .event-pr-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   border-radius: 10px;
   background: var(--sys-color-surface-container);
-  text-decoration: none;
-  color: inherit;
   overflow: hidden;
+}
+
+.event-pr-card__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
   transition: transform 0.15s ease;
 
   &:active {
@@ -114,5 +138,16 @@ const prTitle = computed(() => props.pr.title || props.pr.type);
   gap: var(--sys-spacing-medium);
   @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.event-pr-card__actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--sys-spacing-small);
+  padding: 0 var(--sys-spacing-small) var(--sys-spacing-small);
+}
+
+.event-pr-card__actions :deep(> *) {
+  flex: 1 1 0;
 }
 </style>

@@ -7,6 +7,7 @@ import { isEventScopedLocation } from "../services/event-scope";
 import {
   buildAnchorEventFormModeTimeWindow,
   buildAnchorEventRecommendationMatch,
+  isAnchorEventPrimaryRecommendationMatch,
 } from "../services/form-mode";
 
 const anchorEventRepo = new AnchorEventRepository();
@@ -132,11 +133,13 @@ export async function recommendAnchorEventFormModePRs(input: {
       return right.pr.createdAt.localeCompare(left.pr.createdAt);
     });
 
-  const primaryRecommendation = rankedCandidates[0] ?? null;
-  const orderedCandidates = rankedCandidates.slice(
-    primaryRecommendation ? 1 : 0,
-    MAX_ORDERED_CANDIDATE_COUNT + (primaryRecommendation ? 1 : 0),
-  );
+  const primaryRecommendation =
+    rankedCandidates.find((candidate) =>
+      isAnchorEventPrimaryRecommendationMatch(candidate.match),
+    ) ?? null;
+  const orderedCandidates = rankedCandidates
+    .filter((candidate) => candidate.pr.id !== primaryRecommendation?.pr.id)
+    .slice(0, MAX_ORDERED_CANDIDATE_COUNT);
 
   return {
     event: {

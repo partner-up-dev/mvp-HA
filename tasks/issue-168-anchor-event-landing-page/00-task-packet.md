@@ -2,7 +2,7 @@
 
 ## MVT Core
 
-- Objective & Hypothesis: land GitHub issue `#168` on top of `#180` by replacing the current `/e/:eventId` `FORM` placeholder with a form-first recommendation flow. The user should select location, start time, and optional preferences, then receive one backend-authored primary recommendation plus an ordered candidate list, with continuation into join handoff or create fallback. Hypothesis: keeping the Form Mode surface focused on one-page input and one-page recommendation output will preserve the ad-scan-first low-friction entry while still giving the system enough context to rank candidates better than the current browse-first Anchor Event page.
+- Objective & Hypothesis: land GitHub issue `#168` on top of `#180` by replacing the current `/e/:eventId` `FORM` placeholder with a form-first join flow. The user selects location, start time, and optional preferences, then long-presses the join-intent CTA. Backend returns one primary recommendation plus ordered candidates. If a primary recommendation exists, the splash handoff continues into the canonical PR page. If no primary recommendation exists, `/e/:eventId` switches into an inline candidate-list plus create-fallback state. Hypothesis: keeping the Form Mode flow inside one route-level state machine preserves low-friction ad-scan continuity and avoids serializing recommendation result state into a separate page.
 - Guardrails Touched:
   - `docs/10-prd/behavior/workflows.md`
   - `docs/10-prd/behavior/rules-and-invariants.md`
@@ -43,14 +43,17 @@
 - the user completes location, start time, and optional preferences in one form-first landing surface.
 - the primary CTA keeps join-intent copy:
   - `加入一场 {time} 在 {location} 的 {event.title} 活动`
-- submitting the current selection does not bypass recommendation.
+- long-press completion submits the current selection for backend recommendation.
 - backend returns:
   - one primary recommendation
   - one ordered candidate list
-- the result surface may continue into:
-  - join handoff for the primary recommendation or a candidate
+- if a primary recommendation exists, the long-press splash continues into that PR's canonical `/pr/:id` route.
+- if no primary recommendation exists, the same `/e/:eventId` Form Mode surface switches into an inline no-primary result state.
+- the no-primary result state contains:
+  - ordered candidate list
   - create fallback action `都不合适，帮我找`
-- the secondary CTA `查看所有场次` routes into the existing Anchor Event list-mode browsing path.
+- candidate list PR cards reuse `AnchorEventPRCard` with a bottom `actions` slot for the full-width join action.
+- the selection state's secondary CTA `查看所有场次` routes into the existing Anchor Event list-mode browsing path.
 
 ### 3. Location Control
 
@@ -108,7 +111,10 @@
 - same derived category but different tag label contributes negative signal because category options are mutually exclusive.
 - different categories remain neutral to each other.
 - uncategorized tags remain neutral unless there is exact label overlap.
-- the result surface should show one primary recommendation plus an ordered candidate list rather than direct immediate join or create from the raw form.
+- primary recommendation is consumed as the handoff target after the Form Mode long-press submit.
+- the visible result UI is only for no-primary recommendations.
+- no-primary recommendation result is an inline Form Mode state containing ordered candidates plus create fallback.
+- candidate rows should use the Anchor Event PR card primitive with an action slot rather than a page-local recommendation card.
 
 ### 7. Join CTA Animation And Handoff
 
@@ -121,6 +127,8 @@
   - continued press causes the filled state to burst in the same direction into a full-screen splash
   - releasing early should trigger an elastic rollback of fill and pressure state
 - after the burst, the flow should continue into PR handoff continuity and then settle on canonical `/pr/:id`.
+- if backend finds a primary recommendation, that PR is the target of the same burst handoff.
+- if backend does not find a primary recommendation, the burst resolves into the inline no-primary result state.
 
 ### 8. Header And Other Events
 
@@ -140,12 +148,14 @@
   - Anchor Event public read contracts for Form Mode
   - Anchor Event admin contracts for preset tag pool and moderation state
   - frontend `/e/:eventId` Form Mode surface
+  - frontend event UI local rules in `apps/frontend/src/domains/event/ui/AGENTS.md`
   - frontend reusable carousel primitive and time / preference controls
+  - frontend `AnchorEventPRCard` action slot
   - backend recommendation and candidate-ordering use-cases
   - PR handoff continuity and landing telemetry
 - State Diff:
   - From: `/e/:eventId` `FORM` mode is a static placeholder
-  - To: `/e/:eventId` `FORM` mode is a full selection -> recommendation -> handoff flow
+  - To: `/e/:eventId` `FORM` mode is a full selection -> recommendation -> primary handoff or inline no-primary result flow
 - Blast Radius Forecast:
   - Anchor Event public routes
   - Anchor Event admin workspace
@@ -160,7 +170,7 @@
 - Verification:
   - backend typecheck
   - frontend build
-  - manual verification for FORM selection, recommendation result, create fallback, join long-press handoff, and CARD_RICH non-regression
+  - manual verification for FORM selection, primary long-press handoff, no-primary candidate list, create fallback, and CARD_RICH non-regression
 
 ## Execution Plan
 
@@ -169,10 +179,11 @@
 3. Add Form Mode init read contracts for location gallery, wheel-picker options, event duration, and published preset tags.
 4. Extract or reuse the carousel primitive and build the Form Mode location, time, and preference controls.
 5. Add backend recommendation contract with ranking and ordered candidate list.
-6. Assemble the recommendation result surface, create fallback path, and `查看所有场次` continuation.
-7. Implement the Form Mode join long-press animation and PR handoff continuity.
-8. Add telemetry for landing exposure, recommendation exposure, candidate selection, create fallback intent, long-press completion, and confirm-join funnel.
-9. Verify with backend typecheck, frontend build, and manual flow checks across `FORM`, `CARD_RICH`, and PR handoff continuity.
+6. Add `AnchorEventPRCard` actions slot for candidate-list join actions.
+7. Assemble Form Mode primary handoff and inline no-primary candidate-list / create-fallback state.
+8. Implement the Form Mode join long-press animation and PR handoff continuity.
+9. Add telemetry for landing exposure, no-primary recommendation exposure, candidate selection, create fallback intent, long-press completion, and confirm-join funnel.
+10. Verify with backend typecheck, frontend build, and manual flow checks across `FORM`, `CARD_RICH`, and PR handoff continuity.
 
 ## Current Non-Goals
 
@@ -185,12 +196,31 @@
 ## Surface Artifacts
 
 - `01-form-mode-selection-surface.md`: current selection-state layout snapshot
-- `02-form-mode-recommendation-surface.md`: current recommendation-state layout snapshot
+- `02-form-mode-recommendation-surface.md`: current no-primary result-state layout snapshot
 - `03-form-mode-preference-drawer.md`: preference drawer layout snapshot
 - `04-form-mode-other-events-drawer.md`: other-events drawer layout snapshot
 
 ## Verification Outcome
 
 - `pnpm --filter @partner-up-dev/backend typecheck`
+- `pnpm --filter @partner-up-dev/backend exec node --import tsx --test src/domains/anchor-event/services/form-mode.test.ts`
 - `pnpm --filter @partner-up-dev/frontend build`
+  - latest frontend build passes after removing `/er`, moving recommendation orchestration into `AnchorEventFormModeSurface`, and adding `AnchorEventPRCard` actions slot.
 - durable docs updated for Form Mode workflow, invariants, cross-unit contracts, and state authority
+
+## Defect Follow-up - Primary Recommendation Eligibility
+
+Observed defect:
+
+- changing Form Mode location or start time still routed into an existing currently-recruiting PR.
+
+Root cause:
+
+- backend recommendation ranking used location and time as score signals, then treated the first ranked candidate as `primaryRecommendation`.
+- this allowed close-but-inexact candidates to trigger the primary long-press handoff.
+
+Applied rule:
+
+- a primary recommendation must have exact selected location, exact selected start time, no same-category preference conflict, and score at least `320`.
+- ineligible candidates remain available in `orderedCandidates`.
+- `orderedCandidates` filters out the selected primary by PR id, so the candidate list stays correct when a primary is selected from the ranked list.

@@ -210,7 +210,11 @@ type CanonicalAnalyticsPayloadMap = {
   };
   anchor_event_form_result_action_click: AnalyticsContextPayload & {
     eventId: number;
-    action: "PRIMARY_DETAIL" | "CANDIDATE_DETAIL";
+    action:
+      | "PRIMARY_DETAIL"
+      | "CANDIDATE_DETAIL"
+      | "PRIMARY_JOIN"
+      | "CANDIDATE_JOIN";
     prId: number;
     candidateRank: number | null;
   };
@@ -222,7 +226,10 @@ type CanonicalAnalyticsPayloadMap = {
   };
   anchor_event_form_join_longpress_complete: AnalyticsContextPayload & {
     eventId: number;
-    prId: number;
+    prId: number | null;
+    locationId: string;
+    startAt: string;
+    preferenceCount: number;
   };
   pr_primary_cta_impression: PRContextPayload & {
     prId: number;

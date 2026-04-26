@@ -6,6 +6,7 @@ import {
 } from "./preference-tags";
 
 const MINUTE_MS = 60 * 1000;
+const PRIMARY_RECOMMENDATION_MIN_SCORE = 320;
 
 const parseTimestamp = (value: string): Date | null => {
   const date = new Date(value);
@@ -94,6 +95,14 @@ export type AnchorEventRecommendationMatch = {
   conflictingTagMatches: string[];
   score: number;
 };
+
+export const isAnchorEventPrimaryRecommendationMatch = (
+  match: AnchorEventRecommendationMatch,
+): boolean =>
+  match.exactLocation &&
+  match.startDeltaMinutes === 0 &&
+  match.conflictingTagMatches.length === 0 &&
+  match.score >= PRIMARY_RECOMMENDATION_MIN_SCORE;
 
 export const buildAnchorEventRecommendationMatch = (input: {
   requestedLocationId: string;

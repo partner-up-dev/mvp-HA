@@ -107,53 +107,32 @@
   - selected location label through a narrow event or helper callback only if parent needs display copy for CTA
 - Data ownership claim: the selected location id is cross-control flow state because it affects CTA copy, recommendation request, and create fallback. The image/caption rendering details are local to location control.
 
-## Recommendation Surface Reframing
+## Recommendation Flow Reframing
 
-### Proposed Responsibility
+### Current Decision
 
-`AnchorEventFormModeRecommendationSurface` should own the recommendation result experience:
+The previously implemented independent `/er/:eventId` recommendation page is superseded by the corrected Form Mode flow model.
 
-- read the submitted selection summary needed for display
-- render the primary recommendation
-- render the ordered candidate list
-- render the create fallback action `都不合适，帮我找`
-- render `查看所有场次`
-- handle candidate detail click telemetry local to result browsing
-- handle long-press completion telemetry local to the primary join CTA
-- route to PR detail for primary join / candidate detail
-- trigger create fallback through a passed command or an owned mutation, depending on whether the resulting page owns create side effects
+- `/e/:eventId` keeps the complete Form Mode journey in one route-level state machine.
+- Form Mode selection owns the long-press CTA `加入一场 {time} 在 {location} 的 {event.title} 活动`.
+- Long-press completion submits the selection to backend recommendation.
+- If `primaryRecommendation` exists, the splash handoff continues into that PR's canonical `/pr/:id`.
+- If `primaryRecommendation` is absent, `/e/:eventId` switches into an inline no-primary result state.
+- The no-primary state renders ordered candidates plus create fallback `都不合适，帮我找`.
+- The selection state owns the `查看所有场次` secondary action.
 
-### Parent Question
+### Candidate Card Rule
 
-Open decision: `AnchorEventFormModeRecommendationSurface` parent should be one of:
+The no-primary candidate list should reuse the event-domain PR card primitive instead of creating page-local candidate cards.
 
-- Route-owned page: a separate page-level route / route-state surface that does not mount the common page footer.
-- `AnchorEventFormModeSurface`: conditional in-surface result rendering after recommendation submission.
+- Enhance `AnchorEventPRCard.vue` with an `actions` slot.
+- The slot layout should be a flex row with `gap: var(--sys-spacing-small)`.
+- List Mode can omit the slot and keep current browse behavior.
+- Form Mode candidate rows provide a full-width join action through the slot.
 
-Preferred direction from discussion: make `AnchorEventFormModeRecommendationSurface` an independent page-level experience without the page footer.
+### Superseded Route Detail
 
-Reasoning:
-
-- The recommendation result is a separate task state with its own actions and join handoff.
-- It can keep the result screen visually focused and avoid inheriting selection-page footer behavior.
-- It reduces `AnchorEventFormModeSurface` ownership to selection and recommendation request creation.
-
-Open implementation detail:
-
-- The recommendation result route is `/er/:eventId`.
-- Query parameters encode the submitted selection:
-  - `l`: selected location id
-  - `d`: selected date in `YYYY-MM-DD`
-  - `t`: selected time in `HH:mm`
-  - `p`: selected preference label
-- `p` should use repeated query parameters, for example `?p=球风:进攻&p=新手友善`, because labels may contain punctuation and repeated params avoid comma-splitting ambiguity.
-- `er` means Event Recommendation.
-- The recommendation page reads these route parameters and requests backend recommendation from the encoded selection.
-
-Constraint:
-
-- The result page must remain recoverable on browser refresh and direct navigation through route params.
-- If required query params are missing or invalid, route back to `/e/:eventId` Form Mode selection.
+`/er/:eventId?l=&d=&t=&p=` and `AnchorEventFormModeRecommendationSurface` as an independent page-level experience have been removed from the frontend implementation.
 
 ## Proposed Refactor Slices
 
@@ -191,28 +170,34 @@ Constraint:
 
 ### Slice C - Recommendation Result Surface
 
-- Status: completed.
-- Introduce `AnchorEventFormModeRecommendationSurface`.
-- Route shape: `/er/:eventId?l=&d=&t=&p=`.
-- Missing or invalid required `l`, `d`, or `t` query state routes back to `/e/:eventId`.
-- Move recommendation result rendering and result-specific telemetry out of `AnchorEventFormModeSurface`.
-- Keep PR detail handoff and create fallback ownership aligned with the route decision.
-- Verify result navigation, refresh fallback, join handoff, and create fallback.
+- Status: completed under the corrected Form Mode flow model.
+- Removed the independent recommendation page route.
+- Moved recommendation orchestration back into `AnchorEventFormModeSurface`.
+- Rendered only the no-primary result state inline.
+- Primary matches route from Form Mode long-press splash to canonical `/pr/:id`.
+- Create fallback stays inside the Form Mode flow.
+- `AnchorEventPRCard` now has an `actions` slot for Form Mode candidate joins.
 
 Verification performed:
 
 - `pnpm --filter @partner-up-dev/frontend build`
 
+Backend recommendation defect follow-up:
+
+- primary recommendation eligibility now requires exact selected location, exact selected start time, no same-category preference conflict, and score at least `320`.
+- ordered candidates keep ranked near matches and exclude the selected primary by PR id.
+- service-level tests cover exact match acceptance plus location, start time, and preference-conflict rejection.
+
 ## Risks And Questions
 
-- Moving from in-surface result rendering to an independent page creates route-state and refresh-recovery decisions. Current route contract uses `/er/:eventId` plus `l`, `d`, `t`, and repeated `p`.
+- Manual browser verification should still cover primary-match handoff and no-primary candidate/create paths once representative seed data is available.
 - If `FormModePreferenceControl` owns backend submission, it also needs query invalidation strategy for `anchorEvent.formMode(eventId)`. That should live inside its mutation hook or inside the control.
-- If `FormModeTimeControl` hides `advancedMode`, recommendation telemetry can infer advanced selection on the recommendation surface by comparing route `startAt` to the event's default start option pool.
+- If `FormModeTimeControl` hides `advancedMode`, recommendation telemetry can infer advanced selection in the Form Mode flow by comparing selected `startAt` to the event's default start option pool.
 - Introducing `ui/surfaces` changes frontend architecture vocabulary. The first rename slice should update docs so the folder structure and dependency direction stay explicit.
 
 ## Current Non-Goals
 
-- changing backend recommendation behavior
+- broad reworking of backend recommendation scoring beyond primary eligibility
 - changing Form Mode product behavior
 - changing Card/List mode runtime behavior during the rename slice
 - changing the reusable carousel primitive
