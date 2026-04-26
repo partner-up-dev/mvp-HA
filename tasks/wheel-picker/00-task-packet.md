@@ -19,10 +19,17 @@ Hypothesis: placing the picker under `apps/frontend/src/shared/ui/forms` gives d
 
 - Run frontend typecheck/build through `pnpm --filter @partner-up-dev/frontend build`.
 - Run token governance through `pnpm --filter @partner-up-dev/frontend lint:tokens`.
-- Review interaction contract against requested constraints: finite list, translucent center slot, snap-finished model updates, `surface|primary|secondary|tertiary` styling with `teritary` alias.
+- Review interaction contract against requested constraints: finite list, translucent center slot, snap-finished model updates, `surface|outline|primary|secondary|tertiary` styling with `teritary` alias.
 
 ## Verification Results
 
 - `pnpm --filter @partner-up-dev/frontend build` passed.
 - `pnpm --filter @partner-up-dev/frontend lint:tokens` completed successfully. Remaining findings are pre-existing files under landing/event form surfaces; `WheelPicker.vue` produced no token finding after replacing `color-mix()` with direct `sys` token usage.
 - Interaction contract is implemented in `apps/frontend/src/shared/ui/forms/WheelPicker.vue`: finite clamped scroll range, translucent centered highlight, pointer drag, wheel input, click-to-center, keyboard movement, disabled option skipping, and delayed `update:modelValue` until snap completion.
+
+## Follow-up: Outline Tone
+
+- Added `outline` as an explicit neutral bordered tone.
+- Changed `surface` to render without a persistent border in its resting state while keeping keyboard focus indication.
+- Verification: `pnpm --filter @partner-up-dev/frontend build` passed.
+- Verification: `pnpm --filter @partner-up-dev/frontend lint:tokens` completed successfully; remaining findings are pre-existing form-mode / landing surfaces.

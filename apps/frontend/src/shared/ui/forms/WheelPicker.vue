@@ -82,7 +82,12 @@ export type WheelPickerOption = {
   disabled?: boolean;
 };
 
-export type WheelPickerTone = "surface" | "primary" | "secondary" | "tertiary";
+export type WheelPickerTone =
+  | "surface"
+  | "outline"
+  | "primary"
+  | "secondary"
+  | "tertiary";
 export type WheelPickerVariant = WheelPickerTone | "teritary";
 
 let wheelPickerIdSeed = 0;
@@ -597,7 +602,7 @@ function clearWheelTimer(): void {
   position: relative;
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--sys-color-outline-variant);
+  border: 0;
   border-radius: var(--sys-radius-lg);
   background: var(--wheel-picker-fade-background);
   color: var(--sys-color-on-surface);
@@ -617,6 +622,10 @@ function clearWheelTimer(): void {
   --wheel-picker-highlight-background: var(--sys-color-primary-container);
   --wheel-picker-highlight-border: var(--sys-color-primary);
   --wheel-picker-selected-color: var(--sys-color-primary);
+}
+
+.wheel-picker--tone-outline {
+  border: 1px solid var(--sys-color-outline-variant);
 }
 
 .wheel-picker--tone-secondary {
