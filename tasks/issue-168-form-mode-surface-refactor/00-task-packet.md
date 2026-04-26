@@ -173,6 +173,7 @@ Constraint:
 
 ### Slice B - Form Selection Controls
 
+- Status: completed.
 - Rename `AnchorEventFormModeSection.vue` to `AnchorEventFormModeSurface.vue`.
 - Extract `FormModeLocationControl`.
 - Extract `FormModeTimeControl`.
@@ -189,17 +190,23 @@ Constraint:
 
 ### Slice C - Recommendation Result Surface
 
+- Status: completed.
 - Introduce `AnchorEventFormModeRecommendationSurface`.
-- Decide route shape before implementation.
+- Route shape: `/er/:eventId?l=&d=&t=&p=`.
+- Missing or invalid required `l`, `d`, or `t` query state routes back to `/e/:eventId`.
 - Move recommendation result rendering and result-specific telemetry out of `AnchorEventFormModeSurface`.
 - Keep PR detail handoff and create fallback ownership aligned with the route decision.
 - Verify result navigation, refresh fallback, join handoff, and create fallback.
 
+Verification performed:
+
+- `pnpm --filter @partner-up-dev/frontend build`
+
 ## Risks And Questions
 
-- Moving from in-surface result rendering to an independent page creates route-state and refresh-recovery decisions. This should be settled before coding Slice C.
+- Moving from in-surface result rendering to an independent page creates route-state and refresh-recovery decisions. Current route contract uses `/er/:eventId` plus `l`, `d`, `t`, and repeated `p`.
 - If `FormModePreferenceControl` owns backend submission, it also needs query invalidation strategy for `anchorEvent.formMode(eventId)`. That should live inside its mutation hook or inside the control.
-- If `FormModeTimeControl` hides `advancedMode`, recommendation telemetry currently collected by the parent loses direct access to `advancedMode`. Replace that with a local telemetry event or a narrow parent event only when the funnel truly needs it.
+- If `FormModeTimeControl` hides `advancedMode`, recommendation telemetry can infer advanced selection on the recommendation surface by comparing route `startAt` to the event's default start option pool.
 - Introducing `ui/surfaces` changes frontend architecture vocabulary. The first rename slice should update docs so the folder structure and dependency direction stay explicit.
 
 ## Current Non-Goals
@@ -208,4 +215,4 @@ Constraint:
 - changing Form Mode product behavior
 - changing Card/List mode runtime behavior during the rename slice
 - changing the reusable carousel primitive
-- changing `/events/:eventId` and `/e/:eventId` route semantics before the recommendation-result route decision is made
+- changing `/events/:eventId` and `/e/:eventId` route semantics

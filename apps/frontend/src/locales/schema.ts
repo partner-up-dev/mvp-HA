@@ -601,6 +601,7 @@ export interface MessageSchema {
       customTagPlaceholder: string;
       addCustomTagAction: string;
       customTagSubmitFailed: string;
+      recommendationPageTitle: string;
       viewAllSessions: string;
       primaryCtaFallback: string;
       primaryCta: string;

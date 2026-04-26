@@ -34,7 +34,7 @@
       </router-link>
     </div>
 
-    <AnchorEventFormModeSection
+    <AnchorEventFormModeSurface
       v-else-if="resolvedMode === 'FORM' && eventId !== null"
       :event-id="eventId"
     />
@@ -99,7 +99,7 @@ import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import AnchorEventCardModeSurface from "@/domains/event/ui/surfaces/AnchorEventCardModeSurface.vue";
-import AnchorEventFormModeSection from "@/domains/event/ui/sections/AnchorEventFormModeSection.vue";
+import AnchorEventFormModeSurface from "@/domains/event/ui/surfaces/AnchorEventFormModeSurface.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";

@@ -38,6 +38,53 @@ export const formatFormModeDateLabel = (isoDateTime: string): string =>
 export const formatFormModeTimeLabel = (isoDateTime: string): string =>
   timePartFormatter.format(new Date(isoDateTime));
 
+export const buildFormModeRouteDateKey = (isoDateTime: string): string =>
+  buildFormModeDateKey(isoDateTime);
+
+export const buildFormModeRouteTimeKey = (isoDateTime: string): string =>
+  formatFormModeTimeLabel(isoDateTime);
+
+export const buildFormModeStartAtFromRouteParts = (
+  dateKey: string,
+  timeKey: string,
+): string | null => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    return null;
+  }
+  if (!/^\d{2}:\d{2}$/.test(timeKey)) {
+    return null;
+  }
+
+  const [hourText, minuteText] = timeKey.split(":");
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  if (
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+
+  const date = new Date(`${dateKey}T${timeKey}:00+08:00`);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const isoDateTime = date.toISOString();
+  if (
+    buildFormModeRouteDateKey(isoDateTime) !== dateKey ||
+    buildFormModeRouteTimeKey(isoDateTime) !== timeKey
+  ) {
+    return null;
+  }
+
+  return isoDateTime;
+};
+
 export const formatFormModeDurationLabel = (
   durationMinutes: number | null,
 ): string => {

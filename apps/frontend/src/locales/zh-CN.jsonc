@@ -1332,6 +1332,7 @@
       "customTagPlaceholder": "输入一个偏好标签",
       "addCustomTagAction": "添加",
       "customTagSubmitFailed": "标签已加入本次推荐，但提交到活动标签池失败，请稍后重试。",
+      "recommendationPageTitle": "推荐场次",
       "viewAllSessions": "查看所有场次",
       "primaryCtaFallback": "请选择地点与开始时间",
       "primaryCta": "加入一场 {time} 在 {location} 的 {eventTitle} 活动",
