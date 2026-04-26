@@ -611,7 +611,12 @@ function clearWheelTimer(): void {
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
+  outline: none;
 
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
 }
 
 .wheel-picker--tone-primary {

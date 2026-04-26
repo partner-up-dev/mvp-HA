@@ -39,3 +39,9 @@ Hypothesis: placing the picker under `apps/frontend/src/shared/ui/forms` gives d
 - Removed WheelPicker-specific focus visuals so focus does not introduce a primary-color border or selected-color text treatment.
 - Verification: `pnpm --filter @partner-up-dev/frontend build` passed.
 - Verification: `pnpm --filter @partner-up-dev/frontend lint:tokens` completed successfully; remaining findings are pre-existing form-mode / landing / ToggleSwitch surfaces.
+
+## Follow-up: Native Focus Reset
+
+- Added an explicit root `outline: none` reset for `:focus` and `:focus-visible` to suppress the browser native black focus ring.
+- Verification: `pnpm --filter @partner-up-dev/frontend build` passed.
+- Verification: `pnpm --filter @partner-up-dev/frontend lint:tokens` completed successfully; remaining findings are pre-existing form-mode / landing / ToggleSwitch surfaces.
