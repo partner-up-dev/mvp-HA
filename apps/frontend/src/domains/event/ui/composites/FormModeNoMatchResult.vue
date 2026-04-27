@@ -1,25 +1,10 @@
 <template>
-  <section class="form-mode-no-primary-result">
-    <header class="no-primary-hero">
-      <p class="no-primary-hero__eyebrow">
-        {{ t("anchorEvent.formMode.emptyRecommendationEyebrow") }}
-      </p>
-      <h2 class="no-primary-hero__title">
-        {{ t("anchorEvent.formMode.emptyRecommendationTitle") }}
-      </h2>
-      <p class="no-primary-hero__body">
-        {{ t("anchorEvent.formMode.emptyRecommendationBody") }}
-      </p>
-    </header>
-
+  <section class="form-mode-no-match-result">
     <section
       v-if="props.candidates.length > 0"
       class="candidate-list"
       data-region="form-mode-candidates"
     >
-      <p class="candidate-list__eyebrow">
-        {{ t("anchorEvent.formMode.candidateListEyebrow") }}
-      </p>
       <h2 class="candidate-list__title">
         {{ t("anchorEvent.formMode.candidateListTitle") }}
       </h2>
@@ -39,14 +24,14 @@
               block
               @click="emit('join-candidate', candidate.pr.id, index + 1)"
             >
-              {{ t("anchorEvent.formMode.joinPrimaryRecommendation") }}
+              {{ t("anchorEvent.formMode.joinCandidateAction") }}
             </Button>
           </template>
         </AnchorEventPRCard>
       </div>
     </section>
 
-    <div class="no-primary-actions">
+    <div class="no-match-actions">
       <Button
         appearance="rect"
         tone="secondary"
@@ -109,45 +94,31 @@ const buildCandidateTimeLabel = (startAt: string | null): string | null => {
 </script>
 
 <style lang="scss" scoped>
-.form-mode-no-primary-result,
+.form-mode-no-match-result,
 .candidate-list,
-.candidate-list__items,
-.no-primary-hero {
+.candidate-list__items {
   display: flex;
   flex-direction: column;
 }
 
-.form-mode-no-primary-result {
+.form-mode-no-match-result {
   flex: 1 1 auto;
   min-height: 0;
   gap: var(--sys-spacing-medium);
 }
 
-.no-primary-hero {
-  gap: var(--sys-spacing-xsmall);
-}
-
-.no-primary-hero__eyebrow,
-.candidate-list__eyebrow,
-.no-primary-hero__title,
+.no-match-hero__title,
 .candidate-list__title,
-.no-primary-hero__body,
+.no-match-hero__body,
 .inline-message {
   margin: 0;
 }
-
-.no-primary-hero__eyebrow,
-.candidate-list__eyebrow {
-  color: var(--sys-color-primary);
-  @include mx.pu-font(label-large);
-}
-
-.no-primary-hero__title,
+.no-match-hero__title,
 .candidate-list__title {
   @include mx.pu-font(title-medium);
 }
 
-.no-primary-hero__body {
+.no-match-hero__body {
   color: var(--sys-color-on-surface-variant);
   @include mx.pu-font(body-medium);
 }
@@ -161,7 +132,7 @@ const buildCandidateTimeLabel = (startAt: string | null): string | null => {
   gap: var(--sys-spacing-small);
 }
 
-.no-primary-actions {
+.no-match-actions {
   margin-top: auto;
 }
 

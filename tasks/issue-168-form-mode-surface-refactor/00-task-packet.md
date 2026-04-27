@@ -116,19 +116,29 @@ The previously implemented independent `/er/:eventId` recommendation page is sup
 - `/e/:eventId` keeps the complete Form Mode journey in one route-level state machine.
 - Form Mode selection owns the long-press CTA `加入一场 {time} 在 {location} 的 {event.title} 活动`.
 - Long-press completion submits the selection to backend recommendation.
-- If `primaryRecommendation` exists, the splash handoff continues into that PR's canonical `/pr/:id`.
-- If `primaryRecommendation` is absent, `/e/:eventId` switches into an inline no-primary result state.
-- The no-primary state renders ordered candidates plus create fallback `都不合适，帮我找`.
+- Backend returns `matchedRecommendation` plus `orderedCandidates`.
+- If `matchedRecommendation` exists, the splash handoff continues into that PR's canonical `/pr/:id`.
+- If `matchedRecommendation` is absent, `/e/:eventId` switches into an inline no-match result state.
+- The no-match state renders ordered candidates plus create fallback `都不合适，帮我找`.
+- PageHeader back from the no-match state returns to Form Mode selection.
 - The selection state owns the `查看所有场次` secondary action.
 
 ### Candidate Card Rule
 
-The no-primary candidate list should reuse the event-domain PR card primitive instead of creating page-local candidate cards.
+The no-match candidate list should reuse the event-domain PR card primitive instead of creating page-local candidate cards.
 
 - Enhance `AnchorEventPRCard.vue` with an `actions` slot.
 - The slot layout should be a flex row with `gap: var(--sys-spacing-small)`.
 - List Mode can omit the slot and keep current browse behavior.
 - Form Mode candidate rows provide a full-width join action through the slot.
+
+### Backend Matching Rule
+
+- Base PR pool: this Anchor Event's visible PR contexts with joinable PR status.
+- Matched eligibility: exact selected location, start time within `5` minutes, and no same-category preference conflict.
+- Score chooses the top item inside the matched pool when more than one PR is matched.
+- When the matched pool is empty, score ranks the whole base PR pool into ordered candidates.
+- Group momentum in score means how close the PR is to `minPartners` after the current user joins.
 
 ### Superseded Route Detail
 
@@ -173,8 +183,8 @@ The no-primary candidate list should reuse the event-domain PR card primitive in
 - Status: completed under the corrected Form Mode flow model.
 - Removed the independent recommendation page route.
 - Moved recommendation orchestration back into `AnchorEventFormModeSurface`.
-- Rendered only the no-primary result state inline.
-- Primary matches route from Form Mode long-press splash to canonical `/pr/:id`.
+- Rendered only the no-match result state inline.
+- Matched recommendation routes from Form Mode long-press splash to canonical `/pr/:id`.
 - Create fallback stays inside the Form Mode flow.
 - `AnchorEventPRCard` now has an `actions` slot for Form Mode candidate joins.
 
@@ -184,20 +194,21 @@ Verification performed:
 
 Backend recommendation defect follow-up:
 
-- primary recommendation eligibility now requires exact selected location, exact selected start time, no same-category preference conflict, and score at least `320`.
-- ordered candidates keep ranked near matches and exclude the selected primary by PR id.
-- service-level tests cover exact match acceptance plus location, start time, and preference-conflict rejection.
+- the former primary response is renamed to `matchedRecommendation`.
+- matched eligibility now requires exact selected location, start time within `5` minutes, and no same-category preference conflict.
+- ordered candidates are ranked from the whole base PR pool when the matched pool is empty.
+- service-level tests cover matched acceptance plus location, start time tolerance, preference-conflict rejection, and group momentum scoring.
 
 ## Risks And Questions
 
-- Manual browser verification should still cover primary-match handoff and no-primary candidate/create paths once representative seed data is available.
+- Manual browser verification should still cover matched handoff and no-match candidate/create paths once representative seed data is available.
 - If `FormModePreferenceControl` owns backend submission, it also needs query invalidation strategy for `anchorEvent.formMode(eventId)`. That should live inside its mutation hook or inside the control.
 - If `FormModeTimeControl` hides `advancedMode`, recommendation telemetry can infer advanced selection in the Form Mode flow by comparing selected `startAt` to the event's default start option pool.
 - Introducing `ui/surfaces` changes frontend architecture vocabulary. The first rename slice should update docs so the folder structure and dependency direction stay explicit.
 
 ## Current Non-Goals
 
-- broad reworking of backend recommendation scoring beyond primary eligibility
+- broad reworking of backend recommendation scoring beyond matched eligibility
 - changing Form Mode product behavior
 - changing Card/List mode runtime behavior during the rename slice
 - changing the reusable carousel primitive

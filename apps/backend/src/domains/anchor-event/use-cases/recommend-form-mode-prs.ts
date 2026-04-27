@@ -7,7 +7,7 @@ import { isEventScopedLocation } from "../services/event-scope";
 import {
   buildAnchorEventFormModeTimeWindow,
   buildAnchorEventRecommendationMatch,
-  isAnchorEventPrimaryRecommendationMatch,
+  isAnchorEventMatchedRecommendation,
 } from "../services/form-mode";
 
 const anchorEventRepo = new AnchorEventRepository();
@@ -27,7 +27,7 @@ export interface AnchorEventFormModeRecommendationResponse {
     timeWindow: [string, string];
     preferences: string[];
   };
-  primaryRecommendation: FormModeRecommendationCandidate | null;
+  matchedRecommendation: FormModeRecommendationCandidate | null;
   orderedCandidates: FormModeRecommendationCandidate[];
 }
 
@@ -49,8 +49,10 @@ export interface FormModeRecommendationCandidate {
   match: {
     exactLocation: boolean;
     startDeltaMinutes: number | null;
+    startWithinTolerance: boolean;
     exactTagMatches: string[];
     conflictingTagMatches: string[];
+    groupMomentumScore: number;
     score: number;
   };
 }
@@ -98,6 +100,7 @@ export async function recommendAnchorEventFormModePRs(input: {
         candidateLocationId: record.root.location,
         candidateTimeWindow: record.root.time,
         candidatePreferences: record.root.preferences,
+        candidateMinPartners: record.root.minPartners,
         activePartnerCount: activePartnerCounts.get(record.root.id) ?? 0,
       });
 
@@ -133,13 +136,14 @@ export async function recommendAnchorEventFormModePRs(input: {
       return right.pr.createdAt.localeCompare(left.pr.createdAt);
     });
 
-  const primaryRecommendation =
+  const matchedRecommendation =
     rankedCandidates.find((candidate) =>
-      isAnchorEventPrimaryRecommendationMatch(candidate.match),
+      isAnchorEventMatchedRecommendation(candidate.match),
     ) ?? null;
-  const orderedCandidates = rankedCandidates
-    .filter((candidate) => candidate.pr.id !== primaryRecommendation?.pr.id)
-    .slice(0, MAX_ORDERED_CANDIDATE_COUNT);
+  const orderedCandidates =
+    matchedRecommendation === null
+      ? rankedCandidates.slice(0, MAX_ORDERED_CANDIDATE_COUNT)
+      : [];
 
   return {
     event: {
@@ -151,7 +155,7 @@ export async function recommendAnchorEventFormModePRs(input: {
       timeWindow: selectionTimeWindow as [string, string],
       preferences: selectionPreferences,
     },
-    primaryRecommendation,
+    matchedRecommendation,
     orderedCandidates,
   };
 }

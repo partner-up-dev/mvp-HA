@@ -6,7 +6,17 @@ import {
 } from "./preference-tags";
 
 const MINUTE_MS = 60 * 1000;
-const PRIMARY_RECOMMENDATION_MIN_SCORE = 320;
+const MATCHED_START_TOLERANCE_MINUTES = 5;
+const DEFAULT_MIN_PARTNERS = 2;
+const EXACT_LOCATION_SCORE = 2;
+const LOCATION_MISMATCH_SCORE = -2;
+const MATCHED_TIME_SCORE = 2;
+const NEAR_TIME_MISMATCH_SCORE = -1;
+const FAR_TIME_MISMATCH_SCORE = -2;
+const MISSING_TIME_SCORE = -3;
+const EXACT_TAG_SCORE_CAP = 2;
+const CONFLICTING_TAG_PENALTY_CAP = 4;
+const CONFLICTING_TAG_PENALTY = 2;
 
 const parseTimestamp = (value: string): Date | null => {
   const date = new Date(value);
@@ -91,18 +101,56 @@ const buildCategoryMap = (preferences: readonly string[]): Map<string, string> =
 export type AnchorEventRecommendationMatch = {
   exactLocation: boolean;
   startDeltaMinutes: number | null;
+  startWithinTolerance: boolean;
   exactTagMatches: string[];
   conflictingTagMatches: string[];
+  groupMomentumScore: number;
   score: number;
 };
 
-export const isAnchorEventPrimaryRecommendationMatch = (
+export const isAnchorEventMatchedRecommendation = (
   match: AnchorEventRecommendationMatch,
 ): boolean =>
   match.exactLocation &&
-  match.startDeltaMinutes === 0 &&
-  match.conflictingTagMatches.length === 0 &&
-  match.score >= PRIMARY_RECOMMENDATION_MIN_SCORE;
+  match.startWithinTolerance &&
+  match.conflictingTagMatches.length === 0;
+
+const buildStartTimeScore = (startDeltaMinutes: number | null): number => {
+  if (startDeltaMinutes === null) {
+    return MISSING_TIME_SCORE;
+  }
+  if (startDeltaMinutes <= MATCHED_START_TOLERANCE_MINUTES) {
+    return MATCHED_TIME_SCORE;
+  }
+  if (startDeltaMinutes <= 30) {
+    return NEAR_TIME_MISMATCH_SCORE;
+  }
+  return FAR_TIME_MISMATCH_SCORE;
+};
+
+const buildGroupMomentumScore = (input: {
+  candidateMinPartners: number | null;
+  activePartnerCount: number;
+}): number => {
+  const minPartners =
+    input.candidateMinPartners !== null &&
+    input.candidateMinPartners >= DEFAULT_MIN_PARTNERS
+      ? input.candidateMinPartners
+      : DEFAULT_MIN_PARTNERS;
+  const activePartnerCount = Math.max(0, input.activePartnerCount);
+  const missingAfterCurrentUserJoins = Math.max(
+    0,
+    minPartners - (activePartnerCount + 1),
+  );
+
+  if (missingAfterCurrentUserJoins === 0) {
+    return 2;
+  }
+  if (missingAfterCurrentUserJoins === 1) {
+    return 1;
+  }
+  return 0;
+};
 
 export const buildAnchorEventRecommendationMatch = (input: {
   requestedLocationId: string;
@@ -111,6 +159,7 @@ export const buildAnchorEventRecommendationMatch = (input: {
   candidateLocationId: string | null;
   candidateTimeWindow: TimeWindowEntry;
   candidatePreferences: string[];
+  candidateMinPartners: number | null;
   activePartnerCount: number;
 }): AnchorEventRecommendationMatch => {
   const requestedStart = parseTimestamp(input.requestedStartAtIso);
@@ -151,22 +200,30 @@ export const buildAnchorEventRecommendationMatch = (input: {
   const exactLocation =
     (input.candidateLocationId?.trim() ?? "") === input.requestedLocationId.trim();
 
-  let score = 0;
-  if (startDeltaMinutes !== null) {
-    score += Math.max(0, 240 - Math.min(startDeltaMinutes, 240));
-  }
-  if (exactLocation) {
-    score += 80;
-  }
-  score += exactTagMatches.length * 16;
-  score -= conflictingTagMatches.length * 18;
-  score += Math.min(input.activePartnerCount, 4) * 4;
+  const startWithinTolerance =
+    startDeltaMinutes !== null &&
+    startDeltaMinutes <= MATCHED_START_TOLERANCE_MINUTES;
+  const locationScore = exactLocation ? EXACT_LOCATION_SCORE : LOCATION_MISMATCH_SCORE;
+  const timeScore = buildStartTimeScore(startDeltaMinutes);
+  const preferenceScore =
+    Math.min(exactTagMatches.length, EXACT_TAG_SCORE_CAP) -
+    Math.min(
+      conflictingTagMatches.length * CONFLICTING_TAG_PENALTY,
+      CONFLICTING_TAG_PENALTY_CAP,
+    );
+  const groupMomentumScore = buildGroupMomentumScore({
+    candidateMinPartners: input.candidateMinPartners,
+    activePartnerCount: input.activePartnerCount,
+  });
+  const score = locationScore + timeScore + preferenceScore + groupMomentumScore;
 
   return {
     exactLocation,
     startDeltaMinutes,
+    startWithinTolerance,
     exactTagMatches,
     conflictingTagMatches,
+    groupMomentumScore,
     score,
   };
 };

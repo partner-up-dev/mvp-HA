@@ -7,6 +7,7 @@
         :title="detail.title"
         :subtitle="detail.description ?? undefined"
         :back-fallback-to="{ name: 'event-plaza' }"
+        @back="handleLandingBack"
       >
         <template #top-actions>
           <Button
@@ -36,7 +37,9 @@
 
     <AnchorEventFormModeSurface
       v-else-if="resolvedMode === 'FORM' && eventId !== null"
+      ref="formModeSurfaceRef"
       :event-id="eventId"
+      @result-state-change="formModeResultState = $event"
     />
 
     <template v-else-if="detail">
@@ -93,7 +96,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter, type RouteLocationRaw } from "vue-router";
 import { useI18n } from "vue-i18n";
 import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -142,11 +145,20 @@ type CardCreateLocationOptionViewModel = {
   label: string;
   disabled: boolean;
 };
+type FormModeResultState = "selection" | "no-match";
+type FormModeSurfaceExposed = {
+  returnToSelection: () => void;
+};
+type RouterHistoryState = {
+  back?: string | null;
+};
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const showOtherEventsDrawer = ref(false);
+const formModeSurfaceRef = ref<FormModeSurfaceExposed | null>(null);
+const formModeResultState = ref<FormModeResultState>("selection");
 
 const noop = () => undefined;
 
@@ -215,6 +227,35 @@ const isError = computed(() => {
   }
 
   return false;
+});
+
+const hasRouterBackEntry = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const historyState = window.history.state as RouterHistoryState | null;
+  return typeof historyState?.back === "string" && historyState.back.length > 0;
+};
+
+const backFallbackTo: RouteLocationRaw = { name: "event-plaza" };
+
+const handleLandingBack = async () => {
+  if (resolvedMode.value === "FORM" && formModeResultState.value === "no-match") {
+    formModeSurfaceRef.value?.returnToSelection();
+    return;
+  }
+
+  if (hasRouterBackEntry()) {
+    router.back();
+    return;
+  }
+
+  await router.replace(backFallbackTo);
+};
+
+watch([eventId, resolvedMode], () => {
+  formModeResultState.value = "selection";
 });
 
 const createEventAssistedPRMutation = useCreateEventAssistedPR();

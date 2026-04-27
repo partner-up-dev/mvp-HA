@@ -16,6 +16,13 @@
     @pointerup="handlePointerUp"
     @pointercancel="handlePointerCancel"
     @pointerleave="handlePointerLeave"
+    @contextmenu.capture.prevent
+    @dragstart.prevent
+    @selectstart.prevent
+    @touchstart.prevent
+    @touchmove.prevent
+    @touchend.prevent
+    @touchcancel.prevent
   >
     <span class="form-mode-long-press-button__fill" aria-hidden="true" />
     <span class="form-mode-long-press-button__splash" aria-hidden="true" />
@@ -29,6 +36,14 @@
 import { computed, onBeforeUnmount, ref } from "vue";
 
 type ButtonPhase = "IDLE" | "CHARGING" | "OVERLOAD" | "BURST" | "ROLLBACK";
+export type LongPressOriginRect = {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+};
 
 const props = withDefaults(
   defineProps<{
@@ -49,7 +64,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  complete: [];
+  complete: [originRect: LongPressOriginRect];
 }>();
 
 const buttonRef = ref<HTMLButtonElement | null>(null);
@@ -59,12 +74,93 @@ const overloadProgress = ref(0);
 const pointerId = ref<number | null>(null);
 const startedAt = ref(0);
 const rafId = ref<number | null>(null);
+const resetTimeoutId = ref<number | null>(null);
 const hasCompleted = ref(false);
+const longPressGuardsActive = ref(false);
+
+const longPressGuardOptions: AddEventListenerOptions = {
+  capture: true,
+  passive: false,
+};
+
+const preventLongPressDefault = (event: Event): void => {
+  if (!longPressGuardsActive.value) {
+    return;
+  }
+
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+  event.stopImmediatePropagation();
+};
+
+const addLongPressGuards = (): void => {
+  if (longPressGuardsActive.value || typeof document === "undefined") {
+    return;
+  }
+
+  longPressGuardsActive.value = true;
+  document.addEventListener(
+    "contextmenu",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+  document.addEventListener(
+    "selectstart",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+  document.addEventListener(
+    "dragstart",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+  document.addEventListener(
+    "touchmove",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+};
+
+const removeLongPressGuards = (): void => {
+  if (!longPressGuardsActive.value || typeof document === "undefined") {
+    return;
+  }
+
+  longPressGuardsActive.value = false;
+  document.removeEventListener(
+    "contextmenu",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+  document.removeEventListener(
+    "selectstart",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+  document.removeEventListener(
+    "dragstart",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+  document.removeEventListener(
+    "touchmove",
+    preventLongPressDefault,
+    longPressGuardOptions,
+  );
+};
 
 const clearAnimationFrame = () => {
   if (rafId.value !== null && typeof window !== "undefined") {
     window.cancelAnimationFrame(rafId.value);
     rafId.value = null;
+  }
+};
+
+const clearResetTimeout = () => {
+  if (resetTimeoutId.value !== null && typeof window !== "undefined") {
+    window.clearTimeout(resetTimeoutId.value);
+    resetTimeoutId.value = null;
   }
 };
 
@@ -84,6 +180,7 @@ const releasePointerCapture = () => {
 
 const resetToIdle = () => {
   clearAnimationFrame();
+  clearResetTimeout();
   releasePointerCapture();
   pointerId.value = null;
   startedAt.value = 0;
@@ -91,7 +188,14 @@ const resetToIdle = () => {
   fillProgress.value = 0;
   overloadProgress.value = 0;
   hasCompleted.value = false;
+  removeLongPressGuards();
 };
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max);
+
+const toCssPx = (value: number): string => `${value.toFixed(2)}px`;
+const toCssDeg = (value: number): string => `${value.toFixed(3)}deg`;
 
 const easing = (value: number): number => 1 - (1 - value) ** 2.2;
 
@@ -122,11 +226,12 @@ const runTick = (timestamp: number) => {
     hasCompleted.value = true;
     phase.value = "BURST";
     overloadProgress.value = 1;
-    emit("complete");
+    emit("complete", resolveOriginRect());
   }
 
   clearAnimationFrame();
-  window.setTimeout(() => {
+  clearResetTimeout();
+  resetTimeoutId.value = window.setTimeout(() => {
     if (phase.value === "BURST") {
       resetToIdle();
     }
@@ -138,7 +243,10 @@ const startCharging = (event: PointerEvent) => {
     return;
   }
 
+  event.preventDefault();
+  addLongPressGuards();
   clearAnimationFrame();
+  clearResetTimeout();
   hasCompleted.value = false;
   pointerId.value = event.pointerId;
   startedAt.value = 0;
@@ -161,12 +269,13 @@ const triggerRollback = () => {
   }
 
   clearAnimationFrame();
+  clearResetTimeout();
   releasePointerCapture();
   pointerId.value = null;
   phase.value = "ROLLBACK";
   fillProgress.value = 0;
   overloadProgress.value = 0;
-  window.setTimeout(() => {
+  resetTimeoutId.value = window.setTimeout(() => {
     if (phase.value === "ROLLBACK") {
       resetToIdle();
     }
@@ -212,12 +321,74 @@ const handlePointerLeave = (event: PointerEvent) => {
 
 onBeforeUnmount(() => {
   clearAnimationFrame();
+  clearResetTimeout();
+  removeLongPressGuards();
 });
 
-const buttonStyle = computed(() => ({
-  "--form-mode-long-press-progress": String(fillProgress.value),
-  "--form-mode-long-press-overload": String(overloadProgress.value),
-}));
+const buttonStyle = computed(() => {
+  const pressure = clamp(
+    fillProgress.value ** 1.35 + overloadProgress.value * 0.58,
+    0,
+    1.35,
+  );
+  const outlinePressure = clamp(
+    fillProgress.value * 0.36 + overloadProgress.value * 0.82,
+    0,
+    1,
+  );
+
+  return {
+    "--form-mode-long-press-progress": String(fillProgress.value),
+    "--form-mode-long-press-overload": String(overloadProgress.value),
+    "--form-mode-long-press-tremble-duration": `${Math.round(
+      132 - pressure * 44,
+    )}ms`,
+    "--form-mode-long-press-tremble-left": toCssPx(-(0.85 + pressure * 2.75)),
+    "--form-mode-long-press-tremble-right": toCssPx(0.95 + pressure * 2.95),
+    "--form-mode-long-press-tremble-left-soft": toCssPx(
+      -(0.38 + pressure * 1.42),
+    ),
+    "--form-mode-long-press-tremble-right-soft": toCssPx(
+      0.42 + pressure * 1.48,
+    ),
+    "--form-mode-long-press-tremble-up": toCssPx(-(0.18 + pressure * 1.02)),
+    "--form-mode-long-press-tremble-down": toCssPx(0.14 + pressure * 0.86),
+    "--form-mode-long-press-tremble-rotate-left": toCssDeg(
+      -(0.08 + pressure * 0.34),
+    ),
+    "--form-mode-long-press-tremble-rotate-right": toCssDeg(
+      0.08 + pressure * 0.36,
+    ),
+    "--form-mode-long-press-pressure-outline": toCssPx(
+      outlinePressure * 7.5,
+    ),
+  };
+});
+
+const resolveOriginRect = (): LongPressOriginRect => {
+  const rect = buttonRef.value?.getBoundingClientRect();
+  if (rect) {
+    return {
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+    };
+  }
+
+  const fallbackWidth = typeof window === "undefined" ? 1 : window.innerWidth;
+  const fallbackHeight = typeof window === "undefined" ? 1 : window.innerHeight;
+  return {
+    left: 0,
+    top: fallbackHeight,
+    right: fallbackWidth,
+    bottom: fallbackHeight,
+    width: fallbackWidth,
+    height: 1,
+  };
+};
 </script>
 
 <style lang="scss" scoped>
@@ -231,26 +402,33 @@ const buttonStyle = computed(() => ({
   width: 100%;
   min-height: 3.5rem;
   padding: var(--sys-spacing-small) var(--sys-spacing-medium);
-  border: none;
+  border: 1.5px solid var(--sys-color-primary);
   border-radius: 0;
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary) 16%,
-    var(--sys-color-surface-container)
-  );
-  color: var(--sys-color-on-primary-container);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-primary);
   cursor: pointer;
   transition:
     transform 180ms ease,
-    box-shadow 180ms ease,
-    background-color 180ms ease;
+    border-color 180ms ease,
+    background-color 180ms ease,
+    outline-width 100ms ease;
+  outline: 0 solid color-mix(in srgb, var(--sys-color-primary) 14%, transparent);
+  outline-offset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  will-change: transform, outline-width;
   @include mx.pu-font(title-small);
-  @include mx.pu-elevation(2);
 }
 
 .form-mode-long-press-button__label {
   position: relative;
   z-index: 2;
+  pointer-events: none;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .form-mode-long-press-button__fill,
@@ -264,8 +442,8 @@ const buttonStyle = computed(() => ({
   z-index: 0;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--sys-color-primary) 92%, white),
-    var(--sys-color-primary)
+    color-mix(in srgb, var(--sys-color-primary-container) 82%, white),
+    color-mix(in srgb, var(--sys-color-primary) 54%, white)
   );
   transform-origin: left center;
   transform: scaleX(var(--form-mode-long-press-progress, 0));
@@ -277,7 +455,7 @@ const buttonStyle = computed(() => ({
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, var(--sys-color-primary) 72%, white) 50%,
+    color-mix(in srgb, var(--sys-color-primary) 72%, white) 42%,
     var(--sys-color-primary) 100%
   );
   opacity: 0;
@@ -286,19 +464,37 @@ const buttonStyle = computed(() => ({
 }
 
 .form-mode-long-press-button--charging {
-  transform: translateY(-1px);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-primary-container) 18%,
+    var(--sys-color-surface)
+  );
+  animation: form-mode-long-press-tremble
+    var(--form-mode-long-press-tremble-duration, 112ms) linear infinite;
+  outline-width: var(--form-mode-long-press-pressure-outline, 0);
 }
 
 .form-mode-long-press-button--overload {
-  animation: form-mode-long-press-tremble 92ms linear infinite;
-  box-shadow:
-    0 0 0 calc(var(--form-mode-long-press-overload, 0) * 8px)
-      color-mix(in srgb, var(--sys-color-primary) 18%, transparent),
-    0 14px 28px rgba(0, 0, 0, 0.18);
+  background: color-mix(
+    in srgb,
+    var(--sys-color-primary-container) 28%,
+    var(--sys-color-surface)
+  );
+  animation: form-mode-long-press-tremble
+    var(--form-mode-long-press-tremble-duration, 76ms) linear infinite;
+  outline-color: color-mix(in srgb, var(--sys-color-primary) 24%, transparent);
+  outline-width: var(--form-mode-long-press-pressure-outline, 0);
 }
 
 .form-mode-long-press-button--burst {
+  border-color: var(--sys-color-primary);
+  background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
+}
+
+.form-mode-long-press-button--burst.form-mode-long-press-button--disabled {
+  cursor: progress;
+  opacity: 1;
 }
 
 .form-mode-long-press-button--burst .form-mode-long-press-button__splash {
@@ -316,30 +512,73 @@ const buttonStyle = computed(() => ({
 .form-mode-long-press-button--disabled {
   cursor: not-allowed;
   opacity: 0.56;
-  box-shadow: none;
+  outline: 0;
 }
 
 @keyframes form-mode-long-press-tremble {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
-  25% {
-    transform: translate3d(-1px, 0, 0);
+  12% {
+    transform: translate3d(
+        var(--form-mode-long-press-tremble-left),
+        var(--form-mode-long-press-tremble-up),
+        0
+      )
+      rotate(var(--form-mode-long-press-tremble-rotate-left));
   }
-  50% {
-    transform: translate3d(1px, 0, 0);
+  27% {
+    transform: translate3d(
+        var(--form-mode-long-press-tremble-right),
+        var(--form-mode-long-press-tremble-down),
+        0
+      )
+      rotate(var(--form-mode-long-press-tremble-rotate-right));
   }
-  75% {
-    transform: translate3d(-1px, 0, 0);
+  43% {
+    transform: translate3d(
+        var(--form-mode-long-press-tremble-left-soft),
+        var(--form-mode-long-press-tremble-down),
+        0
+      )
+      rotate(var(--form-mode-long-press-tremble-rotate-left));
+  }
+  58% {
+    transform: translate3d(
+        var(--form-mode-long-press-tremble-right),
+        var(--form-mode-long-press-tremble-up),
+        0
+      )
+      rotate(var(--form-mode-long-press-tremble-rotate-right));
+  }
+  73% {
+    transform: translate3d(
+        var(--form-mode-long-press-tremble-left),
+        var(--form-mode-long-press-tremble-up),
+        0
+      )
+      rotate(var(--form-mode-long-press-tremble-rotate-left));
+  }
+  88% {
+    transform: translate3d(
+        var(--form-mode-long-press-tremble-right-soft),
+        var(--form-mode-long-press-tremble-down),
+        0
+      )
+      rotate(var(--form-mode-long-press-tremble-rotate-right));
   }
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0) rotate(0deg);
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .form-mode-long-press-button:hover:not(.form-mode-long-press-button--disabled) {
-    transform: translateY(-1px);
+    background: color-mix(
+      in srgb,
+      var(--sys-color-primary-container) 18%,
+      var(--sys-color-surface)
+    );
   }
 }
 
@@ -350,8 +589,10 @@ const buttonStyle = computed(() => ({
     transition: none;
   }
 
+  .form-mode-long-press-button--charging,
   .form-mode-long-press-button--overload {
     animation: none;
+    outline-width: 0;
   }
 }
 </style>

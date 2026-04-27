@@ -2,7 +2,7 @@
 
 ## MVT Core
 
-- Objective & Hypothesis: land GitHub issue `#168` on top of `#180` by replacing the current `/e/:eventId` `FORM` placeholder with a form-first join flow. The user selects location, start time, and optional preferences, then long-presses the join-intent CTA. Backend returns one primary recommendation plus ordered candidates. If a primary recommendation exists, the splash handoff continues into the canonical PR page. If no primary recommendation exists, `/e/:eventId` switches into an inline candidate-list plus create-fallback state. Hypothesis: keeping the Form Mode flow inside one route-level state machine preserves low-friction ad-scan continuity and avoids serializing recommendation result state into a separate page.
+- Objective & Hypothesis: land GitHub issue `#168` on top of `#180` by replacing the current `/e/:eventId` `FORM` placeholder with a form-first join flow. The user selects location, start time, and optional preferences, then long-presses the join-intent CTA. Backend returns one matched recommendation plus ordered candidates. If a matched recommendation exists, the splash handoff continues into the canonical PR page. If no matched recommendation exists, `/e/:eventId` switches into an inline candidate-list plus create-fallback state. Hypothesis: keeping the Form Mode flow inside one route-level state machine preserves low-friction ad-scan continuity and avoids serializing recommendation result state into a separate page.
 - Guardrails Touched:
   - `docs/10-prd/behavior/workflows.md`
   - `docs/10-prd/behavior/rules-and-invariants.md`
@@ -38,20 +38,21 @@
 - experiment comparison remains `FORM` vs `CARD_RICH` in this ticket.
 - the previously discussed hybrid mode that auto-switches after skipped cards is out of scope for `#168`.
 
-### 2. Primary Flow
+### 2. Matched Flow
 
 - the user completes location, start time, and optional preferences in one form-first landing surface.
 - the primary CTA keeps join-intent copy:
   - `加入一场 {time} 在 {location} 的 {event.title} 活动`
 - long-press completion submits the current selection for backend recommendation.
 - backend returns:
-  - one primary recommendation
+  - one matched recommendation
   - one ordered candidate list
-- if a primary recommendation exists, the long-press splash continues into that PR's canonical `/pr/:id` route.
-- if no primary recommendation exists, the same `/e/:eventId` Form Mode surface switches into an inline no-primary result state.
-- the no-primary result state contains:
+- if a matched recommendation exists, the long-press splash continues into that PR's canonical `/pr/:id` route.
+- if no matched recommendation exists, the same `/e/:eventId` Form Mode surface switches into an inline no-match result state.
+- the no-match result state contains:
   - ordered candidate list
   - create fallback action `都不合适，帮我找`
+- PageHeader back inside the no-match result state returns to the Form Mode selection state.
 - candidate list PR cards reuse `AnchorEventPRCard` with a bottom `actions` slot for the full-width join action.
 - the selection state's secondary CTA `查看所有场次` routes into the existing Anchor Event list-mode browsing path.
 
@@ -88,9 +89,16 @@
   - `description`
 - category is derived from the substring before the first `:` in `label`.
 - tags with the same derived category are mutually exclusive within that category.
-- tags without a category are grouped under `其它`.
-- if the whole preset pool is uncategorized, the group label should be `偏好`.
-- the page itself shows one summary cell; editing happens in a `BottomDrawer`.
+- if the event preset tag pool is empty, the Preference Control is hidden from Form Mode.
+- if at least one category exists, the page shows one `Cell` per category, and each cell opens a category-scoped `BottomDrawer`.
+- category-scoped drawer titles use `选择{category}偏好`.
+- category-scoped tag badges display the label content after the category prefix, so the category is not repeated inside that drawer.
+- tag badges carry only selection state and short label; descriptions are shown in a separate inline drawer panel.
+- tag badges use pill geometry with a roughly `80px` adaptive minimum width; the `+` creation chip uses secondary visual tone.
+- the inline description panel appears only when the active drawer has a selected tag with non-empty description.
+- clicking the Preference Drawer backdrop commits the drawer selection with the same effect as confirm.
+- tags without a category are grouped under a separate `其它` cell when categorized tags also exist.
+- if the whole preset pool is uncategorized, the page shows one `选择偏好` cell.
 - the drawer must support user-authored new tags with label-only input.
 - a user-authored tag participates immediately in:
   - the current landing selection state
@@ -101,19 +109,31 @@
 ### 6. Recommendation Semantics
 
 - recommendation and ranking stay backend-authoritative.
-- backend should evaluate whole PR candidates rather than only tag overlap.
+- backend starts from one base PR pool:
+  - PRs from this Anchor Event's visible PR contexts
+  - joinable PR status
+- backend first derives a matched pool from that base PR pool.
+- matched eligibility requires:
+  - exact selected location
+  - start time within a `5` minute tolerance
+  - no same-category preference conflict
+- if the matched pool is non-empty, backend ranks that matched pool and returns the highest-ranked item as `matchedRecommendation`.
+- if the matched pool is empty, backend ranks the whole base PR pool and returns the top entries as `orderedCandidates`.
+- score is a ranking function, not a matched eligibility gate.
+- backend should evaluate whole PRs rather than only tag overlap.
 - ranking dimensions include:
   - time fit
   - location fit
   - tag fit
-  - candidate crowd state
+  - group momentum
 - exact same tag label contributes positive signal.
 - same derived category but different tag label contributes negative signal because category options are mutually exclusive.
 - different categories remain neutral to each other.
 - uncategorized tags remain neutral unless there is exact label overlap.
-- primary recommendation is consumed as the handoff target after the Form Mode long-press submit.
-- the visible result UI is only for no-primary recommendations.
-- no-primary recommendation result is an inline Form Mode state containing ordered candidates plus create fallback.
+- group momentum is based on how close the PR is to reaching `minPartners` after the current user joins.
+- matched recommendation is consumed as the handoff target after the Form Mode long-press submit.
+- the visible result UI is only for no-match recommendations.
+- no-match recommendation result is an inline Form Mode state containing ordered candidates plus create fallback.
 - candidate rows should use the Anchor Event PR card primitive with an action slot rather than a page-local recommendation card.
 
 ### 7. Join CTA Animation And Handoff
@@ -126,9 +146,18 @@
   - after reaching `100%`, the CTA enters a short overload state
   - continued press causes the filled state to burst in the same direction into a full-screen splash
   - releasing early should trigger an elastic rollback of fill and pressure state
+- Form Mode join CTA should be a local primary-outline custom button rather than an extension of the shared `Button` primitive.
+- trembling intensity follows both charge progress and overload progress through X/Y displacement, slight rotation, faster cadence, and an outline pressure pulse.
+- the long-press CTA suppresses text selection, browser touch callout, drag start, and context menu during the gesture.
+- during an active long-press, the CTA installs document-level capture guards for `contextmenu`, `selectstart`, `dragstart`, and `touchmove`.
+- long-press completion starts a Form Mode surface-owned liquid overlay:
+  - primary liquid expands from the CTA rect to cover the whole viewport
+  - droplets and shine provide the splash / liquid burst cue
+  - the overlay stays filled while recommendation resolves
+  - when the inline no-match result is ready, the primary liquid drains downward to reveal the result state
 - after the burst, the flow should continue into PR handoff continuity and then settle on canonical `/pr/:id`.
-- if backend finds a primary recommendation, that PR is the target of the same burst handoff.
-- if backend does not find a primary recommendation, the burst resolves into the inline no-primary result state.
+- if backend finds a matched recommendation, that PR is the target of the same burst handoff.
+- if backend does not find a matched recommendation, the burst resolves into the inline no-match result state.
 
 ### 8. Header And Other Events
 
@@ -155,7 +184,7 @@
   - PR handoff continuity and landing telemetry
 - State Diff:
   - From: `/e/:eventId` `FORM` mode is a static placeholder
-  - To: `/e/:eventId` `FORM` mode is a full selection -> recommendation -> primary handoff or inline no-primary result flow
+  - To: `/e/:eventId` `FORM` mode is a full selection -> recommendation -> matched handoff or inline no-match result flow
 - Blast Radius Forecast:
   - Anchor Event public routes
   - Anchor Event admin workspace
@@ -170,7 +199,7 @@
 - Verification:
   - backend typecheck
   - frontend build
-  - manual verification for FORM selection, primary long-press handoff, no-primary candidate list, create fallback, and CARD_RICH non-regression
+  - manual verification for FORM selection, matched long-press handoff, no-match candidate list, create fallback, and CARD_RICH non-regression
 
 ## Execution Plan
 
@@ -178,11 +207,11 @@
 2. Add durable data and admin support for the event-specific preset tag pool plus pending user-submitted tags.
 3. Add Form Mode init read contracts for location gallery, wheel-picker options, event duration, and published preset tags.
 4. Extract or reuse the carousel primitive and build the Form Mode location, time, and preference controls.
-5. Add backend recommendation contract with ranking and ordered candidate list.
+5. Add backend recommendation contract with matched recommendation and ordered candidate list.
 6. Add `AnchorEventPRCard` actions slot for candidate-list join actions.
-7. Assemble Form Mode primary handoff and inline no-primary candidate-list / create-fallback state.
+7. Assemble Form Mode matched handoff and inline no-match candidate-list / create-fallback state.
 8. Implement the Form Mode join long-press animation and PR handoff continuity.
-9. Add telemetry for landing exposure, no-primary recommendation exposure, candidate selection, create fallback intent, long-press completion, and confirm-join funnel.
+9. Add telemetry for landing exposure, no-match recommendation exposure, candidate selection, create fallback intent, long-press completion, and confirm-join funnel.
 10. Verify with backend typecheck, frontend build, and manual flow checks across `FORM`, `CARD_RICH`, and PR handoff continuity.
 
 ## Current Non-Goals
@@ -196,7 +225,7 @@
 ## Surface Artifacts
 
 - `01-form-mode-selection-surface.md`: current selection-state layout snapshot
-- `02-form-mode-recommendation-surface.md`: current no-primary result-state layout snapshot
+- `02-form-mode-recommendation-surface.md`: current no-match result-state layout snapshot
 - `03-form-mode-preference-drawer.md`: preference drawer layout snapshot
 - `04-form-mode-other-events-drawer.md`: other-events drawer layout snapshot
 
@@ -205,10 +234,28 @@
 - `pnpm --filter @partner-up-dev/backend typecheck`
 - `pnpm --filter @partner-up-dev/backend exec node --import tsx --test src/domains/anchor-event/services/form-mode.test.ts`
 - `pnpm --filter @partner-up-dev/frontend build`
+  - latest backend test and typecheck pass after renaming the direct handoff response to `matchedRecommendation`, adding 5-minute start tolerance, and replacing the large score threshold with matched eligibility plus small signed ranking.
   - latest frontend build passes after removing `/er`, moving recommendation orchestration into `AnchorEventFormModeSurface`, and adding `AnchorEventPRCard` actions slot.
+  - latest frontend build passes after splitting Preference Control into empty-pool hidden state, category-scoped cells/drawers, and category-prefix-stripped tag badges.
+- `git diff --check`
+- `agent-browser` manual verification:
+  - `/e/1` has an empty `presetTags` response and renders no Preference Control.
+  - `/e/2` renders category cells `类别1` and `类别2`.
+  - opening `类别1` shows drawer title `选择类别1偏好`, only the scoped `测试` tag, and the badge omits the `类别1:` prefix.
+  - selecting `类别1:测试` closes back to a cell value of `测试`.
+  - preference drawer footer uses one two-column action row with cancel on the left and confirm on the right.
+  - preference drawer panel accepts a `40vh` minimum height and uses larger internal chip spacing.
+  - custom tag creation is inline in the tag list through a `+` chip; created custom chips can be removed through their `X` action before confirm.
+  - preference drawer tag badges show short labels only before selection; selecting a described tag reveals its description as a separate inline panel.
+  - backdrop-clicking the preference drawer after selecting `英语` closes the drawer and persists the cell value as `科目 英语`.
+  - Form Mode join CTA renders as a shadowless primary-outline custom button.
+  - long-pressing the Form Mode join CTA completes the gesture and enters the recommendation result flow without showing a browser context menu.
+  - synthetic `contextmenu` dispatched during active long-press returns `defaultPrevented=true`, `dispatchResult=false`, and reaches no bubble listener.
+  - long-pressing `/e/2` covers the viewport with primary liquid, then drains to reveal the inline candidate result state.
+  - synthetic long-press sampling shows trembling grows from early charge to overload: duration `111ms -> 91ms -> 82ms`, X displacement about `2.18px -> 3.42px -> 3.98px`, and outline pressure `1.58px -> 2.57px -> 4.15px`.
 - durable docs updated for Form Mode workflow, invariants, cross-unit contracts, and state authority
 
-## Defect Follow-up - Primary Recommendation Eligibility
+## Defect Follow-up - Matched Recommendation Eligibility
 
 Observed defect:
 
@@ -216,11 +263,20 @@ Observed defect:
 
 Root cause:
 
-- backend recommendation ranking used location and time as score signals, then treated the first ranked candidate as `primaryRecommendation`.
-- this allowed close-but-inexact candidates to trigger the primary long-press handoff.
+- backend recommendation ranking used location and time as score signals, then treated the first ranked candidate as the direct handoff target.
+- this allowed close-but-inexact candidates to trigger the long-press matched handoff.
 
-Applied rule:
+Superseded interim rule:
 
-- a primary recommendation must have exact selected location, exact selected start time, no same-category preference conflict, and score at least `320`.
+- the interim direct handoff target required exact selected location, exact selected start time, no same-category preference conflict, and score at least `320`.
 - ineligible candidates remain available in `orderedCandidates`.
-- `orderedCandidates` filters out the selected primary by PR id, so the candidate list stays correct when a primary is selected from the ranked list.
+- `orderedCandidates` filtered out the selected direct handoff target by PR id, so the candidate list stayed correct when the handoff target was selected from the ranked list.
+
+Current rule:
+
+- rename the direct handoff response to `matchedRecommendation`.
+- matched eligibility is computed before score ranking.
+- matched eligibility requires exact selected location, start time within `5` minutes, and no same-category preference conflict.
+- if multiple PRs are matched, score chooses the best matched PR.
+- if no PR is matched, score ranks the whole base PR pool into `orderedCandidates`.
+- score uses small signed values and includes group momentum based on remaining people needed after the current user joins.

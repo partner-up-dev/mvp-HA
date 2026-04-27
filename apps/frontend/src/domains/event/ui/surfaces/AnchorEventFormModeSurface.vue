@@ -12,9 +12,9 @@
     />
 
     <div v-else-if="formModeData" class="anchor-event-form-mode__stack">
-      <FormModeNoPrimaryResult
-        v-if="noPrimaryRecommendationResult"
-        :candidates="noPrimaryRecommendationResult.orderedCandidates"
+      <FormModeNoMatchResult
+        v-if="noMatchRecommendationResult"
+        :candidates="noMatchRecommendationResult.orderedCandidates"
         :create-pending="createMutation.isPending.value"
         :create-disabled="!canCreateFallback"
         :create-error-message="createActionErrorMessage"
@@ -69,11 +69,32 @@
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="joinSplashPhase !== 'IDLE'"
+        class="form-mode-join-splash"
+        :class="{
+          'form-mode-join-splash--filling': joinSplashPhase === 'FILLING',
+          'form-mode-join-splash--holding': joinSplashPhase === 'HOLDING',
+          'form-mode-join-splash--draining': joinSplashPhase === 'DRAINING',
+        }"
+        :style="joinSplashStyle"
+        aria-hidden="true"
+      >
+        <span class="form-mode-join-splash__liquid" />
+        <span class="form-mode-join-splash__shine" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--one" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--two" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--three" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--four" />
+      </div>
+    </Teleport>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields } from "@partner-up-dev/backend";
@@ -90,8 +111,9 @@ import {
 import FormModeLocationControl from "@/domains/event/ui/controls/form-mode/FormModeLocationControl.vue";
 import FormModeTimeControl from "@/domains/event/ui/controls/form-mode/FormModeTimeControl.vue";
 import FormModePreferenceControl from "@/domains/event/ui/controls/form-mode/FormModePreferenceControl.vue";
-import FormModeNoPrimaryResult from "@/domains/event/ui/composites/FormModeNoPrimaryResult.vue";
+import FormModeNoMatchResult from "@/domains/event/ui/composites/FormModeNoMatchResult.vue";
 import FormModeLongPressButton from "@/domains/event/ui/primitives/FormModeLongPressButton.vue";
+import type { LongPressOriginRect } from "@/domains/event/ui/primitives/FormModeLongPressButton.vue";
 import {
   formatFormModeDateLabel,
   formatFormModeTimeLabel,
@@ -108,6 +130,10 @@ const props = defineProps<{
   eventId: number;
 }>();
 
+const emit = defineEmits<{
+  "result-state-change": [state: "selection" | "no-match"];
+}>();
+
 const router = useRouter();
 const { t } = useI18n();
 
@@ -119,13 +145,18 @@ const createMutation = useCreateEventAssistedPR();
 const selectedLocationId = ref<string | null>(null);
 const selectedStartAt = ref<string | null>(null);
 const selectedPreferences = ref<string[]>([]);
-const noPrimaryRecommendationResult =
+const noMatchRecommendationResult =
   ref<AnchorEventFormModeRecommendationResponse | null>(null);
 const selectionErrorMessage = ref<string | null>(null);
 const createReplayErrorMessage = ref<string | null>(null);
 const hasTrackedFormImpression = ref(false);
-const isRoutingToPrimaryRecommendation = ref(false);
+const isRoutingToMatchedRecommendation = ref(false);
 const pendingCreateReplayRunning = ref(false);
+type JoinSplashPhase = "IDLE" | "FILLING" | "HOLDING" | "DRAINING";
+
+const joinSplashPhase = ref<JoinSplashPhase>("IDLE");
+const joinSplashOrigin = ref<LongPressOriginRect | null>(null);
+const joinSplashTimeoutIds = new Set<number>();
 
 const formModeData = computed(() => formModeQuery.data.value ?? null);
 
@@ -159,7 +190,8 @@ const primaryCtaLabel = computed(() => {
 const recommendationSubmissionPending = computed(
   () =>
     recommendationMutation.isPending.value ||
-    isRoutingToPrimaryRecommendation.value,
+    isRoutingToMatchedRecommendation.value ||
+    joinSplashPhase.value !== "IDLE",
 );
 
 const canSubmitRecommendation = computed(() =>
@@ -173,6 +205,82 @@ const canSubmitRecommendation = computed(() =>
 const canCreateFallback = computed(() =>
   Boolean(selectedLocationId.value && selectedStartAt.value && formModeData.value),
 );
+
+const waitForJoinSplash = async (durationMs: number): Promise<void> => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const timeoutId = window.setTimeout(() => {
+      joinSplashTimeoutIds.delete(timeoutId);
+      resolve();
+    }, durationMs);
+    joinSplashTimeoutIds.add(timeoutId);
+  });
+};
+
+const clearJoinSplashTimeouts = () => {
+  if (typeof window === "undefined") {
+    joinSplashTimeoutIds.clear();
+    return;
+  }
+
+  for (const timeoutId of joinSplashTimeoutIds) {
+    window.clearTimeout(timeoutId);
+  }
+  joinSplashTimeoutIds.clear();
+};
+
+const startJoinSplash = async (
+  originRect: LongPressOriginRect,
+): Promise<void> => {
+  clearJoinSplashTimeouts();
+  joinSplashOrigin.value = originRect;
+  joinSplashPhase.value = "FILLING";
+  await waitForJoinSplash(920);
+  if (joinSplashPhase.value === "FILLING") {
+    joinSplashPhase.value = "HOLDING";
+  }
+};
+
+const drainJoinSplash = async (): Promise<void> => {
+  if (joinSplashPhase.value === "IDLE") {
+    return;
+  }
+
+  joinSplashPhase.value = "DRAINING";
+  await waitForJoinSplash(920);
+  if (joinSplashPhase.value === "DRAINING") {
+    joinSplashPhase.value = "IDLE";
+    joinSplashOrigin.value = null;
+  }
+};
+
+const resetJoinSplash = () => {
+  clearJoinSplashTimeouts();
+  joinSplashPhase.value = "IDLE";
+  joinSplashOrigin.value = null;
+};
+
+const joinSplashStyle = computed(() => {
+  const origin = joinSplashOrigin.value;
+  if (!origin) {
+    return {};
+  }
+
+  const centerX = origin.left + origin.width / 2;
+  const centerY = origin.top + origin.height / 2;
+
+  return {
+    "--join-splash-left": `${origin.left}px`,
+    "--join-splash-top": `${origin.top}px`,
+    "--join-splash-right": `${origin.right}px`,
+    "--join-splash-bottom": `${origin.bottom}px`,
+    "--join-splash-center-x": `${centerX}px`,
+    "--join-splash-center-y": `${centerY}px`,
+  };
+});
 
 const createActionErrorMessage = computed(() => {
   if (createReplayErrorMessage.value) {
@@ -209,10 +317,26 @@ watch(
   { immediate: true },
 );
 
-watch([selectedLocationId, selectedStartAt, selectedPreferences], () => {
-  noPrimaryRecommendationResult.value = null;
+const returnToSelection = () => {
+  noMatchRecommendationResult.value = null;
   selectionErrorMessage.value = null;
+};
+
+defineExpose({
+  returnToSelection,
 });
+
+watch([selectedLocationId, selectedStartAt, selectedPreferences], () => {
+  returnToSelection();
+});
+
+watch(
+  noMatchRecommendationResult,
+  (result) => {
+    emit("result-state-change", result ? "no-match" : "selection");
+  },
+  { immediate: true },
+);
 
 const handleViewAllSessions = async () => {
   await router.push({
@@ -253,9 +377,9 @@ const trackRecommendationExposure = (
 
   trackEvent("anchor_event_form_recommendation_impression", {
     eventId: props.eventId,
-    hasPrimaryRecommendation: Boolean(result.primaryRecommendation),
+    hasMatchedRecommendation: Boolean(result.matchedRecommendation),
     candidateCount:
-      result.orderedCandidates.length + (result.primaryRecommendation ? 1 : 0),
+      result.orderedCandidates.length + (result.matchedRecommendation ? 1 : 0),
     advancedMode: isAdvancedStartValue(startAt),
     locationId,
     startAt,
@@ -265,7 +389,7 @@ const trackRecommendationExposure = (
 
 const routeToPRJoin = async (
   prId: number,
-  action: "PRIMARY_JOIN" | "CANDIDATE_JOIN",
+  action: "MATCHED_JOIN" | "CANDIDATE_JOIN",
   candidateRank: number | null = null,
 ) => {
   trackEvent("anchor_event_form_result_action_click", {
@@ -280,15 +404,15 @@ const routeToPRJoin = async (
   );
 };
 
-const handleSubmitRecommendation = async () => {
+const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
   const locationId = selectedLocationId.value;
   const startAt = selectedStartAt.value;
   if (!locationId || !startAt) {
     return;
   }
 
-  selectionErrorMessage.value = null;
-  noPrimaryRecommendationResult.value = null;
+  returnToSelection();
+  const splashFill = startJoinSplash(originRect);
 
   try {
     const result = await recommendationMutation.mutateAsync({
@@ -299,31 +423,35 @@ const handleSubmitRecommendation = async () => {
     });
     trackRecommendationExposure(result);
 
-    const primaryPRId = result.primaryRecommendation?.pr.id ?? null;
+    const matchedPRId = result.matchedRecommendation?.pr.id ?? null;
     trackEvent("anchor_event_form_join_longpress_complete", {
       eventId: props.eventId,
-      prId: primaryPRId,
+      prId: matchedPRId,
       locationId,
       startAt,
       preferenceCount: selectedPreferences.value.length,
     });
 
-    if (primaryPRId !== null) {
-      isRoutingToPrimaryRecommendation.value = true;
-      window.setTimeout(() => {
-        void routeToPRJoin(primaryPRId, "PRIMARY_JOIN").finally(() => {
-          isRoutingToPrimaryRecommendation.value = false;
-        });
-      }, 120);
+    if (matchedPRId !== null) {
+      isRoutingToMatchedRecommendation.value = true;
+      await splashFill;
+      await waitForJoinSplash(140);
+      await routeToPRJoin(matchedPRId, "MATCHED_JOIN").finally(() => {
+        isRoutingToMatchedRecommendation.value = false;
+      });
       return;
     }
 
-    noPrimaryRecommendationResult.value = result;
+    noMatchRecommendationResult.value = result;
+    await splashFill;
+    await drainJoinSplash();
   } catch (error) {
     selectionErrorMessage.value =
       error instanceof Error
         ? error.message
         : t("anchorEvent.formMode.recommendationFailed");
+    await splashFill;
+    await drainJoinSplash();
   }
 };
 
@@ -481,6 +609,10 @@ const attemptPendingCreateReplay = async () => {
 onMounted(() => {
   void attemptPendingCreateReplay();
 });
+
+onBeforeUnmount(() => {
+  resetJoinSplash();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -530,5 +662,279 @@ onMounted(() => {
 
 .inline-message--error {
   color: var(--sys-color-error);
+}
+
+.form-mode-join-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.form-mode-join-splash__liquid,
+.form-mode-join-splash__shine {
+  position: absolute;
+  inset: 0;
+}
+
+.form-mode-join-splash__liquid {
+  background:
+    radial-gradient(
+      circle at var(--join-splash-center-x) var(--join-splash-center-y),
+      color-mix(in srgb, var(--sys-color-primary) 72%, white) 0 9%,
+      transparent 22%
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--sys-color-primary) 82%, white),
+      var(--sys-color-primary) 42%,
+      color-mix(in srgb, var(--sys-color-primary) 88%, black)
+    );
+  clip-path: polygon(
+    var(--join-splash-left) var(--join-splash-top),
+    var(--join-splash-right) var(--join-splash-top),
+    var(--join-splash-right) var(--join-splash-bottom),
+    var(--join-splash-left) var(--join-splash-bottom)
+  );
+}
+
+.form-mode-join-splash__shine {
+  opacity: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 0 34%,
+    rgba(255, 255, 255, 0.26) 44%,
+    transparent 58% 100%
+  );
+  transform: translateX(-100%);
+}
+
+.form-mode-join-splash__drop {
+  position: absolute;
+  left: var(--join-splash-center-x);
+  top: var(--join-splash-center-y);
+  width: 0.82rem;
+  height: 0.82rem;
+  border-radius: var(--sys-radius-full);
+  background: color-mix(in srgb, var(--sys-color-primary) 72%, white);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.36);
+}
+
+.form-mode-join-splash__drop--two {
+  width: 0.56rem;
+  height: 0.56rem;
+}
+
+.form-mode-join-splash__drop--three {
+  width: 1rem;
+  height: 1rem;
+}
+
+.form-mode-join-splash__drop--four {
+  width: 0.68rem;
+  height: 0.68rem;
+}
+
+.form-mode-join-splash--filling .form-mode-join-splash__liquid {
+  animation: form-mode-join-splash-fill 920ms
+    cubic-bezier(0.14, 0.82, 0.18, 1) forwards;
+}
+
+.form-mode-join-splash--filling .form-mode-join-splash__shine {
+  animation: form-mode-join-splash-shine 720ms ease-out forwards;
+}
+
+.form-mode-join-splash--filling .form-mode-join-splash__drop--one {
+  animation: form-mode-join-splash-drop-one 860ms ease-out forwards;
+}
+
+.form-mode-join-splash--filling .form-mode-join-splash__drop--two {
+  animation: form-mode-join-splash-drop-two 820ms 40ms ease-out forwards;
+}
+
+.form-mode-join-splash--filling .form-mode-join-splash__drop--three {
+  animation: form-mode-join-splash-drop-three 900ms 20ms ease-out forwards;
+}
+
+.form-mode-join-splash--filling .form-mode-join-splash__drop--four {
+  animation: form-mode-join-splash-drop-four 820ms 80ms ease-out forwards;
+}
+
+.form-mode-join-splash--holding .form-mode-join-splash__liquid {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.form-mode-join-splash--holding .form-mode-join-splash__shine {
+  opacity: 0.28;
+  animation: form-mode-join-splash-shine 1320ms ease-in-out infinite;
+}
+
+.form-mode-join-splash--draining .form-mode-join-splash__liquid {
+  animation: form-mode-join-splash-drain 920ms
+    cubic-bezier(0.52, 0, 0.24, 1) forwards;
+}
+
+@keyframes form-mode-join-splash-fill {
+  0% {
+    clip-path: polygon(
+      var(--join-splash-left) var(--join-splash-top),
+      var(--join-splash-right) var(--join-splash-top),
+      var(--join-splash-right) var(--join-splash-bottom),
+      var(--join-splash-left) var(--join-splash-bottom)
+    );
+  }
+  34% {
+    clip-path: polygon(
+      var(--join-splash-left) var(--join-splash-top),
+      100% var(--join-splash-top),
+      100% var(--join-splash-bottom),
+      var(--join-splash-left) var(--join-splash-bottom)
+    );
+  }
+  62% {
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% var(--join-splash-bottom),
+      0 var(--join-splash-bottom)
+    );
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes form-mode-join-splash-drain {
+  0% {
+    clip-path: polygon(
+      0 0,
+      12% 0,
+      24% 0,
+      36% 0,
+      50% 0,
+      64% 0,
+      80% 0,
+      100% 0,
+      100% 100%,
+      0 100%
+    );
+  }
+  34% {
+    clip-path: polygon(
+      0 18%,
+      12% 12%,
+      24% 20%,
+      36% 14%,
+      50% 23%,
+      64% 15%,
+      80% 21%,
+      100% 16%,
+      100% 100%,
+      0 100%
+    );
+  }
+  100% {
+    clip-path: polygon(
+      0 112%,
+      12% 106%,
+      24% 114%,
+      36% 108%,
+      50% 117%,
+      64% 109%,
+      80% 115%,
+      100% 110%,
+      100% 100%,
+      0 100%
+    );
+  }
+}
+
+@keyframes form-mode-join-splash-shine {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  35% {
+    opacity: 0.34;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes form-mode-join-splash-drop-one {
+  0% {
+    opacity: 0.92;
+    transform: translate(-50%, -50%) scale(0.36);
+  }
+  72% {
+    opacity: 0.82;
+    transform: translate(calc(-50% + 9rem), calc(-50% - 6.5rem)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 12rem), calc(-50% - 7.6rem)) scale(0.28);
+  }
+}
+
+@keyframes form-mode-join-splash-drop-two {
+  0% {
+    opacity: 0.88;
+    transform: translate(-50%, -50%) scale(0.32);
+  }
+  74% {
+    opacity: 0.72;
+    transform: translate(calc(-50% + 6.8rem), calc(-50% + 4.6rem)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 10rem), calc(-50% + 5.4rem)) scale(0.18);
+  }
+}
+
+@keyframes form-mode-join-splash-drop-three {
+  0% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.28);
+  }
+  70% {
+    opacity: 0.78;
+    transform: translate(calc(-50% + 14rem), calc(-50% - 1.7rem)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 17rem), calc(-50% - 2.8rem)) scale(0.22);
+  }
+}
+
+@keyframes form-mode-join-splash-drop-four {
+  0% {
+    opacity: 0.88;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  72% {
+    opacity: 0.72;
+    transform: translate(calc(-50% + 4.2rem), calc(-50% - 8.6rem)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 6rem), calc(-50% - 10rem)) scale(0.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form-mode-join-splash--filling .form-mode-join-splash__liquid,
+  .form-mode-join-splash--holding .form-mode-join-splash__shine,
+  .form-mode-join-splash--draining .form-mode-join-splash__liquid,
+  .form-mode-join-splash--filling .form-mode-join-splash__drop {
+    animation: none;
+  }
+
+  .form-mode-join-splash__liquid {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
 }
 </style>

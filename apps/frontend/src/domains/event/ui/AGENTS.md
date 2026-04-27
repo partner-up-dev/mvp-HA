@@ -15,12 +15,12 @@ This folder owns event-domain UI surfaces, controls, composites, and primitives.
     |       加入一场 {time} 在 {location} 的 {event.title} 活动
     |
     |-- Submit Recommendation
-    |   `-- backend returns primaryRecommendation + orderedCandidates
+    |   `-- backend returns matchedRecommendation + orderedCandidates
     |
-    |-- Primary Exists
+    |-- Matched Exists
     |   `-- long-press splash continues into canonical /pr/:id
     |
-    `-- No Primary
+    `-- No Match
         `-- Inline Recommendation Result State
             |-- Candidate List
             |   `-- AnchorEventPRCard with action slot
@@ -29,11 +29,30 @@ This folder owns event-domain UI surfaces, controls, composites, and primitives.
 
 Rules:
 
-- `AnchorEventFormModeSurface.vue` owns selection state, recommendation result state, primary handoff, no-primary result transition, create fallback, and flow telemetry.
+- `AnchorEventFormModeSurface.vue` owns selection state, recommendation result state, matched handoff, no-match result transition, create fallback, and flow telemetry.
 - Form Mode controls own local interaction state and expose committed values through narrow `v-model` contracts.
-- The no-primary result is a Form Mode inline state within `/e/:eventId`.
+- The no-match result is a Form Mode inline state within `/e/:eventId`.
+- PageHeader back in the no-match result state should return to the Form Mode selection state.
 - The selection state owns the `查看所有场次` action.
 - The special long-press animation belongs to the Form Mode primary CTA only.
+
+## Form Mode Recommendation Semantics
+
+Backend recommendation uses a two-stage model.
+
+```text
+base PR pool
+|-- matched eligibility -> matched pool -> score sort -> matchedRecommendation
+`-- when matched pool is empty -> score sort base PR pool -> orderedCandidates
+```
+
+Rules:
+
+- The base PR pool comes from this Anchor Event's visible PR contexts and joinable PR status.
+- A matched recommendation requires exact location, start time within a 5-minute tolerance, and no same-category preference conflict.
+- Score is used to choose the best matched PR when multiple matches exist.
+- Ordered candidates are returned only when the matched pool is empty.
+- Ordered candidates use the same score function over the whole base PR pool.
 
 ## Anchor Event PR Card Actions
 
@@ -45,4 +64,4 @@ Rules:
 - The card may expose an `actions` slot at the bottom.
 - The `actions` slot layout should be a flex row with `gap: var(--sys-spacing-small)`.
 - List Mode can omit the `actions` slot and keep its existing browse-card behavior.
-- Form Mode no-primary candidate cards should provide a full-width join action through the `actions` slot.
+- Form Mode no-match candidate cards should provide a full-width join action through the `actions` slot.

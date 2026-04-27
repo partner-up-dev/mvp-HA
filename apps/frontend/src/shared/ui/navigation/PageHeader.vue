@@ -48,6 +48,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const router = useRouter();
 const defaultBackFallbackTo: RouteLocationRaw = { path: "/" };
+const instance = getCurrentInstance();
 type RouterHistoryState = {
   back?: string | null;
 };
@@ -67,11 +68,10 @@ const resolveBackFallbackTo = (): RouteLocationRaw =>
   props.backFallbackTo ?? defaultBackFallbackTo;
 
 async function handleBack(): Promise<void> {
-  const inst = getCurrentInstance();
   const hasListener =
-    !!inst?.vnode.props &&
-    ((inst.vnode.props as Record<string, unknown>)["onBack"] ||
-      (inst.vnode.props as Record<string, unknown>)["onBack"] === null);
+    !!instance?.vnode.props &&
+    ((instance.vnode.props as Record<string, unknown>)["onBack"] ||
+      (instance.vnode.props as Record<string, unknown>)["onBack"] === null);
 
   if (hasListener) {
     emit("back");

@@ -1,9 +1,20 @@
 <template>
   <section class="form-mode-time-control">
     <div class="form-mode-time-control__header">
-      <h2 class="form-mode-time-control__title">
-        {{ t("anchorEvent.formMode.timeTitle") }}
-      </h2>
+      <div class="form-mode-time-control__title-row">
+        <h2 class="form-mode-time-control__title">
+          {{ t("anchorEvent.formMode.timeTitle") }}
+        </h2>
+
+        <ToggleSwitch
+          v-model="advancedMode"
+          :label="t('anchorEvent.formMode.advancedModeLabel')"
+        />
+      </div>
+
+      <p class="form-mode-time-control__duration">
+        {{ durationLabel }}
+      </p>
     </div>
 
     <div class="time-wheel">
@@ -11,7 +22,7 @@
         :model-value="selectedDateKey"
         :options="dateWheelOptions"
         :item-height="42"
-        :visible-count="5"
+        :visible-count="3"
         :aria-label="t('anchorEvent.formMode.dateWheelAriaLabel')"
         :empty-label="t('anchorEvent.formMode.timePlaceholder')"
         @update:model-value="handleDateWheelUpdate"
@@ -21,21 +32,10 @@
         :model-value="props.modelValue"
         :options="timeWheelOptions"
         :item-height="42"
-        :visible-count="5"
+        :visible-count="3"
         :aria-label="t('anchorEvent.formMode.timeWheelAriaLabel')"
         :empty-label="t('anchorEvent.formMode.timePlaceholder')"
         @update:model-value="handleTimeWheelUpdate"
-      />
-    </div>
-
-    <div class="time-mode-row">
-      <p class="time-mode-row__duration">
-        {{ durationLabel }}
-      </p>
-
-      <ToggleSwitch
-        v-model="advancedMode"
-        :label="t('anchorEvent.formMode.advancedModeLabel')"
       />
     </div>
   </section>
@@ -156,17 +156,35 @@ watch(
 .form-mode-time-control {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-small);
 }
 
 .form-mode-time-control__header {
   display: flex;
   flex-direction: column;
+  gap: var(--sys-spacing-xxsmall);
+  color: var(--sys-color-on-surface-variant);
+}
+
+.form-mode-time-control__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-spacing-small);
+  flex-wrap: nowrap;
 }
 
 .form-mode-time-control__title {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
+  color: var(--sys-color-on-surface);
   @include mx.pu-font(title-medium);
+}
+
+.form-mode-time-control__duration {
+  margin: 0;
+  color: inherit;
+  @include mx.pu-font(body-medium);
 }
 
 .time-wheel {
@@ -175,23 +193,8 @@ watch(
   gap: var(--sys-spacing-xsmall);
 }
 
-.time-mode-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-spacing-small);
-  flex-wrap: nowrap;
-  color: var(--sys-color-on-surface-variant);
-}
-
-.time-mode-row__duration {
-  margin: 0;
-  color: inherit;
-  @include mx.pu-font(body-medium);
-}
-
 @media (max-width: 720px) {
-  .time-mode-row {
+  .form-mode-time-control__title-row {
     gap: var(--sys-spacing-xsmall);
   }
 }

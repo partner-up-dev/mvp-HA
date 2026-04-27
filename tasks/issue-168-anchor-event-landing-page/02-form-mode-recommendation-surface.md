@@ -1,6 +1,6 @@
-# Form Mode No-Primary Recommendation State
+# Form Mode No-Match Recommendation State
 
-Current `/e/:eventId` Form Mode no-primary result-state layout snapshot.
+Current `/e/:eventId` Form Mode no-match result-state layout snapshot.
 
 ```text
 +--------------------------------------------------------------------------------+

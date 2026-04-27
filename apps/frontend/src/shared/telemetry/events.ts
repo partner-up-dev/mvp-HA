@@ -201,7 +201,7 @@ type CanonicalAnalyticsPayloadMap = {
   };
   anchor_event_form_recommendation_impression: AnalyticsContextPayload & {
     eventId: number;
-    hasPrimaryRecommendation: boolean;
+    hasMatchedRecommendation: boolean;
     candidateCount: number;
     advancedMode: boolean;
     locationId: string;
@@ -213,7 +213,7 @@ type CanonicalAnalyticsPayloadMap = {
     action:
       | "PRIMARY_DETAIL"
       | "CANDIDATE_DETAIL"
-      | "PRIMARY_JOIN"
+      | "MATCHED_JOIN"
       | "CANDIDATE_JOIN";
     prId: number;
     candidateRank: number | null;

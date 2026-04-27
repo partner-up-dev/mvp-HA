@@ -11,7 +11,7 @@
         :aria-label="resolvedAriaLabel"
         aria-modal="true"
         role="dialog"
-        :style="{ maxWidth: props.maxWidth }"
+        :style="{ maxWidth: props.maxWidth, minHeight: props.minHeight }"
       >
         <header
           v-if="$slots.header || title || showClose"
@@ -28,7 +28,7 @@
             size="sm"
             type="button"
             aria-label="Close drawer"
-            @click="emitClose"
+            @click="emitClose('close-button')"
           >
             <span class="i-mdi-close" aria-hidden="true"></span>
           </Button>
@@ -58,6 +58,7 @@ interface Props {
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;
   maxWidth?: string;
+  minHeight?: string;
   zIndex?: number;
 }
 
@@ -68,30 +69,33 @@ const props = withDefaults(defineProps<Props>(), {
   closeOnBackdrop: true,
   closeOnEscape: true,
   maxWidth: "720px",
+  minHeight: "0",
   zIndex: 1000,
 });
 
+type BottomDrawerCloseReason = "backdrop" | "close-button" | "escape";
+
 const emit = defineEmits<{
-  close: [];
+  close: [reason: BottomDrawerCloseReason];
 }>();
 
 const resolvedAriaLabel = computed(
   () => props.ariaLabel ?? props.title ?? "Bottom drawer",
 );
 
-const emitClose = (): void => {
-  emit("close");
+const emitClose = (reason: BottomDrawerCloseReason): void => {
+  emit("close", reason);
 };
 
 const handleBackdropClick = (): void => {
   if (!props.closeOnBackdrop) return;
-  emitClose();
+  emitClose("backdrop");
 };
 
 const handleEscape = (event: KeyboardEvent): void => {
   if (!props.closeOnEscape) return;
   if (event.key !== "Escape" || !props.open) return;
-  emitClose();
+  emitClose("escape");
 };
 
 watch(
@@ -123,8 +127,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding:
-    calc(var(--sys-spacing-medium) + var(--pu-safe-top))
+  padding: calc(var(--sys-spacing-medium) + var(--pu-safe-top))
     calc(var(--sys-spacing-medium) + var(--pu-safe-right))
     calc(var(--sys-spacing-medium) + var(--pu-safe-bottom))
     calc(var(--sys-spacing-medium) + var(--pu-safe-left));
@@ -136,8 +139,8 @@ onBeforeUnmount(() => {
   max-height: calc(
     var(--pu-vh) - var(--pu-safe-top) - (2 * var(--sys-spacing-medium))
   );
-  border-radius: var(--sys-radius-large) var(--sys-radius-large) var(--sys-radius-medium)
-    var(--sys-radius-medium);
+  border-radius: var(--sys-radius-large) var(--sys-radius-large)
+    var(--sys-radius-medium) var(--sys-radius-medium);
   background: var(--sys-color-surface);
   display: flex;
   flex-direction: column;
@@ -161,9 +164,8 @@ onBeforeUnmount(() => {
 .bottom-drawer-content {
   flex: 1 1 auto;
   min-height: 0;
-  padding:
-    var(--sys-spacing-xsmall) var(--sys-spacing-xsmall)
-    calc(var(--sys-spacing-xsmall) + var(--pu-safe-bottom));
+  padding: var(--sys-spacing-small) var(--sys-spacing-small)
+    calc(var(--sys-spacing-small) + var(--pu-safe-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -171,9 +173,8 @@ onBeforeUnmount(() => {
 }
 
 .bottom-drawer-footer {
-  padding:
-    0 var(--sys-spacing-small)
-    calc(var(--sys-spacing-small) + var(--pu-safe-bottom));
+  padding: 0 var(--sys-spacing-small)
+    calc(var(--sys-spacing-medium) + var(--pu-safe-bottom));
 }
 
 .bottom-drawer-enter-active,
