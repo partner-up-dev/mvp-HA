@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildAnchorEventRecommendationMatch,
+  isAnchorEventFormModeStartSelectable,
   isAnchorEventMatchedRecommendation,
 } from "./form-mode";
 
@@ -81,4 +82,40 @@ test("buildAnchorEventRecommendationMatch gives higher score to stronger group m
   assert.equal(lowMomentum.groupMomentumScore, 0);
   assert.equal(highMomentum.groupMomentumScore, 2);
   assert.ok(highMomentum.score > lowMomentum.score);
+});
+
+test("isAnchorEventFormModeStartSelectable respects future start and earliest lead boundary", () => {
+  const now = new Date("2026-04-27T08:00:00.000Z");
+  const event = {
+    timePoolConfig: {
+      durationMinutes: 60,
+      earliestLeadMinutes: 120,
+      startRules: [],
+    },
+  };
+
+  assert.equal(
+    isAnchorEventFormModeStartSelectable(
+      event,
+      "2026-04-27T09:30:00.000Z",
+      now,
+    ),
+    true,
+  );
+  assert.equal(
+    isAnchorEventFormModeStartSelectable(
+      event,
+      "2026-04-27T10:01:00.000Z",
+      now,
+    ),
+    false,
+  );
+  assert.equal(
+    isAnchorEventFormModeStartSelectable(
+      event,
+      "2026-04-27T07:59:00.000Z",
+      now,
+    ),
+    false,
+  );
 });

@@ -51,12 +51,14 @@ import WheelPicker, {
 import ToggleSwitch from "@/shared/ui/forms/ToggleSwitch.vue";
 import {
   buildAdvancedModeStartOptions,
+  buildFormModeDateKey,
   buildStartOptionsByDate,
   formatFormModeDurationLabel,
   formatFormModeTimeLabel,
 } from "@/domains/event/model/form-mode";
 
 type StartOption = AnchorEventFormModeResponse["startOptions"][number];
+type StartOptionGroup = ReturnType<typeof buildStartOptionsByDate>[number];
 
 const props = defineProps<{
   modelValue: string | null;
@@ -122,6 +124,65 @@ const handleDateWheelUpdate = (value: WheelPickerValue) => {
 const handleTimeWheelUpdate = (value: WheelPickerValue) => {
   emit("update:modelValue", String(value));
 };
+
+const findGroupForStartAt = (
+  groups: readonly StartOptionGroup[],
+  startAt: string,
+): StartOptionGroup | null =>
+  groups.find((group) =>
+    group.options.some((option) => option.startAt === startAt),
+  ) ?? null;
+
+const resolveDateKey = (value: string): string | null => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return buildFormModeDateKey(value);
+};
+
+watch(
+  [() => props.modelValue, defaultStartOptionGroups, advancedStartOptionGroups],
+  ([modelValue, defaultGroups, advancedGroups]) => {
+    if (!modelValue) {
+      return;
+    }
+
+    const activeGroup = findGroupForStartAt(
+      activeStartOptionGroups.value,
+      modelValue,
+    );
+    if (activeGroup) {
+      selectedDateKey.value = activeGroup.dateKey;
+      return;
+    }
+
+    const defaultGroup = findGroupForStartAt(defaultGroups, modelValue);
+    if (defaultGroup) {
+      advancedMode.value = false;
+      selectedDateKey.value = defaultGroup.dateKey;
+      return;
+    }
+
+    const advancedGroup = findGroupForStartAt(advancedGroups, modelValue);
+    if (advancedGroup) {
+      advancedMode.value = true;
+      selectedDateKey.value = advancedGroup.dateKey;
+      return;
+    }
+
+    const modelDateKey = resolveDateKey(modelValue);
+    const advancedDateGroup =
+      modelDateKey === null
+        ? null
+        : (advancedGroups.find((group) => group.dateKey === modelDateKey) ?? null);
+    if (advancedDateGroup) {
+      advancedMode.value = true;
+      selectedDateKey.value = advancedDateGroup.dateKey;
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   activeStartOptionGroups,

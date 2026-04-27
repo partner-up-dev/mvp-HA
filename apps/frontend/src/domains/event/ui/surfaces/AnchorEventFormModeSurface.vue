@@ -88,6 +88,10 @@
         <span class="form-mode-join-splash__drop form-mode-join-splash__drop--two" />
         <span class="form-mode-join-splash__drop form-mode-join-splash__drop--three" />
         <span class="form-mode-join-splash__drop form-mode-join-splash__drop--four" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--five" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--six" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--seven" />
+        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--eight" />
       </div>
     </Teleport>
   </section>
@@ -150,6 +154,7 @@ const noMatchRecommendationResult =
 const selectionErrorMessage = ref<string | null>(null);
 const createReplayErrorMessage = ref<string | null>(null);
 const hasTrackedFormImpression = ref(false);
+const defaultSelectionAppliedEventId = ref<number | null>(null);
 const isRoutingToMatchedRecommendation = ref(false);
 const pendingCreateReplayRunning = ref(false);
 type JoinSplashPhase = "IDLE" | "FILLING" | "HOLDING" | "DRAINING";
@@ -271,6 +276,25 @@ const joinSplashStyle = computed(() => {
 
   const centerX = origin.left + origin.width / 2;
   const centerY = origin.top + origin.height / 2;
+  const viewportWidth =
+    typeof window === "undefined" ? origin.right : window.innerWidth;
+  const viewportHeight =
+    typeof window === "undefined" ? origin.bottom : window.innerHeight;
+  const coverRadius =
+    Math.max(
+      Math.hypot(centerX, centerY),
+      Math.hypot(viewportWidth - centerX, centerY),
+      Math.hypot(centerX, viewportHeight - centerY),
+      Math.hypot(viewportWidth - centerX, viewportHeight - centerY),
+    ) +
+    Math.max(origin.width, origin.height) * 0.24 +
+    64;
+  const coverSize = coverRadius * 2;
+  const startScale = Math.max(
+    Math.max(origin.width, origin.height) / coverSize,
+    0.045,
+  );
+  const drainY = viewportHeight - centerY + coverRadius + 96;
 
   return {
     "--join-splash-left": `${origin.left}px`,
@@ -279,6 +303,10 @@ const joinSplashStyle = computed(() => {
     "--join-splash-bottom": `${origin.bottom}px`,
     "--join-splash-center-x": `${centerX}px`,
     "--join-splash-center-y": `${centerY}px`,
+    "--join-splash-cover-size": `${coverSize}px`,
+    "--join-splash-start-scale": String(startScale),
+    "--join-splash-drain-y": `${drainY}px`,
+    "--join-splash-drain-y-mid": `${drainY * 0.32}px`,
   };
 });
 
@@ -301,6 +329,32 @@ const createActionErrorMessage = computed(() => {
       return t("anchorEvent.createCard.errors.createFailed");
   }
 });
+
+watch(
+  formModeData,
+  (data) => {
+    if (!data || defaultSelectionAppliedEventId.value === data.event.id) {
+      return;
+    }
+
+    defaultSelectionAppliedEventId.value = data.event.id;
+    const defaultSelection = data.defaultSelection;
+    if (!defaultSelection) {
+      return;
+    }
+
+    const hasDefaultLocation = data.locations.some(
+      (location) => location.id === defaultSelection.locationId,
+    );
+    if (!hasDefaultLocation) {
+      return;
+    }
+
+    selectedLocationId.value = defaultSelection.locationId;
+    selectedStartAt.value = defaultSelection.startAt;
+  },
+  { immediate: true },
+);
 
 watch(
   formModeData,
@@ -672,98 +726,183 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.form-mode-join-splash__liquid,
-.form-mode-join-splash__shine {
-  position: absolute;
-  inset: 0;
-}
-
 .form-mode-join-splash__liquid {
+  position: absolute;
+  left: var(--join-splash-center-x);
+  top: var(--join-splash-center-y);
+  width: var(--join-splash-cover-size);
+  height: var(--join-splash-cover-size);
+  border-radius: 44% 56% 52% 48% / 46% 48% 52% 54%;
   background:
     radial-gradient(
-      circle at var(--join-splash-center-x) var(--join-splash-center-y),
-      color-mix(in srgb, var(--sys-color-primary) 72%, white) 0 9%,
-      transparent 22%
+      circle at 38% 34%,
+      color-mix(in srgb, var(--sys-color-primary) 58%, white) 0 11%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 68% 58%,
+      color-mix(in srgb, var(--sys-color-primary) 80%, white) 0 18%,
+      transparent 44%
     ),
     linear-gradient(
-      90deg,
+      135deg,
       color-mix(in srgb, var(--sys-color-primary) 82%, white),
       var(--sys-color-primary) 42%,
       color-mix(in srgb, var(--sys-color-primary) 88%, black)
     );
-  clip-path: polygon(
-    var(--join-splash-left) var(--join-splash-top),
-    var(--join-splash-right) var(--join-splash-top),
-    var(--join-splash-right) var(--join-splash-bottom),
-    var(--join-splash-left) var(--join-splash-bottom)
-  );
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(var(--join-splash-start-scale))
+    rotate(-7deg);
+  transform-origin: center;
+  will-change: transform, border-radius, opacity;
+}
+
+.form-mode-join-splash__liquid::before,
+.form-mode-join-splash__liquid::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+  background: color-mix(in srgb, var(--sys-color-primary) 78%, white);
+  filter: blur(0.5px);
+}
+
+.form-mode-join-splash__liquid::before {
+  inset: 10% 6% 14% 12%;
+  border-radius: 62% 38% 54% 46% / 42% 58% 40% 60%;
+  opacity: 0.42;
+  transform: rotate(18deg);
+}
+
+.form-mode-join-splash__liquid::after {
+  inset: 18% 18% 9% 8%;
+  border-radius: 40% 60% 44% 56% / 58% 38% 62% 42%;
+  opacity: 0.26;
+  transform: rotate(-24deg);
 }
 
 .form-mode-join-splash__shine {
+  position: absolute;
+  inset: -18%;
   opacity: 0;
-  background: linear-gradient(
-    115deg,
-    transparent 0 34%,
-    rgba(255, 255, 255, 0.26) 44%,
-    transparent 58% 100%
-  );
-  transform: translateX(-100%);
+  background:
+    radial-gradient(
+      circle at var(--join-splash-center-x) var(--join-splash-center-y),
+      rgba(255, 255, 255, 0.34) 0 4%,
+      transparent 19%
+    ),
+    conic-gradient(
+      from 214deg at var(--join-splash-center-x) var(--join-splash-center-y),
+      transparent 0deg,
+      rgba(255, 255, 255, 0.22) 24deg,
+      transparent 62deg,
+      rgba(255, 255, 255, 0.16) 122deg,
+      transparent 174deg,
+      rgba(255, 255, 255, 0.18) 236deg,
+      transparent 320deg
+    );
+  mix-blend-mode: screen;
+  transform: scale(0.72) rotate(-10deg);
 }
 
 .form-mode-join-splash__drop {
   position: absolute;
   left: var(--join-splash-center-x);
   top: var(--join-splash-center-y);
-  width: 0.82rem;
-  height: 0.82rem;
+  width: var(--join-splash-drop-size, 0.82rem);
+  height: var(--join-splash-drop-size, 0.82rem);
   border-radius: var(--sys-radius-full);
-  background: color-mix(in srgb, var(--sys-color-primary) 72%, white);
+  background:
+    radial-gradient(
+      circle at 34% 28%,
+      rgba(255, 255, 255, 0.34) 0 16%,
+      transparent 38%
+    ),
+    color-mix(in srgb, var(--sys-color-primary) 72%, white);
+  filter: blur(0.15px);
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.36);
 }
 
+.form-mode-join-splash__drop--one {
+  --join-splash-drop-x: 13rem;
+  --join-splash-drop-y: -7.4rem;
+  --join-splash-drop-size: 0.9rem;
+  --join-splash-drop-scale: 1.06;
+}
+
 .form-mode-join-splash__drop--two {
-  width: 0.56rem;
-  height: 0.56rem;
+  --join-splash-drop-x: 8.8rem;
+  --join-splash-drop-y: 6.2rem;
+  --join-splash-drop-size: 0.62rem;
+  --join-splash-drop-scale: 0.92;
+  --join-splash-drop-delay: 34ms;
 }
 
 .form-mode-join-splash__drop--three {
-  width: 1rem;
-  height: 1rem;
+  --join-splash-drop-x: -9.4rem;
+  --join-splash-drop-y: -5.2rem;
+  --join-splash-drop-size: 1rem;
+  --join-splash-drop-scale: 1.04;
+  --join-splash-drop-delay: 18ms;
 }
 
 .form-mode-join-splash__drop--four {
-  width: 0.68rem;
-  height: 0.68rem;
+  --join-splash-drop-x: -6.4rem;
+  --join-splash-drop-y: 7.6rem;
+  --join-splash-drop-size: 0.74rem;
+  --join-splash-drop-scale: 0.92;
+  --join-splash-drop-delay: 74ms;
+}
+
+.form-mode-join-splash__drop--five {
+  --join-splash-drop-x: 1.8rem;
+  --join-splash-drop-y: -10.8rem;
+  --join-splash-drop-size: 0.56rem;
+  --join-splash-drop-scale: 0.78;
+  --join-splash-drop-delay: 48ms;
+}
+
+.form-mode-join-splash__drop--six {
+  --join-splash-drop-x: -1rem;
+  --join-splash-drop-y: 10.2rem;
+  --join-splash-drop-size: 0.82rem;
+  --join-splash-drop-scale: 0.96;
+  --join-splash-drop-delay: 96ms;
+}
+
+.form-mode-join-splash__drop--seven {
+  --join-splash-drop-x: 15.4rem;
+  --join-splash-drop-y: 1.8rem;
+  --join-splash-drop-size: 0.48rem;
+  --join-splash-drop-scale: 0.7;
+  --join-splash-drop-delay: 112ms;
+}
+
+.form-mode-join-splash__drop--eight {
+  --join-splash-drop-x: -13.8rem;
+  --join-splash-drop-y: 1.2rem;
+  --join-splash-drop-size: 0.58rem;
+  --join-splash-drop-scale: 0.76;
+  --join-splash-drop-delay: 62ms;
 }
 
 .form-mode-join-splash--filling .form-mode-join-splash__liquid {
-  animation: form-mode-join-splash-fill 920ms
-    cubic-bezier(0.14, 0.82, 0.18, 1) forwards;
+  animation: form-mode-join-splash-burst 920ms
+    cubic-bezier(0.12, 0.86, 0.13, 1) forwards;
 }
 
 .form-mode-join-splash--filling .form-mode-join-splash__shine {
-  animation: form-mode-join-splash-shine 720ms ease-out forwards;
+  animation: form-mode-join-splash-shine 820ms ease-out forwards;
 }
 
-.form-mode-join-splash--filling .form-mode-join-splash__drop--one {
-  animation: form-mode-join-splash-drop-one 860ms ease-out forwards;
-}
-
-.form-mode-join-splash--filling .form-mode-join-splash__drop--two {
-  animation: form-mode-join-splash-drop-two 820ms 40ms ease-out forwards;
-}
-
-.form-mode-join-splash--filling .form-mode-join-splash__drop--three {
-  animation: form-mode-join-splash-drop-three 900ms 20ms ease-out forwards;
-}
-
-.form-mode-join-splash--filling .form-mode-join-splash__drop--four {
-  animation: form-mode-join-splash-drop-four 820ms 80ms ease-out forwards;
+.form-mode-join-splash--filling .form-mode-join-splash__drop {
+  animation: form-mode-join-splash-drop 760ms
+    var(--join-splash-drop-delay, 0ms) cubic-bezier(0.1, 0.86, 0.16, 1) forwards;
 }
 
 .form-mode-join-splash--holding .form-mode-join-splash__liquid {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  opacity: 1;
+  animation: form-mode-join-splash-hold 1800ms ease-in-out infinite alternate;
 }
 
 .form-mode-join-splash--holding .form-mode-join-splash__shine {
@@ -772,156 +911,99 @@ onBeforeUnmount(() => {
 }
 
 .form-mode-join-splash--draining .form-mode-join-splash__liquid {
+  opacity: 1;
   animation: form-mode-join-splash-drain 920ms
     cubic-bezier(0.52, 0, 0.24, 1) forwards;
 }
 
-@keyframes form-mode-join-splash-fill {
+@keyframes form-mode-join-splash-burst {
   0% {
-    clip-path: polygon(
-      var(--join-splash-left) var(--join-splash-top),
-      var(--join-splash-right) var(--join-splash-top),
-      var(--join-splash-right) var(--join-splash-bottom),
-      var(--join-splash-left) var(--join-splash-bottom)
-    );
+    border-radius: 28% 72% 64% 36% / 42% 36% 64% 58%;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(var(--join-splash-start-scale))
+      rotate(-7deg);
   }
-  34% {
-    clip-path: polygon(
-      var(--join-splash-left) var(--join-splash-top),
-      100% var(--join-splash-top),
-      100% var(--join-splash-bottom),
-      var(--join-splash-left) var(--join-splash-bottom)
-    );
+  18% {
+    border-radius: 66% 34% 58% 42% / 35% 62% 38% 65%;
+    transform: translate(-50%, -50%) scale(0.24) rotate(10deg);
   }
-  62% {
-    clip-path: polygon(
-      0 0,
-      100% 0,
-      100% var(--join-splash-bottom),
-      0 var(--join-splash-bottom)
-    );
+  42% {
+    border-radius: 40% 60% 35% 65% / 61% 44% 56% 39%;
+    transform: translate(-50%, -50%) scale(0.58) rotate(-14deg);
+  }
+  72% {
+    border-radius: 57% 43% 62% 38% / 44% 58% 42% 56%;
+    transform: translate(-50%, -50%) scale(0.96) rotate(7deg);
   }
   100% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    border-radius: 52% 48% 46% 54% / 48% 52% 50% 50%;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08) rotate(0deg);
+  }
+}
+
+@keyframes form-mode-join-splash-hold {
+  0% {
+    border-radius: 52% 48% 46% 54% / 48% 52% 50% 50%;
+    transform: translate(-50%, -50%) scale(1.08) rotate(0deg);
+  }
+  100% {
+    border-radius: 45% 55% 54% 46% / 54% 44% 56% 46%;
+    transform: translate(-50%, -50%) scale(1.11) rotate(-2deg);
   }
 }
 
 @keyframes form-mode-join-splash-drain {
   0% {
-    clip-path: polygon(
-      0 0,
-      12% 0,
-      24% 0,
-      36% 0,
-      50% 0,
-      64% 0,
-      80% 0,
-      100% 0,
-      100% 100%,
-      0 100%
-    );
+    border-radius: 52% 48% 46% 54% / 48% 52% 50% 50%;
+    transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
   }
-  34% {
-    clip-path: polygon(
-      0 18%,
-      12% 12%,
-      24% 20%,
-      36% 14%,
-      50% 23%,
-      64% 15%,
-      80% 21%,
-      100% 16%,
-      100% 100%,
-      0 100%
-    );
+  38% {
+    border-radius: 40% 60% 52% 48% / 62% 40% 60% 38%;
+    transform: translate(-50%, calc(-50% + var(--join-splash-drain-y-mid)))
+      scale(1.16) rotate(3deg);
   }
   100% {
-    clip-path: polygon(
-      0 112%,
-      12% 106%,
-      24% 114%,
-      36% 108%,
-      50% 117%,
-      64% 109%,
-      80% 115%,
-      100% 110%,
-      100% 100%,
-      0 100%
-    );
+    border-radius: 46% 54% 58% 42% / 58% 44% 56% 42%;
+    transform: translate(-50%, calc(-50% + var(--join-splash-drain-y)))
+      scale(1.08) rotate(-4deg);
   }
 }
 
 @keyframes form-mode-join-splash-shine {
   0% {
     opacity: 0;
-    transform: translateX(-100%);
+    transform: scale(0.7) rotate(-12deg);
   }
   35% {
     opacity: 0.34;
   }
   100% {
     opacity: 0;
-    transform: translateX(100%);
+    transform: scale(1.18) rotate(8deg);
   }
 }
 
-@keyframes form-mode-join-splash-drop-one {
+@keyframes form-mode-join-splash-drop {
   0% {
     opacity: 0.92;
-    transform: translate(-50%, -50%) scale(0.36);
-  }
-  72% {
-    opacity: 0.82;
-    transform: translate(calc(-50% + 9rem), calc(-50% - 6.5rem)) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(calc(-50% + 12rem), calc(-50% - 7.6rem)) scale(0.28);
-  }
-}
-
-@keyframes form-mode-join-splash-drop-two {
-  0% {
-    opacity: 0.88;
-    transform: translate(-50%, -50%) scale(0.32);
-  }
-  74% {
-    opacity: 0.72;
-    transform: translate(calc(-50% + 6.8rem), calc(-50% + 4.6rem)) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(calc(-50% + 10rem), calc(-50% + 5.4rem)) scale(0.18);
-  }
-}
-
-@keyframes form-mode-join-splash-drop-three {
-  0% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(0.28);
-  }
-  70% {
-    opacity: 0.78;
-    transform: translate(calc(-50% + 14rem), calc(-50% - 1.7rem)) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(calc(-50% + 17rem), calc(-50% - 2.8rem)) scale(0.22);
-  }
-}
-
-@keyframes form-mode-join-splash-drop-four {
-  0% {
-    opacity: 0.88;
     transform: translate(-50%, -50%) scale(0.3);
   }
   72% {
-    opacity: 0.72;
-    transform: translate(calc(-50% + 4.2rem), calc(-50% - 8.6rem)) scale(1);
+    opacity: 0.78;
+    transform: translate(
+        calc(-50% + var(--join-splash-drop-x)),
+        calc(-50% + var(--join-splash-drop-y))
+      )
+      scale(var(--join-splash-drop-scale, 1));
   }
   100% {
     opacity: 0;
-    transform: translate(calc(-50% + 6rem), calc(-50% - 10rem)) scale(0.2);
+    transform: translate(
+        calc(-50% + var(--join-splash-drop-x)),
+        calc(-50% + var(--join-splash-drop-y))
+      )
+      scale(0.16);
   }
 }
 
@@ -934,7 +1016,12 @@ onBeforeUnmount(() => {
   }
 
   .form-mode-join-splash__liquid {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    inset: 0;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    opacity: 1;
+    transform: none;
   }
 }
 </style>

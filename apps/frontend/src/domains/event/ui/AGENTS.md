@@ -12,7 +12,7 @@ This folder owns event-domain UI surfaces, controls, composites, and primitives.
     |-- Selection State
     |   |-- location / start time / preferences
     |   `-- long-press CTA:
-    |       加入一场 {time} 在 {location} 的 {event.title} 活动
+    |       加入一场 {time} 在 {location} 的 {event.title}活动
     |
     |-- Submit Recommendation
     |   `-- backend returns matchedRecommendation + orderedCandidates

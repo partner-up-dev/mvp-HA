@@ -64,6 +64,28 @@ export const buildAnchorEventFormModeTimeWindow = (
   return [startAt.toISOString(), endAt.toISOString()];
 };
 
+export const isAnchorEventFormModeStartSelectable = (
+  event: Pick<AnchorEvent, "timePoolConfig">,
+  startAtIso: string | null,
+  now: Date = new Date(),
+): boolean => {
+  if (!startAtIso) {
+    return false;
+  }
+
+  const startAt = parseTimestamp(startAtIso);
+  if (!startAt || startAt.getTime() <= now.getTime()) {
+    return false;
+  }
+
+  const earliestLeadMinutes = event.timePoolConfig.earliestLeadMinutes;
+  if (earliestLeadMinutes === null) {
+    return true;
+  }
+
+  return startAt.getTime() <= now.getTime() + earliestLeadMinutes * MINUTE_MS;
+};
+
 const normalizePreferenceLabels = (preferences: readonly string[]): string[] => {
   const unique = new Map<string, string>();
   for (const preference of preferences) {

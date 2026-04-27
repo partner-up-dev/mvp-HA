@@ -47,6 +47,7 @@
 - backend returns:
   - one matched recommendation
   - one ordered candidate list
+- during Form Mode bootstrap, backend may return one default selection from the nearest upcoming joinable PR in the current Anchor Event context.
 - if a matched recommendation exists, the long-press splash continues into that PR's canonical `/pr/:id` route.
 - if no matched recommendation exists, the same `/e/:eventId` Form Mode surface switches into an inline no-match result state.
 - the no-match result state contains:
@@ -65,6 +66,7 @@
 - changing selection should animate the centered location title with a short crossfade.
 - location means the event venue or POI-level place choice; meetup point is a separate, more precise coordination concept and should not be collapsed into the location control.
 - the location-creation card is out of scope for `#168`.
+- if backend bootstrap returns a default selection, Location Control initializes to that selected PR's location when the location still exists in the event location pool.
 
 ### 4. Time Control
 
@@ -78,6 +80,7 @@
 - `Advanced Mode` is a toggle-based state, not a separate route or drawer.
 - `Advanced Mode` unlocks date/time combinations beyond the concrete time-pool items while still respecting event `earliestLeadMinutes`.
 - `Advanced Mode` granularity is fixed at `5` minutes.
+- if backend bootstrap returns a default selection whose start time is selectable only through Advanced Mode, Time Control may enter Advanced Mode automatically.
 
 ### 5. Preference Control
 
@@ -120,6 +123,7 @@
 - if the matched pool is non-empty, backend ranks that matched pool and returns the highest-ranked item as `matchedRecommendation`.
 - if the matched pool is empty, backend ranks the whole base PR pool and returns the top entries as `orderedCandidates`.
 - score is a ranking function, not a matched eligibility gate.
+- Form Mode bootstrap default selection uses the same visible joinable PR context, sorts upcoming PRs by closest start time, and skips PRs whose start time is outside `earliestLeadMinutes`.
 - backend should evaluate whole PRs rather than only tag overlap.
 - ranking dimensions include:
   - time fit
@@ -151,8 +155,9 @@
 - the long-press CTA suppresses text selection, browser touch callout, drag start, and context menu during the gesture.
 - during an active long-press, the CTA installs document-level capture guards for `contextmenu`, `selectstart`, `dragstart`, and `touchmove`.
 - long-press completion starts a Form Mode surface-owned liquid overlay:
-  - primary liquid expands from the CTA rect to cover the whole viewport
-  - droplets and shine provide the splash / liquid burst cue
+  - after the CTA has filled and overloaded, primary liquid bursts outward from the CTA center in all directions.
+  - the viewport cover uses a CTA-origin blob sized by distance to the farthest viewport corner, avoiding directional rectangle expansion gaps.
+  - droplets, organic border-radius morphing, and shine provide the splash / liquid burst cue.
   - the overlay stays filled while recommendation resolves
   - when the inline no-match result is ready, the primary liquid drains downward to reveal the result state
 - after the burst, the flow should continue into PR handoff continuity and then settle on canonical `/pr/:id`.
@@ -211,8 +216,9 @@
 6. Add `AnchorEventPRCard` actions slot for candidate-list join actions.
 7. Assemble Form Mode matched handoff and inline no-match candidate-list / create-fallback state.
 8. Implement the Form Mode join long-press animation and PR handoff continuity.
-9. Add telemetry for landing exposure, no-match recommendation exposure, candidate selection, create fallback intent, long-press completion, and confirm-join funnel.
-10. Verify with backend typecheck, frontend build, and manual flow checks across `FORM`, `CARD_RICH`, and PR handoff continuity.
+9. Add backend-authored Form Mode default selection from the nearest upcoming joinable PR.
+10. Add telemetry for landing exposure, no-match recommendation exposure, candidate selection, create fallback intent, long-press completion, and confirm-join funnel.
+11. Verify with backend typecheck, frontend build, and manual flow checks across `FORM`, `CARD_RICH`, and PR handoff continuity.
 
 ## Current Non-Goals
 
@@ -235,10 +241,14 @@
 - `pnpm --filter @partner-up-dev/backend exec node --import tsx --test src/domains/anchor-event/services/form-mode.test.ts`
 - `pnpm --filter @partner-up-dev/frontend build`
   - latest backend test and typecheck pass after renaming the direct handoff response to `matchedRecommendation`, adding 5-minute start tolerance, and replacing the large score threshold with matched eligibility plus small signed ranking.
+  - latest backend test and typecheck pass after adding Form Mode bootstrap default selection from the nearest upcoming visible joinable PR under `earliestLeadMinutes`.
   - latest frontend build passes after removing `/er`, moving recommendation orchestration into `AnchorEventFormModeSurface`, and adding `AnchorEventPRCard` actions slot.
+  - latest frontend build passes after applying backend-authored default location/start selection and allowing Time Control to auto-enter Advanced Mode for externally supplied selectable starts.
   - latest frontend build passes after splitting Preference Control into empty-pool hidden state, category-scoped cells/drawers, and category-prefix-stripped tag badges.
-- `git diff --check`
+- `git diff --check` passes on the files changed by this slice; full-repo check is currently blocked by pre-existing trailing whitespace in `apps/frontend/src/locales/zh-CN.jsonc`.
 - `agent-browser` manual verification:
+  - `/api/events/2/form-mode` returns `defaultSelection` from PR `31`, location `云山水榭`, start `2026-04-28T11:00:00.000Z`.
+  - forcing `/e/2` into FORM mode initializes the selected location to `云山水榭`, the selected date to `4/28`, the selected time to `19:00`, and the CTA to `加入一场 4/28 19:00 在 云山水榭 的学习冲刺活动`.
   - `/e/1` has an empty `presetTags` response and renders no Preference Control.
   - `/e/2` renders category cells `类别1` and `类别2`.
   - opening `类别1` shows drawer title `选择类别1偏好`, only the scoped `测试` tag, and the badge omits the `类别1:` prefix.
@@ -253,6 +263,7 @@
   - synthetic `contextmenu` dispatched during active long-press returns `defaultPrevented=true`, `dispatchResult=false`, and reaches no bubble listener.
   - long-pressing `/e/2` covers the viewport with primary liquid, then drains to reveal the inline candidate result state.
   - synthetic long-press sampling shows trembling grows from early charge to overload: duration `111ms -> 91ms -> 82ms`, X displacement about `2.18px -> 3.42px -> 3.98px`, and outline pressure `1.58px -> 2.57px -> 4.15px`.
+  - synthetic long-press splash sampling on `/e/2` shows the overlay entering `form-mode-join-splash--filling` with a viewport-aware `2275px` cover blob, start scale about `0.104`, and `8` radial droplets.
 - durable docs updated for Form Mode workflow, invariants, cross-unit contracts, and state authority
 
 ## Defect Follow-up - Matched Recommendation Eligibility
