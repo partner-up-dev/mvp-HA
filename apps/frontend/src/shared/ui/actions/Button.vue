@@ -46,6 +46,7 @@ import { computed } from "vue";
 type ButtonAppearance = "rect" | "pill";
 type ButtonTone =
   | "primary"
+  | "primary-outline"
   | "secondary"
   | "outline"
   | "surface"
@@ -152,6 +153,12 @@ defineEmits<{
 }
 
 .ui-button--appearance-rect.ui-button--tone-secondary {
+  border-color: var(--sys-color-secondary);
+  background: transparent;
+  color: var(--sys-color-secondary);
+}
+
+.ui-button--appearance-rect.ui-button--tone-primary-outline {
   border-color: var(--sys-color-primary);
   background: transparent;
   color: var(--sys-color-primary);
@@ -205,6 +212,12 @@ defineEmits<{
 .ui-button--appearance-pill.ui-button--tone-secondary {
   background: var(--sys-color-secondary);
   color: var(--sys-color-on-secondary);
+}
+
+.ui-button--appearance-pill.ui-button--tone-primary-outline {
+  border-color: var(--sys-color-primary);
+  background: transparent;
+  color: var(--sys-color-primary);
 }
 
 .ui-button--appearance-pill.ui-button--tone-outline {
@@ -289,7 +302,9 @@ defineEmits<{
 .ui-button--appearance-pill.ui-button--tone-tertiary:hover:not(:disabled),
 .ui-button--appearance-pill.ui-button--tone-dashed:hover:not(:disabled),
 .ui-button--appearance-pill.ui-button--tone-ghost:hover:not(:disabled),
+.ui-button--appearance-pill.ui-button--tone-primary-outline:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-primary:hover:not(:disabled),
+.ui-button--appearance-rect.ui-button--tone-primary-outline:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-secondary:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-outline:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-surface:hover:not(:disabled),

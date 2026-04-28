@@ -134,7 +134,7 @@ const showMiniProgramWebViewNotice = ref(false);
 
 const items = computed(() => notificationSubscriptions.items.value);
 const actionButtonTone = computed(() =>
-  props.outlineProfile === "surface" ? "outline" : "secondary",
+  props.outlineProfile === "surface" ? "outline" : "primary-outline",
 );
 
 const panelError = computed(() => {

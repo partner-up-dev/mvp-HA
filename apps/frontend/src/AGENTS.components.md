@@ -101,8 +101,8 @@ Prohibited:
 
 ## Components
 
-- `shared/ui/actions/Button.vue`: Shared button primitive. Prefer it over page-local button classes; use `appearance="pill"` for compact CTA clusters and `appearance="rect"` for dialogs or block actions. Keep `tone` choices narrow (`primary`, `outline`, `secondary`, `surface`, `tertiary`, `dashed`, `danger`, `ghost`).
-- `shared/ui/actions/ActionLink.vue`: Shared action-looking link primitive for `<RouterLink>` and external `<a>` CTAs. Use it instead of page-local link classes that recreate action treatment styles.
+- `shared/ui/actions/Button.vue`: Shared button primitive. Prefer it over page-local button classes; use `appearance="pill"` for compact CTA clusters and `appearance="rect"` for dialogs or block actions. Keep `tone` choices narrow (`primary`, `primary-outline`, `outline`, `secondary`, `surface`, `tertiary`, `dashed`, `danger`, `ghost`).
+- `shared/ui/actions/ActionLink.vue`: Shared action-looking link primitive for `<RouterLink>` and external `<a>` CTAs. Use `primary-outline` for primary-color outlined actions and `secondary` for secondary-family actions.
 - `shared/ui/actions/FeedbackButton.vue`: Shared transient feedback action button. Use `state="pending|success|error"` for short-lived action results instead of page-local `.success` / `.error` button treatments.
 - `shared/ui/containers/SurfaceCard.vue`: Standard card shell for reusable section, inset, and outline surfaces. Use it instead of re-declaring card shells in pages when the wrapper itself is a reusable primitive.
 - `shared/ui/containers/ChoiceCard.vue`: Selectable card primitive for button-like choices and RouterLink navigation choices. Use it for repeated default/active selectable card shells without embedding domain semantics.

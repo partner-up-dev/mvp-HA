@@ -3,7 +3,7 @@
     <Button
       v-if="hasJoined && canConfirm"
       class="confirm-slot-btn"
-      tone="secondary"
+      tone="primary-outline"
       @click="emit('confirm-slot')"
       :disabled="confirmPending"
     >

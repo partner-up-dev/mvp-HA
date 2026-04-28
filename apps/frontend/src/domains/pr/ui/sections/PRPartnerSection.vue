@@ -69,7 +69,7 @@
 
       <Button
         v-if="section.viewer.canConfirm"
-        tone="secondary"
+        tone="primary-outline"
         type="button"
         :disabled="confirmPending"
         @click="emit('confirm-slot')"
@@ -81,7 +81,7 @@
 
       <Button
         v-if="section.viewer.canCheckIn"
-        tone="secondary"
+        tone="primary-outline"
         type="button"
         :disabled="checkInPending"
         @click="emit('prepare-check-in')"
@@ -117,7 +117,7 @@
           {{ t("prPage.wouldJoinAgainYes") }}
         </Button>
         <Button
-          tone="secondary"
+          tone="primary-outline"
           type="button"
           :disabled="checkInPending"
           @click="emit('submit-check-in', false)"

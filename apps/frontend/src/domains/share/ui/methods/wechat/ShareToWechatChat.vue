@@ -6,7 +6,7 @@
       </p>
       <Button
         appearance="rect"
-        tone="secondary"
+        tone="primary-outline"
         type="button"
         @click="showMiniProgramWebViewNotice = true"
       >

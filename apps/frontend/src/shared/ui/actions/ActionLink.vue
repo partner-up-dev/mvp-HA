@@ -44,6 +44,7 @@ import { RouterLink, type RouteLocationRaw } from "vue-router";
 type ActionLinkAppearance = "rect" | "pill";
 type ActionLinkTone =
   | "primary"
+  | "primary-outline"
   | "secondary"
   | "outline"
   | "surface"
@@ -180,6 +181,12 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .ui-action-link--appearance-rect.ui-action-link--tone-secondary {
+  border-color: var(--sys-color-secondary);
+  background: transparent;
+  color: var(--sys-color-secondary);
+}
+
+.ui-action-link--appearance-rect.ui-action-link--tone-primary-outline {
   border-color: var(--sys-color-primary);
   background: transparent;
   color: var(--sys-color-primary);
@@ -229,6 +236,12 @@ const handleClick = (event: MouseEvent) => {
 .ui-action-link--appearance-pill.ui-action-link--tone-secondary {
   background: var(--sys-color-secondary);
   color: var(--sys-color-on-secondary);
+}
+
+.ui-action-link--appearance-pill.ui-action-link--tone-primary-outline {
+  border-color: var(--sys-color-primary);
+  background: transparent;
+  color: var(--sys-color-primary);
 }
 
 .ui-action-link--appearance-pill.ui-action-link--tone-outline {
@@ -313,7 +326,9 @@ const handleClick = (event: MouseEvent) => {
 .ui-action-link--appearance-pill.ui-action-link--tone-tertiary:hover,
 .ui-action-link--appearance-pill.ui-action-link--tone-dashed:hover,
 .ui-action-link--appearance-pill.ui-action-link--tone-ghost:hover,
+.ui-action-link--appearance-pill.ui-action-link--tone-primary-outline:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-primary:hover,
+.ui-action-link--appearance-rect.ui-action-link--tone-primary-outline:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-secondary:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-outline:hover,
 .ui-action-link--appearance-rect.ui-action-link--tone-surface:hover,

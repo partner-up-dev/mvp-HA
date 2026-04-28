@@ -355,7 +355,7 @@
             {{ t("prPage.wouldJoinAgainYes") }}
           </Button>
           <Button
-            tone="secondary"
+            tone="primary-outline"
             type="button"
             :disabled="attendanceActions.checkInPending.value"
             @click="attendanceActions.submitCheckIn(false)"
@@ -439,7 +439,7 @@ type DockActionItem = {
   key: DockActionKey;
   label: string;
   pendingLabel: string;
-  tone: "primary" | "secondary" | "surface" | "danger";
+  tone: "primary" | "primary-outline" | "secondary" | "surface" | "danger";
   disabled: boolean;
   pending: boolean;
   tip: string | null;
@@ -1139,8 +1139,16 @@ function blockedReasonText(reason: BlockedReason): string {
 
 function buttonToneForAction(
   action: DockActionItem,
-): "primary" | "secondary" | "surface" | "danger" | "outline" | "ghost" {
+):
+  | "primary"
+  | "primary-outline"
+  | "secondary"
+  | "surface"
+  | "danger"
+  | "outline"
+  | "ghost" {
   if (action.tone === "surface") return "surface";
+  if (action.tone === "primary-outline") return "primary-outline";
   if (action.tone === "secondary") return "secondary";
   if (action.tone === "danger") return "danger";
   return "primary";

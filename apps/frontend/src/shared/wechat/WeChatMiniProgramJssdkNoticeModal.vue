@@ -39,7 +39,7 @@
 
       <div class="mini-program-jssdk-notice__actions">
         <Button
-          tone="secondary"
+          tone="primary-outline"
           appearance="rect"
           type="button"
           @click="copyCurrentUrl"
