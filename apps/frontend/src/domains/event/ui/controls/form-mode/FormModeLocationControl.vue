@@ -130,11 +130,11 @@ watch(
 .location-card {
   position: relative;
   overflow: hidden;
-  height: clamp(7.2rem, 19.2vh, 10.4rem);
+  height: var(--dcs-event-form-mode-location-card-height);
   border-radius: var(--sys-radius-small);
   background: linear-gradient(
     160deg,
-    color-mix(in srgb, var(--sys-color-primary) 24%, white),
+    var(--sys-color-primary-container),
     var(--sys-color-surface-container-high)
   );
   transition:

@@ -57,6 +57,16 @@ The Landing Page is an art-directed visual surface. Landing-only adaptive curves
 
 Do not promote Landing-only values into global `dcs` or shared primitives. If several Landing children need the same value, define a `--landing-*` custom property on the Landing page shell and let descendants inherit it.
 
+## Splash Exception
+
+Splash and liquid-transition implementations are art-directed motion surfaces. They may bypass token governance for local tint math and adaptive geometry when the values directly define splash physics, fill pressure, liquid waves, or route handoff reveal effects.
+
+Keep the exception narrow to splash-owned files such as the Form Mode long-press button and route-handoff liquid splash component. Ordinary layout, form controls, cards, and reusable UI primitives still follow the default `sys`-first rule.
+
+## Component Contract Exception
+
+Shared primitives may define private `--component-*` or component-prefixed CSS custom properties for their own geometry when the values are part of the primitive contract. Keep those values inside the primitive and expose behavior through props or slots rather than leaking raw geometry to consumers.
+
 ## Guardrails
 
 Use:

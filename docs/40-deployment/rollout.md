@@ -76,7 +76,8 @@ This workflow:
 
 Separate workflow: `.github/workflows/job-runner-trigger-fc-deploy.yml`
 
-This deploys the trigger function that periodically calls the backend job tick endpoint.
+This deploys the trigger function that calls the backend job tick endpoint on
+cron expression `CRON_TZ=Asia/Shanghai 0 0/30 8-23 ? * ?`.
 
 ## Frontend Rollout Reality
 

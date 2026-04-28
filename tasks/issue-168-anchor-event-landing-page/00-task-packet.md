@@ -156,6 +156,7 @@
 - trembling intensity follows both charge progress and overload progress through X/Y displacement, slight rotation, faster cadence, and an outline pressure pulse.
 - the long-press CTA suppresses text selection, browser touch callout, drag start, and context menu during the gesture.
 - during an active long-press, the CTA installs document-level capture guards for `contextmenu`, `selectstart`, `dragstart`, and `touchmove`.
+- splash-related visual implementation is allowed to bypass token governance for local tint math and adaptive geometry when those values directly define fill pressure, liquid wave motion, or route handoff reveal behavior.
 - long-press completion starts a Form Mode surface-owned liquid overlay:
   - after the CTA has filled and overloaded, primary liquid bursts outward from the CTA center in all directions.
   - the viewport cover uses a CTA-origin blob sized by distance to the farthest viewport corner, avoiding directional rectangle expansion gaps.
@@ -165,7 +166,9 @@
 - after the burst, the flow should continue into a route-level PR handoff overlay.
 - the handoff PR Facts Card appears from the center with a small-to-large spin-in animation.
 - during `/e/:eventId` to `/pr/:id` navigation, the primary splash remains above the app until the PR Page target card is ready.
-- once PR Page renders its PR Facts Card target, the overlay card aligns into that card's final rect, then the splash fades and reveals the real PR Page card in the same position.
+- once PR Page renders its PR Facts Card target, the overlay card aligns into that card's final rect, then the splash drains from top to bottom and reveals the real PR Page card in the same position.
+- Form Mode full-screen join splash and matched PR handoff drain use the same route-handoff-owned SVG liquid layer driven by `requestAnimationFrame`: three sine-wave path layers share the primary color family, move with phase offsets, increase wave deformation during flow, and calm down near empty.
+- Form Mode fill passes the CTA origin rect into that liquid layer, so the full-screen liquid starts from the long-press CTA area, expands through a radial reveal, then holds as a filled liquid surface before either draining into the no-match result or handing off into the matched PR overlay.
 - if backend finds a matched recommendation, that PR is the target of the same burst handoff.
 - if backend does not find a matched recommendation, the burst resolves into the inline no-match result state.
 
@@ -251,6 +254,10 @@
   - latest frontend build passes after applying backend-authored default location/start selection and allowing Time Control to auto-enter Advanced Mode for externally supplied selectable starts.
   - latest frontend build passes after adding route-level matched PR handoff overlay, moving `PRFactsCard` to `prId`-owned data loading, and removing PR Page `entry=landing_join` auto modal behavior.
   - latest frontend build passes after splitting Preference Control into empty-pool hidden state, category-scoped cells/drawers, and category-prefix-stripped tag badges.
+  - latest frontend build passes after replacing the matched PR handoff drain with a three-layer SVG liquid-wave splash.
+  - latest frontend build passes after replacing the Form Mode full-screen join splash fill/hold/drain with the same SVG liquid-wave splash.
+  - latest frontend build passes after resolving token-governance findings through scaffold placement, `dcs` promotion, and narrow component / splash exceptions.
+  - latest token governance check reports no findings outside baseline after keeping splash tint / adaptive geometry inside a narrow exception, moving landing loading / error placement into `FooterRevealPageScaffold`, promoting Form Mode location-card height into `dcs`, and documenting the shared primitive component-contract exception.
 - `git diff --check` passes on the files changed by this slice; full-repo check is currently blocked by pre-existing trailing whitespace in `apps/frontend/src/locales/zh-CN.jsonc`.
 - `agent-browser` manual verification:
   - `/api/events/2/form-mode` returns `defaultSelection` from PR `31`, location `云山水榭`, start `2026-04-28T11:00:00.000Z`.
@@ -269,9 +276,10 @@
   - synthetic `contextmenu` dispatched during active long-press returns `defaultPrevented=true`, `dispatchResult=false`, and reaches no bubble listener.
   - long-pressing `/e/2` covers the viewport with primary liquid, then drains to reveal the inline candidate result state.
   - synthetic long-press sampling shows trembling grows from early charge to overload: duration `111ms -> 91ms -> 82ms`, X displacement about `2.18px -> 3.42px -> 3.98px`, and outline pressure `1.58px -> 2.57px -> 4.15px`.
-  - synthetic long-press splash sampling on `/e/2` shows the overlay entering `form-mode-join-splash--filling` with a viewport-aware `2275px` cover blob, start scale about `0.104`, and `8` radial droplets.
+  - synthetic long-press splash sampling on `/e/2` now shows `form-mode-join-splash` mounting `LiquidWaveSplash` with `3` SVG paths and an origin-centered radial reveal, for example `circle(565.29px at 759.14px 669.67px)`.
   - matched long-press on `/e/2` opens `matched-pr-handoff--preview` with PR `31` Facts Card preview plus `取消` / `加入` actions.
-  - clicking the matched handoff `加入` action routes to `/pr/31` with `handoff=matched_pr`, clears the overlay after PR Facts Card target registration, and does not open the old join modal automatically.
+  - after the Form Mode fill finishes on `/e/2`, the form overlay clears and the matched handoff preview mounts its own `LiquidWaveSplash` with `3` SVG paths.
+  - clicking the matched handoff `加入` action routes to `/pr/31` with `handoff=matched_pr`, clears the overlay after PR Facts Card target registration, and leaves the PR Page join modal closed.
 - durable docs updated for Form Mode workflow, invariants, cross-unit contracts, and state authority
 
 ## Defect Follow-up - Matched Recommendation Eligibility

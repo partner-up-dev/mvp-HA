@@ -1347,7 +1347,7 @@
       "emptyRecommendationTitle": "看看接近的，或者帮你找",
       "emptyRecommendationBody": "这些场次与条件接近；如果都不合适，我们会按你的条件发起新的搭子请求。",
       "candidateListEyebrow": "候选列表",
-      "candidateListTitle": "候选场次",
+      "candidateListTitle": "我们没有找到符合条件的场次，下面是候选场次",
       "createFallbackAction": "都不合适，帮我找",
       "recommendationFailed": "获取推荐失败，请稍后重试。",
       "recommendationCardHeadline": "{time} · {location}",

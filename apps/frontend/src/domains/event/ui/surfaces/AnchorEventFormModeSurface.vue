@@ -74,24 +74,15 @@
       <div
         v-if="joinSplashPhase !== 'IDLE'"
         class="form-mode-join-splash"
-        :class="{
-          'form-mode-join-splash--filling': joinSplashPhase === 'FILLING',
-          'form-mode-join-splash--holding': joinSplashPhase === 'HOLDING',
-          'form-mode-join-splash--draining': joinSplashPhase === 'DRAINING',
-        }"
-        :style="joinSplashStyle"
         aria-hidden="true"
       >
-        <span class="form-mode-join-splash__liquid" />
-        <span class="form-mode-join-splash__shine" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--one" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--two" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--three" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--four" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--five" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--six" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--seven" />
-        <span class="form-mode-join-splash__drop form-mode-join-splash__drop--eight" />
+        <LiquidWaveSplash
+          :duration-ms="joinSplashDurationMs"
+          :origin-rect="joinSplashOrigin"
+          :phase="joinSplashLiquidPhase"
+          @fill-complete="handleJoinSplashFilled"
+          @drain-complete="handleJoinSplashDrained"
+        />
       </div>
     </Teleport>
   </section>
@@ -129,6 +120,8 @@ import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
 } from "@/processes/wechat/pending-wechat-action";
+import LiquidWaveSplash from "@/processes/route-handoff/LiquidWaveSplash.vue";
+import type { LiquidSplashPhase } from "@/processes/route-handoff/LiquidWaveSplash.vue";
 import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHandoff";
 
 const props = defineProps<{
@@ -159,10 +152,14 @@ const hasTrackedFormImpression = ref(false);
 const defaultSelectionAppliedEventId = ref<number | null>(null);
 const pendingCreateReplayRunning = ref(false);
 type JoinSplashPhase = "IDLE" | "FILLING" | "HOLDING" | "DRAINING";
+const JOIN_SPLASH_FILL_MS = 980;
+const JOIN_SPLASH_DRAIN_MS = 980;
 
 const joinSplashPhase = ref<JoinSplashPhase>("IDLE");
 const joinSplashOrigin = ref<LongPressOriginRect | null>(null);
 const joinSplashTimeoutIds = new Set<number>();
+let joinSplashFillResolve: (() => void) | null = null;
+let joinSplashDrainResolve: (() => void) | null = null;
 
 const formModeData = computed(() => formModeQuery.data.value ?? null);
 
@@ -212,7 +209,25 @@ const canCreateFallback = computed(() =>
   Boolean(selectedLocationId.value && selectedStartAt.value && formModeData.value),
 );
 
-const waitForJoinSplash = async (durationMs: number): Promise<void> => {
+const joinSplashLiquidPhase = computed<LiquidSplashPhase>(() => {
+  switch (joinSplashPhase.value) {
+    case "FILLING":
+      return "FILL";
+    case "DRAINING":
+      return "DRAIN";
+    case "HOLDING":
+    case "IDLE":
+      return "HOLD";
+  }
+});
+
+const joinSplashDurationMs = computed(() =>
+  joinSplashPhase.value === "DRAINING"
+    ? JOIN_SPLASH_DRAIN_MS
+    : JOIN_SPLASH_FILL_MS,
+);
+
+const waitForJoinSplashFallback = async (durationMs: number): Promise<void> => {
   if (typeof window === "undefined") {
     return;
   }
@@ -238,13 +253,42 @@ const clearJoinSplashTimeouts = () => {
   joinSplashTimeoutIds.clear();
 };
 
+const resolveJoinSplashFill = () => {
+  if (joinSplashFillResolve === null) {
+    return;
+  }
+
+  const resolve = joinSplashFillResolve;
+  joinSplashFillResolve = null;
+  resolve();
+};
+
+const resolveJoinSplashDrain = () => {
+  if (joinSplashDrainResolve === null) {
+    return;
+  }
+
+  const resolve = joinSplashDrainResolve;
+  joinSplashDrainResolve = null;
+  resolve();
+};
+
 const startJoinSplash = async (
   originRect: LongPressOriginRect,
 ): Promise<void> => {
   clearJoinSplashTimeouts();
+  resolveJoinSplashFill();
+  resolveJoinSplashDrain();
   joinSplashOrigin.value = originRect;
   joinSplashPhase.value = "FILLING";
-  await waitForJoinSplash(920);
+  const fillPromise = new Promise<void>((resolve) => {
+    joinSplashFillResolve = resolve;
+  });
+  await Promise.race([
+    fillPromise,
+    waitForJoinSplashFallback(JOIN_SPLASH_FILL_MS + 180),
+  ]);
+  resolveJoinSplashFill();
   if (joinSplashPhase.value === "FILLING") {
     joinSplashPhase.value = "HOLDING";
   }
@@ -256,7 +300,14 @@ const drainJoinSplash = async (): Promise<void> => {
   }
 
   joinSplashPhase.value = "DRAINING";
-  await waitForJoinSplash(920);
+  const drainPromise = new Promise<void>((resolve) => {
+    joinSplashDrainResolve = resolve;
+  });
+  await Promise.race([
+    drainPromise,
+    waitForJoinSplashFallback(JOIN_SPLASH_DRAIN_MS + 180),
+  ]);
+  resolveJoinSplashDrain();
   if (joinSplashPhase.value === "DRAINING") {
     joinSplashPhase.value = "IDLE";
     joinSplashOrigin.value = null;
@@ -265,51 +316,26 @@ const drainJoinSplash = async (): Promise<void> => {
 
 const resetJoinSplash = () => {
   clearJoinSplashTimeouts();
+  resolveJoinSplashFill();
+  resolveJoinSplashDrain();
   joinSplashPhase.value = "IDLE";
   joinSplashOrigin.value = null;
 };
 
-const joinSplashStyle = computed(() => {
-  const origin = joinSplashOrigin.value;
-  if (!origin) {
-    return {};
+const handleJoinSplashFilled = () => {
+  if (joinSplashPhase.value === "FILLING") {
+    joinSplashPhase.value = "HOLDING";
   }
+  resolveJoinSplashFill();
+};
 
-  const centerX = origin.left + origin.width / 2;
-  const centerY = origin.top + origin.height / 2;
-  const viewportWidth =
-    typeof window === "undefined" ? origin.right : window.innerWidth;
-  const viewportHeight =
-    typeof window === "undefined" ? origin.bottom : window.innerHeight;
-  const coverRadius =
-    Math.max(
-      Math.hypot(centerX, centerY),
-      Math.hypot(viewportWidth - centerX, centerY),
-      Math.hypot(centerX, viewportHeight - centerY),
-      Math.hypot(viewportWidth - centerX, viewportHeight - centerY),
-    ) +
-    Math.max(origin.width, origin.height) * 0.24 +
-    64;
-  const coverSize = coverRadius * 2;
-  const startScale = Math.max(
-    Math.max(origin.width, origin.height) / coverSize,
-    0.045,
-  );
-  const drainY = viewportHeight - centerY + coverRadius + 96;
-
-  return {
-    "--join-splash-left": `${origin.left}px`,
-    "--join-splash-top": `${origin.top}px`,
-    "--join-splash-right": `${origin.right}px`,
-    "--join-splash-bottom": `${origin.bottom}px`,
-    "--join-splash-center-x": `${centerX}px`,
-    "--join-splash-center-y": `${centerY}px`,
-    "--join-splash-cover-size": `${coverSize}px`,
-    "--join-splash-start-scale": String(startScale),
-    "--join-splash-drain-y": `${drainY}px`,
-    "--join-splash-drain-y-mid": `${drainY * 0.32}px`,
-  };
-});
+const handleJoinSplashDrained = () => {
+  if (joinSplashPhase.value === "DRAINING") {
+    joinSplashPhase.value = "IDLE";
+    joinSplashOrigin.value = null;
+  }
+  resolveJoinSplashDrain();
+};
 
 const createActionErrorMessage = computed(() => {
   if (createReplayErrorMessage.value) {
@@ -487,7 +513,7 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
 
     if (matchedPRId !== null) {
       await splashFill;
-      await waitForJoinSplash(140);
+      await waitForJoinSplashFallback(140);
       matchedPRHandoff.begin({
         prId: matchedPRId,
         eventId: props.eventId,
@@ -725,304 +751,5 @@ onBeforeUnmount(() => {
   z-index: 2147483000;
   overflow: hidden;
   pointer-events: none;
-}
-
-.form-mode-join-splash__liquid {
-  position: absolute;
-  left: var(--join-splash-center-x);
-  top: var(--join-splash-center-y);
-  width: var(--join-splash-cover-size);
-  height: var(--join-splash-cover-size);
-  border-radius: 44% 56% 52% 48% / 46% 48% 52% 54%;
-  background:
-    radial-gradient(
-      circle at 38% 34%,
-      color-mix(in srgb, var(--sys-color-primary) 58%, white) 0 11%,
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 68% 58%,
-      color-mix(in srgb, var(--sys-color-primary) 80%, white) 0 18%,
-      transparent 44%
-    ),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--sys-color-primary) 82%, white),
-      var(--sys-color-primary) 42%,
-      color-mix(in srgb, var(--sys-color-primary) 88%, black)
-    );
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(var(--join-splash-start-scale))
-    rotate(-7deg);
-  transform-origin: center;
-  will-change: transform, border-radius, opacity;
-}
-
-.form-mode-join-splash__liquid::before,
-.form-mode-join-splash__liquid::after {
-  position: absolute;
-  content: "";
-  pointer-events: none;
-  background: color-mix(in srgb, var(--sys-color-primary) 78%, white);
-  filter: blur(0.5px);
-}
-
-.form-mode-join-splash__liquid::before {
-  inset: 10% 6% 14% 12%;
-  border-radius: 62% 38% 54% 46% / 42% 58% 40% 60%;
-  opacity: 0.42;
-  transform: rotate(18deg);
-}
-
-.form-mode-join-splash__liquid::after {
-  inset: 18% 18% 9% 8%;
-  border-radius: 40% 60% 44% 56% / 58% 38% 62% 42%;
-  opacity: 0.26;
-  transform: rotate(-24deg);
-}
-
-.form-mode-join-splash__shine {
-  position: absolute;
-  inset: -18%;
-  opacity: 0;
-  background:
-    radial-gradient(
-      circle at var(--join-splash-center-x) var(--join-splash-center-y),
-      rgba(255, 255, 255, 0.34) 0 4%,
-      transparent 19%
-    ),
-    conic-gradient(
-      from 214deg at var(--join-splash-center-x) var(--join-splash-center-y),
-      transparent 0deg,
-      rgba(255, 255, 255, 0.22) 24deg,
-      transparent 62deg,
-      rgba(255, 255, 255, 0.16) 122deg,
-      transparent 174deg,
-      rgba(255, 255, 255, 0.18) 236deg,
-      transparent 320deg
-    );
-  mix-blend-mode: screen;
-  transform: scale(0.72) rotate(-10deg);
-}
-
-.form-mode-join-splash__drop {
-  position: absolute;
-  left: var(--join-splash-center-x);
-  top: var(--join-splash-center-y);
-  width: var(--join-splash-drop-size, 0.82rem);
-  height: var(--join-splash-drop-size, 0.82rem);
-  border-radius: var(--sys-radius-full);
-  background:
-    radial-gradient(
-      circle at 34% 28%,
-      rgba(255, 255, 255, 0.34) 0 16%,
-      transparent 38%
-    ),
-    color-mix(in srgb, var(--sys-color-primary) 72%, white);
-  filter: blur(0.15px);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.36);
-}
-
-.form-mode-join-splash__drop--one {
-  --join-splash-drop-x: 13rem;
-  --join-splash-drop-y: -7.4rem;
-  --join-splash-drop-size: 0.9rem;
-  --join-splash-drop-scale: 1.06;
-}
-
-.form-mode-join-splash__drop--two {
-  --join-splash-drop-x: 8.8rem;
-  --join-splash-drop-y: 6.2rem;
-  --join-splash-drop-size: 0.62rem;
-  --join-splash-drop-scale: 0.92;
-  --join-splash-drop-delay: 34ms;
-}
-
-.form-mode-join-splash__drop--three {
-  --join-splash-drop-x: -9.4rem;
-  --join-splash-drop-y: -5.2rem;
-  --join-splash-drop-size: 1rem;
-  --join-splash-drop-scale: 1.04;
-  --join-splash-drop-delay: 18ms;
-}
-
-.form-mode-join-splash__drop--four {
-  --join-splash-drop-x: -6.4rem;
-  --join-splash-drop-y: 7.6rem;
-  --join-splash-drop-size: 0.74rem;
-  --join-splash-drop-scale: 0.92;
-  --join-splash-drop-delay: 74ms;
-}
-
-.form-mode-join-splash__drop--five {
-  --join-splash-drop-x: 1.8rem;
-  --join-splash-drop-y: -10.8rem;
-  --join-splash-drop-size: 0.56rem;
-  --join-splash-drop-scale: 0.78;
-  --join-splash-drop-delay: 48ms;
-}
-
-.form-mode-join-splash__drop--six {
-  --join-splash-drop-x: -1rem;
-  --join-splash-drop-y: 10.2rem;
-  --join-splash-drop-size: 0.82rem;
-  --join-splash-drop-scale: 0.96;
-  --join-splash-drop-delay: 96ms;
-}
-
-.form-mode-join-splash__drop--seven {
-  --join-splash-drop-x: 15.4rem;
-  --join-splash-drop-y: 1.8rem;
-  --join-splash-drop-size: 0.48rem;
-  --join-splash-drop-scale: 0.7;
-  --join-splash-drop-delay: 112ms;
-}
-
-.form-mode-join-splash__drop--eight {
-  --join-splash-drop-x: -13.8rem;
-  --join-splash-drop-y: 1.2rem;
-  --join-splash-drop-size: 0.58rem;
-  --join-splash-drop-scale: 0.76;
-  --join-splash-drop-delay: 62ms;
-}
-
-.form-mode-join-splash--filling .form-mode-join-splash__liquid {
-  animation: form-mode-join-splash-burst 920ms
-    cubic-bezier(0.12, 0.86, 0.13, 1) forwards;
-}
-
-.form-mode-join-splash--filling .form-mode-join-splash__shine {
-  animation: form-mode-join-splash-shine 820ms ease-out forwards;
-}
-
-.form-mode-join-splash--filling .form-mode-join-splash__drop {
-  animation: form-mode-join-splash-drop 760ms
-    var(--join-splash-drop-delay, 0ms) cubic-bezier(0.1, 0.86, 0.16, 1) forwards;
-}
-
-.form-mode-join-splash--holding .form-mode-join-splash__liquid {
-  opacity: 1;
-  animation: form-mode-join-splash-hold 1800ms ease-in-out infinite alternate;
-}
-
-.form-mode-join-splash--holding .form-mode-join-splash__shine {
-  opacity: 0.28;
-  animation: form-mode-join-splash-shine 1320ms ease-in-out infinite;
-}
-
-.form-mode-join-splash--draining .form-mode-join-splash__liquid {
-  opacity: 1;
-  animation: form-mode-join-splash-drain 920ms
-    cubic-bezier(0.52, 0, 0.24, 1) forwards;
-}
-
-@keyframes form-mode-join-splash-burst {
-  0% {
-    border-radius: 28% 72% 64% 36% / 42% 36% 64% 58%;
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(var(--join-splash-start-scale))
-      rotate(-7deg);
-  }
-  18% {
-    border-radius: 66% 34% 58% 42% / 35% 62% 38% 65%;
-    transform: translate(-50%, -50%) scale(0.24) rotate(10deg);
-  }
-  42% {
-    border-radius: 40% 60% 35% 65% / 61% 44% 56% 39%;
-    transform: translate(-50%, -50%) scale(0.58) rotate(-14deg);
-  }
-  72% {
-    border-radius: 57% 43% 62% 38% / 44% 58% 42% 56%;
-    transform: translate(-50%, -50%) scale(0.96) rotate(7deg);
-  }
-  100% {
-    border-radius: 52% 48% 46% 54% / 48% 52% 50% 50%;
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.08) rotate(0deg);
-  }
-}
-
-@keyframes form-mode-join-splash-hold {
-  0% {
-    border-radius: 52% 48% 46% 54% / 48% 52% 50% 50%;
-    transform: translate(-50%, -50%) scale(1.08) rotate(0deg);
-  }
-  100% {
-    border-radius: 45% 55% 54% 46% / 54% 44% 56% 46%;
-    transform: translate(-50%, -50%) scale(1.11) rotate(-2deg);
-  }
-}
-
-@keyframes form-mode-join-splash-drain {
-  0% {
-    border-radius: 52% 48% 46% 54% / 48% 52% 50% 50%;
-    transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
-  }
-  38% {
-    border-radius: 40% 60% 52% 48% / 62% 40% 60% 38%;
-    transform: translate(-50%, calc(-50% + var(--join-splash-drain-y-mid)))
-      scale(1.16) rotate(3deg);
-  }
-  100% {
-    border-radius: 46% 54% 58% 42% / 58% 44% 56% 42%;
-    transform: translate(-50%, calc(-50% + var(--join-splash-drain-y)))
-      scale(1.08) rotate(-4deg);
-  }
-}
-
-@keyframes form-mode-join-splash-shine {
-  0% {
-    opacity: 0;
-    transform: scale(0.7) rotate(-12deg);
-  }
-  35% {
-    opacity: 0.34;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.18) rotate(8deg);
-  }
-}
-
-@keyframes form-mode-join-splash-drop {
-  0% {
-    opacity: 0.92;
-    transform: translate(-50%, -50%) scale(0.3);
-  }
-  72% {
-    opacity: 0.78;
-    transform: translate(
-        calc(-50% + var(--join-splash-drop-x)),
-        calc(-50% + var(--join-splash-drop-y))
-      )
-      scale(var(--join-splash-drop-scale, 1));
-  }
-  100% {
-    opacity: 0;
-    transform: translate(
-        calc(-50% + var(--join-splash-drop-x)),
-        calc(-50% + var(--join-splash-drop-y))
-      )
-      scale(0.16);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .form-mode-join-splash--filling .form-mode-join-splash__liquid,
-  .form-mode-join-splash--holding .form-mode-join-splash__shine,
-  .form-mode-join-splash--draining .form-mode-join-splash__liquid,
-  .form-mode-join-splash--filling .form-mode-join-splash__drop {
-    animation: none;
-  }
-
-  .form-mode-join-splash__liquid {
-    inset: 0;
-    width: auto;
-    height: auto;
-    border-radius: 0;
-    opacity: 1;
-    transform: none;
-  }
 }
 </style>

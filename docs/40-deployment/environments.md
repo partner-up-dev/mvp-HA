@@ -62,7 +62,8 @@ fallbacks when the DB config row is absent.
 There is a separate FC deployment for the external job-runner trigger function:
 
 - deployed from `apps/backend/fc-job-runner-trigger`
-- calls the backend internal maintenance tick endpoint on a cron schedule
+- calls the backend internal maintenance tick endpoint with cron expression
+  `CRON_TZ=Asia/Shanghai 0 0/30 8-23 ? * ?`
 - has its own GitHub Actions workflow and FC function name/URL variables
 
 ## Frontend Deployment Truth

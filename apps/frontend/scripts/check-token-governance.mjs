@@ -28,6 +28,36 @@ const landingVisualExceptionPaths = [
   },
 ];
 
+const splashVisualExceptionPaths = [
+  {
+    type: "file",
+    path: path.join(
+      srcRoot,
+      "domains",
+      "event",
+      "ui",
+      "primitives",
+      "FormModeLongPressButton.vue",
+    ),
+  },
+  {
+    type: "file",
+    path: path.join(
+      srcRoot,
+      "processes",
+      "route-handoff",
+      "LiquidWaveSplash.vue",
+    ),
+  },
+];
+
+const componentContractPaths = [
+  {
+    type: "file",
+    path: path.join(srcRoot, "shared", "ui", "forms", "ToggleSwitch.vue"),
+  },
+];
+
 const rules = [
   {
     id: "no-local-color-mix",
@@ -119,6 +149,25 @@ const isLandingVisualExceptionPath = (filePath) =>
     return filePath.startsWith(`${entry.path}${path.sep}`);
   });
 
+const isSplashVisualExceptionPath = (filePath) =>
+  splashVisualExceptionPaths.some((entry) => {
+    if (entry.type === "file") {
+      return filePath === entry.path;
+    }
+    return filePath.startsWith(`${entry.path}${path.sep}`);
+  });
+
+const isComponentContractPath = (filePath) =>
+  componentContractPaths.some((entry) => {
+    if (entry.type === "file") {
+      return filePath === entry.path;
+    }
+    return filePath.startsWith(`${entry.path}${path.sep}`);
+  });
+
+const isComponentContractLine = (filePath, line) =>
+  isComponentContractPath(filePath) && /^\s*--[a-z0-9-]+:/.test(line);
+
 const collectFindings = async () => {
   const files = (
     await Promise.all(scanRoots.map(async (scanRoot) => await walk(scanRoot)))
@@ -136,10 +185,14 @@ const collectFindings = async () => {
       if (line.includes("token-governance-ignore")) {
         return;
       }
+      if (isComponentContractLine(filePath, line)) {
+        return;
+      }
       for (const rule of rules) {
         if (
           rule.allowLandingVisualException &&
-          isLandingVisualExceptionPath(filePath)
+          (isLandingVisualExceptionPath(filePath) ||
+            isSplashVisualExceptionPath(filePath))
         ) {
           continue;
         }

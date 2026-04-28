@@ -1,5 +1,9 @@
 <template>
-  <FooterRevealPageScaffold class="anchor-event-landing-page" data-page="event-landing">
+  <FooterRevealPageScaffold
+    class="anchor-event-landing-page"
+    data-page="event-landing"
+    :content-placement="pageStatePlacement"
+  >
     <template #header>
       <PageHeader
         v-if="detail"
@@ -228,6 +232,10 @@ const isError = computed(() => {
 
   return false;
 });
+
+const pageStatePlacement = computed(() =>
+  isLoading.value || isError.value ? "center" : "start",
+);
 
 const hasRouterBackEntry = (): boolean => {
   if (typeof window === "undefined") {
@@ -714,7 +722,6 @@ const handleSelectOtherEvent = async (nextEventId: number | null) => {
 
 .loading-state,
 .error-state {
-  padding: 3rem 0;
   text-align: center;
   color: var(--sys-color-on-surface-variant);
 }

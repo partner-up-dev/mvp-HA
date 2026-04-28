@@ -34,7 +34,7 @@
     <div class="no-match-actions">
       <Button
         appearance="rect"
-        tone="secondary"
+        tone="tertiary"
         type="button"
         block
         :loading="props.createPending"

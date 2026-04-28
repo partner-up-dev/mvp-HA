@@ -641,7 +641,7 @@ const handleSavePreferenceDrawer = async () => {
   display: inline-flex;
   align-items: stretch;
   gap: var(--sys-spacing-xxsmall);
-  min-width: clamp(4.75rem, 22vw, 5.25rem);
+  min-width: calc(var(--sys-size-large) + var(--sys-spacing-large));
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-radius-pill);
   background: var(--sys-color-surface);
@@ -655,11 +655,7 @@ const handleSavePreferenceDrawer = async () => {
 
 .tag-pill--selected {
   border-color: var(--sys-color-primary);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) 72%,
-    var(--sys-color-surface)
-  );
+  background: var(--sys-color-primary-container);
 }
 
 .tag-pill--add,
@@ -690,7 +686,7 @@ const handleSavePreferenceDrawer = async () => {
   flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
   padding: var(--sys-spacing-small);
   border: 0;

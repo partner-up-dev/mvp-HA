@@ -8,7 +8,12 @@
       ]"
       aria-live="polite"
     >
-      <div class="matched-pr-handoff__splash" aria-hidden="true" />
+      <LiquidWaveSplash
+        class="matched-pr-handoff__splash"
+        :duration-ms="MATCHED_SPLASH_DRAIN_MS"
+        :phase="handoff.state.phase === 'SETTLING' ? 'DRAIN' : 'HOLD'"
+        @drain-complete="handleSplashDrained"
+      />
 
       <div class="matched-pr-handoff__stage">
         <div class="matched-pr-handoff__card-shell" :style="cardShellStyle">
@@ -53,11 +58,13 @@ import Button from "@/shared/ui/actions/Button.vue";
 import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import { trackEvent } from "@/shared/telemetry/track";
+import LiquidWaveSplash from "@/processes/route-handoff/LiquidWaveSplash.vue";
 import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHandoff";
 
 const handoff = useMatchedPRHandoff();
 const router = useRouter();
 const { t } = useI18n();
+const MATCHED_SPLASH_DRAIN_MS = 980;
 
 let alignTimeoutId: number | null = null;
 let settleTimeoutId: number | null = null;
@@ -133,6 +140,15 @@ const handleConfirm = async () => {
   await router.push(`${prDetailPath(prId)}?${query.toString()}`);
 };
 
+const handleSplashDrained = () => {
+  if (handoff.state.phase !== "SETTLING") {
+    return;
+  }
+
+  clearTimers();
+  handoff.finish();
+};
+
 watch(
   () => handoff.state.phase,
   (phase) => {
@@ -145,10 +161,20 @@ watch(
       handoff.beginSettling();
       alignTimeoutId = null;
     }, 640);
+  },
+);
+
+watch(
+  () => handoff.state.phase,
+  (phase) => {
+    if (phase !== "SETTLING" || typeof window === "undefined") {
+      return;
+    }
+
     settleTimeoutId = window.setTimeout(() => {
-      handoff.finish();
+      handleSplashDrained();
       settleTimeoutId = null;
-    }, 980);
+    }, MATCHED_SPLASH_DRAIN_MS + 180);
   },
 );
 
@@ -168,24 +194,6 @@ onBeforeUnmount(() => {
 .matched-pr-handoff__splash {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      circle at 50% 42%,
-      color-mix(in srgb, var(--sys-color-primary) 78%, white) 0 8%,
-      transparent 34%
-    ),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--sys-color-primary) 88%, white),
-      var(--sys-color-primary) 44%,
-      color-mix(in srgb, var(--sys-color-primary) 88%, black)
-    );
-  opacity: 1;
-  transition: opacity 340ms ease;
-}
-
-.matched-pr-handoff--settling .matched-pr-handoff__splash {
-  opacity: 0;
 }
 
 .matched-pr-handoff__stage {
@@ -245,8 +253,7 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .matched-pr-handoff__card-shell,
-  .matched-pr-handoff__splash {
+  .matched-pr-handoff__card-shell {
     transition: none;
   }
 
