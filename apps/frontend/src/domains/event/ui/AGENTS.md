@@ -18,7 +18,7 @@ This folder owns event-domain UI surfaces, controls, composites, and primitives.
     |   `-- backend returns matchedRecommendation + orderedCandidates
     |
     |-- Matched Exists
-    |   `-- long-press splash continues into canonical /pr/:id
+    |   `-- route handoff overlay previews the matched PR card, then aligns it into canonical /pr/:id
     |
     `-- No Match
         `-- Inline Recommendation Result State
@@ -32,6 +32,7 @@ Rules:
 - `AnchorEventFormModeSurface.vue` owns selection state, recommendation result state, matched handoff, no-match result transition, create fallback, and flow telemetry.
 - Form Mode controls own local interaction state and expose committed values through narrow `v-model` contracts.
 - The no-match result is a Form Mode inline state within `/e/:eventId`.
+- Matched PR handoff state is route-level process state under `processes/route-handoff` so the overlay can survive `/e/:eventId` to `/pr/:id` navigation.
 - PageHeader back in the no-match result state should return to the Form Mode selection state.
 - The selection state owns the `查看所有场次` action.
 - The special long-press animation belongs to the Form Mode primary CTA only.

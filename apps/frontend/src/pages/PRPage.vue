@@ -68,21 +68,17 @@
         "
       />
 
-      <PRFactsCard
+      <div
+        ref="factsCardTargetRef"
         class="facts-card"
-        :pr-id="prDetail.id"
-        :location="prDetail.core.location ?? null"
-        :time-text="localizedTimeText"
-        :preferences="prDetail.core.preferences"
-        :notes="prDetail.core.notes ?? null"
-        :participant-overview-text="participantOverviewText"
-        :roster-preview="rosterPreview"
-        :has-more-roster="hasMoreRoster"
-        :location-gallery-available="locationGallery.length > 0"
-        @view-location-gallery="showLocationGalleryModal = true"
-        @view-roster="showRosterModal = true"
+        :class="{ 'facts-card--handoff-hidden': shouldHideFactsForHandoff }"
         data-region="summary"
-      />
+      >
+        <PRFactsCard
+          :pr-id="prDetail.id"
+          @ready="handleFactsCardReady"
+        />
+      </div>
 
       <section
         v-if="showContextualActionArea"
@@ -216,13 +212,6 @@
         />
       </BottomDrawer>
 
-      <PRRosterModal
-        :open="showRosterModal"
-        :pr-id="prDetail.id"
-        :section="prDetail.partnerSection"
-        @close="showRosterModal = false"
-      />
-
       <EditPRContentModal
         v-if="showEditModal && id !== null"
         :open="showEditModal"
@@ -239,12 +228,6 @@
         :open="showModifyModal"
         :pr-id="id"
         @close="showModifyModal = false"
-      />
-
-      <PRLocationGalleryModal
-        :open="showLocationGalleryModal"
-        :images="locationGallery"
-        @close="showLocationGalleryModal = false"
       />
 
       <Modal
@@ -396,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
@@ -406,8 +389,6 @@ import Modal from "@/shared/ui/overlay/Modal.vue";
 import ConfirmDialog from "@/shared/ui/overlay/ConfirmDialog.vue";
 import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
 import Button from "@/shared/ui/actions/Button.vue";
-import PRLocationGalleryModal from "@/domains/pr/ui/modals/PRLocationGalleryModal.vue";
-import PRRosterModal from "@/domains/pr/ui/modals/PRRosterModal.vue";
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
@@ -430,7 +411,6 @@ import { usePRRouteShareDescriptor } from "@/domains/pr/use-cases/usePRRouteShar
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRAttendanceActions } from "@/domains/pr/use-cases/usePRAttendanceActions";
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
-import { usePRLocationGallery } from "@/domains/pr/use-cases/usePRLocationGallery";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
 import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
@@ -449,12 +429,10 @@ import {
   readPendingWeChatAction,
   type PendingWeChatAction,
 } from "@/processes/wechat/pending-wechat-action";
+import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHandoff";
 
 type BlockedReason =
   PRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
-type RosterState =
-  PRDetailResponse["partnerSection"]["roster"][number]["state"];
-
 type DockActionKey = "JOIN" | "CONFIRM" | "CHECKIN_ATTENDED";
 
 type DockActionItem = {
@@ -479,90 +457,7 @@ const { t } = useI18n();
 const id = usePRRouteId();
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const FACTS_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})\s(.+)$/;
 const userSessionStore = useUserSessionStore();
-
-const extractFactsTimeDatePart = (formatted: string | null): string | null => {
-  if (!formatted) {
-    return null;
-  }
-
-  const matched = formatted.match(FACTS_TIME_PATTERN);
-  if (!matched) {
-    return null;
-  }
-
-  return `${matched[1]}-${matched[2]}-${matched[3]}`;
-};
-
-const resolveRelativeDayLabelByDate = (
-  year: number,
-  month: number,
-  day: number,
-): "今天" | "明天" | "后天" | null => {
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day)
-  ) {
-    return null;
-  }
-
-  const today = new Date();
-  const todayStart = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  const targetStart = new Date(year, month - 1, day);
-  if (Number.isNaN(targetStart.getTime())) {
-    return null;
-  }
-
-  const diffDays = Math.round(
-    (targetStart.getTime() - todayStart.getTime()) / DAY_IN_MS,
-  );
-  if (diffDays === 0) {
-    return "今天";
-  }
-
-  if (diffDays === 1) {
-    return "明天";
-  }
-
-  if (diffDays === 2) {
-    return "后天";
-  }
-
-  return null;
-};
-
-const formatFactsTimePoint = (
-  formatted: string | null,
-  includeRelativeDayLabel: boolean,
-): string | null => {
-  if (!formatted || !includeRelativeDayLabel) {
-    return formatted;
-  }
-
-  const matched = formatted.match(FACTS_TIME_PATTERN);
-  if (!matched) {
-    return formatted;
-  }
-
-  const year = Number(matched[1]);
-  const month = Number(matched[2]);
-  const day = Number(matched[3]);
-  const timePart = matched[4];
-  const relativeDayLabel = resolveRelativeDayLabelByDate(year, month, day);
-  if (!relativeDayLabel) {
-    return formatted;
-  }
-
-  const datePart = `${matched[1]}-${matched[2]}-${matched[3]}`;
-  return `${datePart} (${relativeDayLabel}) ${timePart}`;
-};
 
 const { data, isLoading, error, refetch } = usePRDetail(id);
 const prDetail = computed(() => data.value);
@@ -582,8 +477,6 @@ const backFallbackTo = computed(() => {
 const publishMutation = usePublishPR();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
-const showLocationGalleryModal = ref(false);
-const showRosterModal = ref(false);
 const showJoinFlowModal = ref(false);
 const showExitConfirmModal = ref(false);
 const showShareDrawer = ref(false);
@@ -599,6 +492,8 @@ const bookingContactActionError = ref<string | null>(null);
 const joinFlowPhoneInput = ref("");
 const exitActionError = ref<string | null>(null);
 const lastPrimaryImpressionKey = ref("");
+const factsCardTargetRef = ref<HTMLElement | null>(null);
+const matchedPRHandoff = useMatchedPRHandoff();
 
 const editableFields = computed<PRFormFields>(() => ({
   title: prDetail.value?.title,
@@ -614,14 +509,6 @@ const editableFields = computed<PRFormFields>(() => ({
 }));
 const showBudgetField = computed(() => !supportsEventContextFeatures.value);
 const showTimeField = computed(() => !supportsEventContextFeatures.value);
-
-const { locationId, locationGallery } = usePRLocationGallery(
-  computed(() => prDetail.value?.core.location ?? null),
-);
-
-watch(locationId, () => {
-  showLocationGalleryModal.value = false;
-});
 
 const isCreator = computed(() => {
   const createdBy = prDetail.value?.createdBy ?? null;
@@ -651,7 +538,6 @@ const creationEntry = computed(() => {
   if (Array.isArray(raw)) return raw[0] ?? null;
   return null;
 });
-const hasAppliedLandingJoinEntry = ref(false);
 const showDraftPublishCard = computed(
   () => prDetail.value?.status === "DRAFT",
 );
@@ -670,6 +556,40 @@ const primaryActionErrorMessage = computed(
   () => bookingContactActionError.value ?? sharedActions.joinErrorMessage.value,
 );
 
+const shouldHideFactsForHandoff = computed(() =>
+  matchedPRHandoff.shouldHideTargetForPR(id.value),
+);
+
+const registerFactsCardTarget = () => {
+  if (id.value === null || !matchedPRHandoff.isActiveForPR(id.value)) {
+    return;
+  }
+
+  const target = factsCardTargetRef.value;
+  if (!target) {
+    return;
+  }
+
+  const rect = target.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    return;
+  }
+
+  matchedPRHandoff.registerTargetRect(id.value, {
+    left: rect.left,
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  });
+};
+
+const handleFactsCardReady = async () => {
+  await nextTick();
+  registerFactsCardTarget();
+};
+
 watch(
   () => currentBookingContact.value?.state,
   (state) => {
@@ -684,8 +604,6 @@ useBodyScrollLock(
     () =>
       showEditModal.value ||
       showModifyModal.value ||
-      showLocationGalleryModal.value ||
-      showRosterModal.value ||
       showJoinSubscriptionModal.value ||
       showJoinFlowModal.value ||
       showExitConfirmModal.value ||
@@ -706,31 +624,6 @@ const routeShareDescriptor = usePRRouteShareDescriptor({
 usePRDetailHead({ pr: prDetail, shareUrl });
 useRouteShareDescriptorRegistration(routeShareDescriptor);
 
-const localizedTimeText = computed(() => {
-  const [startRaw, endRaw] = prDetail.value?.core.time ?? [null, null];
-  const startBase = formatLocalDateTimeValue(startRaw);
-  const endBase = formatLocalDateTimeValue(endRaw);
-  const sameDay =
-    extractFactsTimeDatePart(startBase) !== null &&
-    extractFactsTimeDatePart(startBase) === extractFactsTimeDatePart(endBase);
-  const start = formatFactsTimePoint(startBase, true);
-  const end = formatFactsTimePoint(endBase, !sameDay);
-
-  if (start && end) return `${start} - ${end}`;
-  return start ?? end ?? t("prPage.partnerSection.notSet");
-});
-
-const participantOverviewText = computed(() => {
-  if (!prDetail.value) return "";
-  const current = prDetail.value.partnerSection.capacity.current;
-  const min = prDetail.value.partnerSection.capacity.min;
-  if (min === null) return `${current} 人已加入，当前未设置最低成团人数。`;
-  return `${current} 人已加入，最低成团人数 ${min} 人。`;
-});
-
-const isActiveRosterState = (state: RosterState): boolean =>
-  state === "JOINED" || state === "CONFIRMED" || state === "ATTENDED";
-
 const releaseNoticeText = computed(() => {
   const releasedSlot =
     prDetail.value?.partnerSection.viewer.releasedSlot ?? null;
@@ -744,17 +637,6 @@ const releaseNoticeText = computed(() => {
   }
   return t("prPage.partnerSection.releaseNoticeAuto");
 });
-
-const activeRoster = computed(
-  () =>
-    prDetail.value?.partnerSection.roster.filter((item) =>
-      isActiveRosterState(item.state),
-    ) ?? [],
-);
-const rosterPreview = computed(() => activeRoster.value.slice(0, 4));
-const hasMoreRoster = computed(
-  () => activeRoster.value.length > rosterPreview.value.length,
-);
 
 const viewerState = computed<ViewerState>(() => {
   if (!prDetail.value) return "VISITOR_BLOCKED";
@@ -936,24 +818,14 @@ const openJoinFlowModal = () => {
 };
 
 watch(
-  [creationEntry, () => prDetail.value?.partnerSection.viewer.canJoin],
-  async ([entry, canJoin]) => {
-    if (entry !== "landing_join") {
-      hasAppliedLandingJoinEntry.value = false;
-      return;
-    }
-    if (!canJoin || hasAppliedLandingJoinEntry.value) {
-      return;
-    }
-
-    hasAppliedLandingJoinEntry.value = true;
-    openJoinFlowModal();
-    await router.replace({
-      query: {
-        ...route.query,
-        entry: "join",
-      },
-    });
+  [
+    () => matchedPRHandoff.state.phase,
+    id,
+    () => prDetail.value?.id ?? null,
+  ],
+  async () => {
+    await nextTick();
+    registerFactsCardTarget();
   },
   { immediate: true },
 );
@@ -1292,6 +1164,10 @@ function buttonToneForAction(
 
 .facts-card {
   margin-top: var(--sys-spacing-large);
+}
+
+.facts-card--handoff-hidden {
+  visibility: hidden;
 }
 
 .contextual-area {

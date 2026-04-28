@@ -48,7 +48,8 @@
   - one matched recommendation
   - one ordered candidate list
 - during Form Mode bootstrap, backend may return one default selection from the nearest upcoming joinable PR in the current Anchor Event context.
-- if a matched recommendation exists, the long-press splash continues into that PR's canonical `/pr/:id` route.
+- if a matched recommendation exists, the long-press splash opens a route-level matched PR handoff overlay with the PR Facts Card preview and ordinary `取消` / `加入` actions.
+- tapping the handoff `加入` action enters that PR's canonical `/pr/:id` route; PR Page owns the final join action after the handoff settles.
 - if no matched recommendation exists, the same `/e/:eventId` Form Mode surface switches into an inline no-match result state.
 - the no-match result state contains:
   - ordered candidate list
@@ -136,6 +137,7 @@
 - uncategorized tags remain neutral unless there is exact label overlap.
 - group momentum is based on how close the PR is to reaching `minPartners` after the current user joins.
 - matched recommendation is consumed as the handoff target after the Form Mode long-press submit.
+- matched recommendation preview uses the same `PRFactsCard` component as PR Page; the card accepts a `prId` and owns its PR detail data request.
 - the visible result UI is only for no-match recommendations.
 - no-match recommendation result is an inline Form Mode state containing ordered candidates plus create fallback.
 - candidate rows should use the Anchor Event PR card primitive with an action slot rather than a page-local recommendation card.
@@ -160,7 +162,10 @@
   - droplets, organic border-radius morphing, and shine provide the splash / liquid burst cue.
   - the overlay stays filled while recommendation resolves
   - when the inline no-match result is ready, the primary liquid drains downward to reveal the result state
-- after the burst, the flow should continue into PR handoff continuity and then settle on canonical `/pr/:id`.
+- after the burst, the flow should continue into a route-level PR handoff overlay.
+- the handoff PR Facts Card appears from the center with a small-to-large spin-in animation.
+- during `/e/:eventId` to `/pr/:id` navigation, the primary splash remains above the app until the PR Page target card is ready.
+- once PR Page renders its PR Facts Card target, the overlay card aligns into that card's final rect, then the splash fades and reveals the real PR Page card in the same position.
 - if backend finds a matched recommendation, that PR is the target of the same burst handoff.
 - if backend does not find a matched recommendation, the burst resolves into the inline no-match result state.
 
@@ -244,6 +249,7 @@
   - latest backend test and typecheck pass after adding Form Mode bootstrap default selection from the nearest upcoming visible joinable PR under `earliestLeadMinutes`.
   - latest frontend build passes after removing `/er`, moving recommendation orchestration into `AnchorEventFormModeSurface`, and adding `AnchorEventPRCard` actions slot.
   - latest frontend build passes after applying backend-authored default location/start selection and allowing Time Control to auto-enter Advanced Mode for externally supplied selectable starts.
+  - latest frontend build passes after adding route-level matched PR handoff overlay, moving `PRFactsCard` to `prId`-owned data loading, and removing PR Page `entry=landing_join` auto modal behavior.
   - latest frontend build passes after splitting Preference Control into empty-pool hidden state, category-scoped cells/drawers, and category-prefix-stripped tag badges.
 - `git diff --check` passes on the files changed by this slice; full-repo check is currently blocked by pre-existing trailing whitespace in `apps/frontend/src/locales/zh-CN.jsonc`.
 - `agent-browser` manual verification:
@@ -264,6 +270,8 @@
   - long-pressing `/e/2` covers the viewport with primary liquid, then drains to reveal the inline candidate result state.
   - synthetic long-press sampling shows trembling grows from early charge to overload: duration `111ms -> 91ms -> 82ms`, X displacement about `2.18px -> 3.42px -> 3.98px`, and outline pressure `1.58px -> 2.57px -> 4.15px`.
   - synthetic long-press splash sampling on `/e/2` shows the overlay entering `form-mode-join-splash--filling` with a viewport-aware `2275px` cover blob, start scale about `0.104`, and `8` radial droplets.
+  - matched long-press on `/e/2` opens `matched-pr-handoff--preview` with PR `31` Facts Card preview plus `取消` / `加入` actions.
+  - clicking the matched handoff `加入` action routes to `/pr/31` with `handoff=matched_pr`, clears the overlay after PR Facts Card target registration, and does not open the old join modal automatically.
 - durable docs updated for Form Mode workflow, invariants, cross-unit contracts, and state authority
 
 ## Defect Follow-up - Matched Recommendation Eligibility

@@ -129,6 +129,7 @@ import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
 } from "@/processes/wechat/pending-wechat-action";
+import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHandoff";
 
 const props = defineProps<{
   eventId: number;
@@ -145,6 +146,7 @@ const eventId = computed(() => props.eventId);
 const formModeQuery = useAnchorEventFormModeData(eventId);
 const recommendationMutation = useAnchorEventFormModeRecommendation();
 const createMutation = useCreateEventAssistedPR();
+const matchedPRHandoff = useMatchedPRHandoff();
 
 const selectedLocationId = ref<string | null>(null);
 const selectedStartAt = ref<string | null>(null);
@@ -155,7 +157,6 @@ const selectionErrorMessage = ref<string | null>(null);
 const createReplayErrorMessage = ref<string | null>(null);
 const hasTrackedFormImpression = ref(false);
 const defaultSelectionAppliedEventId = ref<number | null>(null);
-const isRoutingToMatchedRecommendation = ref(false);
 const pendingCreateReplayRunning = ref(false);
 type JoinSplashPhase = "IDLE" | "FILLING" | "HOLDING" | "DRAINING";
 
@@ -195,7 +196,7 @@ const primaryCtaLabel = computed(() => {
 const recommendationSubmissionPending = computed(
   () =>
     recommendationMutation.isPending.value ||
-    isRoutingToMatchedRecommendation.value ||
+    matchedPRHandoff.isActive.value ||
     joinSplashPhase.value !== "IDLE",
 );
 
@@ -453,9 +454,7 @@ const routeToPRJoin = async (
     candidateRank,
   });
 
-  await router.push(
-    `${prDetailPath(prId)}?fromEvent=${props.eventId}&entry=landing_join`,
-  );
+  await router.push(`${prDetailPath(prId)}?fromEvent=${props.eventId}`);
 };
 
 const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
@@ -487,12 +486,14 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
     });
 
     if (matchedPRId !== null) {
-      isRoutingToMatchedRecommendation.value = true;
       await splashFill;
       await waitForJoinSplash(140);
-      await routeToPRJoin(matchedPRId, "MATCHED_JOIN").finally(() => {
-        isRoutingToMatchedRecommendation.value = false;
+      matchedPRHandoff.begin({
+        prId: matchedPRId,
+        eventId: props.eventId,
+        originRect,
       });
+      resetJoinSplash();
       return;
     }
 
