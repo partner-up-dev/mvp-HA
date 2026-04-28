@@ -3,9 +3,7 @@
     <div
       v-if="isVisible"
       class="matched-pr-handoff"
-      :class="[
-        `matched-pr-handoff--${handoff.state.phase.toLowerCase()}`,
-      ]"
+      :class="[`matched-pr-handoff--${handoff.state.phase.toLowerCase()}`]"
       aria-live="polite"
     >
       <LiquidWaveSplash
@@ -16,7 +14,15 @@
       />
 
       <div class="matched-pr-handoff__stage">
-        <div class="matched-pr-handoff__card-shell" :style="cardShellStyle">
+        <div
+          ref="cardShellRef"
+          class="matched-pr-handoff__card-shell"
+          :class="{
+            'matched-pr-handoff__card-shell--flip-running':
+              cardAlignmentStage === 'RUNNING',
+          }"
+          :style="cardShellStyle"
+        >
           <PRFactsCard
             v-if="handoff.state.prId !== null"
             class="matched-pr-handoff__card"
@@ -28,19 +34,10 @@
             v-if="handoff.state.phase === 'PREVIEW'"
             class="matched-pr-handoff__actions"
           >
-            <Button
-              type="button"
-              tone="surface"
-              block
-              @click="handleCancel"
-            >
+            <Button type="button" tone="surface" block @click="handleCancel">
               {{ t("common.cancel") }}
             </Button>
-            <Button
-              type="button"
-              block
-              @click="handleConfirm"
-            >
+            <Button type="button" block @click="handleConfirm">
               {{ t("prPage.join") }}
             </Button>
           </div>
@@ -51,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import Button from "@/shared/ui/actions/Button.vue";
@@ -59,15 +56,26 @@ import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import { trackEvent } from "@/shared/telemetry/track";
 import LiquidWaveSplash from "@/processes/route-handoff/LiquidWaveSplash.vue";
-import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHandoff";
+import {
+  useMatchedPRHandoff,
+  type RouteHandoffRect,
+} from "@/processes/route-handoff/useMatchedPRHandoff";
 
 const handoff = useMatchedPRHandoff();
 const router = useRouter();
 const { t } = useI18n();
+const MATCHED_CARD_ALIGN_MS = 820;
 const MATCHED_SPLASH_DRAIN_MS = 980;
 
 let alignTimeoutId: number | null = null;
 let settleTimeoutId: number | null = null;
+let alignFrameId: number | null = null;
+
+type CardAlignmentStage = "IDLE" | "INVERTED" | "RUNNING" | "SETTLED";
+
+const cardShellRef = ref<HTMLElement | null>(null);
+const cardAlignmentStage = ref<CardAlignmentStage>("IDLE");
+const cardFlipTransform = ref("translate3d(0, 0, 0) scale(1) rotateY(0deg)");
 
 const isVisible = computed(
   () => handoff.state.phase !== "IDLE" && handoff.state.prId !== null,
@@ -77,14 +85,13 @@ const cardShellStyle = computed(() => {
   const targetRect = handoff.state.targetRect;
   if (
     targetRect &&
-    (handoff.state.phase === "ALIGNING" ||
-      handoff.state.phase === "SETTLING")
+    (handoff.state.phase === "ALIGNING" || handoff.state.phase === "SETTLING")
   ) {
     return {
       left: `${targetRect.left}px`,
       top: `${targetRect.top}px`,
       width: `${targetRect.width}px`,
-      transform: "none",
+      transform: cardFlipTransform.value,
     };
   }
 
@@ -112,8 +119,94 @@ const clearTimers = () => {
   }
 };
 
+const clearAnimationFrame = () => {
+  if (typeof window === "undefined") {
+    alignFrameId = null;
+    return;
+  }
+  if (alignFrameId !== null) {
+    window.cancelAnimationFrame(alignFrameId);
+    alignFrameId = null;
+  }
+};
+
+const resetCardAlignment = () => {
+  clearAnimationFrame();
+  cardAlignmentStage.value = "IDLE";
+  cardFlipTransform.value = "translate3d(0, 0, 0) scale(1) rotateY(0deg)";
+};
+
+const prefersReducedMotion = (): boolean => {
+  if (typeof window === "undefined") {
+    return true;
+  }
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+};
+
+const toRouteHandoffRect = (rect: DOMRect): RouteHandoffRect => ({
+  left: rect.left,
+  top: rect.top,
+  right: rect.right,
+  bottom: rect.bottom,
+  width: rect.width,
+  height: rect.height,
+});
+
+const buildInvertedCardTransform = (
+  sourceRect: RouteHandoffRect,
+  targetRect: RouteHandoffRect,
+): string => {
+  const sourceCenterX = sourceRect.left + sourceRect.width / 2;
+  const sourceCenterY = sourceRect.top + sourceRect.height / 2;
+  const targetCenterX = targetRect.left + targetRect.width / 2;
+  const targetCenterY = targetRect.top + targetRect.height / 2;
+  const deltaX = sourceCenterX - targetCenterX;
+  const deltaY = sourceCenterY - targetCenterY;
+  const scaleX = sourceRect.width / Math.max(targetRect.width, 1);
+  const scaleY = sourceRect.height / Math.max(targetRect.height, 1);
+
+  return `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${scaleX}, ${scaleY}) rotateY(0deg)`;
+};
+
+const startCardAlignment = () => {
+  clearTimers();
+  clearAnimationFrame();
+
+  const targetRect = handoff.state.targetRect;
+  const sourceElement = cardShellRef.value;
+  if (!targetRect || !sourceElement || typeof window === "undefined") {
+    handoff.beginSettling();
+    return;
+  }
+
+  if (prefersReducedMotion()) {
+    cardFlipTransform.value = "translate3d(0, 0, 0) scale(1) rotateY(0deg)";
+    cardAlignmentStage.value = "SETTLED";
+    handoff.beginSettling();
+    return;
+  }
+
+  const sourceRect = toRouteHandoffRect(sourceElement.getBoundingClientRect());
+  cardFlipTransform.value = buildInvertedCardTransform(sourceRect, targetRect);
+  cardAlignmentStage.value = "INVERTED";
+
+  alignFrameId = window.requestAnimationFrame(() => {
+    alignFrameId = null;
+    cardShellRef.value?.getBoundingClientRect();
+    cardAlignmentStage.value = "RUNNING";
+    cardFlipTransform.value =
+      "translate3d(0, 0, 0) scale(1, 1) rotateY(360deg)";
+    alignTimeoutId = window.setTimeout(() => {
+      cardAlignmentStage.value = "SETTLED";
+      handoff.beginSettling();
+      alignTimeoutId = null;
+    }, MATCHED_CARD_ALIGN_MS);
+  });
+};
+
 const handleCancel = () => {
   clearTimers();
+  resetCardAlignment();
   handoff.cancel();
 };
 
@@ -146,21 +239,21 @@ const handleSplashDrained = () => {
   }
 
   clearTimers();
+  resetCardAlignment();
   handoff.finish();
 };
 
 watch(
   () => handoff.state.phase,
   (phase) => {
-    clearTimers();
-    if (phase !== "ALIGNING" || typeof window === "undefined") {
+    if (phase !== "ALIGNING") {
+      if (phase === "IDLE" || phase === "PREVIEW" || phase === "NAVIGATING") {
+        resetCardAlignment();
+      }
       return;
     }
 
-    alignTimeoutId = window.setTimeout(() => {
-      handoff.beginSettling();
-      alignTimeoutId = null;
-    }, 640);
+    startCardAlignment();
   },
 );
 
@@ -180,6 +273,7 @@ watch(
 
 onBeforeUnmount(() => {
   clearTimers();
+  resetCardAlignment();
 });
 </script>
 
@@ -208,17 +302,18 @@ onBeforeUnmount(() => {
   gap: var(--sys-spacing-medium);
   max-width: calc(100vw - 2rem);
   transform-origin: center;
+  transition: opacity 280ms ease;
+  will-change: transform, opacity;
+}
+
+.matched-pr-handoff__card-shell--flip-running {
   transition:
-    left 620ms cubic-bezier(0.18, 0.86, 0.2, 1),
-    top 620ms cubic-bezier(0.18, 0.86, 0.2, 1),
-    width 620ms cubic-bezier(0.18, 0.86, 0.2, 1),
-    transform 620ms cubic-bezier(0.18, 0.86, 0.2, 1),
+    transform 820ms cubic-bezier(0.15, 0.86, 0.18, 1),
     opacity 280ms ease;
 }
 
 .matched-pr-handoff--preview .matched-pr-handoff__card-shell {
-  animation: matched-pr-card-spin-in 760ms cubic-bezier(0.16, 0.9, 0.2, 1)
-    both;
+  animation: matched-pr-card-spin-in 760ms cubic-bezier(0.16, 0.9, 0.2, 1) both;
 }
 
 .matched-pr-handoff--settling .matched-pr-handoff__card-shell {

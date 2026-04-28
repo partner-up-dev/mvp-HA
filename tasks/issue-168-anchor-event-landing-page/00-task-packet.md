@@ -166,11 +166,11 @@
 - after the burst, the flow should continue into a route-level PR handoff overlay.
 - the handoff PR Facts Card appears from the center with a small-to-large spin-in animation.
 - during `/e/:eventId` to `/pr/:id` navigation, the primary splash remains above the app until the PR Page target card is ready.
-- once PR Page renders its PR Facts Card target, the overlay card aligns into that card's final rect, then the splash drains from top to bottom and reveals the real PR Page card in the same position.
+- once PR Page renders its PR Facts Card target, the overlay card aligns into that card's final rect through a FLIP transform and one full Y-axis spin, then the splash drains from top to bottom and reveals the real PR Page card in the same position.
 - Form Mode full-screen join splash and matched PR handoff drain use the same route-handoff-owned SVG liquid layer driven by `requestAnimationFrame`: three sine-wave path layers share the primary color family, move with phase offsets, increase wave deformation during flow, and calm down near empty.
 - Form Mode fill passes the CTA origin rect into that liquid layer, so the full-screen liquid starts from the long-press CTA area, expands through a radial reveal, then holds as a filled liquid surface before either draining into the no-match result or handing off into the matched PR overlay.
 - if backend finds a matched recommendation, that PR is the target of the same burst handoff.
-- if backend does not find a matched recommendation, the burst resolves into the inline no-match result state.
+- if backend does not find a matched recommendation, the liquid fill completes first, the inline no-match result state mounts underneath the filled surface, and the drain reveals that result state.
 
 ### 8. Header And Other Events
 
@@ -257,8 +257,10 @@
   - latest frontend build passes after replacing the matched PR handoff drain with a three-layer SVG liquid-wave splash.
   - latest frontend build passes after replacing the Form Mode full-screen join splash fill/hold/drain with the same SVG liquid-wave splash.
   - latest frontend build passes after resolving token-governance findings through scaffold placement, `dcs` promotion, and narrow component / splash exceptions.
+  - latest frontend build passes after replacing matched PR card target alignment with a FLIP transform that rotates once around the Y axis and lands on the PR Page Facts Card rect.
+  - latest frontend build passes after delaying the no-match result state mount until Form Mode liquid fill completion, so result content is revealed only during the drain.
   - latest token governance check reports no findings outside baseline after keeping splash tint / adaptive geometry inside a narrow exception, moving landing loading / error placement into `FooterRevealPageScaffold`, promoting Form Mode location-card height into `dcs`, and documenting the shared primitive component-contract exception.
-- `git diff --check` passes on the files changed by this slice; full-repo check is currently blocked by pre-existing trailing whitespace in `apps/frontend/src/locales/zh-CN.jsonc`.
+- `git diff --check` passes for the current worktree diff.
 - `agent-browser` manual verification:
   - `/api/events/2/form-mode` returns `defaultSelection` from PR `31`, location `云山水榭`, start `2026-04-28T11:00:00.000Z`.
   - forcing `/e/2` into FORM mode initializes the selected location to `云山水榭`, the selected date to `4/28`, the selected time to `19:00`, and the CTA to `加入一场 4/28 19:00 在 云山水榭 的学习冲刺活动`.

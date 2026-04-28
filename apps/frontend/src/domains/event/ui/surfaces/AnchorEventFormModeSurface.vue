@@ -523,8 +523,8 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
       return;
     }
 
-    noMatchRecommendationResult.value = result;
     await splashFill;
+    noMatchRecommendationResult.value = result;
     await drainJoinSplash();
   } catch (error) {
     selectionErrorMessage.value =
