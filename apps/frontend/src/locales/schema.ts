@@ -995,6 +995,8 @@ export interface MessageSchema {
     createPoiAction: string;
     creatingPoi: string;
     galleryHint: string;
+    perTimeWindowCapLabel: string;
+    perTimeWindowCapPlaceholder: string;
     uploadImageAction: string;
     uploadingImage: string;
     manualUrlPlaceholder: string;

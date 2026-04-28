@@ -3,8 +3,7 @@ insert into anchor_events (
   title,
   type,
   description,
-  system_location_pool,
-  user_location_pool,
+  location_pool,
   time_pool_config,
   cover_image,
   beta_group_qr_code,
@@ -19,7 +18,6 @@ values
     'BADMINTON',
     '就在校内，场地费用我们出，你只管玩得开心！',
     $$["广外南体育馆羽毛球场1号场", "广外南体育馆羽毛球场2号场"]$$::jsonb,
-    $$[]$$::jsonb,
     $${
       "durationMinutes": 60,
       "earliestLeadMinutes": null,
@@ -40,7 +38,6 @@ values
     'STUDY_SPRINT',
     '互相陪伴，独立学习',
     $$["图书馆自习区A桌", "图书馆自习区B桌"]$$::jsonb,
-    $$[]$$::jsonb,
     $${
       "durationMinutes": 120,
       "earliestLeadMinutes": null,
@@ -60,8 +57,7 @@ set
   title = excluded.title,
   type = excluded.type,
   description = excluded.description,
-  system_location_pool = excluded.system_location_pool,
-  user_location_pool = excluded.user_location_pool,
+  location_pool = excluded.location_pool,
   time_pool_config = excluded.time_pool_config,
   cover_image = excluded.cover_image,
   beta_group_qr_code = excluded.beta_group_qr_code,
@@ -202,6 +198,7 @@ select setval(
 insert into pois (
   id,
   gallery,
+  per_time_window_cap,
   created_at,
   updated_at
 )
@@ -209,30 +206,35 @@ values
   (
     '广外南体育馆羽毛球场1号场',
     array['https://oss-app.partner-up.cn/pois/4310f713-8897-4055-9be4-914a5ec7477f.jpg']::text[],
+    1,
     '2026-03-03 11:55:30.133803'::timestamp,
     '2026-03-03 11:55:30.133803'::timestamp
   ),
   (
     '广外南体育馆羽毛球场2号场',
     array['https://oss-app.partner-up.cn/pois/4310f713-8897-4055-9be4-914a5ec7477f.jpg']::text[],
+    1,
     '2026-03-03 11:56:30.133803'::timestamp,
     '2026-03-03 11:56:30.133803'::timestamp
   ),
   (
     '图书馆自习区A桌',
     array[]::text[],
+    1,
     '2026-03-03 11:57:30.133803'::timestamp,
     '2026-03-03 11:57:30.133803'::timestamp
   ),
   (
     '图书馆自习区B桌',
     array[]::text[],
+    1,
     '2026-03-03 11:58:30.133803'::timestamp,
     '2026-03-03 11:58:30.133803'::timestamp
   )
 on conflict (id) do update
 set
   gallery = excluded.gallery,
+  per_time_window_cap = excluded.per_time_window_cap,
   created_at = excluded.created_at,
   updated_at = excluded.updated_at;
 

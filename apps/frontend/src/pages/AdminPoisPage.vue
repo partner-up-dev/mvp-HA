@@ -102,6 +102,18 @@
               }}
             </Button>
           </div>
+
+          <label class="field">
+            <span class="field-label">{{ t("adminPois.perTimeWindowCapLabel") }}</span>
+            <input
+              v-model="selectedPoiCapText"
+              class="field-input"
+              type="number"
+              min="1"
+              :disabled="selectedPoiId === null"
+              :placeholder="t('adminPois.perTimeWindowCapPlaceholder')"
+            />
+          </label>
           <input
             ref="galleryInputRef"
             class="hidden-input"
@@ -180,6 +192,7 @@ import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 
 type PoiRecord = NonNullable<AdminPoisResponse>[number];
 type PoiGalleryMap = Record<string, string[]>;
+type PoiCapMap = Record<string, number | null>;
 
 const normalizeGallery = (gallery: string[]): string[] => {
   const normalized = new Set<string>();
@@ -202,6 +215,7 @@ const newPoiId = ref("");
 const manualGalleryUrl = ref("");
 const galleryInputRef = ref<HTMLInputElement | null>(null);
 const poiGalleryById = ref<PoiGalleryMap>({});
+const poiCapById = ref<PoiCapMap>({});
 const dirtyPoiIds = ref<Set<string>>(new Set());
 const poiMutationAction = ref<"create" | "save-gallery" | null>(null);
 
@@ -216,6 +230,24 @@ const selectedPoiGallery = computed<string[]>(() => {
   const poiId = selectedPoiId.value;
   if (!poiId) return [];
   return poiGalleryById.value[poiId] ?? [];
+});
+const normalizeNullablePositiveInteger = (value: unknown): number | null => {
+  if (typeof value === "string" && value.trim().length === 0) {
+    return null;
+  }
+  const parsed = typeof value === "number" ? value : Number(String(value).trim());
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+const selectedPoiCap = computed<number | null>(() => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return null;
+  return poiCapById.value[poiId] ?? null;
+});
+const selectedPoiCapText = computed<string>({
+  get: () => (selectedPoiCap.value === null ? "" : String(selectedPoiCap.value)),
+  set: (value) => {
+    setSelectedPoiCap(normalizeNullablePositiveInteger(value));
+  },
 });
 const canCreatePoi = computed(() => {
   const poiId = newPoiId.value.trim();
@@ -251,6 +283,25 @@ const setSelectedPoiGallery = (
   }
 };
 
+const setSelectedPoiCap = (
+  perTimeWindowCap: number | null,
+  options?: { markDirty?: boolean },
+) => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return;
+
+  const markDirty = options?.markDirty ?? true;
+  poiCapById.value = {
+    ...poiCapById.value,
+    [poiId]: perTimeWindowCap,
+  };
+  if (markDirty) {
+    const nextDirtyPoiIds = new Set(dirtyPoiIds.value);
+    nextDirtyPoiIds.add(poiId);
+    dirtyPoiIds.value = nextDirtyPoiIds;
+  }
+};
+
 watch([pois, isAdmin], ([nextPois, adminReady]) => {
   if (!adminReady || nextPois.length === 0) {
     selectedPoiIdRaw.value = "";
@@ -263,20 +314,25 @@ watch([pois, isAdmin], ([nextPois, adminReady]) => {
 
 watch(pois, (nextPois) => {
   const nextMap: PoiGalleryMap = {};
+  const nextCapMap: PoiCapMap = {};
   const nextDirtyPoiIds = new Set<string>();
 
   for (const poi of nextPois) {
     const isDirty = dirtyPoiIds.value.has(poi.id);
     const localGallery = poiGalleryById.value[poi.id];
+    const localCap = poiCapById.value[poi.id];
     if (isDirty && localGallery !== undefined) {
       nextMap[poi.id] = normalizeGallery(localGallery);
+      nextCapMap[poi.id] = localCap ?? null;
       nextDirtyPoiIds.add(poi.id);
       continue;
     }
     nextMap[poi.id] = normalizeGallery(poi.gallery);
+    nextCapMap[poi.id] = poi.perTimeWindowCap ?? null;
   }
 
   poiGalleryById.value = nextMap;
+  poiCapById.value = nextCapMap;
   dirtyPoiIds.value = nextDirtyPoiIds;
 }, { immediate: true });
 
@@ -289,6 +345,7 @@ const handleCreatePoi = async () => {
     const result = await upsertPoiMutation.mutateAsync({
       poiId,
       gallery: [],
+      perTimeWindowCap: null,
     });
     selectedPoiIdRaw.value = result.id;
     newPoiId.value = "";
@@ -342,8 +399,10 @@ const handleSaveGallery = async () => {
     const result = await upsertPoiMutation.mutateAsync({
       poiId,
       gallery: normalizeGallery(selectedPoiGallery.value),
+      perTimeWindowCap: selectedPoiCap.value,
     });
     setSelectedPoiGallery(result.gallery, { markDirty: false });
+    setSelectedPoiCap(result.perTimeWindowCap ?? null, { markDirty: false });
     const nextDirtyPoiIds = new Set(dirtyPoiIds.value);
     nextDirtyPoiIds.delete(poiId);
     dirtyPoiIds.value = nextDirtyPoiIds;

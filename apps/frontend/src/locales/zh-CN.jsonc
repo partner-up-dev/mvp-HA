@@ -609,7 +609,7 @@
   },
   "adminPois": {
     "title": "POIs 配置",
-    "subtitle": "维护全局 POI 库与 POI Gallery，活动页面只引用 POI ID。",
+    "subtitle": "维护全局 POI 库、容量与 POI Gallery，活动页面只引用 POI ID。",
     "poiListTitle": "POI 列表",
     "poiCount": "共 {count} 个 POI",
     "emptyPois": "当前还没有 POI，请先创建一个。",
@@ -622,11 +622,13 @@
     "createPoiAction": "创建 POI",
     "creatingPoi": "创建中...",
     "galleryHint": "可上传图片或手动添加 URL。上传路径与头像/海报一致。",
+    "perTimeWindowCapLabel": "每时间段容量",
+    "perTimeWindowCapPlaceholder": "留空表示不限量",
     "uploadImageAction": "上传图片",
     "uploadingImage": "上传中...",
     "manualUrlPlaceholder": "粘贴图片 URL",
     "addUrlAction": "添加 URL",
-    "saveGalleryAction": "保存 Gallery",
+    "saveGalleryAction": "保存 POI",
     "savingGallery": "保存中...",
     "emptyGallery": "当前 POI 还没有图片。",
     "removeImageAction": "移除",
@@ -699,7 +701,7 @@
     "eventStatusLabel": "活动状态",
     "eventDefaultMinPartnersLabel": "默认最少人数",
     "eventDefaultMaxPartnersLabel": "默认最多人数",
-    "eventPoiHint": "POI 库与 Gallery 在「POIs 配置」页面维护；这里维护当前活动引用的 POI ID 列表。",
+    "eventPoiHint": "POI 库、容量与 Gallery 在「POIs 配置」页面维护；这里维护当前活动引用的 POI ID 列表。",
     "eventLocationPoolLabel": "场地池（每行一个）",
     "eventTimeWindowHint": "时间池由活动的时间池规则生成。",
     "saveEventAction": "保存活动",
@@ -776,8 +778,7 @@
     "visibilityVisible": "VISIBLE",
     "visibilityHidden": "HIDDEN",
     "saving": "保存中...",
-    "generatedPRCount": "{count} 个 PR",
-    "userLocationPoolLabel": "用户可选场地池（每行一个）"
+    "generatedPRCount": "{count} 个 PR"
   },
   "adminPRMessages": {
     "title": "PR 系统留言",

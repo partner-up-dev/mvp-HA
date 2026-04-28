@@ -278,7 +278,6 @@ export const eventOwnsTimeWindow = (
   }
 
   const candidateStart = new Date(startAtMs);
-  const candidateStartIso = toCanonicalIso(candidateStart);
   const localCandidate = toProductLocalDate(candidateStart);
   const candidateWeekday = localCandidate.getUTCDay();
   const candidateTimeOfDay = `${String(localCandidate.getUTCHours()).padStart(
@@ -288,7 +287,8 @@ export const eventOwnsTimeWindow = (
 
   return config.startRules.some((rule) => {
     if (rule.kind === "ABSOLUTE") {
-      return rule.startAt === candidateStartIso;
+      const ruleStartAtMs = parseTime(rule.startAt);
+      return ruleStartAtMs !== null && ruleStartAtMs === startAtMs;
     }
 
     return (

@@ -54,11 +54,7 @@ export type AdminAnchorEventInput = {
   title: string;
   type: string;
   description: string | null;
-  systemLocationPool: string[];
-  userLocationPool: Array<{
-    id: string;
-    perBatchCap: number;
-  }>;
+  locationPool: string[];
   timePoolConfig: AdminAnchorTimePoolConfigInput;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;

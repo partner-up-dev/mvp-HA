@@ -3,8 +3,7 @@ import type {
   AnchorEvent,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
-  SystemLocationEntry,
-  UserLocationEntry,
+  LocationEntry,
 } from "../../../entities";
 import { normalizeAnchorEventTimePoolConfig } from "../../../entities";
 import { HTTPException } from "hono/http-exception";
@@ -19,8 +18,7 @@ export interface CreateAdminAnchorEventInput {
   title: string;
   type: string;
   description: string | null;
-  systemLocationPool: SystemLocationEntry[];
-  userLocationPool: UserLocationEntry[];
+  locationPool: LocationEntry[];
   timePoolConfig: AnchorEventTimePoolConfig;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
@@ -58,8 +56,7 @@ export async function createAdminAnchorEvent(
     title: input.title,
     type: input.type,
     description: input.description,
-    systemLocationPool: input.systemLocationPool,
-    userLocationPool: input.userLocationPool,
+    locationPool: input.locationPool,
     timePoolConfig: normalizeAnchorEventTimePoolConfig(input.timePoolConfig),
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,

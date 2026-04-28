@@ -81,7 +81,7 @@ import { useReducedMotion } from "@/shared/motion/useReducedMotion";
 
 type LocationOption = {
   locationId: string;
-  remainingQuota: number;
+  remainingQuota: number | null;
   disabled: boolean;
   disabledReason: "NONE" | "MAX_REACHED";
 };
@@ -277,6 +277,9 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
     return t("anchorEvent.createCard.optionMaxReached", {
       locationId: option.locationId,
     });
+  }
+  if (option.remainingQuota === null) {
+    return option.locationId;
   }
   return t("anchorEvent.createCard.optionRemaining", {
     locationId: option.locationId,

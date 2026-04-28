@@ -16,32 +16,14 @@ import { z } from "zod";
 export const anchorEventStatusSchema = z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]);
 export type AnchorEventStatus = z.infer<typeof anchorEventStatusSchema>;
 
-/** A system-managed location entry: POI.id */
-export const systemLocationEntrySchema = z.string().min(1);
-export type SystemLocationEntry = z.infer<typeof systemLocationEntrySchema>;
-
-/** Backward-compatible alias kept for incremental migration of call sites. */
-export const locationEntrySchema = systemLocationEntrySchema;
-export type LocationEntry = SystemLocationEntry;
-
-export const userLocationEntrySchema = z.object({
-  id: z.string().trim().min(1),
-  perBatchCap: z.number().int().positive(),
-});
-export type UserLocationEntry = z.infer<typeof userLocationEntrySchema>;
+/** A location entry: POI.id or a free-form location label. */
+export const locationEntrySchema = z.string().trim().min(1);
+export type LocationEntry = z.infer<typeof locationEntrySchema>;
 
 type LegacyLocationEntry = {
   id?: unknown;
   key?: unknown;
   label?: unknown;
-};
-
-type LegacyUserLocationEntry = {
-  id?: unknown;
-  locationId?: unknown;
-  key?: unknown;
-  perBatchCap?: unknown;
-  cap?: unknown;
 };
 
 const normalizeLocationString = (value: unknown): string | null => {
@@ -72,14 +54,12 @@ const normalizeLocationValue = (value: unknown): string | null => {
   return null;
 };
 
-export const normalizeSystemLocationPool = (
-  rawPool: unknown,
-): SystemLocationEntry[] => {
+export const normalizeLocationPool = (rawPool: unknown): LocationEntry[] => {
   if (!Array.isArray(rawPool)) {
     return [];
   }
 
-  const unique = new Set<SystemLocationEntry>();
+  const unique = new Set<LocationEntry>();
   for (const item of rawPool) {
     const normalized = normalizeLocationValue(item);
     if (!normalized) continue;
@@ -88,57 +68,6 @@ export const normalizeSystemLocationPool = (
 
   return Array.from(unique);
 };
-
-const normalizePositiveInteger = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
-    return value;
-  }
-  if (typeof value === "string") {
-    const parsed = Number(value.trim());
-    if (Number.isInteger(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-  return null;
-};
-
-const normalizeUserLocationEntry = (value: unknown): UserLocationEntry | null => {
-  if (typeof value !== "object" || value === null) {
-    return null;
-  }
-  const raw = value as LegacyUserLocationEntry;
-
-  const id =
-    normalizeLocationString(raw.id) ??
-    normalizeLocationString(raw.locationId) ??
-    normalizeLocationString(raw.key);
-  if (!id) return null;
-
-  const perBatchCap = normalizePositiveInteger(raw.perBatchCap ?? raw.cap);
-  if (perBatchCap === null) return null;
-
-  return { id, perBatchCap };
-};
-
-export const normalizeUserLocationPool = (
-  rawPool: unknown,
-): UserLocationEntry[] => {
-  if (!Array.isArray(rawPool)) {
-    return [];
-  }
-
-  const byId = new Map<string, UserLocationEntry>();
-  for (const item of rawPool) {
-    const normalized = normalizeUserLocationEntry(item);
-    if (!normalized) continue;
-    byId.set(normalized.id, normalized);
-  }
-
-  return Array.from(byId.values());
-};
-
-/** Backward-compatible alias kept for incremental migration of call sites. */
-export const normalizeLocationPool = normalizeSystemLocationPool;
 
 /** A time-window entry: [start, end] in the same format PR uses (ISO date or datetime, nullable) */
 export const timeWindowEntrySchema = z.tuple([
@@ -367,11 +296,8 @@ export const anchorEvents = pgTable("anchor_events", {
   title: text("title").notNull(),
   type: text("type").notNull(),
   description: text("description"),
-  systemLocationPool: jsonb("system_location_pool")
-    .$type<SystemLocationEntry[]>()
-    .notNull(),
-  userLocationPool: jsonb("user_location_pool")
-    .$type<UserLocationEntry[]>()
+  locationPool: jsonb("location_pool")
+    .$type<LocationEntry[]>()
     .notNull(),
   timePoolConfig: jsonb("time_pool_config")
     .$type<AnchorEventTimePoolConfig>()

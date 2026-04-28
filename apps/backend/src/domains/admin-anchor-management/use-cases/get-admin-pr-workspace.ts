@@ -1,4 +1,5 @@
 import type { PartnerRequest } from "../../../entities";
+import { normalizeLocationPool } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import {
@@ -94,12 +95,7 @@ export async function getAdminPRWorkspace(): Promise<AdminPRWorkspace> {
     typeOptionsByType.set(event.type, {
       type: event.type,
       eventTitle: event.title,
-      locationOptions: Array.from(
-        new Set([
-          ...event.systemLocationPool,
-          ...event.userLocationPool.map((entry) => entry.id),
-        ]),
-      ),
+      locationOptions: normalizeLocationPool(event.locationPool),
       defaultMinPartners: event.defaultMinPartners ?? null,
       defaultMaxPartners: event.defaultMaxPartners ?? null,
       defaultConfirmationStartOffsetMinutes:

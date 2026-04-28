@@ -174,10 +174,7 @@ const availableLocationOptions = computed<string[]>(() => {
   const event = selectedEvent.value;
   if (!event) return [];
 
-  const allLocationIds = [
-    ...event.systemLocationPool,
-    ...event.userLocationPool.map((entry) => entry.id),
-  ]
+  const allLocationIds = event.locationPool
     .map((locationId) => locationId.trim())
     .filter((locationId) => locationId.length > 0);
 

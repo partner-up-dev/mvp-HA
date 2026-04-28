@@ -80,15 +80,15 @@ export const useUpsertAdminPoi = () => {
   return useMutation<
     UpsertAdminPoiResponse,
     Error,
-    { poiId: string; gallery: string[] }
+    { poiId: string; gallery: string[]; perTimeWindowCap: number | null }
   >({
-    mutationFn: async ({ poiId, gallery }) => {
+    mutationFn: async ({ poiId, gallery, perTimeWindowCap }) => {
       const res = await adminClient.api.admin.pois[":poiId"].$put({
         param: { poiId },
-        json: { gallery },
+        json: { gallery, perTimeWindowCap },
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "保存 POI Gallery 失败"));
+        throw new Error(await readErrorMessage(res, "保存 POI 失败"));
       }
       return await res.json();
     },

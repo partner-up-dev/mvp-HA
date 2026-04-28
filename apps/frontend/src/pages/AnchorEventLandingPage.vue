@@ -415,6 +415,10 @@ const formatLocationOptionLabel = (option: LocationOption): string => {
     });
   }
 
+  if (option.remainingQuota === null) {
+    return option.locationId;
+  }
+
   return t("anchorEvent.createCard.optionRemaining", {
     locationId: option.locationId,
     count: option.remainingQuota,

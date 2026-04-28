@@ -1,14 +1,13 @@
 import { HTTPException } from "hono/http-exception";
 import type { AnchorEventId, PartnerRequestFields } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventPRAttachmentRepository } from "../../../repositories/AnchorEventPRAttachmentRepository";
 import { createPRFromStructured } from "../../pr-core/use-cases/create-pr-structured";
 import type { CreatorIdentityInput } from "../../pr/services";
 import { isEventScopedLocation } from "../services/event-scope";
 import { buildAnchorEventFormModeTimeWindow } from "../services/form-mode";
+import { eventOwnsTimeWindow } from "../services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
-const attachmentRepo = new AnchorEventPRAttachmentRepository();
 
 export async function createEventAssistedPR(
   input: {
@@ -24,6 +23,12 @@ export async function createEventAssistedPR(
     throw error;
   }
 
+  if (input.fields.type.trim() !== event.type) {
+    throw new HTTPException(400, {
+      message: "Selected type does not match the anchor event type",
+    });
+  }
+
   if (!isEventScopedLocation(event, input.fields.location)) {
     throw new HTTPException(400, {
       message: "Selected location is outside the anchor event scope",
@@ -36,6 +41,12 @@ export async function createEventAssistedPR(
   }
 
   const validatedTimeWindow = buildAnchorEventFormModeTimeWindow(event, startAt);
+  if (!eventOwnsTimeWindow(event, validatedTimeWindow)) {
+    throw new HTTPException(400, {
+      message: "Selected time window is outside the anchor event time pool",
+    });
+  }
+
   const result = await createPRFromStructured(
     {
       ...input.fields,
@@ -46,11 +57,6 @@ export async function createEventAssistedPR(
       createSource: "EVENT_ASSISTED",
     },
   );
-
-  await attachmentRepo.upsertByPrId({
-    prId: result.id,
-    anchorEventId: event.id,
-  });
 
   return result;
 }

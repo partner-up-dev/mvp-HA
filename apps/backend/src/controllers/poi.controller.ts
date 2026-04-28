@@ -32,6 +32,7 @@ export const poiRoute = app.get(
       pois.map((poi) => ({
         id: poi.id,
         gallery: poi.gallery,
+        perTimeWindowCap: poi.perTimeWindowCap,
       })),
     );
   },

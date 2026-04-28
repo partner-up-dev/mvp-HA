@@ -1,5 +1,4 @@
 export * from "./partner-request";
-export * from "./anchor-partner-request";
 export * from "./anchor-event-support-resource";
 export * from "./pr-support-resource";
 export * from "./pr-booking-contact";
@@ -24,4 +23,3 @@ export * from "./analytics-daily-community";
 export * from "./scenario-type-metric";
 export * from "./poi";
 export * from "./anchor-event-preference-tag";
-export * from "./anchor-event-pr-attachment";

@@ -184,17 +184,7 @@
                   t("adminPR.eventLocationPoolLabel")
                 }}</span>
                 <textarea
-                  v-model="eventForm.systemLocationPoolText"
-                  class="field-input field-textarea"
-                ></textarea>
-              </label>
-
-              <label class="field">
-                <span class="field-label">{{
-                  t("adminPR.userLocationPoolLabel")
-                }}</span>
-                <textarea
-                  v-model="eventForm.userLocationPoolText"
+                  v-model="eventForm.locationPoolText"
                   class="field-input field-textarea"
                 ></textarea>
               </label>
@@ -577,8 +567,7 @@ type EventForm = {
   title: string;
   type: string;
   description: string;
-  systemLocationPoolText: string;
-  userLocationPoolText: string;
+  locationPoolText: string;
   durationMinutes: number | null;
   earliestLeadMinutes: number | null;
   absoluteRulesText: string;
@@ -613,8 +602,7 @@ const emptyEventForm = (): EventForm => ({
   title: "",
   type: "",
   description: "",
-  systemLocationPoolText: "",
-  userLocationPoolText: "",
+  locationPoolText: "",
   durationMinutes: null,
   earliestLeadMinutes: null,
   absoluteRulesText: "",
@@ -640,10 +628,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
   title: event.title,
   type: event.type,
   description: event.description ?? "",
-  systemLocationPoolText: event.systemLocationPool.join("\n"),
-  userLocationPoolText: event.userLocationPool
-    .map((entry) => `${entry.id},${entry.perBatchCap}`)
-    .join("\n"),
+  locationPoolText: event.locationPool.join("\n"),
   durationMinutes: event.timePoolConfig.durationMinutes ?? null,
   earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
   absoluteRulesText: event.timePoolConfig.startRules
@@ -723,24 +708,6 @@ const normalizeLines = (value: string): string[] =>
     .split("\n")
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
-
-const normalizeUserLocationLines = (
-  value: string,
-): Array<{ id: string; perBatchCap: number }> =>
-  value
-    .split("\n")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0)
-    .map((entry) => {
-      const parts = entry.split(",").map((part) => part.trim());
-      const id = parts[0] ?? "";
-      const capRaw = parts[1] ?? "";
-      const parsedCap = Number(capRaw);
-      const perBatchCap =
-        Number.isInteger(parsedCap) && parsedCap > 0 ? parsedCap : 1;
-      return { id, perBatchCap };
-    })
-    .filter((entry) => entry.id.length > 0);
 
 const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
@@ -1012,10 +979,7 @@ const handleSaveEvent = async () => {
     title: eventForm.value.title.trim(),
     type: eventForm.value.type.trim(),
     description: eventForm.value.description.trim() || null,
-    systemLocationPool: normalizeLines(eventForm.value.systemLocationPoolText),
-    userLocationPool: normalizeUserLocationLines(
-      eventForm.value.userLocationPoolText,
-    ),
+    locationPool: normalizeLines(eventForm.value.locationPoolText),
     timePoolConfig: buildTimePoolConfig(eventForm.value),
     defaultMinPartners: normalizeNullableNonNegativeInteger(
       eventForm.value.defaultMinPartners,

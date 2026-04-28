@@ -4,9 +4,7 @@ import { z } from "zod";
 import {
   anchorEventStatusSchema,
   anchorEventTimePoolConfigSchema,
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
-  userLocationEntrySchema,
+  normalizeLocationPool,
   prStatusManualSchema,
   visibilityStatusSchema,
 } from "../entities";
@@ -69,8 +67,7 @@ const adminAnchorEventInputSchema = z.object({
   title: z.string().trim().min(1),
   type: z.string().trim().min(1),
   description: z.string().trim().nullable(),
-  systemLocationPool: z.array(z.string().trim().min(1)),
-  userLocationPool: z.array(userLocationEntrySchema),
+  locationPool: z.array(z.string().trim().min(1)),
   timePoolConfig: anchorEventTimePoolConfigSchema,
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
@@ -211,10 +208,7 @@ export const adminAnchorManagementRoute = app
       const result = await createAdminAnchorEvent({
         ...payload,
         description: payload.description || null,
-        systemLocationPool: normalizeSystemLocationPool(
-          payload.systemLocationPool,
-        ),
-        userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
+        locationPool: normalizeLocationPool(payload.locationPool),
         coverImage: payload.coverImage || null,
         betaGroupQrCode: payload.betaGroupQrCode || null,
       });
@@ -231,10 +225,7 @@ export const adminAnchorManagementRoute = app
       const result = await updateAdminAnchorEvent(eventId, {
         ...payload,
         description: payload.description || null,
-        systemLocationPool: normalizeSystemLocationPool(
-          payload.systemLocationPool,
-        ),
-        userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
+        locationPool: normalizeLocationPool(payload.locationPool),
         coverImage: payload.coverImage || null,
         betaGroupQrCode: payload.betaGroupQrCode || null,
       });

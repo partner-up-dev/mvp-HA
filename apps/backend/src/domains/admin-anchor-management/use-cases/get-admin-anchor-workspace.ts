@@ -42,11 +42,7 @@ export type AdminAnchorEventSummary = {
   title: string;
   type: string;
   description: string | null;
-  systemLocationPool: string[];
-  userLocationPool: Array<{
-    id: string;
-    perBatchCap: number;
-  }>;
+  locationPool: string[];
   timePoolConfig: {
     durationMinutes: number | null;
     earliestLeadMinutes: number | null;
@@ -138,14 +134,8 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         title: event.title,
         type: event.type,
         description: event.description,
-        systemLocationPool: Array.isArray(event.systemLocationPool)
-          ? [...event.systemLocationPool]
-          : [],
-        userLocationPool: Array.isArray(event.userLocationPool)
-          ? event.userLocationPool.map((entry) => ({
-              id: entry.id,
-              perBatchCap: entry.perBatchCap,
-            }))
+        locationPool: Array.isArray(event.locationPool)
+          ? [...event.locationPool]
           : [],
         timePoolConfig: event.timePoolConfig,
         defaultMinPartners: event.defaultMinPartners ?? null,

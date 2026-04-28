@@ -1,9 +1,10 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const pois = pgTable("pois", {
   id: text("id").primaryKey(),
   gallery: text("gallery").array().notNull().default([]),
+  perTimeWindowCap: integer("per_time_window_cap"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

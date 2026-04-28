@@ -6,15 +6,9 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import type {
-  AnchorEventId,
-  TimeWindowEntry,
-  UserLocationEntry,
-} from "../../../entities/anchor-event";
-import {
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
-} from "../../../entities/anchor-event";
+import { PoiRepository } from "../../../repositories/PoiRepository";
+import type { AnchorEventId, TimeWindowEntry } from "../../../entities/anchor-event";
+import { normalizeLocationPool } from "../../../entities/anchor-event";
 import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import {
   isActiveVisiblePRStatus,
@@ -25,6 +19,7 @@ import { listAnchorEventTimeWindows } from "../services/time-window-pool";
 
 const eventRepo = new AnchorEventRepository();
 const partnerRepo = new PartnerRepository();
+const poiRepo = new PoiRepository();
 
 export interface EventPRSummary {
   id: number;
@@ -55,7 +50,7 @@ export interface CreateTimeWindowDetail {
 
 export interface LocationOption {
   locationId: string;
-  remainingQuota: number;
+  remainingQuota: number | null;
   disabled: boolean;
   disabledReason: "NONE" | "MAX_REACHED";
 }
@@ -67,8 +62,7 @@ export interface AnchorEventDetail {
   description: string | null;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
-  systemLocationPool: string[];
-  userLocationPool: UserLocationEntry[];
+  locationPool: string[];
   timeWindowPool: TimeWindowEntry[];
   coverImage: string | null;
   betaGroupQrCode: string | null;
@@ -162,11 +156,12 @@ export async function getAnchorEventDetail(
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
 
-  const systemLocationPool = normalizeSystemLocationPool(
-    event.systemLocationPool,
-  );
-  const userLocationPool = normalizeUserLocationPool(event.userLocationPool);
+  const locationPool = normalizeLocationPool(event.locationPool);
   const timeWindowPool = listAnchorEventTimeWindows(event);
+  const pois = await poiRepo.findByIds(locationPool);
+  const perTimeWindowCapByLocation = new Map(
+    pois.map((poi) => [poi.id, poi.perTimeWindowCap]),
+  );
 
   const browsePRs = await readVisiblePartnerRequestsByType(event.type);
   const browseTimeWindows = buildBrowseTimeWindowDetails(browsePRs);
@@ -181,16 +176,14 @@ export async function getAnchorEventDetail(
   }
 
   const createTimeWindows: CreateTimeWindowDetail[] = [];
-  let occupiedSlots = 0;
-  let hasUserManagedCapacity = false;
+  let hasAvailableCapacity = false;
 
   for (const timeWindow of timeWindowPool) {
     const sameTypePRs = await readVisiblePartnerRequestsByTypeAndTime(
       event.type,
       timeWindow,
     );
-    const activeUserCountsByLocation = new Map<string, number>();
-    const occupiedSystemLocationIds = new Set<string>();
+    const activeCountsByLocation = new Map<string, number>();
 
     for (const pr of sameTypePRs) {
       if (!isActiveVisiblePRStatus(pr.status)) {
@@ -201,43 +194,33 @@ export async function getAnchorEventDetail(
       if (!location) {
         continue;
       }
-
-      if (systemLocationPool.includes(location)) {
-        occupiedSystemLocationIds.add(location);
-      }
-
-      if (!userLocationPool.some((entry) => entry.id === location)) {
+      if (!locationPool.includes(location)) {
         continue;
       }
 
-      activeUserCountsByLocation.set(
+      activeCountsByLocation.set(
         location,
-        (activeUserCountsByLocation.get(location) ?? 0) + 1,
+        (activeCountsByLocation.get(location) ?? 0) + 1,
       );
     }
 
-    occupiedSlots += occupiedSystemLocationIds.size;
+    const locationOptions: LocationOption[] = locationPool.map((locationId) => {
+      const activeCount = activeCountsByLocation.get(locationId) ?? 0;
+      const cap = perTimeWindowCapByLocation.get(locationId) ?? null;
+      const remainingQuota =
+        cap === null ? null : Math.max(cap - activeCount, 0);
+      const disabled = remainingQuota !== null && remainingQuota <= 0;
+      if (!disabled) {
+        hasAvailableCapacity = true;
+      }
 
-    const locationOptions: LocationOption[] = userLocationPool.map(
-      (userLocation) => {
-        const activeCount = activeUserCountsByLocation.get(userLocation.id) ?? 0;
-        const remainingQuota = Math.max(
-          userLocation.perBatchCap - activeCount,
-          0,
-        );
-        const disabled = remainingQuota === 0;
-        if (remainingQuota > 0) {
-          hasUserManagedCapacity = true;
-        }
-
-        return {
-          locationId: userLocation.id,
-          remainingQuota,
-          disabled,
-          disabledReason: disabled ? "MAX_REACHED" : "NONE",
-        };
-      },
-    );
+      return {
+        locationId,
+        remainingQuota,
+        disabled,
+        disabledReason: disabled ? "MAX_REACHED" : "NONE",
+      };
+    });
 
     createTimeWindows.push({
       key: buildTimeWindowKey(timeWindow),
@@ -246,9 +229,8 @@ export async function getAnchorEventDetail(
     });
   }
 
-  const totalSlots = systemLocationPool.length * timeWindowPool.length;
-  const systemExhausted = totalSlots > 0 && occupiedSlots >= totalSlots;
-  const exhausted = systemExhausted && !hasUserManagedCapacity;
+  const exhausted =
+    timeWindowPool.length === 0 || locationPool.length === 0 || !hasAvailableCapacity;
 
   return {
     id: event.id,
@@ -257,8 +239,7 @@ export async function getAnchorEventDetail(
     description: event.description,
     defaultMinPartners: event.defaultMinPartners ?? null,
     defaultMaxPartners: event.defaultMaxPartners ?? null,
-    systemLocationPool,
-    userLocationPool,
+    locationPool,
     timeWindowPool,
     coverImage: event.coverImage,
     betaGroupQrCode: event.betaGroupQrCode,

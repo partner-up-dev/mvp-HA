@@ -77,7 +77,7 @@ Important coordination note:
   - authenticated create persists and publishes in one command path
   - anonymous create persists `DRAFT` and returns that draft id for later authenticated publish
 - Anchor Event assisted create prepares the same PR-owned structured payload and submits `POST /api/pr/new/form`
-- event-assisted create may attach transient assisted-create metadata such as create source or event referral, while persisted PR state remains the same PR-owned field set used by structured create
+- event-assisted create carries transient create source or event referral through command context, while persisted PR state remains the same PR-owned field set used by structured create
 - event-assisted create targets direct `OPEN` creation and therefore requires an authenticated account
 - the old public batch-specific event-create route is retired from the public contract surface
 - structured PR creation accepts arbitrary `type` input with event-type suggestions and accepts one resolved `time_window`; batch and free are UI modes rather than separate persisted PR models
@@ -93,8 +93,8 @@ Important coordination note:
 - `POST /api/events/:eventId/preference-tags/submissions` accepts visitor-authored label-only tags, records them as pending event-owned preference-tag moderation items, and does not automatically expose them to later visitors
 - `GET /api/events/:eventId/demand-cards` is the backend-authored card-mode demand projection contract; it returns only joinable (`OPEN` / `READY`) demand-card groups for that event.
 - the old public demand-card join route is retired from the public contract surface
-- `GET /api/events/:eventId` exposes public event discovery through `timeWindows`. Discoverable PRs inside those time-window groups come from root PR reads keyed by `event.type + time_window` plus event-owned location constraints.
-- `GET /api/events/:eventId/demand-cards` groups demand through compatibility card keys, while the underlying candidate PR set should already come from root PR reads keyed by `event.type + time_window` plus event-owned location constraints.
+- `GET /api/events/:eventId` exposes public event discovery through `timeWindows`. Discoverable PRs inside those time-window groups come from root PR reads keyed by `event.type + time_window`; create location options come from `event.locationPool` plus POI-owned per-time-window capacity.
+- `GET /api/events/:eventId/demand-cards` groups demand through compatibility card keys, while the underlying candidate PR set should already come from root PR reads keyed by `event.type + time_window`.
 - `GET /api/pr/search` is the PR search read contract; it queries by active `Anchor Event` id plus repeated local-date values and returns matching visible actionable PR candidates under that event's current activity type and time-pool rules
 - if PR search has exactly one result, frontend may replace-route to `/pr/:id` while avoiding a browser-back auto-redirect loop
 - `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`

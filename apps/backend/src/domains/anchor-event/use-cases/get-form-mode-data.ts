@@ -6,7 +6,7 @@ import {
   AnchorEventPRContextRepository,
   type AnchorEventPRContextRecord,
 } from "../../../repositories/AnchorEventPRContextRepository";
-import type { AnchorEvent, AnchorEventId } from "../../../entities";
+import { normalizeLocationPool, type AnchorEvent, type AnchorEventId } from "../../../entities";
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
 import { isAnchorEventFormModeStartSelectable } from "../services/form-mode";
 import { listAnchorEventTimeWindows } from "../services/time-window-pool";
@@ -31,20 +31,7 @@ const hasTimeWindowStarted = (
 const normalizeLocationIds = (
   event: NonNullable<Awaited<ReturnType<AnchorEventRepository["findById"]>>>,
 ): string[] => {
-  const unique = new Set<string>();
-  for (const locationId of event.systemLocationPool) {
-    const normalized = locationId.trim();
-    if (normalized) {
-      unique.add(normalized);
-    }
-  }
-  for (const entry of event.userLocationPool) {
-    const normalized = entry.id.trim();
-    if (normalized) {
-      unique.add(normalized);
-    }
-  }
-  return Array.from(unique);
+  return normalizeLocationPool(event.locationPool);
 };
 
 const parseStartAt = (value: string | null): Date | null => {

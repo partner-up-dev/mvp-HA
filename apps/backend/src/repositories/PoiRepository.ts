@@ -36,20 +36,27 @@ export class PoiRepository {
     return await db.select().from(pois).where(inArray(pois.id, normalizedIds));
   }
 
-  async upsertById(id: string, gallery: string[]): Promise<Poi> {
+  async upsertById(
+    id: string,
+    data: { gallery: string[]; perTimeWindowCap?: number | null },
+  ): Promise<Poi> {
     const normalizedId = id.trim();
-    const normalizedGallery = normalizeGallery(gallery);
+    const normalizedGallery = normalizeGallery(data.gallery);
+    const normalizedPerTimeWindowCap =
+      data.perTimeWindowCap === undefined ? null : data.perTimeWindowCap;
 
     const result = await db
       .insert(pois)
       .values({
         id: normalizedId,
         gallery: normalizedGallery,
+        perTimeWindowCap: normalizedPerTimeWindowCap,
       })
       .onConflictDoUpdate({
         target: pois.id,
         set: {
           gallery: normalizedGallery,
+          perTimeWindowCap: normalizedPerTimeWindowCap,
           updatedAt: new Date(),
         },
       })

@@ -8,7 +8,6 @@ import {
   AnchorEventPRContextRepository,
   type AnchorEventPRContextRecord,
 } from "../../../repositories/AnchorEventPRContextRepository";
-import type { AnchorLocationSource } from "../../../entities/anchor-partner-request";
 import type { AnchorEventId } from "../../../entities/anchor-event";
 import type { TimeWindowEntry } from "../../../entities/anchor-event";
 import type { PRId, PRStatus, PartnerRequest } from "../../../entities/partner-request";
@@ -148,18 +147,16 @@ export async function readVisibleAnchorEventPRContextRecordsByEventTimeWindowAnd
   return applyConsistencyToAnchorRecords(records, options.consistency ?? "strong");
 }
 
-export async function countActiveVisiblePRsByEventTimeWindowAndLocationSource({
+export async function countActiveVisiblePRsByEventTimeWindowAndLocation({
   anchorEventId,
   timeWindow,
   location,
-  locationSource,
   excludePrId,
   consistency,
 }: {
   anchorEventId: AnchorEventId;
   timeWindow: TimeWindowEntry;
   location: string;
-  locationSource: AnchorLocationSource;
   excludePrId?: PRId;
   consistency?: PRReadConsistency;
 }): Promise<number> {
@@ -170,7 +167,6 @@ export async function countActiveVisiblePRsByEventTimeWindowAndLocationSource({
     { consistency },
   );
   return records.filter((record) => {
-    if (record.anchor.locationSource !== locationSource) return false;
     if (excludePrId !== undefined && record.root.id === excludePrId) return false;
     return isActiveVisiblePRStatus(record.root.status);
   }).length;

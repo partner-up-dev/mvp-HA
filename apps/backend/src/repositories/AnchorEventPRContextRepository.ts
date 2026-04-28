@@ -5,26 +5,19 @@ import type {
   PartnerRequest,
   VisibilityStatus,
 } from "../entities/partner-request";
-import type { AnchorLocationSource } from "../entities/anchor-partner-request";
 import { AnchorEventRepository } from "./AnchorEventRepository";
-import { AnchorEventPRAttachmentRepository } from "./AnchorEventPRAttachmentRepository";
 import { PartnerRequestRepository } from "./PartnerRequestRepository";
 import {
   DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
   DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
   DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
 } from "../domains/pr/services";
-import {
-  isEventScopedLocation,
-  resolveEventLocationSource,
-} from "../domains/anchor-event/services/event-scope";
 import { eventOwnsTimeWindow } from "../domains/anchor-event/services/time-window-pool";
 
 export type AnchorEventPRContext = {
   prId: PRId;
   anchorEventId: AnchorEventId;
   timeWindow: TimeWindowEntry;
-  locationSource: AnchorLocationSource;
   visibilityStatus: VisibilityStatus;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
@@ -46,17 +39,11 @@ const sortRecordsByCreatedAtDesc = (
 const buildAnchorContext = (
   root: PartnerRequest,
   event: AnchorEvent,
-): AnchorEventPRContext | null => {
-  const locationSource = resolveEventLocationSource(event, root.location);
-  if (!locationSource) {
-    return null;
-  }
-
+): AnchorEventPRContext => {
   return {
     prId: root.id,
     anchorEventId: event.id,
     timeWindow: root.time,
-    locationSource,
     visibilityStatus: root.visibilityStatus,
     confirmationStartOffsetMinutes:
       root.confirmationStartOffsetMinutes ??
@@ -79,41 +66,15 @@ export class AnchorEventPRContextRepository {
 
   private readonly eventRepo = new AnchorEventRepository();
 
-  private readonly attachmentRepo = new AnchorEventPRAttachmentRepository();
-
   private async buildRecordForRequest(
     root: PartnerRequest,
   ): Promise<AnchorEventPRContextRecord | null> {
-    const attachment = await this.attachmentRepo.findByPrId(root.id);
-    if (attachment) {
-      const attachedEvent = await this.eventRepo.findById(attachment.anchorEventId);
-      if (attachedEvent && isEventScopedLocation(attachedEvent, root.location)) {
-        const anchor = buildAnchorContext(root, attachedEvent);
-        if (anchor) {
-          return { root, anchor };
-        }
-      }
+    const event = await this.eventRepo.findOneByType(root.type);
+    if (!event) {
+      return null;
     }
 
-    const candidateEvents = await this.eventRepo.findByType(root.type);
-
-    for (const event of candidateEvents) {
-      if (!isEventScopedLocation(event, root.location)) {
-        continue;
-      }
-      if (!eventOwnsTimeWindow(event, root.time)) {
-        continue;
-      }
-
-      const anchor = buildAnchorContext(root, event);
-      if (!anchor) {
-        continue;
-      }
-
-      return { root, anchor };
-    }
-
-    return null;
+    return { root, anchor: buildAnchorContext(root, event) };
   }
 
   private async listRecordsByEventAndTimeWindow(
@@ -132,9 +93,6 @@ export class AnchorEventPRContextRepository {
     const roots = await this.prRootRepo.findByTypeAndTime(event.type, timeWindow);
 
     const records = roots.flatMap((root) => {
-      if (!isEventScopedLocation(event, root.location)) {
-        return [];
-      }
       if (options.visibleOnly && !isRecordVisible(root)) {
         return [];
       }
@@ -146,7 +104,7 @@ export class AnchorEventPRContextRepository {
       }
 
       const anchor = buildAnchorContext(root, event);
-      return anchor ? [{ root, anchor }] : [];
+      return [{ root, anchor }];
     });
 
     return records.sort(sortRecordsByCreatedAtDesc);
@@ -195,11 +153,10 @@ export class AnchorEventPRContextRepository {
     });
   }
 
-  async countActiveVisibleByEventTimeWindowAndLocationSource(
+  async countActiveVisibleByEventTimeWindowAndLocation(
     anchorEventId: AnchorEventId,
     timeWindow: TimeWindowEntry,
     location: string,
-    locationSource: AnchorLocationSource,
   ): Promise<number> {
     const records = await this.findVisibleByAnchorEventTimeWindowAndLocation(
       anchorEventId,
@@ -207,9 +164,6 @@ export class AnchorEventPRContextRepository {
       location,
     );
     return records.filter((record) => {
-      if (record.anchor.locationSource !== locationSource) {
-        return false;
-      }
       return record.root.status !== "CLOSED" && record.root.status !== "EXPIRED";
     }).length;
   }
@@ -275,13 +229,6 @@ export class AnchorEventPRContextRepository {
     if (!updated) {
       return null;
     }
-    return this.findByPrId(prId);
-  }
-
-  async updateLocationSource(
-    prId: PRId,
-    _locationSource: AnchorLocationSource,
-  ): Promise<AnchorEventPRContext | null> {
     return this.findByPrId(prId);
   }
 

@@ -20,6 +20,7 @@ const poiIdParamSchema = z.object({
 
 const upsertPoiSchema = z.object({
   gallery: z.array(z.string().trim().min(1)),
+  perTimeWindowCap: z.number().int().positive().nullable().optional(),
 });
 
 const normalizeCsvIds = (csv: string): string[] => {
@@ -40,6 +41,7 @@ export const adminPoiRoute = app
       pois.map((poi) => ({
         id: poi.id,
         gallery: poi.gallery,
+        perTimeWindowCap: poi.perTimeWindowCap,
       })),
     );
   })
@@ -52,6 +54,7 @@ export const adminPoiRoute = app
       pois.map((poi) => ({
         id: poi.id,
         gallery: poi.gallery,
+        perTimeWindowCap: poi.perTimeWindowCap,
       })),
     );
   })
@@ -61,12 +64,16 @@ export const adminPoiRoute = app
     zValidator("json", upsertPoiSchema),
     async (c) => {
       const { poiId } = c.req.valid("param");
-      const { gallery } = c.req.valid("json");
+      const { gallery, perTimeWindowCap } = c.req.valid("json");
 
-      const poi = await poiRepo.upsertById(poiId, gallery);
+      const poi = await poiRepo.upsertById(poiId, {
+        gallery,
+        perTimeWindowCap: perTimeWindowCap ?? null,
+      });
       return c.json({
         id: poi.id,
         gallery: poi.gallery,
+        perTimeWindowCap: poi.perTimeWindowCap,
       });
     },
   );

@@ -36,7 +36,7 @@ export {
   readVisibleAnchorEventPRContextRecordsByEventTimeWindow,
   readVisibleAnchorEventPRContextRecordsByEventTimeWindowAndLocation,
   readAnchorEventPRContextRecordsByEventTimeWindow,
-  countActiveVisiblePRsByEventTimeWindowAndLocationSource,
+  countActiveVisiblePRsByEventTimeWindowAndLocation,
 } from "../../pr-core/services/pr-read.service";
 export {
   initializeSlotsForPR,

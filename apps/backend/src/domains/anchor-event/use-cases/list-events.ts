@@ -5,8 +5,7 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import {
   type AnchorEvent,
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
+  normalizeLocationPool,
 } from "../../../entities/anchor-event";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 
@@ -44,11 +43,7 @@ function normalizeLocationLookupKey(value: string): string {
 }
 
 function getLocationLabels(event: AnchorEvent): string[] {
-  const systemLocations = normalizeSystemLocationPool(event.systemLocationPool);
-  const userLocations = normalizeUserLocationPool(event.userLocationPool).map(
-    (entry) => entry.id,
-  );
-  return Array.from(new Set([...systemLocations, ...userLocations]));
+  return normalizeLocationPool(event.locationPool);
 }
 
 function toSummary(
