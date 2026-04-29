@@ -5,16 +5,34 @@ const optionalUrlFromEnv = z.preprocess(
   z.string().url().optional(),
 );
 
+const optionalStringFromEnv = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().min(1).optional(),
+);
+
+const optionalPositiveIntFromEnv = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.coerce.number().int().positive().optional(),
+);
+
+const optionalBooleanStringFromEnv = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.enum(["true", "false"]).optional(),
+);
+
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
 
   // Configurable LLM settings (OpenAI v1 compatible)
-  LLM_API_KEY: z.string().min(1).optional(),
-  LLM_BASE_URL: z.string().url().optional(),
-  LLM_DEFAULT_MODEL: z.string().default("gpt-4o-mini"),
+  LLM_API_KEY: optionalStringFromEnv,
+  LLM_BASE_URL: optionalUrlFromEnv,
+  LLM_DEFAULT_MODEL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().default("gpt-4o-mini"),
+  ),
 
   // Deprecated: Keep for backward compatibility
-  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: optionalStringFromEnv,
 
   // DB operation timeout (ms) for config lookups (fallback is used on timeout)
   DB_OPERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(250),
@@ -25,35 +43,29 @@ const envSchema = z.object({
     .default(5),
 
   // WeChat Official Account (for JS-SDK signature)
-  WECHAT_OFFICIAL_ACCOUNT_APP_ID: z.string().min(1).optional(),
-  WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: z.string().min(1).optional(),
-  WECHAT_AUTH_SESSION_SECRET: z.string().min(1).optional(),
+  WECHAT_OFFICIAL_ACCOUNT_APP_ID: optionalStringFromEnv,
+  WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: optionalStringFromEnv,
+  WECHAT_AUTH_SESSION_SECRET: optionalStringFromEnv,
   // Unified WeChat ability mocking switch (OAuth + phone resolve) for non-production debugging.
-  WECHAT_ABILITY_MOCKING_ENABLED: z.enum(["true", "false"]).optional(),
-  WECHAT_ABILITY_MOCK_OPEN_ID: z.string().min(1).optional(),
-  WECHAT_REMINDER_TEMPLATE_ID: z.string().min(1).optional(),
-  WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID: z
-    .string()
-    .min(1)
-    .optional(),
-  WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID: z
-    .string()
-    .min(1)
-    .optional(),
-  WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID: z.string().min(1).optional(),
-  WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID: z.string().min(1).optional(),
-  WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID: z.string().min(1).optional(),
-  FIXED_IP_HTTP_PROXY: z.string().url().optional(),
+  WECHAT_ABILITY_MOCKING_ENABLED: optionalBooleanStringFromEnv,
+  WECHAT_ABILITY_MOCK_OPEN_ID: optionalStringFromEnv,
+  WECHAT_REMINDER_TEMPLATE_ID: optionalStringFromEnv,
+  WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID: optionalStringFromEnv,
+  WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID: optionalStringFromEnv,
+  WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID: optionalStringFromEnv,
+  WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID: optionalStringFromEnv,
+  WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID: optionalStringFromEnv,
+  FIXED_IP_HTTP_PROXY: optionalUrlFromEnv,
 
   // WeCom (Enterprise WeChat) self-built app
-  WECOM_TOKEN: z.string().min(1).optional(),
-  WECOM_ENCODING_AES_KEY: z.string().min(1).optional(),
-  WECOM_CORP_ID: z.string().min(1).optional(),
-  WECOM_APP_AGENT_ID: z.coerce.number().int().positive().optional(),
-  WECOM_APP_SECRET: z.string().min(1).optional(),
+  WECOM_TOKEN: optionalStringFromEnv,
+  WECOM_ENCODING_AES_KEY: optionalStringFromEnv,
+  WECOM_CORP_ID: optionalStringFromEnv,
+  WECOM_APP_AGENT_ID: optionalPositiveIntFromEnv,
+  WECOM_APP_SECRET: optionalStringFromEnv,
 
   // Frontend URL for share links
-  FRONTEND_URL: z.string().min(1).optional(),
+  FRONTEND_URL: optionalStringFromEnv,
   // Optional exact OAuth callback URL registered in the WeChat official account console.
   WECHAT_OAUTH_CALLBACK_URL: optionalUrlFromEnv,
 
@@ -67,11 +79,11 @@ const envSchema = z.object({
     .default(3_600),
 
   // Poster storage directory (used by upload controller)
-  POSTERS_DIR: z.string().min(1).optional(),
-  AVATARS_DIR: z.string().min(1).optional(),
+  POSTERS_DIR: optionalStringFromEnv,
+  AVATARS_DIR: optionalStringFromEnv,
 
   // Internal endpoint auth token for external job tick trigger.
-  JOB_RUNNER_INTERNAL_TOKEN: z.string().min(1).optional(),
+  JOB_RUNNER_INTERNAL_TOKEN: optionalStringFromEnv,
   JOB_RUNNER_CLAIM_BATCH_SIZE: z.coerce.number().int().positive().default(20),
   JOB_RUNNER_MAX_BATCHES_PER_TICK: z.coerce
     .number()

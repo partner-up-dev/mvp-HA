@@ -36,6 +36,61 @@ can be supplied from either:
 The `config` table remains the higher-priority source; env vars are operational
 fallbacks when the DB config row is absent.
 
+## Backend Deploy Environment Contract
+
+Backend FC deployment validates required environment variables through
+`scripts/ci/fc/validate_backend_env.sh` before it touches migration or runtime
+deploy steps.
+
+Required GitHub Environment secrets:
+
+- `ALIBABA_CLOUD_ACCESS_KEY_ID`
+- `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
+- `ALIBABA_CLOUD_ACCOUNT_ID`
+- `DATABASE_URL`
+- `DATABASE_URL_FOR_MIGRATION`
+- `AUTH_JWT_SECRET`
+- `WECHAT_OFFICIAL_ACCOUNT_APP_ID`
+- `WECHAT_OFFICIAL_ACCOUNT_APP_SECRET`
+- `WECHAT_AUTH_SESSION_SECRET`
+- `JOB_RUNNER_INTERNAL_TOKEN`
+- optional by feature: `LLM_API_KEY` is required when `LLM_BASE_URL` is set
+
+Required GitHub Environment variables:
+
+- `ALIYUN_FC_REGION`
+- `ALIYUN_FC_DB_MIGRATION_FUNCTION_NAME`
+- `ALIYUN_FC_FUNCTION_NAME`
+- `ALIYUN_FC_ROLE_ARN`
+- `ALIYUN_FC_RESOURCE_GROUP_ID`
+- `ALIYUN_FC_NODE_MODULES_LAYER_NAME`
+- `ALIYUN_FC_LOG_PROJECT`
+- `ALIYUN_FC_LOG_STORE`
+- `ALIYUN_FC_VPC_ID`
+- `ALIYUN_FC_SECURITY_GROUP_ID`
+- `ALIYUN_FC_VSWITCH_ID_PRIMARY`
+- `ALIYUN_FC_VSWITCH_ID_SECONDARY`
+- `ALIYUN_FC_OSS_ENDPOINT`
+- `ALIYUN_FC_OSS_BUCKET`
+- `ALIYUN_FC_OSS_BUCKET_PATH`
+- `ALIYUN_FC_PATH`
+- `FRONTEND_URL`
+
+Optional GitHub Environment variables that are passed to backend runtime when
+configured:
+
+- `WECHAT_OAUTH_CALLBACK_URL`
+- `WECHAT_REMINDER_TEMPLATE_ID`
+- `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`
+- `WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID`
+- `WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID`
+- `WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID`
+- `WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID`
+
+`AUTH_JWT_SECRET` must be at least 32 characters for staging and production
+deploys. Optional runtime env vars may be left empty; backend startup treats
+empty optional values as absent.
+
 ## Environment Split
 
 ### `develop`

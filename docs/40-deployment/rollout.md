@@ -8,6 +8,11 @@ The workflow prepares the GitHub runner and delegates deploy control flow to
 `scripts/ci/fc/deploy_backend.sh`. The script is the canonical executable
 rollout path for backend FC deployment.
 
+Runner toolchain versions are explicit: Node is read from `.node-version`,
+pnpm is read from the root `packageManager`, and Serverless Devs is pinned in
+`scripts/ci/fc/common.sh`. GitHub Action majors are kept on Node24-compatible
+releases while project commands run on Node 22.
+
 ### Standard deploy path
 
 1. checkout

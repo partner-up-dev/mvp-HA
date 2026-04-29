@@ -53,10 +53,18 @@ jobs:
       WECHAT_OFFICIAL_ACCOUNT_APP_ID: ${{ secrets.WECHAT_OFFICIAL_ACCOUNT_APP_ID }}
       WECHAT_OFFICIAL_ACCOUNT_APP_SECRET: ${{ secrets.WECHAT_OFFICIAL_ACCOUNT_APP_SECRET }}
       WECHAT_AUTH_SESSION_SECRET: ${{ secrets.WECHAT_AUTH_SESSION_SECRET }}
+      WECHAT_OAUTH_CALLBACK_URL: ${{ vars.WECHAT_OAUTH_CALLBACK_URL }}
+      WECHAT_REMINDER_TEMPLATE_ID: ${{ vars.WECHAT_REMINDER_TEMPLATE_ID }}
+      WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID: ${{ vars.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID }}
+      WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID: ${{ vars.WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID }}
+      WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID: ${{ vars.WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID }}
+      WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID: ${{ vars.WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID }}
+      WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID: ${{ vars.WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
       LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
       LLM_DEFAULT_MODEL: ${{ vars.LLM_DEFAULT_MODEL }}
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      AUTH_JWT_SECRET: ${{ secrets.AUTH_JWT_SECRET }}
       WECOM_TOKEN: ${{ secrets.WECOM_TOKEN }}
       WECOM_ENCODING_AES_KEY: ${{ secrets.WECOM_ENCODING_AES_KEY }}
       WECOM_CORP_ID: ${{ secrets.WECOM_CORP_ID }}
@@ -71,23 +79,21 @@ jobs:
       PUBLISH_LAYER_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_layer_only == true }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version-file: .node-version
           cache: pnpm
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
@@ -96,7 +102,7 @@ jobs:
 
       - name: Create backend GitHub Release
         if: (github.event_name != 'workflow_dispatch' || inputs.publish_layer_only != true) && github.ref_name == 'master'
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: .github/release-please-backend-github-release.json

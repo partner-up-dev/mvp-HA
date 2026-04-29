@@ -64,8 +64,6 @@ should_publish_layer() {
 }
 
 run_backend_migrations() {
-  ci_fc_require_env DATABASE_URL_FOR_MIGRATION
-
   install_workspace_dependencies
   ci_fc_run pnpm --filter @partner-up-dev/backend db:lint
   ci_fc_run pnpm --filter @partner-up-dev/backend build:db-migrate-fc
@@ -103,8 +101,6 @@ resolve_backend_layer_arn() {
 }
 
 deploy_backend_function() {
-  ci_fc_require_env DATABASE_URL
-
   local layer_arn
   layer_arn="$(resolve_backend_layer_arn)"
   export ALIYUN_FC_NODE_MODULES_LAYER_ARN="$layer_arn"
@@ -122,20 +118,22 @@ deploy_backend_function() {
 }
 
 main() {
-  ci_fc_require_env \
-    ALIBABA_CLOUD_ACCESS_KEY_ID \
-    ALIBABA_CLOUD_ACCESS_KEY_SECRET \
-    ALIBABA_CLOUD_ACCOUNT_ID \
-    ALIYUN_FC_REGION \
-    ALIYUN_FC_NODE_MODULES_LAYER_NAME
-
-  ci_fc_install_serverless_devs
-  ci_fc_run bash scripts/ci/fc/configure_aliyun_credentials.sh
-
   if ci_fc_is_true "${PUBLISH_LAYER_ONLY:-false}"; then
+    echo "+ bash scripts/ci/fc/validate_backend_env.sh layer"
+    bash scripts/ci/fc/validate_backend_env.sh layer
+    ci_fc_install_serverless_devs
+    ci_fc_run bash scripts/ci/fc/configure_aliyun_credentials.sh
     publish_backend_layer
     exit 0
   fi
+
+  echo "+ bash scripts/ci/fc/validate_backend_env.sh migration"
+  bash scripts/ci/fc/validate_backend_env.sh migration
+  echo "+ bash scripts/ci/fc/validate_backend_env.sh runtime"
+  bash scripts/ci/fc/validate_backend_env.sh runtime
+
+  ci_fc_install_serverless_devs
+  ci_fc_run bash scripts/ci/fc/configure_aliyun_credentials.sh
 
   run_backend_migrations
 

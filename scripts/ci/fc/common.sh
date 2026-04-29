@@ -45,7 +45,7 @@ ci_fc_cd_repo_root() {
 }
 
 ci_fc_install_serverless_devs() {
-  local package_name="${SERVERLESS_DEVS_PACKAGE:-@serverless-devs/s}"
+  local package_name="${SERVERLESS_DEVS_PACKAGE:-@serverless-devs/s@3.1.10}"
   ci_fc_run npm install -g "$package_name"
 }
 

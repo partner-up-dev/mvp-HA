@@ -33,12 +33,12 @@ jobs:
       ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version-file: .node-version
 
       - name: Deploy job runner trigger through repository script
         run: bash scripts/ci/fc/deploy_job_runner_trigger.sh
