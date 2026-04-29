@@ -148,6 +148,7 @@ import type { ApiError } from "@/shared/api/error";
 import {
   addDaysToProductLocalDateKey,
   getTodayProductLocalDateKey,
+  isProductLocalDateKey,
   parseProductLocalDateKey,
   type ProductLocalDateKey,
 } from "@/shared/datetime/productLocalDate";
@@ -165,6 +166,8 @@ type LocationOption =
 
 type BrowseTimeWindowEntry =
   AnchorEventDetailResponse["browseTimeWindows"][number];
+
+type BrowseTimeWindowPR = BrowseTimeWindowEntry["prs"][number];
 
 type CreateTimeWindowEntry =
   AnchorEventDetailResponse["createTimeWindows"][number];
@@ -188,6 +191,7 @@ type ListModeTimeWindowViewModel = {
 type ListModeDateGroupViewModel = {
   key: string;
   label: string;
+  isExpiredDate: boolean;
   tabClass?: string;
   timeWindows: ListModeTimeWindowViewModel[];
 };
@@ -205,6 +209,8 @@ const { prefersReducedMotion } = useReducedMotion();
 
 const CARD_OVERFLOW_GUARD_CLASS = "anchor-event-card-overflow-guard";
 const CARD_MODE_DRAG_HINT_DELAY_MS = 3000;
+const LIST_MODE_EXPIRED_DATE_LIMIT = 3;
+const LIST_MODE_EXPIRED_TAB_CLASS = "tab-bar__tab--expired";
 
 const syncCardOverflowGuard = (enabled: boolean) => {
   if (typeof document === "undefined") {
@@ -576,9 +582,31 @@ const formatTimeWindowOptionLabel = (
   index: number,
 ): string => formatTimeWindowLabel(entry.timeWindow, index);
 
+const isExpiredDateGroupKey = (
+  groupKey: string,
+  todayDateKey: ProductLocalDateKey,
+): boolean => isProductLocalDateKey(groupKey) && groupKey < todayDateKey;
+
+const isClosedPR = (pr: BrowseTimeWindowPR): boolean => pr.status === "CLOSED";
+
+const dateGroupHasClosedPR = (group: ListModeDateGroupViewModel): boolean =>
+  group.timeWindows.some(({ entry }) => entry.prs.some(isClosedPR));
+
+const toVisibleListModeDateGroups = (
+  groups: ListModeDateGroupViewModel[],
+): ListModeDateGroupViewModel[] => {
+  const expiredDateGroups = groups
+    .filter((group) => group.isExpiredDate && dateGroupHasClosedPR(group))
+    .slice(-LIST_MODE_EXPIRED_DATE_LIMIT);
+  const currentAndFutureGroups = groups.filter((group) => !group.isExpiredDate);
+
+  return [...expiredDateGroups, ...currentAndFutureGroups];
+};
+
 const dateGroups = computed<ListModeDateGroupViewModel[]>(() => {
   const groups: ListModeDateGroupViewModel[] = [];
   const groupIndexByKey = new Map<string, number>();
+  const todayDateKey = getTodayProductLocalDateKey();
 
   sortedBrowseTimeWindows.value.forEach((entry, index) => {
     const groupKey =
@@ -598,25 +626,21 @@ const dateGroups = computed<ListModeDateGroupViewModel[]>(() => {
       groupKey.startsWith("time-window:")
         ? formatTimeWindowLabel(entry.timeWindow, index)
         : formatDateKeyLabel(groupKey as ProductLocalDateKey);
+    const isExpiredDate = isExpiredDateGroupKey(groupKey, todayDateKey);
 
     groupIndexByKey.set(groupKey, groups.length);
     groups.push({
       key: groupKey,
       label: groupLabel,
-      tabClass: isEndedTimeWindow(entry.timeWindow)
-        ? "tab-bar__tab--expired"
-        : undefined,
+      isExpiredDate,
+      tabClass: isExpiredDate ? LIST_MODE_EXPIRED_TAB_CLASS : undefined,
       timeWindows: [timeWindowViewModel],
     });
   });
 
-  return groups.map((group) => ({
+  return toVisibleListModeDateGroups(groups).map((group) => ({
     ...group,
-    tabClass: group.timeWindows.every(({ entry }) =>
-      isEndedTimeWindow(entry.timeWindow),
-    )
-      ? "tab-bar__tab--expired"
-      : undefined,
+    tabClass: group.isExpiredDate ? LIST_MODE_EXPIRED_TAB_CLASS : undefined,
   }));
 });
 
@@ -647,13 +671,19 @@ const resolveDefaultDateKey = (
   groups: ListModeDateGroupViewModel[],
 ): string | null => {
   const firstUpcomingGroup = groups.find((group) =>
+    !group.isExpiredDate &&
     group.timeWindows.some(({ entry }) => !isEndedTimeWindow(entry.timeWindow)),
   );
   if (firstUpcomingGroup) {
     return firstUpcomingGroup.key;
   }
 
-  return groups[0]?.key ?? null;
+  const firstCurrentOrFutureGroup = groups.find((group) => !group.isExpiredDate);
+  if (firstCurrentOrFutureGroup) {
+    return firstCurrentOrFutureGroup.key;
+  }
+
+  return groups[groups.length - 1]?.key ?? null;
 };
 
 watch(

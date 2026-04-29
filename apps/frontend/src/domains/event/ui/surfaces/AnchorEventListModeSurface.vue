@@ -90,6 +90,7 @@ type DateGroupTimeWindowItem = {
 type DateGroup = {
   key: string;
   label: string;
+  isExpiredDate: boolean;
   timeWindows: DateGroupTimeWindowItem[];
 };
 
@@ -132,14 +133,23 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const selectedTimeWindowKey = ref<string | null>(null);
 
-const isVisibleListModePR = (pr: AnchorEventTimeWindowPR): boolean =>
-  pr.status !== "EXPIRED";
+const isVisibleListModePR = (
+  pr: AnchorEventTimeWindowPR,
+  group: DateGroup,
+): boolean =>
+  group.isExpiredDate ? pr.status === "CLOSED" : pr.status !== "EXPIRED";
 
 const visiblePRItems = computed<VisiblePRItem[]>(() => {
   const items: VisiblePRItem[] = [];
+  const group = props.selectedDateGroup;
+  if (!group) {
+    return items;
+  }
 
-  for (const timeWindowItem of props.selectedDateGroup?.timeWindows ?? []) {
-    for (const pr of timeWindowItem.entry.prs.filter(isVisibleListModePR)) {
+  for (const timeWindowItem of group.timeWindows) {
+    for (const pr of timeWindowItem.entry.prs.filter((entry) =>
+      isVisibleListModePR(entry, group),
+    )) {
       items.push({
         timeWindowKey: timeWindowItem.entry.key,
         pr,
