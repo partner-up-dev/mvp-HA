@@ -1187,7 +1187,8 @@
     "typeRequired": "类型不能为空",
     "naturalLanguageRequired": "请输入你的请求",
     "naturalLanguageWordLimit": "自然语言输入不能超过 50 个词",
-    "minPartnersAtLeastTwo": "最少两个搭子",
+    "minPartnersAtLeastOne": "最少人数至少 1 人",
+    "maxPartnersAtLeastTwo": "最多人数至少 2 人",
     "maxPartnersMustBeAtLeastMinPartners": "最多必须大于等于最少"
   },
   "errors": {

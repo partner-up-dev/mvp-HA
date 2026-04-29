@@ -38,8 +38,8 @@
 - The visible `PartnerRequest` status set is `DRAFT`, `OPEN`, `READY`, `FULL`, `LOCKED_TO_START`, `ACTIVE`, `CLOSED`, and `EXPIRED`.
 - `LOCKED_TO_START` means the collaboration object has entered the pre-start lock window; joining is no longer allowed, and progression toward `ACTIVE` may still continue.
 - `PartnerRequest` state is jointly shaped by partner thresholds, time windows, confirmation windows, and context-specific rules.
-- `PartnerRequest.minPartners` must be an integer and `>= 2`. If `maxPartners` is present, it must satisfy `maxPartners >= minPartners`.
-- Auto-created paths must fall back to `2` when a valid `minPartners` is unavailable. Manual input paths must reject empty value, `0`, `1`, and invalid bounds.
+- `PartnerRequest.minPartners` must be an integer and `>= 1`. If `maxPartners` is present, it must satisfy both `maxPartners >= 2` and `maxPartners >= minPartners`.
+- Auto-created paths must fall back to `2` when a valid `minPartners` is unavailable. Manual input paths must reject empty value, `0`, `maxPartners = 1`, and invalid bounds.
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
 - `PR` supports `join` and `exit`.
 - `Partner` submodule may carry explicit confirmation and join-lock settings. Attendance follow-up may appear when the relevant collaboration module is active.

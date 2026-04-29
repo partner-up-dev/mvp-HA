@@ -135,7 +135,7 @@ export async function publishPR(
     {
       prId: id,
       fromStatus: "DRAFT",
-      toStatus: "OPEN",
+      toStatus: latest.status,
       trigger: "manual",
     },
   );
@@ -146,7 +146,7 @@ export async function publishPR(
     action: "pr.publish",
     aggregateType: "partner_request",
     aggregateId: String(id),
-    detail: { fromStatus: "DRAFT", toStatus: "OPEN" },
+    detail: { fromStatus: "DRAFT", toStatus: latest.status },
   });
 
   return {

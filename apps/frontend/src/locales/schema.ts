@@ -1262,7 +1262,8 @@ export interface MessageSchema {
     typeRequired: string;
     naturalLanguageRequired: string;
     naturalLanguageWordLimit: string;
-    minPartnersAtLeastTwo: string;
+    minPartnersAtLeastOne: string;
+    maxPartnersAtLeastTwo: string;
     maxPartnersMustBeAtLeastMinPartners: string;
   };
   errors: {

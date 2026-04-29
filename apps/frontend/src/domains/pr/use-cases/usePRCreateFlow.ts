@@ -1,5 +1,6 @@
 import { computed, nextTick, ref } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
+import type { PRStatus } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
 import { useCreatePRFromStructured } from "@/domains/pr/queries/usePRCreate";
 import { usePublishPR } from "@/domains/pr/queries/usePRPublish";
@@ -63,13 +64,13 @@ export const usePRCreateFlow = () => {
       createSource: "FORM",
     });
 
-    let createdStatus: "DRAFT" | "OPEN" = result.status;
+    let createdStatus: PRStatus = result.status;
     if (createdStatus === "DRAFT" && pendingStatus.value === "PUBLISH") {
       const publishResult = await publishMutation.mutateAsync({ id: result.id });
       if (publishResult.auth) {
         userSessionStore.applyAuthSession(publishResult.auth);
       }
-      createdStatus = "OPEN";
+      createdStatus = publishResult.pr.status;
     }
 
     await nextTick();
@@ -78,7 +79,7 @@ export const usePRCreateFlow = () => {
       status: createdStatus,
       scenarioType: fields.type,
     });
-    if (createdStatus === "OPEN") {
+    if (createdStatus !== "DRAFT") {
       await router.push(`${result.canonicalPath}?entry=create`);
       return;
     }

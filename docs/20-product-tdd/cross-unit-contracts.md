@@ -15,7 +15,7 @@ Contract implication:
 
 - Backend owns `PartnerRequestStatus` and legal state transitions.
 - Frontend renders and branches on the shared visible status set: `DRAFT`, `OPEN`, `READY`, `FULL`, `LOCKED_TO_START`, `ACTIVE`, `CLOSED`, `EXPIRED`.
-- Backend owns the persisted partner-bounds invariant: manual PR writes must reject `minPartners < 2` or missing `minPartners`; system-generated create paths may default missing or invalid `minPartners` to `2` before persistence.
+- Backend owns the persisted partner-bounds invariant: manual PR writes must reject `minPartners < 1`, missing `minPartners`, and present `maxPartners < 2`; system-generated create paths may default missing or invalid `minPartners` to `2` before persistence, while still rejecting present `maxPartners < 2`.
 - Legacy invalid partner-bound data is repaired through forward-only data migrations before deploy; frontend and backend reads do not introduce separate normalization policy.
 - If the status set or lock/join semantics change, backend runtime, frontend UX, and the PRD lifecycle description must move together.
 

@@ -1,4 +1,4 @@
-import type { PRId } from "../../../entities/partner-request";
+import type { PRId, PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import type { CreatorIdentityInput } from "../services/creator-identity.service";
 import { publishPR } from "./publish-pr";
@@ -6,7 +6,7 @@ import { publishPR } from "./publish-pr";
 export type CreatePRCommandResult = {
   id: PRId;
   createdBy: UserId | null;
-  status: "DRAFT" | "OPEN";
+  status: PRStatus;
   canonicalPath: string;
 };
 
@@ -40,7 +40,7 @@ export const finalizeCreatedPR = async ({
   return {
     id,
     createdBy: published.createdBy,
-    status: "OPEN",
+    status: published.pr.status,
     canonicalPath: buildCanonicalPRPath(id),
   };
 };

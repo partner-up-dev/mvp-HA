@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/vue-query";
 import type {
   PartnerRequestFields,
   PRId,
+  PRStatus,
   WeekdayLabel,
 } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
@@ -10,7 +11,7 @@ import { readApiErrorPayload, resolveApiErrorMessage } from "@/shared/api/error"
 
 export type CreatePRResult = {
   id: PRId;
-  status: "DRAFT" | "OPEN";
+  status: PRStatus;
   canonicalPath: string;
 };
 

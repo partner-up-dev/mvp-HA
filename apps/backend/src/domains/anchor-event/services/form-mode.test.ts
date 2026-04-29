@@ -84,6 +84,15 @@ test("buildAnchorEventRecommendationMatch gives higher score to stronger group m
   assert.ok(highMomentum.score > lowMomentum.score);
 });
 
+test("buildAnchorEventRecommendationMatch treats minPartners of 1 as immediately viable", () => {
+  const match = buildMatch({
+    candidateMinPartners: 1,
+    activePartnerCount: 0,
+  });
+
+  assert.equal(match.groupMomentumScore, 2);
+});
+
 test("isAnchorEventFormModeStartSelectable respects future start and earliest lead boundary", () => {
   const now = new Date("2026-04-27T08:00:00.000Z");
   const event = {

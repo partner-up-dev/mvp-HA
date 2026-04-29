@@ -211,7 +211,7 @@
                     v-model.number="prForm.minPartners"
                     class="field-input"
                     type="number"
-                    min="2"
+                    min="1"
                   />
                 </label>
                 <label class="field">

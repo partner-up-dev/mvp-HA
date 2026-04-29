@@ -4,10 +4,13 @@ import {
   deriveAnchorEventPreferenceTagCategory,
   normalizeAnchorEventPreferenceTagLabel,
 } from "./preference-tags";
+import {
+  DEFAULT_AUTOMATIC_MIN_PARTNERS,
+  MIN_MANUAL_PARTNERS,
+} from "../../pr-core/services/partner-bounds.service";
 
 const MINUTE_MS = 60 * 1000;
 const MATCHED_START_TOLERANCE_MINUTES = 5;
-const DEFAULT_MIN_PARTNERS = 2;
 const EXACT_LOCATION_SCORE = 2;
 const LOCATION_MISMATCH_SCORE = -2;
 const MATCHED_TIME_SCORE = 2;
@@ -156,9 +159,9 @@ const buildGroupMomentumScore = (input: {
 }): number => {
   const minPartners =
     input.candidateMinPartners !== null &&
-    input.candidateMinPartners >= DEFAULT_MIN_PARTNERS
+    input.candidateMinPartners >= MIN_MANUAL_PARTNERS
       ? input.candidateMinPartners
-      : DEFAULT_MIN_PARTNERS;
+      : DEFAULT_AUTOMATIC_MIN_PARTNERS;
   const activePartnerCount = Math.max(0, input.activePartnerCount);
   const missingAfterCurrentUserJoins = Math.max(
     0,

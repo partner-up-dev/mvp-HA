@@ -1,3 +1,5 @@
+import type { PRStatus } from "@partner-up-dev/backend";
+
 export type PRKind = "ANCHOR" | "COMMUNITY";
 
 export type CanonicalAnalyticsEventName =
@@ -90,7 +92,7 @@ type CanonicalAnalyticsPayloadMap = {
   };
   pr_create_success: PRContextPayload & {
     prId: number;
-    status: "DRAFT" | "OPEN";
+    status: PRStatus;
   };
   pr_join_success: PRContextPayload & {
     prId: number;

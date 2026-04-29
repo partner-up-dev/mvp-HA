@@ -44,6 +44,9 @@ export {
   countActivePartnersForPR,
 } from "../../pr-core/services/slot-management.service";
 export {
+  DEFAULT_AUTOMATIC_MIN_PARTNERS,
+  MIN_MANUAL_PARTNERS,
+  MIN_PRESENT_MAX_PARTNERS,
   normalizeAutomaticPartnerBounds,
   assertManualPartnerBoundsValid,
 } from "../../pr-core/services/partner-bounds.service";

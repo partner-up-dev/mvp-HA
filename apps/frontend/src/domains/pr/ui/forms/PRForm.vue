@@ -59,7 +59,7 @@
           <input
             :value="minPartnersInput"
             type="number"
-            min="2"
+            min="1"
             :placeholder="t('partnerRequestForm.minPartnersPlaceholder')"
             @input="onMinPartnersInput"
           />

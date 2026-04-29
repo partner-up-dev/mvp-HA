@@ -10,7 +10,7 @@ import {
   expectActiveParticipantsInclude,
 } from "./_kit/assertions/participants";
 import { expectPartnerRequestStatus } from "./_kit/assertions/partner-requests";
-import { givenOpenPartnerRequest } from "./_kit/builders/partner-requests";
+import { givenPublishedPartnerRequest } from "./_kit/builders/partner-requests";
 import { givenUser } from "./_kit/builders/users";
 import { probeMessageThreadVisibility } from "./_kit/probes/messages";
 
@@ -22,7 +22,7 @@ scenario("open_pr_join_reaches_ready", async (ctx) => {
   const creator = await givenUser("creator");
   const joiner = await givenUser("joiner");
   const outsider = await givenUser("outsider");
-  const pr = await givenOpenPartnerRequest({
+  const pr = await givenPublishedPartnerRequest({
     creator,
     minPartners: 2,
     maxPartners: null,
@@ -63,4 +63,21 @@ scenario("open_pr_join_reaches_ready", async (ctx) => {
   expectMessageThreadForbidden(
     await probeMessageThreadVisibility({ pr, viewer: outsider }),
   );
+});
+
+scenario("min_one_pr_publishes_ready_with_creator_slot", async (ctx) => {
+  const creator = await givenUser("min-one-creator");
+  const pr = await givenPublishedPartnerRequest({
+    creator,
+    minPartners: 1,
+    maxPartners: null,
+    expectedCreatedStatus: "READY",
+  });
+
+  ctx.record("creatorUserId", creator.user.id);
+  ctx.record("prId", pr.id);
+
+  await expectPartnerRequestStatus(pr, "READY");
+  await expectActiveParticipantCount(pr, 1);
+  await expectActiveParticipantsInclude(pr, [creator.user.id]);
 });
