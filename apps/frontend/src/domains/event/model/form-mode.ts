@@ -29,14 +29,30 @@ type StartOption = AnchorEventFormModeResponse["startOptions"][number];
 
 const normalizeTagLabel = (value: string): string => value.trim();
 
-export const buildFormModeDateKey = (isoDateTime: string): string =>
-  dateKeyFormatter.format(new Date(isoDateTime));
+const parseFormModeDateTime = (value: string): Date | null => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
-export const formatFormModeDateLabel = (isoDateTime: string): string =>
-  datePartFormatter.format(new Date(isoDateTime));
+export const isValidFormModeDateTime = (
+  value: string | null | undefined,
+): value is string =>
+  typeof value === "string" && parseFormModeDateTime(value) !== null;
 
-export const formatFormModeTimeLabel = (isoDateTime: string): string =>
-  timePartFormatter.format(new Date(isoDateTime));
+export const buildFormModeDateKey = (isoDateTime: string): string => {
+  const date = parseFormModeDateTime(isoDateTime);
+  return date === null ? "" : dateKeyFormatter.format(date);
+};
+
+export const formatFormModeDateLabel = (isoDateTime: string): string => {
+  const date = parseFormModeDateTime(isoDateTime);
+  return date === null ? "" : datePartFormatter.format(date);
+};
+
+export const formatFormModeTimeLabel = (isoDateTime: string): string => {
+  const date = parseFormModeDateTime(isoDateTime);
+  return date === null ? "" : timePartFormatter.format(date);
+};
 
 export const buildFormModeRouteDateKey = (isoDateTime: string): string =>
   buildFormModeDateKey(isoDateTime);
@@ -211,7 +227,13 @@ export const buildStartOptionsByDate = (startOptions: readonly StartOption[]) =>
   const groups = new Map<string, StartOption[]>();
 
   for (const option of startOptions) {
+    if (!isValidFormModeDateTime(option.startAt)) {
+      continue;
+    }
     const dateKey = buildFormModeDateKey(option.startAt);
+    if (!dateKey) {
+      continue;
+    }
     const items = groups.get(dateKey) ?? [];
     items.push(option);
     groups.set(dateKey, items);

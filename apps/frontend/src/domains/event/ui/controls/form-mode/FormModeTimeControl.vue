@@ -55,6 +55,7 @@ import {
   buildStartOptionsByDate,
   formatFormModeDurationLabel,
   formatFormModeTimeLabel,
+  isValidFormModeDateTime,
 } from "@/domains/event/model/form-mode";
 
 type StartOption = AnchorEventFormModeResponse["startOptions"][number];
@@ -122,7 +123,11 @@ const handleDateWheelUpdate = (value: WheelPickerValue) => {
 };
 
 const handleTimeWheelUpdate = (value: WheelPickerValue) => {
-  emit("update:modelValue", String(value));
+  const nextValue = String(value);
+  emit(
+    "update:modelValue",
+    isValidFormModeDateTime(nextValue) ? nextValue : null,
+  );
 };
 
 const findGroupForStartAt = (
@@ -134,8 +139,7 @@ const findGroupForStartAt = (
   ) ?? null;
 
 const resolveDateKey = (value: string): string | null => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  if (!isValidFormModeDateTime(value)) {
     return null;
   }
   return buildFormModeDateKey(value);
@@ -145,6 +149,10 @@ watch(
   [() => props.modelValue, defaultStartOptionGroups, advancedStartOptionGroups],
   ([modelValue, defaultGroups, advancedGroups]) => {
     if (!modelValue) {
+      return;
+    }
+    if (!isValidFormModeDateTime(modelValue)) {
+      emit("update:modelValue", null);
       return;
     }
 

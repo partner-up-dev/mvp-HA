@@ -112,6 +112,7 @@ import type { LongPressOriginRect } from "@/domains/event/ui/primitives/FormMode
 import {
   formatFormModeDateLabel,
   formatFormModeTimeLabel,
+  isValidFormModeDateTime,
   pickStableGalleryImage,
 } from "@/domains/event/model/form-mode";
 import type { AnchorEventFormModeRecommendationResponse } from "@/domains/event/model/types";
@@ -188,7 +189,7 @@ const selectedLocationLabel = computed(() => {
 });
 
 const selectedTimeLabel = computed(() => {
-  if (!selectedStartAt.value) {
+  if (!isValidFormModeDateTime(selectedStartAt.value)) {
     return t("anchorEvent.formMode.timePlaceholder");
   }
   return `${formatFormModeDateLabel(selectedStartAt.value)} ${formatFormModeTimeLabel(
@@ -218,12 +219,18 @@ const canSubmitRecommendation = computed(() =>
   Boolean(
     selectedLocationId.value &&
       selectedStartAt.value &&
+      isValidFormModeDateTime(selectedStartAt.value) &&
       !recommendationSubmissionPending.value,
   ),
 );
 
 const canCreateFallback = computed(() =>
-  Boolean(selectedLocationId.value && selectedStartAt.value && formModeData.value),
+  Boolean(
+    selectedLocationId.value &&
+      selectedStartAt.value &&
+      isValidFormModeDateTime(selectedStartAt.value) &&
+      formModeData.value,
+  ),
 );
 
 const joinSplashLiquidPhase = computed<LiquidSplashPhase>(() => {
@@ -469,7 +476,7 @@ const trackRecommendationExposure = (
 ) => {
   const locationId = selectedLocationId.value;
   const startAt = selectedStartAt.value;
-  if (!locationId || !startAt) {
+  if (!locationId || !isValidFormModeDateTime(startAt)) {
     return;
   }
 
@@ -503,7 +510,7 @@ const routeToPRJoin = async (
 const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
   const locationId = selectedLocationId.value;
   const startAt = selectedStartAt.value;
-  if (!locationId || !startAt) {
+  if (!locationId || !isValidFormModeDateTime(startAt)) {
     return;
   }
 
@@ -554,7 +561,7 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
 };
 
 const resolveSelectedTimeWindow = (): [string | null, string | null] => {
-  if (!selectedStartAt.value) {
+  if (!isValidFormModeDateTime(selectedStartAt.value)) {
     return [null, null];
   }
 
@@ -602,7 +609,7 @@ const buildCreateFields = (): PartnerRequestFields | null => {
 const handleCreateFallback = async () => {
   const locationId = selectedLocationId.value;
   const startAt = selectedStartAt.value;
-  if (!locationId || !startAt) {
+  if (!locationId || !isValidFormModeDateTime(startAt)) {
     return;
   }
 

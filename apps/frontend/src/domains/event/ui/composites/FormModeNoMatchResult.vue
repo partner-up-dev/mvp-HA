@@ -60,6 +60,7 @@ import type { AnchorEventFormModeRecommendationResponse } from "@/domains/event/
 import {
   formatFormModeDateLabel,
   formatFormModeTimeLabel,
+  isValidFormModeDateTime,
 } from "@/domains/event/model/form-mode";
 import Button from "@/shared/ui/actions/Button.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
@@ -83,7 +84,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const buildCandidateTimeLabel = (startAt: string | null): string | null => {
-  if (!startAt) {
+  if (!isValidFormModeDateTime(startAt)) {
     return null;
   }
 
