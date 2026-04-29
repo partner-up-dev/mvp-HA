@@ -13,6 +13,10 @@ pnpm is read from the root `packageManager`, and Serverless Devs is pinned in
 `scripts/ci/fc/common.sh`. GitHub Action majors are kept on Node24-compatible
 releases while project commands run on Node 22.
 
+The backend deploy workflow is triggered by backend source changes and by root
+workspace/toolchain inputs used during install, build, or layer packaging:
+`.node-version`, `package.json`, `pnpm-lock.yaml`, and `pnpm-workspace.yaml`.
+
 ### Standard deploy path
 
 1. checkout

@@ -18,7 +18,7 @@ install_workspace_dependencies() {
 
 path_is_layer_input() {
   case "$1" in
-    apps/backend/package.json | pnpm-lock.yaml | apps/backend/layers/node-modules/*)
+    .node-version | apps/backend/package.json | package.json | pnpm-lock.yaml | pnpm-workspace.yaml | apps/backend/layers/node-modules/*)
       return 0
       ;;
     *)
@@ -58,7 +58,7 @@ should_publish_layer() {
     if path_is_layer_input "$changed_file"; then
       return 0
     fi
-  done < <(git diff --name-only "$before" "$after" -- apps/backend/package.json pnpm-lock.yaml apps/backend/layers/node-modules)
+  done < <(git diff --name-only "$before" "$after" -- .node-version apps/backend/package.json package.json pnpm-lock.yaml pnpm-workspace.yaml apps/backend/layers/node-modules)
 
   return 1
 }
