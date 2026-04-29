@@ -20,13 +20,30 @@ Scenario Tests -> Domain Test Kit -> Core Test Infra
 
 ## Run
 
+Prerequisites:
+
 ```bash
-SCENARIO_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5436/postgres pnpm test:scenario
+pnpm install --frozen-lockfile
+docker compose up -d postgres
+```
+
+Recommended local mode:
+
+```bash
+SCENARIO_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres pnpm test:scenario
 ```
 
 The runner creates a unique temporary database from `SCENARIO_DATABASE_ADMIN_URL`, maps it to `DATABASE_URL`, runs migrations, imports `*.scenario.test.ts`, closes backend DB clients after the test run, then drops the temporary database.
 
-For focused debugging, `TEST_DATABASE_URL` can point at a named database. In that mode the runner resets the schema inside that database and leaves the database itself in place.
+If your local Docker compose uses a custom `POSTGRES_PORT`, use that port in the URL.
+
+Debug mode:
+
+```bash
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partnerup_scenario pnpm test:scenario
+```
+
+`TEST_DATABASE_URL` and `SCENARIO_DATABASE_ADMIN_URL` are alternatives. `TEST_DATABASE_URL` has priority when both are set. In that mode the runner resets the schema inside the named database and leaves the database itself in place.
 
 ## Authoring Rule
 

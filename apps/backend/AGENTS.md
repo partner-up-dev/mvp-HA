@@ -46,6 +46,11 @@ src/
 ├── controllers/          # Hono routes + validation (no business logic)
 ├── lib/                  # DB engine + utilities
 └── index.ts              # Entrypoint, mounts routes, request-tail maintenance, exports AppType
+tests/
+├── _infra/               # Business-agnostic scenario test mechanics
+└── <domain>/
+    ├── _kit/             # Domain test language: builders, actions, probes, assertions
+    └── *.scenario.test.ts
 ```
 
 ## Documents
@@ -72,6 +77,7 @@ Read the smallest useful set and keep durable docs current:
 - Domain services (`src/domains/*/services`): domain rules and reusable domain logic belong here.
 - Controller layer (`src/controllers`): protocol conversion only; see `src/controllers/AGENTS.md`.
 - Infra layer (`src/infra`): event bus, job runner, analytics ingest, and operation log.
+- Unit tests under `src/**/*.test.ts` cover local rules, pure domain services, schema/bounds logic, and isolated error mapping. Scenario tests under `tests/<domain>/**/*.scenario.test.ts` cover cross-module behavior through HTTP APIs with real Postgres migrations, especially persisted state transitions, route/controller/use-case/repository coordination, and user-visible business promises.
 - Better not use intervals or in-process background jobs; the backend runs in scale-to-0 serverless.
 
 ## Database Workflow
