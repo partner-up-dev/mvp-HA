@@ -7,3 +7,7 @@ const client = postgres(env.DATABASE_URL, {
   connect_timeout: env.DB_CONNECT_TIMEOUT_SECONDS,
 });
 export const db = drizzle(client, { schema });
+
+export const closeDb = async (): Promise<void> => {
+  await client.end({ timeout: 5 });
+};

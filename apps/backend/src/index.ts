@@ -2,6 +2,8 @@
  * 职责：聚合所有 Controller，导出 AppType。
  */
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -53,7 +55,7 @@ import {
   WXOA_DOMAIN_VERIFICATION_FILENAME,
 } from "./lib/wechat-domain-verification";
 
-const app = new Hono();
+export const app = new Hono();
 registerWeChatReminderJobs();
 registerWeChatActivityStartReminderJobs();
 registerWeChatNewPartnerJobs();
@@ -64,12 +66,14 @@ registerNotificationOutboxHandlers({
   schedulePRMessageNotification: scheduleWeChatPRMessageNotification,
 });
 registerAnalyticsAggregationJobs();
-void bootstrapAnalyticsAggregationJobs().catch((error) => {
-  console.error(
-    "[Analytics] failed to bootstrap daily aggregation jobs",
-    error,
-  );
-});
+if (process.env.BACKEND_SCENARIO_DISABLE_BOOTSTRAP !== "true") {
+  void bootstrapAnalyticsAggregationJobs().catch((error) => {
+    console.error(
+      "[Analytics] failed to bootstrap daily aggregation jobs",
+      error,
+    );
+  });
+}
 
 // Middleware
 app.use("*", logger());
@@ -95,7 +99,9 @@ app.use("*", async (c, next) => {
       return;
     }
 
-    kickRequestTailMaintenance();
+    if (process.env.BACKEND_SCENARIO_DISABLE_REQUEST_TAIL !== "true") {
+      kickRequestTailMaintenance();
+    }
   }
 });
 
@@ -128,7 +134,7 @@ app.onError((err, c) => {
 });
 
 // Mount routes
-const routes = app
+export const routes = app
   .route("/api/auth", authRoute)
   .route("/api/users", userRoute)
   .route("/api/pr", partnerRequestRoute)
@@ -273,10 +279,17 @@ export {
   userSexSchema,
 } from "./entities/user";
 
-// Start server
-serve({
-  fetch: app.fetch,
-  port: env.PORT,
-});
+const isMainModule = (moduleUrl: string): boolean => {
+  const entryPath = process.argv[1];
+  if (!entryPath) return false;
+  return path.resolve(fileURLToPath(moduleUrl)) === path.resolve(entryPath);
+};
 
-console.log(`Server running on http://localhost:${env.PORT}`);
+if (isMainModule(import.meta.url)) {
+  serve({
+    fetch: app.fetch,
+    port: env.PORT,
+  });
+
+  console.log(`Server running on http://localhost:${env.PORT}`);
+}

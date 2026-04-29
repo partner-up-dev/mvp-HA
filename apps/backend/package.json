@@ -13,6 +13,8 @@
     "build": "tsup",
     "build:db-migrate-fc": "tsup --config tsup.fc-db-migrate.config.ts",
     "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test \"src/**/*.test.ts\"",
+    "test:scenario": "tsx tests/run-scenario-tests.ts",
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:lint": "tsx src/scripts/db/lint.ts",
