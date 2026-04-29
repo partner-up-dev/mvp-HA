@@ -4,6 +4,10 @@
 
 Primary workflow: `.github/workflows/backend-fc-deploy.yml`
 
+The workflow prepares the GitHub runner and delegates deploy control flow to
+`scripts/ci/fc/deploy_backend.sh`. The script is the canonical executable
+rollout path for backend FC deployment.
+
 ### Standard deploy path
 
 1. checkout
@@ -79,6 +83,9 @@ Separate workflow: `.github/workflows/job-runner-trigger-fc-deploy.yml`
 This deploys the trigger function that calls the backend job tick endpoint on
 cron expression `CRON_TZ=Asia/Shanghai 0 0/30 8-23 ? * ?`.
 
+The workflow delegates deployment to
+`scripts/ci/fc/deploy_job_runner_trigger.sh`.
+
 ## Frontend Rollout Reality
 
 Current frontend deployment target is Aliyun ESA.
@@ -98,7 +105,8 @@ pull-based ESA rollout model.
 
 ## Manual Rollout Reality
 
-Manual backend deployment is supported through Serverless Devs commands, but the canonical rollout path is GitHub Actions.
+Manual backend deployment is supported through the same repository scripts used
+by GitHub Actions. GitHub Actions remains the canonical hosted rollout path.
 
 If manual deploy is used:
 

@@ -9,6 +9,7 @@ on:
     paths:
       - "apps/backend/fc-job-runner-trigger/**"
       - ".github/workflows/job-runner-trigger-fc-deploy.yml"
+      - "scripts/ci/fc/**"
 
 concurrency:
   group: job-runner-trigger-fc-deploy
@@ -27,6 +28,9 @@ jobs:
       ALIYUN_FC_ROLE_ARN: ${{ vars.ALIYUN_FC_ROLE_ARN }}
       ALIYUN_FC_RESOURCE_GROUP_ID: ${{ vars.ALIYUN_FC_RESOURCE_GROUP_ID }}
       JOB_RUNNER_INTERNAL_TOKEN: ${{ secrets.JOB_RUNNER_INTERNAL_TOKEN }}
+      ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+      ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+      ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,30 +40,5 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Serverless Devs CLI
-        run: npm install -g @serverless-devs/s
-
-      - name: Configure Aliyun credentials
-        env:
-          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
-          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-          ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIBABA_CLOUD_ACCOUNT_ID }}
-        run: bash scripts/ci/fc/configure_aliyun_credentials.sh
-
-      - name: Validate required secrets
-        run: |
-          if [ -z "${JOB_RUNNER_INTERNAL_TOKEN}" ]; then
-            echo "::error::Missing JOB_RUNNER_INTERNAL_TOKEN. Configure it in the selected GitHub environment secrets."
-            exit 1
-          fi
-
-      - name: Deploy job runner trigger function
-        run: s deploy -y -t apps/backend/fc-job-runner-trigger/s.yaml
-
-      - name: Publish FC function version
-        if: github.ref_name == 'master'
-        run: bash scripts/ci/fc/publish_function_version.sh
-
-      - name: Publish FC alias
-        if: github.ref_name == 'master'
-        run: bash scripts/ci/fc/publish_production_alias.sh
+      - name: Deploy job runner trigger through repository script
+        run: bash scripts/ci/fc/deploy_job_runner_trigger.sh
