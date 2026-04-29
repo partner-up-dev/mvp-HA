@@ -4,6 +4,7 @@ import { initializeSlotsForPR } from "../../pr/services";
 import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import {
   assertManualPartnerBoundsValid,
+  assertPRTimeWindowAvailableAtLocation,
   validateAnchorParticipationPolicyOffsets,
 } from "../../pr/services";
 import type { PartnerRequest } from "../../../entities";
@@ -56,6 +57,10 @@ export async function createAdminPR(
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
   assertManualPartnerBoundsValid(input.minPartners, input.maxPartners, 0);
+  await assertPRTimeWindowAvailableAtLocation({
+    location: input.location,
+    timeWindow,
+  });
 
   const createdRoot = await prRepo.create({
     title: input.title,

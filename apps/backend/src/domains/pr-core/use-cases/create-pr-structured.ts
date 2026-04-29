@@ -4,6 +4,7 @@ import type {
 } from "../../../entities/partner-request";
 import { initializeSlotsForPR } from "../services/slot-management.service";
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
+import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
 import {
   resolveDraftCreator,
   type CreatorIdentityInput,
@@ -27,6 +28,10 @@ export async function createPRFromStructured(
   } = {},
 ): Promise<CreatePRCommandResult> {
   assertManualPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
+  await assertPRTimeWindowAvailableAtLocation({
+    location: fields.location,
+    timeWindow: fields.time,
+  });
 
   const creator = await resolveDraftCreator(creatorIdentity);
   const createdBy = creator?.id ?? null;

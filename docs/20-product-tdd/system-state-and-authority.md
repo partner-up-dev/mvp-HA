@@ -8,7 +8,7 @@ Persisted in Postgres via backend entities and repositories:
 - partner slots and participation state
 - PR messages and per-user PR message inbox state
 - users, user notification options, and user reliability
-- anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, unified event location pools, type-derived Anchor Event PR context, time-pool strategy state, POIs with per-time-window capacity, support resources, booking contacts, and booking execution records
+- anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, unified event location pools, type-derived Anchor Event PR context, time-pool strategy state, POIs with per-time-window capacity and availability rules, support resources, booking contacts, and booking execution records
 - config, operation logs, domain events, outbox events, jobs, notification opportunities, notification waves, and notification deliveries
 - analytics aggregate tables
 
@@ -40,6 +40,7 @@ The backend is authoritative for:
 - PR message visibility, read-marker progression, and notification wave gating
 - identity binding, session verification, and role semantics
 - event, time-pool, POI, booking-support, and admin-managed configuration state
+- POI-owned availability rules that determine whether a PR location accepts a full PR time window
 - event-owned preference-tag pool, moderation state, landing recommendation, and type-derived Anchor Event PR context
 - event-specific beta-group QR codes; generic config must not be the owner for activity-specific beta-group entry
 - domain events, notifications, analytics persistence, and operation logs

@@ -31,7 +31,7 @@
 
         <FormModeTimeControl
           v-model="selectedStartAt"
-          :start-options="formModeData.startOptions"
+          :start-options="selectedLocationStartOptions"
           :duration-minutes="formModeData.event.durationMinutes"
           :earliest-lead-minutes="formModeData.event.earliestLeadMinutes"
         />
@@ -162,6 +162,23 @@ let joinSplashFillResolve: (() => void) | null = null;
 let joinSplashDrainResolve: (() => void) | null = null;
 
 const formModeData = computed(() => formModeQuery.data.value ?? null);
+
+const selectedLocationStartOptions = computed(() => {
+  const data = formModeData.value;
+  if (!data) {
+    return [];
+  }
+
+  const selectedLocation = data.locations.find(
+    (location) => location.id === selectedLocationId.value,
+  );
+  if (!selectedLocation) {
+    return data.startOptions;
+  }
+
+  const availableStartKeys = new Set(selectedLocation.availableStartKeys);
+  return data.startOptions.filter((option) => availableStartKeys.has(option.key));
+});
 
 const selectedLocationLabel = computed(() => {
   const selected = formModeData.value?.locations.find(
@@ -353,7 +370,7 @@ const createActionErrorMessage = computed(() => {
     case "WECHAT_AUTH_REQUIRED":
       return t("anchorEvent.createCard.errors.wechatAuthRequired");
     default:
-      return t("anchorEvent.createCard.errors.createFailed");
+      return error.message || t("anchorEvent.createCard.errors.createFailed");
   }
 });
 

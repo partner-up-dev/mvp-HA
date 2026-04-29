@@ -12,6 +12,7 @@ import {
 import { ensureUserHasPin, resolveUserByOpenId } from "../../user";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
+import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
 import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
@@ -109,6 +110,10 @@ export async function publishPR(
     userId: creatorUserId,
     targetTimeWindow: request.time,
     excludePrId: id,
+  });
+  await assertPRTimeWindowAvailableAtLocation({
+    location: request.location,
+    timeWindow: request.time,
   });
 
   const updated = await prRepo.updateStatus(id, "OPEN");

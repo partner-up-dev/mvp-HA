@@ -199,6 +199,7 @@ insert into pois (
   id,
   gallery,
   per_time_window_cap,
+  availability_rules,
   created_at,
   updated_at
 )
@@ -207,6 +208,7 @@ values
     '广外南体育馆羽毛球场1号场',
     array['https://oss-app.partner-up.cn/pois/4310f713-8897-4055-9be4-914a5ec7477f.jpg']::text[],
     1,
+    '[]'::jsonb,
     '2026-03-03 11:55:30.133803'::timestamp,
     '2026-03-03 11:55:30.133803'::timestamp
   ),
@@ -214,6 +216,7 @@ values
     '广外南体育馆羽毛球场2号场',
     array['https://oss-app.partner-up.cn/pois/4310f713-8897-4055-9be4-914a5ec7477f.jpg']::text[],
     1,
+    '[]'::jsonb,
     '2026-03-03 11:56:30.133803'::timestamp,
     '2026-03-03 11:56:30.133803'::timestamp
   ),
@@ -221,6 +224,7 @@ values
     '图书馆自习区A桌',
     array[]::text[],
     1,
+    '[]'::jsonb,
     '2026-03-03 11:57:30.133803'::timestamp,
     '2026-03-03 11:57:30.133803'::timestamp
   ),
@@ -228,6 +232,7 @@ values
     '图书馆自习区B桌',
     array[]::text[],
     1,
+    '[]'::jsonb,
     '2026-03-03 11:58:30.133803'::timestamp,
     '2026-03-03 11:58:30.133803'::timestamp
   )

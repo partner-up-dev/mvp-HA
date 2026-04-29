@@ -8,6 +8,7 @@ import {
 } from "../../../repositories/AnchorEventPRContextRepository";
 import { normalizeLocationPool, type AnchorEvent, type AnchorEventId } from "../../../entities";
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
+import { isTimeWindowAvailableByPoiRules } from "../../pr/services";
 import { isAnchorEventFormModeStartSelectable } from "../services/form-mode";
 import { listAnchorEventTimeWindows } from "../services/time-window-pool";
 
@@ -106,6 +107,7 @@ export interface AnchorEventFormModeData {
   locations: Array<{
     id: string;
     gallery: string[];
+    availableStartKeys: string[];
   }>;
   startOptions: Array<{
     key: string;
@@ -141,6 +143,7 @@ export async function getAnchorEventFormModeData(
 
   const now = new Date();
   const poiById = new Map(pois.map((poi) => [poi.id, poi.gallery]));
+  const poiRecordById = new Map(pois.map((poi) => [poi.id, poi]));
   const startOptions = listAnchorEventTimeWindows(event)
     .filter((timeWindow) => !hasTimeWindowStarted(timeWindow, now))
     .flatMap((timeWindow) => {
@@ -156,6 +159,12 @@ export async function getAnchorEventFormModeData(
         },
       ];
     });
+  const startOptionByKey = new Map(
+    startOptions.map((option) => [
+      option.key,
+      [option.startAt, option.endAt] as [string | null, string | null],
+    ]),
+  );
 
   return {
     event: {
@@ -171,6 +180,18 @@ export async function getAnchorEventFormModeData(
     locations: locationIds.map((id) => ({
       id,
       gallery: [...(poiById.get(id) ?? [])],
+      availableStartKeys: startOptions
+        .filter((option) => {
+          const poi = poiRecordById.get(id) ?? null;
+          const timeWindow = startOptionByKey.get(option.key);
+          return (
+            !poi ||
+            poi.availabilityRules.length === 0 ||
+            (timeWindow !== undefined &&
+              isTimeWindowAvailableByPoiRules(poi.availabilityRules, timeWindow))
+          );
+        })
+        .map((option) => option.key),
     })),
     startOptions,
     presetTags: tags.map((tag) => ({

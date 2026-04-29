@@ -636,6 +636,7 @@ export interface MessageSchema {
       createAction: string;
       creatingAction: string;
       optionMaxReached: string;
+      optionTimeUnavailable: string;
       optionRemaining: string;
       errors: {
         timeWindowConflict: string;
@@ -1001,11 +1002,35 @@ export interface MessageSchema {
     uploadingImage: string;
     manualUrlPlaceholder: string;
     addUrlAction: string;
-    saveGalleryAction: string;
-    savingGallery: string;
+    savePoiAction: string;
+    savingPoi: string;
     emptyGallery: string;
     removeImageAction: string;
     imageAlt: string;
+    availabilityRulesTitle: string;
+    addAvailabilityRuleAction: string;
+    emptyAvailabilityRules: string;
+    availabilityRuleTitle: string;
+    removeRuleAction: string;
+    ruleModeLabel: string;
+    ruleModeInclude: string;
+    ruleModeExclude: string;
+    ruleKindLabel: string;
+    ruleKindAbsolute: string;
+    ruleKindRecurring: string;
+    ruleStartAtLabel: string;
+    ruleEndAtLabel: string;
+    ruleFrequencyLabel: string;
+    frequencyDaily: string;
+    frequencyWeekly: string;
+    frequencyMonthly: string;
+    frequencyYearly: string;
+    ruleStartTimeLabel: string;
+    ruleEndTimeLabel: string;
+    ruleWeekdaysLabel: string;
+    ruleMonthDaysLabel: string;
+    ruleMonthsLabel: string;
+    ruleNumberListPlaceholder: string;
   };
   adminAnchorEvents: {
     title: string;

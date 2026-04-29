@@ -1,5 +1,10 @@
 import { inArray } from "drizzle-orm";
-import { pois, type Poi } from "../entities/poi";
+import {
+  normalizePoiAvailabilityRules,
+  pois,
+  type Poi,
+  type PoiAvailabilityRule,
+} from "../entities/poi";
 import { db } from "../lib/db";
 
 const normalizeIds = (ids: string[]): string[] => {
@@ -38,12 +43,20 @@ export class PoiRepository {
 
   async upsertById(
     id: string,
-    data: { gallery: string[]; perTimeWindowCap?: number | null },
+    data: {
+      gallery: string[];
+      perTimeWindowCap?: number | null;
+      availabilityRules?: PoiAvailabilityRule[];
+    },
   ): Promise<Poi> {
     const normalizedId = id.trim();
     const normalizedGallery = normalizeGallery(data.gallery);
     const normalizedPerTimeWindowCap =
       data.perTimeWindowCap === undefined ? null : data.perTimeWindowCap;
+    const shouldReplaceAvailabilityRules = data.availabilityRules !== undefined;
+    const normalizedAvailabilityRules = shouldReplaceAvailabilityRules
+      ? normalizePoiAvailabilityRules(data.availabilityRules)
+      : [];
 
     const result = await db
       .insert(pois)
@@ -51,12 +64,16 @@ export class PoiRepository {
         id: normalizedId,
         gallery: normalizedGallery,
         perTimeWindowCap: normalizedPerTimeWindowCap,
+        availabilityRules: normalizedAvailabilityRules,
       })
       .onConflictDoUpdate({
         target: pois.id,
         set: {
           gallery: normalizedGallery,
           perTimeWindowCap: normalizedPerTimeWindowCap,
+          ...(shouldReplaceAvailabilityRules
+            ? { availabilityRules: normalizedAvailabilityRules }
+            : {}),
           updatedAt: new Date(),
         },
       })

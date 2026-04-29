@@ -6,6 +6,7 @@ import type {
 } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
+import { readApiErrorPayload, resolveApiErrorMessage } from "@/shared/api/error";
 
 export type CreatePRResult = {
   id: PRId;
@@ -21,15 +22,15 @@ type CreatePRFromNaturalLanguageInput = {
 
 type CreatePRFromStructuredInput = {
   fields: PartnerRequestFields;
-  createSource?: "FORM" | "EVENT_ASSISTED";
+  createSource?: "FORM";
 };
 
 const readErrorMessage = async (
   response: Response,
   fallback: string,
 ): Promise<string> => {
-  const payload = (await response.json()) as { error?: string };
-  return payload.error || fallback;
+  const payload = await readApiErrorPayload(response);
+  return resolveApiErrorMessage(payload, fallback);
 };
 
 export const useCreatePRFromNaturalLanguage = () => {

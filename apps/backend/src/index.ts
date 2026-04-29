@@ -42,6 +42,10 @@ import {
 import { registerNotificationOutboxHandlers } from "./domains/notification";
 import { drainOutboxBatches } from "./infra/maintenance";
 import { env } from "./lib/env";
+import {
+  buildProblemDetailsPayload,
+  ProblemDetailsError,
+} from "./lib/problem-details";
 import { withTimeout } from "./lib/with-timeout";
 import {
   getWechatDomainVerificationContent,
@@ -97,6 +101,17 @@ app.use("*", async (c, next) => {
 
 // Global error handler
 app.onError((err, c) => {
+  if (err instanceof ProblemDetailsError) {
+    const { payload, contentLanguage } = buildProblemDetailsPayload(
+      err,
+      c.req.header("accept-language"),
+    );
+    return c.body(JSON.stringify(payload), err.status, {
+      "Content-Type": "application/problem+json; charset=utf-8",
+      "Content-Language": contentLanguage,
+    });
+  }
+
   if (err instanceof HTTPException) {
     const codedError = err as HTTPException & { code?: string };
     const payload: { error: string; code?: string } = {

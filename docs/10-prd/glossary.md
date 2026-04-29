@@ -11,4 +11,4 @@ Business vocabulary stays here. The file is written in English, but the product-
 | 预订与资助 | `Booking Support` | The user-visible support surface covering booking-related help, subsidy-related help, and platform-handled booking context. |
 | 预订责任方 | `BookingHandledBy` | The booking responsibility semantic: `PLATFORM`, `PLATFORM_PASSTHROUGH`, or `USER`. |
 | 预订联系人 | `Booking Contact` | The phone-contact semantic required only when booking uses `PLATFORM_PASSTHROUGH`. |
-| 地点兴趣点 | `POI` | The semantic carrier for event locations, related gallery or venue context, and per-time-window capacity. |
+| 地点兴趣点 | `POI` | The semantic carrier for event locations, related gallery or venue context, per-time-window capacity, and location-owned availability windows. |

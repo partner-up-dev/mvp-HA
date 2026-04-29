@@ -382,7 +382,10 @@ const createActionErrorMessage = computed(() => {
       case "ANCHOR_EVENT_NOT_FOUND":
         return t("anchorEvent.createCard.errors.eventUnavailable");
       default:
-        return t("anchorEvent.createCard.errors.createFailed");
+        return (
+          createAnchorError.message ||
+          t("anchorEvent.createCard.errors.createFailed")
+        );
     }
   }
   return null;
@@ -1054,6 +1057,12 @@ const handleCreateFromCardEmpty = async () => {
 };
 
 const formatLocationOptionLabel = (option: LocationOption): string => {
+  if (option.disabled && option.disabledReason === "TIME_UNAVAILABLE") {
+    return t("anchorEvent.createCard.optionTimeUnavailable", {
+      locationId: option.locationId,
+    });
+  }
+
   if (option.disabled && option.disabledReason === "MAX_REACHED") {
     return t("anchorEvent.createCard.optionMaxReached", {
       locationId: option.locationId,

@@ -43,6 +43,32 @@
                 </Button>
               </div>
             </label>
+
+            <label class="field">
+              <span class="field-label">{{ t("adminPois.perTimeWindowCapLabel") }}</span>
+              <input
+                v-model="selectedPoiCapText"
+                class="field-input"
+                type="number"
+                min="1"
+                :disabled="selectedPoiId === null"
+                :placeholder="t('adminPois.perTimeWindowCapPlaceholder')"
+              />
+            </label>
+
+            <Button
+              appearance="pill"
+              size="sm"
+              type="button"
+              :disabled="selectedPoiId === null || isSavingPoi"
+              @click="handleSavePoi"
+            >
+              {{
+                isSavingPoi
+                  ? t("adminPois.savingPoi")
+                  : t("adminPois.savePoiAction")
+              }}
+            </Button>
           </div>
         </section>
       </div>
@@ -59,11 +85,14 @@
       <LoadingIndicator v-if="poisQuery.isLoading.value" :message="t('common.loading')" />
       <ErrorToast v-else-if="pageError" :message="pageError.message" persistent />
 
-      <section v-else class="panel">
-        <div v-if="pois.length === 0" class="hint">
+      <template v-else-if="pois.length === 0">
+        <section class="panel">
           {{ t("adminPois.emptyPois") }}
-        </div>
-        <div v-else class="stack">
+        </section>
+      </template>
+
+      <template v-else>
+        <section class="panel">
           <div class="section-header">
             <h2 class="card-title">
               {{ t("adminPois.galleryTitle") }} · {{ selectedPoiId ?? "-" }}
@@ -88,32 +117,8 @@
                   : t("adminPois.uploadImageAction")
               }}
             </Button>
-            <Button
-              appearance="pill"
-              size="sm"
-              type="button"
-              :disabled="selectedPoiId === null || isSavingGallery"
-              @click="handleSaveGallery"
-            >
-              {{
-                isSavingGallery
-                  ? t("adminPois.savingGallery")
-                  : t("adminPois.saveGalleryAction")
-              }}
-            </Button>
           </div>
 
-          <label class="field">
-            <span class="field-label">{{ t("adminPois.perTimeWindowCapLabel") }}</span>
-            <input
-              v-model="selectedPoiCapText"
-              class="field-input"
-              type="number"
-              min="1"
-              :disabled="selectedPoiId === null"
-              :placeholder="t('adminPois.perTimeWindowCapPlaceholder')"
-            />
-          </label>
           <input
             ref="galleryInputRef"
             class="hidden-input"
@@ -168,8 +173,176 @@
               </Button>
             </article>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section class="panel availability-card">
+          <div class="section-header">
+            <h2 class="card-title">
+              {{ t("adminPois.availabilityRulesTitle") }} · {{ selectedPoiId ?? "-" }}
+            </h2>
+            <Button
+              appearance="pill"
+              tone="outline"
+              size="sm"
+              type="button"
+              :disabled="selectedPoiId === null"
+              @click="handleAddAvailabilityRule"
+            >
+              {{ t("adminPois.addAvailabilityRuleAction") }}
+            </Button>
+          </div>
+
+          <p v-if="selectedPoiAvailabilityRules.length === 0" class="hint">
+            {{ t("adminPois.emptyAvailabilityRules") }}
+          </p>
+
+          <article
+            v-for="(rule, index) in selectedPoiAvailabilityRules"
+            :key="rule.id"
+            class="availability-rule"
+          >
+            <div class="action-row">
+              <strong>
+                {{ t("adminPois.availabilityRuleTitle", { index: index + 1 }) }}
+              </strong>
+              <Button
+                tone="danger"
+                size="sm"
+                type="button"
+                @click="handleRemoveAvailabilityRule(index)"
+              >
+                {{ t("adminPois.removeRuleAction") }}
+              </Button>
+            </div>
+
+            <div class="grid">
+              <label class="field">
+                <span class="field-label">{{ t("adminPois.ruleModeLabel") }}</span>
+                <select
+                  v-model="rule.mode"
+                  class="field-input"
+                  @change="markSelectedPoiDirty"
+                >
+                  <option value="INCLUDE">{{ t("adminPois.ruleModeInclude") }}</option>
+                  <option value="EXCLUDE">{{ t("adminPois.ruleModeExclude") }}</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span class="field-label">{{ t("adminPois.ruleKindLabel") }}</span>
+                <select
+                  v-model="rule.kind"
+                  class="field-input"
+                  @change="markSelectedPoiDirty"
+                >
+                  <option value="ABSOLUTE">{{ t("adminPois.ruleKindAbsolute") }}</option>
+                  <option value="RECURRING">{{ t("adminPois.ruleKindRecurring") }}</option>
+                </select>
+              </label>
+
+              <template v-if="rule.kind === 'ABSOLUTE'">
+                <label class="field">
+                  <span class="field-label">{{ t("adminPois.ruleStartAtLabel") }}</span>
+                  <input
+                    v-model="rule.startAtLocal"
+                    class="field-input"
+                    type="datetime-local"
+                    @input="markSelectedPoiDirty"
+                  />
+                </label>
+
+                <label class="field">
+                  <span class="field-label">{{ t("adminPois.ruleEndAtLabel") }}</span>
+                  <input
+                    v-model="rule.endAtLocal"
+                    class="field-input"
+                    type="datetime-local"
+                    @input="markSelectedPoiDirty"
+                  />
+                </label>
+              </template>
+
+              <template v-else>
+                <label class="field">
+                  <span class="field-label">{{ t("adminPois.ruleFrequencyLabel") }}</span>
+                  <select
+                    v-model="rule.frequency"
+                    class="field-input"
+                    @change="markSelectedPoiDirty"
+                  >
+                    <option value="DAILY">{{ t("adminPois.frequencyDaily") }}</option>
+                    <option value="WEEKLY">{{ t("adminPois.frequencyWeekly") }}</option>
+                    <option value="MONTHLY">{{ t("adminPois.frequencyMonthly") }}</option>
+                    <option value="YEARLY">{{ t("adminPois.frequencyYearly") }}</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">{{ t("adminPois.ruleStartTimeLabel") }}</span>
+                  <input
+                    v-model="rule.startTime"
+                    class="field-input"
+                    type="time"
+                    @input="markSelectedPoiDirty"
+                  />
+                </label>
+
+                <label class="field">
+                  <span class="field-label">{{ t("adminPois.ruleEndTimeLabel") }}</span>
+                  <input
+                    v-model="rule.endTime"
+                    class="field-input"
+                    type="time"
+                    @input="markSelectedPoiDirty"
+                  />
+                </label>
+
+                <label v-if="rule.frequency === 'WEEKLY'" class="field field--full">
+                  <span class="field-label">{{ t("adminPois.ruleWeekdaysLabel") }}</span>
+                  <div class="weekday-grid">
+                    <label
+                      v-for="weekday in weekdayOptions"
+                      :key="weekday.value"
+                      class="checkbox-field"
+                    >
+                      <input
+                        v-model="rule.weekdays"
+                        type="checkbox"
+                        :value="weekday.value"
+                        @change="markSelectedPoiDirty"
+                      />
+                      <span>{{ weekday.label }}</span>
+                    </label>
+                  </div>
+                </label>
+
+                <label
+                  v-if="rule.frequency === 'MONTHLY' || rule.frequency === 'YEARLY'"
+                  class="field"
+                >
+                  <span class="field-label">{{ t("adminPois.ruleMonthDaysLabel") }}</span>
+                  <input
+                    v-model="rule.monthDaysText"
+                    class="field-input"
+                    :placeholder="t('adminPois.ruleNumberListPlaceholder')"
+                    @input="markSelectedPoiDirty"
+                  />
+                </label>
+
+                <label v-if="rule.frequency === 'YEARLY'" class="field">
+                  <span class="field-label">{{ t("adminPois.ruleMonthsLabel") }}</span>
+                  <input
+                    v-model="rule.monthsText"
+                    class="field-input"
+                    :placeholder="t('adminPois.ruleNumberListPlaceholder')"
+                    @input="markSelectedPoiDirty"
+                  />
+                </label>
+              </template>
+            </div>
+          </article>
+        </section>
+      </template>
     </div>
   </DesktopPageScaffold>
 </template>
@@ -181,6 +354,7 @@ import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCa
 import {
   useAdminPois,
   useUpsertAdminPoi,
+  type AdminPoiAvailabilityRulesInput,
   type AdminPoisResponse,
 } from "@/domains/admin/queries/useAdminPoiManagement";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
@@ -193,6 +367,33 @@ import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 type PoiRecord = NonNullable<AdminPoisResponse>[number];
 type PoiGalleryMap = Record<string, string[]>;
 type PoiCapMap = Record<string, number | null>;
+type PoiAvailabilityRuleInput = AdminPoiAvailabilityRulesInput[number];
+type EditableAvailabilityRule = {
+  id: string;
+  mode: "INCLUDE" | "EXCLUDE";
+  kind: "ABSOLUTE" | "RECURRING";
+  startAtLocal: string;
+  endAtLocal: string;
+  frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+  startTime: string;
+  endTime: string;
+  weekdays: number[];
+  monthDaysText: string;
+  monthsText: string;
+};
+type PoiAvailabilityRulesMap = Record<string, EditableAvailabilityRule[]>;
+
+const PRODUCT_TIME_ZONE_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+const weekdayOptions = [
+  { value: 0, label: "周日" },
+  { value: 1, label: "周一" },
+  { value: 2, label: "周二" },
+  { value: 3, label: "周三" },
+  { value: 4, label: "周四" },
+  { value: 5, label: "周五" },
+  { value: 6, label: "周六" },
+] as const;
 
 const normalizeGallery = (gallery: string[]): string[] => {
   const normalized = new Set<string>();
@@ -216,8 +417,9 @@ const manualGalleryUrl = ref("");
 const galleryInputRef = ref<HTMLInputElement | null>(null);
 const poiGalleryById = ref<PoiGalleryMap>({});
 const poiCapById = ref<PoiCapMap>({});
+const poiAvailabilityRulesById = ref<PoiAvailabilityRulesMap>({});
 const dirtyPoiIds = ref<Set<string>>(new Set());
-const poiMutationAction = ref<"create" | "save-gallery" | null>(null);
+const poiMutationAction = ref<"create" | "save-poi" | null>(null);
 
 const pois = computed<PoiRecord[]>(() => poisQuery.data.value ?? []);
 const poiIdSet = computed<Set<string>>(() => new Set(pois.value.map((poi) => poi.id)));
@@ -249,6 +451,11 @@ const selectedPoiCapText = computed<string>({
     setSelectedPoiCap(normalizeNullablePositiveInteger(value));
   },
 });
+const selectedPoiAvailabilityRules = computed<EditableAvailabilityRule[]>(() => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return [];
+  return poiAvailabilityRulesById.value[poiId] ?? [];
+});
 const canCreatePoi = computed(() => {
   const poiId = newPoiId.value.trim();
   if (!poiId) return false;
@@ -257,10 +464,10 @@ const canCreatePoi = computed(() => {
 const isCreatingPoi = computed(
   () => upsertPoiMutation.isPending.value && poiMutationAction.value === "create",
 );
-const isSavingGallery = computed(
+const isSavingPoi = computed(
   () =>
     upsertPoiMutation.isPending.value &&
-    poiMutationAction.value === "save-gallery",
+    poiMutationAction.value === "save-poi",
 );
 const pageError = computed(() => poisQuery.error.value ?? upsertPoiMutation.error.value ?? null);
 
@@ -302,6 +509,151 @@ const setSelectedPoiCap = (
   }
 };
 
+const markSelectedPoiDirty = () => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return;
+  const nextDirtyPoiIds = new Set(dirtyPoiIds.value);
+  nextDirtyPoiIds.add(poiId);
+  dirtyPoiIds.value = nextDirtyPoiIds;
+};
+
+const toDatetimeLocalValue = (isoValue: string): string => {
+  const parsed = Date.parse(isoValue);
+  if (!Number.isFinite(parsed)) return "";
+  return new Date(parsed + PRODUCT_TIME_ZONE_OFFSET_MS)
+    .toISOString()
+    .slice(0, 16);
+};
+
+const fromDatetimeLocalValue = (value: string): string | null => {
+  if (!value) return null;
+  const parsed = new Date(`${value}:00+08:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+};
+
+const toNumberListText = (values: readonly number[]): string =>
+  values.join(",");
+
+const parseNumberList = (
+  value: string,
+  min: number,
+  max: number,
+): number[] =>
+  Array.from(
+    new Set(
+      value
+        .split(",")
+        .map((entry) => Number(entry.trim()))
+        .filter(
+          (entry) => Number.isInteger(entry) && entry >= min && entry <= max,
+        ),
+    ),
+  ).sort((left, right) => left - right);
+
+const toEditableAvailabilityRule = (
+  rule: PoiAvailabilityRuleInput,
+): EditableAvailabilityRule => {
+  if (rule.kind === "ABSOLUTE") {
+    return {
+      id: rule.id,
+      mode: rule.mode,
+      kind: "ABSOLUTE",
+      startAtLocal: toDatetimeLocalValue(rule.startAt),
+      endAtLocal: toDatetimeLocalValue(rule.endAt),
+      frequency: "DAILY",
+      startTime: "09:00",
+      endTime: "18:00",
+      weekdays: [],
+      monthDaysText: "",
+      monthsText: "",
+    };
+  }
+
+  return {
+    id: rule.id,
+    mode: rule.mode,
+    kind: "RECURRING",
+    startAtLocal: "",
+    endAtLocal: "",
+    frequency: rule.frequency,
+    startTime: rule.startTime,
+    endTime: rule.endTime,
+    weekdays: [...rule.weekdays],
+    monthDaysText: toNumberListText(rule.monthDays),
+    monthsText: toNumberListText(rule.months),
+  };
+};
+
+const buildAvailabilityRulesInput = (
+  rules: readonly EditableAvailabilityRule[],
+): AdminPoiAvailabilityRulesInput =>
+  rules.flatMap((rule): AdminPoiAvailabilityRulesInput => {
+    if (rule.kind === "ABSOLUTE") {
+      const startAt = fromDatetimeLocalValue(rule.startAtLocal);
+      const endAt = fromDatetimeLocalValue(rule.endAtLocal);
+      if (!startAt || !endAt || Date.parse(endAt) <= Date.parse(startAt)) {
+        return [];
+      }
+      return [
+        {
+          id: rule.id,
+          mode: rule.mode,
+          kind: "ABSOLUTE",
+          startAt,
+          endAt,
+        },
+      ];
+    }
+
+    const monthDays = parseNumberList(rule.monthDaysText, 1, 31);
+    const months = parseNumberList(rule.monthsText, 1, 12);
+    if (rule.frequency === "WEEKLY" && rule.weekdays.length === 0) {
+      return [];
+    }
+    if (rule.frequency === "MONTHLY" && monthDays.length === 0) {
+      return [];
+    }
+    if (
+      rule.frequency === "YEARLY" &&
+      (monthDays.length === 0 || months.length === 0)
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        id: rule.id,
+        mode: rule.mode,
+        kind: "RECURRING",
+        frequency: rule.frequency,
+        startTime: rule.startTime || "09:00",
+        endTime: rule.endTime || "18:00",
+        weekdays: rule.frequency === "WEEKLY" ? [...rule.weekdays] : [],
+        monthDays:
+          rule.frequency === "MONTHLY" || rule.frequency === "YEARLY"
+            ? monthDays
+            : [],
+        months: rule.frequency === "YEARLY" ? months : [],
+      },
+    ];
+  });
+
+const setSelectedPoiAvailabilityRules = (
+  rules: EditableAvailabilityRule[],
+  options?: { markDirty?: boolean },
+) => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return;
+
+  poiAvailabilityRulesById.value = {
+    ...poiAvailabilityRulesById.value,
+    [poiId]: rules,
+  };
+  if (options?.markDirty ?? true) {
+    markSelectedPoiDirty();
+  }
+};
+
 watch([pois, isAdmin], ([nextPois, adminReady]) => {
   if (!adminReady || nextPois.length === 0) {
     selectedPoiIdRaw.value = "";
@@ -315,24 +667,30 @@ watch([pois, isAdmin], ([nextPois, adminReady]) => {
 watch(pois, (nextPois) => {
   const nextMap: PoiGalleryMap = {};
   const nextCapMap: PoiCapMap = {};
+  const nextAvailabilityRulesMap: PoiAvailabilityRulesMap = {};
   const nextDirtyPoiIds = new Set<string>();
 
   for (const poi of nextPois) {
     const isDirty = dirtyPoiIds.value.has(poi.id);
     const localGallery = poiGalleryById.value[poi.id];
     const localCap = poiCapById.value[poi.id];
+    const localAvailabilityRules = poiAvailabilityRulesById.value[poi.id];
     if (isDirty && localGallery !== undefined) {
       nextMap[poi.id] = normalizeGallery(localGallery);
       nextCapMap[poi.id] = localCap ?? null;
+      nextAvailabilityRulesMap[poi.id] = localAvailabilityRules ?? [];
       nextDirtyPoiIds.add(poi.id);
       continue;
     }
     nextMap[poi.id] = normalizeGallery(poi.gallery);
     nextCapMap[poi.id] = poi.perTimeWindowCap ?? null;
+    nextAvailabilityRulesMap[poi.id] =
+      poi.availabilityRules.map(toEditableAvailabilityRule);
   }
 
   poiGalleryById.value = nextMap;
   poiCapById.value = nextCapMap;
+  poiAvailabilityRulesById.value = nextAvailabilityRulesMap;
   dirtyPoiIds.value = nextDirtyPoiIds;
 }, { immediate: true });
 
@@ -346,6 +704,7 @@ const handleCreatePoi = async () => {
       poiId,
       gallery: [],
       perTimeWindowCap: null,
+      availabilityRules: [],
     });
     selectedPoiIdRaw.value = result.id;
     newPoiId.value = "";
@@ -390,19 +749,53 @@ const handleRemoveGalleryImage = (index: number) => {
   setSelectedPoiGallery(currentGallery);
 };
 
-const handleSaveGallery = async () => {
+const handleAddAvailabilityRule = () => {
+  const now = Date.now();
+  setSelectedPoiAvailabilityRules([
+    ...selectedPoiAvailabilityRules.value,
+    {
+      id: `rule-${now}`,
+      mode: "INCLUDE",
+      kind: "RECURRING",
+      startAtLocal: "",
+      endAtLocal: "",
+      frequency: "WEEKLY",
+      startTime: "09:00",
+      endTime: "18:00",
+      weekdays: [5, 6, 0],
+      monthDaysText: "",
+      monthsText: "",
+    },
+  ]);
+};
+
+const handleRemoveAvailabilityRule = (index: number) => {
+  const rules = [...selectedPoiAvailabilityRules.value];
+  if (index < 0 || index >= rules.length) return;
+  rules.splice(index, 1);
+  setSelectedPoiAvailabilityRules(rules);
+};
+
+const handleSavePoi = async () => {
   const poiId = selectedPoiId.value;
   if (!poiId) return;
 
-  poiMutationAction.value = "save-gallery";
+  poiMutationAction.value = "save-poi";
   try {
     const result = await upsertPoiMutation.mutateAsync({
       poiId,
       gallery: normalizeGallery(selectedPoiGallery.value),
       perTimeWindowCap: selectedPoiCap.value,
+      availabilityRules: buildAvailabilityRulesInput(
+        selectedPoiAvailabilityRules.value,
+      ),
     });
     setSelectedPoiGallery(result.gallery, { markDirty: false });
     setSelectedPoiCap(result.perTimeWindowCap ?? null, { markDirty: false });
+    setSelectedPoiAvailabilityRules(
+      result.availabilityRules.map(toEditableAvailabilityRule),
+      { markDirty: false },
+    );
     const nextDirtyPoiIds = new Set(dirtyPoiIds.value);
     nextDirtyPoiIds.delete(poiId);
     dirtyPoiIds.value = nextDirtyPoiIds;
@@ -474,6 +867,10 @@ const handleSaveGallery = async () => {
   gap: var(--sys-spacing-xsmall);
 }
 
+.field--full {
+  grid-column: 1 / -1;
+}
+
 .field-label {
   @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
@@ -486,6 +883,46 @@ const handleSaveGallery = async () => {
   border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
+}
+
+.availability-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-small);
+}
+
+.availability-rule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-medium);
+  background: var(--sys-color-surface);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sys-spacing-small);
+}
+
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  gap: var(--sys-spacing-xsmall);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sys-spacing-xsmall);
+  min-height: 2.25rem;
+  padding: 0 var(--sys-spacing-xsmall);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface-container);
+  @include mx.pu-font(body-small);
 }
 
 .manual-url-row {
@@ -527,5 +964,12 @@ const handleSaveGallery = async () => {
 
 .hidden-input {
   display: none;
+}
+
+@media (max-width: 720px) {
+  .grid,
+  .manual-url-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

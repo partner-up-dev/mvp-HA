@@ -12,6 +12,7 @@ import { normalizeLocationPool } from "../../../entities/anchor-event";
 import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import {
   isActiveVisiblePRStatus,
+  isTimeWindowAvailableByPoiRules,
   readVisiblePartnerRequestsByType,
   readVisiblePartnerRequestsByTypeAndTime,
 } from "../../pr/services";
@@ -52,7 +53,7 @@ export interface LocationOption {
   locationId: string;
   remainingQuota: number | null;
   disabled: boolean;
-  disabledReason: "NONE" | "MAX_REACHED";
+  disabledReason: "NONE" | "MAX_REACHED" | "TIME_UNAVAILABLE";
 }
 
 export interface AnchorEventDetail {
@@ -159,9 +160,7 @@ export async function getAnchorEventDetail(
   const locationPool = normalizeLocationPool(event.locationPool);
   const timeWindowPool = listAnchorEventTimeWindows(event);
   const pois = await poiRepo.findByIds(locationPool);
-  const perTimeWindowCapByLocation = new Map(
-    pois.map((poi) => [poi.id, poi.perTimeWindowCap]),
-  );
+  const poiByLocation = new Map(pois.map((poi) => [poi.id, poi]));
 
   const browsePRs = await readVisiblePartnerRequestsByType(event.type);
   const browseTimeWindows = buildBrowseTimeWindowDetails(browsePRs);
@@ -206,10 +205,16 @@ export async function getAnchorEventDetail(
 
     const locationOptions: LocationOption[] = locationPool.map((locationId) => {
       const activeCount = activeCountsByLocation.get(locationId) ?? 0;
-      const cap = perTimeWindowCapByLocation.get(locationId) ?? null;
+      const poi = poiByLocation.get(locationId) ?? null;
+      const cap = poi?.perTimeWindowCap ?? null;
       const remainingQuota =
         cap === null ? null : Math.max(cap - activeCount, 0);
-      const disabled = remainingQuota !== null && remainingQuota <= 0;
+      const timeAvailable =
+        !poi ||
+        poi.availabilityRules.length === 0 ||
+        isTimeWindowAvailableByPoiRules(poi.availabilityRules, timeWindow);
+      const disabled =
+        !timeAvailable || (remainingQuota !== null && remainingQuota <= 0);
       if (!disabled) {
         hasAvailableCapacity = true;
       }
@@ -218,7 +223,11 @@ export async function getAnchorEventDetail(
         locationId,
         remainingQuota,
         disabled,
-        disabledReason: disabled ? "MAX_REACHED" : "NONE",
+        disabledReason: !timeAvailable
+          ? "TIME_UNAVAILABLE"
+          : disabled
+            ? "MAX_REACHED"
+            : "NONE",
       };
     });
 

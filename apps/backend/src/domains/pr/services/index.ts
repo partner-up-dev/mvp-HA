@@ -48,6 +48,10 @@ export {
   assertManualPartnerBoundsValid,
 } from "../../pr-core/services/partner-bounds.service";
 export { assertNoUserTimeWindowConflict } from "../../pr-core/services/participation-time-conflict.service";
+export {
+  assertPRTimeWindowAvailableAtLocation,
+  isTimeWindowAvailableByPoiRules,
+} from "../../pr-core/services/poi-availability.service";
 export { isJoinableStatus, isExitAllowedStatus } from "../../pr-core/services/status-rules";
 export { syncAnchorBookingTriggeredState } from "../../pr-core/services/anchor-booking-trigger.service";
 export { applyAnchorParticipantReleaseEffects } from "../../pr-core/services/anchor-participant-release-effects.service";

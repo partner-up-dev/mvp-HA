@@ -83,7 +83,7 @@ type LocationOption = {
   locationId: string;
   remainingQuota: number | null;
   disabled: boolean;
-  disabledReason: "NONE" | "MAX_REACHED";
+  disabledReason: "NONE" | "MAX_REACHED" | "TIME_UNAVAILABLE";
 };
 
 type TimeWindowOption = {
@@ -273,6 +273,12 @@ onUnmounted(() => {
 });
 
 const formatLocationOptionLabel = (option: LocationOption): string => {
+  if (option.disabled && option.disabledReason === "TIME_UNAVAILABLE") {
+    return t("anchorEvent.createCard.optionTimeUnavailable", {
+      locationId: option.locationId,
+    });
+  }
+
   if (option.disabled && option.disabledReason === "MAX_REACHED") {
     return t("anchorEvent.createCard.optionMaxReached", {
       locationId: option.locationId,

@@ -33,6 +33,7 @@ export const poiRoute = app.get(
         id: poi.id,
         gallery: poi.gallery,
         perTimeWindowCap: poi.perTimeWindowCap,
+        availabilityRules: poi.availabilityRules,
       })),
     );
   },

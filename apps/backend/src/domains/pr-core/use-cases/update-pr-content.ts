@@ -13,6 +13,7 @@ import {
 } from "../services/slot-management.service";
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
+import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
@@ -60,6 +61,10 @@ export async function updatePRContent(
     fields.maxPartners,
     currentParticipants,
   );
+  await assertPRTimeWindowAvailableAtLocation({
+    location: fields.location,
+    timeWindow: fields.time,
+  });
 
   if (timeChanged && refreshedRequest.status !== "DRAFT") {
     const activeParticipants = await listActiveParticipantSummariesForPR(id);

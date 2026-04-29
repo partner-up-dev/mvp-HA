@@ -23,6 +23,8 @@ export type AdminPoisResponse = InferResponseType<
 export type UpsertAdminPoiResponse = InferResponseType<
   (typeof adminClient.api.admin.pois)[":poiId"]["$put"]
 >;
+export type AdminPoiAvailabilityRulesInput =
+  AdminPoisResponse[number]["availabilityRules"];
 
 export const useAdminPois = (enabled: MaybeRef<boolean> = true) =>
   useQuery<AdminPoisResponse>({
@@ -80,12 +82,22 @@ export const useUpsertAdminPoi = () => {
   return useMutation<
     UpsertAdminPoiResponse,
     Error,
-    { poiId: string; gallery: string[]; perTimeWindowCap: number | null }
+    {
+      poiId: string;
+      gallery: string[];
+      perTimeWindowCap: number | null;
+      availabilityRules: AdminPoiAvailabilityRulesInput;
+    }
   >({
-    mutationFn: async ({ poiId, gallery, perTimeWindowCap }) => {
+    mutationFn: async ({
+      poiId,
+      gallery,
+      perTimeWindowCap,
+      availabilityRules,
+    }) => {
       const res = await adminClient.api.admin.pois[":poiId"].$put({
         param: { poiId },
-        json: { gallery, perTimeWindowCap },
+        json: { gallery, perTimeWindowCap, availabilityRules },
       });
       if (!res.ok) {
         throw new Error(await readErrorMessage(res, "保存 POI 失败"));

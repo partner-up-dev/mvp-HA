@@ -70,11 +70,17 @@ const eventPRSearchQuerySchema = z.object({
     z.array(isoDateSearchParamSchema).min(1).max(28),
   ),
 });
-const createStructuredPRCommandSchema = z.object({
-  fields: partnerRequestFieldsSchema,
-  createSource: z.enum(["FORM", "EVENT_ASSISTED"]).optional(),
-  anchorEventId: z.coerce.number().int().positive().optional(),
-});
+const createStructuredPRCommandSchema = z.union([
+  z.object({
+    fields: partnerRequestFieldsSchema,
+    createSource: z.literal("EVENT_ASSISTED"),
+    anchorEventId: z.coerce.number().int().positive(),
+  }),
+  z.object({
+    fields: partnerRequestFieldsSchema,
+    createSource: z.literal("FORM").optional(),
+  }),
+]);
 const canonicalUpdateContentSchema = z.union([
   updateContentSchema,
   anchorUpdateContentSchema,
@@ -114,7 +120,8 @@ export const partnerRequestRoute = app
     "/new/form",
     zValidator("json", createStructuredPRCommandSchema),
     async (c) => {
-      const { fields, createSource, anchorEventId } = c.req.valid("json");
+      const command = c.req.valid("json");
+      const { fields, createSource } = command;
 
       const creatorIdentity =
         createSource === "EVENT_ASSISTED"
@@ -128,9 +135,9 @@ export const partnerRequestRoute = app
           : await buildCreatorIdentity(c);
 
       const result =
-        createSource === "EVENT_ASSISTED" && anchorEventId
+        createSource === "EVENT_ASSISTED"
           ? await createEventAssistedPR({
-              anchorEventId,
+              anchorEventId: command.anchorEventId,
               fields,
               creatorIdentity,
             })

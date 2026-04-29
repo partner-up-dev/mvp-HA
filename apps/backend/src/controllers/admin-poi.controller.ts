@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
+import { poiAvailabilityRulesSchema } from "../entities/poi";
 import {
   adminAuthMiddleware,
   type AdminAuthEnv,
@@ -21,6 +22,7 @@ const poiIdParamSchema = z.object({
 const upsertPoiSchema = z.object({
   gallery: z.array(z.string().trim().min(1)),
   perTimeWindowCap: z.number().int().positive().nullable().optional(),
+  availabilityRules: poiAvailabilityRulesSchema.optional(),
 });
 
 const normalizeCsvIds = (csv: string): string[] => {
@@ -42,6 +44,7 @@ export const adminPoiRoute = app
         id: poi.id,
         gallery: poi.gallery,
         perTimeWindowCap: poi.perTimeWindowCap,
+        availabilityRules: poi.availabilityRules,
       })),
     );
   })
@@ -55,6 +58,7 @@ export const adminPoiRoute = app
         id: poi.id,
         gallery: poi.gallery,
         perTimeWindowCap: poi.perTimeWindowCap,
+        availabilityRules: poi.availabilityRules,
       })),
     );
   })
@@ -64,16 +68,20 @@ export const adminPoiRoute = app
     zValidator("json", upsertPoiSchema),
     async (c) => {
       const { poiId } = c.req.valid("param");
-      const { gallery, perTimeWindowCap } = c.req.valid("json");
+      const { gallery, perTimeWindowCap, availabilityRules } = c.req.valid("json");
+      const [existingPoi] =
+        availabilityRules === undefined ? await poiRepo.findByIds([poiId]) : [];
 
       const poi = await poiRepo.upsertById(poiId, {
         gallery,
         perTimeWindowCap: perTimeWindowCap ?? null,
+        availabilityRules: availabilityRules ?? existingPoi?.availabilityRules ?? [],
       });
       return c.json({
         id: poi.id,
         gallery: poi.gallery,
         perTimeWindowCap: poi.perTimeWindowCap,
+        availabilityRules: poi.availabilityRules,
       });
     },
   );
