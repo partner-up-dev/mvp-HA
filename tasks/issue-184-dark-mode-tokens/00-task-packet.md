@@ -31,5 +31,8 @@ Hypothesis: the visible dark-mode issues come from incomplete or inconsistent da
 - Replaced the existing non-primary `ref.$color` tonal palettes with Material-generated values instead of keeping a separate `material` namespace.
 - Kept the existing `primary` palette as the brand color exception.
 - Updated `sys.$light.color` and `sys.$dark.color` so semantic roles resolve from the normal `ref.$color` keys.
+- Restored the pre-issue-184 light `sys.color` hex outputs through `ref.$color.light-legacy` compatibility values.
 - Passed after namespace correction: `pnpm --filter @partner-up-dev/frontend build`
-- Current working tree note: `pnpm --filter @partner-up-dev/frontend lint:tokens` and `lint:tokens:strict` are blocked by an unrelated finding in `AnchorEventListModeSurface.vue`.
+- Passed after light-output correction: `pnpm --filter @partner-up-dev/frontend build`
+- Passed with existing unrelated finding reported: `pnpm --filter @partner-up-dev/frontend lint:tokens`
+- Current working tree note: `pnpm --filter @partner-up-dev/frontend lint:tokens:strict` is blocked by an unrelated finding in `AnchorEventListModeSurface.vue`.

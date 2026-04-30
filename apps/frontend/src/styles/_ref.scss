@@ -130,6 +130,41 @@ $color: (
     99: #fbfeee,
     100: #ffffff,
   ),
+  light-legacy: (
+    secondary: (
+      40: #dbe7c8,
+      80: #85976e,
+      100: #ffffff,
+    ),
+    tertiary: (
+      40: #bbece8,
+      80: #4c9e99,
+      100: #ffffff,
+    ),
+    error: (
+      40: #ffdad6,
+      80: #d32f2f,
+      100: #410002,
+    ),
+    surface: (
+      30: #f9faef,
+      50: #eeefe3,
+      60: #e8e9de,
+      80: #050a00,
+    ),
+    neutral: (
+      40: #75796c,
+      80: #55594c,
+      90: #e2e3d8,
+      96: #f3f4e9,
+      100: #ffffff,
+    ),
+    neutral-variant: (
+      30: #44483d,
+      40: #c5c8ba,
+      90: #e1e4d5,
+    ),
+  ),
 );
 
 /* Spacing Tokens */
