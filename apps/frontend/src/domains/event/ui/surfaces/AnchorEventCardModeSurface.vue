@@ -1,5 +1,16 @@
 <template>
-  <div v-if="activeDemandCard" class="card-mode" data-region="pr-list">
+  <div v-if="isLoading" class="loading-state">
+    {{ t("common.loading") }}
+  </div>
+
+  <div v-else-if="isError" class="error-state">
+    {{ t("anchorEvent.loadFailed") }}
+    <router-link :to="{ name: 'event-plaza' }" class="back-link">
+      {{ t("anchorEvent.backToPlaza") }}
+    </router-link>
+  </div>
+
+  <div v-else-if="resolvedActiveDemandCard" class="card-mode" data-region="pr-list">
     <div class="card-stage">
       <div class="card-stage__label-rail" aria-hidden="true">
         <span
@@ -52,7 +63,7 @@
         </div>
 
         <AnchorEventDemandCard
-          v-for="(previewCard, previewIndex) in stackPreviewCards"
+          v-for="(previewCard, previewIndex) in resolvedStackPreviewCards"
           :key="`preview-${previewCard.cardKey}`"
           class="card-stack-preview"
           :style="{
@@ -70,17 +81,20 @@
           aria-hidden="true"
         />
 
-        <div class="card-stage__front-shell" :key="activeDemandCard.cardKey">
+        <div
+          class="card-stage__front-shell"
+          :key="resolvedActiveDemandCard.cardKey"
+        >
           <AnchorEventDemandCard
             ref="frontDemandCardRef"
             class="card-stage__front"
-            :display-location-name="activeDemandCard.displayLocationName"
-            :time-label="activeDemandCard.timeLabel"
-            :preference-tags="activeDemandCard.preferenceTags"
-            :notes="activeDemandCard.notes"
-            :cover-image="activeDemandCard.coverImage"
-            :detail-pr-id="activeDemandCard.detailPrId"
-            :pending="isCardRouting"
+            :display-location-name="resolvedActiveDemandCard.displayLocationName"
+            :time-label="resolvedActiveDemandCard.timeLabel"
+            :preference-tags="resolvedActiveDemandCard.preferenceTags"
+            :notes="resolvedActiveDemandCard.notes"
+            :cover-image="resolvedActiveDemandCard.coverImage"
+            :detail-pr-id="resolvedActiveDemandCard.detailPrId"
+            :pending="resolvedIsCardRouting"
             @swipe-preview="handleSwipePreview"
             @skip="emitSkipActiveCard"
             @view-detail="emitViewActiveCardDetail"
@@ -95,7 +109,7 @@
         class="card-mode__action"
         appearance="pill"
         tone="danger"
-        :disabled="isCardRouting"
+        :disabled="resolvedIsCardRouting"
         @click="handleSkipActionClick"
       >
         {{ t("anchorEvent.card.skipButton") }}
@@ -104,42 +118,44 @@
         type="button"
         class="card-mode__action"
         appearance="pill"
-        :disabled="isCardRouting || activeDemandCard.detailPrId === null"
+        :disabled="
+          resolvedIsCardRouting || resolvedActiveDemandCard.detailPrId === null
+        "
         @click="handleViewActionClick"
       >
         {{ t("anchorEvent.card.detailButton") }}
       </Button>
     </div>
 
-    <p v-if="cardActionError" class="card-mode__error">
-      {{ cardActionError }}
+    <p v-if="resolvedCardActionError" class="card-mode__error">
+      {{ resolvedCardActionError }}
     </p>
   </div>
 
   <div v-else class="card-empty-stack">
     <div class="card-empty">
       <p class="card-empty__title">
-        {{ t("anchorEvent.card.emptyTitle") }}
+        {{ cardEmptyTitle }}
       </p>
       <p class="card-empty__subtitle">
-        {{ t("anchorEvent.card.emptySubtitle") }}
+        {{ cardEmptySubtitle }}
       </p>
 
       <div class="card-empty__create" data-region="create-pr">
         <label
-          v-if="cardCreateTimeWindowOptions.length > 0"
+          v-if="resolvedCardCreateTimeWindowOptions.length > 0"
           class="card-empty__field"
         >
           <span class="card-empty__label">{{
             t("anchorEvent.card.batchLabel")
           }}</span>
           <select
-            :value="cardCreateTimeWindowKey ?? ''"
+            :value="resolvedCardCreateTimeWindowKey ?? ''"
             class="card-empty__input"
             @change="handleCardCreateTimeWindowChange"
           >
             <option
-              v-for="option in cardCreateTimeWindowOptions"
+              v-for="option in resolvedCardCreateTimeWindowOptions"
               :key="option.key"
               :value="option.key"
             >
@@ -149,19 +165,19 @@
         </label>
 
         <label
-          v-if="cardCreateTimeWindowOptions.length > 0"
+          v-if="resolvedCardCreateTimeWindowOptions.length > 0"
           class="card-empty__field"
         >
           <span class="card-empty__label">{{
             t("anchorEvent.createCard.locationLabel")
           }}</span>
           <select
-            :value="cardCreateLocationId"
+            :value="resolvedCardCreateLocationId"
             class="card-empty__input"
             @change="handleCardCreateLocationChange"
           >
             <option
-              v-for="option in cardCreateLocationOptions"
+              v-for="option in resolvedCardCreateLocationOptions"
               :key="option.locationId"
               :value="option.locationId"
               :disabled="option.disabled"
@@ -171,19 +187,19 @@
           </select>
         </label>
 
-        <p v-if="createActionErrorMessage" class="card-empty__error">
-          {{ createActionErrorMessage }}
+        <p v-if="resolvedCreateActionErrorMessage" class="card-empty__error">
+          {{ resolvedCreateActionErrorMessage }}
         </p>
 
         <Button
           type="button"
           appearance="pill"
           size="sm"
-          :disabled="isCreatePending"
+          :disabled="resolvedIsCreatePending"
           @click="emitCreateFromCardEmpty"
         >
           {{
-            isCreatePending
+            resolvedIsCreatePending
               ? t("anchorEvent.createCard.creatingAction")
               : t("anchorEvent.createCard.createAction")
           }}
@@ -191,16 +207,16 @@
       </div>
 
       <OtherAnchorEventsSection
-        :current-event-id="eventId"
+        :current-event-id="eventIdValue"
         variant="embedded"
         data-region="discover-other-events"
       />
     </div>
 
     <AnchorEventBetaGroupCard
-      :event-id="eventId"
-      :event-title="eventTitle"
-      :qr-code-url="eventBetaGroupQrCode"
+      :event-id="eventIdValue"
+      :event-title="resolvedEventTitle"
+      :qr-code-url="resolvedEventBetaGroupQrCode"
       :default-expanded="true"
       variant="card"
     />
@@ -208,12 +224,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onActivated, onDeactivated, onUnmounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import AnchorEventDemandCard from "@/domains/event/ui/primitives/AnchorEventDemandCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
+import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
+import { toDemandCardViewModels } from "@/domains/event/model/demand-cards";
+import {
+  pickRandomPoiGalleryImage,
+  toPoiGalleryMap,
+} from "@/domains/event/model/poi-gallery";
+import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
+import {
+  formatTimeWindowLabel,
+  hasTimeWindowStarted,
+  resolveTimeWindowStartTimestamp,
+} from "@/domains/event/model/time-window-view";
+import { useEventAssistedPRCreateFlow } from "@/domains/event/use-cases/useEventAssistedPRCreateFlow";
+import { useReducedMotion } from "@/shared/motion/useReducedMotion";
+import { prDetailPath } from "@/domains/pr/routing/routes";
+import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 import {
   DEMAND_CARD_EXIT_TIMING,
   DEMAND_CARD_REBOUND_TIMING,
@@ -243,27 +277,45 @@ type CardCreateLocationOption = {
   disabled: boolean;
 };
 
+type LocationOption =
+  AnchorEventDetailResponse["createTimeWindows"][number]["locationOptions"][number];
+type CreateTimeWindowEntry =
+  AnchorEventDetailResponse["createTimeWindows"][number];
+
 type FrontDemandCardHandle = {
   triggerAction: (action: "skip" | "view-detail") => void;
   playHintWobble: () => void;
 };
 
-const props = defineProps<{
-  activeDemandCard: DemandCardViewModel | null;
-  stackPreviewCards: DemandCardViewModel[];
-  isCardRouting: boolean;
-  cardActionError: string | null;
-  dragHintToken: number;
-  cardCreateTimeWindowOptions: CardTimeWindowOption[];
-  cardCreateTimeWindowKey: string | null;
-  cardCreateLocationId: string;
-  cardCreateLocationOptions: CardCreateLocationOption[];
-  createActionErrorMessage: string | null;
-  isCreatePending: boolean;
+const props = withDefaults(defineProps<{
+  activeDemandCard?: DemandCardViewModel | null;
+  stackPreviewCards?: DemandCardViewModel[];
+  isCardRouting?: boolean;
+  cardActionError?: string | null;
+  dragHintToken?: number;
+  cardCreateTimeWindowOptions?: CardTimeWindowOption[];
+  cardCreateTimeWindowKey?: string | null;
+  cardCreateLocationId?: string;
+  cardCreateLocationOptions?: CardCreateLocationOption[];
+  createActionErrorMessage?: string | null;
+  isCreatePending?: boolean;
   eventId: number;
-  eventTitle: string;
-  eventBetaGroupQrCode: string | null;
-}>();
+  eventTitle?: string;
+  eventBetaGroupQrCode?: string | null;
+}>(), {
+  stackPreviewCards: () => [],
+  isCardRouting: false,
+  cardActionError: null,
+  dragHintToken: 0,
+  cardCreateTimeWindowOptions: () => [],
+  cardCreateTimeWindowKey: null,
+  cardCreateLocationId: "",
+  cardCreateLocationOptions: () => [],
+  createActionErrorMessage: null,
+  isCreatePending: false,
+  eventTitle: "",
+  eventBetaGroupQrCode: null,
+});
 
 const emit = defineEmits<{
   "consume-drag-hint-window": [];
@@ -272,14 +324,398 @@ const emit = defineEmits<{
   "update:cardCreateTimeWindowKey": [value: string | null];
   "update:cardCreateLocationId": [value: string];
   "create-from-card-empty": [];
+  "header-context": [
+    context: {
+      title: string;
+      subtitle: string | null;
+    } | null,
+  ];
+  "card-stage-active-change": [isActive: boolean];
 }>();
 
 const { t } = useI18n();
+const router = useRouter();
+const { prefersReducedMotion } = useReducedMotion();
 const frontDemandCardRef = ref<FrontDemandCardHandle | null>(null);
 const swipePreviewState = ref<DemandCardSwipePreviewState>(
   createIdleDemandCardSwipePreviewState(),
 );
 const hasConsumedDragHintWindow = ref(false);
+const processedCardKeys = ref<string[]>([]);
+const internalCardActionError = ref<string | null>(null);
+const internalIsCardRouting = ref(false);
+const internalCardCreateTimeWindowKey = ref<string | null>(null);
+const internalCardCreateLocationId = ref("");
+const internalDragHintToken = ref(0);
+let internalCardDragHintTimerId: number | null = null;
+
+const CARD_OVERFLOW_GUARD_CLASS = "anchor-event-card-overflow-guard";
+const CARD_MODE_DRAG_HINT_DELAY_MS = 3000;
+
+const isControlled = computed(() => props.activeDemandCard !== undefined);
+const internalQueriesEnabled = computed(() => !isControlled.value);
+const eventId = computed<number | null>(() => props.eventId);
+const eventIdValue = computed(() => props.eventId);
+
+const {
+  data: detail,
+  isLoading: isDetailLoading,
+  isError: isDetailError,
+} = useAnchorEventDetail(eventId, internalQueriesEnabled);
+const {
+  data: demandCards,
+  isLoading: isDemandCardsLoading,
+  isError: isDemandCardsError,
+} = useAnchorEventDemandCards(eventId, internalQueriesEnabled);
+const eventDetail = computed(() => detail.value ?? null);
+const {
+  createEventAssistedPR,
+  createActionErrorMessage: internalCreateActionErrorMessage,
+  isCreatePending: internalIsCreatePending,
+  replayErrorMessage,
+} = useEventAssistedPRCreateFlow(eventDetail);
+
+const isLoading = computed(
+  () =>
+    !isControlled.value &&
+    (isDetailLoading.value || isDemandCardsLoading.value),
+);
+const isError = computed(
+  () =>
+    !isControlled.value &&
+    (isDetailError.value || isDemandCardsError.value),
+);
+
+watch(
+  detail,
+  (event) => {
+    if (isControlled.value) {
+      return;
+    }
+    emit(
+      "header-context",
+      event
+        ? {
+            title: event.title,
+            subtitle: event.description ?? null,
+          }
+        : null,
+    );
+  },
+  { immediate: true },
+);
+
+const sortedCreateTimeWindows = computed(() => {
+  const timeWindows = detail.value?.createTimeWindows ?? [];
+  return [...timeWindows].sort((left, right) => {
+    const leftTimestamp = resolveTimeWindowStartTimestamp(left.timeWindow);
+    const rightTimestamp = resolveTimeWindowStartTimestamp(right.timeWindow);
+    return leftTimestamp - rightTimestamp;
+  });
+});
+
+const upcomingSortedCreateTimeWindows = computed(() =>
+  sortedCreateTimeWindows.value.filter(
+    (entry) => !hasTimeWindowStarted(entry.timeWindow),
+  ),
+);
+
+const allPoiIdsCsv = computed(() => {
+  const uniqueLocationIds = new Set<string>();
+
+  for (const card of demandCards.value ?? []) {
+    const location = card.displayLocationName.trim();
+    if (location.length > 0) {
+      uniqueLocationIds.add(location);
+    }
+  }
+
+  if (uniqueLocationIds.size === 0) {
+    return null;
+  }
+
+  return Array.from(uniqueLocationIds).join(",");
+});
+
+const { data: eventPois } = usePoisByIds(allPoiIdsCsv);
+const poiGalleryById = computed(() => toPoiGalleryMap(eventPois.value ?? []));
+
+const resolveCoverImage = (location: string | null): string | null => {
+  if (!location) {
+    return null;
+  }
+
+  const normalized = location.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return pickRandomPoiGalleryImage(poiGalleryById.value.get(normalized) ?? []);
+};
+
+const internalDemandCards = computed(() =>
+  toDemandCardViewModels({
+    cards: demandCards.value ?? [],
+    eventCoverImage: detail.value?.coverImage ?? null,
+    resolveCoverImage,
+  }),
+);
+
+const processedCardKeySet = computed(() => new Set(processedCardKeys.value));
+const remainingDemandCards = computed(() =>
+  internalDemandCards.value.filter(
+    (card) => !processedCardKeySet.value.has(card.cardKey),
+  ),
+);
+const internalActiveDemandCard = computed(
+  () => remainingDemandCards.value[0] ?? null,
+);
+const internalStackPreviewCards = computed(() =>
+  remainingDemandCards.value.slice(1, 3),
+);
+const resolvedActiveDemandCard = computed(() =>
+  isControlled.value ? (props.activeDemandCard ?? null) : internalActiveDemandCard.value,
+);
+const resolvedStackPreviewCards = computed(() =>
+  isControlled.value ? props.stackPreviewCards : internalStackPreviewCards.value,
+);
+const isCardStageActive = computed(() => resolvedActiveDemandCard.value !== null);
+const resolvedIsCardRouting = computed(() =>
+  isControlled.value ? props.isCardRouting : internalIsCardRouting.value,
+);
+const resolvedCardActionError = computed(() => {
+  if (isControlled.value) {
+    return props.cardActionError;
+  }
+
+  return internalCardActionError.value ?? replayErrorMessage.value;
+});
+const resolvedDragHintToken = computed(() =>
+  isControlled.value ? props.dragHintToken : internalDragHintToken.value,
+);
+const resolvedEventTitle = computed(() =>
+  isControlled.value ? props.eventTitle : (detail.value?.title ?? ""),
+);
+const resolvedEventBetaGroupQrCode = computed(() =>
+  isControlled.value
+    ? props.eventBetaGroupQrCode
+    : (detail.value?.betaGroupQrCode ?? null),
+);
+const resolvedCreateActionErrorMessage = computed(() =>
+  isControlled.value
+    ? props.createActionErrorMessage
+    : internalCreateActionErrorMessage.value,
+);
+const resolvedIsCreatePending = computed(() =>
+  isControlled.value ? props.isCreatePending : internalIsCreatePending.value,
+);
+const isCardExhausted = computed(
+  () => !isControlled.value && detail.value?.exhausted === true,
+);
+const cardEmptyTitle = computed(() =>
+  isCardExhausted.value
+    ? t("anchorEvent.exhausted")
+    : t("anchorEvent.card.emptyTitle"),
+);
+const cardEmptySubtitle = computed(() =>
+  isCardExhausted.value
+    ? t("anchorEvent.subscribeHint")
+    : t("anchorEvent.card.emptySubtitle"),
+);
+
+const formatTimeWindowOptionLabel = (
+  entry: CreateTimeWindowEntry,
+  index: number,
+): string =>
+  formatTimeWindowLabel(entry.timeWindow, index, t("anchorEvent.batchLabel"));
+
+const internalCardCreateTimeWindowOptions = computed<CardTimeWindowOption[]>(() =>
+  upcomingSortedCreateTimeWindows.value.map((entry, index) => ({
+    key: entry.key,
+    label: formatTimeWindowOptionLabel(entry, index),
+  })),
+);
+
+const resolveFirstCreatableTimeWindowKey = (): string | null => {
+  for (const entry of upcomingSortedCreateTimeWindows.value) {
+    if (entry.locationOptions.some((option) => !option.disabled)) {
+      return entry.key;
+    }
+  }
+
+  return upcomingSortedCreateTimeWindows.value[0]?.key ?? null;
+};
+
+watch(
+  upcomingSortedCreateTimeWindows,
+  (timeWindows) => {
+    if (isControlled.value) {
+      return;
+    }
+
+    if (timeWindows.length === 0) {
+      internalCardCreateTimeWindowKey.value = null;
+      return;
+    }
+
+    const current = timeWindows.find(
+      (entry) => entry.key === internalCardCreateTimeWindowKey.value,
+    );
+    if (current) {
+      return;
+    }
+
+    internalCardCreateTimeWindowKey.value = resolveFirstCreatableTimeWindowKey();
+  },
+  { immediate: true },
+);
+
+const selectedInternalCardCreateTimeWindow = computed(() => {
+  const key = internalCardCreateTimeWindowKey.value;
+  if (key === null) {
+    return null;
+  }
+
+  return (
+    upcomingSortedCreateTimeWindows.value.find((entry) => entry.key === key) ??
+    null
+  );
+});
+
+const internalCardCreateLocationOptions = computed<LocationOption[]>(() => {
+  return selectedInternalCardCreateTimeWindow.value?.locationOptions ?? [];
+});
+
+const formatLocationOptionLabel = (option: LocationOption): string => {
+  if (option.disabled && option.disabledReason === "TIME_UNAVAILABLE") {
+    return t("anchorEvent.createCard.optionTimeUnavailable", {
+      locationId: option.locationId,
+    });
+  }
+
+  if (option.disabled && option.disabledReason === "MAX_REACHED") {
+    return t("anchorEvent.createCard.optionMaxReached", {
+      locationId: option.locationId,
+    });
+  }
+
+  if (option.remainingQuota === null) {
+    return option.locationId;
+  }
+
+  return t("anchorEvent.createCard.optionRemaining", {
+    locationId: option.locationId,
+    count: option.remainingQuota,
+  });
+};
+
+const internalCardCreateLocationOptionViewModels = computed<
+  CardCreateLocationOption[]
+>(() =>
+  internalCardCreateLocationOptions.value.map((option) => ({
+    locationId: option.locationId,
+    label: formatLocationOptionLabel(option),
+    disabled: option.disabled,
+  })),
+);
+
+watch(
+  internalCardCreateLocationOptions,
+  (options) => {
+    if (isControlled.value) {
+      return;
+    }
+
+    if (
+      internalCardCreateLocationId.value.length > 0 &&
+      options.some(
+        (option) =>
+          option.locationId === internalCardCreateLocationId.value &&
+          !option.disabled,
+      )
+    ) {
+      return;
+    }
+
+    const firstAvailable = options.find((option) => !option.disabled);
+    internalCardCreateLocationId.value = firstAvailable?.locationId ?? "";
+  },
+  { immediate: true, deep: true },
+);
+
+const resolvedCardCreateTimeWindowOptions = computed(() =>
+  isControlled.value
+    ? props.cardCreateTimeWindowOptions
+    : internalCardCreateTimeWindowOptions.value,
+);
+const resolvedCardCreateTimeWindowKey = computed(() =>
+  isControlled.value
+    ? props.cardCreateTimeWindowKey
+    : internalCardCreateTimeWindowKey.value,
+);
+const resolvedCardCreateLocationId = computed(() =>
+  isControlled.value
+    ? props.cardCreateLocationId
+    : internalCardCreateLocationId.value,
+);
+const resolvedCardCreateLocationOptions = computed(() =>
+  isControlled.value
+    ? props.cardCreateLocationOptions
+    : internalCardCreateLocationOptionViewModels.value,
+);
+
+const syncCardOverflowGuard = (enabled: boolean) => {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.documentElement.classList.toggle(CARD_OVERFLOW_GUARD_CLASS, enabled);
+  document.body.classList.toggle(CARD_OVERFLOW_GUARD_CLASS, enabled);
+};
+
+const clearInternalCardDragHintTimer = () => {
+  if (
+    typeof window === "undefined" ||
+    internalCardDragHintTimerId === null
+  ) {
+    return;
+  }
+
+  window.clearTimeout(internalCardDragHintTimerId);
+  internalCardDragHintTimerId = null;
+};
+
+const scheduleInternalCardDragHint = () => {
+  clearInternalCardDragHintTimer();
+
+  if (
+    isControlled.value ||
+    typeof window === "undefined" ||
+    prefersReducedMotion.value ||
+    !isCardStageActive.value
+  ) {
+    return;
+  }
+
+  internalCardDragHintTimerId = window.setTimeout(() => {
+    internalCardDragHintTimerId = null;
+
+    if (!isCardStageActive.value || prefersReducedMotion.value) {
+      return;
+    }
+
+    internalDragHintToken.value += 1;
+  }, CARD_MODE_DRAG_HINT_DELAY_MS);
+};
+
+const consumeCardDragHintWindow = () => {
+  if (isControlled.value) {
+    emit("consume-drag-hint-window");
+    return;
+  }
+
+  clearInternalCardDragHintTimer();
+};
 
 const swipePreviewIntensity = computed(() =>
   clampDemandCardSwipePreviewIntensity(swipePreviewState.value.intensity),
@@ -417,7 +853,7 @@ const handleSwipePreview = (previewState: DemandCardSwipePreviewState) => {
     previewState.phase !== "hinting"
   ) {
     hasConsumedDragHintWindow.value = true;
-    emit("consume-drag-hint-window");
+    consumeCardDragHintWindow();
   }
 
   swipePreviewState.value = {
@@ -429,11 +865,45 @@ const handleSwipePreview = (previewState: DemandCardSwipePreviewState) => {
 };
 
 const emitSkipActiveCard = () => {
-  emit("skip-active-card");
+  if (isControlled.value) {
+    emit("skip-active-card");
+    return;
+  }
+
+  const card = resolvedActiveDemandCard.value;
+  if (!card) {
+    return;
+  }
+
+  consumeCardDragHintWindow();
+  if (!processedCardKeySet.value.has(card.cardKey)) {
+    processedCardKeys.value = [...processedCardKeys.value, card.cardKey];
+  }
+  internalCardActionError.value = null;
 };
 
-const emitViewActiveCardDetail = () => {
-  emit("view-active-card-detail");
+const emitViewActiveCardDetail = async () => {
+  if (isControlled.value) {
+    emit("view-active-card-detail");
+    return;
+  }
+
+  const card = resolvedActiveDemandCard.value;
+  if (!card || card.detailPrId === null) {
+    return;
+  }
+
+  consumeCardDragHintWindow();
+  internalCardActionError.value = null;
+  internalIsCardRouting.value = true;
+  try {
+    await router.push(prDetailPath(card.detailPrId));
+  } catch (error) {
+    internalCardActionError.value =
+      error instanceof Error ? error.message : t("common.operationFailed");
+  } finally {
+    internalIsCardRouting.value = false;
+  }
 };
 
 const handleSkipActionClick = () => {
@@ -451,11 +921,20 @@ const handleViewActionClick = () => {
     return;
   }
 
-  emitViewActiveCardDetail();
+  void emitViewActiveCardDetail();
 };
 
 const emitCreateFromCardEmpty = () => {
-  emit("create-from-card-empty");
+  if (isControlled.value) {
+    emit("create-from-card-empty");
+    return;
+  }
+
+  void createEventAssistedPR({
+    targetTimeWindow:
+      selectedInternalCardCreateTimeWindow.value?.timeWindow ?? null,
+    locationId: internalCardCreateLocationId.value || null,
+  });
 };
 
 const handleCardCreateTimeWindowChange = (event: Event) => {
@@ -466,11 +945,19 @@ const handleCardCreateTimeWindowChange = (event: Event) => {
 
   const nextValue = select.value.trim();
   if (nextValue.length === 0) {
-    emit("update:cardCreateTimeWindowKey", null);
+    if (isControlled.value) {
+      emit("update:cardCreateTimeWindowKey", null);
+      return;
+    }
+    internalCardCreateTimeWindowKey.value = null;
     return;
   }
 
-  emit("update:cardCreateTimeWindowKey", nextValue);
+  if (isControlled.value) {
+    emit("update:cardCreateTimeWindowKey", nextValue);
+    return;
+  }
+  internalCardCreateTimeWindowKey.value = nextValue;
 };
 
 const handleCardCreateLocationChange = (event: Event) => {
@@ -479,18 +966,23 @@ const handleCardCreateLocationChange = (event: Event) => {
     return;
   }
 
-  emit("update:cardCreateLocationId", select.value);
+  if (isControlled.value) {
+    emit("update:cardCreateLocationId", select.value);
+    return;
+  }
+  internalCardCreateLocationId.value = select.value;
 };
 
 watch(
-  () => props.activeDemandCard?.cardKey ?? null,
+  () => resolvedActiveDemandCard.value?.cardKey ?? null,
   () => {
     swipePreviewState.value = createIdleDemandCardSwipePreviewState();
+    internalCardActionError.value = null;
   },
 );
 
 watch(
-  () => props.dragHintToken,
+  resolvedDragHintToken,
   (token, previousToken) => {
     if (token === previousToken || token <= 0) {
       return;
@@ -499,6 +991,68 @@ watch(
     frontDemandCardRef.value?.playHintWobble();
   },
 );
+
+watch(
+  isCardStageActive,
+  (isActive, wasActive) => {
+    emit("card-stage-active-change", isActive);
+
+    if (isControlled.value) {
+      return;
+    }
+
+    syncCardOverflowGuard(isActive);
+
+    if (!isActive) {
+      consumeCardDragHintWindow();
+      return;
+    }
+
+    if (!wasActive) {
+      scheduleInternalCardDragHint();
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  prefersReducedMotion,
+  (reduced) => {
+    if (isControlled.value) {
+      return;
+    }
+
+    if (reduced) {
+      consumeCardDragHintWindow();
+      return;
+    }
+
+    if (isCardStageActive.value) {
+      scheduleInternalCardDragHint();
+    }
+  },
+  { immediate: false },
+);
+
+onActivated(() => {
+  if (!isControlled.value && isCardStageActive.value) {
+    syncCardOverflowGuard(true);
+    scheduleInternalCardDragHint();
+  }
+  emit("card-stage-active-change", isCardStageActive.value);
+});
+
+onDeactivated(() => {
+  consumeCardDragHintWindow();
+  syncCardOverflowGuard(false);
+  emit("card-stage-active-change", false);
+});
+
+onUnmounted(() => {
+  consumeCardDragHintWindow();
+  syncCardOverflowGuard(false);
+  emit("card-stage-active-change", false);
+});
 </script>
 
 <style lang="scss" scoped>

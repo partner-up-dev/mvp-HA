@@ -1,5 +1,16 @@
 <template>
-  <div class="date-section">
+  <div v-if="isLoading" class="loading-state">
+    {{ t("common.loading") }}
+  </div>
+
+  <div v-else-if="isError" class="error-state">
+    {{ t("anchorEvent.loadFailed") }}
+    <router-link :to="{ name: 'event-plaza' }" class="back-link">
+      {{ t("anchorEvent.backToPlaza") }}
+    </router-link>
+  </div>
+
+  <div v-else-if="detail" class="date-section">
     <TabBar
       v-if="dateTabs.length > 0"
       :items="dateTabs"
@@ -19,6 +30,24 @@
             :cover-image="resolveCoverImage(item.pr.location)"
           />
         </div>
+        <article
+          v-else-if="isListExhausted"
+          class="list-exhausted-card"
+          data-region="exhausted-card"
+        >
+          <p class="list-exhausted-card__title">
+            {{ t("anchorEvent.exhausted") }}
+          </p>
+          <p class="list-exhausted-card__body">
+            {{ t("anchorEvent.subscribeHint") }}
+          </p>
+          <router-link
+            :to="{ name: 'event-plaza' }"
+            class="list-exhausted-card__link"
+          >
+            {{ t("anchorEvent.discoverOthers") }}
+          </router-link>
+        </article>
         <div v-else class="empty-batch">
           {{
             hasBrowseTimeWindows
@@ -45,14 +74,14 @@
           data-region="create-pr"
         />
         <AnchorEventBetaGroupCard
-          :event-id="eventId"
+          :event-id="eventIdValue"
           :event-title="eventTitle"
           :qr-code-url="eventBetaGroupQrCode"
           :default-expanded="false"
           variant="list"
         />
         <OtherAnchorEventsSection
-          :current-event-id="eventId"
+          :current-event-id="eventIdValue"
           variant="panel"
           data-region="discover-other-events"
         />
@@ -69,7 +98,28 @@ import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.v
 import EventPRCreateCard from "@/domains/event/ui/primitives/EventPRCreateCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
+import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
+import {
+  formatDateKeyLabel,
+  formatTimeWindowLabel,
+  formatTimeWindowTimeLabel,
+  hasTimeWindowStarted,
+  isEndedTimeWindow,
+  resolveTimeWindowDateKey,
+  resolveTimeWindowStartTimestamp,
+} from "@/domains/event/model/time-window-view";
+import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
+import {
+  pickRandomPoiGalleryImage,
+  toPoiGalleryMap,
+} from "@/domains/event/model/poi-gallery";
+import { useEventAssistedPRCreateFlow } from "@/domains/event/use-cases/useEventAssistedPRCreateFlow";
+import {
+  getTodayProductLocalDateKey,
+  isProductLocalDateKey,
+  type ProductLocalDateKey,
+} from "@/shared/datetime/productLocalDate";
 
 type DateTabItem = {
   key: string;
@@ -91,6 +141,7 @@ type DateGroup = {
   key: string;
   label: string;
   isExpiredDate: boolean;
+  tabClass?: string;
   timeWindows: DateGroupTimeWindowItem[];
 };
 
@@ -107,31 +158,266 @@ type CreateTimeWindowChoice = {
 };
 
 const props = defineProps<{
-  hasBrowseTimeWindows: boolean;
-  dateTabs: DateTabItem[];
-  selectedDateKey: string | null;
-  selectedDateGroup: DateGroup | null;
-  createTimeWindowChoices: CreateTimeWindowChoice[];
   eventId: number;
-  eventTitle: string;
-  eventBetaGroupQrCode: string | null;
-  isCreatePending: boolean;
-  createActionErrorMessage: string | null;
-  resolveCoverImage: (location: string | null) => string | null;
 }>();
 
 const emit = defineEmits<{
-  "select-date": [dateKey: string];
-  "create-in-list": [
-    payload: {
-      timeWindow: [string | null, string | null] | null;
-      locationId: string | null;
-    },
+  "header-context": [
+    context: {
+      title: string;
+      subtitle: string | null;
+    } | null,
   ];
 }>();
 
 const { t } = useI18n();
+const eventId = computed<number | null>(() => props.eventId);
+const eventIdValue = computed(() => props.eventId);
 const selectedTimeWindowKey = ref<string | null>(null);
+const selectedDateKey = ref<string | null>(null);
+
+const {
+  data: detail,
+  isLoading,
+  isError,
+} = useAnchorEventDetail(eventId);
+const eventDetail = computed(() => detail.value ?? null);
+const {
+  createEventAssistedPR,
+  createActionErrorMessage,
+  isCreatePending,
+} = useEventAssistedPRCreateFlow(eventDetail);
+
+watch(
+  detail,
+  (event) => {
+    emit(
+      "header-context",
+      event
+        ? {
+            title: event.title,
+            subtitle: event.description ?? null,
+          }
+        : null,
+    );
+  },
+  { immediate: true },
+);
+
+const eventTitle = computed(() => detail.value?.title ?? "");
+const eventBetaGroupQrCode = computed(() => detail.value?.betaGroupQrCode ?? null);
+const hasBrowseTimeWindows = computed(
+  () => (detail.value?.browseTimeWindows.length ?? 0) > 0,
+);
+const isListExhausted = computed(() => detail.value?.exhausted === true);
+
+const LIST_MODE_EXPIRED_DATE_LIMIT = 3;
+const LIST_MODE_EXPIRED_TAB_CLASS = "tab-bar__tab--expired";
+
+const sortedBrowseTimeWindows = computed(() => {
+  const timeWindows = detail.value?.browseTimeWindows ?? [];
+  return [...timeWindows].sort((left, right) => {
+    const leftTimestamp = resolveTimeWindowStartTimestamp(left.timeWindow);
+    const rightTimestamp = resolveTimeWindowStartTimestamp(right.timeWindow);
+    return leftTimestamp - rightTimestamp;
+  });
+});
+
+const sortedCreateTimeWindows = computed(() => {
+  const timeWindows = detail.value?.createTimeWindows ?? [];
+  return [...timeWindows].sort((left, right) => {
+    const leftTimestamp = resolveTimeWindowStartTimestamp(left.timeWindow);
+    const rightTimestamp = resolveTimeWindowStartTimestamp(right.timeWindow);
+    return leftTimestamp - rightTimestamp;
+  });
+});
+
+const upcomingSortedCreateTimeWindows = computed(() =>
+  sortedCreateTimeWindows.value.filter(
+    (entry) => !hasTimeWindowStarted(entry.timeWindow),
+  ),
+);
+
+const formatTimeWindowOptionLabel = (
+  entry: CreateTimeWindow,
+  index: number,
+): string =>
+  formatTimeWindowLabel(entry.timeWindow, index, t("anchorEvent.batchLabel"));
+
+const isExpiredDateGroupKey = (
+  groupKey: string,
+  todayDateKey: string,
+): boolean =>
+  isProductLocalDateKey(groupKey) &&
+  groupKey < todayDateKey;
+
+const isClosedPR = (pr: AnchorEventTimeWindowPR): boolean =>
+  pr.status === "CLOSED";
+
+const dateGroupHasClosedPR = (group: DateGroup): boolean =>
+  group.timeWindows.some(({ entry }) => entry.prs.some(isClosedPR));
+
+const toVisibleListModeDateGroups = (groups: DateGroup[]): DateGroup[] => {
+  const expiredDateGroups = groups
+    .filter((group) => group.isExpiredDate && dateGroupHasClosedPR(group))
+    .slice(-LIST_MODE_EXPIRED_DATE_LIMIT);
+  const currentAndFutureGroups = groups.filter((group) => !group.isExpiredDate);
+
+  return [...expiredDateGroups, ...currentAndFutureGroups];
+};
+
+const dateGroups = computed<DateGroup[]>(() => {
+  const groups: DateGroup[] = [];
+  const groupIndexByKey = new Map<string, number>();
+  const todayDateKey = getTodayProductLocalDateKey();
+
+  sortedBrowseTimeWindows.value.forEach((entry, index) => {
+    const groupKey =
+      resolveTimeWindowDateKey(entry.timeWindow) ?? `time-window:${entry.key}`;
+    const existingIndex = groupIndexByKey.get(groupKey);
+    const timeWindowViewModel: DateGroupTimeWindowItem = {
+      entry,
+      timeLabel: formatTimeWindowTimeLabel(
+        entry.timeWindow,
+        index,
+        t("anchorEvent.batchLabel"),
+      ),
+    };
+
+    if (existingIndex !== undefined) {
+      groups[existingIndex]?.timeWindows.push(timeWindowViewModel);
+      return;
+    }
+
+    const groupLabel = groupKey.startsWith("time-window:")
+      ? formatTimeWindowLabel(
+          entry.timeWindow,
+          index,
+          t("anchorEvent.batchLabel"),
+        )
+      : formatDateKeyLabel(groupKey as ProductLocalDateKey);
+    const isExpiredDate = isExpiredDateGroupKey(groupKey, todayDateKey);
+
+    groupIndexByKey.set(groupKey, groups.length);
+    groups.push({
+      key: groupKey,
+      label: groupLabel,
+      isExpiredDate,
+      tabClass: isExpiredDate ? LIST_MODE_EXPIRED_TAB_CLASS : undefined,
+      timeWindows: [timeWindowViewModel],
+    });
+  });
+
+  return toVisibleListModeDateGroups(groups).map((group) => ({
+    ...group,
+    tabClass: group.isExpiredDate ? LIST_MODE_EXPIRED_TAB_CLASS : undefined,
+  }));
+});
+
+const dateTabs = computed<DateTabItem[]>(() =>
+  dateGroups.value.map((group) => ({
+    key: group.key,
+    label: group.label,
+    tabClass: group.tabClass,
+  })),
+);
+
+const createTimeWindowChoices = computed<CreateTimeWindowChoice[]>(() =>
+  upcomingSortedCreateTimeWindows.value.map((entry, index) => ({
+    entry,
+    optionLabel: formatTimeWindowOptionLabel(entry, index),
+    subtitleLabel: formatTimeWindowLabel(
+      entry.timeWindow,
+      index,
+      t("anchorEvent.batchLabel"),
+    ),
+  })),
+);
+
+const selectedDateGroup = computed(
+  () =>
+    dateGroups.value.find((group) => group.key === selectedDateKey.value) ??
+    null,
+);
+
+const resolveDefaultDateKey = (groups: DateGroup[]): string | null => {
+  const firstUpcomingGroup = groups.find(
+    (group) =>
+      !group.isExpiredDate &&
+      group.timeWindows.some(
+        ({ entry }) => !isEndedTimeWindow(entry.timeWindow),
+      ),
+  );
+  if (firstUpcomingGroup) {
+    return firstUpcomingGroup.key;
+  }
+
+  const firstCurrentOrFutureGroup = groups.find(
+    (group) => !group.isExpiredDate,
+  );
+  if (firstCurrentOrFutureGroup) {
+    return firstCurrentOrFutureGroup.key;
+  }
+
+  return groups[groups.length - 1]?.key ?? null;
+};
+
+watch(
+  dateGroups,
+  (groups) => {
+    if (groups.length === 0) {
+      selectedDateKey.value = null;
+      return;
+    }
+
+    if (selectedDateKey.value !== null) {
+      const matched = groups.some(
+        (group) => group.key === selectedDateKey.value,
+      );
+      if (matched) {
+        return;
+      }
+    }
+
+    selectedDateKey.value = resolveDefaultDateKey(groups);
+  },
+  { immediate: true },
+);
+
+const allPoiIdsCsv = computed(() => {
+  const uniqueLocationIds = new Set<string>();
+
+  for (const entry of sortedBrowseTimeWindows.value) {
+    for (const pr of entry.prs) {
+      const location = pr.location?.trim() ?? "";
+      if (location.length > 0) {
+        uniqueLocationIds.add(location);
+      }
+    }
+  }
+
+  if (uniqueLocationIds.size === 0) {
+    return null;
+  }
+
+  return Array.from(uniqueLocationIds).join(",");
+});
+
+const { data: eventPois } = usePoisByIds(allPoiIdsCsv);
+const poiGalleryById = computed(() => toPoiGalleryMap(eventPois.value ?? []));
+
+const resolveCoverImage = (location: string | null): string | null => {
+  if (!location) {
+    return null;
+  }
+
+  const normalized = location.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return pickRandomPoiGalleryImage(poiGalleryById.value.get(normalized) ?? []);
+};
 
 const isVisibleListModePR = (
   pr: AnchorEventTimeWindowPR,
@@ -141,7 +427,7 @@ const isVisibleListModePR = (
 
 const visiblePRItems = computed<VisiblePRItem[]>(() => {
   const items: VisiblePRItem[] = [];
-  const group = props.selectedDateGroup;
+  const group = selectedDateGroup.value;
   if (!group) {
     return items;
   }
@@ -209,7 +495,7 @@ const resolveDefaultCreateTimeWindowKey = (
 };
 
 watch(
-  [() => props.selectedDateGroup, () => props.createTimeWindowChoices],
+  [selectedDateGroup, createTimeWindowChoices],
   ([group, createTimeWindowChoices]) => {
     const currentTimeWindowKey = selectedTimeWindowKey.value;
     if (
@@ -238,14 +524,14 @@ watch(
 
 const timeWindowLabelByKey = computed(() => {
   const map = new Map<string, string>();
-  for (const timeWindowChoice of props.createTimeWindowChoices) {
+  for (const timeWindowChoice of createTimeWindowChoices.value) {
     map.set(timeWindowChoice.entry.key, timeWindowChoice.subtitleLabel);
   }
   return map;
 });
 
 const createTimeWindowOptions = computed(() =>
-  props.createTimeWindowChoices.map(({ entry, optionLabel }) => ({
+  createTimeWindowChoices.value.map(({ entry, optionLabel }) => ({
     key: entry.key,
     label: optionLabel,
   })),
@@ -257,7 +543,7 @@ const selectedTimeWindowEntry = computed(() => {
   }
 
   return (
-    props.createTimeWindowChoices.find(
+    createTimeWindowChoices.value.find(
       ({ entry }) => entry.key === selectedTimeWindowKey.value,
     )?.entry ?? null
   );
@@ -281,7 +567,7 @@ const createTimeWindowLocationOptions = computed(
 );
 
 const hasJoinablePRInSelectedDate = computed(() => {
-  const group = props.selectedDateGroup;
+  const group = selectedDateGroup.value;
   if (!group) {
     return false;
   }
@@ -298,7 +584,7 @@ const createCardTitle = computed(() => {
 });
 
 const shouldAutoExpandCreateCard = computed(() => {
-  if (props.createTimeWindowChoices.length === 0) {
+  if (createTimeWindowChoices.value.length === 0) {
     return false;
   }
 
@@ -307,7 +593,7 @@ const shouldAutoExpandCreateCard = computed(() => {
 
 const createCardAutoExpandContextKey = computed(
   () =>
-    `${props.selectedDateKey ?? "none"}:${selectedTimeWindowKey.value ?? "none"}`,
+    `${selectedDateKey.value ?? "none"}:${selectedTimeWindowKey.value ?? "none"}`,
 );
 
 const handleSelectedTimeWindowChange = (key: string | null) => {
@@ -315,12 +601,12 @@ const handleSelectedTimeWindowChange = (key: string | null) => {
 };
 
 const handleDateTabChange = (value: string | number) => {
-  emit("select-date", String(value));
+  selectedDateKey.value = String(value);
 };
 
-const handleCreateInList = (locationId: string | null) => {
-  emit("create-in-list", {
-    timeWindow: selectedTimeWindowEntry.value?.timeWindow ?? null,
+const handleCreateInList = async (locationId: string | null) => {
+  await createEventAssistedPR({
+    targetTimeWindow: selectedTimeWindowEntry.value?.timeWindow ?? null,
     locationId,
   });
 };
@@ -371,5 +657,50 @@ const handleCreateInList = (locationId: string | null) => {
   text-align: center;
   padding: calc(var(--sys-spacing-large) + var(--sys-spacing-medium)) 0;
   color: var(--sys-color-on-surface-variant);
+}
+
+.list-exhausted-card {
+  display: grid;
+  gap: var(--sys-spacing-xsmall);
+  padding: var(--sys-spacing-medium);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-large);
+  background: var(--sys-color-surface-container);
+}
+
+.list-exhausted-card__title,
+.list-exhausted-card__body {
+  margin: 0;
+}
+
+.list-exhausted-card__title {
+  @include mx.pu-font(title-medium);
+  color: var(--sys-color-on-surface);
+}
+
+.list-exhausted-card__body {
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-on-surface-variant);
+}
+
+.list-exhausted-card__link {
+  @include mx.pu-font(label-medium);
+  justify-self: start;
+  color: var(--sys-color-primary);
+  text-decoration: none;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 3rem 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.back-link {
+  display: block;
+  margin-top: var(--sys-spacing-small);
+  color: var(--sys-color-primary);
+  text-decoration: none;
 }
 </style>
