@@ -285,7 +285,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 }
 
 .send-icon {
-  @include mx.pu-icon(smallall, true);
+  @include mx.pu-icon(small, true);
 }
 
 .spinner {

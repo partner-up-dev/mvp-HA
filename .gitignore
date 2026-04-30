@@ -107,3 +107,6 @@ apps/backend/fc-db-migrate/.fc-package/
 .pdm-python
 __pypackages__/
 __pycache__/
+
+# Special case
+tasks/frontend-screenshot-capture/**/*
