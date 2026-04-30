@@ -5,6 +5,7 @@ import process from "node:process";
 const appRoot = process.cwd();
 const srcRoot = path.join(appRoot, "src");
 const baselinePath = path.join(appRoot, "token-governance-baseline.json");
+const sysTokenPath = path.join(srcRoot, "styles", "_sys.scss");
 const strict = process.argv.includes("--strict");
 
 const scanRoots = [
@@ -102,21 +103,26 @@ const rules = [
   },
 ];
 
-const walk = async (dir) => {
+const walkMatching = async (dir, fileNameRegex) => {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   const files = await Promise.all(
     entries.map(async (entry) => {
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        return await walk(fullPath);
+        return await walkMatching(fullPath, fileNameRegex);
       }
       if (!entry.isFile()) return [];
-      if (!/\.(vue|scss)$/.test(entry.name)) return [];
+      if (!fileNameRegex.test(entry.name)) return [];
       return [fullPath];
     }),
   );
   return files.flat();
 };
+
+const walk = async (dir) => await walkMatching(dir, /\.(vue|scss)$/);
+
+const walkSysColorTokenFiles = async (dir) =>
+  await walkMatching(dir, /\.(vue|scss|ts)$/);
 
 const readBaseline = async () => {
   try {
@@ -168,6 +174,118 @@ const isComponentContractPath = (filePath) =>
 const isComponentContractLine = (filePath, line) =>
   isComponentContractPath(filePath) && /^\s*--[a-z0-9-]+:/.test(line);
 
+const findMatchingParenEnd = (source, openParenIndex) => {
+  let depth = 0;
+
+  for (let index = openParenIndex; index < source.length; index += 1) {
+    const character = source[index];
+
+    if (character === "(") {
+      depth += 1;
+    }
+
+    if (character === ")") {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+};
+
+const extractThemeColorTokenNames = (source, themeName) => {
+  const themeStart = source.indexOf(`$${themeName}:`);
+  if (themeStart === -1) {
+    return new Set();
+  }
+
+  const colorStart = source.indexOf("color:", themeStart);
+  if (colorStart === -1) {
+    return new Set();
+  }
+
+  const colorMapStart = source.indexOf("(", colorStart);
+  if (colorMapStart === -1) {
+    return new Set();
+  }
+
+  const colorMapEnd = findMatchingParenEnd(source, colorMapStart);
+  if (colorMapEnd === -1) {
+    return new Set();
+  }
+
+  const colorMapSource = source.slice(colorMapStart + 1, colorMapEnd);
+  const tokenNames = new Set();
+
+  for (const match of colorMapSource.matchAll(/^\s{4}([a-z0-9-]+):/gm)) {
+    tokenNames.add(match[1]);
+  }
+
+  return tokenNames;
+};
+
+const collectDefinedSysColorTokens = async () => {
+  const raw = await fs.readFile(sysTokenPath, "utf8");
+
+  return {
+    dark: extractThemeColorTokenNames(raw, "dark"),
+    light: extractThemeColorTokenNames(raw, "light"),
+  };
+};
+
+const collectUndefinedSysColorTokenFindings = async (definedTokensByTheme) => {
+  const files = (await walkSysColorTokenFiles(srcRoot)).filter(
+    (filePath) => !shouldIgnorePath(filePath),
+  );
+  const findings = [];
+  const seenFindings = new Set();
+  const sysColorTokenRegex = /var\(\s*(--sys-color-([a-z0-9-]+))/g;
+
+  for (const filePath of files) {
+    const raw = await fs.readFile(filePath, "utf8");
+    const lines = raw.split(/\r?\n/);
+
+    lines.forEach((line, index) => {
+      sysColorTokenRegex.lastIndex = 0;
+
+      for (
+        let match = sysColorTokenRegex.exec(line);
+        match;
+        match = sysColorTokenRegex.exec(line)
+      ) {
+        const fullTokenName = match[1];
+        const colorTokenName = match[2];
+
+        for (const [themeName, definedTokens] of Object.entries(
+          definedTokensByTheme,
+        )) {
+          if (definedTokens.has(colorTokenName)) {
+            continue;
+          }
+
+          const findingKey = `${filePath}::${index + 1}::${themeName}::${fullTokenName}`;
+          if (seenFindings.has(findingKey)) {
+            continue;
+          }
+          seenFindings.add(findingKey);
+
+          findings.push({
+            path: relativePath(filePath),
+            line: index + 1,
+            rule: "undefined-sys-color-token",
+            description: `${fullTokenName} is used but is not defined in the ${themeName} sys color token map.`,
+            text: line.trim(),
+          });
+        }
+      }
+    });
+  }
+
+  return findings;
+};
+
 const collectFindings = async () => {
   const files = (
     await Promise.all(scanRoots.map(async (scanRoot) => await walk(scanRoot)))
@@ -216,10 +334,18 @@ const collectFindings = async () => {
 };
 
 const main = async () => {
-  const [baseline, findings] = await Promise.all([
-    readBaseline(),
-    collectFindings(),
-  ]);
+  const [baseline, definedSysColorTokens, governanceFindings] =
+    await Promise.all([
+      readBaseline(),
+      collectDefinedSysColorTokens(),
+      collectFindings(),
+    ]);
+  const undefinedSysColorTokenFindings =
+    await collectUndefinedSysColorTokenFindings(definedSysColorTokens);
+  const findings = [
+    ...governanceFindings,
+    ...undefinedSysColorTokenFindings,
+  ];
 
   const unmatched = findings.filter(
     (finding) =>
