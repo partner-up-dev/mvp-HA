@@ -42,3 +42,14 @@ exception.
   `pnpm --filter @partner-up-dev/backend deploy --prod --node-linker=hoisted <temp>`
 - Clean-worktree backend build passed.
 - Clean-worktree frontend build passed.
+- GitHub Actions run `25164988485` passed the original pnpm deploy failure,
+  published backend node_modules layer version 60, then failed during backend
+  function `s deploy` because `WECHAT_OAUTH_CALLBACK_URL` was referenced with
+  `env('WECHAT_OAUTH_CALLBACK_URL')` while the GitHub environment value was
+  absent.
+- Serverless Devs YAML supports `${env('NAME', 'default')}` defaults. Backend
+  optional runtime env references should use an empty-string default so the
+  backend env schema can continue to parse empty optional values as absent.
+- Local `npx -y @serverless-devs/s@3.1.10 verify -t apps/backend/s.yaml`
+  with dummy required env values passed variable resolution and reached the
+  existing `tags/0` schema casing check.
