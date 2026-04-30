@@ -28,6 +28,9 @@ export type UserSex = z.infer<typeof userSexSchema>;
 export const users = pgTable("users", {
   id: uuid("id").$type<UserId>().primaryKey(),
   openId: text("open_id").unique(),
+  wechatOfficialAccountFollowedAt: timestamp(
+    "wechat_official_account_followed_at",
+  ),
   pinHash: text("pin_hash"),
   role: text("role").$type<UserRole>().notNull().default("authenticated"),
   nickname: text("nickname"),

@@ -263,6 +263,17 @@ export interface MessageSchema {
       support: string;
     };
   };
+  officialAccountFollow: {
+    nudgeTitle: string;
+    nudgeDescription: string;
+    followAction: string;
+    laterAction: string;
+    modalTitle: string;
+    modalDescription: string;
+    qrAlt: string;
+    qrMissing: string;
+    doneAction: string;
+  };
   aboutPage: {
     title: string;
     description: string;
@@ -1301,6 +1312,7 @@ export interface MessageSchema {
     fetchBackendBuildMetadataFailed: string;
     fetchPublicConfigFailed: string;
     fetchWechatReminderSubscriptionFailed: string;
+    fetchWechatOfficialAccountFollowStatusFailed: string;
     updateWechatReminderSubscriptionFailed: string;
     fetchCurrentUserProfileFailed: string;
     updateCurrentUserProfileFailed: string;

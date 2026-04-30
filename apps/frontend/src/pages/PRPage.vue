@@ -232,29 +232,50 @@
 
       <Modal
         :open="showJoinSubscriptionModal"
-        @close="closeJoinSuccessNotificationPrompt"
+        @close="closeJoinSuccessPrompt"
       >
         <div class="notification-modal">
-          <p class="modal-text modal-text--tight">
-            {{ t("prPage.joinSuccessSubscriptions.description") }}
-          </p>
+          <template v-if="joinSuccessPromptStep === 'SUBSCRIPTIONS'">
+            <p class="modal-text modal-text--tight">
+              {{ t("prPage.joinSuccessSubscriptions.description") }}
+            </p>
 
-          <WeChatNotificationSubscriptionsCard
-            :title="t('prPage.notificationSubscriptions.title')"
-          >
-            <APRNotificationSubscriptions
-              :updating-label="t('prPage.wechatReminder.updating')"
-              outline-profile="surface"
-            />
-          </WeChatNotificationSubscriptionsCard>
+            <WeChatNotificationSubscriptionsCard
+              :title="t('prPage.notificationSubscriptions.title')"
+            >
+              <APRNotificationSubscriptions
+                :updating-label="t('prPage.wechatReminder.updating')"
+                outline-profile="surface"
+              />
+            </WeChatNotificationSubscriptionsCard>
 
-          <Button
-            tone="surface"
-            block
-            @click="closeJoinSuccessNotificationPrompt"
-          >
-            {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
-          </Button>
+            <Button
+              tone="surface"
+              block
+              @click="handleJoinSuccessSubscriptionDone"
+            >
+              {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
+            </Button>
+          </template>
+
+          <template v-else>
+            <OfficialAccountFollowPanel />
+            <div class="modal-actions">
+              <Button
+                tone="surface"
+                type="button"
+                @click="handleCloseJoinOfficialAccountPrompt"
+              >
+                {{ t("officialAccountFollow.laterAction") }}
+              </Button>
+              <Button
+                type="button"
+                @click="handleJoinOfficialAccountDone"
+              >
+                {{ t("officialAccountFollow.doneAction") }}
+              </Button>
+            </div>
+          </template>
         </div>
       </Modal>
 
@@ -393,6 +414,7 @@ import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
+import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFollowPanel.vue";
 import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
@@ -413,6 +435,7 @@ import { usePRAttendanceActions } from "@/domains/pr/use-cases/usePRAttendanceAc
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
+import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
 import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import {
   prBookingSupportPath,
@@ -434,6 +457,7 @@ import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHando
 type BlockedReason =
   PRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
 type DockActionKey = "JOIN" | "CONFIRM" | "CHECKIN_ATTENDED";
+type JoinSuccessPromptStep = "SUBSCRIPTIONS" | "OFFICIAL_ACCOUNT";
 
 type DockActionItem = {
   key: DockActionKey;
@@ -485,6 +509,9 @@ const {
   open: openJoinSuccessNotificationPrompt,
   close: closeJoinSuccessNotificationPrompt,
 } = useJoinSuccessNotificationPrompt();
+const officialAccountFollowPrompt =
+  useOfficialAccountFollowPrompt("pr_join_success");
+const joinSuccessPromptStep = ref<JoinSuccessPromptStep>("SUBSCRIPTIONS");
 const joinFlowStep = ref<"SUMMARY" | "PHONE_INPUT">("SUMMARY");
 const joinFlowPending = ref(false);
 const joinFlowError = ref<string | null>(null);
@@ -817,6 +844,37 @@ const openJoinFlowModal = () => {
   showJoinFlowModal.value = true;
 };
 
+const closeJoinSuccessPrompt = () => {
+  if (joinSuccessPromptStep.value === "OFFICIAL_ACCOUNT") {
+    officialAccountFollowPrompt.dismissPrompt();
+  }
+  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
+  closeJoinSuccessNotificationPrompt();
+};
+
+const handleJoinSuccessSubscriptionDone = () => {
+  if (officialAccountFollowPrompt.canPromptNow()) {
+    officialAccountFollowPrompt.markPromptPresented();
+    joinSuccessPromptStep.value = "OFFICIAL_ACCOUNT";
+    return;
+  }
+
+  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
+  closeJoinSuccessNotificationPrompt();
+};
+
+const handleCloseJoinOfficialAccountPrompt = () => {
+  officialAccountFollowPrompt.dismissPrompt();
+  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
+  closeJoinSuccessNotificationPrompt();
+};
+
+const handleJoinOfficialAccountDone = () => {
+  officialAccountFollowPrompt.markPromptCompleted();
+  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
+  closeJoinSuccessNotificationPrompt();
+};
+
 watch(
   [
     () => matchedPRHandoff.state.phase,
@@ -838,6 +896,7 @@ const finalizeJoinFlow = async (bookingContactPhone?: string | null) => {
   joinFlowPending.value = false;
   if (result) {
     closeJoinFlowModal();
+    joinSuccessPromptStep.value = "SUBSCRIPTIONS";
     openJoinSuccessNotificationPrompt();
     return;
   }

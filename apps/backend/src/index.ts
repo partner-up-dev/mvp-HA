@@ -33,6 +33,10 @@ import {
   registerAnalyticsAggregationJobs,
 } from "./infra/analytics";
 import {
+  bootstrapOfficialAccountFollowSyncJob,
+  registerOfficialAccountFollowSyncJobs,
+} from "./infra/marketing";
+import {
   isWeChatPRMessageNotificationConfigured,
   registerWeChatActivityStartReminderJobs,
   registerWeChatBookingResultJobs,
@@ -66,10 +70,17 @@ registerNotificationOutboxHandlers({
   schedulePRMessageNotification: scheduleWeChatPRMessageNotification,
 });
 registerAnalyticsAggregationJobs();
+registerOfficialAccountFollowSyncJobs();
 if (process.env.BACKEND_SCENARIO_DISABLE_BOOTSTRAP !== "true") {
   void bootstrapAnalyticsAggregationJobs().catch((error) => {
     console.error(
       "[Analytics] failed to bootstrap daily aggregation jobs",
+      error,
+    );
+  });
+  void bootstrapOfficialAccountFollowSyncJob().catch((error) => {
+    console.error(
+      "[OfficialAccountFollowSync] failed to bootstrap sync job",
       error,
     );
   });

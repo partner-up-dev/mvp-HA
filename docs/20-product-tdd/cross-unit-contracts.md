@@ -27,7 +27,16 @@ Contract implication:
 - Admin and user sessions are separate client contexts.
 - WeChat OAuth callback completion must not place the long-lived access token in route query parameters. Backend-owned OAuth callbacks hand the frontend session across with a short-lived signed cookie plus a non-secret handoff nonce.
 
-## 4. Error Contract
+## 4. WeChat Official Account Follow Contract
+
+- Backend persists official-account follow confirmation on `users.wechat_official_account_followed_at`.
+- `GET /api/wechat/official-account/follow-status` returns `{ status, followedAt }`, where `status` is `FOLLOWED` or `UNKNOWN`; `FOLLOWED` requires an active authenticated user whose `users.wechat_official_account_followed_at` is present.
+- A 6-hour backend JobRunner task reads the WeChat official-account follower list and positively marks local users whose `open_id` appears in the list.
+- The follower-list cursor is pagination state for one scan. It is not persisted as durable user state.
+- The sync task only writes positive confirmations. Missing users in a follower-list scan remain `UNKNOWN` until a later unsubscribe webhook or reconciliation contract exists.
+- Frontend official-account follow prompts combine backend status with a 6-hour local cooldown aligned to the follower-list sync period, so a user who recently saw the prompt or opened the follow QR is spared repeat presentation before the next expected backend confirmation opportunity.
+
+## 5. Error Contract
 
 - Backend command failures should converge on RFC 9457 `application/problem+json`.
 - HTTP status selection should follow RFC 9110 semantics, especially across auth failures, forbidden actions, state conflicts, and invalid content.
@@ -38,7 +47,7 @@ Contract implication:
 - Human-readable explanation remains backend-owned on command failures. Frontend owns placement and presentation.
 - Problem-details transport shape is a cross-unit reusable substrate. Domain modules own their `type` and `code` registries.
 
-## 5. Stable Route And Flow Contract
+## 6. Stable Route And Flow Contract
 
 Stable user-facing route families that materially affect coordination include:
 
@@ -84,6 +93,7 @@ Important coordination note:
 - `/pr/:id` remains the primary PR detail route for read, join, exit, confirm, check-in, share, and booking-support handoff; it keeps the persistent notification-subscriptions section mounted there when reminder registration is relevant for that PR and links into adjacent PR sub-routes instead of absorbing all secondary actions inline
 - `/events/search` is a PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
 - `/e/:eventId` is the ad-scan-first Anchor Event landing entry; it may render `FORM` or `CARD_RICH` mode while `/events/:eventId` keeps the existing rich page responsibility
+- `/events/:eventId` and `/e/:eventId` may trigger the official-account follow nudge after 3 seconds when the follow-status contract returns `UNKNOWN` or is unavailable and the local cooldown admits another prompt.
 - `/e/:eventId` owns the Form Mode selection state and inline no-match recommendation result state in one route-level state machine.
 - `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative display policy, so frontend should treat it as opaque instead of hardcoded ranking truth; it does not own PR search results
 - `GET /api/events` and `GET /api/events/:eventId` expose each Anchor Event's beta-group QR code when configured; `/about` and `/events/:eventId` use that event-owned value for beta-group entry instead of reading a generic beta-group public config key
@@ -114,7 +124,7 @@ Important coordination note:
 - `OPTIONS /api/pr/:id/actions` may expose generic method capabilities and `HEAD /api/pr/:id/actions/preflight` may support metadata-aware infrastructure behavior. PR action availability semantics live on the `GET` response body.
 - action-availability transport shape is a cross-unit reusable substrate. Each domain owns its action-name set, code registry, and fact loader.
 
-## 6. Admin Booking Execution Contract
+## 7. Admin Booking Execution Contract
 
 - Frontend admin workspace reads one workspace payload containing `pendingItems` and merged `auditItems`.
 - Backend provides that workspace through `GET /api/admin/booking-execution/workspace`.
@@ -123,7 +133,7 @@ Important coordination note:
 - Backend accepts that through `POST /api/admin/prs/:id/booking-execution`.
 - The contract includes notification summary fields so admin UX can render fulfillment outcome without recomputing backend state.
 
-## 7. Configuration And Metadata Contract
+## 8. Configuration And Metadata Contract
 
 - Backend exposes public config values through `/api/config/public/:key`.
 - Backend exposes build metadata through `/api/meta/build`.
@@ -133,7 +143,7 @@ Important coordination note:
 - Admin edits event-owned landing rollout config through `GET /api/admin/events/:eventId/landing-config` and `PUT /api/admin/events/:eventId/landing-config`.
 - Event-owned preset preference tags and their moderation state are persisted through dedicated Anchor Event tables instead of config blobs; admin reads them through `GET /api/admin/events/:eventId/preference-tags`, replaces published tags through `PUT /api/admin/events/:eventId/preference-tags/published`, and moderates pending tags through `POST /api/admin/events/:eventId/preference-tags/:tagId/publish|reject`.
 
-## 8. Share Descriptor Contract
+## 9. Share Descriptor Contract
 
 - Entity-backed public detail routes such as `GET /api/pr/:id` provide canonical share metadata inside the detail payload.
 - Canonical share metadata includes stable route-owned fields required for base share correctness:
@@ -149,7 +159,7 @@ Important coordination note:
   - the target URL that will actually be shared outward
 - Frontend owns the route-scoped active share session and replay behavior, and it uses backend-provided canonical share metadata for entity truth.
 
-## 9. PR Messaging Contract
+## 10. PR Messaging Contract
 
 - Backend owns persisted `PRMessage` items and one backend-authoritative `PRMessageInboxState` per `prId + userId`.
 - `PRMessage` is a PR-scoped plain-text message item inside one `PartnerRequest` thread. A message is either participant-authored or operator-authored system context, and backend owns that author and type classification.
@@ -173,9 +183,9 @@ Important coordination note:
 - `POST /api/pr/:id/messages/read-marker` advances the viewer's read marker idempotently after the thread is actually shown. Read-marker advancement should be explicit rather than piggybacked on list fetch, so prefetching or hidden loads do not silently clear an unread wave.
 - Message visibility and read-marker advancement reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread. Participant-authored message creation uses that same rule, while admin-authored system-message creation is a separate admin-only capability.
 - PR message notification semantics are governed by `notification-contracts.md`, including unread-wave eligibility, delayed summary dispatch, durable opportunity and wave records, and dispatch-time revalidation.
-- Frontend owns only route and page placement, thread rendering, composer input, join-success subscription-modal prompting, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
+- Frontend owns only route and page placement, thread rendering, composer input, join-success subscription-modal prompting, follow-up official-account prompt cooldown, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
 
-## 10. Coordination And Failure Assumptions
+## 11. Coordination And Failure Assumptions
 
 - The primary coordination path is browser route -> frontend process and UI -> typed backend API -> backend persistence and side effects -> frontend cache and UI refresh.
 - Rules that affect eligibility, status, timing, or identity must coordinate through backend-owned contracts; frontend may optimize UX and does not invent new domain truth.

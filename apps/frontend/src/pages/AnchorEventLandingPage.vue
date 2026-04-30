@@ -96,6 +96,12 @@
       @update:model-value="handleSelectOtherEvent"
     />
   </BottomDrawer>
+
+  <OfficialAccountFollowNudge
+    :open="officialAccountFollowPrompt.isVisible.value"
+    @dismiss="officialAccountFollowPrompt.dismissPrompt"
+    @complete="officialAccountFollowPrompt.markPromptCompleted"
+  />
 </template>
 
 <script setup lang="ts">
@@ -107,6 +113,7 @@ import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import AnchorEventCardModeSurface from "@/domains/event/ui/surfaces/AnchorEventCardModeSurface.vue";
 import AnchorEventFormModeSurface from "@/domains/event/ui/surfaces/AnchorEventFormModeSurface.vue";
+import OfficialAccountFollowNudge from "@/domains/marketing/ui/OfficialAccountFollowNudge.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
 import { useAnchorEvents } from "@/domains/event/queries/useAnchorEvents";
@@ -132,6 +139,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import AnchorEventRadioCardCarousel from "@/domains/event/ui/composites/AnchorEventRadioCardCarousel.vue";
+import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
 
 type TimeWindow = [string | null, string | null];
 type LocationOption =
@@ -163,6 +171,9 @@ const { t } = useI18n();
 const showOtherEventsDrawer = ref(false);
 const formModeSurfaceRef = ref<FormModeSurfaceExposed | null>(null);
 const formModeResultState = ref<FormModeResultState>("selection");
+const officialAccountFollowPrompt =
+  useOfficialAccountFollowPrompt("anchor_event");
+const OFFICIAL_ACCOUNT_FOLLOW_PROMPT_DELAY_MS = 3000;
 
 const noop = () => undefined;
 
@@ -699,6 +710,9 @@ watch(
 
 onMounted(() => {
   void attemptPendingCreateReplay();
+  officialAccountFollowPrompt.requestPromptAfterDelay(
+    OFFICIAL_ACCOUNT_FOLLOW_PROMPT_DELAY_MS,
+  );
 });
 
 const handleCreateFromCardEmpty = async () => {

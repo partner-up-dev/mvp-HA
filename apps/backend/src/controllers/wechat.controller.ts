@@ -874,6 +874,32 @@ export const wechatRoute = app
       }
     },
   )
+  .get("/official-account/follow-status", async (c) => {
+    const userId = readSessionUserId(c);
+    if (!userId) {
+      return c.json({
+        status: "UNKNOWN" as const,
+        followedAt: null,
+      });
+    }
+
+    const user = await userRepo.findById(userId);
+    if (
+      !user ||
+      user.status !== "ACTIVE" ||
+      !user.wechatOfficialAccountFollowedAt
+    ) {
+      return c.json({
+        status: "UNKNOWN" as const,
+        followedAt: null,
+      });
+    }
+
+    return c.json({
+      status: "FOLLOWED" as const,
+      followedAt: user.wechatOfficialAccountFollowedAt.toISOString(),
+    });
+  })
   .get("/notifications/subscriptions", async (c) => {
     if (!isOAuthRuntimeAvailable()) {
       return c.json(await buildAnonymousSubscriptionsResponse(false));

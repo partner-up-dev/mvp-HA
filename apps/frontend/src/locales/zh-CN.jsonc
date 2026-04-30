@@ -229,6 +229,17 @@
       "support": "投诉 / 使用问题 / 功能建议 -> 联系企业微信客服"
     }
   },
+  "officialAccountFollow": {
+    "nudgeTitle": "关注公众号，随时回来",
+    "nudgeDescription": "新场次、名额释放和活动服务更新都会在这里同步。",
+    "followAction": "关注公众号",
+    "laterAction": "稍后",
+    "modalTitle": "关注搭一把公众号",
+    "modalDescription": "扫码关注后，可以持续获得活动更新和服务通知入口。",
+    "qrAlt": "搭一把公众号二维码",
+    "qrMissing": "公众号二维码暂未配置，请稍后再试。",
+    "doneAction": "完成"
+  },
   "aboutPage": {
     "title": "关于",
     "description": "关于本软件的基础信息以及“搭一把”。",
@@ -1226,6 +1237,7 @@
     "fetchBackendBuildMetadataFailed": "获取后端构建信息失败",
     "fetchPublicConfigFailed": "获取公共配置失败",
     "fetchWechatReminderSubscriptionFailed": "获取公众号提醒状态失败",
+    "fetchWechatOfficialAccountFollowStatusFailed": "获取公众号关注状态失败",
     "updateWechatReminderSubscriptionFailed": "更新公众号提醒状态失败",
     "fetchCurrentUserProfileFailed": "获取当前用户资料失败",
     "updateCurrentUserProfileFailed": "更新当前用户资料失败",

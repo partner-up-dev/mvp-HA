@@ -8,6 +8,7 @@ Persisted in Postgres via backend entities and repositories:
 - partner slots and participation state
 - PR messages and per-user PR message inbox state
 - users, user notification options, and user reliability
+- `users.wechat_official_account_followed_at` as the positive marker that the backend has confirmed a user follows the WeChat official account
 - anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, unified event location pools, type-derived Anchor Event PR context, time-pool strategy state, POIs with per-time-window capacity and availability rules, support resources, booking contacts, and booking execution records
 - config, operation logs, domain events, outbox events, jobs, notification opportunities, notification waves, and notification deliveries
 - analytics aggregate tables
@@ -27,7 +28,7 @@ These shape runtime behavior but remain backend-owned.
 - TanStack Query caches of backend data
 - route-local UI state
 - local message composer drafts and thread expansion/collapse state
-- local and session storage for session tokens, user id/pin, admin tokens, pending WeChat actions, bookmark nudges, anchor-event landing mode stability, analytics session id, and `spm`
+- local and session storage for session tokens, user id/pin, admin tokens, pending WeChat actions, bookmark nudges, official-account follow prompt cooldown, anchor-event landing mode stability, analytics session id, and `spm`
 - active route-share session state, currently selected share descriptor, and replay bookkeeping for WeChat/browser share flows
 
 This state improves UX and continuity but does not define product truth.
@@ -39,6 +40,7 @@ The backend is authoritative for:
 - PartnerRequest and partner-slot state
 - PR message visibility, read-marker progression, and notification wave gating
 - identity binding, session verification, and role semantics
+- confirmed WeChat official-account follow state derived from official-account follower-list sync
 - event, time-pool, POI, booking-support, and admin-managed configuration state
 - POI-owned availability rules that determine whether a PR location accepts a full PR time window
 - event-owned preference-tag pool, moderation state, landing recommendation, and type-derived Anchor Event PR context

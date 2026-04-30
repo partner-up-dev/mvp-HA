@@ -69,6 +69,8 @@ export const queryKeys = {
     notificationSubscriptions: () =>
       ["wechat", "notification-subscriptions"] as const,
     reminderSubscription: () => ["wechat", "reminder-subscription"] as const,
+    officialAccountFollowStatus: () =>
+      ["wechat", "official-account-follow-status"] as const,
   },
   user: {
     me: () => ["user", "me"] as const,
