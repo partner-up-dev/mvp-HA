@@ -40,6 +40,7 @@ import {
   isWeChatPRMessageNotificationConfigured,
   registerWeChatActivityStartReminderJobs,
   registerWeChatBookingResultJobs,
+  registerWeChatMeetingPointUpdatedJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatPRMessageJobs,
   registerWeChatReminderJobs,
@@ -65,6 +66,7 @@ registerWeChatActivityStartReminderJobs();
 registerWeChatNewPartnerJobs();
 registerWeChatBookingResultJobs();
 registerWeChatPRMessageJobs();
+registerWeChatMeetingPointUpdatedJobs();
 registerNotificationOutboxHandlers({
   isPRMessageChannelConfigured: isWeChatPRMessageNotificationConfigured,
   schedulePRMessageNotification: scheduleWeChatPRMessageNotification,

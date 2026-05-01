@@ -37,6 +37,8 @@ const CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID =
   "wechat.submsg_booking_result_template_id";
 const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
   "wechat.submsg_new_partner_template_id";
+const CONFIG_KEY_WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID =
+  "wechat.submsg_meeting_point_updated_template_id";
 const CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID =
   "wechat.submsg_pr_message_template_id";
 
@@ -45,6 +47,7 @@ type SubscriptionTemplateKind =
   | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
   | "NEW_PARTNER"
+  | "MEETING_POINT_UPDATED"
   | "PR_MESSAGE";
 
 const resolveTemplateConfigKey = (kind: SubscriptionTemplateKind): string =>
@@ -56,7 +59,9 @@ const resolveTemplateConfigKey = (kind: SubscriptionTemplateKind): string =>
       ? CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
       : kind === "NEW_PARTNER"
         ? CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
-        : CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
+        : kind === "MEETING_POINT_UPDATED"
+          ? CONFIG_KEY_WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID
+          : CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
 
 const resolveTemplateEnvFallback = (
   kind: SubscriptionTemplateKind,
@@ -70,7 +75,9 @@ const resolveTemplateEnvFallback = (
         ? env.WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
         : kind === "NEW_PARTNER"
           ? env.WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
-          : env.WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
+          : kind === "MEETING_POINT_UPDATED"
+            ? env.WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID
+            : env.WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
 
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : null;
@@ -134,6 +141,15 @@ export interface SendPRMessageNotificationParams {
   page: string | null;
 }
 
+export interface SendMeetingPointUpdatedNotificationParams {
+  openId: string;
+  updateType: string;
+  operatorName: string;
+  updatedAt: string;
+  meetingPointDescription: string;
+  page: string | null;
+}
+
 const clipText = (value: string, max: number): string =>
   value.trim().slice(0, max);
 
@@ -162,6 +178,10 @@ export class WeChatSubscriptionMessageService {
     return this.isConfigured("NEW_PARTNER");
   }
 
+  async isMeetingPointUpdatedConfigured(): Promise<boolean> {
+    return this.isConfigured("MEETING_POINT_UPDATED");
+  }
+
   async isPRMessageConfigured(): Promise<boolean> {
     return this.isConfigured("PR_MESSAGE");
   }
@@ -180,6 +200,10 @@ export class WeChatSubscriptionMessageService {
 
   async getNewPartnerTemplateId(): Promise<string | null> {
     return this.resolveTemplateId("NEW_PARTNER");
+  }
+
+  async getMeetingPointUpdatedTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("MEETING_POINT_UPDATED");
   }
 
   async getPRMessageTemplateId(): Promise<string | null> {
@@ -391,6 +415,22 @@ export class WeChatSubscriptionMessageService {
         time2: { value: clipText(params.sentAt, 32) },
         name3: { value: clipText(params.authorName, 10) },
         thing4: { value: clipText(params.messageSummary, 20) },
+      },
+    });
+  }
+
+  async sendMeetingPointUpdatedNotification(
+    params: SendMeetingPointUpdatedNotificationParams,
+  ): Promise<string | number | null> {
+    return this.sendSubscribeMessage({
+      kind: "MEETING_POINT_UPDATED",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        phrase1: { value: clipText(params.updateType, 20) },
+        thing2: { value: clipText(params.operatorName, 20) },
+        time3: { value: clipText(params.updatedAt, 32) },
+        thing6: { value: clipText(params.meetingPointDescription, 20) },
       },
     });
   }

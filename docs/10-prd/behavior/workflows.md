@@ -24,7 +24,7 @@
 ## 3. Enter Through a Link and Join a PR
 
 1. The user opens `/pr/:id`.
-2. The user reads the request details, current count, visible status, and participant list. In the current event-context detail layout, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
+2. The user reads the request details, current count, visible status, participant list, and public meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
 3. Joining uses local account plus PIN by default; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, and context-specific rules.
 5. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal while still keeping the persistent notification-subscriptions section available on the detail page for later revisit.
@@ -102,3 +102,4 @@
 2. The user is routed toward support, author feedback, or event-specific beta-group selection based on need. When `/contact-support` is opened inside a WeChat mini program webview, reimbursement-staff and platform-support entrypoints use QR presentation instead of outbound links.
 3. The user can also reach `/about` from that path, inspect product and repository metadata, choose which active activity beta group to join, and open the official-account QR modal.
 4. Operator pages maintain event, POI, booking-support, and related capabilities so the above workflows remain operable.
+5. PR Admin lets an operator hard-delete a selected PR after explicit confirmation. The delete removes the PR root plus the corresponding Partner rows and PR-owned resource rows.

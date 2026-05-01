@@ -6,8 +6,15 @@ import {
   timestamp,
   integer,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import {
+  meetingPointConfigMapSchema,
+  meetingPointConfigSchema,
+  type MeetingPointConfig,
+  type MeetingPointConfigMap,
+} from "./meeting-point";
 
 // ---------------------------------------------------------------------------
 // Zod schemas
@@ -311,6 +318,13 @@ export const anchorEvents = pgTable("anchor_events", {
     "default_confirmation_end_offset_minutes",
   ),
   defaultJoinLockOffsetMinutes: integer("default_join_lock_offset_minutes"),
+  meetingPoint: jsonb("meeting_point")
+    .$type<MeetingPointConfig | null>()
+    .default(null),
+  locationMeetingPoints: jsonb("location_meeting_points")
+    .$type<MeetingPointConfigMap>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   coverImage: text("cover_image"),
   betaGroupQrCode: text("beta_group_qr_code"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
@@ -324,9 +338,13 @@ export const anchorEvents = pgTable("anchor_events", {
 
 export const insertAnchorEventSchema = createInsertSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
+  locationMeetingPoints: meetingPointConfigMapSchema.optional(),
 });
 export const selectAnchorEventSchema = createSelectSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
+  meetingPoint: meetingPointConfigSchema.nullable(),
+  locationMeetingPoints: meetingPointConfigMapSchema,
 });
 
 // ---------------------------------------------------------------------------

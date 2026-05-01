@@ -47,6 +47,7 @@ export async function createPRFromStructured(
     budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
+    meetingPoint: fields.meetingPoint ?? null,
     status: "DRAFT",
     createdBy,
   });

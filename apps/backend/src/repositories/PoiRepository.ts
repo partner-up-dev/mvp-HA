@@ -1,5 +1,9 @@
 import { inArray } from "drizzle-orm";
 import {
+  normalizeMeetingPointConfig,
+  type MeetingPointConfig,
+} from "../entities/meeting-point";
+import {
   normalizePoiAvailabilityRules,
   pois,
   type Poi,
@@ -47,6 +51,7 @@ export class PoiRepository {
       gallery: string[];
       perTimeWindowCap?: number | null;
       availabilityRules?: PoiAvailabilityRule[];
+      meetingPoint?: MeetingPointConfig | null;
     },
   ): Promise<Poi> {
     const normalizedId = id.trim();
@@ -57,6 +62,9 @@ export class PoiRepository {
     const normalizedAvailabilityRules = shouldReplaceAvailabilityRules
       ? normalizePoiAvailabilityRules(data.availabilityRules)
       : [];
+    const normalizedMeetingPoint = normalizeMeetingPointConfig(
+      data.meetingPoint,
+    );
 
     const result = await db
       .insert(pois)
@@ -65,6 +73,7 @@ export class PoiRepository {
         gallery: normalizedGallery,
         perTimeWindowCap: normalizedPerTimeWindowCap,
         availabilityRules: normalizedAvailabilityRules,
+        meetingPoint: normalizedMeetingPoint,
       })
       .onConflictDoUpdate({
         target: pois.id,
@@ -74,6 +83,7 @@ export class PoiRepository {
           ...(shouldReplaceAvailabilityRules
             ? { availabilityRules: normalizedAvailabilityRules }
             : {}),
+          meetingPoint: normalizedMeetingPoint,
           updatedAt: new Date(),
         },
       })

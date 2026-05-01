@@ -603,6 +603,7 @@ const buildCreateFields = (): PartnerRequestFields | null => {
     budget: null,
     preferences: [...selectedPreferences.value],
     notes: null,
+    meetingPoint: null,
   };
 };
 

@@ -116,6 +116,7 @@ const props = withDefaults(
         "ACTIVITY_START_REMINDER",
         "BOOKING_RESULT",
         "NEW_PARTNER",
+        "MEETING_POINT_UPDATED",
         "PR_MESSAGE",
       ] as const,
     outlineProfile: "primary",

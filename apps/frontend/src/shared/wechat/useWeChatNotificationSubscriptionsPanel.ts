@@ -18,6 +18,7 @@ export type WeChatNotificationKind =
   | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
   | "NEW_PARTNER"
+  | "MEETING_POINT_UPDATED"
   | "PR_MESSAGE";
 
 type NotificationActionKind =
@@ -301,6 +302,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (kind === "NEW_PARTNER") {
       return t("prPage.notificationSubscriptions.items.NEW_PARTNER.title");
     }
+    if (kind === "MEETING_POINT_UPDATED") {
+      return t(
+        "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.title",
+      );
+    }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.title");
   };
 
@@ -323,6 +329,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (kind === "NEW_PARTNER") {
       return t("prPage.notificationSubscriptions.items.NEW_PARTNER.enabledHint");
     }
+    if (kind === "MEETING_POINT_UPDATED") {
+      return t(
+        "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.enabledHint",
+      );
+    }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.enabledHint");
   };
 
@@ -344,6 +355,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     }
     if (kind === "NEW_PARTNER") {
       return t("prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint");
+    }
+    if (kind === "MEETING_POINT_UPDATED") {
+      return t(
+        "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.disabledHint",
+      );
     }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.disabledHint");
   };
@@ -386,6 +402,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         if (kind === "NEW_PARTNER") {
           description = t(
             "prPage.notificationSubscriptions.items.NEW_PARTNER.unconfiguredHint",
+          );
+        } else if (kind === "MEETING_POINT_UPDATED") {
+          description = t(
+            "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.unconfiguredHint",
           );
         } else if (kind === "PR_MESSAGE") {
           description = t(

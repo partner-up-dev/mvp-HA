@@ -13,6 +13,12 @@ export const clonePRFields = (
   budget: fields.budget,
   preferences: [...fields.preferences],
   notes: fields.notes,
+  meetingPoint: fields.meetingPoint
+    ? {
+        description: fields.meetingPoint.description,
+        imageUrl: fields.meetingPoint.imageUrl,
+      }
+    : fields.meetingPoint,
 });
 
 export const parseNullableNumber = (value: string): number | null => {

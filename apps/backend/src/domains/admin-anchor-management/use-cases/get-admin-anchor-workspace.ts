@@ -1,4 +1,5 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import type { MeetingPointConfig, MeetingPointConfigMap } from "../../../entities";
 import type { AnchorEventPRContextRecord } from "../../../repositories/AnchorEventPRContextRepository";
 import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
@@ -22,6 +23,7 @@ type AdminPRSummary = {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  meetingPoint: MeetingPointConfig | null;
   partnerCount: number;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
@@ -65,6 +67,8 @@ export type AdminAnchorEventSummary = {
   defaultConfirmationStartOffsetMinutes: number | null;
   defaultConfirmationEndOffsetMinutes: number | null;
   defaultJoinLockOffsetMinutes: number | null;
+  meetingPoint: MeetingPointConfig | null;
+  locationMeetingPoints: MeetingPointConfigMap;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   betaGroupQrCode: string | null;
@@ -92,6 +96,7 @@ const toAdminPRSummary = async (
   maxPartners: record.root.maxPartners,
   preferences: [...record.root.preferences],
   notes: record.root.notes,
+  meetingPoint: record.root.meetingPoint,
   partnerCount: await countActivePartnersForPR(record.root.id),
   confirmationStartOffsetMinutes: record.anchor.confirmationStartOffsetMinutes,
   confirmationEndOffsetMinutes: record.anchor.confirmationEndOffsetMinutes,
@@ -145,6 +150,8 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         defaultConfirmationEndOffsetMinutes:
           event.defaultConfirmationEndOffsetMinutes ?? null,
         defaultJoinLockOffsetMinutes: event.defaultJoinLockOffsetMinutes ?? null,
+        meetingPoint: event.meetingPoint,
+        locationMeetingPoints: event.locationMeetingPoints,
         timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,

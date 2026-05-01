@@ -82,6 +82,8 @@ export class AnchorEventRepository {
         | "defaultConfirmationStartOffsetMinutes"
         | "defaultConfirmationEndOffsetMinutes"
         | "defaultJoinLockOffsetMinutes"
+        | "meetingPoint"
+        | "locationMeetingPoints"
         | "coverImage"
         | "betaGroupQrCode"
         | "status"

@@ -120,6 +120,7 @@ export interface NotificationOpportunityCreatedPayload {
     | "ACTIVITY_START_REMINDER"
     | "BOOKING_RESULT"
     | "NEW_PARTNER"
+    | "MEETING_POINT_UPDATED"
     | "PR_MESSAGE";
   lifecycleModel: "WAVE" | "ONE_SHOT";
   aggregateType: string;

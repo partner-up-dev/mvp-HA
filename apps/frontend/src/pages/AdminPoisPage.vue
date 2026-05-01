@@ -56,6 +56,28 @@
               />
             </label>
 
+            <label class="field">
+              <span class="field-label">{{
+                t("adminPois.meetingPointDescriptionLabel")
+              }}</span>
+              <textarea
+                v-model="selectedPoiMeetingPointDescription"
+                class="field-input field-textarea"
+                :disabled="selectedPoiId === null"
+              ></textarea>
+            </label>
+
+            <label class="field">
+              <span class="field-label">{{
+                t("adminPois.meetingPointImageUrlLabel")
+              }}</span>
+              <input
+                v-model="selectedPoiMeetingPointImageUrl"
+                class="field-input"
+                :disabled="selectedPoiId === null"
+              />
+            </label>
+
             <Button
               appearance="pill"
               size="sm"
@@ -367,6 +389,11 @@ import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 type PoiRecord = NonNullable<AdminPoisResponse>[number];
 type PoiGalleryMap = Record<string, string[]>;
 type PoiCapMap = Record<string, number | null>;
+type PoiMeetingPointInput = {
+  description: string | null;
+  imageUrl: string | null;
+};
+type PoiMeetingPointMap = Record<string, PoiMeetingPointInput | null>;
 type PoiAvailabilityRuleInput = AdminPoiAvailabilityRulesInput[number];
 type EditableAvailabilityRule = {
   id: string;
@@ -417,6 +444,7 @@ const manualGalleryUrl = ref("");
 const galleryInputRef = ref<HTMLInputElement | null>(null);
 const poiGalleryById = ref<PoiGalleryMap>({});
 const poiCapById = ref<PoiCapMap>({});
+const poiMeetingPointById = ref<PoiMeetingPointMap>({});
 const poiAvailabilityRulesById = ref<PoiAvailabilityRulesMap>({});
 const dirtyPoiIds = ref<Set<string>>(new Set());
 const poiMutationAction = ref<"create" | "save-poi" | null>(null);
@@ -449,6 +477,29 @@ const selectedPoiCapText = computed<string>({
   get: () => (selectedPoiCap.value === null ? "" : String(selectedPoiCap.value)),
   set: (value) => {
     setSelectedPoiCap(normalizeNullablePositiveInteger(value));
+  },
+});
+const selectedPoiMeetingPoint = computed<PoiMeetingPointInput | null>(() => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return null;
+  return poiMeetingPointById.value[poiId] ?? null;
+});
+const selectedPoiMeetingPointDescription = computed<string>({
+  get: () => selectedPoiMeetingPoint.value?.description ?? "",
+  set: (value) => {
+    setSelectedPoiMeetingPoint({
+      description: value.trim() || null,
+      imageUrl: selectedPoiMeetingPoint.value?.imageUrl ?? null,
+    });
+  },
+});
+const selectedPoiMeetingPointImageUrl = computed<string>({
+  get: () => selectedPoiMeetingPoint.value?.imageUrl ?? "",
+  set: (value) => {
+    setSelectedPoiMeetingPoint({
+      description: selectedPoiMeetingPoint.value?.description ?? null,
+      imageUrl: value.trim() || null,
+    });
   },
 });
 const selectedPoiAvailabilityRules = computed<EditableAvailabilityRule[]>(() => {
@@ -506,6 +557,24 @@ const setSelectedPoiCap = (
     const nextDirtyPoiIds = new Set(dirtyPoiIds.value);
     nextDirtyPoiIds.add(poiId);
     dirtyPoiIds.value = nextDirtyPoiIds;
+  }
+};
+
+const setSelectedPoiMeetingPoint = (
+  meetingPoint: PoiMeetingPointInput | null,
+  options?: { markDirty?: boolean },
+) => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return;
+
+  const normalized =
+    meetingPoint?.description || meetingPoint?.imageUrl ? meetingPoint : null;
+  poiMeetingPointById.value = {
+    ...poiMeetingPointById.value,
+    [poiId]: normalized,
+  };
+  if (options?.markDirty ?? true) {
+    markSelectedPoiDirty();
   }
 };
 
@@ -667,6 +736,7 @@ watch([pois, isAdmin], ([nextPois, adminReady]) => {
 watch(pois, (nextPois) => {
   const nextMap: PoiGalleryMap = {};
   const nextCapMap: PoiCapMap = {};
+  const nextMeetingPointMap: PoiMeetingPointMap = {};
   const nextAvailabilityRulesMap: PoiAvailabilityRulesMap = {};
   const nextDirtyPoiIds = new Set<string>();
 
@@ -674,22 +744,26 @@ watch(pois, (nextPois) => {
     const isDirty = dirtyPoiIds.value.has(poi.id);
     const localGallery = poiGalleryById.value[poi.id];
     const localCap = poiCapById.value[poi.id];
+    const localMeetingPoint = poiMeetingPointById.value[poi.id];
     const localAvailabilityRules = poiAvailabilityRulesById.value[poi.id];
     if (isDirty && localGallery !== undefined) {
       nextMap[poi.id] = normalizeGallery(localGallery);
       nextCapMap[poi.id] = localCap ?? null;
+      nextMeetingPointMap[poi.id] = localMeetingPoint ?? null;
       nextAvailabilityRulesMap[poi.id] = localAvailabilityRules ?? [];
       nextDirtyPoiIds.add(poi.id);
       continue;
     }
     nextMap[poi.id] = normalizeGallery(poi.gallery);
     nextCapMap[poi.id] = poi.perTimeWindowCap ?? null;
+    nextMeetingPointMap[poi.id] = poi.meetingPoint ?? null;
     nextAvailabilityRulesMap[poi.id] =
       poi.availabilityRules.map(toEditableAvailabilityRule);
   }
 
   poiGalleryById.value = nextMap;
   poiCapById.value = nextCapMap;
+  poiMeetingPointById.value = nextMeetingPointMap;
   poiAvailabilityRulesById.value = nextAvailabilityRulesMap;
   dirtyPoiIds.value = nextDirtyPoiIds;
 }, { immediate: true });
@@ -705,6 +779,7 @@ const handleCreatePoi = async () => {
       gallery: [],
       perTimeWindowCap: null,
       availabilityRules: [],
+      meetingPoint: null,
     });
     selectedPoiIdRaw.value = result.id;
     newPoiId.value = "";
@@ -789,9 +864,13 @@ const handleSavePoi = async () => {
       availabilityRules: buildAvailabilityRulesInput(
         selectedPoiAvailabilityRules.value,
       ),
+      meetingPoint: selectedPoiMeetingPoint.value,
     });
     setSelectedPoiGallery(result.gallery, { markDirty: false });
     setSelectedPoiCap(result.perTimeWindowCap ?? null, { markDirty: false });
+    setSelectedPoiMeetingPoint(result.meetingPoint ?? null, {
+      markDirty: false,
+    });
     setSelectedPoiAvailabilityRules(
       result.availabilityRules.map(toEditableAvailabilityRule),
       { markDirty: false },

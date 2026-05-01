@@ -100,6 +100,7 @@ export class PRRootRepository {
         maxPartners: fields.maxPartners,
         preferences: fields.preferences,
         notes: fields.notes,
+        meetingPoint: fields.meetingPoint ?? null,
       })
       .where(eq(partnerRequests.id, id))
       .returning();

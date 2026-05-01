@@ -1,4 +1,5 @@
 export * from "./partner-request";
+export * from "./meeting-point";
 export * from "./anchor-event-support-resource";
 export * from "./pr-support-resource";
 export * from "./pr-booking-contact";

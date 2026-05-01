@@ -30,3 +30,9 @@ export {
   cancelWeChatPRMessageJobsForUser,
   isWeChatPRMessageNotificationConfigured,
 } from "./wechat-pr-message";
+
+export {
+  registerWeChatMeetingPointUpdatedJobs,
+  scheduleWeChatMeetingPointUpdatedNotifications,
+  cancelWeChatMeetingPointUpdatedJobsForUser,
+} from "./wechat-meeting-point-updated";

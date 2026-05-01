@@ -4,12 +4,12 @@
 
 Persisted in Postgres via backend entities and repositories:
 
-- `PartnerRequest` as the single durable PR record
+- `PartnerRequest` as the single durable PR record, including PR-level meeting-point override configuration
 - partner slots and participation state
 - PR messages and per-user PR message inbox state
 - users, user notification options, and user reliability
 - `users.wechat_official_account_followed_at` as the positive marker that the backend has confirmed a user follows the WeChat official account
-- anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, unified event location pools, type-derived Anchor Event PR context, time-pool strategy state, POIs with per-time-window capacity and availability rules, support resources, booking contacts, and booking execution records
+- anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, unified event location pools, event-owned meeting-point defaults and location-specific meeting-point overrides, type-derived Anchor Event PR context, time-pool strategy state, POIs with meeting-point fallback configuration, per-time-window capacity and availability rules, support resources, booking contacts, and booking execution records
 - config, operation logs, domain events, outbox events, jobs, notification opportunities, notification waves, and notification deliveries
 - analytics aggregate tables
 
@@ -38,10 +38,12 @@ This state improves UX and continuity but does not define product truth.
 The backend is authoritative for:
 
 - PartnerRequest and partner-slot state
+- PR detail meeting-point fallback resolution
 - PR message visibility, read-marker progression, and notification wave gating
 - identity binding, session verification, and role semantics
 - confirmed WeChat official-account follow state derived from official-account follower-list sync
 - event, time-pool, POI, booking-support, and admin-managed configuration state
+- notification scheduling and dispatch for meeting-point update notifications
 - POI-owned availability rules that determine whether a PR location accepts a full PR time window
 - event-owned preference-tag pool, moderation state, landing recommendation, and type-derived Anchor Event PR context
 - event-specific beta-group QR codes; generic config must not be the owner for activity-specific beta-group entry

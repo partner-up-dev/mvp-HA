@@ -34,6 +34,7 @@ const buildInitialFields = (topic: string | null): PRFormFields => ({
   budget: null,
   preferences: [],
   notes: null,
+  meetingPoint: null,
 });
 
 export const usePRCreateFlow = () => {

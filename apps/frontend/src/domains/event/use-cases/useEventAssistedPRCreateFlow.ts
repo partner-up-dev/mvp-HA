@@ -100,6 +100,7 @@ export const useEventAssistedPRCreateFlow = (
       budget: null,
       preferences: [],
       notes: null,
+      meetingPoint: null,
     };
   };
 

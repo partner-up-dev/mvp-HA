@@ -2,6 +2,7 @@ export { registerNotificationOutboxHandlers } from "./outbox-handlers";
 export {
   ACTIVITY_START_REMINDER_NOTIFICATION_KIND,
   BOOKING_RESULT_NOTIFICATION_KIND,
+  MEETING_POINT_UPDATED_NOTIFICATION_KIND,
   NEW_PARTNER_NOTIFICATION_KIND,
   PR_MESSAGE_NOTIFICATION_KIND,
   REMINDER_CONFIRMATION_NOTIFICATION_KIND,
@@ -94,6 +95,18 @@ export {
   type NewPartnerDispatchPreparation,
   type NewPartnerNotificationJobPayload,
 } from "./services/new-partner-dispatch.service";
+export {
+  buildMeetingPointUpdatedDedupeKey,
+  buildMeetingPointUpdatedDedupePrefixForUser,
+  clearMeetingPointUpdatedNotificationCredits,
+  collectMeetingPointUpdatedNotificationRecipients,
+  consumeMeetingPointUpdatedNotificationCredit,
+  meetingPointUpdatedNotificationJobPayloadSchema,
+  prepareMeetingPointUpdatedNotificationDispatch,
+  recordMeetingPointUpdatedNotificationDelivery,
+  type MeetingPointUpdatedDispatchPreparation,
+  type MeetingPointUpdatedNotificationJobPayload,
+} from "./services/meeting-point-updated-dispatch.service";
 export {
   createNotificationOpportunity,
   markNotificationOpportunityScheduled,

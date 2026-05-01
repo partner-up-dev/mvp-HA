@@ -33,6 +33,7 @@ import {
 } from "../auth/anonymous-session";
 import {
   cancelWeChatActivityStartReminderJobsForUser,
+  cancelWeChatMeetingPointUpdatedJobsForUser,
   cancelWeChatNewPartnerJobsForUser,
   cancelWeChatPRMessageJobsForUser,
   cancelWeChatReminderJobsForUser,
@@ -167,6 +168,10 @@ const buildNotificationChannelState = async (): Promise<{
     NotificationSubscriptionState,
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
+  meetingPointUpdated: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
 }> => {
   const [
     reminderTemplateId,
@@ -174,12 +179,14 @@ const buildNotificationChannelState = async (): Promise<{
     bookingResultTemplateId,
     newPartnerTemplateId,
     prMessageTemplateId,
+    meetingPointUpdatedTemplateId,
   ] = await Promise.all([
     subscriptionMessageService.getConfirmationReminderTemplateId(),
     subscriptionMessageService.getActivityStartReminderTemplateId(),
     subscriptionMessageService.getBookingResultTemplateId(),
     subscriptionMessageService.getNewPartnerTemplateId(),
     subscriptionMessageService.getPRMessageTemplateId(),
+    subscriptionMessageService.getMeetingPointUpdatedTemplateId(),
   ]);
 
   const [
@@ -188,12 +195,14 @@ const buildNotificationChannelState = async (): Promise<{
     bookingResultSubmsgConfigured,
     newPartnerSubmsgConfigured,
     prMessageSubmsgConfigured,
+    meetingPointUpdatedSubmsgConfigured,
   ] = await Promise.all([
     subscriptionMessageService.isConfirmationReminderConfigured(),
     subscriptionMessageService.isActivityStartReminderConfigured(),
     subscriptionMessageService.isBookingResultConfigured(),
     subscriptionMessageService.isNewPartnerConfigured(),
     subscriptionMessageService.isPRMessageConfigured(),
+    subscriptionMessageService.isMeetingPointUpdatedConfigured(),
   ]);
 
   return {
@@ -229,6 +238,13 @@ const buildNotificationChannelState = async (): Promise<{
       requiresOpenSubscribe:
         prMessageSubmsgConfigured && Boolean(prMessageTemplateId),
       templateId: prMessageTemplateId,
+    },
+    meetingPointUpdated: {
+      configured: meetingPointUpdatedSubmsgConfigured,
+      requiresOpenSubscribe:
+        meetingPointUpdatedSubmsgConfigured &&
+        Boolean(meetingPointUpdatedTemplateId),
+      templateId: meetingPointUpdatedTemplateId,
     },
   };
 };
@@ -282,6 +298,15 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
         requiresOpenSubscribe: channels.prMessage.requiresOpenSubscribe,
         templateId: channels.prMessage.templateId,
       },
+      MEETING_POINT_UPDATED: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.meetingPointUpdated.configured,
+        requiresOpenSubscribe:
+          channels.meetingPointUpdated.requiresOpenSubscribe,
+        templateId: channels.meetingPointUpdated.templateId,
+      },
     },
   };
 };
@@ -316,6 +341,10 @@ const buildAuthenticatedSubscriptionsResponse = async (
   const prMessage = userNotificationOptRepo.getSubscriptionSnapshot(
     notificationOpt,
     "PR_MESSAGE",
+  );
+  const meetingPointUpdated = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "MEETING_POINT_UPDATED",
   );
 
   return {
@@ -368,6 +397,17 @@ const buildAuthenticatedSubscriptionsResponse = async (
         requiresOpenSubscribe: channels.prMessage.requiresOpenSubscribe,
         templateId: channels.prMessage.templateId,
       },
+      MEETING_POINT_UPDATED: {
+        enabled: meetingPointUpdated.enabled,
+        optInAt: meetingPointUpdated.optInAt
+          ? meetingPointUpdated.optInAt.toISOString()
+          : null,
+        remainingCount: meetingPointUpdated.remainingCount,
+        configured: channels.meetingPointUpdated.configured,
+        requiresOpenSubscribe:
+          channels.meetingPointUpdated.requiresOpenSubscribe,
+        templateId: channels.meetingPointUpdated.templateId,
+      },
     },
   };
 };
@@ -406,6 +446,10 @@ const applyNotificationSubscriptionSideEffects = async (
 
   if (kind === "PR_MESSAGE" && nextRemainingCount <= 0) {
     return cancelWeChatPRMessageJobsForUser(userId);
+  }
+
+  if (kind === "MEETING_POINT_UPDATED" && nextRemainingCount <= 0) {
+    return cancelWeChatMeetingPointUpdatedJobsForUser(userId);
   }
 
   return 0;

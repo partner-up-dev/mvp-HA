@@ -15,6 +15,7 @@ import {
 } from "../../pr-core/services/partner-section-view.service";
 import {
   hasAnchorParticipationPolicy,
+  resolveEffectiveMeetingPoint,
   resolveAnchorParticipationPolicy,
 } from "../../pr/services";
 import { readPartnerRequestById } from "../../pr/services";
@@ -44,6 +45,7 @@ export type PRDetail = {
     budget: string | null;
     preferences: string[];
     notes: string | null;
+    meetingPoint: Awaited<ReturnType<typeof resolveEffectiveMeetingPoint>>;
   };
   share: {
     canonical: PRCanonicalShareMetadata;
@@ -91,6 +93,7 @@ export async function getPRDetailView(
       : viewerIdentity?.userId ?? null;
 
   const publicPR = await toPublicPR(request, viewerUserId);
+  const meetingPoint = await resolveEffectiveMeetingPoint(publicPR);
   const canonicalShare = buildPRCanonicalShareMetadata(publicPR);
   const supportResources = await prSupportRepo.findByPrId(id);
   const bookingSupportPreview = buildBookingSupportPreview(supportResources);
@@ -128,6 +131,7 @@ export async function getPRDetailView(
       budget: publicPR.budget,
       preferences: publicPR.preferences,
       notes: publicPR.notes,
+      meetingPoint,
     },
     share: {
       canonical: canonicalShare,

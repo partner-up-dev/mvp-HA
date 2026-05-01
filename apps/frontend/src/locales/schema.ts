@@ -410,6 +410,12 @@ export interface MessageSchema {
           disabledHint: string;
           unconfiguredHint: string;
         };
+        MEETING_POINT_UPDATED: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
         PR_MESSAGE: {
           title: string;
           enabledHint: string;
@@ -903,7 +909,10 @@ export interface MessageSchema {
     type: string;
     time: string;
     location: string;
+    meetingPoint: string;
     viewLocationImages: string;
+    viewMeetingPointImage: string;
+    meetingPointImageTitle: string;
     locationGallery: {
       title: string;
       empty: string;
@@ -1009,6 +1018,8 @@ export interface MessageSchema {
     galleryHint: string;
     perTimeWindowCapLabel: string;
     perTimeWindowCapPlaceholder: string;
+    meetingPointDescriptionLabel: string;
+    meetingPointImageUrlLabel: string;
     uploadImageAction: string;
     uploadingImage: string;
     manualUrlPlaceholder: string;
@@ -1094,6 +1105,8 @@ export interface MessageSchema {
     eventNameLabel: string;
     eventTypeLabel: string;
     eventDescriptionLabel: string;
+    eventMeetingPointDescriptionLabel: string;
+    eventMeetingPointImageUrlLabel: string;
     eventCoverImageLabel: string;
     eventBetaGroupQrCodeLabel: string;
     eventStatusLabel: string;
@@ -1101,6 +1114,13 @@ export interface MessageSchema {
     eventDefaultMaxPartnersLabel: string;
     eventPoiHint: string;
     eventLocationPoolLabel: string;
+    eventDefaultMeetingPointTitle: string;
+    eventLocationMeetingPointsTitle: string;
+    eventLocationMeetingPointsLabel: string;
+    eventLocationMeetingPointsHint: string;
+    eventLocationMeetingPointsEmpty: string;
+    eventLocationMeetingPointDescriptionLabel: string;
+    eventLocationMeetingPointImageUrlLabel: string;
     eventTimeWindowHint: string;
     saveEventAction: string;
     createEventAction: string;
@@ -1128,6 +1148,8 @@ export interface MessageSchema {
     prMaxPartnersLabel: string;
     prPreferencesLabel: string;
     prNotesLabel: string;
+    prMeetingPointDescriptionLabel: string;
+    prMeetingPointImageUrlLabel: string;
     prLocationHint: string;
     prTimeHint: string;
     prContentLockedHint: string;

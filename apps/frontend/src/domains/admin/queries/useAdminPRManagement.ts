@@ -57,6 +57,10 @@ export type AdminCreatePRInput = {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  meetingPoint?: {
+    description: string | null;
+    imageUrl: string | null;
+  } | null;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -71,6 +75,10 @@ export type AdminUpdatePRContentInput = {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  meetingPoint?: {
+    description: string | null;
+    imageUrl: string | null;
+  } | null;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;

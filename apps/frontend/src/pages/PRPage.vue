@@ -533,6 +533,12 @@ const editableFields = computed<PRFormFields>(() => ({
   budget: prDetail.value?.core.budget ?? null,
   preferences: prDetail.value?.core.preferences ?? [],
   notes: prDetail.value?.core.notes ?? null,
+  meetingPoint: prDetail.value?.core.meetingPoint
+    ? {
+        description: prDetail.value.core.meetingPoint.description,
+        imageUrl: prDetail.value.core.meetingPoint.imageUrl,
+      }
+    : null,
 }));
 const showBudgetField = computed(() => !supportsEventContextFeatures.value);
 const showTimeField = computed(() => !supportsEventContextFeatures.value);

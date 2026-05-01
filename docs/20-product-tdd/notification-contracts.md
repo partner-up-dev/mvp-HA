@@ -35,12 +35,15 @@ One-shot notifications represent a single opportunity created from a business co
 - `ACTIVITY_START_REMINDER`
 - `BOOKING_RESULT`
 - `NEW_PARTNER`
+- `MEETING_POINT_UPDATED`
 
 Wave notifications represent a bounded attention window:
 
 - `PR_MESSAGE`
 
 The current `PR_MESSAGE` policy opens one unread wave per `PR / recipient` and creates one delayed summary opportunity for that wave.
+
+The `MEETING_POINT_UPDATED` policy creates one-shot notifications to current active PR participants when the effective public meeting-point guidance changes.
 
 ## Creation Contract
 

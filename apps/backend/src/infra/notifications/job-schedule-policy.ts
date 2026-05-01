@@ -35,6 +35,12 @@ export const newPartnerSchedulePolicy: JobSchedulePolicy = {
   lateToleranceUnits: NO_LATE_TOLERANCE_UNITS,
 };
 
+export const meetingPointUpdatedSchedulePolicy: JobSchedulePolicy = {
+  resolutionMs: SECOND_RESOLUTION_MS,
+  earlyToleranceUnits: 0,
+  lateToleranceUnits: NO_LATE_TOLERANCE_UNITS,
+};
+
 export const prMessageSchedulePolicy: JobSchedulePolicy = {
   resolutionMs: SECOND_RESOLUTION_MS,
   earlyToleranceUnits: 0,

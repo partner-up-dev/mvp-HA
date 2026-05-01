@@ -52,6 +52,7 @@ export async function createPRFromNaturalLanguage(
     budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
+    meetingPoint: fields.meetingPoint ?? null,
     status: "DRAFT",
     createdBy,
   });

@@ -1,4 +1,5 @@
 import type { PartnerRequest } from "../../../entities";
+import type { MeetingPointConfig } from "../../../entities";
 import { normalizeLocationPool } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
@@ -25,6 +26,7 @@ export type AdminPRWorkspaceSummary = {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  meetingPoint: MeetingPointConfig | null;
   partnerCount: number;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
@@ -63,6 +65,7 @@ const toAdminPRWorkspaceSummary = async (
   maxPartners: root.maxPartners,
   preferences: [...root.preferences],
   notes: root.notes,
+  meetingPoint: root.meetingPoint,
   partnerCount: await countActivePartnersForPR(root.id),
   confirmationStartOffsetMinutes:
     root.confirmationStartOffsetMinutes ??

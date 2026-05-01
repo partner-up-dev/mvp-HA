@@ -4,8 +4,14 @@ import type {
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
   LocationEntry,
+  MeetingPointConfig,
+  MeetingPointConfigMap,
 } from "../../../entities";
-import { normalizeAnchorEventTimePoolConfig } from "../../../entities";
+import {
+  normalizeAnchorEventTimePoolConfig,
+  normalizeMeetingPointConfig,
+  normalizeMeetingPointConfigMap,
+} from "../../../entities";
 import { HTTPException } from "hono/http-exception";
 import {
   assertManualPartnerBoundsValid,
@@ -25,6 +31,8 @@ export interface CreateAdminAnchorEventInput {
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
+  meetingPoint?: MeetingPointConfig | null;
+  locationMeetingPoints?: MeetingPointConfigMap;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: AnchorEventStatus;
@@ -65,6 +73,10 @@ export async function createAdminAnchorEvent(
     defaultConfirmationEndOffsetMinutes:
       input.defaultConfirmationEndOffsetMinutes,
     defaultJoinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
+    meetingPoint: normalizeMeetingPointConfig(input.meetingPoint),
+    locationMeetingPoints: normalizeMeetingPointConfigMap(
+      input.locationMeetingPoints,
+    ),
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     status: input.status,

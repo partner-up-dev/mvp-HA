@@ -58,3 +58,17 @@ export {
 export { isJoinableStatus, isExitAllowedStatus } from "../../pr-core/services/status-rules";
 export { syncAnchorBookingTriggeredState } from "../../pr-core/services/anchor-booking-trigger.service";
 export { applyAnchorParticipantReleaseEffects } from "../../pr-core/services/anchor-participant-release-effects.service";
+export {
+  resolveEffectiveMeetingPoint,
+  areEffectiveMeetingPointsEqual,
+  resolveMeetingPointNotificationDescription,
+  type EffectiveMeetingPoint,
+  type MeetingPointSource,
+} from "../../pr-core/services/meeting-point.service";
+export {
+  captureEffectiveMeetingPointsForRequests,
+  listRequestsAffectedByAnchorEventMeetingPoint,
+  listRequestsAffectedByPoiMeetingPoint,
+  scheduleMeetingPointNotificationsForChangedRequests,
+  type MeetingPointSnapshot,
+} from "../../pr-core/services/meeting-point-change-notifier.service";

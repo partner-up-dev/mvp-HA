@@ -43,6 +43,9 @@ export const isWeChatSubscriptionNotificationConfigured = async (
   if (kind === "NEW_PARTNER") {
     return service.isNewPartnerConfigured();
   }
+  if (kind === "MEETING_POINT_UPDATED") {
+    return service.isMeetingPointUpdatedConfigured();
+  }
   return service.isPRMessageConfigured();
 };
 
@@ -108,6 +111,17 @@ const send = async (
     });
   }
 
+  if (message.kind === "MEETING_POINT_UPDATED") {
+    return service.sendMeetingPointUpdatedNotification({
+      openId: message.openId,
+      updateType: message.updateType,
+      operatorName: message.operatorName,
+      updatedAt: message.updatedAt,
+      meetingPointDescription: message.meetingPointDescription,
+      page: message.page,
+    });
+  }
+
   return service.sendPRMessageNotification({
     openId: message.openId,
     threadTitle: message.threadTitle,
@@ -117,4 +131,3 @@ const send = async (
     page: message.page,
   });
 };
-

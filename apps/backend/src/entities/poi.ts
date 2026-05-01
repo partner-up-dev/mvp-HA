@@ -2,6 +2,10 @@ import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import {
+  meetingPointConfigSchema,
+  type MeetingPointConfig,
+} from "./meeting-point";
 
 const isoDateTimeWithOffsetSchema = z.string().datetime({ offset: true });
 const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
@@ -114,15 +118,20 @@ export const pois = pgTable("pois", {
     .$type<PoiAvailabilityRule[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  meetingPoint: jsonb("meeting_point")
+    .$type<MeetingPointConfig | null>()
+    .default(null),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertPoiSchema = createInsertSchema(pois, {
   availabilityRules: poiAvailabilityRulesSchema,
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
 });
 export const selectPoiSchema = createSelectSchema(pois, {
   availabilityRules: poiAvailabilityRulesSchema,
+  meetingPoint: meetingPointConfigSchema.nullable(),
 });
 
 export type Poi = typeof pois.$inferSelect;

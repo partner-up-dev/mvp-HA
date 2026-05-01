@@ -65,6 +65,13 @@ const buildFieldsSchema = ({
       budget: z.string().nullable().optional(),
       preferences: z.array(z.string()),
       notes: z.string().nullable(),
+      meetingPoint: z
+        .object({
+          description: z.string().nullable(),
+          imageUrl: z.string().nullable(),
+        })
+        .nullable()
+        .optional(),
     })
     .superRefine((value, context) => {
       if (

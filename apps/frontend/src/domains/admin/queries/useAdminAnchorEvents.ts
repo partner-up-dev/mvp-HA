@@ -50,11 +50,18 @@ export type AdminAnchorTimePoolConfigInput = {
   >;
 };
 
+type MeetingPointInput = {
+  description: string | null;
+  imageUrl: string | null;
+};
+
 export type AdminAnchorEventInput = {
   title: string;
   type: string;
   description: string | null;
   locationPool: string[];
+  meetingPoint?: MeetingPointInput | null;
+  locationMeetingPoints?: Record<string, MeetingPointInput>;
   timePoolConfig: AdminAnchorTimePoolConfigInput;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;

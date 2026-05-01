@@ -14,6 +14,10 @@ import {
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
+import {
+  captureEffectiveMeetingPointsForRequests,
+  scheduleMeetingPointNotificationsForChangedRequests,
+} from "../services/meeting-point-change-notifier.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { eventBus, writeToOutbox } from "../../../infra/events";
@@ -65,6 +69,9 @@ export async function updatePRContent(
     location: fields.location,
     timeWindow: fields.time,
   });
+  const previousMeetingPoints = await captureEffectiveMeetingPointsForRequests([
+    refreshedRequest,
+  ]);
 
   if (timeChanged && refreshedRequest.status !== "DRAFT") {
     const activeParticipants = await listActiveParticipantSummariesForPR(id);
@@ -120,6 +127,12 @@ export async function updatePRContent(
     action: "pr.update_content",
     aggregateType: "partner_request",
     aggregateId: String(id),
+  });
+
+  await scheduleMeetingPointNotificationsForChangedRequests({
+    previous: previousMeetingPoints,
+    requests: [latest],
+    updatedAt: new Date(),
   });
 
   return toPublicPR(latest, null);

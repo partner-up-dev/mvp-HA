@@ -259,6 +259,26 @@
               </label>
 
               <label class="field">
+                <span class="field-label">{{
+                  t("adminPR.prMeetingPointDescriptionLabel")
+                }}</span>
+                <textarea
+                  v-model="prForm.meetingPointDescription"
+                  class="field-input field-textarea"
+                ></textarea>
+              </label>
+
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminPR.prMeetingPointImageUrlLabel")
+                }}</span>
+                <input
+                  v-model="prForm.meetingPointImageUrl"
+                  class="field-input"
+                />
+              </label>
+
+              <label class="field">
                 <span class="field-label">{{ t("adminPR.prStatusLabel") }}</span>
                 <select v-model="prForm.status" class="field-input">
                   <option value="OPEN">OPEN</option>
@@ -525,6 +545,8 @@ type PRForm = {
   joinLockOffsetMinutes: number;
   preferencesText: string;
   notes: string;
+  meetingPointDescription: string;
+  meetingPointImageUrl: string;
   status: "OPEN" | "READY" | "ACTIVE" | "CLOSED";
   visibilityStatus: "VISIBLE" | "HIDDEN";
 };
@@ -546,6 +568,8 @@ const emptyPRForm = (): PRForm => ({
   joinLockOffsetMinutes: DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
   preferencesText: "",
   notes: "",
+  meetingPointDescription: "",
+  meetingPointImageUrl: "",
   status: "OPEN",
   visibilityStatus: "VISIBLE",
 });
@@ -589,6 +613,8 @@ const toPRForm = (pr: PRRecord): PRForm => ({
   joinLockOffsetMinutes: pr.joinLockOffsetMinutes,
   preferencesText: pr.preferences.join(", "),
   notes: pr.notes ?? "",
+  meetingPointDescription: pr.meetingPoint?.description ?? "",
+  meetingPointImageUrl: pr.meetingPoint?.imageUrl ?? "",
   status: pr.status as PRForm["status"],
   visibilityStatus: pr.visibilityStatus as PRForm["visibilityStatus"],
 });
@@ -841,6 +867,22 @@ const normalizeComma = (value: string): string[] =>
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
 
+const buildMeetingPointInput = (
+  description: string,
+  imageUrl: string,
+): { description: string | null; imageUrl: string | null } | null => {
+  const normalizedDescription = description.trim();
+  const normalizedImageUrl = imageUrl.trim();
+  if (!normalizedDescription && !normalizedImageUrl) {
+    return null;
+  }
+
+  return {
+    description: normalizedDescription || null,
+    imageUrl: normalizedImageUrl || null,
+  };
+};
+
 const prepareNewPR = () => {
   isCreatingPR.value = true;
   selectedPRIdRaw.value = "";
@@ -962,6 +1004,10 @@ const handleSavePR = async () => {
     maxPartners: prForm.value.maxPartners,
     preferences: normalizeComma(prForm.value.preferencesText),
     notes: prForm.value.notes.trim() || null,
+    meetingPoint: buildMeetingPointInput(
+      prForm.value.meetingPointDescription,
+      prForm.value.meetingPointImageUrl,
+    ),
     confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,

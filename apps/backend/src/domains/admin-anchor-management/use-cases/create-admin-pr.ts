@@ -8,6 +8,7 @@ import {
   validateAnchorParticipationPolicyOffsets,
 } from "../../pr/services";
 import type { PartnerRequest } from "../../../entities";
+import type { MeetingPointConfig } from "../../../entities";
 
 const prRepo = new PartnerRequestRepository();
 
@@ -19,6 +20,7 @@ export interface CreateAdminPRInput {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  meetingPoint?: MeetingPointConfig | null;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -73,6 +75,7 @@ export async function createAdminPR(
     maxPartners: input.maxPartners,
     preferences: input.preferences,
     notes: input.notes,
+    meetingPoint: input.meetingPoint ?? null,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,

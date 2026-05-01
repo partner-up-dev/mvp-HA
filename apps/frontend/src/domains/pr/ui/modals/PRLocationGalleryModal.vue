@@ -1,7 +1,7 @@
 <template>
   <Modal
     :open="open"
-    :title="t('prCard.locationGallery.title')"
+    :title="title ?? t('prCard.locationGallery.title')"
     max-width="560px"
     @close="emit('close')"
   >
@@ -63,6 +63,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 interface PRLocationGalleryModalProps {
   open: boolean;
   images: string[];
+  title?: string;
 }
 
 const props = defineProps<PRLocationGalleryModalProps>();

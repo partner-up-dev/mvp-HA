@@ -6,10 +6,19 @@ import type {
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
   LocationEntry,
+  MeetingPointConfig,
+  MeetingPointConfigMap,
 } from "../../../entities";
-import { normalizeAnchorEventTimePoolConfig } from "../../../entities";
+import {
+  normalizeAnchorEventTimePoolConfig,
+  normalizeMeetingPointConfig,
+  normalizeMeetingPointConfigMap,
+} from "../../../entities";
 import {
   assertManualPartnerBoundsValid,
+  captureEffectiveMeetingPointsForRequests,
+  listRequestsAffectedByAnchorEventMeetingPoint,
+  scheduleMeetingPointNotificationsForChangedRequests,
   validateAnchorParticipationPolicyOffsets,
 } from "../../pr/services";
 
@@ -26,6 +35,8 @@ export interface UpdateAdminAnchorEventInput {
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
+  meetingPoint?: MeetingPointConfig | null;
+  locationMeetingPoints?: MeetingPointConfigMap;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: AnchorEventStatus;
@@ -47,12 +58,26 @@ export async function updateAdminAnchorEvent(
     joinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
   });
 
-  const existing = await anchorEventRepo.findOneByType(input.type);
-  if (existing && existing.id !== eventId) {
+  const current = await anchorEventRepo.findById(eventId);
+  if (!current) {
+    throw new HTTPException(404, { message: "Anchor event not found" });
+  }
+
+  const existingByType = await anchorEventRepo.findOneByType(input.type);
+  if (existingByType && existingByType.id !== eventId) {
     throw new HTTPException(409, {
       message: `Anchor event type already exists: ${input.type}`,
     });
   }
+
+  const affectedRequests =
+    await listRequestsAffectedByAnchorEventMeetingPoint(
+      current.type,
+      input.type,
+    );
+  const previousMeetingPoints =
+    await captureEffectiveMeetingPointsForRequests(affectedRequests);
+  const updatedAt = new Date();
 
   const updated = await anchorEventRepo.update(eventId, {
     title: input.title,
@@ -67,6 +92,10 @@ export async function updateAdminAnchorEvent(
     defaultConfirmationEndOffsetMinutes:
       input.defaultConfirmationEndOffsetMinutes,
     defaultJoinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
+    meetingPoint: normalizeMeetingPointConfig(input.meetingPoint),
+    locationMeetingPoints: normalizeMeetingPointConfigMap(
+      input.locationMeetingPoints,
+    ),
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     status: input.status,
@@ -75,6 +104,16 @@ export async function updateAdminAnchorEvent(
   if (!updated) {
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
+
+  const latestAffectedRequests = await listRequestsAffectedByAnchorEventMeetingPoint(
+    current.type,
+    input.type,
+  );
+  await scheduleMeetingPointNotificationsForChangedRequests({
+    previous: previousMeetingPoints,
+    requests: latestAffectedRequests,
+    updatedAt,
+  });
 
   return updated;
 }

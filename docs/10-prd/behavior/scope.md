@@ -6,7 +6,7 @@
 - home exploration, event browsing, `PR` creation, and PR detail participation
 - local account plus PIN, WeChat login / binding, `/me`, and `/pr/mine`
 - distribution paths, WeChat share, Xiaohongshu caption / poster output, and `spm` attribution
-- the current event-context `PR` detail-page information architecture: persistent notification subscriptions section, facts-card driven participant roster modal, clickable participant profile badges, and venue-image entry through a clickable label row
+- the current event-context `PR` detail-page information architecture: meeting-point guidance under the facts-card location row, persistent notification subscriptions section, facts-card driven participant roster modal, clickable participant profile badges, and venue-image entry through a clickable label row
 - non-realtime PR messaging and message notifications, including participant-authored messages plus operator-authored system messages, with the current frontend rollout exposed through the dedicated `/pr/:id/messages` route family
 - the current reliability loop modules: confirmation, reminders, check-in, and new-partner notifications
 - PR booking fulfillment result notifications and operator execution audit

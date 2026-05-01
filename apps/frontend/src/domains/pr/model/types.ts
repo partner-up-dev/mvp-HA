@@ -38,4 +38,5 @@ export const toPartnerRequestFields = (
   budget: fields.budget ?? null,
   preferences: [...fields.preferences],
   notes: fields.notes,
+  meetingPoint: fields.meetingPoint ?? null,
 });

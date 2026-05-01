@@ -4,6 +4,7 @@ import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId } from "../../../entities";
+import type { MeetingPointConfig } from "../../../entities";
 
 const prRepo = new PartnerRequestRepository();
 
@@ -16,6 +17,7 @@ export interface UpdateAdminPRContentInput {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  meetingPoint?: MeetingPointConfig | null;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -68,6 +70,7 @@ export async function updateAdminPRContent(
       budget: null,
       preferences: input.preferences,
       notes: input.notes,
+      meetingPoint: input.meetingPoint ?? null,
     },
     null,
     {

@@ -190,6 +190,87 @@
               </label>
 
               <p class="hint">{{ t("adminPR.eventPoiHint") }}</p>
+
+              <div class="stack stack--tight">
+                <h3 class="subsection-title">
+                  {{ t("adminPR.eventDefaultMeetingPointTitle") }}
+                </h3>
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminPR.eventMeetingPointDescriptionLabel")
+                  }}</span>
+                  <textarea
+                    v-model="eventForm.meetingPointDescription"
+                    class="field-input field-textarea"
+                  ></textarea>
+                </label>
+
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminPR.eventMeetingPointImageUrlLabel")
+                  }}</span>
+                  <input
+                    v-model="eventForm.meetingPointImageUrl"
+                    class="field-input"
+                  />
+                </label>
+              </div>
+
+              <div class="stack stack--tight">
+                <h3 class="subsection-title">
+                  {{ t("adminPR.eventLocationMeetingPointsTitle") }}
+                </h3>
+                <p class="hint">
+                  {{ t("adminPR.eventLocationMeetingPointsHint") }}
+                </p>
+
+                <p
+                  v-if="locationMeetingPointLocations.length === 0"
+                  class="hint"
+                >
+                  {{ t("adminPR.eventLocationMeetingPointsEmpty") }}
+                </p>
+
+                <article
+                  v-for="location in locationMeetingPointLocations"
+                  :key="location"
+                  class="location-meeting-point-row"
+                >
+                  <strong class="location-meeting-point-title">
+                    {{ location }}
+                  </strong>
+                  <div class="grid-2">
+                    <label class="field">
+                      <span class="field-label">{{
+                        t("adminPR.eventLocationMeetingPointDescriptionLabel")
+                      }}</span>
+                      <textarea
+                        class="field-input field-textarea"
+                        :value="getLocationMeetingPointDescription(location)"
+                        @input="
+                          updateLocationMeetingPointDescription(
+                            location,
+                            $event,
+                          )
+                        "
+                      ></textarea>
+                    </label>
+
+                    <label class="field">
+                      <span class="field-label">{{
+                        t("adminPR.eventLocationMeetingPointImageUrlLabel")
+                      }}</span>
+                      <input
+                        class="field-input"
+                        :value="getLocationMeetingPointImageUrl(location)"
+                        @input="
+                          updateLocationMeetingPointImageUrl(location, $event)
+                        "
+                      />
+                    </label>
+                  </div>
+                </article>
+              </div>
             </div>
           </section>
         </div>
@@ -568,6 +649,9 @@ type EventForm = {
   type: string;
   description: string;
   locationPoolText: string;
+  meetingPointDescription: string;
+  meetingPointImageUrl: string;
+  locationMeetingPoints: Record<string, EditableMeetingPointForm>;
   durationMinutes: number | null;
   earliestLeadMinutes: number | null;
   absoluteRulesText: string;
@@ -594,6 +678,11 @@ type PreferenceTagFormRow = {
   description: string;
 };
 
+type EditableMeetingPointForm = {
+  description: string;
+  imageUrl: string;
+};
+
 const DEFAULT_CONFIRMATION_START_OFFSET_MINUTES = 120;
 const DEFAULT_CONFIRMATION_END_OFFSET_MINUTES = 30;
 const DEFAULT_JOIN_LOCK_OFFSET_MINUTES = 30;
@@ -603,6 +692,9 @@ const emptyEventForm = (): EventForm => ({
   type: "",
   description: "",
   locationPoolText: "",
+  meetingPointDescription: "",
+  meetingPointImageUrl: "",
+  locationMeetingPoints: {},
   durationMinutes: null,
   earliestLeadMinutes: null,
   absoluteRulesText: "",
@@ -629,6 +721,11 @@ const toEventForm = (event: EventRecord): EventForm => ({
   type: event.type,
   description: event.description ?? "",
   locationPoolText: event.locationPool.join("\n"),
+  meetingPointDescription: event.meetingPoint?.description ?? "",
+  meetingPointImageUrl: event.meetingPoint?.imageUrl ?? "",
+  locationMeetingPoints: toEditableLocationMeetingPoints(
+    event.locationMeetingPoints,
+  ),
   durationMinutes: event.timePoolConfig.durationMinutes ?? null,
   earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
   absoluteRulesText: event.timePoolConfig.startRules
@@ -708,6 +805,126 @@ const normalizeLines = (value: string): string[] =>
     .split("\n")
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
+
+const locationMeetingPointLocations = computed(() =>
+  normalizeLines(eventForm.value.locationPoolText),
+);
+
+const buildMeetingPointInput = (
+  description: string,
+  imageUrl: string,
+): { description: string | null; imageUrl: string | null } | null => {
+  const normalizedDescription = description.trim();
+  const normalizedImageUrl = imageUrl.trim();
+  if (!normalizedDescription && !normalizedImageUrl) {
+    return null;
+  }
+
+  return {
+    description: normalizedDescription || null,
+    imageUrl: normalizedImageUrl || null,
+  };
+};
+
+const toEditableLocationMeetingPoints = (
+  map: Record<
+    string,
+    { description: string | null; imageUrl: string | null } | null | undefined
+  >,
+): Record<string, EditableMeetingPointForm> => {
+  const result: Record<string, EditableMeetingPointForm> = {};
+  for (const [location, meetingPoint] of Object.entries(map)) {
+    const normalizedLocation = location.trim();
+    if (!normalizedLocation || !meetingPoint) {
+      continue;
+    }
+    result[normalizedLocation] = {
+      description: meetingPoint.description ?? "",
+      imageUrl: meetingPoint.imageUrl ?? "",
+    };
+  }
+  return result;
+};
+
+const buildLocationMeetingPointsInput = (
+  locations: string[],
+  map: Record<string, EditableMeetingPointForm>,
+): Record<string, { description: string | null; imageUrl: string | null }> => {
+  const result: Record<
+    string,
+    { description: string | null; imageUrl: string | null }
+  > = {};
+
+  for (const location of locations) {
+    const meetingPoint = map[location];
+    if (!meetingPoint) {
+      continue;
+    }
+    const input = buildMeetingPointInput(
+      meetingPoint.description,
+      meetingPoint.imageUrl,
+    );
+    if (input) {
+      result[location] = input;
+    }
+  }
+
+  return result;
+};
+
+const getLocationMeetingPointDescription = (location: string): string =>
+  eventForm.value.locationMeetingPoints[location]?.description ?? "";
+
+const getLocationMeetingPointImageUrl = (location: string): string =>
+  eventForm.value.locationMeetingPoints[location]?.imageUrl ?? "";
+
+const readInputEventValue = (event: Event): string => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement | null;
+  return target?.value ?? "";
+};
+
+const updateLocationMeetingPoint = (
+  location: string,
+  patch: Partial<EditableMeetingPointForm>,
+): void => {
+  const current = eventForm.value.locationMeetingPoints[location] ?? {
+    description: "",
+    imageUrl: "",
+  };
+  const next = {
+    ...current,
+    ...patch,
+  };
+  const nextMap = { ...eventForm.value.locationMeetingPoints };
+  if (!next.description.trim() && !next.imageUrl.trim()) {
+    delete nextMap[location];
+  } else {
+    nextMap[location] = next;
+  }
+
+  eventForm.value = {
+    ...eventForm.value,
+    locationMeetingPoints: nextMap,
+  };
+};
+
+const updateLocationMeetingPointDescription = (
+  location: string,
+  event: Event,
+): void => {
+  updateLocationMeetingPoint(location, {
+    description: readInputEventValue(event),
+  });
+};
+
+const updateLocationMeetingPointImageUrl = (
+  location: string,
+  event: Event,
+): void => {
+  updateLocationMeetingPoint(location, {
+    imageUrl: readInputEventValue(event),
+  });
+};
 
 const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
@@ -992,6 +1209,14 @@ const handleSaveEvent = async () => {
     defaultConfirmationEndOffsetMinutes:
       eventForm.value.defaultConfirmationEndOffsetMinutes,
     defaultJoinLockOffsetMinutes: eventForm.value.defaultJoinLockOffsetMinutes,
+    meetingPoint: buildMeetingPointInput(
+      eventForm.value.meetingPointDescription,
+      eventForm.value.meetingPointImageUrl,
+    ),
+    locationMeetingPoints: buildLocationMeetingPointsInput(
+      normalizeLines(eventForm.value.locationPoolText),
+      eventForm.value.locationMeetingPoints,
+    ),
     coverImage: eventForm.value.coverImage.trim() || null,
     betaGroupQrCode: eventForm.value.betaGroupQrCode.trim() || null,
     status: eventForm.value.status,
@@ -1153,6 +1378,15 @@ const handleRejectPreferenceTag = async (tagId: number) => {
   @include mx.pu-font(title-medium);
 }
 
+.subsection-title {
+  margin: 0;
+  @include mx.pu-font(title-small);
+}
+
+.stack--tight {
+  gap: var(--sys-spacing-small);
+}
+
 .hint {
   margin: 0;
   @include mx.pu-font(body-medium);
@@ -1196,6 +1430,18 @@ const handleRejectPreferenceTag = async (tagId: number) => {
 .field-textarea {
   min-height: 96px;
   resize: vertical;
+}
+
+.location-meeting-point-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-small);
+  padding-block: var(--sys-spacing-small);
+  border-top: 1px solid var(--sys-color-outline-variant);
+}
+
+.location-meeting-point-title {
+  @include mx.pu-font(label-large);
 }
 
 .grid-2 {

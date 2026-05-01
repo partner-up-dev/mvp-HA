@@ -48,6 +48,15 @@ export type WeChatSubscriptionChannelMessage =
       page: string | null;
     }
   | {
+      kind: "MEETING_POINT_UPDATED";
+      openId: string;
+      updateType: string;
+      operatorName: string;
+      updatedAt: string;
+      meetingPointDescription: string;
+      page: string | null;
+    }
+  | {
       kind: "PR_MESSAGE";
       openId: string;
       threadTitle: string;
@@ -94,4 +103,3 @@ export const toChannelErrorLike = (error: unknown): NotificationChannelErrorLike
     message: String(error),
   };
 };
-

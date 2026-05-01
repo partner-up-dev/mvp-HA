@@ -8,6 +8,7 @@ export const wechatNotificationKindSchema = z.enum([
   "ACTIVITY_START_REMINDER",
   "BOOKING_RESULT",
   "NEW_PARTNER",
+  "MEETING_POINT_UPDATED",
   "PR_MESSAGE",
 ]);
 export type WeChatNotificationKind = z.infer<
@@ -53,6 +54,19 @@ export const userNotificationOpts = pgTable("user_notification_opts", {
     .default(false),
   wechatNewPartnerOptInAt: timestamp("wechat_new_partner_opt_in_at"),
   wechatNewPartnerRemainingCount: integer("wechat_new_partner_remaining_count")
+    .notNull()
+    .default(0),
+  wechatMeetingPointUpdatedOptIn: boolean(
+    "wechat_meeting_point_updated_opt_in",
+  )
+    .notNull()
+    .default(false),
+  wechatMeetingPointUpdatedOptInAt: timestamp(
+    "wechat_meeting_point_updated_opt_in_at",
+  ),
+  wechatMeetingPointUpdatedRemainingCount: integer(
+    "wechat_meeting_point_updated_remaining_count",
+  )
     .notNull()
     .default(0),
   wechatPrMessageOptIn: boolean("wechat_pr_message_opt_in")

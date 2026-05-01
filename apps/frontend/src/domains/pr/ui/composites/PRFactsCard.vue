@@ -51,6 +51,45 @@
         </p>
       </section>
 
+      <section
+        v-if="meetingPointDescription || meetingPointImageUrl"
+        class="facts-entry"
+      >
+        <Button
+          v-if="interactive && meetingPointImageUrl"
+          class="facts-entry-button"
+          tone="ghost"
+          block
+          @click="showMeetingPointGalleryModal = true"
+        >
+          <span class="facts-entry-button__content">
+            <span class="facts-entry-button__label">{{
+              t("prCard.meetingPoint")
+            }}</span>
+            <span class="facts-entry-button__trailing">
+              <span class="facts-entry-button__action">
+                {{ t("prCard.viewMeetingPointImage") }}
+              </span>
+              <span
+                class="facts-entry-button__icon i-mdi-chevron-right"
+                aria-hidden="true"
+              />
+            </span>
+          </span>
+        </Button>
+
+        <InfoRow v-else :label="t('prCard.meetingPoint')">
+          {{ meetingPointDescription ?? t("prPage.partnerSection.notSet") }}
+        </InfoRow>
+
+        <p
+          v-if="interactive && meetingPointImageUrl && meetingPointDescription"
+          class="facts-entry__value"
+        >
+          {{ meetingPointDescription }}
+        </p>
+      </section>
+
       <InfoRow :label="t('prCard.time')">
         {{ localizedTimeText }}
       </InfoRow>
@@ -139,6 +178,14 @@
     :images="locationGallery"
     @close="showLocationGalleryModal = false"
   />
+
+  <PRLocationGalleryModal
+    v-if="interactive"
+    :open="showMeetingPointGalleryModal"
+    :images="meetingPointImageUrl ? [meetingPointImageUrl] : []"
+    :title="t('prCard.meetingPointImageTitle')"
+    @close="showMeetingPointGalleryModal = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -187,6 +234,7 @@ const prId = computed(() => props.prId);
 const { data, isLoading, error } = usePRDetail(prId);
 const prDetail = computed(() => data.value);
 const showLocationGalleryModal = ref(false);
+const showMeetingPointGalleryModal = ref(false);
 const showRosterModal = ref(false);
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const FACTS_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})\s(.+)$/;
@@ -200,6 +248,16 @@ watch(locationId, () => {
 });
 
 const locationGalleryAvailable = computed(() => locationGallery.value.length > 0);
+
+const meetingPointDescription = computed(() => {
+  const description = prDetail.value?.core.meetingPoint?.description?.trim() ?? "";
+  return description.length > 0 ? description : null;
+});
+
+const meetingPointImageUrl = computed(() => {
+  const imageUrl = prDetail.value?.core.meetingPoint?.imageUrl?.trim() ?? "";
+  return imageUrl.length > 0 ? imageUrl : null;
+});
 
 const normalizedNotes = computed(() => {
   const trimmed = prDetail.value?.core.notes?.trim() ?? "";

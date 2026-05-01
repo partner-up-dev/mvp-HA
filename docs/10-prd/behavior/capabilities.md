@@ -24,6 +24,7 @@
 - browse Anchor Events and time-pool driven PR discovery surfaces
 - enter `PR` from Anchor Event context
 - keep the current event-context `PR` detail page focused on facts, participation, booking support, and persistent notification-subscription management
+- show public meeting-point guidance in the PR facts card under the primary location
 - open the PR message experience through `/pr/:id/messages`
 - open the participant roster modal from the facts-card participant row
 - open venue images through a clickable label row aligned with other facts-card entry rows
@@ -54,6 +55,7 @@
 - notify booking results
 - notify new-partner events
 - notify new PR messages
+- notify meeting-point updates
 - model remaining send quota
 - release unconfirmed slots when the `Partner` submodule carries confirmation rules
 

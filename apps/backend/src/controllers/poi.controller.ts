@@ -34,6 +34,7 @@ export const poiRoute = app.get(
         gallery: poi.gallery,
         perTimeWindowCap: poi.perTimeWindowCap,
         availabilityRules: poi.availabilityRules,
+        meetingPoint: poi.meetingPoint,
       })),
     );
   },

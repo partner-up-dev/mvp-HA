@@ -46,3 +46,49 @@ test("sendPRMessageNotification maps batch summary fields to PR_MESSAGE keywords
     },
   });
 });
+
+test("sendMeetingPointUpdatedNotification maps meeting point fields to subscription keywords", async () => {
+  const { WeChatSubscriptionMessageService } = await import(
+    "./WeChatSubscriptionMessageService"
+  );
+  const service = new WeChatSubscriptionMessageService();
+  type CapturedMessage = {
+    kind: string;
+    openId: string;
+    page: string | null;
+    data: Record<string, { value: string }>;
+  };
+  let captured: CapturedMessage | null = null;
+
+  (
+    service as unknown as {
+      sendSubscribeMessage: (
+        input: CapturedMessage,
+      ) => Promise<string | number | null>;
+    }
+  ).sendSubscribeMessage = async (input) => {
+    captured = input;
+    return null;
+  };
+
+  await service.sendMeetingPointUpdatedNotification({
+    openId: "openid-456",
+    updateType: "碰头地点",
+    operatorName: "系统",
+    updatedAt: "2026/04/30 20:15",
+    meetingPointDescription: "商场南门星巴克门口",
+    page: "/pr/177",
+  });
+
+  assert.deepEqual(captured, {
+    kind: "MEETING_POINT_UPDATED",
+    openId: "openid-456",
+    page: "/pr/177",
+    data: {
+      phrase1: { value: "碰头地点" },
+      thing2: { value: "系统" },
+      time3: { value: "2026/04/30 20:15" },
+      thing6: { value: "商场南门星巴克门口" },
+    },
+  });
+});

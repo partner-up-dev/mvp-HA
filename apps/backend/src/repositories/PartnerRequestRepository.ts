@@ -166,6 +166,7 @@ export class PartnerRequestRepository {
         budget: fields.budget,
         preferences: fields.preferences,
         notes: fields.notes,
+        meetingPoint: fields.meetingPoint ?? null,
       })
       .where(eq(partnerRequests.id, id))
       .returning();
@@ -245,5 +246,13 @@ export class PartnerRequestRepository {
       .update(partnerRequests)
       .set({ xiaohongshuPoster: null, wechatThumbnail: null })
       .where(eq(partnerRequests.id, id));
+  }
+
+  async deleteById(id: PRId): Promise<PartnerRequest | null> {
+    const result = await db
+      .delete(partnerRequests)
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] ?? null;
   }
 }

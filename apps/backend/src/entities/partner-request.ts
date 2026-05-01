@@ -10,6 +10,10 @@ import {
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import {
+  meetingPointConfigSchema,
+  type MeetingPointConfig,
+} from "./meeting-point";
 import { users, type UserId } from "./user";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -34,6 +38,7 @@ export const partnerRequestFieldsSchema = z.object({
   budget: z.string().nullable(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
 });
 
 export type PartnerRequestFields = z.infer<typeof partnerRequestFieldsSchema>;
@@ -142,6 +147,9 @@ export const partnerRequests = pgTable("partner_requests", {
     .notNull()
     .default(sql`ARRAY[]::text[]`),
   notes: text("notes"),
+  meetingPoint: jsonb("meeting_point")
+    .$type<MeetingPointConfig | null>()
+    .default(null),
   createdBy: uuid("created_by")
     .$type<UserId | null>()
     .references(() => users.id, { onDelete: "set null" }),
@@ -160,6 +168,7 @@ export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
   visibilityStatus: visibilityStatusSchema,
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
@@ -169,6 +178,7 @@ export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   budget: partnerRequestFieldsSchema.shape.budget,
   status: prStatusSchema,
   visibilityStatus: visibilityStatusSchema,
+  meetingPoint: meetingPointConfigSchema.nullable(),
 });
 
 // Type inference
