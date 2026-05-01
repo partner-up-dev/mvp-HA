@@ -202,6 +202,26 @@
                 />
               </label>
 
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminPR.prMeetingPointDescriptionLabel")
+                }}</span>
+                <textarea
+                  v-model="prForm.meetingPointDescription"
+                  class="field-input field-textarea"
+                ></textarea>
+              </label>
+
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminPR.prMeetingPointImageUrlLabel")
+                }}</span>
+                <input
+                  v-model="prForm.meetingPointImageUrl"
+                  class="field-input"
+                />
+              </label>
+
               <div class="grid-2">
                 <label class="field">
                   <span class="field-label">{{
@@ -256,26 +276,6 @@
                   v-model="prForm.notes"
                   class="field-input field-textarea"
                 ></textarea>
-              </label>
-
-              <label class="field">
-                <span class="field-label">{{
-                  t("adminPR.prMeetingPointDescriptionLabel")
-                }}</span>
-                <textarea
-                  v-model="prForm.meetingPointDescription"
-                  class="field-input field-textarea"
-                ></textarea>
-              </label>
-
-              <label class="field">
-                <span class="field-label">{{
-                  t("adminPR.prMeetingPointImageUrlLabel")
-                }}</span>
-                <input
-                  v-model="prForm.meetingPointImageUrl"
-                  class="field-input"
-                />
               </label>
 
               <label class="field">
@@ -989,6 +989,7 @@ const confirmDeletePR = async () => {
     // Mutation state already drives page-level feedback.
   }
 };
+
 const handleSendSystemMessage = async () => {
   if (selectedPRId.value === null) return;
 
