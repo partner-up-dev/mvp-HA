@@ -25,6 +25,8 @@ export type AdminPRWorkspaceResponse = InferResponseType<
 
 export type CreateAdminPRResponse = InferResponseType<PRsRoute["$post"]>;
 
+export type DeleteAdminPRResponse = InferResponseType<PRRoute["$delete"]>;
+
 export type UpdateAdminPRContentResponse = InferResponseType<
   PRRoute["content"]["$patch"]
 >;
@@ -151,6 +153,39 @@ export const useCreateAdminPR = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.anchorEventWorkspace(),
+      });
+    },
+  });
+};
+
+export const useDeleteAdminPR = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<DeleteAdminPRResponse, Error, { prId: number }>({
+    mutationFn: async ({ prId }) => {
+      const res = await adminClient.api.admin.prs[":id"].$delete({
+        param: { id: prId.toString() },
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "删除 PR 失败"));
+      }
+      return await res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.prWorkspace(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.anchorEventWorkspace(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.prMessages(variables.prId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.messages(variables.prId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.prId),
       });
     },
   });

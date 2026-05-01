@@ -18,6 +18,7 @@ import {
   createAdminAnchorEvent,
   createAdminPR,
   createAdminPRMessage,
+  deleteAdminPR,
   deleteAdminPRMessage,
   getAdminAnchorLandingConfig,
   getAdminAnchorEventPreferenceTags,
@@ -247,6 +248,19 @@ export const adminAnchorManagementRoute = app
         ...payload,
         title: payload.title || null,
         notes: payload.notes || null,
+      });
+      return c.json(result);
+    },
+  )
+  .delete(
+    "/prs/:id",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const auth = c.get("auth");
+      const result = await deleteAdminPR({
+        prId: id,
+        actorUserId: auth.userId ?? null,
       });
       return c.json(result);
     },

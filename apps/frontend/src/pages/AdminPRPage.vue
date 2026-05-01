@@ -310,28 +310,46 @@
                 }}
               </p>
 
-              <Button
-                appearance="pill"
-                size="sm"
-                type="button"
-                :disabled="
-                  isSavingPR ||
-                  Boolean(prBoundsValidationMessage) ||
-                  Boolean(timeValidationMessage) ||
-                  Boolean(policyValidationMessage) ||
-                  prForm.type.trim().length === 0 ||
-                  prForm.location.trim().length === 0
-                "
-                @click="handleSavePR"
-              >
-                {{
-                  isSavingPR
-                    ? t("adminPR.saving")
-                    : isCreatingPR
-                      ? t("adminPR.createPRAction")
-                      : t("adminPR.savePRAction")
-                }}
-              </Button>
+              <div class="actions actions--inline">
+                <Button
+                  appearance="pill"
+                  size="sm"
+                  type="button"
+                  :disabled="
+                    isSavingPR ||
+                    isDeletingPR ||
+                    Boolean(prBoundsValidationMessage) ||
+                    Boolean(timeValidationMessage) ||
+                    Boolean(policyValidationMessage) ||
+                    prForm.type.trim().length === 0 ||
+                    prForm.location.trim().length === 0
+                  "
+                  @click="handleSavePR"
+                >
+                  {{
+                    isSavingPR
+                      ? t("adminPR.saving")
+                      : isCreatingPR
+                        ? t("adminPR.createPRAction")
+                        : t("adminPR.savePRAction")
+                  }}
+                </Button>
+                <Button
+                  v-if="!isCreatingPR && selectedPR !== null"
+                  appearance="pill"
+                  tone="danger"
+                  size="sm"
+                  type="button"
+                  :disabled="isSavingPR || isDeletingPR"
+                  @click="requestDeletePR(selectedPR.prId)"
+                >
+                  {{
+                    isDeletingPR
+                      ? t("adminPR.deletingPR")
+                      : t("adminPR.deletePRAction")
+                  }}
+                </Button>
+              </div>
             </div>
           </section>
 
@@ -495,6 +513,25 @@
         />
       </template>
     </div>
+
+    <ConfirmDialog
+      :open="pendingDeletePRId !== null"
+      :title="t('adminPR.deleteConfirmTitle')"
+      :message="
+        t('adminPR.deleteConfirmMessage', {
+          title: pendingDeletePRLabel,
+        })
+      "
+      :description="t('adminPR.deleteConfirmDescription')"
+      :confirm-label="
+        isDeletingPR ? t('adminPR.deletingPR') : t('adminPR.deletePRAction')
+      "
+      confirm-tone="danger"
+      :loading="isDeletingPR"
+      :disabled="pendingDeletePRId === null"
+      @close="closeDeletePRConfirm"
+      @confirm="confirmDeletePR"
+    />
   </DesktopPageScaffold>
 </template>
 
@@ -507,6 +544,7 @@ import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
+import ConfirmDialog from "@/shared/ui/overlay/ConfirmDialog.vue";
 import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
@@ -516,6 +554,7 @@ import {
   useAdminPRWorkspace,
   useCreateAdminPR,
   useCreateAdminPRMessage,
+  useDeleteAdminPR,
   useDeleteAdminPRMessage,
   useUpdateAdminPRContent,
   useUpdateAdminPRMessage,
@@ -624,6 +663,7 @@ const { isAdmin, logout } = useAdminAccess();
 const workspaceQuery = useAdminPRWorkspace(isAdmin);
 const poisQuery = useAdminPois(isAdmin);
 const createPRMutation = useCreateAdminPR();
+const deletePRMutation = useDeleteAdminPR();
 const createMessageMutation = useCreateAdminPRMessage();
 const updateMessageMutation = useUpdateAdminPRMessage();
 const deleteMessageMutation = useDeleteAdminPRMessage();
@@ -647,6 +687,7 @@ const messageDraftBody = ref("");
 const messageActionError = ref<string | null>(null);
 const editingMessageId = ref<number | null>(null);
 const editingMessageBody = ref("");
+const pendingDeletePRId = ref<number | null>(null);
 
 const workspace = computed<Workspace | null>(() => workspaceQuery.data.value ?? null);
 const prs = computed<PRRecord[]>(() => workspace.value?.prs ?? []);
@@ -665,6 +706,16 @@ const selectedPRId = computed<number | null>(() => {
 const selectedPR = computed<PRRecord | null>(
   () => prs.value.find((pr) => pr.prId === selectedPRId.value) ?? null,
 );
+const pendingDeletePR = computed<PRRecord | null>(
+  () => prs.value.find((pr) => pr.prId === pendingDeletePRId.value) ?? null,
+);
+const pendingDeletePRLabel = computed(() => {
+  const pr = pendingDeletePR.value;
+  if (pr) {
+    return pr.title || pr.location || `#${pr.prId}`;
+  }
+  return pendingDeletePRId.value === null ? "" : `#${pendingDeletePRId.value}`;
+});
 const messagesQuery = useAdminPRMessages(selectedPRId);
 
 const matchedTypeOption = computed(
@@ -789,10 +840,12 @@ const isSavingPR = computed(
     updatePRStatusMutation.isPending.value ||
     updatePRVisibilityMutation.isPending.value,
 );
+const isDeletingPR = computed(() => deletePRMutation.isPending.value);
 
 const mutationErrorMessage = computed(
   () =>
     createPRMutation.error.value?.message ||
+    deletePRMutation.error.value?.message ||
     updatePRContentMutation.error.value?.message ||
     updatePRStatusMutation.error.value?.message ||
     updatePRVisibilityMutation.error.value?.message ||
@@ -897,11 +950,45 @@ const selectPR = (prId: number) => {
 
 const resetMutationErrors = () => {
   createPRMutation.reset();
+  deletePRMutation.reset();
   updatePRContentMutation.reset();
   updatePRStatusMutation.reset();
   updatePRVisibilityMutation.reset();
 };
 
+const requestDeletePR = (prId: number) => {
+  deletePRMutation.reset();
+  pendingDeletePRId.value = prId;
+};
+
+const closeDeletePRConfirm = () => {
+  if (deletePRMutation.isPending.value) return;
+  pendingDeletePRId.value = null;
+};
+
+const clearSelectedPRAfterDelete = (deletedPrId: number) => {
+  if (selectedPRId.value === deletedPrId) {
+    selectedPRIdRaw.value = "";
+    isCreatingPR.value = false;
+    messageDraftBody.value = "";
+    messageActionError.value = null;
+    editingMessageId.value = null;
+    editingMessageBody.value = "";
+  }
+};
+
+const confirmDeletePR = async () => {
+  const prId = pendingDeletePRId.value;
+  if (prId === null) return;
+
+  try {
+    await deletePRMutation.mutateAsync({ prId });
+    clearSelectedPRAfterDelete(prId);
+    pendingDeletePRId.value = null;
+  } catch {
+    // Mutation state already drives page-level feedback.
+  }
+};
 const handleSendSystemMessage = async () => {
   if (selectedPRId.value === null) return;
 

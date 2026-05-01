@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   prSupportResources,
@@ -49,5 +49,13 @@ export class PRSupportResourceRepository {
     await db
       .delete(prSupportResources)
       .where(eq(prSupportResources.prId, prId));
+  }
+
+  async countByPrId(prId: PRId): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(prSupportResources)
+      .where(eq(prSupportResources.prId, prId));
+    return result[0]?.count ?? 0;
   }
 }

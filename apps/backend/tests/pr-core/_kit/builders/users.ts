@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { issueUserAuth } from "../../../../src/auth/middleware";
+import {
+  issueAuthForUser,
+  issueUserAuth,
+} from "../../../../src/auth/middleware";
 import type { User } from "../../../../src/entities/user";
 import { UserRepository } from "../../../../src/repositories/UserRepository";
 
@@ -25,5 +28,23 @@ export async function givenUser(label: string): Promise<ScenarioUser> {
   return {
     user,
     token: issueUserAuth(user.id).token,
+  };
+}
+
+export async function givenAdminUser(label: string): Promise<ScenarioUser> {
+  const user = await userRepo.create({
+    id: randomUUID(),
+    role: "service",
+    nickname: `scenario-admin-${label}`,
+    status: "ACTIVE",
+  });
+
+  if (!user) {
+    throw new Error(`Failed to create scenario admin user: ${label}`);
+  }
+
+  return {
+    user,
+    token: issueAuthForUser(user).token,
   };
 }

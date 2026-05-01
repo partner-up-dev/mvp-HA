@@ -1161,6 +1161,11 @@ export interface MessageSchema {
     policyValidationDeadlineAfterConfirmationEnd: string;
     savePRAction: string;
     createPRAction: string;
+    deletePRAction: string;
+    deletingPR: string;
+    deleteConfirmTitle: string;
+    deleteConfirmMessage: string;
+    deleteConfirmDescription: string;
     prListTitle: string;
     partnerCountWithValue: string;
     filtersTitle: string;

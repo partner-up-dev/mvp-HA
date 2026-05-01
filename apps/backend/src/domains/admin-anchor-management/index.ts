@@ -1,6 +1,7 @@
 export * from "./use-cases/create-admin-anchor-event";
 export * from "./use-cases/create-admin-pr";
 export * from "./use-cases/create-admin-pr-message";
+export * from "./use-cases/delete-admin-pr";
 export * from "./use-cases/list-admin-pr-messages";
 export * from "./use-cases/update-admin-pr-message";
 export * from "./use-cases/delete-admin-pr-message";
