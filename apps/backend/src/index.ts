@@ -268,6 +268,13 @@ export type {
   LocationEntry,
   TimeWindowEntry,
 } from "./entities/anchor-event";
+export type {
+  PRBookingContactGateConfig,
+  PRJoinGateConfig,
+  PRJoinGateConfigItem,
+  PRJoinGateSource,
+  PRJoinNoticeGateConfig,
+} from "./entities/join-gate";
 export type { VisibilityStatus } from "./entities/partner-request";
 export type {
   AnchorEventSummary,

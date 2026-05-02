@@ -21,9 +21,7 @@ type PRActionInput = {
   id: PRId;
 };
 
-type PRJoinInput = PRActionInput & {
-  bookingContactPhone?: string | null;
-};
+type PRJoinInput = PRActionInput;
 
 type PRCheckInInput = {
   id: PRId;
@@ -44,6 +42,7 @@ type PRUpdateStatusInput = {
 
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
+const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
 
 const resolveErrorMessage = (
   response: Response,
@@ -75,19 +74,20 @@ const isBookingContactPhoneInvalidError = (
   payload: ApiErrorPayload | null,
 ): boolean => payload?.code === BOOKING_CONTACT_PHONE_INVALID_CODE;
 
+const isPRJoinGateUnresolvedError = (
+  payload: ApiErrorPayload | null,
+): boolean => payload?.code === PR_JOIN_GATE_UNRESOLVED_CODE;
+
 export const useJoinPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      bookingContactPhone = null,
-    }: PRJoinInput) => {
+    mutationFn: async ({ id }: PRJoinInput) => {
       const requestJoin = async () =>
         client.api.pr[":id"].join.$post(
           {
             param: { id: id.toString() },
-            json: bookingContactPhone ? { bookingContactPhone } : {},
+            json: {},
           },
           {
             init: {
@@ -110,6 +110,8 @@ export const useJoinPR = () => {
           ? i18n.global.t("prPage.bookingContact.ownerVerifyBeforeJoin")
           : isBookingContactPhoneInvalidError(payload)
             ? i18n.global.t("prPage.bookingContact.verifyFailed")
+            : isPRJoinGateUnresolvedError(payload)
+              ? "请先完成加入门槛"
             : i18n.global.t("errors.joinRequestFailed");
         throw buildApiError(
           resolveErrorMessage(res, payload, fallbackMessage),
@@ -125,6 +127,9 @@ export const useJoinPR = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.bookingSupport(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.joinGates(variables.id),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.mineJoined(),

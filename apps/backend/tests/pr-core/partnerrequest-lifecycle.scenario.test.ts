@@ -15,8 +15,27 @@ import { givenAdminUser, givenUser } from "./_kit/builders/users";
 import { probeMessageThreadVisibility } from "./_kit/probes/messages";
 import { requestJson, expectJsonResponse } from "../_infra/http/backend-app";
 import { getTestDb } from "../_infra/probes/sql-probe";
-import { partners, partnerRequests, prSupportResources } from "../../src/entities";
+import {
+  partners,
+  partnerRequests,
+  prBookingContacts,
+  prJoinNoticeAcceptances,
+  prSupportResources,
+} from "../../src/entities";
 import { eq, sql } from "drizzle-orm";
+
+type JoinGateProjectionResponse = {
+  gates: Array<{
+    key: string;
+    kind: "JOIN_NOTICE" | "BOOKING_CONTACT" | "FALLBACK_CONFIRM";
+    version: string;
+    resolved: boolean;
+  }>;
+};
+
+type ProblemDetailsResponse = {
+  code?: string;
+};
 
 scenario("open_pr_join_reaches_ready", async (ctx) => {
   // Comprehension coverage:
@@ -84,6 +103,158 @@ scenario("min_one_pr_publishes_ready_with_creator_slot", async (ctx) => {
   await expectPartnerRequestStatus(pr, "READY");
   await expectActiveParticipantCount(pr, 1);
   await expectActiveParticipantsInclude(pr, [creator.user.id]);
+});
+
+scenario("join_notice_gate_blocks_join_until_viewer_accepts", async (ctx) => {
+  const creator = await givenUser("notice-creator");
+  const joiner = await givenUser("notice-joiner");
+  const pr = await givenPublishedPartnerRequest({
+    creator,
+    minPartners: 2,
+    maxPartners: null,
+  });
+  const db = getTestDb();
+
+  await db
+    .update(partnerRequests)
+    .set({
+      joinGateConfig: [
+        {
+          kind: "JOIN_NOTICE",
+          key: "scenario-join-notice",
+          version: "1",
+          title: "Scenario join notice",
+          source: "PR",
+          body: "Read and accept before joining.",
+        },
+      ],
+    })
+    .where(eq(partnerRequests.id, pr.id));
+
+  ctx.record("prId", pr.id);
+  ctx.record("joinerUserId", joiner.user.id);
+
+  const initialProjection = await expectJsonResponse<JoinGateProjectionResponse>(
+    await requestJson(`/api/pr/${pr.id}/join-gates`, {
+      method: "GET",
+      token: joiner.token,
+    }),
+    200,
+  );
+  assert.equal(initialProjection.gates[0]?.kind, "JOIN_NOTICE");
+  assert.equal(initialProjection.gates[0]?.resolved, false);
+
+  const rejectedJoin = await expectJsonResponse<ProblemDetailsResponse>(
+    await requestJson(`/api/pr/${pr.id}/join`, {
+      method: "POST",
+      token: joiner.token,
+      body: {},
+    }),
+    400,
+  );
+  assert.equal(rejectedJoin.code, "PR_JOIN_GATE_UNRESOLVED");
+
+  const resolvedProjection = await expectJsonResponse<JoinGateProjectionResponse>(
+    await requestJson(`/api/pr/${pr.id}/join-gates/scenario-join-notice/resolve`, {
+      method: "POST",
+      token: joiner.token,
+      body: {
+        kind: "JOIN_NOTICE",
+        version: "1",
+        accepted: true,
+      },
+    }),
+    200,
+  );
+  assert.equal(resolvedProjection.gates[0]?.resolved, true);
+
+  const acceptances = await db
+    .select()
+    .from(prJoinNoticeAcceptances)
+    .where(eq(prJoinNoticeAcceptances.prId, pr.id));
+  assert.equal(acceptances.length, 1);
+  assert.equal(acceptances[0]?.userId, joiner.user.id);
+  assert.equal(acceptances[0]?.gateKey, "scenario-join-notice");
+
+  const joined = await joinPartnerRequest({ pr, user: joiner });
+  assert.equal(joined.status, "READY");
+  await expectActiveParticipantCount(pr, 2);
+});
+
+scenario("booking_contact_gate_collects_phone_before_join", async (ctx) => {
+  const creator = await givenUser("booking-contact-creator");
+  const joiner = await givenUser("booking-contact-joiner");
+  const pr = await givenPublishedPartnerRequest({
+    creator,
+    minPartners: 2,
+    maxPartners: null,
+  });
+  const db = getTestDb();
+
+  await db
+    .update(partnerRequests)
+    .set({
+      joinGateConfig: [
+        {
+          kind: "BOOKING_CONTACT",
+          key: "scenario-booking-contact",
+          version: "1",
+          title: "Booking contact",
+          source: "PR",
+          prompt: "Phone used for booking communication.",
+        },
+      ],
+    })
+    .where(eq(partnerRequests.id, pr.id));
+
+  ctx.record("prId", pr.id);
+  ctx.record("joinerUserId", joiner.user.id);
+
+  const rejectedJoin = await expectJsonResponse<ProblemDetailsResponse>(
+    await requestJson(`/api/pr/${pr.id}/join`, {
+      method: "POST",
+      token: joiner.token,
+      body: {},
+    }),
+    400,
+  );
+  assert.equal(rejectedJoin.code, "PR_JOIN_GATE_UNRESOLVED");
+
+  const resolvedProjection = await expectJsonResponse<JoinGateProjectionResponse>(
+    await requestJson(
+      `/api/pr/${pr.id}/join-gates/scenario-booking-contact/resolve`,
+      {
+        method: "POST",
+        token: joiner.token,
+        body: {
+          kind: "BOOKING_CONTACT",
+          version: "1",
+          phone: "13800138000",
+        },
+      },
+    ),
+    200,
+  );
+  assert.equal(resolvedProjection.gates[0]?.resolved, true);
+
+  const pendingContacts = await db
+    .select()
+    .from(prBookingContacts)
+    .where(eq(prBookingContacts.prId, pr.id));
+  assert.equal(pendingContacts.length, 1);
+  assert.equal(pendingContacts[0]?.ownerUserId, joiner.user.id);
+  assert.equal(pendingContacts[0]?.ownerPartnerId, null);
+
+  const joined = await joinPartnerRequest({ pr, user: joiner });
+  assert.equal(joined.status, "READY");
+
+  const resolvedContacts = await db
+    .select()
+    .from(prBookingContacts)
+    .where(eq(prBookingContacts.prId, pr.id));
+  assert.equal(resolvedContacts.length, 1);
+  assert.equal(resolvedContacts[0]?.ownerUserId, joiner.user.id);
+  assert.notEqual(resolvedContacts[0]?.ownerPartnerId, null);
 });
 
 scenario("admin_delete_pr_removes_root_partners_and_support_resources", async (ctx) => {

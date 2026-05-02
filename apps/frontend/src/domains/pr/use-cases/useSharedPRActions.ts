@@ -10,12 +10,9 @@ import type { ApiError } from "@/shared/api/error";
 const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
+const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
-
-type JoinActionOptions = {
-  bookingContactPhone?: string | null;
-};
 
 type UseSharedPRActionsOptions = {
   id: ComputedRef<PRId | null>;
@@ -84,6 +81,9 @@ export const useSharedPRActions = ({
     if (error.code === BOOKING_CONTACT_PHONE_INVALID_CODE) {
       return t("prPage.bookingContact.verifyFailed");
     }
+    if (error.code === PR_JOIN_GATE_UNRESOLVED_CODE) {
+      return "请先完成加入门槛";
+    }
     if (
       error.code === WECHAT_AUTH_REQUIRED_CODE ||
       error.code === WECHAT_BIND_REQUIRED_CODE
@@ -92,8 +92,12 @@ export const useSharedPRActions = ({
     }
     return null;
   });
+  const joinErrorCode = computed(() => {
+    const error = joinMutation.error.value as ApiError | null;
+    return error?.code ?? null;
+  });
 
-  const handleJoin = async (options: JoinActionOptions = {}) => {
+  const handleJoin = async () => {
     if (id.value === null) return;
 
     try {
@@ -101,7 +105,6 @@ export const useSharedPRActions = ({
       const result =
         await joinMutation.mutateAsync({
           id: id.value,
-          bookingContactPhone: options.bookingContactPhone ?? null,
         });
       trackEvent("pr_join_success", {
         prId: id.value,
@@ -139,6 +142,7 @@ export const useSharedPRActions = ({
     joinPending,
     exitPending,
     joinErrorMessage,
+    joinErrorCode,
     handleJoin,
     handleExit,
   };

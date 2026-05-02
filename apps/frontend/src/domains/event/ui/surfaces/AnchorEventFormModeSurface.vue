@@ -20,6 +20,7 @@
         :create-error-message="createActionErrorMessage"
         :resolve-cover-image="resolveCoverImage"
         @join-candidate="handleJoinCandidate"
+        @join-candidate-success-closed="handleJoinCandidateSuccessClosed"
         @create-fallback="handleCreateFallback"
       />
 
@@ -492,19 +493,17 @@ const trackRecommendationExposure = (
   });
 };
 
-const routeToPRJoin = async (
+const trackFormModeJoinAction = (
   prId: number,
   action: "MATCHED_JOIN" | "CANDIDATE_JOIN",
   candidateRank: number | null = null,
-) => {
+): void => {
   trackEvent("anchor_event_form_result_action_click", {
     eventId: props.eventId,
     action,
     prId,
     candidateRank,
   });
-
-  await router.push(`${prDetailPath(prId)}?fromEvent=${props.eventId}`);
 };
 
 const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
@@ -642,8 +641,12 @@ const handleCreateFallback = async () => {
   }
 };
 
-const handleJoinCandidate = async (prId: number, rank: number) => {
-  await routeToPRJoin(prId, "CANDIDATE_JOIN", rank);
+const handleJoinCandidate = (prId: number, rank: number): void => {
+  trackFormModeJoinAction(prId, "CANDIDATE_JOIN", rank);
+};
+
+const handleJoinCandidateSuccessClosed = async (prId: number) => {
+  await router.push(`${prDetailPath(prId)}?entry=join&fromEvent=${props.eventId}`);
 };
 
 const WECHAT_AUTH_BLOCKING_CODES = new Set([
@@ -671,6 +674,13 @@ const attemptPendingCreateReplay = async () => {
   }
 
   const pending = readPendingWeChatAction();
+  if (pending?.kind === "PR_JOIN") {
+    await router.push(
+      `${prDetailPath(pending.prId)}?entry=join&fromEvent=${props.eventId}`,
+    );
+    return;
+  }
+
   if (
     !pending ||
     pending.kind !== "EVENT_ASSISTED_PR_CREATE" ||

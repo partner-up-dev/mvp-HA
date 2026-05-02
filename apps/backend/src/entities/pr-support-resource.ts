@@ -5,6 +5,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -24,6 +25,10 @@ import {
   anchorEventSupportResources,
   type AnchorEventSupportResourceId,
 } from "./anchor-event-support-resource";
+import {
+  prJoinGateConfigSchema,
+  type PRJoinGateConfig,
+} from "./join-gate";
 
 export const prSupportResources = pgTable(
   "pr_support_resources",
@@ -69,6 +74,10 @@ export const prSupportResources = pgTable(
       .array()
       .notNull()
       .default(sql`ARRAY[]::text[]`),
+    joinGateConfig: jsonb("join_gate_config")
+      .$type<PRJoinGateConfig>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -87,6 +96,7 @@ export const insertPRSupportResourceSchema = createInsertSchema(
     resourceKind: supportResourceKindSchema,
     bookingHandledBy: bookingHandledBySchema.nullable(),
     settlementMode: supportSettlementModeSchema,
+    joinGateConfig: prJoinGateConfigSchema.optional(),
   },
 );
 
@@ -96,6 +106,7 @@ export const selectPRSupportResourceSchema = createSelectSchema(
     resourceKind: supportResourceKindSchema,
     bookingHandledBy: bookingHandledBySchema.nullable(),
     settlementMode: supportSettlementModeSchema,
+    joinGateConfig: prJoinGateConfigSchema,
   },
 );
 

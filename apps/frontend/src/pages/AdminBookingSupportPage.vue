@@ -97,6 +97,10 @@
                   <label class="field field--full"><span class="field-label">{{ t("adminBookingSupport.summaryText") }}</span><input v-model="resource.summaryText" class="field-input" /></label>
                   <label class="field field--full"><span class="field-label">{{ t("adminBookingSupport.detailRules") }}</span><textarea v-model="resource.detailRulesText" class="field-input field-textarea"></textarea></label>
                 </div>
+                <PRJoinGateConfigEditor
+                  v-model="resource.joinGateConfig"
+                  source="PR_SUPPORT_RESOURCE"
+                />
               </article>
             </div>
 
@@ -124,6 +128,7 @@ import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCa
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import PRJoinGateConfigEditor from "@/domains/pr/ui/forms/PRJoinGateConfigEditor.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   type AdminAnchorEventWorkspaceResponse,
@@ -198,6 +203,7 @@ const toEventResource = (resource: AdminEventResource): EditableEventResource =>
   requiresUserTransferToPlatform: resource.requiresUserTransferToPlatform,
   summaryText: resource.summaryText,
   detailRules: [...resource.detailRules],
+  joinGateConfig: resource.joinGateConfig,
   detailRulesText: resource.detailRules.join("\n"),
   displayOrder: resource.displayOrder,
 });
@@ -261,6 +267,7 @@ const handleSaveEventResources = async () => {
       requiresUserTransferToPlatform: resource.requiresUserTransferToPlatform,
       summaryText: resource.summaryText.trim(),
       detailRules: splitLines(resource.detailRulesText),
+      joinGateConfig: resource.joinGateConfig,
       displayOrder: resource.displayOrder,
     })),
   });
@@ -270,7 +277,7 @@ const addEventResource = () => editableResources.value.push({
   code: "", title: "", resourceKind: "ITEM", appliesToAllLocations: true, locationIds: [],
   bookingRequired: false, bookingHandledBy: null, bookingDeadlineRule: null, bookingLocksParticipant: false,
   cancellationPolicy: null, settlementMode: "NONE", subsidyRate: null, subsidyCap: null,
-  requiresUserTransferToPlatform: false, summaryText: "", detailRules: [], detailRulesText: "", displayOrder: editableResources.value.length,
+  requiresUserTransferToPlatform: false, summaryText: "", detailRules: [], joinGateConfig: [], detailRulesText: "", displayOrder: editableResources.value.length,
 });
 const removeEventResource = (index: number) => { editableResources.value.splice(index, 1); };
 </script>

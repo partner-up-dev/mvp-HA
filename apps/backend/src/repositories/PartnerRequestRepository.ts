@@ -10,6 +10,7 @@ import {
   type PartnerRequest,
   type PartnerRequestFields,
 } from "../entities/partner-request";
+import type { PRJoinGateConfig } from "../entities/join-gate";
 import type { TimeWindowEntry } from "../entities/anchor-event";
 import type { UserId } from "../entities/user";
 import { and, desc, eq, inArray } from "drizzle-orm";
@@ -147,6 +148,20 @@ export class PartnerRequestRepository {
         confirmationStartOffsetMinutes: data.confirmationStartOffsetMinutes,
         confirmationEndOffsetMinutes: data.confirmationEndOffsetMinutes,
         joinLockOffsetMinutes: data.joinLockOffsetMinutes,
+      })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async updateJoinGateConfig(
+    id: PRId,
+    joinGateConfig: PRJoinGateConfig,
+  ): Promise<PartnerRequest | null> {
+    const result = await db
+      .update(partnerRequests)
+      .set({
+        joinGateConfig,
       })
       .where(eq(partnerRequests.id, id))
       .returning();

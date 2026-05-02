@@ -98,7 +98,41 @@
         />
 
         <div v-if="primaryDockAction" class="primary-action">
+          <PRJoinFlow
+            v-if="primaryDockAction.key === 'JOIN'"
+            ref="joinFlowRef"
+            :pr-id="id"
+            :disabled="primaryDockAction.disabled"
+            :scenario-type="prDetail.core.type"
+            write-join-entry-on-auth
+            @joined="handleJoinFlowJoined"
+          >
+            <template
+              #default="{ open, pending, disabled, joined, errorMessage }"
+            >
+              <Button
+                class="primary-action__button"
+                :tone="buttonToneForAction(primaryDockAction)"
+                :disabled="disabled"
+                :loading="pending"
+                block
+                @click="handleDockJoinAction(primaryDockAction, open)"
+              >
+                {{
+                  joined
+                    ? t("prPage.partnerSection.rosterJoined")
+                    : pending
+                      ? primaryDockAction.pendingLabel
+                      : primaryDockAction.label
+                }}
+              </Button>
+              <p v-if="errorMessage" class="action-error">
+                {{ errorMessage }}
+              </p>
+            </template>
+          </PRJoinFlow>
           <Button
+            v-else
             class="primary-action__button"
             :tone="buttonToneForAction(primaryDockAction)"
             :disabled="primaryDockAction.disabled"
@@ -230,119 +264,6 @@
         @close="showModifyModal = false"
       />
 
-      <Modal
-        :open="showJoinSubscriptionModal"
-        @close="closeJoinSuccessPrompt"
-      >
-        <div class="notification-modal">
-          <template v-if="joinSuccessPromptStep === 'SUBSCRIPTIONS'">
-            <p class="modal-text modal-text--tight">
-              {{ t("prPage.joinSuccessSubscriptions.description") }}
-            </p>
-
-            <WeChatNotificationSubscriptionsCard
-              :title="t('prPage.notificationSubscriptions.title')"
-            >
-              <APRNotificationSubscriptions
-                :updating-label="t('prPage.wechatReminder.updating')"
-                outline-profile="surface"
-              />
-            </WeChatNotificationSubscriptionsCard>
-
-            <Button
-              tone="surface"
-              block
-              @click="handleJoinSuccessSubscriptionDone"
-            >
-              {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
-            </Button>
-          </template>
-
-          <template v-else>
-            <OfficialAccountFollowPanel />
-            <div class="modal-actions">
-              <Button
-                tone="surface"
-                type="button"
-                @click="handleCloseJoinOfficialAccountPrompt"
-              >
-                {{ t("officialAccountFollow.laterAction") }}
-              </Button>
-              <Button
-                type="button"
-                @click="handleJoinOfficialAccountDone"
-              >
-                {{ t("officialAccountFollow.doneAction") }}
-              </Button>
-            </div>
-          </template>
-        </div>
-      </Modal>
-
-      <Modal
-        :open="showJoinFlowModal"
-        title="加入活动"
-        @close="closeJoinFlowModal"
-      >
-        <template v-if="joinFlowStep === 'SUMMARY'">
-          <p class="modal-text">确认加入当前活动？</p>
-          <p class="modal-text">加入后即可按流程完成确认与签到。</p>
-          <div class="modal-actions">
-            <Button
-              tone="surface"
-              type="button"
-              @click="closeJoinFlowModal"
-            >
-              {{ t("common.cancel") }}
-            </Button>
-            <Button
-              type="button"
-              :disabled="joinFlowPending"
-              @click="continueJoinFlow"
-            >
-              {{ joinFlowPending ? t("prPage.joining") : t("common.confirm") }}
-            </Button>
-          </div>
-        </template>
-
-        <template v-else>
-          <div class="join-phone-step">
-            <p class="modal-text">
-              {{ t("prPage.bookingContact.joinFlowPrompt") }}
-            </p>
-            <input
-              v-model.trim="joinFlowPhoneInput"
-              class="modal-phone-input"
-              type="tel"
-              inputmode="numeric"
-              maxlength="11"
-              placeholder="请输入 11 位大陆手机号"
-            />
-            <div class="modal-actions">
-              <Button
-                tone="surface"
-                type="button"
-                @click="closeJoinFlowModal"
-              >
-                {{ t("common.cancel") }}
-              </Button>
-              <Button
-                type="button"
-                :disabled="joinFlowPending"
-                @click="submitJoinFlowPhoneAndJoin"
-              >
-                {{
-                  joinFlowPending
-                    ? t("prPage.joining")
-                    : t("prPage.bookingContact.joinFlowSubmit")
-                }}
-              </Button>
-            </div>
-          </div>
-        </template>
-        <p v-if="joinFlowError" class="action-error">{{ joinFlowError }}</p>
-      </Modal>
-
       <ConfirmDialog
         :open="showExitConfirmModal"
         title="确认退出"
@@ -413,14 +334,13 @@ import Button from "@/shared/ui/actions/Button.vue";
 import EditPRContentModal from "@/domains/pr/ui/modals/EditPRContentModal.vue";
 import UpdatePRStatusModal from "@/domains/pr/ui/modals/UpdatePRStatusModal.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
-import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
-import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFollowPanel.vue";
 import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
 import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
+import PRJoinFlow from "@/domains/pr/ui/composites/PRJoinFlow.vue";
 import { usePublishPR } from "@/domains/pr/queries/usePRPublish";
 import { usePRDetail, type PRDetailResponse } from "@/domains/pr/queries/usePRDetail";
 import {
@@ -434,8 +354,6 @@ import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRAttendanceActions } from "@/domains/pr/use-cases/usePRAttendanceActions";
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
-import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
-import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
 import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import {
   prBookingSupportPath,
@@ -457,7 +375,6 @@ import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHando
 type BlockedReason =
   PRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
 type DockActionKey = "JOIN" | "CONFIRM" | "CHECKIN_ATTENDED";
-type JoinSuccessPromptStep = "SUBSCRIPTIONS" | "OFFICIAL_ACCOUNT";
 
 type DockActionItem = {
   key: DockActionKey;
@@ -479,8 +396,6 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const id = usePRRouteId();
-const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
-const CN_MAINLAND_MOBILE_REGEX = /^1\d{10}$/;
 const userSessionStore = useUserSessionStore();
 
 const { data, isLoading, error, refetch } = usePRDetail(id);
@@ -501,26 +416,14 @@ const backFallbackTo = computed(() => {
 const publishMutation = usePublishPR();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
-const showJoinFlowModal = ref(false);
 const showExitConfirmModal = ref(false);
 const showShareDrawer = ref(false);
-const {
-  isOpen: showJoinSubscriptionModal,
-  open: openJoinSuccessNotificationPrompt,
-  close: closeJoinSuccessNotificationPrompt,
-} = useJoinSuccessNotificationPrompt();
-const officialAccountFollowPrompt =
-  useOfficialAccountFollowPrompt("pr_join_success");
-const joinSuccessPromptStep = ref<JoinSuccessPromptStep>("SUBSCRIPTIONS");
-const joinFlowStep = ref<"SUMMARY" | "PHONE_INPUT">("SUMMARY");
-const joinFlowPending = ref(false);
-const joinFlowError = ref<string | null>(null);
 const bookingContactActionError = ref<string | null>(null);
-const joinFlowPhoneInput = ref("");
 const exitActionError = ref<string | null>(null);
 const lastPrimaryImpressionKey = ref("");
 const factsCardTargetRef = ref<HTMLElement | null>(null);
 const matchedPRHandoff = useMatchedPRHandoff();
+const joinFlowRef = ref<{ open: () => Promise<void> } | null>(null);
 
 const editableFields = computed<PRFormFields>(() => ({
   title: prDetail.value?.title,
@@ -582,11 +485,8 @@ const showPinHelpCard = computed(() => {
   if (!isCreator.value) return false;
   return creationEntry.value === "create" || creationEntry.value === "publish";
 });
-const currentBookingContact = computed(
-  () => prDetail.value?.partnerSection.bookingContact ?? null,
-);
 const primaryActionErrorMessage = computed(
-  () => bookingContactActionError.value ?? sharedActions.joinErrorMessage.value,
+  () => bookingContactActionError.value,
 );
 
 const shouldHideFactsForHandoff = computed(() =>
@@ -623,22 +523,11 @@ const handleFactsCardReady = async () => {
   registerFactsCardTarget();
 };
 
-watch(
-  () => currentBookingContact.value?.state,
-  (state) => {
-    if (state === "VERIFIED") {
-      bookingContactActionError.value = null;
-    }
-  },
-);
-
 useBodyScrollLock(
   computed(
     () =>
       showEditModal.value ||
       showModifyModal.value ||
-      showJoinSubscriptionModal.value ||
-      showJoinFlowModal.value ||
       showExitConfirmModal.value ||
       showShareDrawer.value ||
       attendanceActions.showCheckInFollowup.value,
@@ -697,7 +586,7 @@ const dockActions = computed<DockActionItem[]>(() => {
         pendingLabel: t("prPage.joining"),
         tone: "primary",
         disabled: !viewer.canJoin,
-        pending: sharedActions.joinPending.value,
+        pending: false,
         tip: viewer.canJoin
           ? null
           : blockedReasonText(viewer.joinBlockedReason),
@@ -815,72 +704,6 @@ const exitBlockedTip = computed(() => {
   return blockedReasonText(viewer.exitBlockedReason);
 });
 
-const joinFlowNeedsBookingContact = computed(() => {
-  const bookingContact = currentBookingContact.value;
-  return Boolean(
-    bookingContact?.required && bookingContact.ownerPartnerId === null,
-  );
-});
-
-const validateJoinFlowPhoneInput = (value: string): string | null => {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return "请输入手机号";
-  }
-  if (!CN_MAINLAND_MOBILE_REGEX.test(trimmed)) {
-    return "请输入 11 位大陆手机号";
-  }
-  return null;
-};
-
-const closeJoinFlowModal = () => {
-  showJoinFlowModal.value = false;
-  joinFlowStep.value = "SUMMARY";
-  joinFlowPhoneInput.value = "";
-  joinFlowPending.value = false;
-  joinFlowError.value = null;
-};
-
-const openJoinFlowModal = () => {
-  bookingContactActionError.value = null;
-  joinFlowError.value = null;
-  joinFlowPending.value = false;
-  joinFlowStep.value = "SUMMARY";
-  joinFlowPhoneInput.value = "";
-  showJoinFlowModal.value = true;
-};
-
-const closeJoinSuccessPrompt = () => {
-  if (joinSuccessPromptStep.value === "OFFICIAL_ACCOUNT") {
-    officialAccountFollowPrompt.dismissPrompt();
-  }
-  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
-  closeJoinSuccessNotificationPrompt();
-};
-
-const handleJoinSuccessSubscriptionDone = () => {
-  if (officialAccountFollowPrompt.canPromptNow()) {
-    officialAccountFollowPrompt.markPromptPresented();
-    joinSuccessPromptStep.value = "OFFICIAL_ACCOUNT";
-    return;
-  }
-
-  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
-  closeJoinSuccessNotificationPrompt();
-};
-
-const handleCloseJoinOfficialAccountPrompt = () => {
-  officialAccountFollowPrompt.dismissPrompt();
-  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
-  closeJoinSuccessNotificationPrompt();
-};
-
-const handleJoinOfficialAccountDone = () => {
-  officialAccountFollowPrompt.markPromptCompleted();
-  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
-  closeJoinSuccessNotificationPrompt();
-};
-
 watch(
   [
     () => matchedPRHandoff.state.phase,
@@ -893,53 +716,6 @@ watch(
   },
   { immediate: true },
 );
-
-const finalizeJoinFlow = async (bookingContactPhone?: string | null) => {
-  joinFlowPending.value = true;
-  joinFlowError.value = null;
-  bookingContactActionError.value = null;
-  const result = await sharedActions.handleJoin({ bookingContactPhone });
-  joinFlowPending.value = false;
-  if (result) {
-    closeJoinFlowModal();
-    joinSuccessPromptStep.value = "SUBSCRIPTIONS";
-    openJoinSuccessNotificationPrompt();
-    return;
-  }
-  joinFlowError.value =
-    primaryActionErrorMessage.value ?? t("errors.joinRequestFailed");
-};
-
-const continueJoinFlow = async () => {
-  if (joinFlowPending.value) return;
-  if (joinFlowNeedsBookingContact.value) {
-    joinFlowStep.value = "PHONE_INPUT";
-    return;
-  }
-  await finalizeJoinFlow();
-};
-
-const submitJoinFlowPhoneAndJoin = async () => {
-  if (joinFlowPending.value) return;
-  const phoneInputError = validateJoinFlowPhoneInput(joinFlowPhoneInput.value);
-  if (phoneInputError) {
-    joinFlowError.value = phoneInputError;
-    return;
-  }
-  await finalizeJoinFlow(joinFlowPhoneInput.value.trim());
-};
-
-const handleDirectJoin = async () => {
-  const result = await sharedActions.handleJoin();
-  const authPayload = (result as { auth?: AuthSessionPayload | null } | null)
-    ?.auth;
-  if (authPayload) {
-    userSessionStore.applyAuthSession(authPayload);
-  }
-  if (authPayload?.userPin) {
-    await router.replace({ query: { ...route.query, entry: "join" } });
-  }
-};
 
 const handlePublishDraft = async () => {
   if (id.value === null || prDetail.value?.status !== "DRAFT") return;
@@ -962,6 +738,16 @@ const handleConfirmWithBookingContact = async () => {
     bookingContactActionError.value =
       error instanceof Error ? error.message : t("errors.confirmSlotFailed");
   }
+};
+
+const openJoinFlow = async (): Promise<void> => {
+  bookingContactActionError.value = null;
+  await nextTick();
+  await joinFlowRef.value?.open();
+};
+
+const handleJoinFlowJoined = (): void => {
+  resetLivePolling();
 };
 
 const pendingActionReplayRunning = ref(false);
@@ -995,11 +781,7 @@ const attemptPendingWeChatActionReplay = async () => {
     if (pending.kind === "PR_JOIN") {
       const viewer = currentDetail.value.partnerSection.viewer;
       if (viewer.isParticipant || !viewer.canJoin) return;
-      if (joinFlowNeedsBookingContact.value) {
-        openJoinFlowModal();
-        return;
-      }
-      await finalizeJoinFlow();
+      await openJoinFlow();
       return;
     }
 
@@ -1043,8 +825,7 @@ onMounted(() => {
   void attemptPendingWeChatActionReplay();
 });
 
-const handleDockAction = async (action: DockActionItem) => {
-  if (action.disabled || action.pending) return;
+const trackPrimaryActionClick = (action: DockActionItem): void => {
   const ctaType = mapDockActionToTrackType(action.key);
   if (id.value !== null) {
     if (ctaType !== null && supportsEventContextFeatures.value) {
@@ -1055,13 +836,23 @@ const handleDockAction = async (action: DockActionItem) => {
       });
     }
   }
+};
+
+const handleDockJoinAction = (
+  action: DockActionItem,
+  open: () => Promise<void>,
+): void => {
+  if (action.disabled || action.pending) return;
+  trackPrimaryActionClick(action);
+  void open();
+};
+
+const handleDockAction = async (action: DockActionItem) => {
+  if (action.disabled || action.pending) return;
+  trackPrimaryActionClick(action);
 
   if (action.key === "JOIN") {
-    if (supportsEventContextFeatures.value) {
-      openJoinFlowModal();
-      return;
-    }
-    await handleDirectJoin();
+    await openJoinFlow();
     return;
   }
   if (action.key === "CONFIRM") {
@@ -1335,42 +1126,6 @@ function buttonToneForAction(
 
 .page-action-error {
   margin-top: var(--sys-spacing-small);
-}
-
-.modal-text {
-  margin: 0 0 var(--sys-spacing-small);
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.modal-text--tight {
-  margin-bottom: 0;
-}
-
-.notification-modal {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-medium);
-}
-
-.modal-phone-input {
-  width: 100%;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-small);
-  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
-  @include mx.pu-font(body-medium);
-  background: var(--sys-color-surface);
-  color: var(--sys-color-on-surface);
-}
-
-.join-phone-step {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-small);
-}
-
-.join-phone-step .modal-text {
-  margin: 0;
 }
 
 .modal-actions {

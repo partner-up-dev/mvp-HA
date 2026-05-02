@@ -11,7 +11,7 @@ import {
 
 export type UpsertPRBookingContactInput = {
   prId: PRId;
-  ownerPartnerId: PartnerId;
+  ownerPartnerId: PartnerId | null;
   ownerUserId: UserId;
   phoneE164: string;
   phoneMasked: string;
@@ -66,5 +66,20 @@ export class PRBookingContactRepository {
     await db
       .delete(prBookingContacts)
       .where(eq(prBookingContacts.prId, prId));
+  }
+
+  async updateOwnerPartner(input: {
+    prId: PRId;
+    ownerPartnerId: PartnerId;
+  }): Promise<PRBookingContact | null> {
+    const result = await db
+      .update(prBookingContacts)
+      .set({
+        ownerPartnerId: input.ownerPartnerId,
+        updatedAt: new Date(),
+      })
+      .where(eq(prBookingContacts.prId, input.prId))
+      .returning();
+    return result[0] ?? null;
   }
 }

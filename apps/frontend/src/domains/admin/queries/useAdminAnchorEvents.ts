@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { InferResponseType } from "hono";
 import { computed, unref, type MaybeRef } from "vue";
+import type { PRJoinGateConfig } from "@partner-up-dev/backend";
 import { adminClient } from "@/lib/admin-rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
@@ -62,6 +63,7 @@ export type AdminAnchorEventInput = {
   locationPool: string[];
   meetingPoint?: MeetingPointInput | null;
   locationMeetingPoints?: Record<string, MeetingPointInput>;
+  joinGateConfig: PRJoinGateConfig;
   timePoolConfig: AdminAnchorTimePoolConfigInput;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;

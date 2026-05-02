@@ -1,4 +1,4 @@
-import type { PartnerRequest } from "../../../entities";
+import type { PartnerRequest, PRJoinGateConfig } from "../../../entities";
 import type { MeetingPointConfig } from "../../../entities";
 import { normalizeLocationPool } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
@@ -27,6 +27,7 @@ export type AdminPRWorkspaceSummary = {
   preferences: string[];
   notes: string | null;
   meetingPoint: MeetingPointConfig | null;
+  joinGateConfig: PRJoinGateConfig;
   partnerCount: number;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
@@ -44,6 +45,7 @@ export type AdminPRTypeOption = {
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
+  joinGateConfig: PRJoinGateConfig;
 };
 
 export interface AdminPRWorkspace {
@@ -66,6 +68,7 @@ const toAdminPRWorkspaceSummary = async (
   preferences: [...root.preferences],
   notes: root.notes,
   meetingPoint: root.meetingPoint,
+  joinGateConfig: root.joinGateConfig,
   partnerCount: await countActivePartnersForPR(root.id),
   confirmationStartOffsetMinutes:
     root.confirmationStartOffsetMinutes ??
@@ -109,6 +112,7 @@ export async function getAdminPRWorkspace(): Promise<AdminPRWorkspace> {
         DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
       defaultJoinLockOffsetMinutes:
         event.defaultJoinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
+      joinGateConfig: event.joinGateConfig,
     });
   }
 

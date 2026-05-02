@@ -4,6 +4,7 @@ import {
   boolean,
   doublePrecision,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -13,6 +14,10 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { anchorEvents, type AnchorEventId } from "./anchor-event";
+import {
+  prJoinGateConfigSchema,
+  type PRJoinGateConfig,
+} from "./join-gate";
 
 export const supportResourceKindSchema = z.enum([
   "VENUE",
@@ -81,6 +86,10 @@ export const anchorEventSupportResources = pgTable(
       .array()
       .notNull()
       .default(sql`ARRAY[]::text[]`),
+    joinGateConfig: jsonb("join_gate_config")
+      .$type<PRJoinGateConfig>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -96,6 +105,7 @@ export const insertAnchorEventSupportResourceSchema = createInsertSchema(
     resourceKind: supportResourceKindSchema,
     bookingHandledBy: bookingHandledBySchema.nullable(),
     settlementMode: supportSettlementModeSchema,
+    joinGateConfig: prJoinGateConfigSchema.optional(),
   },
 );
 
@@ -105,6 +115,7 @@ export const selectAnchorEventSupportResourceSchema = createSelectSchema(
     resourceKind: supportResourceKindSchema,
     bookingHandledBy: bookingHandledBySchema.nullable(),
     settlementMode: supportSettlementModeSchema,
+    joinGateConfig: prJoinGateConfigSchema,
   },
 );
 

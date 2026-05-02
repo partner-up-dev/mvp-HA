@@ -1,5 +1,9 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import type { MeetingPointConfig, MeetingPointConfigMap } from "../../../entities";
+import type {
+  MeetingPointConfig,
+  MeetingPointConfigMap,
+  PRJoinGateConfig,
+} from "../../../entities";
 import type { AnchorEventPRContextRecord } from "../../../repositories/AnchorEventPRContextRepository";
 import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
@@ -24,6 +28,7 @@ type AdminPRSummary = {
   preferences: string[];
   notes: string | null;
   meetingPoint: MeetingPointConfig | null;
+  joinGateConfig: PRJoinGateConfig;
   partnerCount: number;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
@@ -69,6 +74,7 @@ export type AdminAnchorEventSummary = {
   defaultJoinLockOffsetMinutes: number | null;
   meetingPoint: MeetingPointConfig | null;
   locationMeetingPoints: MeetingPointConfigMap;
+  joinGateConfig: PRJoinGateConfig;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   betaGroupQrCode: string | null;
@@ -97,6 +103,7 @@ const toAdminPRSummary = async (
   preferences: [...record.root.preferences],
   notes: record.root.notes,
   meetingPoint: record.root.meetingPoint,
+  joinGateConfig: record.root.joinGateConfig,
   partnerCount: await countActivePartnersForPR(record.root.id),
   confirmationStartOffsetMinutes: record.anchor.confirmationStartOffsetMinutes,
   confirmationEndOffsetMinutes: record.anchor.confirmationEndOffsetMinutes,
@@ -152,6 +159,7 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         defaultJoinLockOffsetMinutes: event.defaultJoinLockOffsetMinutes ?? null,
         meetingPoint: event.meetingPoint,
         locationMeetingPoints: event.locationMeetingPoints,
+        joinGateConfig: event.joinGateConfig,
         timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,

@@ -16,6 +16,7 @@ export type ProblemDetailsPayload = {
   title: string;
   status: ProblemStatus;
   detail: string;
+  code?: string;
 };
 
 export class ProblemDetailsError extends Error {
@@ -25,15 +26,19 @@ export class ProblemDetailsError extends Error {
 
   readonly localizedText: LocalizedProblemText;
 
+  readonly code: string | null;
+
   constructor(input: {
     status: ProblemStatus;
     type: string;
+    code?: string;
     localizedText: LocalizedProblemText;
   }) {
     super(input.localizedText.zhCN.detail);
     this.name = "ProblemDetailsError";
     this.status = input.status;
     this.type = input.type;
+    this.code = input.code ?? null;
     this.localizedText = input.localizedText;
   }
 }
@@ -107,6 +112,7 @@ export const buildProblemDetailsPayload = (
       title: text.title,
       status: error.status,
       detail: text.detail,
+      ...(error.code ? { code: error.code } : {}),
     },
   };
 };

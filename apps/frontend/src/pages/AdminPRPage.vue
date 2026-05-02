@@ -278,6 +278,11 @@
                 ></textarea>
               </label>
 
+              <PRJoinGateConfigEditor
+                v-model="prForm.joinGateConfig"
+                source="PR"
+              />
+
               <label class="field">
                 <span class="field-label">{{ t("adminPR.prStatusLabel") }}</span>
                 <select v-model="prForm.status" class="field-input">
@@ -546,6 +551,7 @@ import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import ConfirmDialog from "@/shared/ui/overlay/ConfirmDialog.vue";
 import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
+import PRJoinGateConfigEditor from "@/domains/pr/ui/forms/PRJoinGateConfigEditor.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   type AdminPRWorkspaceResponse,
@@ -567,6 +573,7 @@ import {
   formatLocalDateTimeWindowLabel,
 } from "@/shared/datetime/formatLocalDateTime";
 import { validateManualPartnerBounds } from "@/lib/validation";
+import type { PRJoinGateConfig } from "@partner-up-dev/backend";
 
 type Workspace = NonNullable<AdminPRWorkspaceResponse>;
 type PRRecord = Workspace["prs"][number];
@@ -586,6 +593,7 @@ type PRForm = {
   notes: string;
   meetingPointDescription: string;
   meetingPointImageUrl: string;
+  joinGateConfig: PRJoinGateConfig;
   status: "OPEN" | "READY" | "ACTIVE" | "CLOSED";
   visibilityStatus: "VISIBLE" | "HIDDEN";
 };
@@ -609,6 +617,7 @@ const emptyPRForm = (): PRForm => ({
   notes: "",
   meetingPointDescription: "",
   meetingPointImageUrl: "",
+  joinGateConfig: [],
   status: "OPEN",
   visibilityStatus: "VISIBLE",
 });
@@ -654,6 +663,7 @@ const toPRForm = (pr: PRRecord): PRForm => ({
   notes: pr.notes ?? "",
   meetingPointDescription: pr.meetingPoint?.description ?? "",
   meetingPointImageUrl: pr.meetingPoint?.imageUrl ?? "",
+  joinGateConfig: pr.joinGateConfig,
   status: pr.status as PRForm["status"],
   visibilityStatus: pr.visibilityStatus as PRForm["visibilityStatus"],
 });
@@ -906,6 +916,7 @@ watch(
         matched.defaultConfirmationStartOffsetMinutes,
       confirmationEndOffsetMinutes: matched.defaultConfirmationEndOffsetMinutes,
       joinLockOffsetMinutes: matched.defaultJoinLockOffsetMinutes,
+      joinGateConfig: matched.joinGateConfig,
     };
     lastAppliedType.value = matched.type;
   },
@@ -1096,6 +1107,7 @@ const handleSavePR = async () => {
       prForm.value.meetingPointDescription,
       prForm.value.meetingPointImageUrl,
     ),
+    joinGateConfig: prForm.value.joinGateConfig,
     confirmationStartOffsetMinutes: prForm.value.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: prForm.value.joinLockOffsetMinutes,

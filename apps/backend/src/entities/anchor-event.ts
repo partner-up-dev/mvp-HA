@@ -15,6 +15,10 @@ import {
   type MeetingPointConfig,
   type MeetingPointConfigMap,
 } from "./meeting-point";
+import {
+  prJoinGateConfigSchema,
+  type PRJoinGateConfig,
+} from "./join-gate";
 
 // ---------------------------------------------------------------------------
 // Zod schemas
@@ -321,6 +325,10 @@ export const anchorEvents = pgTable("anchor_events", {
   meetingPoint: jsonb("meeting_point")
     .$type<MeetingPointConfig | null>()
     .default(null),
+  joinGateConfig: jsonb("join_gate_config")
+    .$type<PRJoinGateConfig>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   locationMeetingPoints: jsonb("location_meeting_points")
     .$type<MeetingPointConfigMap>()
     .notNull()
@@ -339,11 +347,13 @@ export const anchorEvents = pgTable("anchor_events", {
 export const insertAnchorEventSchema = createInsertSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
+  joinGateConfig: prJoinGateConfigSchema.optional(),
   locationMeetingPoints: meetingPointConfigMapSchema.optional(),
 });
 export const selectAnchorEventSchema = createSelectSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
   meetingPoint: meetingPointConfigSchema.nullable(),
+  joinGateConfig: prJoinGateConfigSchema,
   locationMeetingPoints: meetingPointConfigMapSchema,
 });
 

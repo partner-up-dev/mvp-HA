@@ -26,11 +26,12 @@
 1. The user opens `/pr/:id`.
 2. The user reads the request details, current count, visible status, participant list, and public meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
 3. Joining uses local account plus PIN by default; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
-4. Before join, the system checks time-window conflict, state, capacity, and context-specific rules.
-5. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal while still keeping the persistent notification-subscriptions section available on the detail page for later revisit.
-6. After the join-success notification-subscription modal is completed, the same flow may recommend following the official account when the user is not backend-confirmed as a follower and the frontend cooldown is not active.
-7. If join succeeds, the user enters the downstream progression of that collaboration object.
-8. If the current PR was entered from Anchor Event context and is not the right fit, `/pr/:id` keeps a lightweight path back to browsing other active Anchor Events without hiding the current collaboration detail.
+4. Before join, the system checks time-window conflict, state, capacity, context-specific rules, and any PR-owned join gates.
+5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the flow shows a fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or booking-contact phone collection.
+6. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal while still keeping the persistent notification-subscriptions section available on the detail page for later revisit.
+7. After the join-success notification-subscription modal is completed, the same flow may recommend following the official account when the user is not backend-confirmed as a follower and the frontend cooldown is not active.
+8. If join succeeds, the user enters the downstream progression of that collaboration object.
+9. If the current PR was entered from Anchor Event context and is not the right fit, `/pr/:id` keeps a lightweight path back to browsing other active Anchor Events without hiding the current collaboration detail.
 
 ## 4. Enter PR Through Anchor Event Browsing And Search
 
@@ -45,7 +46,7 @@
 9. The `/er/:eventId` recommendation route returns to `/e/:eventId` when required `l`, `d`, or `t` query state is missing or invalid.
 10. Form Mode submission returns one backend-authored primary recommendation plus an ordered candidate list instead of bypassing directly into join or create.
 11. If Form Mode has no suitable visible candidate, the page offers create fallback through `都不合适，帮我找`; the same selected conditions feed that assisted-create path.
-12. Entering a recommended candidate from Form Mode continues into canonical `/pr/:id` while preserving event-context handoff continuity for join confirmation.
+12. Joining a recommended candidate from Form Mode uses the same PR join flow as canonical PR detail; successful joins continue into canonical `/pr/:id` while preserving event-context handoff continuity.
 13. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `PR` results.
 14. Search results follow the chosen Anchor Event's activity type and time-pool rules; result cards identify candidate PRs by time, location, visible status, and participant count rather than repeating event-side context.
 15. If the search has exactly one result, the system may route directly to `/pr/:id`; otherwise, the user chooses one result from the list.

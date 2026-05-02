@@ -84,6 +84,7 @@ export class AnchorEventRepository {
         | "defaultJoinLockOffsetMinutes"
         | "meetingPoint"
         | "locationMeetingPoints"
+        | "joinGateConfig"
         | "coverImage"
         | "betaGroupQrCode"
         | "status"

@@ -10,6 +10,7 @@ import {
   supportResourceKindSchema,
   supportSettlementModeSchema,
 } from "../entities/anchor-event-support-resource";
+import { prJoinGateConfigSchema } from "../entities";
 import {
   getAdminBookingSupportConfig,
   replaceEventBookingSupportResources,
@@ -38,6 +39,7 @@ const eventSupportResourceInputSchema = z.object({
   requiresUserTransferToPlatform: z.boolean(),
   summaryText: z.string().trim().min(1),
   detailRules: z.array(z.string().trim().min(1)),
+  joinGateConfig: prJoinGateConfigSchema.optional(),
   displayOrder: z.number().int(),
 });
 

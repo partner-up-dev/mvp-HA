@@ -1,13 +1,19 @@
 import { HTTPException } from "hono/http-exception";
 import type { AnchorEventId, PartnerRequestFields } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { AnchorEventSupportResourceRepository } from "../../../repositories/AnchorEventSupportResourceRepository";
 import { createPRFromStructured } from "../../pr-core/use-cases/create-pr-structured";
-import type { CreatorIdentityInput } from "../../pr/services";
+import {
+  buildMaterializedPRJoinGateConfig,
+  type CreatorIdentityInput,
+} from "../../pr/services";
+import { materializePRSupportResources } from "../../pr-booking-support";
 import { isEventScopedLocation } from "../services/event-scope";
 import { buildAnchorEventFormModeTimeWindow } from "../services/form-mode";
 import { eventOwnsTimeWindow } from "../services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
+const eventSupportRepo = new AnchorEventSupportResourceRepository();
 
 export async function createEventAssistedPR(
   input: {
@@ -47,6 +53,14 @@ export async function createEventAssistedPR(
     });
   }
 
+  const eventResources = await eventSupportRepo.findByAnchorEventId(event.id);
+  const joinGateConfig = buildMaterializedPRJoinGateConfig({
+    event,
+    resources: eventResources,
+    location: input.fields.location,
+    timeWindow: validatedTimeWindow,
+  });
+
   const result = await createPRFromStructured(
     {
       ...input.fields,
@@ -55,8 +69,16 @@ export async function createEventAssistedPR(
     input.creatorIdentity,
     {
       createSource: "EVENT_ASSISTED",
+      joinGateConfig,
     },
   );
+
+  await materializePRSupportResources({
+    prId: result.id,
+    anchorEventId: event.id,
+    location: input.fields.location,
+    timeWindow: validatedTimeWindow,
+  });
 
   return result;
 }

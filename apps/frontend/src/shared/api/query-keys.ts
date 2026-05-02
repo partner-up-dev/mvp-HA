@@ -8,6 +8,8 @@ export const queryKeys = {
     messages: (id: PRId | null) => ["partner-request", "messages", id] as const,
     bookingSupport: (id: PRId | null) =>
       ["partner-request", "booking-support", id] as const,
+    joinGates: (id: PRId | null) =>
+      ["partner-request", "join-gates", id] as const,
     reimbursementStatus: (id: PRId | null) =>
       ["partner-request", "reimbursement-status", id] as const,
     mineCreated: () => ["partner-request", "mine", "created"] as const,

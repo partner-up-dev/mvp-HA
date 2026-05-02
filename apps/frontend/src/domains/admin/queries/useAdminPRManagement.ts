@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { InferResponseType } from "hono";
 import { computed, unref, type MaybeRef } from "vue";
+import type { PRJoinGateConfig } from "@partner-up-dev/backend";
 import { adminClient } from "@/lib/admin-rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
@@ -63,6 +64,7 @@ export type AdminCreatePRInput = {
     description: string | null;
     imageUrl: string | null;
   } | null;
+  joinGateConfig: PRJoinGateConfig;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -81,6 +83,7 @@ export type AdminUpdatePRContentInput = {
     description: string | null;
     imageUrl: string | null;
   } | null;
+  joinGateConfig: PRJoinGateConfig;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;

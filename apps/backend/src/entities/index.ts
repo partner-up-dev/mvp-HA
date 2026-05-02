@@ -1,4 +1,5 @@
 export * from "./partner-request";
+export * from "./join-gate";
 export * from "./meeting-point";
 export * from "./anchor-event-support-resource";
 export * from "./pr-support-resource";
@@ -11,6 +12,7 @@ export * from "./user-reliability";
 export * from "./user-notification-opt";
 export * from "./pr-message";
 export * from "./pr-message-inbox-state";
+export * from "./pr-join-notice-acceptance";
 export * from "./domain-event";
 export * from "./outbox-event";
 export * from "./operation-log";

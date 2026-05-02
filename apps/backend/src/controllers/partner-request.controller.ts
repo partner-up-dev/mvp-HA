@@ -16,10 +16,13 @@ import {
   getReimbursementStatus,
   getMyCreatedPRs,
   getMyJoinedPRs,
+  getPRJoinGateProjection,
   joinPRByIdentity,
   joinPR,
   listPRMessages,
   publishPR,
+  resolvePRJoinGate,
+  resolvePRParticipantUser,
   searchPRs,
   updatePRContent,
   updatePRStatus,
@@ -94,6 +97,22 @@ const slotCheckInSchema = z.object({
   didAttend: z.boolean().optional(),
   wouldJoinAgain: z.boolean().nullable().optional(),
 });
+const joinGateParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  gateKey: z.string().trim().min(1),
+});
+const resolveJoinGateSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("JOIN_NOTICE"),
+    version: z.string().trim().min(1),
+    accepted: z.literal(true),
+  }),
+  z.object({
+    kind: z.literal("BOOKING_CONTACT"),
+    version: z.string().trim().min(1),
+    phone: z.string().trim().min(1),
+  }),
+]);
 const updateBookingContactPhoneSchema = z.object({
   phone: z.string().trim().min(1),
 });
@@ -277,6 +296,43 @@ export const partnerRequestRoute = app
     const result = await getReimbursementStatus(id, userId);
     return c.json(result);
   })
+  .get("/:id/join-gates", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    await getPROr404(id);
+    const userId = getAuthenticatedUserId(c);
+    const result = await getPRJoinGateProjection({
+      prId: id,
+      viewerUserId: userId,
+    });
+    return c.json(result);
+  })
+  .post(
+    "/:id/join-gates/:gateKey/resolve",
+    zValidator("param", joinGateParamSchema),
+    zValidator("json", resolveJoinGateSchema),
+    async (c) => {
+      const { id, gateKey } = c.req.valid("param");
+      await getPROr404(id);
+      const payload = c.req.valid("json");
+      const identity = await buildCreatorIdentity(c);
+      const participant = await resolvePRParticipantUser(identity);
+      const result = await resolvePRJoinGate({
+        prId: id,
+        gateKey,
+        viewerUserId: participant.user.id,
+        payload,
+      });
+      const auth = issueAuthPayload(
+        c,
+        participant.user.id,
+        participant.generatedUserPin,
+      );
+      return c.json({
+        ...result,
+        auth,
+      });
+    },
+  )
   .patch(
     "/:id/status",
     zValidator("param", prIdParamSchema),

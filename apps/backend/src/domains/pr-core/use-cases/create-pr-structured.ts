@@ -2,6 +2,7 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import type {
   PartnerRequestFields,
 } from "../../../entities/partner-request";
+import type { PRJoinGateConfig } from "../../../entities";
 import { initializeSlotsForPR } from "../services/slot-management.service";
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
@@ -25,6 +26,7 @@ export async function createPRFromStructured(
   creatorIdentity: CreatorIdentityInput,
   options: {
     createSource?: StructuredCreateSource;
+    joinGateConfig?: PRJoinGateConfig;
   } = {},
 ): Promise<CreatePRCommandResult> {
   assertManualPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
@@ -48,6 +50,7 @@ export async function createPRFromStructured(
     preferences: fields.preferences,
     notes: fields.notes,
     meetingPoint: fields.meetingPoint ?? null,
+    joinGateConfig: options.joinGateConfig ?? [],
     status: "DRAFT",
     createdBy,
   });

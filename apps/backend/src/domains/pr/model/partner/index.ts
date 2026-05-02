@@ -5,6 +5,7 @@ export { checkIn } from "../../../pr-core/use-cases/check-in";
 export { getPRPartnerProfile } from "../../../pr-core/use-cases/get-pr-partner-profile";
 export {
   joinPRByIdentity,
+  resolvePRParticipantUser,
   type JoinPRByIdentityResult,
   type PRParticipantIdentityInput,
 } from "./join-pr-by-identity";

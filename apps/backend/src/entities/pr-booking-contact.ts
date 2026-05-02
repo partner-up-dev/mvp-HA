@@ -26,8 +26,7 @@ export const prBookingContacts = pgTable("pr_booking_contacts", {
     .primaryKey()
     .references(() => partnerRequests.id, { onDelete: "cascade" }),
   ownerPartnerId: bigint("owner_partner_id", { mode: "number" })
-    .$type<PartnerId>()
-    .notNull()
+    .$type<PartnerId | null>()
     .references(() => partners.id, { onDelete: "cascade" }),
   ownerUserId: uuid("owner_user_id")
     .$type<UserId>()

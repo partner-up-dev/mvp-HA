@@ -72,3 +72,16 @@ export {
   scheduleMeetingPointNotificationsForChangedRequests,
   type MeetingPointSnapshot,
 } from "../../pr-core/services/meeting-point-change-notifier.service";
+export {
+  buildMaterializedPRJoinGateConfig,
+  getPRJoinGateProjection,
+  resolvePRJoinGate,
+  assertPRJoinGatesResolvedForUser,
+  hasBookingContactJoinGate,
+  PR_JOIN_GATE_UNRESOLVED_CODE,
+  BOOKING_CONTACT_PHONE_REQUIRED_CODE,
+  BOOKING_CONTACT_PHONE_INVALID_CODE,
+  type PRJoinGateProjection,
+  type PRJoinGateProjectionItem,
+  type ResolveJoinGatePayload,
+} from "../../pr-core/services/join-gates.service";

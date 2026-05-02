@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { InferResponseType } from "hono";
 import { computed, type Ref } from "vue";
+import type { PRJoinGateConfig } from "@partner-up-dev/backend";
 import { adminClient } from "@/lib/admin-rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
@@ -31,6 +32,7 @@ export type EventSupportResourceInput = {
   requiresUserTransferToPlatform: boolean;
   summaryText: string;
   detailRules: string[];
+  joinGateConfig: PRJoinGateConfig;
   displayOrder: number;
 };
 

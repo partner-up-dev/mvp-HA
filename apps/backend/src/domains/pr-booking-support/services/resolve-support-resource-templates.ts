@@ -93,6 +93,7 @@ export const resolveSupportResourceTemplates = ({
       requiresUserTransferToPlatform: resource.requiresUserTransferToPlatform,
       summaryText: resource.summaryText,
       detailRules: normalizeDetailRules(undefined, resource.detailRules),
+      joinGateConfig: resource.joinGateConfig,
       displayOrder: resource.displayOrder,
     });
   }

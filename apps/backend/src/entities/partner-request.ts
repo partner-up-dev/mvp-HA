@@ -14,6 +14,10 @@ import {
   meetingPointConfigSchema,
   type MeetingPointConfig,
 } from "./meeting-point";
+import {
+  prJoinGateConfigSchema,
+  type PRJoinGateConfig,
+} from "./join-gate";
 import { users, type UserId } from "./user";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -150,6 +154,10 @@ export const partnerRequests = pgTable("partner_requests", {
   meetingPoint: jsonb("meeting_point")
     .$type<MeetingPointConfig | null>()
     .default(null),
+  joinGateConfig: jsonb("join_gate_config")
+    .$type<PRJoinGateConfig>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
   createdBy: uuid("created_by")
     .$type<UserId | null>()
     .references(() => users.id, { onDelete: "set null" }),
@@ -169,6 +177,7 @@ export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
   status: prStatusSchema,
   visibilityStatus: visibilityStatusSchema,
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
+  joinGateConfig: prJoinGateConfigSchema.optional(),
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
@@ -179,6 +188,7 @@ export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   status: prStatusSchema,
   visibilityStatus: visibilityStatusSchema,
   meetingPoint: meetingPointConfigSchema.nullable(),
+  joinGateConfig: prJoinGateConfigSchema,
 });
 
 // Type inference

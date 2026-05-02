@@ -8,6 +8,7 @@ import type {
   LocationEntry,
   MeetingPointConfig,
   MeetingPointConfigMap,
+  PRJoinGateConfig,
 } from "../../../entities";
 import {
   normalizeAnchorEventTimePoolConfig,
@@ -37,6 +38,7 @@ export interface UpdateAdminAnchorEventInput {
   defaultJoinLockOffsetMinutes: number;
   meetingPoint?: MeetingPointConfig | null;
   locationMeetingPoints?: MeetingPointConfigMap;
+  joinGateConfig?: PRJoinGateConfig;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: AnchorEventStatus;
@@ -96,6 +98,7 @@ export async function updateAdminAnchorEvent(
     locationMeetingPoints: normalizeMeetingPointConfigMap(
       input.locationMeetingPoints,
     ),
+    joinGateConfig: input.joinGateConfig ?? [],
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     status: input.status,

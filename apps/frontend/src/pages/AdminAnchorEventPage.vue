@@ -148,6 +148,12 @@
                 :validation-message="policyValidationMessage"
               />
 
+              <PRJoinGateConfigEditor
+                v-model="eventForm.joinGateConfig"
+                source="ANCHOR_EVENT"
+                :allow-booking-contact="false"
+              />
+
               <Button
                 appearance="pill"
                 size="sm"
@@ -619,6 +625,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
+import PRJoinGateConfigEditor from "@/domains/pr/ui/forms/PRJoinGateConfigEditor.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
   type AdminAnchorEventInput,
@@ -640,6 +647,7 @@ import {
 } from "@/domains/admin/queries/useAdminAnchorEventPreferenceTags";
 import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 import { validateManualPartnerBounds } from "@/lib/validation";
+import type { PRJoinGateConfig } from "@partner-up-dev/backend";
 
 type Workspace = NonNullable<AdminAnchorEventWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
@@ -652,6 +660,7 @@ type EventForm = {
   meetingPointDescription: string;
   meetingPointImageUrl: string;
   locationMeetingPoints: Record<string, EditableMeetingPointForm>;
+  joinGateConfig: PRJoinGateConfig;
   durationMinutes: number | null;
   earliestLeadMinutes: number | null;
   absoluteRulesText: string;
@@ -695,6 +704,7 @@ const emptyEventForm = (): EventForm => ({
   meetingPointDescription: "",
   meetingPointImageUrl: "",
   locationMeetingPoints: {},
+  joinGateConfig: [],
   durationMinutes: null,
   earliestLeadMinutes: null,
   absoluteRulesText: "",
@@ -726,6 +736,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
   locationMeetingPoints: toEditableLocationMeetingPoints(
     event.locationMeetingPoints,
   ),
+  joinGateConfig: event.joinGateConfig,
   durationMinutes: event.timePoolConfig.durationMinutes ?? null,
   earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
   absoluteRulesText: event.timePoolConfig.startRules
@@ -1217,6 +1228,7 @@ const handleSaveEvent = async () => {
       normalizeLines(eventForm.value.locationPoolText),
       eventForm.value.locationMeetingPoints,
     ),
+    joinGateConfig: eventForm.value.joinGateConfig,
     coverImage: eventForm.value.coverImage.trim() || null,
     betaGroupQrCode: eventForm.value.betaGroupQrCode.trim() || null,
     status: eventForm.value.status,

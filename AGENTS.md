@@ -90,6 +90,7 @@ Pause and ask for human confirmation when:
 ## Development Workflow
 
 - Use GitHub CLI (`gh`) for GitHub operations and issue workflows.
+- Before starting your own frontend dev server, check whether ports `4001` or `4002` already have the corresponding dev server running. Other sessions may already own a usable local server, so reuse it when appropriate.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
 - Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.
 - Follow `./CONTRIBUTING.md` for commit message format and release policy.

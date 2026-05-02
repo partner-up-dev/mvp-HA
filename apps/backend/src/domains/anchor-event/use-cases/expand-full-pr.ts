@@ -127,6 +127,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     maxPartners: partnerBounds.maxPartners,
     preferences: fullPR.root.preferences,
     notes: fullPR.root.notes,
+    joinGateConfig: fullPR.root.joinGateConfig,
     confirmationStartOffsetMinutes:
       fullPR.root.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: fullPR.root.confirmationEndOffsetMinutes,

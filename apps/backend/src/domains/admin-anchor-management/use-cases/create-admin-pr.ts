@@ -7,7 +7,7 @@ import {
   assertPRTimeWindowAvailableAtLocation,
   validateAnchorParticipationPolicyOffsets,
 } from "../../pr/services";
-import type { PartnerRequest } from "../../../entities";
+import type { PartnerRequest, PRJoinGateConfig } from "../../../entities";
 import type { MeetingPointConfig } from "../../../entities";
 
 const prRepo = new PartnerRequestRepository();
@@ -21,6 +21,7 @@ export interface CreateAdminPRInput {
   preferences: string[];
   notes: string | null;
   meetingPoint?: MeetingPointConfig | null;
+  joinGateConfig?: PRJoinGateConfig;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -76,6 +77,7 @@ export async function createAdminPR(
     preferences: input.preferences,
     notes: input.notes,
     meetingPoint: input.meetingPoint ?? null,
+    joinGateConfig: input.joinGateConfig ?? [],
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,

@@ -3,7 +3,7 @@ import { updatePRContent } from "../../pr";
 import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import type { PRId } from "../../../entities";
+import type { PRId, PRJoinGateConfig } from "../../../entities";
 import type { MeetingPointConfig } from "../../../entities";
 
 const prRepo = new PartnerRequestRepository();
@@ -18,6 +18,7 @@ export interface UpdateAdminPRContentInput {
   preferences: string[];
   notes: string | null;
   meetingPoint?: MeetingPointConfig | null;
+  joinGateConfig?: PRJoinGateConfig;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -57,7 +58,7 @@ export async function updateAdminPRContent(
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
 
-  const updated = await updatePRContent(
+  await updatePRContent(
     prId,
     {
       title: input.title ?? undefined,
@@ -85,5 +86,8 @@ export async function updateAdminPRContent(
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
   });
 
-  return updated;
+  return await prRepo.updateJoinGateConfig(
+    prId,
+    input.joinGateConfig ?? existing.joinGateConfig,
+  );
 }

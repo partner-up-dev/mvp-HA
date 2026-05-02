@@ -23,7 +23,7 @@ export type JoinPRByIdentityResult = {
   generatedUserPin: string | null;
 };
 
-const resolveParticipantUser = async (
+export const resolvePRParticipantUser = async (
   input: PRParticipantIdentityInput,
 ): Promise<{ user: User; generatedUserPin: string | null }> => {
   if (input.authenticatedUserId) {
@@ -62,7 +62,7 @@ export async function joinPRByIdentity(
     bookingContactPhone?: string | null;
   } = {},
 ): Promise<JoinPRByIdentityResult> {
-  const participant = await resolveParticipantUser(identity);
+  const participant = await resolvePRParticipantUser(identity);
   const pr = await joinPRAsUser(id, participant.user, {
     bookingContactPhone: options.bookingContactPhone ?? null,
   });

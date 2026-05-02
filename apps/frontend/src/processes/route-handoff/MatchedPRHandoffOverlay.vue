@@ -30,17 +30,44 @@
             :interactive="false"
           />
 
-          <div
-            v-if="handoff.state.phase === 'PREVIEW'"
-            class="matched-pr-handoff__actions"
+          <PRJoinFlow
+            v-if="handoff.state.phase === 'PREVIEW' && handoff.state.prId !== null"
+            :pr-id="handoff.state.prId"
+            @success-closed="handleJoinSuccessClosed"
           >
-            <Button type="button" tone="surface" block @click="handleCancel">
-              {{ t("common.cancel") }}
-            </Button>
-            <Button type="button" block @click="handleConfirm">
-              {{ t("prPage.join") }}
-            </Button>
-          </div>
+            <template #default="{ open, pending, disabled, joined, errorMessage }">
+              <div class="matched-pr-handoff__actions">
+                <Button
+                  type="button"
+                  tone="surface"
+                  block
+                  :disabled="pending"
+                  @click="handleCancel"
+                >
+                  {{ t("common.cancel") }}
+                </Button>
+                <Button
+                  type="button"
+                  block
+                  :loading="pending"
+                  :disabled="disabled"
+                  @click="handleConfirm(open)"
+                >
+                  {{
+                    joined
+                      ? t("prPage.partnerSection.rosterJoined")
+                      : t("prPage.join")
+                  }}
+                </Button>
+              </div>
+              <p
+                v-if="errorMessage"
+                class="matched-pr-handoff__error"
+              >
+                {{ errorMessage }}
+              </p>
+            </template>
+          </PRJoinFlow>
         </div>
       </div>
     </div>
@@ -53,6 +80,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import Button from "@/shared/ui/actions/Button.vue";
 import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
+import PRJoinFlow from "@/domains/pr/ui/composites/PRJoinFlow.vue";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import { trackEvent } from "@/shared/telemetry/track";
 import LiquidWaveSplash from "@/processes/route-handoff/LiquidWaveSplash.vue";
@@ -210,7 +238,7 @@ const handleCancel = () => {
   handoff.cancel();
 };
 
-const handleConfirm = async () => {
+const handleConfirm = (open: () => Promise<void>) => {
   const prId = handoff.state.prId;
   if (prId === null) {
     return;
@@ -223,9 +251,19 @@ const handleConfirm = async () => {
     candidateRank: null,
   });
 
+  void open();
+};
+
+const handleJoinSuccessClosed = async () => {
+  const prId = handoff.state.prId;
+  if (prId === null) {
+    return;
+  }
+
   handoff.markNavigating();
   const query = new URLSearchParams({
     handoff: "matched_pr",
+    entry: "join",
   });
   if (handoff.state.eventId !== null) {
     query.set("fromEvent", String(handoff.state.eventId));
@@ -278,10 +316,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
+@use "@/styles/mixins" as mx;
+
 .matched-pr-handoff {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 900;
   pointer-events: auto;
 }
 
@@ -328,6 +368,12 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-spacing-small);
+}
+
+.matched-pr-handoff__error {
+  margin: var(--sys-spacing-small) 0 0;
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-error);
 }
 
 @keyframes matched-pr-card-spin-in {

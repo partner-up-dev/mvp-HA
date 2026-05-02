@@ -34,13 +34,16 @@ import {
   isBookingContactRequiredForPR,
   normalizeMainlandChinaMobilePhone,
 } from "../../pr-booking-support";
+import {
+  assertPRJoinGatesResolvedForUser,
+  hasBookingContactJoinGate,
+  BOOKING_CONTACT_PHONE_INVALID_CODE,
+} from "../services/join-gates.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 const bookingContactRepo = new PRBookingContactRepository();
-const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
-const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
 type CodedHttpException = HTTPException & {
   code?: string;
@@ -125,26 +128,10 @@ export async function joinPRAsUser(
   });
 
   const activeCount = await countActivePartnersForPR(id);
-  let bookingContactPhoneInput:
-    | {
-        phoneE164: string;
-        phoneMasked: string;
-      }
-    | null = null;
 
   if (bookingContactRequired) {
-    const isFirstActiveOwnerJoin = activeCount === 0;
-
-    if (isFirstActiveOwnerJoin) {
-      const phone = options.bookingContactPhone?.trim() ?? "";
-      if (!phone) {
-        return throwCodedHttpException(
-          409,
-          "Cannot join - first active participant must provide booking contact phone",
-          BOOKING_CONTACT_PHONE_REQUIRED_CODE,
-        );
-      }
-
+    const phone = options.bookingContactPhone?.trim() ?? "";
+    if (phone) {
       const normalizedPhone = normalizeMainlandChinaMobilePhone(phone);
       if (!normalizedPhone) {
         return throwCodedHttpException(
@@ -154,9 +141,28 @@ export async function joinPRAsUser(
         );
       }
 
-      bookingContactPhoneInput = normalizedPhone;
+      const existingContact = await bookingContactRepo.findByPrId(id);
+      if (
+        !existingContact ||
+        existingContact.ownerPartnerId === null ||
+        existingContact.ownerUserId === user.id
+      ) {
+        await bookingContactRepo.upsertByPrId({
+          prId: id,
+          ownerPartnerId: existingContact?.ownerPartnerId ?? null,
+          ownerUserId: user.id,
+          phoneE164: normalizedPhone.phoneE164,
+          phoneMasked: normalizedPhone.phoneMasked,
+          verifiedSource: "PHONE_INPUT_FORM",
+        });
+      }
     }
   }
+
+  await assertPRJoinGatesResolvedForUser({
+    prId: id,
+    userId: user.id,
+  });
 
   if (
     refreshedRequest.maxPartners !== null &&
@@ -184,15 +190,18 @@ export async function joinPRAsUser(
   }
   const assignedPartnerId = joinedSlot.id;
 
-  if (bookingContactRequired && activeCount === 0 && bookingContactPhoneInput) {
-    await bookingContactRepo.upsertByPrId({
-      prId: id,
-      ownerPartnerId: assignedPartnerId,
-      ownerUserId: user.id,
-      phoneE164: bookingContactPhoneInput.phoneE164,
-      phoneMasked: bookingContactPhoneInput.phoneMasked,
-      verifiedSource: "PHONE_INPUT_FORM",
-    });
+  if (hasBookingContactJoinGate(refreshedRequest.joinGateConfig)) {
+    const contact = await bookingContactRepo.findByPrId(id);
+    if (
+      contact &&
+      contact.ownerPartnerId === null &&
+      contact.ownerUserId === user.id
+    ) {
+      await bookingContactRepo.updateOwnerPartner({
+        prId: id,
+        ownerPartnerId: assignedPartnerId,
+      });
+    }
   }
 
   await userReliabilityRepo.applyDelta(user.id, {

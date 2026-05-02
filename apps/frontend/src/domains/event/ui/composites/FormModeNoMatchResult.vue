@@ -18,14 +18,45 @@
           :cover-image="props.resolveCoverImage(candidate.pr.location)"
         >
           <template #actions>
-            <Button
-              appearance="rect"
-              type="button"
-              block
-              @click="emit('join-candidate', candidate.pr.id, index + 1)"
+            <PRJoinFlow
+              :pr-id="candidate.pr.id"
+              :scenario-type="candidate.pr.type"
+              @joined="
+                emit('join-candidate-joined', candidate.pr.id, index + 1)
+              "
+              @success-closed="
+                emit('join-candidate-success-closed', candidate.pr.id, index + 1)
+              "
             >
-              {{ t("anchorEvent.formMode.joinCandidateAction") }}
-            </Button>
+              <template
+                #default="{ open, pending, disabled, joined, errorMessage }"
+              >
+                <div class="candidate-join-flow">
+                  <Button
+                    appearance="rect"
+                    type="button"
+                    block
+                    :loading="pending"
+                    :disabled="disabled"
+                    @click="
+                      handleJoinCandidateClick(candidate.pr.id, index + 1, open)
+                    "
+                  >
+                    {{
+                      joined
+                        ? t("prPage.partnerSection.rosterJoined")
+                        : t("anchorEvent.formMode.joinCandidateAction")
+                    }}
+                  </Button>
+                  <p
+                    v-if="errorMessage"
+                    class="inline-message inline-message--error"
+                  >
+                    {{ errorMessage }}
+                  </p>
+                </div>
+              </template>
+            </PRJoinFlow>
           </template>
         </AnchorEventPRCard>
       </div>
@@ -64,6 +95,7 @@ import {
 } from "@/domains/event/model/form-mode";
 import Button from "@/shared/ui/actions/Button.vue";
 import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
+import PRJoinFlow from "@/domains/pr/ui/composites/PRJoinFlow.vue";
 
 type RecommendationCandidate =
   AnchorEventFormModeRecommendationResponse["orderedCandidates"][number];
@@ -78,6 +110,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "join-candidate": [prId: number, rank: number];
+  "join-candidate-joined": [prId: number, rank: number];
+  "join-candidate-success-closed": [prId: number, rank: number];
   "create-fallback": [];
 }>();
 
@@ -92,12 +126,22 @@ const buildCandidateTimeLabel = (startAt: string | null): string | null => {
     startAt,
   )}`;
 };
+
+const handleJoinCandidateClick = (
+  prId: number,
+  rank: number,
+  open: () => Promise<void>,
+): void => {
+  emit("join-candidate", prId, rank);
+  void open();
+};
 </script>
 
 <style lang="scss" scoped>
 .form-mode-no-match-result,
 .candidate-list,
-.candidate-list__items {
+.candidate-list__items,
+.candidate-join-flow {
   display: flex;
   flex-direction: column;
 }
@@ -106,6 +150,10 @@ const buildCandidateTimeLabel = (startAt: string | null): string | null => {
   flex: 1 1 auto;
   min-height: 0;
   gap: var(--sys-spacing-medium);
+}
+
+.candidate-join-flow {
+  gap: var(--sys-spacing-small);
 }
 
 .no-match-hero__title,

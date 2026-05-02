@@ -43,6 +43,10 @@
 - Auto-created paths must fall back to `2` when a valid `minPartners` is unavailable. Manual input paths must reject empty value, `0`, `maxPartners = 1`, and invalid bounds.
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
 - `PR` supports `join` and `exit`.
+- `PR` may carry join gates that must be completed before joining. Join gate definitions are PR-owned runtime configuration, while their resolved state comes from the owning fact for each gate kind.
+- When a PR has no configured custom join gate, the join flow uses a system fallback confirmation gate. When any custom join gate exists, the fallback confirmation is absent.
+- Join notice gates are viewer-scoped agreements; each viewer must accept the current gate key and version before joining.
+- Booking contact gates collect the phone contact required for the PR; their presence is explicit join-gate configuration rather than an implicit result of booking-required or platform-handled booking flags.
 - `Partner` submodule may carry explicit confirmation and join-lock settings. Attendance follow-up may appear when the relevant collaboration module is active.
 - PR messages are visible only to current active participants; users who exit or are released must no longer see that PR's message thread.
 - Only current active participants may view the thread or act on read markers and participant posting, while operators may inject system messages through admin tooling without becoming participants themselves.
@@ -100,6 +104,7 @@
 - The current `PR_MESSAGE` timing policy is one fixed short-debounce summary opportunity per unread wave.
 - Before a PR message notification is sent, the system must re-validate that the recipient is still a current active participant of that PR.
 - Availability of join, confirm, booking-contact handoff, and similar operations is enforced on backend write paths; frontend may use preflight reads to surface the same guardrails before the user acts.
+- The join command remains authoritative for unresolved join gates and must reject joining when any configured custom gate is unresolved for the current viewer or PR.
 - Notification cards and prompts are contributed by their owning modules, so confirmation, booking, and other features can add notification items without one central interpreter inside the card container.
 - Only `PLATFORM_PASSTHROUGH` booking requires the first booking-contact owner to provide a phone number. Standard `PLATFORM` booking must keep that requirement absent.
 - The platform-handled booking pending workspace admits PRs that are in `READY`, `FULL`, or `LOCKED_TO_START` and still meet minimum active-participant count. It does not require participants to be `CONFIRMED`.
