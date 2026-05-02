@@ -61,4 +61,4 @@ jobs:
         run: pnpm db:lint
 
       - name: Run backend scenario tests
-        run: pnpm test:backend:scenario
+        run: pnpm test:scenario

@@ -27,20 +27,28 @@ pnpm install --frozen-lockfile
 docker compose up -d postgres
 ```
 
-Recommended local mode:
+Recommended workspace mode:
 
 ```bash
-SCENARIO_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres pnpm test:scenario
+pnpm test:scenario
 ```
 
-The runner creates a unique temporary database from `SCENARIO_DATABASE_ADMIN_URL`, maps it to `DATABASE_URL`, runs migrations, imports `*.scenario.test.ts`, closes backend DB clients after the test run, then drops the temporary database.
+The workspace script loads `apps/frontend/.env` and `apps/backend/.env`, then invokes the backend scenario runner. Shell and CI environment variables have the highest priority; for backend scenario runs, `apps/backend/.env` has priority over `apps/frontend/.env` when both files define the same key.
 
 If your local Docker compose uses a custom `POSTGRES_PORT`, use that port in the URL.
+
+Backend package direct mode:
+
+```bash
+SCENARIO_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres pnpm --filter @partner-up-dev/backend test:scenario
+```
+
+The backend runner creates a unique temporary database from `SCENARIO_DATABASE_ADMIN_URL`, maps it to `DATABASE_URL`, runs migrations, imports `*.scenario.test.ts`, closes backend DB clients after the test run, then drops the temporary database.
 
 Debug mode:
 
 ```bash
-TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partnerup_scenario pnpm test:scenario
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partnerup_scenario pnpm --filter @partner-up-dev/backend test:scenario
 ```
 
 `TEST_DATABASE_URL` and `SCENARIO_DATABASE_ADMIN_URL` are alternatives. `TEST_DATABASE_URL` has priority when both are set. In that mode the runner resets the schema inside the named database and leaves the database itself in place.
