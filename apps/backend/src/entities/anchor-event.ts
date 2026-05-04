@@ -89,11 +89,19 @@ export type TimeWindowEntry = z.infer<typeof timeWindowEntrySchema>;
 
 const isoDateTimeWithOffsetSchema = z.string().datetime({ offset: true });
 const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
+const startRuleDescriptionMaxLength = 280;
+const startRuleDescriptionSchema = z
+  .string()
+  .trim()
+  .max(startRuleDescriptionMaxLength)
+  .nullable()
+  .default(null);
 
 export const anchorEventAbsoluteStartRuleSchema = z.object({
   id: z.string().trim().min(1),
   kind: z.literal("ABSOLUTE"),
   startAt: isoDateTimeWithOffsetSchema,
+  description: startRuleDescriptionSchema,
 });
 export type AnchorEventAbsoluteStartRule = z.infer<
   typeof anchorEventAbsoluteStartRuleSchema
@@ -104,6 +112,7 @@ export const anchorEventRecurringStartRuleSchema = z.object({
   kind: z.literal("RECURRING"),
   weekdays: z.array(z.number().int().min(0).max(6)).min(1),
   timeOfDay: timeOfDaySchema,
+  description: startRuleDescriptionSchema,
 });
 export type AnchorEventRecurringStartRule = z.infer<
   typeof anchorEventRecurringStartRuleSchema
@@ -201,6 +210,19 @@ const normalizeIsoDateTimeWithOffset = (value: unknown): string | null => {
   return isoDateTimeWithOffsetSchema.safeParse(trimmed).success ? trimmed : null;
 };
 
+const normalizeStartRuleDescription = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  return trimmed.slice(0, startRuleDescriptionMaxLength);
+};
+
 const normalizeWeekdays = (value: unknown): number[] => {
   if (!Array.isArray(value)) {
     return [];
@@ -247,6 +269,7 @@ const normalizeStartRule = (
       id: normalizeRuleId(raw.id, fallbackId),
       kind: "ABSOLUTE",
       startAt,
+      description: normalizeStartRuleDescription(raw.description),
     };
   }
 
@@ -261,6 +284,7 @@ const normalizeStartRule = (
       kind: "RECURRING",
       weekdays,
       timeOfDay,
+      description: normalizeStartRuleDescription(raw.description),
     };
   }
 

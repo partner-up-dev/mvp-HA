@@ -10,7 +10,7 @@ import { normalizeLocationPool, type AnchorEvent, type AnchorEventId } from "../
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
 import { isTimeWindowAvailableByPoiRules } from "../../pr/services";
 import { isAnchorEventFormModeStartSelectable } from "../services/form-mode";
-import { listAnchorEventTimeWindows } from "../services/time-window-pool";
+import { listAnchorEventTimeWindowDetails } from "../services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
 const poiRepo = new PoiRepository();
@@ -113,6 +113,7 @@ export interface AnchorEventFormModeData {
     key: string;
     startAt: string;
     endAt: string;
+    description: string | null;
   }>;
   presetTags: Array<{
     id: number;
@@ -144,18 +145,19 @@ export async function getAnchorEventFormModeData(
   const now = new Date();
   const poiById = new Map(pois.map((poi) => [poi.id, poi.gallery]));
   const poiRecordById = new Map(pois.map((poi) => [poi.id, poi]));
-  const startOptions = listAnchorEventTimeWindows(event)
-    .filter((timeWindow) => !hasTimeWindowStarted(timeWindow, now))
-    .flatMap((timeWindow) => {
-      const [startAt, endAt] = timeWindow;
+  const startOptions = listAnchorEventTimeWindowDetails(event)
+    .filter((detail) => !hasTimeWindowStarted(detail.timeWindow, now))
+    .flatMap((detail) => {
+      const [startAt, endAt] = detail.timeWindow;
       if (!startAt || !endAt) {
         return [];
       }
       return [
         {
-          key: `${startAt}::${endAt}`,
+          key: detail.key,
           startAt,
           endAt,
+          description: detail.description,
         },
       ];
     });

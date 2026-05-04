@@ -38,6 +38,13 @@
         @update:model-value="handleTimeWheelUpdate"
       />
     </div>
+
+    <p
+      v-if="selectedStartOptionDescription"
+      class="form-mode-time-control__description"
+    >
+      {{ selectedStartOptionDescription }}
+    </p>
   </section>
 </template>
 
@@ -118,6 +125,17 @@ const durationLabel = computed(() =>
   formatFormModeDurationLabel(props.durationMinutes),
 );
 
+const selectedStartOptionDescription = computed(() => {
+  if (!props.modelValue) {
+    return "";
+  }
+
+  const option = props.startOptions.find(
+    (startOption) => startOption.startAt === props.modelValue,
+  );
+  return option?.description?.trim() ?? "";
+});
+
 const handleDateWheelUpdate = (value: WheelPickerValue) => {
   selectedDateKey.value = String(value);
 };
@@ -183,7 +201,8 @@ watch(
     const advancedDateGroup =
       modelDateKey === null
         ? null
-        : (advancedGroups.find((group) => group.dateKey === modelDateKey) ?? null);
+        : (advancedGroups.find((group) => group.dateKey === modelDateKey) ??
+          null);
     if (advancedDateGroup) {
       advancedMode.value = true;
       selectedDateKey.value = advancedDateGroup.dateKey;
@@ -252,14 +271,21 @@ watch(
 
 .form-mode-time-control__duration {
   margin: 0;
-  color: inherit;
-  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface-variant);
+  @include mx.pu-font(label-large);
 }
 
 .time-wheel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-spacing-xsmall);
+}
+
+.form-mode-time-control__description {
+  margin: var(--sys-spacing-xsmall) 0 0;
+  color: var(--sys-color-secondary);
+  text-align: center;
+  @include mx.pu-font(label-large);
 }
 
 @media (max-width: 720px) {

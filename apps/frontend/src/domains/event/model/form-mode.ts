@@ -217,6 +217,7 @@ export const buildAdvancedModeStartOptions = (
       key: `${startAt}::advanced`,
       startAt,
       endAt: startAt,
+      description: null,
     });
   }
 

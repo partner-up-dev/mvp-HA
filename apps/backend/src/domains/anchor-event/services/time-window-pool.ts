@@ -11,6 +11,12 @@ const PRODUCT_TIME_ZONE_OFFSET_MS = 8 * 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+export interface AnchorEventTimeWindowDetail {
+  key: string;
+  timeWindow: TimeWindowEntry;
+  description: string | null;
+}
+
 const parseTime = (value: string | null): number | null => {
   if (!value) {
     return null;
@@ -115,6 +121,18 @@ export const compareTimeWindow = (
 export const buildTimeWindowKey = (timeWindow: TimeWindowEntry): string => {
   const [start, end] = timeWindow;
   return `${start ?? "_"}::${end ?? "_"}`;
+};
+
+const readStartRuleDescription = (
+  rule: AnchorEventStartRule,
+): string | null => {
+  const description = rule.description;
+  if (typeof description !== "string") {
+    return null;
+  }
+
+  const trimmed = description.trim();
+  return trimmed.length > 0 ? trimmed : null;
 };
 
 const isTimeWindowDiscoverableAt = (
@@ -248,13 +266,110 @@ const materializePreviewTimeWindows = (
   return Array.from(unique.values()).sort(compareTimeWindow);
 };
 
+type TimeWindowRuleMatchContext = {
+  startAtMs: number;
+  candidateWeekday: number;
+  candidateTimeOfDay: string;
+};
+
+const resolveTimeWindowRuleMatchContext = (
+  config: AnchorEventTimePoolConfig,
+  timeWindow: TimeWindowEntry,
+): TimeWindowRuleMatchContext | null => {
+  if (config.durationMinutes === null || config.startRules.length === 0) {
+    return null;
+  }
+
+  const startAtMs = parseTime(timeWindow[0]);
+  const endAtMs = parseTime(timeWindow[1]);
+  if (startAtMs === null || endAtMs === null) {
+    return null;
+  }
+
+  const durationMinutes = (endAtMs - startAtMs) / MINUTE_MS;
+  if (!Number.isFinite(durationMinutes) || durationMinutes !== config.durationMinutes) {
+    return null;
+  }
+
+  const candidateStart = new Date(startAtMs);
+  const localCandidate = toProductLocalDate(candidateStart);
+  const candidateTimeOfDay = `${String(localCandidate.getUTCHours()).padStart(
+    2,
+    "0",
+  )}:${String(localCandidate.getUTCMinutes()).padStart(2, "0")}`;
+
+  return {
+    startAtMs,
+    candidateWeekday: localCandidate.getUTCDay(),
+    candidateTimeOfDay,
+  };
+};
+
+const startRuleMatchesTimeWindow = (
+  rule: AnchorEventStartRule,
+  context: TimeWindowRuleMatchContext,
+): boolean => {
+  if (rule.kind === "ABSOLUTE") {
+    const ruleStartAtMs = parseTime(rule.startAt);
+    return ruleStartAtMs !== null && ruleStartAtMs === context.startAtMs;
+  }
+
+  return (
+    rule.weekdays.includes(context.candidateWeekday) &&
+    rule.timeOfDay === context.candidateTimeOfDay
+  );
+};
+
+const resolveTimeWindowDescriptionFromConfig = (
+  config: AnchorEventTimePoolConfig,
+  timeWindow: TimeWindowEntry,
+): string | null => {
+  const context = resolveTimeWindowRuleMatchContext(config, timeWindow);
+  if (context === null) {
+    return null;
+  }
+
+  for (const rule of config.startRules) {
+    if (!startRuleMatchesTimeWindow(rule, context)) {
+      continue;
+    }
+
+    const description = readStartRuleDescription(rule);
+    if (description !== null) {
+      return description;
+    }
+  }
+
+  return null;
+};
+
 export const listAnchorEventTimeWindows = (
   event: Pick<AnchorEvent, "timePoolConfig">,
   now: Date = new Date(),
-): TimeWindowEntry[] =>
-  materializePreviewTimeWindows(
+): TimeWindowEntry[] => {
+  const config = normalizeAnchorEventTimePoolConfig(event.timePoolConfig);
+  return materializePreviewTimeWindows(config, now);
+};
+
+export const listAnchorEventTimeWindowDetails = (
+  event: Pick<AnchorEvent, "timePoolConfig">,
+  now: Date = new Date(),
+): AnchorEventTimeWindowDetail[] => {
+  const config = normalizeAnchorEventTimePoolConfig(event.timePoolConfig);
+  return materializePreviewTimeWindows(config, now).map((timeWindow) => ({
+    key: buildTimeWindowKey(timeWindow),
+    timeWindow,
+    description: resolveTimeWindowDescriptionFromConfig(config, timeWindow),
+  }));
+};
+
+export const resolveAnchorEventTimeWindowDescription = (
+  event: Pick<AnchorEvent, "timePoolConfig">,
+  timeWindow: TimeWindowEntry,
+): string | null =>
+  resolveTimeWindowDescriptionFromConfig(
     normalizeAnchorEventTimePoolConfig(event.timePoolConfig),
-    now,
+    timeWindow,
   );
 
 export const eventOwnsTimeWindow = (
@@ -262,38 +377,12 @@ export const eventOwnsTimeWindow = (
   timeWindow: TimeWindowEntry,
 ): boolean => {
   const config = normalizeAnchorEventTimePoolConfig(event.timePoolConfig);
-  if (config.durationMinutes === null || config.startRules.length === 0) {
+  const context = resolveTimeWindowRuleMatchContext(config, timeWindow);
+  if (context === null) {
     return false;
   }
-
-  const startAtMs = parseTime(timeWindow[0]);
-  const endAtMs = parseTime(timeWindow[1]);
-  if (startAtMs === null || endAtMs === null) {
-    return false;
-  }
-
-  const durationMinutes = (endAtMs - startAtMs) / MINUTE_MS;
-  if (!Number.isFinite(durationMinutes) || durationMinutes !== config.durationMinutes) {
-    return false;
-  }
-
-  const candidateStart = new Date(startAtMs);
-  const localCandidate = toProductLocalDate(candidateStart);
-  const candidateWeekday = localCandidate.getUTCDay();
-  const candidateTimeOfDay = `${String(localCandidate.getUTCHours()).padStart(
-    2,
-    "0",
-  )}:${String(localCandidate.getUTCMinutes()).padStart(2, "0")}`;
 
   return config.startRules.some((rule) => {
-    if (rule.kind === "ABSOLUTE") {
-      const ruleStartAtMs = parseTime(rule.startAt);
-      return ruleStartAtMs !== null && ruleStartAtMs === startAtMs;
-    }
-
-    return (
-      rule.weekdays.includes(candidateWeekday) &&
-      rule.timeOfDay === candidateTimeOfDay
-    );
+    return startRuleMatchesTimeWindow(rule, context);
   });
 };

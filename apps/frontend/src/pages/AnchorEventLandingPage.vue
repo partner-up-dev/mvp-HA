@@ -129,6 +129,7 @@ import {
   pickRandomPoiGalleryImage,
   toPoiGalleryMap,
 } from "@/domains/event/model/poi-gallery";
+import { formatTimeWindowOptionLabel } from "@/domains/event/model/time-window-view";
 import { prDetailPath } from "@/domains/pr/routing/routes";
 import type { ApiError } from "@/shared/api/error";
 import {
@@ -340,39 +341,18 @@ const upcomingSortedCreateTimeWindows = computed(() =>
   ),
 );
 
-const productLocalTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
-  timeZone: "Asia/Shanghai",
-  month: "numeric",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-
-const formatTimeWindowLabel = (
-  entry: CreateTimeWindowEntry,
-  index: number,
-): string => {
-  const [start] = entry.timeWindow;
-  if (!start) {
-    return `${t("anchorEvent.batchLabel")} ${index + 1}`;
-  }
-
-  const date = new Date(start);
-  if (Number.isNaN(date.getTime())) {
-    return `${t("anchorEvent.batchLabel")} ${index + 1}`;
-  }
-
-  return productLocalTimeFormatter.format(date);
-};
-
 const cardCreateTimeWindowKey = ref<string | null>(null);
 const cardCreateLocationId = ref("");
 
 const cardCreateTimeWindowOptions = computed<CardTimeWindowOption[]>(() =>
   upcomingSortedCreateTimeWindows.value.map((entry, index) => ({
     key: entry.key,
-    label: formatTimeWindowLabel(entry, index),
+    label: formatTimeWindowOptionLabel(
+      entry.timeWindow,
+      index,
+      t("anchorEvent.batchLabel"),
+      entry.description,
+    ),
   })),
 );
 

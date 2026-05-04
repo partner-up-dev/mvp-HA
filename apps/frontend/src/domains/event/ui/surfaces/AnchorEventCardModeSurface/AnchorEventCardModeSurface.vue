@@ -240,7 +240,7 @@ import {
 } from "@/domains/event/model/poi-gallery";
 import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
 import {
-  formatTimeWindowLabel,
+  formatTimeWindowOptionLabel,
   hasTimeWindowStarted,
   resolveTimeWindowStartTimestamp,
 } from "@/domains/event/model/time-window-view";
@@ -461,16 +461,21 @@ const cardEmptySubtitle = computed(() =>
     : t("anchorEvent.card.emptySubtitle"),
 );
 
-const formatTimeWindowOptionLabel = (
+const formatCreateTimeWindowOptionLabel = (
   entry: CreateTimeWindowEntry,
   index: number,
 ): string =>
-  formatTimeWindowLabel(entry.timeWindow, index, t("anchorEvent.batchLabel"));
+  formatTimeWindowOptionLabel(
+    entry.timeWindow,
+    index,
+    t("anchorEvent.batchLabel"),
+    entry.description,
+  );
 
 const internalCardCreateTimeWindowOptions = computed<CardTimeWindowOption[]>(() =>
   upcomingSortedCreateTimeWindows.value.map((entry, index) => ({
     key: entry.key,
-    label: formatTimeWindowOptionLabel(entry, index),
+    label: formatCreateTimeWindowOptionLabel(entry, index),
   })),
 );
 

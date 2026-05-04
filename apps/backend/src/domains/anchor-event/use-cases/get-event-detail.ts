@@ -7,7 +7,11 @@ import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PoiRepository } from "../../../repositories/PoiRepository";
-import type { AnchorEventId, TimeWindowEntry } from "../../../entities/anchor-event";
+import type {
+  AnchorEvent,
+  AnchorEventId,
+  TimeWindowEntry,
+} from "../../../entities/anchor-event";
 import { normalizeLocationPool } from "../../../entities/anchor-event";
 import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import {
@@ -16,7 +20,10 @@ import {
   readVisiblePartnerRequestsByType,
   readVisiblePartnerRequestsByTypeAndTime,
 } from "../../pr/services";
-import { listAnchorEventTimeWindows } from "../services/time-window-pool";
+import {
+  listAnchorEventTimeWindowDetails,
+  resolveAnchorEventTimeWindowDescription,
+} from "../services/time-window-pool";
 
 const eventRepo = new AnchorEventRepository();
 const partnerRepo = new PartnerRepository();
@@ -40,12 +47,14 @@ export interface EventPRSummary {
 export interface BrowseTimeWindowDetail {
   key: string;
   timeWindow: [string | null, string | null];
+  description: string | null;
   prs: EventPRSummary[];
 }
 
 export interface CreateTimeWindowDetail {
   key: string;
   timeWindow: [string | null, string | null];
+  description: string | null;
   locationOptions: LocationOption[];
 }
 
@@ -128,6 +137,7 @@ const sortBrowseTimeWindows = (
 
 const buildBrowseTimeWindowDetails = (
   prs: PartnerRequest[],
+  event: Pick<AnchorEvent, "timePoolConfig">,
 ): BrowseTimeWindowDetail[] => {
   const byKey = new Map<string, BrowseTimeWindowDetail>();
 
@@ -142,6 +152,7 @@ const buildBrowseTimeWindowDetails = (
     byKey.set(key, {
       key,
       timeWindow: pr.time,
+      description: resolveAnchorEventTimeWindowDescription(event, pr.time),
       prs: [toPRSummary(pr)],
     });
   }
@@ -158,12 +169,13 @@ export async function getAnchorEventDetail(
   }
 
   const locationPool = normalizeLocationPool(event.locationPool);
-  const timeWindowPool = listAnchorEventTimeWindows(event);
+  const timeWindowDetails = listAnchorEventTimeWindowDetails(event);
+  const timeWindowPool = timeWindowDetails.map((detail) => detail.timeWindow);
   const pois = await poiRepo.findByIds(locationPool);
   const poiByLocation = new Map(pois.map((poi) => [poi.id, poi]));
 
   const browsePRs = await readVisiblePartnerRequestsByType(event.type);
-  const browseTimeWindows = buildBrowseTimeWindowDetails(browsePRs);
+  const browseTimeWindows = buildBrowseTimeWindowDetails(browsePRs, event);
   const activePartnerCounts = await partnerRepo.countActiveByPrIds(
     browsePRs.map((pr) => pr.id),
   );
@@ -177,7 +189,8 @@ export async function getAnchorEventDetail(
   const createTimeWindows: CreateTimeWindowDetail[] = [];
   let hasAvailableCapacity = false;
 
-  for (const timeWindow of timeWindowPool) {
+  for (const timeWindowDetail of timeWindowDetails) {
+    const timeWindow = timeWindowDetail.timeWindow;
     const sameTypePRs = await readVisiblePartnerRequestsByTypeAndTime(
       event.type,
       timeWindow,
@@ -232,8 +245,9 @@ export async function getAnchorEventDetail(
     });
 
     createTimeWindows.push({
-      key: buildTimeWindowKey(timeWindow),
+      key: timeWindowDetail.key,
       timeWindow,
+      description: timeWindowDetail.description,
       locationOptions,
     });
   }

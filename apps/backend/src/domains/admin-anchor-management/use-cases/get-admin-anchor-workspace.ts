@@ -8,10 +8,7 @@ import type { AnchorEventPRContextRecord } from "../../../repositories/AnchorEve
 import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 import { readAnchorEventPRContextRecordsByEventTimeWindow } from "../../pr/services";
-import {
-  listAnchorEventTimeWindows,
-  buildTimeWindowKey,
-} from "../../anchor-event/services/time-window-pool";
+import { listAnchorEventTimeWindowDetails } from "../../anchor-event/services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
 
@@ -41,6 +38,7 @@ type AdminPRSummary = {
 type AdminAnchorTimeWindowSummary = {
   key: string;
   timeWindow: [string | null, string | null];
+  description: string | null;
   prs: AdminPRSummary[];
 };
 
@@ -58,12 +56,14 @@ export type AdminAnchorEventSummary = {
           id: string;
           kind: "ABSOLUTE";
           startAt: string;
+          description: string | null;
         }
       | {
           id: string;
           kind: "RECURRING";
           weekdays: number[];
           timeOfDay: string;
+          description: string | null;
         }
     >;
   };
@@ -119,12 +119,15 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
 
   const eventSummaries = await Promise.all(
     events.map(async (event) => {
-      const timeWindowPool = listAnchorEventTimeWindows(event);
+      const timeWindowDetails = listAnchorEventTimeWindowDetails(event);
+      const timeWindowPool = timeWindowDetails.map(
+        (detail) => detail.timeWindow,
+      );
       const timeWindowSummaries = await Promise.all(
-        timeWindowPool.map(async (timeWindow) => {
+        timeWindowDetails.map(async (detail) => {
           const prs = await readAnchorEventPRContextRecordsByEventTimeWindow(
             event.id,
-            timeWindow,
+            detail.timeWindow,
             {
               consistency: "strong",
             },
@@ -134,8 +137,9 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
           );
 
           return {
-            key: buildTimeWindowKey(timeWindow),
-            timeWindow,
+            key: detail.key,
+            timeWindow: detail.timeWindow,
+            description: detail.description,
             prs: prSummaries,
           };
         }),

@@ -35,12 +35,14 @@ export type AdminAnchorRecurringStartRuleInput = {
   kind: "RECURRING";
   weekdays: number[];
   timeOfDay: string;
+  description: string | null;
 };
 
 export type AdminAnchorAbsoluteStartRuleInput = {
   id: string;
   kind: "ABSOLUTE";
   startAt: string;
+  description: string | null;
 };
 
 export type AdminAnchorTimePoolConfigInput = {

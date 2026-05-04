@@ -103,6 +103,7 @@ import type { AnchorEventDetailResponse } from "@/domains/event/model/types";
 import {
   formatDateKeyLabel,
   formatTimeWindowLabel,
+  formatTimeWindowOptionLabel,
   formatTimeWindowTimeLabel,
   hasTimeWindowStarted,
   isEndedTimeWindow,
@@ -238,11 +239,16 @@ const upcomingSortedCreateTimeWindows = computed(() =>
   ),
 );
 
-const formatTimeWindowOptionLabel = (
+const formatCreateTimeWindowOptionLabel = (
   entry: CreateTimeWindow,
   index: number,
 ): string =>
-  formatTimeWindowLabel(entry.timeWindow, index, t("anchorEvent.batchLabel"));
+  formatTimeWindowOptionLabel(
+    entry.timeWindow,
+    index,
+    t("anchorEvent.batchLabel"),
+    entry.description,
+  );
 
 const isExpiredDateGroupKey = (
   groupKey: string,
@@ -325,7 +331,7 @@ const dateTabs = computed<DateTabItem[]>(() =>
 const createTimeWindowChoices = computed<CreateTimeWindowChoice[]>(() =>
   upcomingSortedCreateTimeWindows.value.map((entry, index) => ({
     entry,
-    optionLabel: formatTimeWindowOptionLabel(entry, index),
+    optionLabel: formatCreateTimeWindowOptionLabel(entry, index),
     subtitleLabel: formatTimeWindowLabel(
       entry.timeWindow,
       index,
@@ -693,7 +699,7 @@ const handleCreateInList = async (locationId: string | null) => {
 .loading-state,
 .error-state {
   text-align: center;
-  padding: 3rem 0;
+  padding: var(--sys-spacing-large) 0;
   color: var(--sys-color-on-surface-variant);
 }
 

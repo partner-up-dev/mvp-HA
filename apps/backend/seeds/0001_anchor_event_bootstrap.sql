@@ -31,25 +31,29 @@ values
           'id', 'weekly-wed-fri-1720',
           'kind', 'RECURRING',
           'weekdays', jsonb_build_array(3, 5),
-          'timeOfDay', '17:20'
+          'timeOfDay', '17:20',
+          'description', '下课正是运动好时候'
         ),
         jsonb_build_object(
           'id', 'weekly-thu-1700',
           'kind', 'RECURRING',
           'weekdays', jsonb_build_array(4),
-          'timeOfDay', '17:00'
+          'timeOfDay', '17:00',
+          'description', '下课正是运动好时候'
         ),
         jsonb_build_object(
           'id', 'weekly-sat-1100',
           'kind', 'RECURRING',
           'weekdays', jsonb_build_array(6),
-          'timeOfDay', '11:00'
+          'timeOfDay', '11:00',
+          'description', null
         ),
         jsonb_build_object(
           'id', 'weekly-sat-1500',
           'kind', 'RECURRING',
           'weekdays', jsonb_build_array(6),
-          'timeOfDay', '15:00'
+          'timeOfDay', '15:00',
+          'description', null
         )
       )
     ),
@@ -78,13 +82,15 @@ values
           'id', 'weekly-wed-thu-fri-1540',
           'kind', 'RECURRING',
           'weekdays', jsonb_build_array(3, 4, 5),
-          'timeOfDay', '15:40'
+          'timeOfDay', '15:40',
+          'description', '下午专注一小时'
         ),
         jsonb_build_object(
           'id', 'weekly-sat-1030',
           'kind', 'RECURRING',
           'weekdays', jsonb_build_array(6),
-          'timeOfDay', '10:30'
+          'timeOfDay', '10:30',
+          'description', null
         )
       )
     ),

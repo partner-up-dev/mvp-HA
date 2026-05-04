@@ -143,6 +143,19 @@ export const formatTimeWindowLabel = (
   return `${batchLabel} ${index + 1}`;
 };
 
+export const formatTimeWindowOptionLabel = (
+  timeWindow: TimeWindow,
+  index: number,
+  batchLabel: string,
+  description: string | null | undefined,
+): string => {
+  const baseLabel = formatTimeWindowLabel(timeWindow, index, batchLabel);
+  const normalizedDescription = description?.trim() ?? "";
+  return normalizedDescription
+    ? `${baseLabel} - ${normalizedDescription}`
+    : baseLabel;
+};
+
 export const formatTimeWindowTimeLabel = (
   timeWindow: TimeWindow,
   index: number,

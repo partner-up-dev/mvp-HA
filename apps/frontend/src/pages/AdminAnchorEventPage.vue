@@ -358,6 +358,9 @@
                   class="selection-btn"
                 >
                   <span>{{ formatWindow(timeWindow.timeWindow) }}</span>
+                  <small v-if="timeWindow.description">{{
+                    timeWindow.description
+                  }}</small>
                 </ChoiceCard>
               </div>
             </div>
@@ -726,6 +729,13 @@ const emptyLandingConfigForm = (): LandingConfigForm => ({
   assignmentRevision: 1,
 });
 
+const formatRuleDescriptionSuffix = (
+  description: string | null | undefined,
+): string => {
+  const normalized = description?.trim() ?? "";
+  return normalized ? ` | ${normalized}` : "";
+};
+
 const toEventForm = (event: EventRecord): EventForm => ({
   title: event.title,
   type: event.type,
@@ -741,11 +751,19 @@ const toEventForm = (event: EventRecord): EventForm => ({
   earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
   absoluteRulesText: event.timePoolConfig.startRules
     .filter((rule) => rule.kind === "ABSOLUTE")
-    .map((rule) => rule.startAt)
+    .map(
+      (rule) =>
+        `${rule.startAt}${formatRuleDescriptionSuffix(rule.description)}`,
+    )
     .join("\n"),
   recurringRulesText: event.timePoolConfig.startRules
     .filter((rule) => rule.kind === "RECURRING")
-    .map((rule) => `${rule.weekdays.join(",")} ${rule.timeOfDay}`)
+    .map(
+      (rule) =>
+        `${rule.weekdays.join(",")} ${rule.timeOfDay}${formatRuleDescriptionSuffix(
+          rule.description,
+        )}`,
+    )
     .join("\n"),
   defaultMinPartners: event.defaultMinPartners,
   defaultMaxPartners: event.defaultMaxPartners,
@@ -954,20 +972,44 @@ const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
   return null;
 };
 
+const splitRuleDescription = (
+  value: string,
+): { ruleText: string; description: string | null } => {
+  const separatorIndex = value.indexOf("|");
+  if (separatorIndex < 0) {
+    return {
+      ruleText: value.trim(),
+      description: null,
+    };
+  }
+
+  const ruleText = value.slice(0, separatorIndex).trim();
+  const description = value.slice(separatorIndex + 1).trim();
+  return {
+    ruleText,
+    description: description || null,
+  };
+};
+
 const buildTimePoolConfig = (
   form: EventForm,
 ): AdminAnchorTimePoolConfigInput => {
   const absoluteRules = normalizeLines(form.absoluteRulesText).map(
-    (startAt, index) => ({
-      id: `absolute-${index + 1}`,
-      kind: "ABSOLUTE" as const,
-      startAt,
-    }),
+    (line, index) => {
+      const { ruleText, description } = splitRuleDescription(line);
+      return {
+        id: `absolute-${index + 1}`,
+        kind: "ABSOLUTE" as const,
+        startAt: ruleText,
+        description,
+      };
+    },
   );
 
   const recurringRules = normalizeLines(form.recurringRulesText)
     .map((line, index) => {
-      const [weekdaysRaw = "", timeOfDayRaw = ""] = line.split(/\s+/, 2);
+      const { ruleText, description } = splitRuleDescription(line);
+      const [weekdaysRaw = "", timeOfDayRaw = ""] = ruleText.split(/\s+/, 2);
       const weekdays = weekdaysRaw
         .split(",")
         .map((value) => Number(value.trim()))
@@ -981,6 +1023,7 @@ const buildTimePoolConfig = (
         kind: "RECURRING" as const,
         weekdays,
         timeOfDay,
+        description,
       };
     })
     .filter(
