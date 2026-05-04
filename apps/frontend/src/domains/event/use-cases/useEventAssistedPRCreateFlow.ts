@@ -104,6 +104,21 @@ export const useEventAssistedPRCreateFlow = (
     };
   };
 
+  const buildEventAssistedCreateTarget = (
+    canonicalPath: string,
+    eventId: number,
+    handoff?: "event_assisted_create",
+  ): string => {
+    const query = new URLSearchParams({
+      entry: "create",
+      fromEvent: eventId.toString(),
+    });
+    if (handoff === "event_assisted_create") {
+      query.set("handoff", handoff);
+    }
+    return `${canonicalPath}?${query.toString()}`;
+  };
+
   const createEventAssistedPR = async ({
     targetTimeWindow,
     locationId,
@@ -127,7 +142,7 @@ export const useEventAssistedPRCreateFlow = (
         fields,
       });
       await router.push(
-        `${created.canonicalPath}?entry=create&fromEvent=${currentEvent.id}`,
+        buildEventAssistedCreateTarget(created.canonicalPath, currentEvent.id),
       );
     } catch (error) {
       if (isWeChatAuthBlockingError(error)) {
@@ -161,6 +176,7 @@ export const useEventAssistedPRCreateFlow = (
     try {
       const created = await createEventAssistedPRMutation.mutateAsync({
         eventId: currentEvent.id,
+        handoff: pending.handoff,
         fields: {
           title: undefined,
           type: pending.fields.type,
@@ -170,12 +186,16 @@ export const useEventAssistedPRCreateFlow = (
           maxPartners: pending.fields.maxPartners,
           partners: [],
           budget: null,
-          preferences: [],
+          preferences: pending.fields.preferences,
           notes: null,
         },
       });
       await router.push(
-        `${created.canonicalPath}?entry=create&fromEvent=${currentEvent.id}`,
+        buildEventAssistedCreateTarget(
+          created.canonicalPath,
+          currentEvent.id,
+          pending.handoff,
+        ),
       );
     } catch (error) {
       if (!isWeChatAuthBlockingError(error)) {

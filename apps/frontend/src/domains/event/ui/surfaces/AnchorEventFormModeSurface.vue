@@ -506,6 +506,76 @@ const trackFormModeJoinAction = (
   });
 };
 
+type EventAssistedCreateTrigger = "manual_fallback" | "auto_no_candidates";
+
+const buildEventAssistedCreateTarget = (
+  canonicalPath: string,
+  trigger: EventAssistedCreateTrigger,
+): string => {
+  const query = new URLSearchParams({
+    entry: "create",
+    fromEvent: props.eventId.toString(),
+  });
+  if (trigger === "auto_no_candidates") {
+    query.set("handoff", "event_assisted_create");
+  }
+  return `${canonicalPath}?${query.toString()}`;
+};
+
+const createEventAssistedPR = async (
+  trigger: EventAssistedCreateTrigger,
+): Promise<boolean> => {
+  const locationId = selectedLocationId.value;
+  const startAt = selectedStartAt.value;
+  if (!locationId || !isValidFormModeDateTime(startAt)) {
+    return false;
+  }
+
+  const fields = buildCreateFields();
+  if (!fields) {
+    if (trigger === "auto_no_candidates") {
+      selectionErrorMessage.value = t(
+        "anchorEvent.createCard.errors.createFailed",
+      );
+    }
+    return false;
+  }
+
+  if (trigger === "manual_fallback") {
+    trackEvent("anchor_event_form_create_fallback_click", {
+      eventId: props.eventId,
+      locationId,
+      startAt,
+      preferenceCount: selectedPreferences.value.length,
+    });
+  }
+
+  try {
+    const created = await createMutation.mutateAsync({
+      eventId: props.eventId,
+      fields,
+      handoff:
+        trigger === "auto_no_candidates" ? "event_assisted_create" : undefined,
+    });
+
+    await router.push(
+      buildEventAssistedCreateTarget(created.canonicalPath, trigger),
+    );
+    return true;
+  } catch (error) {
+    if (isWeChatAuthBlockingError(error)) {
+      return true;
+    }
+    if (trigger === "auto_no_candidates") {
+      selectionErrorMessage.value =
+        error instanceof Error
+          ? error.message
+          : t("anchorEvent.createCard.errors.createFailed");
+    }
+    return false;
+  }
+};
+
 const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
   const locationId = selectedLocationId.value;
   const startAt = selectedStartAt.value;
@@ -547,6 +617,16 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
     }
 
     await splashFill;
+    if (result.orderedCandidates.length === 0) {
+      const createStarted = await createEventAssistedPR("auto_no_candidates");
+      if (createStarted) {
+        resetJoinSplash();
+        return;
+      }
+      await drainJoinSplash();
+      return;
+    }
+
     noMatchRecommendationResult.value = result;
     await drainJoinSplash();
   } catch (error) {
@@ -607,38 +687,7 @@ const buildCreateFields = (): PartnerRequestFields | null => {
 };
 
 const handleCreateFallback = async () => {
-  const locationId = selectedLocationId.value;
-  const startAt = selectedStartAt.value;
-  if (!locationId || !isValidFormModeDateTime(startAt)) {
-    return;
-  }
-
-  const fields = buildCreateFields();
-  if (!fields) {
-    return;
-  }
-
-  trackEvent("anchor_event_form_create_fallback_click", {
-    eventId: props.eventId,
-    locationId,
-    startAt,
-    preferenceCount: selectedPreferences.value.length,
-  });
-
-  try {
-    const created = await createMutation.mutateAsync({
-      eventId: props.eventId,
-      fields,
-    });
-
-    await router.push(
-      `${created.canonicalPath}?entry=create&fromEvent=${props.eventId}`,
-    );
-  } catch (error) {
-    if (isWeChatAuthBlockingError(error)) {
-      return;
-    }
-  }
+  await createEventAssistedPR("manual_fallback");
 };
 
 const handleJoinCandidate = (prId: number, rank: number): void => {
@@ -694,6 +743,7 @@ const attemptPendingCreateReplay = async () => {
   try {
     const created = await createMutation.mutateAsync({
       eventId: props.eventId,
+      handoff: pending.handoff,
       fields: {
         title: undefined,
         type: pending.fields.type,
@@ -708,7 +758,12 @@ const attemptPendingCreateReplay = async () => {
       },
     });
     await router.push(
-      `${created.canonicalPath}?entry=create&fromEvent=${props.eventId}`,
+      buildEventAssistedCreateTarget(
+        created.canonicalPath,
+        pending.handoff === "event_assisted_create"
+          ? "auto_no_candidates"
+          : "manual_fallback",
+      ),
     );
   } catch (error) {
     if (!isWeChatAuthBlockingError(error)) {

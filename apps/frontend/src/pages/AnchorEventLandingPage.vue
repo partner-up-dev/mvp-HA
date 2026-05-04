@@ -598,6 +598,21 @@ const buildEventAssistedFields = ({
   };
 };
 
+const buildEventAssistedCreateTarget = (
+  canonicalPath: string,
+  eventId: number,
+  handoff?: "event_assisted_create",
+): string => {
+  const query = new URLSearchParams({
+    entry: "create",
+    fromEvent: eventId.toString(),
+  });
+  if (handoff === "event_assisted_create") {
+    query.set("handoff", handoff);
+  }
+  return `${canonicalPath}?${query.toString()}`;
+};
+
 const createEventAssistedPR = async ({
   targetTimeWindow,
   locationId,
@@ -622,9 +637,7 @@ const createEventAssistedPR = async ({
       eventId: event.id,
       fields,
     });
-    await router.push(
-      `${created.canonicalPath}?entry=create&fromEvent=${event.id}`,
-    );
+    await router.push(buildEventAssistedCreateTarget(created.canonicalPath, event.id));
   } catch (error) {
     if (isWeChatAuthBlockingError(error)) {
       return;
@@ -654,6 +667,7 @@ const attemptPendingCreateReplay = async () => {
   try {
     const created = await createEventAssistedPRMutation.mutateAsync({
       eventId: event.id,
+      handoff: pending.handoff,
       fields: {
         title: undefined,
         type: pending.fields.type,
@@ -668,7 +682,11 @@ const attemptPendingCreateReplay = async () => {
       },
     });
     await router.push(
-      `${created.canonicalPath}?entry=create&fromEvent=${event.id}`,
+      buildEventAssistedCreateTarget(
+        created.canonicalPath,
+        event.id,
+        pending.handoff,
+      ),
     );
   } catch (error) {
     if (!isWeChatAuthBlockingError(error)) {

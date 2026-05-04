@@ -2,7 +2,7 @@
 
 ## MVT Core
 
-- Objective & Hypothesis: land GitHub issue `#168` on top of `#180` by replacing the current `/e/:eventId` `FORM` placeholder with a form-first join flow. The user selects location, start time, and optional preferences, then long-presses the join-intent CTA. Backend returns one matched recommendation plus ordered candidates. If a matched recommendation exists, the splash handoff continues into the canonical PR page. If no matched recommendation exists, `/e/:eventId` switches into an inline candidate-list plus create-fallback state. Hypothesis: keeping the Form Mode flow inside one route-level state machine preserves low-friction ad-scan continuity and avoids serializing recommendation result state into a separate page.
+- Objective & Hypothesis: land GitHub issue `#168` on top of `#180` by replacing the current `/e/:eventId` `FORM` placeholder with a form-first join flow. The user selects location, start time, and optional preferences, then long-presses the join-intent CTA. Backend returns one matched recommendation plus ordered candidates. If a matched recommendation exists, the splash handoff continues into the canonical PR page. If no matched recommendation exists and ordered candidates exist, `/e/:eventId` switches into an inline candidate-list plus create-fallback state. If no matched recommendation exists and ordered candidates are empty, Form Mode directly creates an event-assisted PR and opens its canonical PR page with a created-request notice. Hypothesis: keeping the Form Mode flow inside one route-level state machine preserves low-friction ad-scan continuity and avoids serializing recommendation result state into a separate page.
 - Guardrails Touched:
   - `docs/10-prd/behavior/workflows.md`
   - `docs/10-prd/behavior/rules-and-invariants.md`
@@ -50,10 +50,12 @@
 - during Form Mode bootstrap, backend may return one default selection from the nearest upcoming joinable PR in the current Anchor Event context.
 - if a matched recommendation exists, the long-press splash opens a route-level matched PR handoff overlay with the PR Facts Card preview and ordinary `取消` / `加入` actions.
 - tapping the handoff `加入` action enters that PR's canonical `/pr/:id` route; PR Page owns the final join action after the handoff settles.
-- if no matched recommendation exists, the same `/e/:eventId` Form Mode surface switches into an inline no-match result state.
-- the no-match result state contains:
+- if no matched recommendation exists and ordered candidates exist, the same `/e/:eventId` Form Mode surface switches into an inline no-match result state.
+- the candidate no-match result state contains:
   - ordered candidate list
   - create fallback action `都不合适，帮我找`
+- if no matched recommendation exists and ordered candidates are empty, Form Mode directly submits the event-assisted create command and routes to the created `/pr/:id` with `handoff=event_assisted_create`.
+- PR detail renders a success notice for that handoff query telling the user that the created request is ready.
 - PageHeader back inside the no-match result state returns to the Form Mode selection state.
 - candidate list PR cards reuse `AnchorEventPRCard` with a bottom `actions` slot for the full-width join action.
 - the selection state's secondary CTA `查看所有场次` routes into the existing Anchor Event list-mode browsing path.
@@ -107,7 +109,7 @@
 - a user-authored tag participates immediately in:
   - the current landing selection state
   - the current recommendation request
-  - the eventual create payload if create fallback is chosen
+  - the eventual create payload for create fallback or zero-candidate direct create
 - the same user-authored tag is submitted into the event-specific preset tag pool as pending content and requires admin approval or publish before later visitors can see it in Form Mode.
 
 ### 6. Recommendation Semantics
@@ -138,8 +140,9 @@
 - group momentum is based on how close the PR is to reaching `minPartners` after the current user joins.
 - matched recommendation is consumed as the handoff target after the Form Mode long-press submit.
 - matched recommendation preview uses the same `PRFactsCard` component as PR Page; the card accepts a `prId` and owns its PR detail data request.
-- the visible result UI is only for no-match recommendations.
+- the visible result UI is only for no-match recommendations with ordered candidates.
 - no-match recommendation result is an inline Form Mode state containing ordered candidates plus create fallback.
+- zero-candidate no-match uses direct event-assisted create and lands on PR detail with `handoff=event_assisted_create`.
 - candidate rows should use the Anchor Event PR card primitive with an action slot rather than a page-local recommendation card.
 
 ### 7. Join CTA Animation And Handoff
@@ -162,15 +165,16 @@
   - the viewport cover uses a CTA-origin blob sized by distance to the farthest viewport corner, avoiding directional rectangle expansion gaps.
   - droplets, organic border-radius morphing, and shine provide the splash / liquid burst cue.
   - the overlay stays filled while recommendation resolves
-  - when the inline no-match result is ready, the primary liquid drains downward to reveal the result state
+  - when candidate no-match result content is ready, the primary liquid drains downward to reveal the result state
 - after the burst, the flow should continue into a route-level PR handoff overlay.
 - the handoff PR Facts Card appears from the center with a small-to-large spin-in animation.
 - during `/e/:eventId` to `/pr/:id` navigation, the primary splash remains above the app until the PR Page target card is ready.
 - once PR Page renders its PR Facts Card target, the overlay card aligns into that card's final rect through a FLIP transform and one full Y-axis spin, then the splash drains from top to bottom and reveals the real PR Page card in the same position.
 - Form Mode full-screen join splash and matched PR handoff drain use the same route-handoff-owned SVG liquid layer driven by `requestAnimationFrame`: three sine-wave path layers share the primary color family, move with phase offsets, increase wave deformation during flow, and calm down near empty.
-- Form Mode fill passes the CTA origin rect into that liquid layer, so the full-screen liquid starts from the long-press CTA area, expands through a radial reveal, then holds as a filled liquid surface before either draining into the no-match result or handing off into the matched PR overlay.
+- Form Mode fill passes the CTA origin rect into that liquid layer, so the full-screen liquid starts from the long-press CTA area, expands through a radial reveal, then holds as a filled liquid surface before draining into the candidate no-match result, handing off into the matched PR overlay, or completing zero-candidate direct create.
 - if backend finds a matched recommendation, that PR is the target of the same burst handoff.
-- if backend does not find a matched recommendation, the liquid fill completes first, the inline no-match result state mounts underneath the filled surface, and the drain reveals that result state.
+- if backend returns ordered candidates without a matched recommendation, the liquid fill completes first, the inline no-match result state mounts underneath the filled surface, and the drain reveals that result state.
+- if backend returns zero ordered candidates without a matched recommendation, the liquid fill completes first, Form Mode submits event-assisted create, and PR detail displays the created-request notice after navigation.
 
 ### 8. Header And Other Events
 
@@ -197,7 +201,7 @@
   - PR handoff continuity and landing telemetry
 - State Diff:
   - From: `/e/:eventId` `FORM` mode is a static placeholder
-  - To: `/e/:eventId` `FORM` mode is a full selection -> recommendation -> matched handoff or inline no-match result flow
+  - To: `/e/:eventId` `FORM` mode is a full selection -> recommendation -> matched handoff, inline no-match candidate result, or zero-candidate direct-create flow
 - Blast Radius Forecast:
   - Anchor Event public routes
   - Anchor Event admin workspace
@@ -212,7 +216,7 @@
 - Verification:
   - backend typecheck
   - frontend build
-  - manual verification for FORM selection, matched long-press handoff, no-match candidate list, create fallback, and CARD_RICH non-regression
+  - manual verification for FORM selection, matched long-press handoff, no-match candidate list, zero-candidate direct create, create fallback, and CARD_RICH non-regression
 
 ## Execution Plan
 
@@ -222,7 +226,7 @@
 4. Extract or reuse the carousel primitive and build the Form Mode location, time, and preference controls.
 5. Add backend recommendation contract with matched recommendation and ordered candidate list.
 6. Add `AnchorEventPRCard` actions slot for candidate-list join actions.
-7. Assemble Form Mode matched handoff and inline no-match candidate-list / create-fallback state.
+7. Assemble Form Mode matched handoff, inline no-match candidate-list / create-fallback state, and zero-candidate direct create.
 8. Implement the Form Mode join long-press animation and PR handoff continuity.
 9. Add backend-authored Form Mode default selection from the nearest upcoming joinable PR.
 10. Add telemetry for landing exposure, no-match recommendation exposure, candidate selection, create fallback intent, long-press completion, and confirm-join funnel.
@@ -307,5 +311,5 @@ Current rule:
 - matched eligibility is computed before score ranking.
 - matched eligibility requires exact selected location, start time within `5` minutes, and no same-category preference conflict.
 - if multiple PRs are matched, score chooses the best matched PR.
-- if no PR is matched, score ranks the whole base PR pool into `orderedCandidates`.
+- if no PR is matched, score ranks the whole base PR pool into `orderedCandidates`; an empty list is the zero-candidate direct-create signal for Form Mode.
 - score uses small signed values and includes group momentum based on remaining people needed after the current user joins.

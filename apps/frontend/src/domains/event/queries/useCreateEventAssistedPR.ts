@@ -18,6 +18,7 @@ import { setPendingWeChatAction } from "@/processes/wechat/pending-wechat-action
 type CreateEventAssistedPRInput = {
   eventId: number;
   fields: PartnerRequestFields;
+  handoff?: "event_assisted_create";
 };
 
 export type CreateEventAssistedPRResponse = InferResponseType<
@@ -36,7 +37,7 @@ export const useCreateEventAssistedPR = () => {
     CreateEventAssistedPRError,
     CreateEventAssistedPRInput
   >({
-    mutationFn: async ({ eventId, fields }) => {
+    mutationFn: async ({ eventId, fields, handoff }) => {
       const response = await client.api.pr.new.form.$post(
         {
           json: {
@@ -61,6 +62,7 @@ export const useCreateEventAssistedPR = () => {
           setPendingWeChatAction({
             kind: "EVENT_ASSISTED_PR_CREATE",
             eventId,
+            handoff,
             fields: {
               type: fields.type,
               time: fields.time,
