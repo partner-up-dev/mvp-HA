@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   prBookingContacts,
@@ -66,6 +66,25 @@ export class PRBookingContactRepository {
     await db
       .delete(prBookingContacts)
       .where(eq(prBookingContacts.prId, prId));
+  }
+
+  async deleteByPrIdAndOwner(input: {
+    prId: PRId;
+    ownerUserId: UserId;
+    ownerPartnerId: PartnerId;
+  }): Promise<void> {
+    await db
+      .delete(prBookingContacts)
+      .where(
+        and(
+          eq(prBookingContacts.prId, input.prId),
+          eq(prBookingContacts.ownerUserId, input.ownerUserId),
+          or(
+            eq(prBookingContacts.ownerPartnerId, input.ownerPartnerId),
+            isNull(prBookingContacts.ownerPartnerId),
+          ),
+        ),
+      );
   }
 
   async updateOwnerPartner(input: {

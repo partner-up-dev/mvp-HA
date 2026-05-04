@@ -2,6 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import type {
   AnchorEvent,
   AnchorEventSupportResource,
+  PartnerId,
   PRId,
   PRJoinGateConfig,
   PRJoinGateConfigItem,
@@ -278,6 +279,22 @@ export const assertPRJoinGatesResolvedForUser = async (input: {
           "Please complete the join notice or contact information before joining.",
       },
     },
+  });
+};
+
+export const resetPRJoinGateResolutionsForUser = async (input: {
+  prId: PRId;
+  userId: UserId;
+  partnerId: PartnerId;
+}): Promise<void> => {
+  await noticeAcceptanceRepo.deleteByPrIdAndUserId({
+    prId: input.prId,
+    userId: input.userId,
+  });
+  await bookingContactRepo.deleteByPrIdAndOwner({
+    prId: input.prId,
+    ownerUserId: input.userId,
+    ownerPartnerId: input.partnerId,
   });
 };
 

@@ -22,7 +22,7 @@ import {
   prJoinNoticeAcceptances,
   prSupportResources,
 } from "../../src/entities";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 type JoinGateProjectionResponse = {
   gates: Array<{
@@ -179,6 +179,46 @@ scenario("join_notice_gate_blocks_join_until_viewer_accepts", async (ctx) => {
   const joined = await joinPartnerRequest({ pr, user: joiner });
   assert.equal(joined.status, "READY");
   await expectActiveParticipantCount(pr, 2);
+
+  await expectJsonResponse(
+    await requestJson(`/api/pr/${pr.id}/exit`, {
+      method: "POST",
+      token: joiner.token,
+    }),
+    200,
+  );
+
+  const resetAcceptances = await db
+    .select()
+    .from(prJoinNoticeAcceptances)
+    .where(
+      and(
+        eq(prJoinNoticeAcceptances.prId, pr.id),
+        eq(prJoinNoticeAcceptances.userId, joiner.user.id),
+      ),
+    );
+  assert.equal(resetAcceptances.length, 0);
+
+  const afterExitProjection =
+    await expectJsonResponse<JoinGateProjectionResponse>(
+      await requestJson(`/api/pr/${pr.id}/join-gates`, {
+        method: "GET",
+        token: joiner.token,
+      }),
+      200,
+    );
+  assert.equal(afterExitProjection.gates[0]?.kind, "JOIN_NOTICE");
+  assert.equal(afterExitProjection.gates[0]?.resolved, false);
+
+  const rejectedRejoin = await expectJsonResponse<ProblemDetailsResponse>(
+    await requestJson(`/api/pr/${pr.id}/join`, {
+      method: "POST",
+      token: joiner.token,
+      body: {},
+    }),
+    400,
+  );
+  assert.equal(rejectedRejoin.code, "PR_JOIN_GATE_UNRESOLVED");
 });
 
 scenario("booking_contact_gate_collects_phone_before_join", async (ctx) => {
@@ -255,6 +295,41 @@ scenario("booking_contact_gate_collects_phone_before_join", async (ctx) => {
   assert.equal(resolvedContacts.length, 1);
   assert.equal(resolvedContacts[0]?.ownerUserId, joiner.user.id);
   assert.notEqual(resolvedContacts[0]?.ownerPartnerId, null);
+
+  await expectJsonResponse(
+    await requestJson(`/api/pr/${pr.id}/exit`, {
+      method: "POST",
+      token: joiner.token,
+    }),
+    200,
+  );
+
+  const resetContacts = await db
+    .select()
+    .from(prBookingContacts)
+    .where(eq(prBookingContacts.prId, pr.id));
+  assert.equal(resetContacts.length, 0);
+
+  const afterExitProjection =
+    await expectJsonResponse<JoinGateProjectionResponse>(
+      await requestJson(`/api/pr/${pr.id}/join-gates`, {
+        method: "GET",
+        token: joiner.token,
+      }),
+      200,
+    );
+  assert.equal(afterExitProjection.gates[0]?.kind, "BOOKING_CONTACT");
+  assert.equal(afterExitProjection.gates[0]?.resolved, false);
+
+  const rejectedRejoin = await expectJsonResponse<ProblemDetailsResponse>(
+    await requestJson(`/api/pr/${pr.id}/join`, {
+      method: "POST",
+      token: joiner.token,
+      body: {},
+    }),
+    400,
+  );
+  assert.equal(rejectedRejoin.code, "PR_JOIN_GATE_UNRESOLVED");
 });
 
 scenario("admin_delete_pr_removes_root_partners_and_support_resources", async (ctx) => {

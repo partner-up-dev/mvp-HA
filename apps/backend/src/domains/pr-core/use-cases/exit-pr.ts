@@ -23,6 +23,7 @@ import {
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 import { resolveBookingContactState } from "../../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
+import { resetPRJoinGateResolutionsForUser } from "../services/join-gates.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -77,6 +78,11 @@ export async function exitPRByUserId(
   }
 
   await partnerRepo.updateStatus(activeSlot.id, "EXITED");
+  await resetPRJoinGateResolutionsForUser({
+    prId: id,
+    userId,
+    partnerId: activeSlot.id,
+  });
   await userReliabilityRepo.applyDelta(userId, { released: 1 });
   if (hasParticipationPolicy) {
     await cancelWeChatReminderJobsForParticipant(id, userId);

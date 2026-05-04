@@ -97,57 +97,60 @@
           :message="primaryBlockedMessage"
         />
 
-        <div v-if="primaryDockAction" class="primary-action">
-          <PRJoinFlow
-            v-if="primaryDockAction.key === 'JOIN'"
-            ref="joinFlowRef"
-            :pr-id="id"
-            :disabled="primaryDockAction.disabled"
-            :scenario-type="prDetail.core.type"
-            write-join-entry-on-auth
-            @joined="handleJoinFlowJoined"
-          >
-            <template
-              #default="{ open, pending, disabled, joined, errorMessage }"
-            >
+        <PRJoinFlow
+          ref="joinFlowRef"
+          :pr-id="id"
+          :disabled="joinDockAction?.disabled ?? true"
+          :scenario-type="prDetail.core.type"
+          :viewer-is-participant="prDetail.partnerSection.viewer.isParticipant"
+          write-join-entry-on-auth
+          @joined="handleJoinFlowJoined"
+        >
+          <template #default="{ open, pending, disabled, joined, errorMessage }">
+            <div v-if="joinDockAction" class="primary-action">
               <Button
                 class="primary-action__button"
-                :tone="buttonToneForAction(primaryDockAction)"
+                :tone="buttonToneForAction(joinDockAction)"
                 :disabled="disabled"
                 :loading="pending"
                 block
-                @click="handleDockJoinAction(primaryDockAction, open)"
+                @click="handleDockJoinAction(joinDockAction, open)"
               >
                 {{
                   joined
                     ? t("prPage.partnerSection.rosterJoined")
                     : pending
-                      ? primaryDockAction.pendingLabel
-                      : primaryDockAction.label
+                      ? joinDockAction.pendingLabel
+                      : joinDockAction.label
                 }}
               </Button>
               <p v-if="errorMessage" class="action-error">
                 {{ errorMessage }}
               </p>
-            </template>
-          </PRJoinFlow>
+              <p v-if="joinDockAction.tip" class="action-tip">
+                {{ joinDockAction.tip }}
+              </p>
+            </div>
+          </template>
+        </PRJoinFlow>
+
+        <div v-if="nonJoinPrimaryDockAction" class="primary-action">
           <Button
-            v-else
             class="primary-action__button"
-            :tone="buttonToneForAction(primaryDockAction)"
-            :disabled="primaryDockAction.disabled"
-            :loading="primaryDockAction.pending"
+            :tone="buttonToneForAction(nonJoinPrimaryDockAction)"
+            :disabled="nonJoinPrimaryDockAction.disabled"
+            :loading="nonJoinPrimaryDockAction.pending"
             block
-            @click="handleDockAction(primaryDockAction)"
+            @click="handleDockAction(nonJoinPrimaryDockAction)"
           >
             {{
-              primaryDockAction.pending
-                ? primaryDockAction.pendingLabel
-                : primaryDockAction.label
+              nonJoinPrimaryDockAction.pending
+                ? nonJoinPrimaryDockAction.pendingLabel
+                : nonJoinPrimaryDockAction.label
             }}
           </Button>
-          <p v-if="primaryDockAction.tip" class="action-tip">
-            {{ primaryDockAction.tip }}
+          <p v-if="nonJoinPrimaryDockAction.tip" class="action-tip">
+            {{ nonJoinPrimaryDockAction.tip }}
           </p>
         </div>
 
@@ -627,6 +630,14 @@ const dockActions = computed<DockActionItem[]>(() => {
 });
 
 const primaryDockAction = computed(() => dockActions.value[0] ?? null);
+const joinDockAction = computed(() =>
+  primaryDockAction.value?.key === "JOIN" ? primaryDockAction.value : null,
+);
+const nonJoinPrimaryDockAction = computed(() =>
+  primaryDockAction.value && primaryDockAction.value.key !== "JOIN"
+    ? primaryDockAction.value
+    : null,
+);
 
 const primaryBlockedMessage = computed(() => {
   const viewer = prDetail.value?.partnerSection.viewer;

@@ -112,12 +112,14 @@ const props = withDefaults(
     prId: PRId | null;
     disabled?: boolean;
     scenarioType?: string | null;
+    viewerIsParticipant?: boolean | null;
     showSuccessPrompt?: boolean;
     writeJoinEntryOnAuth?: boolean;
   }>(),
   {
     disabled: false,
     scenarioType: null,
+    viewerIsParticipant: null,
     showSuccessPrompt: true,
     writeJoinEntryOnAuth: false,
   },
@@ -387,6 +389,15 @@ watch(
     joined.value = false;
     closeJoinFlowModal();
     finishSuccessPrompt();
+  },
+);
+
+watch(
+  () => props.viewerIsParticipant,
+  (isParticipant) => {
+    if (isParticipant === false) {
+      joined.value = false;
+    }
   },
 );
 
