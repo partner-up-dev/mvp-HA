@@ -107,6 +107,24 @@
           :message="waitlistNoticeText"
         />
 
+        <div v-if="showCancelWaitlistActionInContext" class="secondary-action">
+          <Button
+            tone="surface"
+            :loading="cancelWaitlistMutation.isPending.value"
+            block
+            @click="requestCancelWaitlistWithConfirm"
+          >
+            {{
+              cancelWaitlistMutation.isPending.value
+                ? t("prPage.cancelWaitlisting")
+                : t("prPage.cancelWaitlist")
+            }}
+          </Button>
+          <p v-if="cancelWaitlistActionError" class="action-error">
+            {{ cancelWaitlistActionError }}
+          </p>
+        </div>
+
         <component
           :is="joinFlowComponent"
           v-if="joinDockAction"
@@ -299,6 +317,21 @@
         @confirm="confirmExit"
       />
 
+      <ConfirmDialog
+        :open="showCancelWaitlistConfirmModal"
+        :title="t('prPage.cancelWaitlistConfirm.title')"
+        :message="t('prPage.cancelWaitlistConfirm.message')"
+        :confirm-label="
+          cancelWaitlistMutation.isPending.value
+            ? t('prPage.cancelWaitlisting')
+            : t('prPage.cancelWaitlist')
+        "
+        confirm-tone="danger"
+        :loading="cancelWaitlistMutation.isPending.value"
+        @close="showCancelWaitlistConfirmModal = false"
+        @confirm="confirmCancelWaitlist"
+      />
+
       <Modal
         :open="attendanceActions.showCheckInFollowup.value"
         :title="
@@ -378,6 +411,7 @@ import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRAttendanceActions } from "@/domains/pr/use-cases/usePRAttendanceActions";
 import { usePRLivePolling } from "@/domains/pr/use-cases/usePRLivePolling";
 import { usePRShareContext } from "@/domains/pr/use-cases/usePRShareContext";
+import { useCancelWaitlistPR } from "@/domains/pr/queries/usePRActions";
 import { useRouteShareDescriptorRegistration } from "@/domains/share/use-cases/route-share-controller";
 import {
   prBookingSupportPath,
@@ -464,13 +498,16 @@ const publishMutation = usePublishPR();
 const showEditModal = ref(false);
 const showModifyModal = ref(false);
 const showExitConfirmModal = ref(false);
+const showCancelWaitlistConfirmModal = ref(false);
 const showShareDrawer = ref(false);
 const bookingContactActionError = ref<string | null>(null);
 const exitActionError = ref<string | null>(null);
+const cancelWaitlistActionError = ref<string | null>(null);
 const lastPrimaryImpressionKey = ref("");
 const factsCardTargetRef = ref<HTMLElement | null>(null);
 const matchedPRHandoff = useMatchedPRHandoff();
 const joinFlowRef = ref<{ open: () => Promise<void> } | null>(null);
+const cancelWaitlistMutation = useCancelWaitlistPR();
 
 const editableFields = computed<PRFormFields>(() => ({
   title: prDetail.value?.title,
@@ -586,6 +623,7 @@ useBodyScrollLock(
       showEditModal.value ||
       showModifyModal.value ||
       showExitConfirmModal.value ||
+      showCancelWaitlistConfirmModal.value ||
       showShareDrawer.value ||
       attendanceActions.showCheckInFollowup.value,
   ),
@@ -776,12 +814,17 @@ const showExitActionInContext = computed(() => {
   return true;
 });
 
+const showCancelWaitlistActionInContext = computed(
+  () => prDetail.value?.partnerSection.viewer.isWaitlisted ?? false,
+);
+
 const showContextualActionArea = computed(() =>
   Boolean(
     releaseNoticeText.value ||
       primaryBlockedMessage.value ||
       waitlistNoticeText.value ||
       primaryDockAction.value ||
+      showCancelWaitlistActionInContext.value ||
       showExitActionInContext.value ||
       primaryActionErrorMessage.value,
   ),
@@ -1009,6 +1052,26 @@ const confirmExit = async () => {
   }
 };
 
+const requestCancelWaitlistWithConfirm = () => {
+  cancelWaitlistActionError.value = null;
+  if (!showCancelWaitlistActionInContext.value) return;
+  showCancelWaitlistConfirmModal.value = true;
+};
+
+const confirmCancelWaitlist = async () => {
+  cancelWaitlistActionError.value = null;
+  if (id.value === null) return;
+  try {
+    await cancelWaitlistMutation.mutateAsync({ id: id.value });
+    showCancelWaitlistConfirmModal.value = false;
+    resetLivePolling();
+    void refetch();
+  } catch (error) {
+    cancelWaitlistActionError.value =
+      error instanceof Error ? error.message : t("errors.cancelWaitlistFailed");
+  }
+};
+
 const goBookingSupport = () => {
   if (id.value === null || !supportsEventContextFeatures.value) return;
   router.push(prBookingSupportPath(id.value));
@@ -1179,6 +1242,12 @@ function buttonToneForAction(
 
 .primary-action__button {
   max-width: 100%;
+}
+
+.secondary-action {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-small);
 }
 
 .secondary-danger-action {

@@ -3,6 +3,7 @@ import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import {
   advancePRMessageReadMarker,
   authorizeCreatorMutation,
+  cancelWaitlistPRByUserId,
   checkIn,
   confirmSlot,
   createPRFromNaturalLanguage,
@@ -448,6 +449,17 @@ export const partnerRequestRoute = app
       auth,
     });
   })
+  .post(
+    "/:id/waitlist/cancel",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await getPROr404(id);
+      const userId = requireAuthenticatedUserId(c);
+      const result = await cancelWaitlistPRByUserId(id, userId);
+      return c.json(result);
+    },
+  )
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);

@@ -10,8 +10,15 @@ import {
   expectActiveParticipantsInclude,
 } from "./_kit/assertions/participants";
 import { expectPartnerRequestStatus } from "./_kit/assertions/partner-requests";
-import { givenPublishedPartnerRequest } from "./_kit/builders/partner-requests";
-import { givenAdminUser, givenUser } from "./_kit/builders/users";
+import {
+  givenPublishedPartnerRequest,
+  type ScenarioPartnerRequest,
+} from "./_kit/builders/partner-requests";
+import {
+  givenAdminUser,
+  givenUser,
+  type ScenarioUser,
+} from "./_kit/builders/users";
 import { probeMessageThreadVisibility } from "./_kit/probes/messages";
 import { requestJson, expectJsonResponse } from "../_infra/http/backend-app";
 import { getTestDb } from "../_infra/probes/sql-probe";
@@ -22,7 +29,8 @@ import {
   prJoinNoticeAcceptances,
   prSupportResources,
 } from "../../src/entities";
-import { and, eq, sql } from "drizzle-orm";
+import type { PartnerStatus } from "../../src/entities/partner";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 type JoinGateProjectionResponse = {
   gates: Array<{
@@ -54,6 +62,94 @@ type WaitlistDetailResponse = {
     };
   };
 };
+
+async function waitlistPartnerRequest(input: {
+  pr: ScenarioPartnerRequest;
+  user: ScenarioUser;
+}): Promise<WaitlistPRResponse> {
+  const result = await expectJsonResponse<WaitlistPRResponse>(
+    await requestJson(`/api/pr/${input.pr.id}/waitlist`, {
+      method: "POST",
+      token: input.user.token,
+    }),
+    200,
+  );
+  assert.equal(result.isViewerWaitlisted, true);
+  assert.notEqual(result.myPendingPartnerId, null);
+  return result;
+}
+
+async function cancelWaitlistPartnerRequest(input: {
+  pr: ScenarioPartnerRequest;
+  user: ScenarioUser;
+}): Promise<WaitlistPRResponse> {
+  const result = await expectJsonResponse<WaitlistPRResponse>(
+    await requestJson(`/api/pr/${input.pr.id}/waitlist/cancel`, {
+      method: "POST",
+      token: input.user.token,
+    }),
+    200,
+  );
+  assert.equal(result.isViewerWaitlisted, false);
+  assert.equal(result.myPendingPartnerId, null);
+  return result;
+}
+
+async function getWaitlistDetail(input: {
+  pr: ScenarioPartnerRequest;
+  user: ScenarioUser;
+}): Promise<WaitlistDetailResponse> {
+  return expectJsonResponse<WaitlistDetailResponse>(
+    await requestJson(`/api/pr/${input.pr.id}`, {
+      method: "GET",
+      token: input.user.token,
+    }),
+    200,
+  );
+}
+
+async function expectViewerWaitlisted(input: {
+  pr: ScenarioPartnerRequest;
+  user: ScenarioUser;
+  rank: number;
+}): Promise<void> {
+  const detail = await getWaitlistDetail(input);
+  assert.equal(detail.partnerSection.viewer.isWaitlisted, true);
+  assert.equal(detail.partnerSection.viewer.waitlistRank, input.rank);
+  assert.equal(detail.partnerSection.viewer.slotState, "PENDING");
+  assert.equal(detail.partnerSection.viewer.canWaitlist, false);
+}
+
+async function expectPartnerSlotStatus(input: {
+  pr: ScenarioPartnerRequest;
+  user: ScenarioUser;
+  status: PartnerStatus;
+}): Promise<void> {
+  const db = getTestDb();
+  const [slot] = await db
+    .select({ status: partners.status })
+    .from(partners)
+    .where(
+      and(
+        eq(partners.prId, input.pr.id),
+        eq(partners.userId, input.user.user.id),
+      ),
+    )
+    .orderBy(desc(partners.id));
+  assert.equal(slot?.status, input.status);
+}
+
+async function expectPendingWaitlistCount(
+  pr: ScenarioPartnerRequest,
+  expected: number,
+): Promise<void> {
+  const db = getTestDb();
+  const pendingSlots = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(partners)
+    .where(and(eq(partners.prId, pr.id), eq(partners.status, "PENDING")));
+  assert.equal(pendingSlots[0]?.count ?? 0, expected);
+}
 
 scenario("open_pr_join_reaches_ready", async (ctx) => {
   // Comprehension coverage:
@@ -253,6 +349,112 @@ scenario(
     );
     expectMessageThreadForbidden(
       await probeMessageThreadVisibility({ pr, viewer: secondCandidate }),
+    );
+  },
+);
+
+scenario(
+  "waitlist_cancel_removes_pending_slot_from_fifo_promotion",
+  async (ctx) => {
+    const creator = await givenUser("waitlist-cancel-creator");
+    const joiner = await givenUser("waitlist-cancel-joiner");
+    const firstCandidate = await givenUser("waitlist-cancel-first");
+    const secondCandidate = await givenUser("waitlist-cancel-second");
+    const thirdCandidate = await givenUser("waitlist-cancel-third");
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 1,
+      maxPartners: 2,
+      expectedCreatedStatus: "READY",
+    });
+
+    ctx.record("prId", pr.id);
+    ctx.record("firstCandidateUserId", firstCandidate.user.id);
+    ctx.record("secondCandidateUserId", secondCandidate.user.id);
+    ctx.record("thirdCandidateUserId", thirdCandidate.user.id);
+
+    const joined = await joinPartnerRequest({ pr, user: joiner });
+    assert.equal(joined.status, "FULL");
+    await expectPartnerRequestStatus(pr, "FULL");
+    await expectActiveParticipantCount(pr, 2);
+
+    await waitlistPartnerRequest({ pr, user: firstCandidate });
+    await waitlistPartnerRequest({ pr, user: secondCandidate });
+    await waitlistPartnerRequest({ pr, user: thirdCandidate });
+
+    await expectViewerWaitlisted({ pr, user: firstCandidate, rank: 1 });
+    await expectViewerWaitlisted({ pr, user: secondCandidate, rank: 2 });
+    await expectViewerWaitlisted({ pr, user: thirdCandidate, rank: 3 });
+    await expectPendingWaitlistCount(pr, 3);
+
+    const cancelResult = await cancelWaitlistPartnerRequest({
+      pr,
+      user: firstCandidate,
+    });
+    assert.equal(cancelResult.status, "FULL");
+
+    const firstAfterCancel = await getWaitlistDetail({
+      pr,
+      user: firstCandidate,
+    });
+    assert.equal(firstAfterCancel.partnerSection.viewer.isWaitlisted, false);
+    assert.equal(firstAfterCancel.partnerSection.viewer.waitlistRank, null);
+    assert.equal(
+      firstAfterCancel.partnerSection.viewer.slotState,
+      "NOT_JOINED",
+    );
+    assert.equal(firstAfterCancel.partnerSection.viewer.pendingPartnerId, null);
+    assert.equal(firstAfterCancel.partnerSection.viewer.canWaitlist, true);
+    await expectPartnerSlotStatus({
+      pr,
+      user: firstCandidate,
+      status: "CANCELLED",
+    });
+    await expectViewerWaitlisted({ pr, user: secondCandidate, rank: 1 });
+    await expectViewerWaitlisted({ pr, user: thirdCandidate, rank: 2 });
+    await expectPendingWaitlistCount(pr, 2);
+    expectMessageThreadForbidden(
+      await probeMessageThreadVisibility({ pr, viewer: firstCandidate }),
+    );
+
+    await expectJsonResponse(
+      await requestJson(`/api/pr/${pr.id}/exit`, {
+        method: "POST",
+        token: joiner.token,
+      }),
+      200,
+    );
+
+    await expectPartnerRequestStatus(pr, "FULL");
+    await expectActiveParticipantCount(pr, 2);
+    await expectActiveParticipantsInclude(pr, [
+      creator.user.id,
+      secondCandidate.user.id,
+    ]);
+    await expectPartnerSlotStatus({
+      pr,
+      user: firstCandidate,
+      status: "CANCELLED",
+    });
+    await expectPartnerSlotStatus({
+      pr,
+      user: secondCandidate,
+      status: "JOINED",
+    });
+    await expectPartnerSlotStatus({
+      pr,
+      user: thirdCandidate,
+      status: "PENDING",
+    });
+    await expectViewerWaitlisted({ pr, user: thirdCandidate, rank: 1 });
+    expectMessageThreadVisible(
+      await probeMessageThreadVisibility({ pr, viewer: secondCandidate }),
+    );
+    expectMessageThreadForbidden(
+      await probeMessageThreadVisibility({ pr, viewer: firstCandidate }),
+    );
+    expectMessageThreadForbidden(
+      await probeMessageThreadVisibility({ pr, viewer: thirdCandidate }),
     );
   },
 );

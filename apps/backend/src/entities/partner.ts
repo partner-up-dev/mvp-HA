@@ -18,6 +18,7 @@ export type PartnerId = z.infer<typeof partnerIdSchema>;
 
 export const partnerStatusSchema = z.enum([
   "PENDING",
+  "CANCELLED",
   "JOINED",
   "CONFIRMED",
   "EXITED",

@@ -47,7 +47,8 @@
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
 - `PR` supports `join` and `exit`.
 - A `FULL` PR may accept waitlist entries while it remains before the join-lock boundary. `LOCKED_TO_START` keeps the admission surface closed.
-- Waitlist entries are stored as `Partner.status = PENDING`. Pending users are not current active participants, cannot see PR messages, and do not count toward active capacity.
+- Waitlist entries are stored as `Partner.status = PENDING`. Cancelled waitlist entries are stored as `Partner.status = CANCELLED` and no longer hold queue position.
+- Pending users are not current active participants, cannot see PR messages, and do not count toward active capacity.
 - When an active slot is released or exited, the system promotes waitlisted users by earliest `waitlistedAt` first, subject to current eligibility checks. Promotion converts the existing pending slot into an active partner slot.
 - `PR` may carry join gates that must be completed before joining. Join gate definitions are PR-owned runtime configuration, while their resolved state comes from the owning fact for each gate kind.
 - When a PR has no configured custom join gate, the frontend flow injects the relevant fallback confirmation view. When any custom join gate exists, the fallback confirmation is absent.
@@ -81,7 +82,7 @@
 1. A slot starts as joinable.
 2. A user joins and becomes active.
 3. When the `Partner` submodule carries a confirmation window, the participant may enter confirmation semantics.
-4. A user may also hold a pending waitlist slot when a full PR still admits waitlist entries.
+4. A user may also hold a pending waitlist slot when a full PR still admits waitlist entries. A pending waitlist slot may be cancelled before promotion.
 5. The participant may exit, be released, or complete check-in.
 6. Once no longer active, the participant must not be treated as a current participant.
 

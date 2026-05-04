@@ -436,6 +436,33 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
+  async cancelPendingSlot(id: PartnerId) {
+    const result = await db
+      .update(partners)
+      .set({
+        status: "CANCELLED",
+        waitlistedAt: null,
+        confirmedAt: null,
+        exitedAt: null,
+        releasedAt: null,
+        releaseReason: null,
+        attendedAt: null,
+        checkInAt: null,
+        didAttend: null,
+        wouldJoinAgain: null,
+        paymentStatus: "NONE",
+        reimbursementRequested: false,
+        reimbursementStatus: "NONE",
+        reimbursementAmount: null,
+        reimbursementRequestedAt: null,
+        reimbursementReviewedAt: null,
+        reimbursementPaidAt: null,
+      })
+      .where(and(eq(partners.id, id), eq(partners.status, "PENDING")))
+      .returning();
+    return result[0] ?? null;
+  }
+
   async markConfirmed(id: PartnerId) {
     const now = new Date();
     const result = await db
@@ -492,6 +519,21 @@ export class PartnerRepository {
           eq(partners.prId, prId),
           eq(partners.userId, userId),
           inArray(partners.status, ["RELEASED", "EXITED"]),
+        ),
+      )
+      .orderBy(desc(partners.id));
+    return result[0] ?? null;
+  }
+
+  async findReusableInactiveByPrIdAndUserId(prId: PRId, userId: UserId) {
+    const result = await db
+      .select()
+      .from(partners)
+      .where(
+        and(
+          eq(partners.prId, prId),
+          eq(partners.userId, userId),
+          inArray(partners.status, ["CANCELLED", "RELEASED", "EXITED"]),
         ),
       )
       .orderBy(desc(partners.id));

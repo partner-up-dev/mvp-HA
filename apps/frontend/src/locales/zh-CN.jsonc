@@ -285,6 +285,12 @@
     "waitlisted": "已候补",
     "waitlistedNotice": "你已提交候补。名额释放后会按提交时间顺序自动补位。",
     "waitlistRankNotice": "你已候补，当前排第 {rank} 位。名额释放后会按提交时间顺序自动补位。",
+    "cancelWaitlist": "取消候补",
+    "cancelWaitlisting": "取消中...",
+    "cancelWaitlistConfirm": {
+      "title": "确认取消候补",
+      "message": "取消后会离开当前候补队列，重新候补将按新的提交时间排序。"
+    },
     "exit": "退出",
     "exiting": "退出中...",
     "confirmSlot": "确认参与",
@@ -1275,6 +1281,7 @@
     "fetchMyJoinedRequestsFailed": "获取我加入的搭子请求失败",
     "joinRequestFailed": "加入搭子请求失败",
     "waitlistRequestFailed": "提交候补失败",
+    "cancelWaitlistFailed": "取消候补失败",
     "exitRequestFailed": "退出搭子请求失败",
     "confirmSlotFailed": "确认参与失败",
     "checkInSlotFailed": "签到反馈失败",

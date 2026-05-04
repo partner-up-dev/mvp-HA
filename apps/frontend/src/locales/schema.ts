@@ -320,6 +320,12 @@ export interface MessageSchema {
     waitlisted: string;
     waitlistedNotice: string;
     waitlistRankNotice: string;
+    cancelWaitlist: string;
+    cancelWaitlisting: string;
+    cancelWaitlistConfirm: {
+      title: string;
+      message: string;
+    };
     exit: string;
     exiting: string;
     confirmSlot: string;
@@ -1350,6 +1356,7 @@ export interface MessageSchema {
     fetchMyJoinedRequestsFailed: string;
     joinRequestFailed: string;
     waitlistRequestFailed: string;
+    cancelWaitlistFailed: string;
     exitRequestFailed: string;
     confirmSlotFailed: string;
     checkInSlotFailed: string;

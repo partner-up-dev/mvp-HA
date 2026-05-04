@@ -25,6 +25,8 @@ type PRJoinInput = PRActionInput;
 
 type PRWaitlistInput = PRActionInput;
 
+type PRCancelWaitlistInput = PRActionInput;
+
 type PRCheckInInput = {
   id: PRId;
   wouldJoinAgain: boolean | null;
@@ -190,6 +192,53 @@ export const useWaitlistPR = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.wechat.notificationSubscriptions(),
+      });
+    },
+  });
+};
+
+export const useCancelWaitlistPR = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: PRCancelWaitlistInput) => {
+      const res = await client.api.pr[":id"].waitlist.cancel.$post(
+        {
+          param: { id: id.toString() },
+        },
+        {
+          init: {
+            credentials: "include",
+          },
+        },
+      );
+      const payload = res.ok ? null : await readApiErrorPayload(res);
+
+      if (!res.ok) {
+        throw buildApiError(
+          resolveErrorMessage(
+            res,
+            payload,
+            i18n.global.t("errors.cancelWaitlistFailed"),
+          ),
+          payload,
+        );
+      }
+
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.bookingSupport(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.joinGates(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.mineJoined(),
       });
     },
   });

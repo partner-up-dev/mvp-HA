@@ -4,15 +4,11 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import type { PRId } from "../../../entities/partner-request";
 import type { User } from "../../../entities/user";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
-import {
-  countActivePartnersForPR,
-} from "../services/slot-management.service";
+import { countActivePartnersForPR } from "../services/slot-management.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { operationLogService } from "../../../infra/operation-log";
-import {
-  assertPRJoinGatesResolvedForUser,
-} from "../services/join-gates.service";
+import { assertPRJoinGatesResolvedForUser } from "../services/join-gates.service";
 import { isWaitlistOpenForRequest } from "../services/waitlist.service";
 
 const prRepo = new PartnerRequestRepository();
@@ -82,10 +78,8 @@ export async function waitlistPRAsUser(
     });
   }
 
-  const latestHistoricalSlot = await partnerRepo.findReleasedByPrIdAndUserId(
-    id,
-    user.id,
-  );
+  const latestHistoricalSlot =
+    await partnerRepo.findReusableInactiveByPrIdAndUserId(id, user.id);
   const pendingSlot = latestHistoricalSlot
     ? await partnerRepo.markPending(latestHistoricalSlot.id)
     : await partnerRepo.createSlot({
