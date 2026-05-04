@@ -33,6 +33,8 @@
           <PRJoinFlow
             v-if="handoff.state.phase === 'PREVIEW' && handoff.state.prId !== null"
             :pr-id="handoff.state.prId"
+            :event-id="handoff.state.eventId"
+            entry-surface="form_mode_matched"
             @success-closed="handleJoinSuccessClosed"
           >
             <template #default="{ open, pending, disabled, joined, errorMessage }">

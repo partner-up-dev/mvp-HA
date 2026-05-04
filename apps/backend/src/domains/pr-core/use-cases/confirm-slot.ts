@@ -11,7 +11,6 @@ import {
 } from "../services/anchor-participation-policy.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 
@@ -52,15 +51,6 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
     await partnerRepo.markConfirmed(slot.id);
     await userReliabilityRepo.applyDelta(user.id, { confirmed: 1 });
     await syncAnchorBookingTriggeredState(id);
-
-    // Emit domain event
-    const event = await eventBus.publish(
-      "partner.confirmed",
-      "partner_request",
-      String(id),
-      { prId: id, partnerId: slot.id, userId: user.id },
-    );
-    void writeToOutbox(event);
 
     operationLogService.log({
       actorId: user.id,

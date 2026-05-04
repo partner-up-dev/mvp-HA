@@ -19,6 +19,7 @@ import { shareRoute } from "./controllers/share.controller";
 import { wecomRoute } from "./controllers/wecom.controller";
 import { configRoute } from "./controllers/config.controller";
 import { analyticsRoute } from "./controllers/analytics.controller";
+import { telemetryRoute } from "./controllers/telemetry.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalMaintenanceRoute } from "./controllers/internal-maintenance.controller";
 import { poiRoute } from "./controllers/poi.controller";
@@ -29,25 +30,17 @@ import { adminBookingSupportRoute } from "./controllers/admin-booking-support.co
 import { adminPoiRoute } from "./controllers/admin-poi.controller";
 import { jobRunner } from "./infra/jobs";
 import {
-  bootstrapAnalyticsAggregationJobs,
-  registerAnalyticsAggregationJobs,
-} from "./infra/analytics";
-import {
   bootstrapOfficialAccountFollowSyncJob,
   registerOfficialAccountFollowSyncJobs,
 } from "./infra/marketing";
 import {
-  isWeChatPRMessageNotificationConfigured,
   registerWeChatActivityStartReminderJobs,
   registerWeChatBookingResultJobs,
   registerWeChatMeetingPointUpdatedJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatPRMessageJobs,
   registerWeChatReminderJobs,
-  scheduleWeChatPRMessageNotification,
 } from "./infra/notifications";
-import { registerNotificationOutboxHandlers } from "./domains/notification";
-import { drainOutboxBatches } from "./infra/maintenance";
 import { env } from "./lib/env";
 import {
   buildProblemDetailsPayload,
@@ -67,19 +60,8 @@ registerWeChatNewPartnerJobs();
 registerWeChatBookingResultJobs();
 registerWeChatPRMessageJobs();
 registerWeChatMeetingPointUpdatedJobs();
-registerNotificationOutboxHandlers({
-  isPRMessageChannelConfigured: isWeChatPRMessageNotificationConfigured,
-  schedulePRMessageNotification: scheduleWeChatPRMessageNotification,
-});
-registerAnalyticsAggregationJobs();
 registerOfficialAccountFollowSyncJobs();
 if (process.env.BACKEND_SCENARIO_DISABLE_BOOTSTRAP !== "true") {
-  void bootstrapAnalyticsAggregationJobs().catch((error) => {
-    console.error(
-      "[Analytics] failed to bootstrap daily aggregation jobs",
-      error,
-    );
-  });
   void bootstrapOfficialAccountFollowSyncJob().catch((error) => {
     console.error(
       "[OfficialAccountFollowSync] failed to bootstrap sync job",
@@ -160,7 +142,7 @@ export const routes = app
   .route("/api/config", configRoute)
   .route("/api/meta", metaRoute)
   .route("/api/analytics", analyticsRoute)
-  .route("/api/telemetry", analyticsRoute)
+  .route("/api/telemetry", telemetryRoute)
   .route("/api/pois", poiRoute)
   .route("/api/admin", adminAnchorManagementRoute)
   .route("/api/admin", adminBookingExecutionRoute)
@@ -212,15 +194,6 @@ const kickRequestTailMaintenance = (): void => {
 };
 
 const runRequestTailMaintenance = async (): Promise<void> => {
-  const outboxSummary = await drainOutboxBatches({
-    maxBatches: env.OUTBOX_REQUEST_DRAIN_MAX_BATCHES,
-    batchTimeoutMs: env.OUTBOX_REQUEST_DRAIN_TIMEOUT_MS,
-    timeoutMessage: "Request-tail outbox drain timed out",
-  });
-  if (outboxSummary.error) {
-    console.error("[RequestTail] outbox drain failed", outboxSummary.error);
-  }
-
   if (Date.now() < nextRequestTailJobTickAtMs) {
     return;
   }

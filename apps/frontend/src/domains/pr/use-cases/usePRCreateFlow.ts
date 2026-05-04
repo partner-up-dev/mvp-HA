@@ -75,10 +75,11 @@ export const usePRCreateFlow = () => {
     }
 
     await nextTick();
-    trackEvent("pr_create_success", {
+    trackEvent("pr_create_result", {
       prId: result.id,
       status: createdStatus,
       scenarioType: fields.type,
+      actionResult: "success",
     });
     if (createdStatus !== "DRAFT") {
       await router.push(`${result.canonicalPath}?entry=create`);

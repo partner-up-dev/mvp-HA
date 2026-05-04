@@ -13,7 +13,6 @@ import { ensureUserHasPin, resolveUserByOpenId } from "../../user";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
@@ -127,19 +126,6 @@ export async function publishPR(
   if (!latest) {
     throw new HTTPException(500, { message: "Failed to reload partner request" });
   }
-
-  const event = await eventBus.publish(
-    "pr.status_changed",
-    "partner_request",
-    String(id),
-    {
-      prId: id,
-      fromStatus: "DRAFT",
-      toStatus: latest.status,
-      trigger: "manual",
-    },
-  );
-  void writeToOutbox(event);
 
   operationLogService.log({
     actorId: creatorUserId,

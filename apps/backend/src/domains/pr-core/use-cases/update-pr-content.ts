@@ -20,7 +20,6 @@ import {
 } from "../services/meeting-point-change-notifier.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
@@ -112,15 +111,6 @@ export async function updatePRContent(
       message: "Failed to reload partner request",
     });
   }
-
-  // Emit domain event
-  const event = await eventBus.publish(
-    "pr.content_updated",
-    "partner_request",
-    String(id),
-    { prId: id },
-  );
-  void writeToOutbox(event);
 
   operationLogService.log({
     actorId: actorUserId,

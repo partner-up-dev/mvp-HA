@@ -21,6 +21,9 @@
             <PRJoinFlow
               :pr-id="candidate.pr.id"
               :scenario-type="candidate.pr.type"
+              :event-id="props.eventId"
+              entry-surface="form_mode_candidate"
+              :candidate-rank="index + 1"
               @joined="
                 emit('join-candidate-joined', candidate.pr.id, index + 1)
               "
@@ -101,6 +104,7 @@ type RecommendationCandidate =
   AnchorEventFormModeRecommendationResponse["orderedCandidates"][number];
 
 const props = defineProps<{
+  eventId: number;
   candidates: readonly RecommendationCandidate[];
   createPending: boolean;
   createDisabled: boolean;

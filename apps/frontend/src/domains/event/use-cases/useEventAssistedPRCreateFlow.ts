@@ -13,6 +13,8 @@ import {
   clearPendingWeChatAction,
   readPendingWeChatAction,
 } from "@/processes/wechat/pending-wechat-action";
+import { trackEvent } from "@/shared/telemetry/track";
+import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
 
 type EventAssistedPRCreateInput = {
   targetTimeWindow: TimeWindow | null;
@@ -119,6 +121,57 @@ export const useEventAssistedPRCreateFlow = (
     return `${canonicalPath}?${query.toString()}`;
   };
 
+  const resolveLocationType = (
+    eventValue: AnchorEventDetailResponse,
+    locationId: string,
+  ): "preset" | "user_submitted" =>
+    eventValue.createTimeWindows.some((timeWindow) =>
+      timeWindow.locationOptions.some(
+        (locationOption) => locationOption.locationId === locationId,
+      ),
+    )
+      ? "preset"
+      : "user_submitted";
+
+  const resolveTimeType = (
+    eventValue: AnchorEventDetailResponse,
+    startAt: string,
+  ): "preset" | "user_submitted" =>
+    eventValue.createTimeWindows.some(
+      (timeWindow) => timeWindow.timeWindow[0] === startAt,
+    )
+      ? "preset"
+      : "user_submitted";
+
+  const trackCreateResult = (
+    eventValue: AnchorEventDetailResponse,
+    source: {
+      locationId: string;
+      startAt: string;
+      preferenceCount: number;
+    },
+    payload: {
+      actionResult: "success" | "failure" | "blocked";
+      failureCode?: string;
+      failureReason?: string;
+      prId?: number;
+    },
+  ): void => {
+    trackEvent("event_assisted_create_result", {
+      eventId: eventValue.id,
+      activityType: eventValue.type,
+      prId: payload.prId,
+      locationId: source.locationId,
+      locationType: resolveLocationType(eventValue, source.locationId),
+      startAt: source.startAt,
+      timeType: resolveTimeType(eventValue, source.startAt),
+      preferenceCount: source.preferenceCount,
+      actionResult: payload.actionResult,
+      failureCode: payload.failureCode,
+      failureReason: payload.failureReason,
+    });
+  };
+
   const createEventAssistedPR = async ({
     targetTimeWindow,
     locationId,
@@ -135,19 +188,48 @@ export const useEventAssistedPRCreateFlow = (
       targetTimeWindow,
       locationId,
     });
+    const createTelemetrySource = {
+      locationId: fields.location ?? "",
+      startAt: fields.time[0] ?? "",
+      preferenceCount: fields.preferences.length,
+    };
 
     try {
       const created = await createEventAssistedPRMutation.mutateAsync({
         eventId: currentEvent.id,
         fields,
       });
+      trackCreateResult(currentEvent, createTelemetrySource, {
+        actionResult: "success",
+        prId: created.id,
+      });
       await router.push(
         buildEventAssistedCreateTarget(created.canonicalPath, currentEvent.id),
       );
     } catch (error) {
       if (isWeChatAuthBlockingError(error)) {
+        trackCreateResult(
+          currentEvent,
+          createTelemetrySource,
+          resolveTelemetryFailurePayload(
+            error,
+            "EVENT_ASSISTED_CREATE_BLOCKED",
+            t("anchorEvent.createCard.errors.wechatAuthRequired"),
+          ),
+        );
         return;
       }
+      trackCreateResult(
+        currentEvent,
+        createTelemetrySource,
+        resolveTelemetryFailurePayload(
+          error,
+          "EVENT_ASSISTED_CREATE_FAILED",
+          error instanceof Error
+            ? error.message
+            : t("anchorEvent.createCard.errors.createFailed"),
+        ),
+      );
       throw error;
     }
   };
@@ -173,6 +255,14 @@ export const useEventAssistedPRCreateFlow = (
     pendingCreateReplayRunning.value = true;
     replayErrorMessage.value = null;
     clearPendingWeChatAction();
+    const pendingCreateTelemetrySource =
+      typeof pending.fields.time[0] === "string"
+        ? {
+            locationId: pending.fields.location,
+            startAt: pending.fields.time[0],
+            preferenceCount: pending.fields.preferences.length,
+          }
+        : null;
     try {
       const created = await createEventAssistedPRMutation.mutateAsync({
         eventId: currentEvent.id,
@@ -190,6 +280,12 @@ export const useEventAssistedPRCreateFlow = (
           notes: null,
         },
       });
+      if (pendingCreateTelemetrySource) {
+        trackCreateResult(currentEvent, pendingCreateTelemetrySource, {
+          actionResult: "success",
+          prId: created.id,
+        });
+      }
       await router.push(
         buildEventAssistedCreateTarget(
           created.canonicalPath,
@@ -198,6 +294,17 @@ export const useEventAssistedPRCreateFlow = (
         ),
       );
     } catch (error) {
+      if (pendingCreateTelemetrySource) {
+        trackCreateResult(
+          currentEvent,
+          pendingCreateTelemetrySource,
+          resolveTelemetryFailurePayload(
+            error,
+            "EVENT_ASSISTED_CREATE_REPLAY_FAILED",
+            error instanceof Error ? error.message : t("common.operationFailed"),
+          ),
+        );
+      }
       if (!isWeChatAuthBlockingError(error)) {
         const apiError = error as ApiError;
         replayErrorMessage.value =

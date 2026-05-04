@@ -10,7 +10,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import { domainEvents } from "./domain-event";
 import type { WeChatNotificationKind } from "./user-notification-opt";
 import { users, type UserId } from "./user";
 
@@ -26,10 +25,6 @@ export const notificationWaves = pgTable(
   "notification_waves",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    waveStartEventId: uuid("wave_start_event_id").references(
-      () => domainEvents.id,
-      { onDelete: "set null" },
-    ),
     notificationKind: text("notification_kind")
       .$type<WeChatNotificationKind>()
       .notNull(),
@@ -57,9 +52,6 @@ export const notificationWaves = pgTable(
       table.notificationKind,
       table.waveKey,
     ),
-    eventIdIdx: index("notification_waves_event_id_idx").on(
-      table.waveStartEventId,
-    ),
     aggregateIdx: index("notification_waves_aggregate_idx").on(
       table.aggregateType,
       table.aggregateId,
@@ -76,4 +68,3 @@ export const selectNotificationWaveSchema = createSelectSchema(notificationWaves
 
 export type NotificationWaveRow = typeof notificationWaves.$inferSelect;
 export type NewNotificationWaveRow = typeof notificationWaves.$inferInsert;
-

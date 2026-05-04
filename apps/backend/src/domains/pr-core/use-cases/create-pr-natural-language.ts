@@ -12,7 +12,6 @@ import {
   resolveDraftCreator,
   type CreatorIdentityInput,
 } from "../services/creator-identity.service";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import {
   finalizeCreatedPR,
@@ -61,19 +60,6 @@ export async function createPRFromNaturalLanguage(
     request.id,
     null,
   );
-
-  const event = await eventBus.publish(
-    "pr.created",
-    "partner_request",
-    String(request.id),
-    {
-      prId: request.id,
-      source: "natural_language",
-      status: "DRAFT",
-      creatorOpenId: creatorIdentity.oauthOpenId,
-    },
-  );
-  void writeToOutbox(event);
 
   operationLogService.log({
     actorId: createdBy,

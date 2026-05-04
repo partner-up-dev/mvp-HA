@@ -12,7 +12,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import { domainEvents } from "./domain-event";
 import { jobs } from "./job";
 import type { WeChatNotificationKind } from "./user-notification-opt";
 import { users, type UserId } from "./user";
@@ -47,9 +46,6 @@ export const notificationOpportunities = pgTable(
   "notification_opportunities",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    eventId: uuid("event_id").references(() => domainEvents.id, {
-      onDelete: "set null",
-    }),
     jobId: bigint("job_id", { mode: "number" }).references(() => jobs.id, {
       onDelete: "set null",
     }),
@@ -83,9 +79,6 @@ export const notificationOpportunities = pgTable(
     dedupeKeyUq: uniqueIndex("notification_opportunities_dedupe_key_uq").on(
       table.dedupeKey,
     ),
-    eventIdIdx: index("notification_opportunities_event_id_idx").on(
-      table.eventId,
-    ),
     jobIdIdx: index("notification_opportunities_job_id_idx").on(table.jobId),
     aggregateIdx: index("notification_opportunities_aggregate_idx").on(
       table.aggregateType,
@@ -108,4 +101,3 @@ export type NotificationOpportunityRow =
   typeof notificationOpportunities.$inferSelect;
 export type NewNotificationOpportunityRow =
   typeof notificationOpportunities.$inferInsert;
-

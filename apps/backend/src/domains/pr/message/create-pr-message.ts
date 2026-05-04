@@ -2,10 +2,16 @@ import { HTTPException } from "hono/http-exception";
 import type { PartnerRequest, PRId } from "../../../entities/partner-request";
 import { prMessageBodySchema } from "../../../entities/pr-message";
 import type { UserId } from "../../../entities/user";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import {
+  isWeChatPRMessageNotificationConfigured,
+  scheduleWeChatPRMessageNotification,
+} from "../../../infra/notifications/wechat-pr-message";
 import { PRMessageInboxStateRepository } from "../../../repositories/PRMessageInboxStateRepository";
 import { PRMessageRepository } from "../../../repositories/PRMessageRepository";
+import {
+  createPRMessageUnreadWaveNotificationOpportunities,
+} from "../../notification/services/pr-message-unread-wave.service";
 import { requirePRMessageParticipantAccess } from "../../pr-core/services/pr-message-access.service";
 import {
   PR_MESSAGE_RATE_LIMIT_MAX_MESSAGES,
@@ -86,17 +92,14 @@ export async function createPersistedPRMessage(input: {
     });
   }
 
-  const event = await eventBus.publish(
-    "pr.message_created",
-    "partner_request",
-    String(input.prId),
-    {
-      prId: input.prId,
-      messageId: createdMessage.id,
-      authorUserId: input.authorUserId,
-    },
-  );
-  void writeToOutbox(event);
+  await createPRMessageUnreadWaveNotificationOpportunities({
+    request: input.request,
+    authorUserId: input.authorUserId,
+    messageId: createdMessage.id,
+    messageCreatedAt: createdMessage.createdAt,
+    isChannelConfigured: isWeChatPRMessageNotificationConfigured,
+    scheduleNotification: scheduleWeChatPRMessageNotification,
+  });
 
   operationLogService.log({
     actorId: input.actorUserId,

@@ -14,6 +14,7 @@
     <div v-else-if="formModeData" class="anchor-event-form-mode__stack">
       <FormModeNoMatchResult
         v-if="noMatchRecommendationResult"
+        :event-id="props.eventId"
         :candidates="noMatchRecommendationResult.orderedCandidates"
         :create-pending="createMutation.isPending.value"
         :create-disabled="!canCreateFallback"
@@ -28,6 +29,7 @@
         <FormModeLocationControl
           v-model="selectedLocationId"
           :locations="formModeData.locations"
+          @update:model-value="trackFormStarted('location')"
         />
 
         <FormModeTimeControl
@@ -35,12 +37,14 @@
           :start-options="selectedLocationStartOptions"
           :duration-minutes="formModeData.event.durationMinutes"
           :earliest-lead-minutes="formModeData.event.earliestLeadMinutes"
+          @update:model-value="trackFormStarted('time')"
         />
 
         <FormModePreferenceControl
           v-model="selectedPreferences"
           :event-id="props.eventId"
           :preset-tags="formModeData.presetTags"
+          @update:model-value="trackFormStarted('preference')"
         />
 
         <p
@@ -98,6 +102,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import { trackEvent } from "@/shared/telemetry/track";
+import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
 import { useAnchorEventFormModeData } from "@/domains/event/queries/useAnchorEventFormModeData";
 import { useAnchorEventFormModeRecommendation } from "@/domains/event/queries/useAnchorEventFormModeRecommendation";
 import {
@@ -151,6 +156,8 @@ const noMatchRecommendationResult =
 const selectionErrorMessage = ref<string | null>(null);
 const createReplayErrorMessage = ref<string | null>(null);
 const hasTrackedFormImpression = ref(false);
+const hasTrackedFormStart = ref(false);
+const formStartTrackingArmed = ref(false);
 const defaultSelectionAppliedEventId = ref<number | null>(null);
 const pendingCreateReplayRunning = ref(false);
 type JoinSplashPhase = "IDLE" | "FILLING" | "HOLDING" | "DRAINING";
@@ -164,6 +171,17 @@ let joinSplashFillResolve: (() => void) | null = null;
 let joinSplashDrainResolve: (() => void) | null = null;
 
 const formModeData = computed(() => formModeQuery.data.value ?? null);
+
+const armFormStartTracking = (): void => {
+  if (typeof window === "undefined") {
+    formStartTrackingArmed.value = true;
+    return;
+  }
+
+  window.setTimeout(() => {
+    formStartTrackingArmed.value = true;
+  }, 0);
+};
 
 const selectedLocationStartOptions = computed(() => {
   const data = formModeData.value;
@@ -390,8 +408,11 @@ watch(
     }
 
     defaultSelectionAppliedEventId.value = data.event.id;
+    hasTrackedFormStart.value = false;
+    formStartTrackingArmed.value = false;
     const defaultSelection = data.defaultSelection;
     if (!defaultSelection) {
+      armFormStartTracking();
       return;
     }
 
@@ -404,6 +425,7 @@ watch(
 
     selectedLocationId.value = defaultSelection.locationId;
     selectedStartAt.value = defaultSelection.startAt;
+    armFormStartTracking();
   },
   { immediate: true },
 );
@@ -417,6 +439,7 @@ watch(
 
     trackEvent("anchor_event_form_impression", {
       eventId: props.eventId,
+      activityType: data.event.type,
     });
     hasTrackedFormImpression.value = true;
   },
@@ -472,6 +495,57 @@ const isAdvancedStartValue = (startAt: string): boolean => {
   return !options.some((option) => option.startAt === startAt);
 };
 
+const resolveFormModeActivityType = (): string | undefined =>
+  formModeData.value?.event.type ?? undefined;
+
+const resolveFormModeLocationType = (
+  locationId: string | null,
+): "preset" | "user_submitted" => {
+  const locations = formModeData.value?.locations ?? [];
+  return locationId && locations.some((location) => location.id === locationId)
+    ? "preset"
+    : "user_submitted";
+};
+
+const resolveFormModeTimeType = (
+  startAt: string,
+): "preset" | "user_submitted" =>
+  isAdvancedStartValue(startAt) ? "user_submitted" : "preset";
+
+const trackFormStarted = (
+  trigger: "location" | "time" | "preference" | "primary_cta",
+): void => {
+  if (
+    hasTrackedFormStart.value ||
+    !formStartTrackingArmed.value ||
+    !formModeData.value
+  ) {
+    return;
+  }
+
+  trackEvent("anchor_event_form_started", {
+    eventId: props.eventId,
+    activityType: resolveFormModeActivityType(),
+    trigger,
+    hasDefaultSelection:
+      formModeData.value.defaultSelection !== null &&
+      formModeData.value.defaultSelection !== undefined,
+    locationId: selectedLocationId.value ?? undefined,
+    locationType:
+      selectedLocationId.value === null
+        ? undefined
+        : resolveFormModeLocationType(selectedLocationId.value),
+    startAt: isValidFormModeDateTime(selectedStartAt.value)
+      ? selectedStartAt.value
+      : undefined,
+    timeType: isValidFormModeDateTime(selectedStartAt.value)
+      ? resolveFormModeTimeType(selectedStartAt.value)
+      : undefined,
+    preferenceCount: selectedPreferences.value.length,
+  });
+  hasTrackedFormStart.value = true;
+};
+
 const trackRecommendationExposure = (
   result: AnchorEventFormModeRecommendationResponse,
 ) => {
@@ -483,6 +557,7 @@ const trackRecommendationExposure = (
 
   trackEvent("anchor_event_form_recommendation_impression", {
     eventId: props.eventId,
+    activityType: resolveFormModeActivityType(),
     hasMatchedRecommendation: Boolean(result.matchedRecommendation),
     candidateCount:
       result.orderedCandidates.length + (result.matchedRecommendation ? 1 : 0),
@@ -500,9 +575,66 @@ const trackFormModeJoinAction = (
 ): void => {
   trackEvent("anchor_event_form_result_action_click", {
     eventId: props.eventId,
+    activityType: resolveFormModeActivityType(),
     action,
     prId,
     candidateRank,
+  });
+};
+
+const trackRecommendationResult = (
+  payload: {
+    actionResult: "success" | "failure" | "blocked";
+    failureCode?: string;
+    failureReason?: string;
+    outcome?: "matched" | "no_match";
+    matchedPrId?: number | null;
+    candidateCount?: number;
+  },
+): void => {
+  const locationId = selectedLocationId.value;
+  const startAt = selectedStartAt.value;
+  if (!locationId || !isValidFormModeDateTime(startAt)) {
+    return;
+  }
+
+  trackEvent("anchor_event_recommendation_result", {
+    eventId: props.eventId,
+    activityType: resolveFormModeActivityType(),
+    locationId,
+    locationType: resolveFormModeLocationType(locationId),
+    startAt,
+    timeType: resolveFormModeTimeType(startAt),
+    preferenceCount: selectedPreferences.value.length,
+    ...payload,
+  });
+};
+
+const trackEventAssistedCreateResult = (
+  payload: {
+    actionResult: "success" | "failure" | "blocked";
+    failureCode?: string;
+    failureReason?: string;
+    prId?: number;
+  },
+  source: {
+    locationId: string;
+    startAt: string;
+    preferenceCount: number;
+  },
+): void => {
+  trackEvent("event_assisted_create_result", {
+    eventId: props.eventId,
+    prId: payload.prId,
+    activityType: resolveFormModeActivityType(),
+    locationId: source.locationId,
+    locationType: resolveFormModeLocationType(source.locationId),
+    startAt: source.startAt,
+    timeType: resolveFormModeTimeType(source.startAt),
+    preferenceCount: source.preferenceCount,
+    actionResult: payload.actionResult,
+    failureCode: payload.failureCode,
+    failureReason: payload.failureReason,
   });
 };
 
@@ -544,11 +676,18 @@ const createEventAssistedPR = async (
   if (trigger === "manual_fallback") {
     trackEvent("anchor_event_form_create_fallback_click", {
       eventId: props.eventId,
+      activityType: resolveFormModeActivityType(),
       locationId,
       startAt,
       preferenceCount: selectedPreferences.value.length,
     });
   }
+
+  const createTelemetrySource = {
+    locationId,
+    startAt,
+    preferenceCount: selectedPreferences.value.length,
+  };
 
   try {
     const created = await createMutation.mutateAsync({
@@ -558,14 +697,39 @@ const createEventAssistedPR = async (
         trigger === "auto_no_candidates" ? "event_assisted_create" : undefined,
     });
 
+    trackEventAssistedCreateResult(
+      {
+        actionResult: "success",
+        prId: created.id,
+      },
+      createTelemetrySource,
+    );
     await router.push(
       buildEventAssistedCreateTarget(created.canonicalPath, trigger),
     );
     return true;
   } catch (error) {
     if (isWeChatAuthBlockingError(error)) {
+      trackEventAssistedCreateResult(
+        resolveTelemetryFailurePayload(
+          error,
+          "EVENT_ASSISTED_CREATE_BLOCKED",
+          t("anchorEvent.createCard.errors.wechatAuthRequired"),
+        ),
+        createTelemetrySource,
+      );
       return true;
     }
+    trackEventAssistedCreateResult(
+      resolveTelemetryFailurePayload(
+        error,
+        "EVENT_ASSISTED_CREATE_FAILED",
+        error instanceof Error
+          ? error.message
+          : t("anchorEvent.createCard.errors.createFailed"),
+      ),
+      createTelemetrySource,
+    );
     if (trigger === "auto_no_candidates") {
       selectionErrorMessage.value =
         error instanceof Error
@@ -583,6 +747,7 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
     return;
   }
 
+  trackFormStarted("primary_cta");
   returnToSelection();
   const splashFill = startJoinSplash(originRect);
 
@@ -596,12 +761,12 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
     trackRecommendationExposure(result);
 
     const matchedPRId = result.matchedRecommendation?.pr.id ?? null;
-    trackEvent("anchor_event_form_join_longpress_complete", {
-      eventId: props.eventId,
-      prId: matchedPRId,
-      locationId,
-      startAt,
-      preferenceCount: selectedPreferences.value.length,
+    trackRecommendationResult({
+      actionResult: "success",
+      outcome: matchedPRId === null ? "no_match" : "matched",
+      matchedPrId: matchedPRId,
+      candidateCount:
+        result.orderedCandidates.length + (matchedPRId === null ? 0 : 1),
     });
 
     if (matchedPRId !== null) {
@@ -634,6 +799,13 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
       error instanceof Error
         ? error.message
         : t("anchorEvent.formMode.recommendationFailed");
+    trackRecommendationResult(
+      resolveTelemetryFailurePayload(
+        error,
+        "ANCHOR_EVENT_RECOMMENDATION_FAILED",
+        selectionErrorMessage.value,
+      ),
+    );
     await splashFill;
     await drainJoinSplash();
   }
@@ -740,6 +912,15 @@ const attemptPendingCreateReplay = async () => {
 
   pendingCreateReplayRunning.value = true;
   clearPendingWeChatAction();
+  const pendingStartAt = pending.fields.time[0];
+  const pendingCreateTelemetrySource =
+    typeof pendingStartAt === "string" && isValidFormModeDateTime(pendingStartAt)
+      ? {
+          locationId: pending.fields.location,
+          startAt: pendingStartAt,
+          preferenceCount: pending.fields.preferences.length,
+        }
+      : null;
   try {
     const created = await createMutation.mutateAsync({
       eventId: props.eventId,
@@ -757,6 +938,15 @@ const attemptPendingCreateReplay = async () => {
         notes: null,
       },
     });
+    if (pendingCreateTelemetrySource) {
+      trackEventAssistedCreateResult(
+        {
+          actionResult: "success",
+          prId: created.id,
+        },
+        pendingCreateTelemetrySource,
+      );
+    }
     await router.push(
       buildEventAssistedCreateTarget(
         created.canonicalPath,
@@ -766,6 +956,18 @@ const attemptPendingCreateReplay = async () => {
       ),
     );
   } catch (error) {
+    if (pendingCreateTelemetrySource) {
+      trackEventAssistedCreateResult(
+        resolveTelemetryFailurePayload(
+          error,
+          "EVENT_ASSISTED_CREATE_REPLAY_FAILED",
+          error instanceof Error
+            ? error.message
+            : t("anchorEvent.createCard.errors.createFailed"),
+        ),
+        pendingCreateTelemetrySource,
+      );
+    }
     if (!isWeChatAuthBlockingError(error)) {
       createReplayErrorMessage.value =
         error instanceof Error

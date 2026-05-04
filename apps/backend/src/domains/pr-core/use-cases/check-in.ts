@@ -8,7 +8,6 @@ import { hasAnchorParticipationPolicy } from "../services/anchor-participation-p
 import { hasEventStarted } from "../services/time-window.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
@@ -52,20 +51,6 @@ export async function checkIn(
   if (slot.status !== "ATTENDED") {
     await userReliabilityRepo.applyDelta(user.id, { attended: 1 });
   }
-
-  // Emit domain event
-  const event = await eventBus.publish(
-    "partner.checked_in",
-    "partner_request",
-    String(id),
-    {
-      prId: id,
-      partnerId: slot.id,
-      userId: user.id,
-      didAttend: true,
-    },
-  );
-  void writeToOutbox(event);
 
   operationLogService.log({
     actorId: user.id,

@@ -1,7 +1,6 @@
-import type { PartnerRequest, PRId } from "../../../entities/partner-request";
+import type { PartnerRequest } from "../../../entities/partner-request";
 import type { PRMessageId } from "../../../entities/pr-message";
 import type { UserId } from "../../../entities/user";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PRMessageInboxStateRepository } from "../../../repositories/PRMessageInboxStateRepository";
 import { NotificationOpportunityRepository } from "../../../repositories/NotificationOpportunityRepository";
@@ -27,7 +26,6 @@ type CreatePRMessageUnreadWaveNotificationOpportunitiesInput = {
   authorUserId: UserId;
   messageId: PRMessageId;
   messageCreatedAt: Date;
-  sourceEventId?: string | null;
   isChannelConfigured: () => Promise<boolean>;
   scheduleNotification: PRMessageNotificationScheduler;
 };
@@ -57,75 +55,11 @@ const collectRecipientUserIds = async (
   );
 };
 
-const emitUnreadWaveOpened = async (input: {
-  prId: PRId;
-  recipientUserId: UserId;
-  authorUserId: UserId;
-  messageId: PRMessageId;
-  sourceEventId: string | null;
-  waveId: number | null;
-}): Promise<void> => {
-  const event = await eventBus.publish(
-    "notification.wave_opened",
-    "partner_request",
-    String(input.prId),
-    {
-      notificationKind: PR_MESSAGE_NOTIFICATION_KIND,
-      aggregateType: "partner_request",
-      aggregateId: String(input.prId),
-      recipientUserId: input.recipientUserId,
-      waveKey: `${input.prId}:${input.recipientUserId}`,
-      waveId: input.waveId,
-      sourceEventId: input.sourceEventId,
-      waveStartMessageId: input.messageId,
-      waveStartAuthorUserId: input.authorUserId,
-    },
-  );
-  await writeToOutbox(event);
-};
-
-const emitOpportunityCreated = async (input: {
-  prId: PRId;
-  recipientUserId: UserId;
-  authorUserId: UserId;
-  messageId: PRMessageId;
-  runAt: Date;
-  sourceEventId: string | null;
-  opportunityId: number | null;
-  dedupeKey: string;
-}): Promise<void> => {
-  const event = await eventBus.publish(
-    "notification.opportunity_created",
-    "partner_request",
-    String(input.prId),
-    {
-      notificationKind: PR_MESSAGE_NOTIFICATION_KIND,
-      lifecycleModel: "WAVE",
-      aggregateType: "partner_request",
-      aggregateId: String(input.prId),
-      recipientUserId: input.recipientUserId,
-      channel: PR_MESSAGE_NOTIFICATION_CHANNEL,
-      runAtIso: input.runAt.toISOString(),
-      dedupeKey: input.dedupeKey,
-      opportunityId: input.opportunityId,
-      sourceEventId: input.sourceEventId,
-      payload: {
-        prId: input.prId,
-        recipientUserId: input.recipientUserId,
-        waveStartAuthorUserId: input.authorUserId,
-        waveStartMessageId: input.messageId,
-      },
-    },
-  );
-  await writeToOutbox(event);
-};
-
 export const createPRMessageUnreadWaveNotificationOpportunities = async ({
   request,
   authorUserId,
   messageId,
   messageCreatedAt,
-  sourceEventId = null,
   isChannelConfigured,
   scheduleNotification,
 }: CreatePRMessageUnreadWaveNotificationOpportunitiesInput): Promise<CreatePRMessageUnreadWaveNotificationOpportunitiesResult> => {
@@ -184,8 +118,7 @@ export const createPRMessageUnreadWaveNotificationOpportunities = async ({
         messageId,
       );
       const waveKey = `${request.id}:${recipientUserId}`;
-      const wave = await waveRepo.createOnce({
-        waveStartEventId: sourceEventId,
+      await waveRepo.createOnce({
         notificationKind: PR_MESSAGE_NOTIFICATION_KIND,
         aggregateType: "partner_request",
         aggregateId: String(request.id),
@@ -194,14 +127,6 @@ export const createPRMessageUnreadWaveNotificationOpportunities = async ({
         waveStartMessageId: messageId,
         status: "OPEN",
         openedAt: messageCreatedAt,
-      });
-      await emitUnreadWaveOpened({
-        prId: request.id,
-        recipientUserId,
-        authorUserId,
-        messageId,
-        sourceEventId,
-        waveId: wave?.id ?? null,
       });
       const dedupeKey = buildPRMessageDedupeKey(
         recipientUserId,
@@ -215,7 +140,6 @@ export const createPRMessageUnreadWaveNotificationOpportunities = async ({
         waveStartMessageId: messageId,
       };
       const opportunity = await opportunityRepo.createOnce({
-        eventId: sourceEventId,
         jobId: null,
         notificationKind: PR_MESSAGE_NOTIFICATION_KIND,
         lifecycleModel: "WAVE",
@@ -227,16 +151,6 @@ export const createPRMessageUnreadWaveNotificationOpportunities = async ({
         runAt,
         dedupeKey,
         payload: opportunityPayload,
-      });
-      await emitOpportunityCreated({
-        prId: request.id,
-        recipientUserId,
-        authorUserId,
-        messageId,
-        runAt,
-        sourceEventId,
-        opportunityId: opportunity?.id ?? null,
-        dedupeKey,
       });
       const scheduleResult = await scheduleNotification({
         request,
