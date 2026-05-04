@@ -689,6 +689,18 @@
     "addUrlAction": "添加 URL",
     "savePoiAction": "保存 POI",
     "savingPoi": "保存中...",
+    "reviewStatusLabel": "审核状态",
+    "statusPending": "待审核",
+    "statusPublished": "已发布",
+    "statusRejected": "已驳回",
+    "submittedBy": "提交用户：{userId}",
+    "reviewedAt": "审核时间：{time}",
+    "rejectReasonLabel": "驳回原因",
+    "rejectReasonPlaceholder": "填写给用户看的驳回说明",
+    "publishPoiAction": "发布 POI",
+    "publishingPoi": "发布中...",
+    "rejectPoiAction": "驳回申请",
+    "rejectingPoi": "驳回中...",
     "emptyGallery": "当前 POI 还没有图片。",
     "removeImageAction": "移除",
     "imageAlt": "{poiId} 图片 {index}",
@@ -1073,6 +1085,34 @@
       "title": "我的搭子请求",
       "description": "查看我创建过和加入过的活动记录。",
       "action": "打开列表"
+    },
+    "locationApplications": {
+      "title": "我的地点申请",
+      "description": "查看已提交的地点，以及审核中的状态。",
+      "action": "查看申请"
+    }
+  },
+  "locationApplicationPage": {
+    "title": "申请新地点",
+    "subtitle": "提交一个你希望加入地点库的 POI，审核通过后可被运营加入活动的地点池。",
+    "nameLabel": "地点名称",
+    "namePlaceholder": "例如：徐汇滨江滑板公园",
+    "imageLabel": "地点图片",
+    "imageHint": "上传或粘贴一张能识别地点的图片。",
+    "imageReady": "图片已就绪，可继续提交。",
+    "pickImageAction": "上传图片",
+    "imagePreviewAlt": "地点图片预览",
+    "imageUrlLabel": "图片 URL",
+    "imageUrlPlaceholder": "粘贴图片 URL，或上传后自动生成",
+    "submitAction": "提交地点申请",
+    "submitSuccess": "已提交“{title}”，可以在下方查看审核状态。",
+    "mineTitle": "我的申请",
+    "mineSubtitle": "审核通过后，这个 POI 会进入后台地点库。",
+    "emptyMine": "当前还没有提交过地点申请。",
+    "status": {
+      "PENDING": "待审核",
+      "PUBLISHED": "已发布",
+      "REJECTED": "已驳回"
     }
   },
   "wechatOAuthCallbackPage": {
@@ -1427,6 +1467,7 @@
       "locationEyebrow": "地点",
       "locationTitle": "地点",
       "locationAriaLabel": "地点选择",
+      "locationCreateLabel": "申请新地点",
       "timeEyebrow": "开始时间",
       "timeTitle": "开始时间",
       "dateWheelAriaLabel": "选择日期",

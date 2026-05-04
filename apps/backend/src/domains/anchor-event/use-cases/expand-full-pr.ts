@@ -7,7 +7,7 @@ import { PoiRepository } from "../../../repositories/PoiRepository";
 import { initializeSlotsForPR } from "../../pr/services";
 import type { PRId } from "../../../entities/partner-request";
 import { operationLogService } from "../../../infra/operation-log";
-import { normalizeLocationPool } from "../../../entities/anchor-event";
+import { resolvePublicEventLocationPool } from "../services/event-scope";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { hasAnchorParticipationPolicy } from "../../pr/services";
 import {
@@ -67,7 +67,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     fullPR.anchor.anchorEventId,
     fullPR.anchor.timeWindow,
   );
-  const locationPool = normalizeLocationPool(event.locationPool);
+  const locationPool = await resolvePublicEventLocationPool(event);
   const pois = await poiRepo.findByIds(locationPool);
   const perTimeWindowCapByLocation = new Map(
     pois.map((poi) => [poi.id, poi.perTimeWindowCap]),

@@ -8,10 +8,11 @@
 
     <PeekRadioCarousel
       v-if="locationCards.length > 0"
-      :model-value="props.modelValue"
+      :model-value="activeCardId"
       class="location-carousel"
       :items="locationCards"
       :aria-label="t('anchorEvent.formMode.locationAriaLabel')"
+      @keydown.capture="handleCarouselKeydown"
       @update:model-value="handleUpdateLocation"
     >
       <template #item="{ item, selected }">
@@ -19,13 +20,21 @@
           class="location-card"
           :class="{
             'location-card--selected': selected,
+            'location-card--create': asLocationCardViewModel(item).isCreateCard,
             'location-card--with-image': Boolean(
               asLocationCardViewModel(item).coverImage,
             ),
           }"
+          @click="handleCardClick(asLocationCardViewModel(item))"
         >
+          <div
+            v-if="asLocationCardViewModel(item).isCreateCard"
+            class="location-card__create"
+          >
+            <span class="location-card__create-icon i-mdi-plus" aria-hidden="true"></span>
+          </div>
           <img
-            v-if="asLocationCardViewModel(item).coverImage"
+            v-else-if="asLocationCardViewModel(item).coverImage"
             :src="asLocationCardViewModel(item).coverImage ?? undefined"
             :alt="String(asLocationCardViewModel(item).id)"
             class="location-card__image"
@@ -38,7 +47,7 @@
     </PeekRadioCarousel>
 
     <Transition name="location-label" mode="out-in">
-      <div :key="props.modelValue ?? 'none'" class="location-caption">
+      <div :key="activeCardId ?? 'none'" class="location-caption">
         <p class="location-caption__name">
           {{ selectedLocationLabel }}
         </p>
@@ -48,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import PeekRadioCarousel, {
   type PeekRadioCarouselItem,
@@ -58,9 +67,12 @@ import { pickStableGalleryImage } from "@/domains/event/model/form-mode";
 
 type LocationEntry = AnchorEventFormModeResponse["locations"][number];
 
+const CREATE_LOCATION_CARD_ID = "__create_location__";
+
 type LocationCardViewModel = LocationEntry &
   PeekRadioCarouselItem & {
     coverImage: string | null;
+    isCreateCard?: boolean;
   };
 
 const props = defineProps<{
@@ -70,21 +82,33 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:modelValue": [value: string | null];
+  "createLocation": [];
 }>();
 
 const { t } = useI18n();
+const activeCardId = ref<string | null>(props.modelValue);
 
-const locationCards = computed<LocationCardViewModel[]>(() =>
-  props.locations.map((location) => ({
+const locationCards = computed<LocationCardViewModel[]>(() => [
+  ...props.locations.map((location) => ({
     ...location,
     coverImage: pickStableGalleryImage(location.gallery, location.id),
   })),
-);
+  {
+    id: CREATE_LOCATION_CARD_ID,
+    gallery: [],
+    availableStartKeys: [],
+    coverImage: null,
+    isCreateCard: true,
+  },
+]);
 
 const selectedLocationLabel = computed(() => {
   const selected = locationCards.value.find(
-    (location) => location.id === props.modelValue,
+    (location) => location.id === activeCardId.value,
   );
+  if (selected?.isCreateCard) {
+    return t("anchorEvent.formMode.locationCreateLabel");
+  }
   return selected?.id ?? t("anchorEvent.formMode.locationPlaceholder");
 });
 
@@ -92,19 +116,56 @@ const asLocationCardViewModel = (value: PeekRadioCarouselItem) =>
   value as LocationCardViewModel;
 
 const handleUpdateLocation = (value: string | number | null) => {
-  emit("update:modelValue", typeof value === "string" ? value : null);
+  if (value === CREATE_LOCATION_CARD_ID) {
+    activeCardId.value = CREATE_LOCATION_CARD_ID;
+    return;
+  }
+
+  const nextValue = typeof value === "string" ? value : null;
+  activeCardId.value = nextValue;
+  emit("update:modelValue", nextValue);
 };
+
+const handleCardClick = (card: LocationCardViewModel) => {
+  if (card.isCreateCard && activeCardId.value === CREATE_LOCATION_CARD_ID) {
+    emit("createLocation");
+  }
+};
+
+const handleCarouselKeydown = (event: KeyboardEvent) => {
+  if (
+    activeCardId.value !== CREATE_LOCATION_CARD_ID ||
+    (event.key !== "Enter" && event.key !== " ")
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  emit("createLocation");
+};
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value !== activeCardId.value && activeCardId.value !== CREATE_LOCATION_CARD_ID) {
+      activeCardId.value = value;
+    }
+  },
+);
 
 watch(
   locationCards,
   (locations) => {
+    const selectableLocations = locations.filter((location) => !location.isCreateCard);
     if (
       props.modelValue &&
-      locations.some((location) => location.id === props.modelValue)
+      selectableLocations.some((location) => location.id === props.modelValue)
     ) {
       return;
     }
-    emit("update:modelValue", locations[0]?.id ?? null);
+    const fallbackLocationId = selectableLocations[0]?.id ?? null;
+    activeCardId.value = fallbackLocationId;
+    emit("update:modelValue", fallbackLocationId);
   },
   { immediate: true },
 );
@@ -147,8 +208,13 @@ watch(
   @include mx.pu-elevation(3);
 }
 
+.location-card--create {
+  background: var(--sys-color-secondary-container);
+}
+
 .location-card__image,
-.location-card__fallback {
+.location-card__fallback,
+.location-card__create {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -168,6 +234,17 @@ watch(
   padding: var(--sys-spacing-medium);
   color: var(--sys-color-on-primary-container);
   @include mx.pu-font(title-medium);
+}
+
+.location-card__create {
+  display: grid;
+  place-items: center;
+  color: var(--sys-color-on-secondary-container);
+}
+
+.location-card__create-icon {
+  @include mx.pu-icon(large);
+  transform: scale(1.35);
 }
 
 .location-caption {

@@ -50,6 +50,7 @@ export const queryKeys = {
   },
   poi: {
     byIds: (idsCsv: string) => ["poi", "by-ids", idsCsv] as const,
+    applicationsMine: () => ["poi", "applications", "mine"] as const,
   },
   admin: {
     anchorEventWorkspace: () => ["admin", "anchor-events", "workspace"] as const,

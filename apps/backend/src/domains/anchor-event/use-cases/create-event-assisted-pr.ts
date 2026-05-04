@@ -8,7 +8,7 @@ import {
   type CreatorIdentityInput,
 } from "../../pr/services";
 import { materializePRSupportResources } from "../../pr-booking-support";
-import { isEventScopedLocation } from "../services/event-scope";
+import { isPublicEventScopedLocation } from "../services/event-scope";
 import { buildAnchorEventFormModeTimeWindow } from "../services/form-mode";
 import { eventOwnsTimeWindow } from "../services/time-window-pool";
 
@@ -35,7 +35,7 @@ export async function createEventAssistedPR(
     });
   }
 
-  if (!isEventScopedLocation(event, input.fields.location)) {
+  if (!(await isPublicEventScopedLocation(event, input.fields.location))) {
     throw new HTTPException(400, {
       message: "Selected location is outside the anchor event scope",
     });

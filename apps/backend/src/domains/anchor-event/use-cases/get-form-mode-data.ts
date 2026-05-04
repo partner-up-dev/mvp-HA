@@ -6,10 +6,11 @@ import {
   AnchorEventPRContextRepository,
   type AnchorEventPRContextRecord,
 } from "../../../repositories/AnchorEventPRContextRepository";
-import { normalizeLocationPool, type AnchorEvent, type AnchorEventId } from "../../../entities";
+import { type AnchorEvent, type AnchorEventId } from "../../../entities";
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
 import { isTimeWindowAvailableByPoiRules } from "../../pr/services";
 import { isAnchorEventFormModeStartSelectable } from "../services/form-mode";
+import { resolvePublicEventLocationPool } from "../services/event-scope";
 import { listAnchorEventTimeWindowDetails } from "../services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
@@ -29,11 +30,9 @@ const hasTimeWindowStarted = (
   return Number.isFinite(parsed) && parsed <= now.getTime();
 };
 
-const normalizeLocationIds = (
+const resolveLocationIds = async (
   event: NonNullable<Awaited<ReturnType<AnchorEventRepository["findById"]>>>,
-): string[] => {
-  return normalizeLocationPool(event.locationPool);
-};
+): Promise<string[]> => resolvePublicEventLocationPool(event);
 
 const parseStartAt = (value: string | null): Date | null => {
   if (!value) {
@@ -135,7 +134,7 @@ export async function getAnchorEventFormModeData(
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
 
-  const locationIds = normalizeLocationIds(event);
+  const locationIds = await resolveLocationIds(event);
   const [pois, tags, visiblePrRecords] = await Promise.all([
     poiRepo.findByIds(locationIds),
     preferenceTagRepo.findByAnchorEventIdAndStatuses(eventId, ["PUBLISHED"]),

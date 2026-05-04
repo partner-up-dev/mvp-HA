@@ -12,7 +12,6 @@ import type {
   AnchorEventId,
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
-import { normalizeLocationPool } from "../../../entities/anchor-event";
 import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
 import {
   isActiveVisiblePRStatus,
@@ -24,6 +23,7 @@ import {
   listAnchorEventTimeWindowDetails,
   resolveAnchorEventTimeWindowDescription,
 } from "../services/time-window-pool";
+import { resolvePublicEventLocationPool } from "../services/event-scope";
 
 const eventRepo = new AnchorEventRepository();
 const partnerRepo = new PartnerRepository();
@@ -168,7 +168,7 @@ export async function getAnchorEventDetail(
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
 
-  const locationPool = normalizeLocationPool(event.locationPool);
+  const locationPool = await resolvePublicEventLocationPool(event);
   const timeWindowDetails = listAnchorEventTimeWindowDetails(event);
   const timeWindowPool = timeWindowDetails.map((detail) => detail.timeWindow);
   const pois = await poiRepo.findByIds(locationPool);

@@ -14,10 +14,75 @@
               <select v-model="selectedPoiIdRaw" class="field-input">
                 <option value="">{{ t("adminPois.poiPlaceholder") }}</option>
                 <option v-for="poi in pois" :key="poi.id" :value="poi.id">
-                  {{ poi.id }}
+                  {{ poi.id }} · {{ statusLabel(poi.status) }}
                 </option>
               </select>
             </label>
+
+            <div v-if="selectedPoi" class="review-panel">
+              <div class="review-panel__header">
+                <span class="field-label">{{
+                  t("adminPois.reviewStatusLabel")
+                }}</span>
+                <Chip :tone="statusChipTone(selectedPoi.status)" size="sm">
+                  {{ statusLabel(selectedPoi.status) }}
+                </Chip>
+              </div>
+              <p v-if="selectedPoi.submittedByUserId" class="hint">
+                {{
+                  t("adminPois.submittedBy", {
+                    userId: selectedPoi.submittedByUserId,
+                  })
+                }}
+              </p>
+              <p v-if="selectedPoi.reviewedAt" class="hint">
+                {{ t("adminPois.reviewedAt", { time: selectedReviewedAt }) }}
+              </p>
+
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminPois.rejectReasonLabel")
+                }}</span>
+                <textarea
+                  v-model="rejectReasonDraft"
+                  class="field-input field-textarea"
+                  :placeholder="t('adminPois.rejectReasonPlaceholder')"
+                ></textarea>
+              </label>
+
+              <div class="action-row">
+                <Button
+                  appearance="pill"
+                  tone="outline"
+                  size="sm"
+                  type="button"
+                  :disabled="!canPublishPoi"
+                  :loading="isPublishingPoi"
+                  @click="handlePublishPoi"
+                >
+                  {{
+                    isPublishingPoi
+                      ? t("adminPois.publishingPoi")
+                      : t("adminPois.publishPoiAction")
+                  }}
+                </Button>
+                <Button
+                  appearance="pill"
+                  tone="danger"
+                  size="sm"
+                  type="button"
+                  :disabled="!canRejectPoi"
+                  :loading="isRejectingPoi"
+                  @click="handleRejectPoi"
+                >
+                  {{
+                    isRejectingPoi
+                      ? t("adminPois.rejectingPoi")
+                      : t("adminPois.rejectPoiAction")
+                  }}
+                </Button>
+              </div>
+            </div>
 
             <label class="field">
               <span class="field-label">{{ t("adminPois.newPoiLabel") }}</span>
@@ -375,6 +440,8 @@ import { useI18n } from "vue-i18n";
 import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCard.vue";
 import {
   useAdminPois,
+  usePublishAdminPoi,
+  useRejectAdminPoi,
   useUpsertAdminPoi,
   type AdminPoiAvailabilityRulesInput,
   type AdminPoisResponse,
@@ -384,9 +451,11 @@ import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
 import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 
 type PoiRecord = NonNullable<AdminPoisResponse>[number];
+type PoiStatus = PoiRecord["status"];
 type PoiGalleryMap = Record<string, string[]>;
 type PoiCapMap = Record<string, number | null>;
 type PoiMeetingPointInput = {
@@ -436,18 +505,23 @@ const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
 const poisQuery = useAdminPois(isAdmin);
 const upsertPoiMutation = useUpsertAdminPoi();
+const publishPoiMutation = usePublishAdminPoi();
+const rejectPoiMutation = useRejectAdminPoi();
 const { uploadFile, isUploading: isUploadingGalleryImage } = useCloudStorage();
 
 const selectedPoiIdRaw = ref("");
 const newPoiId = ref("");
 const manualGalleryUrl = ref("");
+const rejectReasonDraft = ref("");
 const galleryInputRef = ref<HTMLInputElement | null>(null);
 const poiGalleryById = ref<PoiGalleryMap>({});
 const poiCapById = ref<PoiCapMap>({});
 const poiMeetingPointById = ref<PoiMeetingPointMap>({});
 const poiAvailabilityRulesById = ref<PoiAvailabilityRulesMap>({});
 const dirtyPoiIds = ref<Set<string>>(new Set());
-const poiMutationAction = ref<"create" | "save-poi" | null>(null);
+const poiMutationAction = ref<
+  "create" | "save-poi" | "publish-poi" | "reject-poi" | null
+>(null);
 
 const pois = computed<PoiRecord[]>(() => poisQuery.data.value ?? []);
 const poiIdSet = computed<Set<string>>(() => new Set(pois.value.map((poi) => poi.id)));
@@ -455,6 +529,11 @@ const selectedPoiId = computed<string | null>(() => {
   const rawId = selectedPoiIdRaw.value.trim();
   if (!rawId) return null;
   return poiIdSet.value.has(rawId) ? rawId : null;
+});
+const selectedPoi = computed<PoiRecord | null>(() => {
+  const poiId = selectedPoiId.value;
+  if (!poiId) return null;
+  return pois.value.find((poi) => poi.id === poiId) ?? null;
 });
 const selectedPoiGallery = computed<string[]>(() => {
   const poiId = selectedPoiId.value;
@@ -520,7 +599,68 @@ const isSavingPoi = computed(
     upsertPoiMutation.isPending.value &&
     poiMutationAction.value === "save-poi",
 );
-const pageError = computed(() => poisQuery.error.value ?? upsertPoiMutation.error.value ?? null);
+const isPublishingPoi = computed(
+  () =>
+    publishPoiMutation.isPending.value &&
+    poiMutationAction.value === "publish-poi",
+);
+const isRejectingPoi = computed(
+  () =>
+    rejectPoiMutation.isPending.value &&
+    poiMutationAction.value === "reject-poi",
+);
+const canPublishPoi = computed(
+  () =>
+    selectedPoi.value !== null &&
+    selectedPoi.value.status !== "PUBLISHED" &&
+    !isPublishingPoi.value,
+);
+const canRejectPoi = computed(
+  () =>
+    selectedPoi.value !== null &&
+    selectedPoi.value.status !== "PUBLISHED" &&
+    selectedPoi.value.status !== "REJECTED" &&
+    !isRejectingPoi.value,
+);
+const selectedReviewedAt = computed(() => {
+  const reviewedAt = selectedPoi.value?.reviewedAt;
+  if (!reviewedAt) return "";
+  const date = new Date(reviewedAt);
+  if (Number.isNaN(date.getTime())) return reviewedAt;
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+});
+const pageError = computed(
+  () =>
+    poisQuery.error.value ??
+    upsertPoiMutation.error.value ??
+    publishPoiMutation.error.value ??
+    rejectPoiMutation.error.value ??
+    null,
+);
+const statusLabel = (status: PoiStatus): string => {
+  switch (status) {
+    case "PENDING":
+      return t("adminPois.statusPending");
+    case "PUBLISHED":
+      return t("adminPois.statusPublished");
+    case "REJECTED":
+      return t("adminPois.statusRejected");
+  }
+};
+
+const statusChipTone = (
+  status: PoiStatus,
+): "primary" | "secondary" | "danger" =>
+  status === "PUBLISHED"
+    ? "primary"
+    : status === "REJECTED"
+      ? "danger"
+      : "secondary";
 
 const setSelectedPoiGallery = (
   gallery: string[],
@@ -733,6 +873,10 @@ watch([pois, isAdmin], ([nextPois, adminReady]) => {
   }
 }, { immediate: true });
 
+watch(selectedPoi, (poi) => {
+  rejectReasonDraft.value = poi?.rejectReason ?? "";
+}, { immediate: true });
+
 watch(pois, (nextPois) => {
   const nextMap: PoiGalleryMap = {};
   const nextCapMap: PoiCapMap = {};
@@ -882,6 +1026,33 @@ const handleSavePoi = async () => {
     poiMutationAction.value = null;
   }
 };
+
+const handlePublishPoi = async () => {
+  const poiId = selectedPoiId.value;
+  if (!poiId || !canPublishPoi.value) return;
+
+  poiMutationAction.value = "publish-poi";
+  try {
+    await publishPoiMutation.mutateAsync({ poiId });
+  } finally {
+    poiMutationAction.value = null;
+  }
+};
+
+const handleRejectPoi = async () => {
+  const poiId = selectedPoiId.value;
+  if (!poiId || !canRejectPoi.value) return;
+
+  poiMutationAction.value = "reject-poi";
+  try {
+    await rejectPoiMutation.mutateAsync({
+      poiId,
+      rejectReason: rejectReasonDraft.value.trim() || null,
+    });
+  } finally {
+    poiMutationAction.value = null;
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -962,6 +1133,28 @@ const handleSavePoi = async () => {
   border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
+}
+
+.field-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.review-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-medium);
+  background: var(--sys-color-surface);
+}
+
+.review-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-spacing-small);
 }
 
 .availability-card {

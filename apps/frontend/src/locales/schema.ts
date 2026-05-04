@@ -646,6 +646,7 @@ export interface MessageSchema {
       locationEyebrow: string;
       locationTitle: string;
       locationAriaLabel: string;
+      locationCreateLabel: string;
       timeEyebrow: string;
       timeTitle: string;
       dateWheelAriaLabel: string;
@@ -806,6 +807,34 @@ export interface MessageSchema {
       title: string;
       description: string;
       action: string;
+    };
+    locationApplications: {
+      title: string;
+      description: string;
+      action: string;
+    };
+  };
+  locationApplicationPage: {
+    title: string;
+    subtitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    imageLabel: string;
+    imageHint: string;
+    imageReady: string;
+    pickImageAction: string;
+    imagePreviewAlt: string;
+    imageUrlLabel: string;
+    imageUrlPlaceholder: string;
+    submitAction: string;
+    submitSuccess: string;
+    mineTitle: string;
+    mineSubtitle: string;
+    emptyMine: string;
+    status: {
+      PENDING: string;
+      PUBLISHED: string;
+      REJECTED: string;
     };
   };
   userProfilePage: {
@@ -1066,6 +1095,18 @@ export interface MessageSchema {
     addUrlAction: string;
     savePoiAction: string;
     savingPoi: string;
+    reviewStatusLabel: string;
+    statusPending: string;
+    statusPublished: string;
+    statusRejected: string;
+    submittedBy: string;
+    reviewedAt: string;
+    rejectReasonLabel: string;
+    rejectReasonPlaceholder: string;
+    publishPoiAction: string;
+    publishingPoi: string;
+    rejectPoiAction: string;
+    rejectingPoi: string;
     emptyGallery: string;
     removeImageAction: string;
     imageAlt: string;

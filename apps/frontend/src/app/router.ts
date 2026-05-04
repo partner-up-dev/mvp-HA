@@ -10,6 +10,8 @@ import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRouteP
 
 const HomePage = () => import("@/pages/HomePage.vue");
 const MePage = () => import("@/pages/MePage.vue");
+const LocationApplicationPage = () =>
+  import("@/pages/LocationApplicationPage.vue");
 const MyPRsPage = () => import("@/pages/MyPRsPage.vue");
 const PRCreatePage = () => import("@/pages/PRCreatePage.vue");
 const PRPage = () => import("@/pages/PRPage.vue");
@@ -51,6 +53,15 @@ const routes: RouteRecordRaw[] = [
     component: MePage,
     meta: {
       wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/locations/apply",
+    name: "poi-location-apply",
+    component: LocationApplicationPage,
+    meta: {
+      wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
     },
   },
   {

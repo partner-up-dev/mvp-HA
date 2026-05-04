@@ -7,6 +7,7 @@ import {
   type AnchorEvent,
   normalizeLocationPool,
 } from "../../../entities/anchor-event";
+import { isPublishedPoi } from "../../../entities/poi";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 
 const repo = new AnchorEventRepository();
@@ -82,7 +83,11 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   }
 
   const locationLabels = Array.from(uniqueLocationLabels);
-  const pois = await poiRepo.findByIds(locationLabels);
+  const exactPois = await poiRepo.findByIds(locationLabels, {
+    includeUnpublished: true,
+  });
+  const exactPoiById = new Map(exactPois.map((poi) => [poi.id, poi]));
+  const pois = exactPois.filter(isPublishedPoi);
   const poiById = new Map<string, { id: string; gallery: string[] }>();
   for (const poi of pois) {
     poiById.set(poi.id, {
@@ -99,6 +104,9 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   if (needNormalizedFallback) {
     const allPois = await poiRepo.listAll();
     for (const poi of allPois) {
+      if (!isPublishedPoi(poi)) {
+        continue;
+      }
       const normalizedPoiId = normalizeLocationLookupKey(poi.id);
       if (!normalizedPoiId) {
         continue;
@@ -114,7 +122,10 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   }
 
   return events.map((event) => {
-    const locationPool = getLocationLabels(event);
+    const locationPool = getLocationLabels(event).filter((label) => {
+      const poi = exactPoiById.get(label);
+      return !poi || isPublishedPoi(poi);
+    });
     const matchedPoisById = new Map<
       string,
       { id: string; gallery: string[] }

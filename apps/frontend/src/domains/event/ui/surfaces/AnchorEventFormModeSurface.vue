@@ -30,6 +30,7 @@
           v-model="selectedLocationId"
           :locations="formModeData.locations"
           @update:model-value="trackFormStarted('location')"
+          @create-location="handleCreateLocationApplication"
         />
 
         <FormModeTimeControl
@@ -475,6 +476,15 @@ const handleViewAllSessions = async () => {
     },
     query: {
       mode: "LIST",
+    },
+  });
+};
+
+const handleCreateLocationApplication = async () => {
+  await router.push({
+    name: "poi-location-apply",
+    query: {
+      fromEvent: props.eventId.toString(),
     },
   });
 };

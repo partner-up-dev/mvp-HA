@@ -43,6 +43,7 @@
 6. In `FORM` mode, the user selects one location, one start time, and optional preferences before the system reveals candidate `PR`s. When the selected start time inherits event-authored time-window description copy from its start rule, the time control surfaces that copy under the picker.
 7. Form Mode preferences come from the event-specific preset tag pool plus the current visitor's session-local custom labels; the same derived category is mutually exclusive while uncategorized labels can coexist.
 8. Form Mode submission stays inside `/e/:eventId`; the route-level state machine keeps the selected location, start time, and preference labels through recommendation and result handling.
+8.1. If the desired location is absent, the Form Mode location control provides a location-application entry. The application creates a pending `POI` with the submitted name and image, independent of any one Anchor Event.
 9. Form Mode submission returns one backend-authored matched recommendation plus an ordered candidate list.
 10. If Form Mode has no matched recommendation and has ordered candidates, the page shows the inline no-match result with candidate actions and the create fallback action `都不合适，帮我找`; the same selected conditions feed that assisted-create path.
 11. If Form Mode has no matched recommendation and zero ordered candidates, the page directly creates an event-assisted `PR` from the selected conditions after the long-press completes, then opens the created `/pr/:id` with a handoff query and a success notice for the created request.
@@ -58,6 +59,16 @@
 21. The current Anchor Event and downstream PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-context collaboration journey entirely.
 22. The user may then join, continue browsing other visible PRs in that event context, or view booking-support information.
 23. The resulting PR may continue through timing and reliability loops such as confirmation, reminders, and attendance follow-up when the corresponding modules are active.
+
+## 4.1 Submit And Review A POI Location Application
+
+1. The user enters the location-application page from the Form Mode location control.
+2. The user submits one location name and one image.
+3. The backend creates a `PENDING` `POI`; the location name is the POI id.
+4. The user can revisit submitted POI applications from the submit-success page and from `/me`.
+5. Operators review submitted POIs in the POI management surface.
+6. Publishing changes the POI status to `PUBLISHED`; rejected applications remain hidden from public location reads and may carry a rejection reason.
+7. Published POIs are available to the global POI library, but Form Mode still shows only locations referenced by the current Anchor Event location pool.
 
 ## 5. Revisit and History Entry
 
@@ -103,4 +114,5 @@
 2. The user is routed toward support, author feedback, or event-specific beta-group selection based on need. When `/contact-support` is opened inside a WeChat mini program webview, reimbursement-staff and platform-support entrypoints use QR presentation instead of outbound links.
 3. The user can also reach `/about` from that path, inspect product and repository metadata, choose which active activity beta group to join, and open the official-account QR modal.
 4. Operator pages maintain event, POI, booking-support, and related capabilities so the above workflows remain operable.
+5. Operator pages review, publish, or reject user-submitted POI location applications.
 5. PR Admin lets an operator hard-delete a selected PR after explicit confirmation. The delete removes the PR root plus the corresponding Partner rows and PR-owned resource rows.

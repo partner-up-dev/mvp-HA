@@ -319,6 +319,23 @@
           </span>
         </RouterLink>
       </template>
+
+      <RouterLink
+        class="history-link"
+        :to="{ name: 'poi-location-apply', query: { view: 'mine' } }"
+      >
+        <div class="history-link__copy">
+          <h2>{{ t("mePage.locationApplications.title") }}</h2>
+          <p>{{ t("mePage.locationApplications.description") }}</p>
+        </div>
+        <span class="history-link__action">
+          {{ t("mePage.locationApplications.action") }}
+          <span
+            class="history-link__icon i-mdi:arrow-right"
+            aria-hidden="true"
+          ></span>
+        </span>
+      </RouterLink>
     </div>
 
     <template #footer>

@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -6,9 +6,13 @@ import {
   meetingPointConfigSchema,
   type MeetingPointConfig,
 } from "./meeting-point";
+import { users, type UserId } from "./user";
 
 const isoDateTimeWithOffsetSchema = z.string().datetime({ offset: true });
 const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
+
+export const poiStatusSchema = z.enum(["PENDING", "PUBLISHED", "REJECTED"]);
+export type PoiStatus = z.infer<typeof poiStatusSchema>;
 
 export const poiAvailabilityRuleModeSchema = z.enum(["INCLUDE", "EXCLUDE"]);
 export type PoiAvailabilityRuleMode = z.infer<
@@ -112,6 +116,7 @@ export const normalizePoiAvailabilityRules = (
 
 export const pois = pgTable("pois", {
   id: text("id").primaryKey(),
+  status: text("status").$type<PoiStatus>().notNull().default("PUBLISHED"),
   gallery: text("gallery").array().notNull().default([]),
   perTimeWindowCap: integer("per_time_window_cap"),
   availabilityRules: jsonb("availability_rules")
@@ -121,15 +126,25 @@ export const pois = pgTable("pois", {
   meetingPoint: jsonb("meeting_point")
     .$type<MeetingPointConfig | null>()
     .default(null),
+  submittedByUserId: uuid("submitted_by_user_id")
+    .$type<UserId | null>()
+    .references(() => users.id, { onDelete: "set null" }),
+  reviewedByUserId: uuid("reviewed_by_user_id")
+    .$type<UserId | null>()
+    .references(() => users.id, { onDelete: "set null" }),
+  reviewedAt: timestamp("reviewed_at"),
+  rejectReason: text("reject_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertPoiSchema = createInsertSchema(pois, {
+  status: poiStatusSchema.optional(),
   availabilityRules: poiAvailabilityRulesSchema,
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
 });
 export const selectPoiSchema = createSelectSchema(pois, {
+  status: poiStatusSchema,
   availabilityRules: poiAvailabilityRulesSchema,
   meetingPoint: meetingPointConfigSchema.nullable(),
 });
@@ -137,3 +152,6 @@ export const selectPoiSchema = createSelectSchema(pois, {
 export type Poi = typeof pois.$inferSelect;
 export type NewPoi = typeof pois.$inferInsert;
 export type PoiId = Poi["id"];
+
+export const isPublishedPoi = (poi: Pick<Poi, "status">): boolean =>
+  poi.status === "PUBLISHED";

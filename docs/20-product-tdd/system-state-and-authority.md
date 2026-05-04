@@ -9,7 +9,7 @@ Persisted in Postgres via backend entities and repositories:
 - PR messages and per-user PR message inbox state
 - users, user notification options, and user reliability
 - `users.wechat_official_account_followed_at` as the positive marker that the backend has confirmed a user follows the WeChat official account
-- anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, event-owned join-gate templates, unified event location pools, event-owned meeting-point defaults and location-specific meeting-point overrides, type-derived Anchor Event PR context, time-pool strategy state, POIs with meeting-point fallback configuration, per-time-window capacity and availability rules, support resources, booking-resource join-gate templates, booking contacts, join-notice acceptances, and booking execution records
+- anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, event-owned join-gate templates, unified event location pools, event-owned meeting-point defaults and location-specific meeting-point overrides, type-derived Anchor Event PR context, time-pool strategy state, POIs with submission status, meeting-point fallback configuration, per-time-window capacity and availability rules, support resources, booking-resource join-gate templates, booking contacts, join-notice acceptances, and booking execution records
 - config, operation logs, domain events, outbox events, jobs, notification opportunities, notification waves, and notification deliveries
 - analytics aggregate tables
 
@@ -43,6 +43,7 @@ The backend is authoritative for:
 - identity binding, session verification, and role semantics
 - confirmed WeChat official-account follow state derived from official-account follower-list sync
 - event, time-pool, POI, booking-support, and admin-managed configuration state
+- POI submission status, submitter linkage, reviewer linkage, and rejection reason
 - PR join-gate configuration, join-gate projection, booking-contact resolution, and join-notice acceptance resolution
 - notification scheduling and dispatch for meeting-point update notifications
 - POI-owned availability rules that determine whether a PR location accepts a full PR time window

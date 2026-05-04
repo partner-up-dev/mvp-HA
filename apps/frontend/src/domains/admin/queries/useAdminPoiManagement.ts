@@ -23,6 +23,9 @@ export type AdminPoisResponse = InferResponseType<
 export type UpsertAdminPoiResponse = InferResponseType<
   (typeof adminClient.api.admin.pois)[":poiId"]["$put"]
 >;
+export type ReviewAdminPoiResponse = InferResponseType<
+  (typeof adminClient.api.admin.pois)[":poiId"]["publish"]["$post"]
+>;
 export type AdminPoiAvailabilityRulesInput =
   AdminPoisResponse[number]["availabilityRules"];
 type MeetingPointInput = {
@@ -117,3 +120,38 @@ export const useUpsertAdminPoi = () => {
     },
   });
 };
+
+const buildPoiReviewMutation = (action: "publish" | "reject") => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ReviewAdminPoiResponse,
+    Error,
+    { poiId: string; rejectReason?: string | null }
+  >({
+    mutationFn: async ({ poiId, rejectReason }) => {
+      const res =
+        action === "publish"
+          ? await adminClient.api.admin.pois[":poiId"].publish.$post({
+              param: { poiId },
+            })
+          : await adminClient.api.admin.pois[":poiId"].reject.$post({
+              param: { poiId },
+              json: { rejectReason: rejectReason ?? null },
+            });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "更新 POI 审批状态失败"));
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.pois(),
+      });
+    },
+  });
+};
+
+export const usePublishAdminPoi = () => buildPoiReviewMutation("publish");
+
+export const useRejectAdminPoi = () => buildPoiReviewMutation("reject");

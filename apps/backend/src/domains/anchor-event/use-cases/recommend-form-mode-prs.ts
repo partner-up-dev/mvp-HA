@@ -3,7 +3,7 @@ import { AnchorEventRepository } from "../../../repositories/AnchorEventReposito
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
 import type { AnchorEventId, PRStatus } from "../../../entities";
-import { isEventScopedLocation } from "../services/event-scope";
+import { isPublicEventScopedLocation } from "../services/event-scope";
 import {
   buildAnchorEventFormModeTimeWindow,
   buildAnchorEventRecommendationMatch,
@@ -69,7 +69,7 @@ export async function recommendAnchorEventFormModePRs(input: {
   }
 
   const locationId = input.locationId.trim();
-  if (!isEventScopedLocation(event, locationId)) {
+  if (!(await isPublicEventScopedLocation(event, locationId))) {
     throw new HTTPException(400, {
       message: "Selected location is outside the anchor event scope",
     });

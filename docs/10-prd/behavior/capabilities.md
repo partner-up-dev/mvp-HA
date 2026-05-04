@@ -32,6 +32,8 @@
 - re-discover other active Anchor Events from current Anchor Event and PR context
 - create `PR` from Anchor Event context as one assisted mode inside the Anchor Event domain
 - review alternative recommendations under the same time-pool rules
+- submit a new POI location application from Form Mode when the desired location is missing
+- revisit the current user's submitted POI location applications
 - view booking support and resource-support semantics
 
 ## 4. Identity And Revisit
@@ -65,5 +67,6 @@
 - route `/contact-support` toward `/contact-author` and `/about`
 - expose repository and frontend/backend commit hashes in `/about`
 - let operator tooling maintain Anchor/Event/POI/Booking Support semantics
+- let operator tooling publish or reject user-submitted POI location applications
 - let operator tooling process booking fulfillment results and release invalid booking contacts
 - let configuration materially shape the real user experience
