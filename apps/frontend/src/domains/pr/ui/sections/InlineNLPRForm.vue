@@ -341,7 +341,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 }
 
 .voice-icon {
-  @include mx.pu-icon(smallall, true);
+  @include mx.pu-icon(small, true);
 }
 
 .error-message {

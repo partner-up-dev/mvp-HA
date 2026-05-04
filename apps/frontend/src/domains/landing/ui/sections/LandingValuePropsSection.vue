@@ -206,7 +206,7 @@ h2.is-visible {
 }
 
 .value-icon {
-  @include mx.pu-icon(smallall, true);
+  @include mx.pu-icon(small, true);
   color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
 }

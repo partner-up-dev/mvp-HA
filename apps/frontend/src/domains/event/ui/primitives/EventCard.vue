@@ -398,7 +398,7 @@ const handleClick = () => {
 }
 
 .event-cta-icon {
-  @include mx.pu-icon(smallall);
+  @include mx.pu-icon(small);
 }
 
 .event-card--shorter .event-cover {
@@ -407,7 +407,8 @@ const handleClick = () => {
 
 .event-card--shorter .event-info {
   gap: var(--sys-spacing-xsmall);
-  padding: var(--sys-spacing-small) var(--sys-spacing-medium) var(--sys-spacing-medium);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium)
+    var(--sys-spacing-medium);
 }
 
 .event-card--outline:hover,

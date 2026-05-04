@@ -31,6 +31,8 @@ const buildPublicPR = (overrides: Partial<PublicPR> = {}): PublicPR => ({
   wechatThumbnail: null,
   partners: [],
   myPartnerId: null,
+  myPendingPartnerId: null,
+  isViewerWaitlisted: false,
   isViewerReleased: false,
   ...overrides,
 });
