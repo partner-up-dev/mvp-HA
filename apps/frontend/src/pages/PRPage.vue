@@ -68,16 +68,20 @@
         "
       />
 
+      <InlineNotice
+        v-if="showEventAssistedCreateHandoffNotice"
+        tone="success"
+        :title="t('prPage.eventAssistedCreateHandoff.title')"
+        :message="t('prPage.eventAssistedCreateHandoff.description')"
+      />
+
       <div
         ref="factsCardTargetRef"
         class="facts-card"
         :class="{ 'facts-card--handoff-hidden': shouldHideFactsForHandoff }"
         data-region="summary"
       >
-        <PRFactsCard
-          :pr-id="prDetail.id"
-          @ready="handleFactsCardReady"
-        />
+        <PRFactsCard :pr-id="prDetail.id" @ready="handleFactsCardReady" />
       </div>
 
       <section
@@ -97,17 +101,29 @@
           :message="primaryBlockedMessage"
         />
 
-        <PRJoinFlow
+        <InlineNotice
+          v-if="waitlistNoticeText"
+          tone="info"
+          :message="waitlistNoticeText"
+        />
+
+        <component
+          :is="joinFlowComponent"
+          v-if="joinDockAction"
           ref="joinFlowRef"
           :pr-id="id"
           :disabled="joinDockAction?.disabled ?? true"
           :scenario-type="prDetail.core.type"
+          :event-id="routeEventId"
+          :entry-surface="joinEntrySurface"
           :confirmation-deadline-at="confirmationDeadlineAt"
           :viewer-is-participant="prDetail.partnerSection.viewer.isParticipant"
           write-join-entry-on-auth
           @joined="handleJoinFlowJoined"
         >
-          <template #default="{ open, pending, disabled, joined, errorMessage }">
+          <template
+            #default="{ open, pending, disabled, joined, errorMessage }"
+          >
             <div v-if="joinDockAction" class="primary-action">
               <Button
                 class="primary-action__button"
@@ -119,7 +135,9 @@
               >
                 {{
                   joined
-                    ? t("prPage.partnerSection.rosterJoined")
+                    ? joinDockAction.key === "WAITLIST"
+                      ? t("prPage.waitlisted")
+                      : t("prPage.partnerSection.rosterJoined")
                     : pending
                       ? joinDockAction.pendingLabel
                       : joinDockAction.label
@@ -133,7 +151,7 @@
               </p>
             </div>
           </template>
-        </PRJoinFlow>
+        </component>
 
         <div v-if="nonJoinPrimaryDockAction" class="primary-action">
           <Button
@@ -178,7 +196,6 @@
         >
           {{ primaryActionErrorMessage }}
         </p>
-
       </section>
 
       <section class="utility-area">
@@ -344,8 +361,12 @@ import PRStatusBadge from "@/domains/pr/ui/primitives/PRStatusBadge.vue";
 import PRShareSection from "@/domains/pr/ui/sections/PRShareSection.vue";
 import PRFactsCard from "@/domains/pr/ui/composites/PRFactsCard.vue";
 import PRJoinFlow from "@/domains/pr/ui/composites/PRJoinFlow.vue";
+import PRWaitlistFlow from "@/domains/pr/ui/composites/PRWaitlistFlow.vue";
 import { usePublishPR } from "@/domains/pr/queries/usePRPublish";
-import { usePRDetail, type PRDetailResponse } from "@/domains/pr/queries/usePRDetail";
+import {
+  usePRDetail,
+  type PRDetailResponse,
+} from "@/domains/pr/queries/usePRDetail";
 import {
   useUserSessionStore,
   type AuthSessionPayload,
@@ -363,9 +384,7 @@ import {
   prMessagesPath,
 } from "@/domains/pr/routing/routes";
 import { usePRRouteId } from "@/domains/pr/routing/usePRRouteId";
-import {
-  type PRFormFields,
-} from "@/domains/pr/model/types";
+import { type PRFormFields } from "@/domains/pr/model/types";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/telemetry/track";
 import {
@@ -376,8 +395,9 @@ import {
 import { useMatchedPRHandoff } from "@/processes/route-handoff/useMatchedPRHandoff";
 
 type BlockedReason =
-  PRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"];
-type DockActionKey = "JOIN" | "CONFIRM" | "CHECKIN_ATTENDED";
+  | PRDetailResponse["partnerSection"]["viewer"]["joinBlockedReason"]
+  | PRDetailResponse["partnerSection"]["viewer"]["waitlistBlockedReason"];
+type DockActionKey = "JOIN" | "WAITLIST" | "CONFIRM" | "CHECKIN_ATTENDED";
 
 type DockActionItem = {
   key: DockActionKey;
@@ -393,6 +413,8 @@ type ViewerState =
   | "CREATOR"
   | "PARTICIPANT"
   | "VISITOR_JOINABLE"
+  | "VISITOR_WAITLISTABLE"
+  | "VISITOR_WAITLISTED"
   | "VISITOR_BLOCKED";
 
 const route = useRoute();
@@ -419,12 +441,22 @@ const confirmationDeadlineAt = computed(
 const supportsEventContextFeatures = computed(
   () => prDetail.value?.partnerSection.reminder.supported ?? false,
 );
-const backFallbackTo = computed(() => {
+const routeEventId = computed(() => {
   const routeEventIdRaw = route.query.fromEvent;
   const routeEventId =
     typeof routeEventIdRaw === "string" ? Number(routeEventIdRaw) : null;
-  if (routeEventId !== null && Number.isFinite(routeEventId) && routeEventId > 0) {
-    return `/events/${routeEventId}`;
+  if (
+    routeEventId !== null &&
+    Number.isFinite(routeEventId) &&
+    routeEventId > 0
+  ) {
+    return routeEventId;
+  }
+  return null;
+});
+const backFallbackTo = computed(() => {
+  if (routeEventId.value !== null) {
+    return `/events/${routeEventId.value}`;
   }
   return "/";
 });
@@ -489,9 +521,16 @@ const creationEntry = computed(() => {
   if (Array.isArray(raw)) return raw[0] ?? null;
   return null;
 });
-const showDraftPublishCard = computed(
-  () => prDetail.value?.status === "DRAFT",
+const handoffEntry = computed(() => {
+  const raw = route.query.handoff;
+  if (typeof raw === "string") return raw;
+  if (Array.isArray(raw)) return raw[0] ?? null;
+  return null;
+});
+const joinEntrySurface = computed(() =>
+  handoffEntry.value === "matched_pr" ? "form_mode_matched" : "pr_detail",
 );
+const showDraftPublishCard = computed(() => prDetail.value?.status === "DRAFT");
 const showPinHelpCard = computed(() => {
   if (prDetail.value?.status !== "DRAFT") return false;
   if (creationEntry.value === "join") {
@@ -500,6 +539,9 @@ const showPinHelpCard = computed(() => {
   if (!isCreator.value) return false;
   return creationEntry.value === "create" || creationEntry.value === "publish";
 });
+const showEventAssistedCreateHandoffNotice = computed(
+  () => isCreator.value && handoffEntry.value === "event_assisted_create",
+);
 const primaryActionErrorMessage = computed(
   () => bookingContactActionError.value,
 );
@@ -579,6 +621,12 @@ const viewerState = computed<ViewerState>(() => {
   if (!prDetail.value) return "VISITOR_BLOCKED";
   if (prDetail.value.partnerSection.viewer.isParticipant) return "PARTICIPANT";
   if (prDetail.value.partnerSection.viewer.isCreator) return "CREATOR";
+  if (prDetail.value.partnerSection.viewer.isWaitlisted) {
+    return "VISITOR_WAITLISTED";
+  }
+  if (prDetail.value.partnerSection.viewer.canWaitlist) {
+    return "VISITOR_WAITLISTABLE";
+  }
   return prDetail.value.partnerSection.viewer.canJoin
     ? "VISITOR_JOINABLE"
     : "VISITOR_BLOCKED";
@@ -593,7 +641,22 @@ const dockActions = computed<DockActionItem[]>(() => {
   }
 
   if (!viewer.isParticipant) {
-    if (!viewer.canJoin) return [];
+    if (!viewer.canJoin && !viewer.canWaitlist) return [];
+    if (viewer.canWaitlist) {
+      return [
+        {
+          key: "WAITLIST",
+          label: t("prPage.waitlist"),
+          pendingLabel: t("prPage.waitlisting"),
+          tone: "primary",
+          disabled: !viewer.canWaitlist,
+          pending: false,
+          tip: viewer.canWaitlist
+            ? null
+            : blockedReasonText(viewer.waitlistBlockedReason),
+        },
+      ];
+    }
     return [
       {
         key: "JOIN",
@@ -643,18 +706,47 @@ const dockActions = computed<DockActionItem[]>(() => {
 
 const primaryDockAction = computed(() => dockActions.value[0] ?? null);
 const joinDockAction = computed(() =>
-  primaryDockAction.value?.key === "JOIN" ? primaryDockAction.value : null,
+  primaryDockAction.value?.key === "JOIN" ||
+  primaryDockAction.value?.key === "WAITLIST"
+    ? primaryDockAction.value
+    : null,
+);
+const joinFlowComponent = computed(() =>
+  joinDockAction.value?.key === "WAITLIST" ? PRWaitlistFlow : PRJoinFlow,
 );
 const nonJoinPrimaryDockAction = computed(() =>
-  primaryDockAction.value && primaryDockAction.value.key !== "JOIN"
+  primaryDockAction.value &&
+  primaryDockAction.value.key !== "JOIN" &&
+  primaryDockAction.value.key !== "WAITLIST"
     ? primaryDockAction.value
     : null,
 );
 
 const primaryBlockedMessage = computed(() => {
   const viewer = prDetail.value?.partnerSection.viewer;
-  if (!viewer || viewer.isParticipant || viewer.canJoin) return null;
-  return blockedReasonText(viewer.joinBlockedReason);
+  if (
+    !viewer ||
+    viewer.isParticipant ||
+    viewer.isWaitlisted ||
+    viewer.canJoin ||
+    viewer.canWaitlist
+  ) {
+    return null;
+  }
+  const reason =
+    viewer.joinBlockedReason === "FULL"
+      ? viewer.waitlistBlockedReason
+      : viewer.joinBlockedReason;
+  return blockedReasonText(reason);
+});
+
+const waitlistNoticeText = computed(() => {
+  const viewer = prDetail.value?.partnerSection.viewer;
+  if (!viewer?.isWaitlisted) return null;
+  if (viewer.waitlistRank !== null) {
+    return t("prPage.waitlistRankNotice", { rank: viewer.waitlistRank });
+  }
+  return t("prPage.waitlistedNotice");
 });
 
 const showReminderSubscriptions = computed(() => {
@@ -673,7 +765,9 @@ const showMessageThread = computed(
     (prDetail.value?.partnerSection.viewer.isParticipant ?? false),
 );
 
-const showBookingSupportEntry = computed(() => supportsEventContextFeatures.value);
+const showBookingSupportEntry = computed(
+  () => supportsEventContextFeatures.value,
+);
 const showEventPlazaLink = computed(() => supportsEventContextFeatures.value);
 
 const showExitActionInContext = computed(() => {
@@ -685,10 +779,11 @@ const showExitActionInContext = computed(() => {
 const showContextualActionArea = computed(() =>
   Boolean(
     releaseNoticeText.value ||
-    primaryBlockedMessage.value ||
-    primaryDockAction.value ||
+      primaryBlockedMessage.value ||
+      waitlistNoticeText.value ||
+      primaryDockAction.value ||
       showExitActionInContext.value ||
-    primaryActionErrorMessage.value,
+      primaryActionErrorMessage.value,
   ),
 );
 
@@ -728,11 +823,7 @@ const exitBlockedTip = computed(() => {
 });
 
 watch(
-  [
-    () => matchedPRHandoff.state.phase,
-    id,
-    () => prDetail.value?.id ?? null,
-  ],
+  [() => matchedPRHandoff.state.phase, id, () => prDetail.value?.id ?? null],
   async () => {
     await nextTick();
     registerFactsCardTarget();
@@ -771,6 +862,7 @@ const openJoinFlow = async (): Promise<void> => {
 
 const handleJoinFlowJoined = (): void => {
   resetLivePolling();
+  void refetch();
 };
 
 const pendingActionReplayRunning = ref(false);
@@ -783,6 +875,7 @@ const matchPendingActionForCurrentPR = (
   }
   if (
     pending.kind === "PR_JOIN" ||
+    pending.kind === "PR_WAITLIST" ||
     pending.kind === "PR_EXIT" ||
     pending.kind === "PR_CONFIRM"
   ) {
@@ -804,6 +897,15 @@ const attemptPendingWeChatActionReplay = async () => {
     if (pending.kind === "PR_JOIN") {
       const viewer = currentDetail.value.partnerSection.viewer;
       if (viewer.isParticipant || !viewer.canJoin) return;
+      await openJoinFlow();
+      return;
+    }
+
+    if (pending.kind === "PR_WAITLIST") {
+      const viewer = currentDetail.value.partnerSection.viewer;
+      if (viewer.isParticipant || viewer.isWaitlisted || !viewer.canWaitlist) {
+        return;
+      }
       await openJoinFlow();
       return;
     }
@@ -834,7 +936,9 @@ watch(
     [
       id.value,
       prDetail.value?.partnerSection.viewer.isParticipant,
+      prDetail.value?.partnerSection.viewer.isWaitlisted,
       prDetail.value?.partnerSection.viewer.canJoin,
+      prDetail.value?.partnerSection.viewer.canWaitlist,
       prDetail.value?.partnerSection.viewer.canExit,
       prDetail.value?.partnerSection.viewer.canConfirm,
     ] as const,
@@ -939,8 +1043,9 @@ const handleOpenCreatorModifyStatus = () => {
 
 function mapDockActionToTrackType(
   key: DockActionKey,
-): "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT" | null {
+): "JOIN" | "WAITLIST" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT" | null {
   if (key === "JOIN") return "JOIN";
+  if (key === "WAITLIST") return "WAITLIST";
   if (key === "CONFIRM") return "CONFIRM_SLOT";
   if (key === "CHECKIN_ATTENDED") return "CHECK_IN";
   return null;
@@ -1005,6 +1110,8 @@ function blockedReasonText(reason: BlockedReason): string {
       return t("prPage.partnerSection.blockedAlreadyConfirmed");
     case "ALREADY_JOINED":
       return t("prPage.partnerSection.joinedHint");
+    case "ALREADY_WAITLISTED":
+      return t("prPage.waitlistedNotice");
     case "NOT_JOINED":
       return t("prPage.partnerSection.blockedNotJoined");
     case "NOT_JOINABLE_STATUS":

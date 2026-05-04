@@ -27,7 +27,7 @@ import { and, eq, sql } from "drizzle-orm";
 type JoinGateProjectionResponse = {
   gates: Array<{
     key: string;
-    kind: "JOIN_NOTICE" | "BOOKING_CONTACT" | "FALLBACK_CONFIRM";
+    kind: "JOIN_NOTICE" | "BOOKING_CONTACT";
     version: string;
     resolved: boolean;
   }>;
@@ -35,6 +35,24 @@ type JoinGateProjectionResponse = {
 
 type ProblemDetailsResponse = {
   code?: string;
+};
+
+type WaitlistPRResponse = {
+  status: string;
+  isViewerWaitlisted: boolean;
+  myPendingPartnerId: number | null;
+};
+
+type WaitlistDetailResponse = {
+  partnerSection: {
+    viewer: {
+      isWaitlisted: boolean;
+      waitlistRank: number | null;
+      slotState: string;
+      canWaitlist: boolean;
+      pendingPartnerId: number | null;
+    };
+  };
 };
 
 scenario("open_pr_join_reaches_ready", async (ctx) => {
@@ -105,6 +123,140 @@ scenario("min_one_pr_publishes_ready_with_creator_slot", async (ctx) => {
   await expectActiveParticipantsInclude(pr, [creator.user.id]);
 });
 
+scenario("join_gate_projection_excludes_fallback_confirm", async (ctx) => {
+  const creator = await givenUser("gate-projection-creator");
+  const viewer = await givenUser("gate-projection-viewer");
+  const pr = await givenPublishedPartnerRequest({
+    creator,
+    minPartners: 2,
+    maxPartners: null,
+  });
+
+  ctx.record("prId", pr.id);
+  ctx.record("viewerUserId", viewer.user.id);
+
+  const projection = await expectJsonResponse<JoinGateProjectionResponse>(
+    await requestJson(`/api/pr/${pr.id}/join-gates`, {
+      method: "GET",
+      token: viewer.token,
+    }),
+    200,
+  );
+  assert.deepEqual(projection.gates, []);
+});
+
+scenario(
+  "full_pr_waitlist_promotes_earliest_pending_after_exit",
+  async (ctx) => {
+    const creator = await givenUser("waitlist-creator");
+    const joiner = await givenUser("waitlist-joiner");
+    const firstCandidate = await givenUser("waitlist-first");
+    const secondCandidate = await givenUser("waitlist-second");
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 1,
+      maxPartners: 2,
+      expectedCreatedStatus: "READY",
+    });
+    const db = getTestDb();
+
+    ctx.record("prId", pr.id);
+    ctx.record("firstCandidateUserId", firstCandidate.user.id);
+    ctx.record("secondCandidateUserId", secondCandidate.user.id);
+
+    const joined = await joinPartnerRequest({ pr, user: joiner });
+    assert.equal(joined.status, "FULL");
+    await expectPartnerRequestStatus(pr, "FULL");
+    await expectActiveParticipantCount(pr, 2);
+
+    const firstWaitlist = await expectJsonResponse<WaitlistPRResponse>(
+      await requestJson(`/api/pr/${pr.id}/waitlist`, {
+        method: "POST",
+        token: firstCandidate.token,
+      }),
+      200,
+    );
+    assert.equal(firstWaitlist.status, "FULL");
+    assert.equal(firstWaitlist.isViewerWaitlisted, true);
+    assert.notEqual(firstWaitlist.myPendingPartnerId, null);
+
+    const secondWaitlist = await expectJsonResponse<WaitlistPRResponse>(
+      await requestJson(`/api/pr/${pr.id}/waitlist`, {
+        method: "POST",
+        token: secondCandidate.token,
+      }),
+      200,
+    );
+    assert.equal(secondWaitlist.isViewerWaitlisted, true);
+
+    const firstDetail = await expectJsonResponse<WaitlistDetailResponse>(
+      await requestJson(`/api/pr/${pr.id}`, {
+        method: "GET",
+        token: firstCandidate.token,
+      }),
+      200,
+    );
+    assert.equal(firstDetail.partnerSection.viewer.isWaitlisted, true);
+    assert.equal(firstDetail.partnerSection.viewer.waitlistRank, 1);
+    assert.equal(firstDetail.partnerSection.viewer.slotState, "PENDING");
+    assert.equal(firstDetail.partnerSection.viewer.canWaitlist, false);
+
+    await expectActiveParticipantCount(pr, 2);
+    const pendingBeforeRelease = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(partners)
+      .where(and(eq(partners.prId, pr.id), eq(partners.status, "PENDING")));
+    assert.equal(pendingBeforeRelease[0]?.count ?? 0, 2);
+    expectMessageThreadForbidden(
+      await probeMessageThreadVisibility({ pr, viewer: firstCandidate }),
+    );
+
+    await expectJsonResponse(
+      await requestJson(`/api/pr/${pr.id}/exit`, {
+        method: "POST",
+        token: joiner.token,
+      }),
+      200,
+    );
+
+    await expectPartnerRequestStatus(pr, "FULL");
+    await expectActiveParticipantCount(pr, 2);
+    await expectActiveParticipantsInclude(pr, [
+      creator.user.id,
+      firstCandidate.user.id,
+    ]);
+
+    const [firstSlot] = await db
+      .select({ status: partners.status })
+      .from(partners)
+      .where(
+        and(
+          eq(partners.prId, pr.id),
+          eq(partners.userId, firstCandidate.user.id),
+        ),
+      );
+    assert.equal(firstSlot?.status, "JOINED");
+
+    const secondDetail = await expectJsonResponse<WaitlistDetailResponse>(
+      await requestJson(`/api/pr/${pr.id}`, {
+        method: "GET",
+        token: secondCandidate.token,
+      }),
+      200,
+    );
+    assert.equal(secondDetail.partnerSection.viewer.isWaitlisted, true);
+    assert.equal(secondDetail.partnerSection.viewer.waitlistRank, 1);
+    assert.equal(secondDetail.partnerSection.viewer.slotState, "PENDING");
+
+    expectMessageThreadVisible(
+      await probeMessageThreadVisibility({ pr, viewer: firstCandidate }),
+    );
+    expectMessageThreadForbidden(
+      await probeMessageThreadVisibility({ pr, viewer: secondCandidate }),
+    );
+  },
+);
+
 scenario("join_notice_gate_blocks_join_until_viewer_accepts", async (ctx) => {
   const creator = await givenUser("notice-creator");
   const joiner = await givenUser("notice-joiner");
@@ -134,13 +286,14 @@ scenario("join_notice_gate_blocks_join_until_viewer_accepts", async (ctx) => {
   ctx.record("prId", pr.id);
   ctx.record("joinerUserId", joiner.user.id);
 
-  const initialProjection = await expectJsonResponse<JoinGateProjectionResponse>(
-    await requestJson(`/api/pr/${pr.id}/join-gates`, {
-      method: "GET",
-      token: joiner.token,
-    }),
-    200,
-  );
+  const initialProjection =
+    await expectJsonResponse<JoinGateProjectionResponse>(
+      await requestJson(`/api/pr/${pr.id}/join-gates`, {
+        method: "GET",
+        token: joiner.token,
+      }),
+      200,
+    );
   assert.equal(initialProjection.gates[0]?.kind, "JOIN_NOTICE");
   assert.equal(initialProjection.gates[0]?.resolved, false);
 
@@ -154,18 +307,22 @@ scenario("join_notice_gate_blocks_join_until_viewer_accepts", async (ctx) => {
   );
   assert.equal(rejectedJoin.code, "PR_JOIN_GATE_UNRESOLVED");
 
-  const resolvedProjection = await expectJsonResponse<JoinGateProjectionResponse>(
-    await requestJson(`/api/pr/${pr.id}/join-gates/scenario-join-notice/resolve`, {
-      method: "POST",
-      token: joiner.token,
-      body: {
-        kind: "JOIN_NOTICE",
-        version: "1",
-        accepted: true,
-      },
-    }),
-    200,
-  );
+  const resolvedProjection =
+    await expectJsonResponse<JoinGateProjectionResponse>(
+      await requestJson(
+        `/api/pr/${pr.id}/join-gates/scenario-join-notice/resolve`,
+        {
+          method: "POST",
+          token: joiner.token,
+          body: {
+            kind: "JOIN_NOTICE",
+            version: "1",
+            accepted: true,
+          },
+        },
+      ),
+      200,
+    );
   assert.equal(resolvedProjection.gates[0]?.resolved, true);
 
   const acceptances = await db
@@ -260,21 +417,22 @@ scenario("booking_contact_gate_collects_phone_before_join", async (ctx) => {
   );
   assert.equal(rejectedJoin.code, "PR_JOIN_GATE_UNRESOLVED");
 
-  const resolvedProjection = await expectJsonResponse<JoinGateProjectionResponse>(
-    await requestJson(
-      `/api/pr/${pr.id}/join-gates/scenario-booking-contact/resolve`,
-      {
-        method: "POST",
-        token: joiner.token,
-        body: {
-          kind: "BOOKING_CONTACT",
-          version: "1",
-          phone: "13800138000",
+  const resolvedProjection =
+    await expectJsonResponse<JoinGateProjectionResponse>(
+      await requestJson(
+        `/api/pr/${pr.id}/join-gates/scenario-booking-contact/resolve`,
+        {
+          method: "POST",
+          token: joiner.token,
+          body: {
+            kind: "BOOKING_CONTACT",
+            version: "1",
+            phone: "13800138000",
+          },
         },
-      },
-    ),
-    200,
-  );
+      ),
+      200,
+    );
   assert.equal(resolvedProjection.gates[0]?.resolved, true);
 
   const pendingContacts = await db
@@ -332,66 +490,69 @@ scenario("booking_contact_gate_collects_phone_before_join", async (ctx) => {
   assert.equal(rejectedRejoin.code, "PR_JOIN_GATE_UNRESOLVED");
 });
 
-scenario("admin_delete_pr_removes_root_partners_and_support_resources", async (ctx) => {
-  const creator = await givenUser("delete-creator");
-  const admin = await givenAdminUser("delete-operator");
-  const pr = await givenPublishedPartnerRequest({
-    creator,
-    minPartners: 1,
-    maxPartners: 2,
-    expectedCreatedStatus: "READY",
-    title: "Scenario delete target",
-  });
+scenario(
+  "admin_delete_pr_removes_root_partners_and_support_resources",
+  async (ctx) => {
+    const creator = await givenUser("delete-creator");
+    const admin = await givenAdminUser("delete-operator");
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 1,
+      maxPartners: 2,
+      expectedCreatedStatus: "READY",
+      title: "Scenario delete target",
+    });
 
-  const db = getTestDb();
-  await db.insert(prSupportResources).values({
-    prId: pr.id,
-    title: "Scenario booking resource",
-    resourceKind: "VENUE",
-    bookingRequired: true,
-    bookingHandledBy: "PLATFORM",
-    bookingLocksParticipant: false,
-    settlementMode: "NONE",
-    summaryText: "Scenario support resource",
-    detailRules: [],
-    displayOrder: 0,
-  });
+    const db = getTestDb();
+    await db.insert(prSupportResources).values({
+      prId: pr.id,
+      title: "Scenario booking resource",
+      resourceKind: "VENUE",
+      bookingRequired: true,
+      bookingHandledBy: "PLATFORM",
+      bookingLocksParticipant: false,
+      settlementMode: "NONE",
+      summaryText: "Scenario support resource",
+      detailRules: [],
+      displayOrder: 0,
+    });
 
-  ctx.record("prId", pr.id);
+    ctx.record("prId", pr.id);
 
-  const response = await requestJson(`/api/admin/prs/${pr.id}`, {
-    method: "DELETE",
-    token: admin.token,
-  });
-  const body = await expectJsonResponse<{
-    ok: true;
-    prId: number;
-    deletedPartnerCount: number;
-    deletedSupportResourceCount: number;
-  }>(response, 200);
+    const response = await requestJson(`/api/admin/prs/${pr.id}`, {
+      method: "DELETE",
+      token: admin.token,
+    });
+    const body = await expectJsonResponse<{
+      ok: true;
+      prId: number;
+      deletedPartnerCount: number;
+      deletedSupportResourceCount: number;
+    }>(response, 200);
 
-  assert.equal(body.ok, true);
-  assert.equal(body.prId, pr.id);
-  assert.equal(body.deletedPartnerCount, 1);
-  assert.equal(body.deletedSupportResourceCount, 1);
+    assert.equal(body.ok, true);
+    assert.equal(body.prId, pr.id);
+    assert.equal(body.deletedPartnerCount, 1);
+    assert.equal(body.deletedSupportResourceCount, 1);
 
-  const [rootRows, partnerCountRows, supportResourceCountRows] =
-    await Promise.all([
-      db
-        .select({ id: partnerRequests.id })
-        .from(partnerRequests)
-        .where(eq(partnerRequests.id, pr.id)),
-      db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(partners)
-        .where(eq(partners.prId, pr.id)),
-      db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(prSupportResources)
-        .where(eq(prSupportResources.prId, pr.id)),
-    ]);
+    const [rootRows, partnerCountRows, supportResourceCountRows] =
+      await Promise.all([
+        db
+          .select({ id: partnerRequests.id })
+          .from(partnerRequests)
+          .where(eq(partnerRequests.id, pr.id)),
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(partners)
+          .where(eq(partners.prId, pr.id)),
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(prSupportResources)
+          .where(eq(prSupportResources.prId, pr.id)),
+      ]);
 
-  assert.equal(rootRows.length, 0);
-  assert.equal(partnerCountRows[0]?.count ?? 0, 0);
-  assert.equal(supportResourceCountRows[0]?.count ?? 0, 0);
-});
+    assert.equal(rootRows.length, 0);
+    assert.equal(partnerCountRows[0]?.count ?? 0, 0);
+    assert.equal(supportResourceCountRows[0]?.count ?? 0, 0);
+  },
+);

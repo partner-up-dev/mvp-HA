@@ -6,6 +6,8 @@ export { getPRPartnerProfile } from "../../../pr-core/use-cases/get-pr-partner-p
 export {
   joinPRByIdentity,
   resolvePRParticipantUser,
+  waitlistPRByIdentity,
   type JoinPRByIdentityResult,
   type PRParticipantIdentityInput,
+  type WaitlistPRByIdentityResult,
 } from "./join-pr-by-identity";

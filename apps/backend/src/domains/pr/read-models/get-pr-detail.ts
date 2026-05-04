@@ -107,6 +107,9 @@ export async function getPRDetailView(
   const activeParticipants = await partnerRepo.listActiveParticipantSummariesByPrId(
     id,
   );
+  const pendingParticipants = await partnerRepo.listPendingParticipantSummariesByPrId(
+    id,
+  );
   const rosterParticipants = await partnerRepo.listRosterParticipantSummariesByPrId(
     id,
   );
@@ -160,6 +163,7 @@ export async function getPRDetailView(
     partnerSection: buildPRPartnerSection({
       publicPR,
       activeParticipants,
+      pendingParticipants,
       rosterParticipants,
       viewerUserId,
       policy,

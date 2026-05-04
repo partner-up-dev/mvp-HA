@@ -8,6 +8,7 @@ import {
   resolveUserByOpenId,
 } from "../../../user";
 import { joinPRAsUser } from "../../../pr-core/use-cases/join-pr";
+import { waitlistPRAsUser } from "../../../pr-core/use-cases/waitlist-pr";
 import type { PublicPR } from "../../read-models/public-pr-view.service";
 
 const userRepo = new UserRepository();
@@ -18,6 +19,12 @@ export type PRParticipantIdentityInput = {
 };
 
 export type JoinPRByIdentityResult = {
+  pr: PublicPR;
+  userId: UserId;
+  generatedUserPin: string | null;
+};
+
+export type WaitlistPRByIdentityResult = {
   pr: PublicPR;
   userId: UserId;
   generatedUserPin: string | null;
@@ -66,6 +73,20 @@ export async function joinPRByIdentity(
   const pr = await joinPRAsUser(id, participant.user, {
     bookingContactPhone: options.bookingContactPhone ?? null,
   });
+
+  return {
+    pr,
+    userId: participant.user.id,
+    generatedUserPin: participant.generatedUserPin,
+  };
+}
+
+export async function waitlistPRByIdentity(
+  id: PRId,
+  identity: PRParticipantIdentityInput,
+): Promise<WaitlistPRByIdentityResult> {
+  const participant = await resolvePRParticipantUser(identity);
+  const pr = await waitlistPRAsUser(id, participant.user);
 
   return {
     pr,

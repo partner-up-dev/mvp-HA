@@ -18,7 +18,9 @@ test("sendPRMessageNotification maps batch summary fields to PR_MESSAGE keywords
 
   (
     service as unknown as {
-      sendSubscribeMessage: (input: CapturedMessage) => Promise<string | number | null>;
+      sendSubscribeMessage: (
+        input: CapturedMessage,
+      ) => Promise<string | number | null>;
     }
   ).sendSubscribeMessage = async (input) => {
     captured = input;
@@ -89,6 +91,50 @@ test("sendMeetingPointUpdatedNotification maps meeting point fields to subscript
       thing2: { value: "系统" },
       time3: { value: "2026/04/30 20:15" },
       thing6: { value: "商场南门星巴克门口" },
+    },
+  });
+});
+
+test("sendWaitlistPromotedNotification maps waitlist fields to subscription keywords", async () => {
+  const { WeChatSubscriptionMessageService } = await import(
+    "./WeChatSubscriptionMessageService"
+  );
+  const service = new WeChatSubscriptionMessageService();
+  type CapturedMessage = {
+    kind: string;
+    openId: string;
+    page: string | null;
+    data: Record<string, { value: string }>;
+  };
+  let captured: CapturedMessage | null = null;
+
+  (
+    service as unknown as {
+      sendSubscribeMessage: (
+        input: CapturedMessage,
+      ) => Promise<string | number | null>;
+    }
+  ).sendSubscribeMessage = async (input) => {
+    captured = input;
+    return null;
+  };
+
+  await service.sendWaitlistPromotedNotification({
+    openId: "openid-789",
+    title: "周六羽毛球双打",
+    status: "候补成功",
+    remark: "已为你保留名额",
+    page: "/pr/188",
+  });
+
+  assert.deepEqual(captured, {
+    kind: "WAITLIST_PROMOTED",
+    openId: "openid-789",
+    page: "/pr/188",
+    data: {
+      thing1: { value: "周六羽毛球双打" },
+      phrase3: { value: "候补成功" },
+      thing4: { value: "已为你保留名额" },
     },
   });
 });

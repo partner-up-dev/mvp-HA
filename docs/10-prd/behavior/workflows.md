@@ -27,7 +27,7 @@
 2. The user reads the request details, current count, visible status, participant list, and public meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
 3. Joining uses local account plus PIN by default; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, context-specific rules, and any PR-owned join gates.
-5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the flow shows a fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or booking-contact phone collection.
+5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the frontend injects the relevant fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or booking-contact phone collection.
 6. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal with confirmation reminder, new-partner reminder, and meeting-point reminder recommendations. Each recommendation explains why it is useful, and the confirmation reminder includes the confirmation deadline when known. The persistent notification-subscriptions section remains available on the detail page for later revisit.
 7. After the join-success notification-subscription modal is completed, the same flow may recommend following the official account when the user is not backend-confirmed as a follower and the frontend cooldown is not active.
 8. If join succeeds, the user enters the downstream progression of that collaboration object.
@@ -42,10 +42,10 @@
 5. If the landing mode cannot be resolved in time, `/e/:eventId` still enters a usable `FORM` fallback experience.
 6. In `FORM` mode, the user selects one location, one start time, and optional preferences before the system reveals candidate `PR`s. When the selected start time inherits event-authored time-window description copy from its start rule, the time control surfaces that copy under the picker.
 7. Form Mode preferences come from the event-specific preset tag pool plus the current visitor's session-local custom labels; the same derived category is mutually exclusive while uncategorized labels can coexist.
-8. Form Mode submission routes to `/er/:eventId` with recoverable query state: `l` for location, `d` for local date, `t` for local time, and repeated `p` values for selected preference labels.
-9. The `/er/:eventId` recommendation route returns to `/e/:eventId` when required `l`, `d`, or `t` query state is missing or invalid.
-10. Form Mode submission returns one backend-authored primary recommendation plus an ordered candidate list instead of bypassing directly into join or create.
-11. If Form Mode has no suitable visible candidate, the page offers create fallback through `都不合适，帮我找`; the same selected conditions feed that assisted-create path.
+8. Form Mode submission stays inside `/e/:eventId`; the route-level state machine keeps the selected location, start time, and preference labels through recommendation and result handling.
+9. Form Mode submission returns one backend-authored matched recommendation plus an ordered candidate list.
+10. If Form Mode has no matched recommendation and has ordered candidates, the page shows the inline no-match result with candidate actions and the create fallback action `都不合适，帮我找`; the same selected conditions feed that assisted-create path.
+11. If Form Mode has no matched recommendation and zero ordered candidates, the page directly creates an event-assisted `PR` from the selected conditions after the long-press completes, then opens the created `/pr/:id` with a handoff query and a success notice for the created request.
 12. Joining a recommended candidate from Form Mode uses the same PR join flow as canonical PR detail; successful joins continue into canonical `/pr/:id` while preserving event-context handoff continuity.
 13. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `PR` results.
 14. Search results follow the chosen Anchor Event's activity type and time-pool rules; result cards identify candidate PRs by time, location, visible status, and participant count rather than repeating event-side context.

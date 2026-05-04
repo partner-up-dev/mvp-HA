@@ -37,6 +37,7 @@ import {
   cancelWeChatNewPartnerJobsForUser,
   cancelWeChatPRMessageJobsForUser,
   cancelWeChatReminderJobsForUser,
+  cancelWeChatWaitlistPromotedJobsForUser,
   rebuildWeChatActivityStartReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
@@ -172,6 +173,10 @@ const buildNotificationChannelState = async (): Promise<{
     NotificationSubscriptionState,
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
+  waitlistPromoted: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
 }> => {
   const [
     reminderTemplateId,
@@ -180,6 +185,7 @@ const buildNotificationChannelState = async (): Promise<{
     newPartnerTemplateId,
     prMessageTemplateId,
     meetingPointUpdatedTemplateId,
+    waitlistPromotedTemplateId,
   ] = await Promise.all([
     subscriptionMessageService.getConfirmationReminderTemplateId(),
     subscriptionMessageService.getActivityStartReminderTemplateId(),
@@ -187,6 +193,7 @@ const buildNotificationChannelState = async (): Promise<{
     subscriptionMessageService.getNewPartnerTemplateId(),
     subscriptionMessageService.getPRMessageTemplateId(),
     subscriptionMessageService.getMeetingPointUpdatedTemplateId(),
+    subscriptionMessageService.getWaitlistPromotedTemplateId(),
   ]);
 
   const [
@@ -196,6 +203,7 @@ const buildNotificationChannelState = async (): Promise<{
     newPartnerSubmsgConfigured,
     prMessageSubmsgConfigured,
     meetingPointUpdatedSubmsgConfigured,
+    waitlistPromotedSubmsgConfigured,
   ] = await Promise.all([
     subscriptionMessageService.isConfirmationReminderConfigured(),
     subscriptionMessageService.isActivityStartReminderConfigured(),
@@ -203,6 +211,7 @@ const buildNotificationChannelState = async (): Promise<{
     subscriptionMessageService.isNewPartnerConfigured(),
     subscriptionMessageService.isPRMessageConfigured(),
     subscriptionMessageService.isMeetingPointUpdatedConfigured(),
+    subscriptionMessageService.isWaitlistPromotedConfigured(),
   ]);
 
   return {
@@ -245,6 +254,13 @@ const buildNotificationChannelState = async (): Promise<{
         meetingPointUpdatedSubmsgConfigured &&
         Boolean(meetingPointUpdatedTemplateId),
       templateId: meetingPointUpdatedTemplateId,
+    },
+    waitlistPromoted: {
+      configured: waitlistPromotedSubmsgConfigured,
+      requiresOpenSubscribe:
+        waitlistPromotedSubmsgConfigured &&
+        Boolean(waitlistPromotedTemplateId),
+      templateId: waitlistPromotedTemplateId,
     },
   };
 };
@@ -307,6 +323,15 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
           channels.meetingPointUpdated.requiresOpenSubscribe,
         templateId: channels.meetingPointUpdated.templateId,
       },
+      WAITLIST_PROMOTED: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.waitlistPromoted.configured,
+        requiresOpenSubscribe:
+          channels.waitlistPromoted.requiresOpenSubscribe,
+        templateId: channels.waitlistPromoted.templateId,
+      },
     },
   };
 };
@@ -345,6 +370,10 @@ const buildAuthenticatedSubscriptionsResponse = async (
   const meetingPointUpdated = userNotificationOptRepo.getSubscriptionSnapshot(
     notificationOpt,
     "MEETING_POINT_UPDATED",
+  );
+  const waitlistPromoted = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "WAITLIST_PROMOTED",
   );
 
   return {
@@ -408,6 +437,17 @@ const buildAuthenticatedSubscriptionsResponse = async (
           channels.meetingPointUpdated.requiresOpenSubscribe,
         templateId: channels.meetingPointUpdated.templateId,
       },
+      WAITLIST_PROMOTED: {
+        enabled: waitlistPromoted.enabled,
+        optInAt: waitlistPromoted.optInAt
+          ? waitlistPromoted.optInAt.toISOString()
+          : null,
+        remainingCount: waitlistPromoted.remainingCount,
+        configured: channels.waitlistPromoted.configured,
+        requiresOpenSubscribe:
+          channels.waitlistPromoted.requiresOpenSubscribe,
+        templateId: channels.waitlistPromoted.templateId,
+      },
     },
   };
 };
@@ -450,6 +490,10 @@ const applyNotificationSubscriptionSideEffects = async (
 
   if (kind === "MEETING_POINT_UPDATED" && nextRemainingCount <= 0) {
     return cancelWeChatMeetingPointUpdatedJobsForUser(userId);
+  }
+
+  if (kind === "WAITLIST_PROMOTED" && nextRemainingCount <= 0) {
+    return cancelWeChatWaitlistPromotedJobsForUser(userId);
   }
 
   return 0;

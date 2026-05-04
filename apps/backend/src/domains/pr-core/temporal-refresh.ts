@@ -33,6 +33,7 @@ import { operationLogService } from "../../infra/operation-log";
 import { getEffectiveBookingDeadline } from "../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "./services/anchor-booking-trigger.service";
 import { applyAnchorParticipantReleaseEffects } from "./services/anchor-participant-release-effects.service";
+import { promoteWaitlistedPartners } from "./services/waitlist.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -45,10 +46,9 @@ const userReliabilityRepo = new UserReliabilityRepository();
 export async function refreshTemporalStatus(
   request: PartnerRequest,
 ): Promise<PartnerRequest> {
-  const effectiveBookingDeadlineAt =
-    hasAnchorParticipationPolicy(request)
-      ? await getEffectiveBookingDeadline(request.id)
-      : null;
+  const effectiveBookingDeadlineAt = hasAnchorParticipationPolicy(request)
+    ? await getEffectiveBookingDeadline(request.id)
+    : null;
 
   await releaseUnconfirmedSlotsIfNeeded(request);
   const afterRelease = await prRepo.findById(request.id);
@@ -141,7 +141,8 @@ async function lockToStartIfNeeded(
     aggregateId: String(request.id),
     detail: {
       previousStatus: request.status,
-      resourceBookingDeadlineAt: resourceBookingDeadlineAt?.toISOString() ?? null,
+      resourceBookingDeadlineAt:
+        resourceBookingDeadlineAt?.toISOString() ?? null,
       trigger: "booking_deadline",
     },
   });
@@ -175,7 +176,8 @@ async function expireIfUnderMinAfterBookingDeadline(
     detail: {
       activeCount,
       minPartners,
-      resourceBookingDeadlineAt: resourceBookingDeadlineAt?.toISOString() ?? null,
+      resourceBookingDeadlineAt:
+        resourceBookingDeadlineAt?.toISOString() ?? null,
       trigger: "booking_deadline",
     },
   });
@@ -231,4 +233,5 @@ async function releaseUnconfirmedSlotsIfNeeded(
       releasedUserIds,
     });
   }
+  await promoteWaitlistedPartners(request.id);
 }

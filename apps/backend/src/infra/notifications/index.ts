@@ -36,3 +36,9 @@ export {
   scheduleWeChatMeetingPointUpdatedNotifications,
   cancelWeChatMeetingPointUpdatedJobsForUser,
 } from "./wechat-meeting-point-updated";
+
+export {
+  registerWeChatWaitlistPromotedJobs,
+  scheduleWeChatWaitlistPromotedNotificationForParticipant,
+  cancelWeChatWaitlistPromotedJobsForUser,
+} from "./wechat-waitlist-promoted";

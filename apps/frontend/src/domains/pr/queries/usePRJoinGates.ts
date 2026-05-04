@@ -51,12 +51,13 @@ export const usePRJoinGates = (
   id: Ref<PRId | null>,
   queryEnabled?: Ref<boolean>,
 ) => {
+  const queryClient = useQueryClient();
   const enabled = computed(
     () => id.value !== null && (queryEnabled?.value ?? true),
   );
   const queryKey = computed(() => queryKeys.pr.joinGates(id.value));
 
-  return useQuery<PRJoinGateProjectionResponse>({
+  const query = useQuery<PRJoinGateProjectionResponse>({
     queryKey,
     queryFn: async () => {
       const prId = id.value;
@@ -77,7 +78,10 @@ export const usePRJoinGates = (
 
       if (!res.ok) {
         throw new Error(
-          await readErrorMessage(res, i18n.global.t("errors.fetchRequestFailed")),
+          await readErrorMessage(
+            res,
+            i18n.global.t("errors.fetchRequestFailed"),
+          ),
         );
       }
 
@@ -85,12 +89,8 @@ export const usePRJoinGates = (
     },
     enabled: () => enabled.value,
   });
-};
 
-export const useResolvePRJoinGate = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<
+  const resolveGate = useMutation<
     ResolvePRJoinGateResponse,
     Error,
     ResolvePRJoinGateInput
@@ -126,16 +126,27 @@ export const useResolvePRJoinGate = () => {
 
       return await res.json();
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.pr.joinGates(variables.id),
-      });
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData<PRJoinGateProjectionResponse>(
+        queryKeys.pr.joinGates(variables.id),
+        {
+          gates: data.gates,
+        },
+      );
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.detail(variables.id),
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.bookingSupport(variables.id),
       });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.joinGates(variables.id),
+      });
     },
   });
+
+  return {
+    ...query,
+    resolveGate,
+  };
 };

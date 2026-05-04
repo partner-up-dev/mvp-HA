@@ -7,8 +7,8 @@
 
 ## Runtime Failure
 
-- request-tail outbox/job processing is best-effort; later requests or explicit tick triggers can continue progress
-- failed background work should be retried through job/outbox mechanisms rather than assuming a persistent worker process
+- request-tail job processing is best-effort; later requests or explicit tick triggers can continue progress
+- failed background work should be retried through job mechanisms rather than assuming a persistent worker process
 
 ## Notification Failure
 
@@ -25,4 +25,4 @@
 
 - rerun GitHub Actions deploy after fixing forward state
 - use the job-runner trigger or `/internal/maintenance/tick` to resume due work
-- inspect persisted logs/events/deliveries before assuming user-facing state has converged
+- inspect persisted logs/jobs/deliveries before assuming user-facing state has converged

@@ -10,10 +10,10 @@ import {
 } from "../../../infra/notifications";
 import {
   applyAnchorParticipantReleaseEffects,
+  promoteWaitlistedPartners,
   recalculatePRStatus,
   syncAnchorBookingTriggeredState,
 } from "../../pr/services";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const eventContextRepo = new AnchorEventPRContextRepository();
@@ -83,20 +83,6 @@ export async function releaseAdminPRPartner(input: {
   await recalculatePRStatus(input.prId);
   await syncAnchorBookingTriggeredState(input.prId);
 
-  const event = await eventBus.publish(
-    "partner.slot_released",
-    "partner_request",
-    String(input.prId),
-    {
-      prId: input.prId,
-      partnerId: releasedSlot.id,
-      reason: "manual",
-      trigger: "admin_manual",
-      manualReason: reason,
-    },
-  );
-  void writeToOutbox(event);
-
   operationLogService.log({
     actorId: input.actorUserId,
     action: "partner.admin_manual_release",
@@ -115,6 +101,8 @@ export async function releaseAdminPRPartner(input: {
       creatorTransferredToUserId,
     },
   });
+
+  await promoteWaitlistedPartners(input.prId);
 
   return {
     ok: true as const,

@@ -1,4 +1,10 @@
-import { boolean, integer, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgTable,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users, type UserId } from "./user";
@@ -9,6 +15,7 @@ export const wechatNotificationKindSchema = z.enum([
   "BOOKING_RESULT",
   "NEW_PARTNER",
   "MEETING_POINT_UPDATED",
+  "WAITLIST_PROMOTED",
   "PR_MESSAGE",
 ]);
 export type WeChatNotificationKind = z.infer<
@@ -56,9 +63,7 @@ export const userNotificationOpts = pgTable("user_notification_opts", {
   wechatNewPartnerRemainingCount: integer("wechat_new_partner_remaining_count")
     .notNull()
     .default(0),
-  wechatMeetingPointUpdatedOptIn: boolean(
-    "wechat_meeting_point_updated_opt_in",
-  )
+  wechatMeetingPointUpdatedOptIn: boolean("wechat_meeting_point_updated_opt_in")
     .notNull()
     .default(false),
   wechatMeetingPointUpdatedOptInAt: timestamp(
@@ -66,6 +71,17 @@ export const userNotificationOpts = pgTable("user_notification_opts", {
   ),
   wechatMeetingPointUpdatedRemainingCount: integer(
     "wechat_meeting_point_updated_remaining_count",
+  )
+    .notNull()
+    .default(0),
+  wechatWaitlistPromotedOptIn: boolean("wechat_waitlist_promoted_opt_in")
+    .notNull()
+    .default(false),
+  wechatWaitlistPromotedOptInAt: timestamp(
+    "wechat_waitlist_promoted_opt_in_at",
+  ),
+  wechatWaitlistPromotedRemainingCount: integer(
+    "wechat_waitlist_promoted_remaining_count",
   )
     .notNull()
     .default(0),

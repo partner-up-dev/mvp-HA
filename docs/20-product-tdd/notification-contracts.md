@@ -36,6 +36,7 @@ One-shot notifications represent a single opportunity created from a business co
 - `BOOKING_RESULT`
 - `NEW_PARTNER`
 - `MEETING_POINT_UPDATED`
+- `WAITLIST_PROMOTED`
 
 Wave notifications represent a bounded attention window:
 
@@ -45,12 +46,15 @@ The current `PR_MESSAGE` policy opens one unread wave per `PR / recipient` and c
 
 The `MEETING_POINT_UPDATED` policy creates one-shot notifications to current active PR participants when the effective public meeting-point guidance changes.
 
+The `WAITLIST_PROMOTED` policy creates one one-shot notification for the user whose pending waitlist slot has just become active. Dispatch revalidates that the recipient is still active, still owns the promoted active partner slot, and still has enabled quota for this notification kind.
+
 ## Creation Contract
 
 Business domains emit business events such as:
 
 - `pr.message_created`
 - `partner.joined`
+- explicit waitlist promotion scheduling from PR participation logic
 - booking execution submission through the admin booking execution flow
 
 `domains/notification` evaluates those facts or the scheduling input, creates `notification_opportunities` / `notification_waves`, and emits notification-owned events:
@@ -118,3 +122,5 @@ Backend owns:
 - delivery result persistence
 
 Frontend renders notification subscription management and prompts users after successful PR join when reminder registration is relevant for that PR, then relies on backend responses and durable state for delivery-adjacent truth.
+
+Frontend also prompts after successful waitlist entry for the focused `WAITLIST_PROMOTED` notification kind.

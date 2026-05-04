@@ -52,14 +52,6 @@ export type PRJoinGateProjectionItem =
       title: string;
       prompt: string;
       resolved: boolean;
-    }
-  | {
-      key: "system:fallback-confirm";
-      kind: "FALLBACK_CONFIRM";
-      version: "1";
-      title: string;
-      prompt: string;
-      resolved: false;
     };
 
 export type PRJoinGateProjection = {
@@ -77,15 +69,6 @@ export type ResolveJoinGatePayload =
       version: string;
       phone: string;
     };
-
-const fallbackConfirmGate = (): PRJoinGateProjectionItem => ({
-  key: "system:fallback-confirm",
-  kind: "FALLBACK_CONFIRM",
-  version: "1",
-  title: "确认加入",
-  prompt: "确认加入当前活动？",
-  resolved: false,
-});
 
 const withSource = (
   gates: PRJoinGateConfig,
@@ -207,11 +190,6 @@ export const getPRJoinGateProjection = async (input: {
   }
 
   const config = normalizePRJoinGateConfig(request.joinGateConfig);
-  if (config.length === 0) {
-    return {
-      gates: [fallbackConfirmGate()],
-    };
-  }
 
   const gates = await Promise.all(
     config.map(async (gate): Promise<PRJoinGateProjectionItem> => {
@@ -256,11 +234,9 @@ export const assertPRJoinGatesResolvedForUser = async (input: {
     prId: input.prId,
     viewerUserId: input.userId,
   });
-  const unresolvedCustomGate = projection.gates.find(
-    (gate) => gate.kind !== "FALLBACK_CONFIRM" && !gate.resolved,
-  );
+  const unresolvedGate = projection.gates.find((gate) => !gate.resolved);
 
-  if (!unresolvedCustomGate) {
+  if (!unresolvedGate) {
     return;
   }
 
@@ -331,7 +307,10 @@ export const resolvePRJoinGate = async (input: {
     );
   }
 
-  if (gate.kind !== input.payload.kind || gate.version !== input.payload.version) {
+  if (
+    gate.kind !== input.payload.kind ||
+    gate.version !== input.payload.version
+  ) {
     return throwCodedHttpException(
       400,
       "Join gate payload does not match current gate",

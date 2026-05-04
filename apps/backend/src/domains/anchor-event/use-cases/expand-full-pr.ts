@@ -6,7 +6,6 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 import { initializeSlotsForPR } from "../../pr/services";
 import type { PRId } from "../../../entities/partner-request";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { normalizeLocationPool } from "../../../entities/anchor-event";
 import { materializePRSupportResources } from "../../pr-booking-support";
@@ -143,20 +142,6 @@ export async function expandFullPR(prId: PRId): Promise<void> {
   });
 
   const activeCount = await partnerRepo.countActiveByPrId(prId);
-  const eventRecord = await eventBus.publish(
-    "pr.auto_created",
-    "partner_request",
-    String(createdRoot.id),
-    {
-      sourcePrId: prId,
-      createdPrId: createdRoot.id,
-      anchorEventId: fullPR.anchor.anchorEventId,
-      timeWindow: fullPR.anchor.timeWindow,
-      location: createdRoot.location,
-      activeCountAtSource: activeCount,
-    },
-  );
-  void writeToOutbox(eventRecord);
 
   operationLogService.log({
     actorId: null,
@@ -167,6 +152,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
       sourcePrId: prId,
       timeWindow: fullPR.anchor.timeWindow,
       location: createdRoot.location,
+      activeCountAtSource: activeCount,
     },
   });
 }

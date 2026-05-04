@@ -23,6 +23,8 @@ type PRActionInput = {
 
 type PRJoinInput = PRActionInput;
 
+type PRWaitlistInput = PRActionInput;
+
 type PRCheckInInput = {
   id: PRId;
   wouldJoinAgain: boolean | null;
@@ -111,8 +113,8 @@ export const useJoinPR = () => {
           : isBookingContactPhoneInvalidError(payload)
             ? i18n.global.t("prPage.bookingContact.verifyFailed")
             : isPRJoinGateUnresolvedError(payload)
-              ? "请先完成加入门槛"
-            : i18n.global.t("errors.joinRequestFailed");
+              ? "请先完成加入前置项"
+              : i18n.global.t("errors.joinRequestFailed");
         throw buildApiError(
           resolveErrorMessage(res, payload, fallbackMessage),
           payload,
@@ -133,6 +135,61 @@ export const useJoinPR = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.pr.mineJoined(),
+      });
+    },
+  });
+};
+
+export const useWaitlistPR = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: PRWaitlistInput) => {
+      const res = await client.api.pr[":id"].waitlist.$post(
+        {
+          param: { id: id.toString() },
+        },
+        {
+          init: {
+            credentials: "include",
+          },
+        },
+      );
+      const payload = res.ok ? null : await readApiErrorPayload(res);
+
+      if (!res.ok) {
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "PR_WAITLIST",
+            prId: id,
+          });
+        }
+        const fallbackMessage = isPRJoinGateUnresolvedError(payload)
+          ? "请先完成候补前置项"
+          : i18n.global.t("errors.waitlistRequestFailed");
+        throw buildApiError(
+          resolveErrorMessage(res, payload, fallbackMessage),
+          payload,
+        );
+      }
+
+      return await res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.bookingSupport(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.joinGates(variables.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.mineJoined(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wechat.notificationSubscriptions(),
       });
     },
   });

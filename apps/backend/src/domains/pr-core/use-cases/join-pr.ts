@@ -20,7 +20,6 @@ import {
 } from "../services/slot-management.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import { expandFullPR } from "../../anchor-event";
 import {
@@ -220,20 +219,6 @@ export async function joinPRAsUser(
   ) {
     await expandFullPR(id);
   }
-
-  // Emit domain event
-  const event = await eventBus.publish(
-    "partner.joined",
-    "partner_request",
-    String(id),
-    {
-      prId: id,
-      partnerId: assignedPartnerId,
-      userId: user.id,
-      autoConfirmed: targetStatus === "CONFIRMED",
-    },
-  );
-  void writeToOutbox(event);
 
   operationLogService.log({
     actorId: user.id,

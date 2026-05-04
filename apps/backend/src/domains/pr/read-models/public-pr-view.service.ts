@@ -8,6 +8,8 @@ export type PublicPR = Omit<PartnerRequest, "title"> & {
   title?: string;
   partners: number[];
   myPartnerId: number | null;
+  myPendingPartnerId: number | null;
+  isViewerWaitlisted: boolean;
   isViewerReleased: boolean;
 };
 
@@ -17,6 +19,8 @@ export async function toPublicPR(
 ): Promise<PublicPR> {
   const partners = await partnerRepo.listActiveIdsByPrId(request.id);
   let myPartnerId: number | null = null;
+  let myPendingPartnerId: number | null = null;
+  let isViewerWaitlisted = false;
   let isViewerReleased = false;
   if (viewerUserId) {
     const slot = await partnerRepo.findActiveByPrIdAndUserId(
@@ -25,6 +29,14 @@ export async function toPublicPR(
     );
     myPartnerId = slot?.id ?? null;
     if (myPartnerId === null) {
+      const pendingSlot = await partnerRepo.findPendingByPrIdAndUserId(
+        request.id,
+        viewerUserId,
+      );
+      myPendingPartnerId = pendingSlot?.id ?? null;
+      isViewerWaitlisted = myPendingPartnerId !== null;
+    }
+    if (myPartnerId === null && myPendingPartnerId === null) {
       const releasedSlot = await partnerRepo.findReleasedByPrIdAndUserId(
         request.id,
         viewerUserId,
@@ -40,6 +52,8 @@ export async function toPublicPR(
     title: title ?? undefined,
     partners,
     myPartnerId,
+    myPendingPartnerId,
+    isViewerWaitlisted,
     isViewerReleased,
   };
 }

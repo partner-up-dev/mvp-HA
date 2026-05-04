@@ -29,6 +29,7 @@
 - The same user should keep a stable landing mode for the same event until the operator changes that event's landing assignment revision.
 - If `/e/:eventId` cannot obtain its landing mode decision in time, it should still enter a usable `FORM` fallback experience.
 - Form Mode recommendation and candidate ordering are backend-authored even though the user chooses location, start time, and preferences on the page.
+- Form Mode directly creates an event-assisted PR when recommendation returns no matched PR and no ordered candidates; the created PR detail page should show a created-request notice.
 - Form Mode bootstrap may preselect location and start time from the nearest joinable PR in the current Anchor Event context when that PR's start time is inside the event `earliestLeadMinutes` boundary.
 - Anchor Event owns the event-specific preset preference tag pool, its moderation state, and which published tags later visitors may see in Form Mode.
 - Anchor Event start rules may own optional description copy. Generated time windows inherit the first non-empty matching start-rule description by configured start-rule order, and that copy remains presentation context rather than a persisted PR fact.
@@ -45,8 +46,11 @@
 - Auto-created paths must fall back to `2` when a valid `minPartners` is unavailable. Manual input paths must reject empty value, `0`, `maxPartners = 1`, and invalid bounds.
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
 - `PR` supports `join` and `exit`.
+- A `FULL` PR may accept waitlist entries while it remains before the join-lock boundary. `LOCKED_TO_START` keeps the admission surface closed.
+- Waitlist entries are stored as `Partner.status = PENDING`. Pending users are not current active participants, cannot see PR messages, and do not count toward active capacity.
+- When an active slot is released or exited, the system promotes waitlisted users by earliest `waitlistedAt` first, subject to current eligibility checks. Promotion converts the existing pending slot into an active partner slot.
 - `PR` may carry join gates that must be completed before joining. Join gate definitions are PR-owned runtime configuration, while their resolved state comes from the owning fact for each gate kind.
-- When a PR has no configured custom join gate, the join flow uses a system fallback confirmation gate. When any custom join gate exists, the fallback confirmation is absent.
+- When a PR has no configured custom join gate, the frontend flow injects the relevant fallback confirmation view. When any custom join gate exists, the fallback confirmation is absent.
 - Join notice gates are viewer-scoped agreements; each viewer must accept the current gate key and version before joining.
 - Booking contact gates collect the phone contact required for the PR; their presence is explicit join-gate configuration rather than an implicit result of booking-required or platform-handled booking flags.
 - `Partner` submodule may carry explicit confirmation and join-lock settings. Attendance follow-up may appear when the relevant collaboration module is active.
@@ -59,16 +63,16 @@
 
 ### Status Semantics
 
-| Status | Meaning | Join Semantics |
-| --- | --- | --- |
-| `DRAFT` | unpublished draft held by the creator | not joinable |
-| `OPEN` | published and not yet formed | joinable |
-| `READY` | minimum viable group reached and waiting to start | joinable until blocked by other rules |
-| `FULL` | maximum partner count reached | not joinable |
-| `LOCKED_TO_START` | pre-start lock window | not joinable |
-| `ACTIVE` | in progress | normally no longer accepts new joins |
-| `CLOSED` | explicitly concluded | not joinable |
-| `EXPIRED` | ended because the time window elapsed | not joinable |
+| Status            | Meaning                                           | Join Semantics                              |
+| ----------------- | ------------------------------------------------- | ------------------------------------------- |
+| `DRAFT`           | unpublished draft held by the creator             | not joinable                                |
+| `OPEN`            | published and not yet formed                      | joinable                                    |
+| `READY`           | minimum viable group reached and waiting to start | joinable until blocked by other rules       |
+| `FULL`            | maximum partner count reached                     | not joinable; waitlistable before join lock |
+| `LOCKED_TO_START` | pre-start lock window                             | not joinable and not waitlistable           |
+| `ACTIVE`          | in progress                                       | normally no longer accepts new joins        |
+| `CLOSED`          | explicitly concluded                              | not joinable                                |
+| `EXPIRED`         | ended because the time window elapsed             | not joinable                                |
 
 `Partner` progression may additionally pass through confirmation-window, reminder, new-partner, and attendance follow-up loops when the corresponding modules are active.
 
@@ -77,8 +81,9 @@
 1. A slot starts as joinable.
 2. A user joins and becomes active.
 3. When the `Partner` submodule carries a confirmation window, the participant may enter confirmation semantics.
-4. The participant may exit, be released, or complete check-in.
-5. Once no longer active, the participant must not be treated as a current participant.
+4. A user may also hold a pending waitlist slot when a full PR still admits waitlist entries.
+5. The participant may exit, be released, or complete check-in.
+6. Once no longer active, the participant must not be treated as a current participant.
 
 ## 4. Identity And Authentication Rules
 
@@ -103,6 +108,7 @@
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
 - Successful join in a PR that supports reminder registration should immediately offer the notification-subscription modal while still leaving a durable management path on the detail page.
 - The successful-join notification-subscription modal focuses on confirmation reminders, new-partner reminders, and meeting-point reminders, with copy explaining the reason to subscribe. Confirmation reminder copy includes the confirmation deadline when that deadline is known.
+- Successful waitlist entry should offer a focused `WAITLIST_PROMOTED` subscription prompt so the user can receive one notification when the pending slot becomes active.
 - PR message notifications are limited to at most one send per `PR / recipient / unread wave`.
 - The current `PR_MESSAGE` timing policy is one fixed short-debounce summary opportunity per unread wave.
 - Before a PR message notification is sent, the system must re-validate that the recipient is still a current active participant of that PR.

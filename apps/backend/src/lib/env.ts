@@ -36,11 +36,7 @@ const envSchema = z.object({
 
   // DB operation timeout (ms) for config lookups (fallback is used on timeout)
   DB_OPERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(250),
-  DB_CONNECT_TIMEOUT_SECONDS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(5),
+  DB_CONNECT_TIMEOUT_SECONDS: z.coerce.number().int().positive().default(5),
 
   // WeChat Official Account (for JS-SDK signature)
   WECHAT_OFFICIAL_ACCOUNT_APP_ID: optionalStringFromEnv,
@@ -55,6 +51,7 @@ const envSchema = z.object({
   WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID: optionalStringFromEnv,
   WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID: optionalStringFromEnv,
   WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID: optionalStringFromEnv,
+  WECHAT_SUBMSG_WAITLIST_PROMOTED_TEMPLATE_ID: optionalStringFromEnv,
   WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID: optionalStringFromEnv,
   FIXED_IP_HTTP_PROXY: optionalUrlFromEnv,
 
@@ -115,30 +112,6 @@ const envSchema = z.object({
     .int()
     .nonnegative()
     .default(30_000),
-
-  // Request-tail outbox drain budget.
-  OUTBOX_REQUEST_DRAIN_TIMEOUT_MS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(80),
-  OUTBOX_REQUEST_DRAIN_MAX_BATCHES: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(1),
-
-  // External maintenance outbox tick budget.
-  OUTBOX_TICK_BATCH_TIMEOUT_MS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(10_000),
-  OUTBOX_TICK_MAX_BATCHES: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(50),
 
   PORT: z.coerce.number().default(3000),
 });

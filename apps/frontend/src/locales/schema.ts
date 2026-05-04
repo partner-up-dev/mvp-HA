@@ -315,6 +315,11 @@ export interface MessageSchema {
   prPage: {
     join: string;
     joining: string;
+    waitlist: string;
+    waitlisting: string;
+    waitlisted: string;
+    waitlistedNotice: string;
+    waitlistRankNotice: string;
     exit: string;
     exiting: string;
     confirmSlot: string;
@@ -330,6 +335,7 @@ export interface MessageSchema {
     slotJoined: string;
     slotConfirmed: string;
     slotAttended: string;
+    slotPending: string;
     slotNotJoined: string;
     slotExited: string;
     slotReleased: string;
@@ -345,6 +351,10 @@ export interface MessageSchema {
       title: string;
       description: string;
       currentPin: string;
+    };
+    eventAssistedCreateHandoff: {
+      title: string;
+      description: string;
     };
     displayFallbackTitle: string;
     metaFallbackTitle: string;
@@ -417,6 +427,12 @@ export interface MessageSchema {
           disabledHint: string;
           unconfiguredHint: string;
         };
+        WAITLIST_PROMOTED: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
         PR_MESSAGE: {
           title: string;
           enabledHint: string;
@@ -435,6 +451,12 @@ export interface MessageSchema {
         };
         NEW_PARTNER: string;
         MEETING_POINT_UPDATED: string;
+      };
+    };
+    waitlistSuccessSubscriptions: {
+      description: string;
+      notificationReasons: {
+        WAITLIST_PROMOTED: string;
       };
     };
     shareEntry: {
@@ -1327,6 +1349,7 @@ export interface MessageSchema {
     fetchMyCreatedRequestsFailed: string;
     fetchMyJoinedRequestsFailed: string;
     joinRequestFailed: string;
+    waitlistRequestFailed: string;
     exitRequestFailed: string;
     confirmSlotFailed: string;
     checkInSlotFailed: string;

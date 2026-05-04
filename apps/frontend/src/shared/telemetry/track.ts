@@ -1,17 +1,14 @@
 import type {
-  AnalyticsEventName,
-  AnalyticsPayload,
-  CanonicalAnalyticsEventName,
-  LegacyAnalyticsEventName,
+  TelemetryEventName,
+  TelemetryPayload,
 } from "@/shared/telemetry/events";
-import { LEGACY_ANALYTICS_EVENT_NAME_MAP } from "@/shared/telemetry/events";
 import { resolveCurrentSpmAttribution } from "@/shared/telemetry/spm-attribution";
 import { sanitizeSpmValue } from "@/shared/url/spm";
 import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
 import { client } from "@/lib/rpc";
 
-type AnalyticsEventRecord<
-  TEvent extends CanonicalAnalyticsEventName = CanonicalAnalyticsEventName,
+type TelemetryEventRecord<
+  TEvent extends TelemetryEventName = TelemetryEventName,
 > = {
   event: TEvent;
   payload: Record<string, unknown>;
@@ -19,8 +16,9 @@ type AnalyticsEventRecord<
   path: string;
 };
 
-type PendingAnalyticsEvent = {
-  type: CanonicalAnalyticsEventName;
+type PendingTelemetryEvent = {
+  type: TelemetryEventName;
+  source: "frontend";
   payload: Record<string, unknown>;
   occurredAt: string;
   sessionId?: string;
@@ -28,21 +26,21 @@ type PendingAnalyticsEvent = {
 
 declare global {
   interface Window {
-    __PARTNER_UP_ANALYTICS_EVENTS__?: AnalyticsEventRecord[];
+    __PARTNER_UP_TELEMETRY_EVENTS__?: TelemetryEventRecord[];
   }
 }
 
-const SESSION_ID_STORAGE_KEY = "__partner_up_analytics_session_id__";
+const SESSION_ID_STORAGE_KEY = "__partner_up_telemetry_session_id__";
 const FLUSH_BATCH_SIZE = 50;
 const FLUSH_INTERVAL_MS = 2_000;
 const FLUSH_RETRY_MS = 5_000;
 const MAX_QUEUE_SIZE = 1_000;
 
-let analyticsSessionId: string | null = null;
+let telemetrySessionId: string | null = null;
 let transportInitialized = false;
 let flushTimer: number | null = null;
 let flushInFlight = false;
-const pendingQueue: PendingAnalyticsEvent[] = [];
+const pendingQueue: PendingTelemetryEvent[] = [];
 
 const asRecord = (value: unknown): Record<string, unknown> => {
   if (typeof value === "object" && value !== null && !Array.isArray(value)) {
@@ -55,48 +53,25 @@ const shouldAttachCurrentSpm = (path: string): boolean => {
   return !path.startsWith("/admin");
 };
 
-const withCurrentSpm = (
+const withCurrentAttribution = (
   payload: Record<string, unknown>,
   path: string,
 ): Record<string, unknown> => {
   const explicitSpm =
     typeof payload.spm === "string" ? sanitizeSpmValue(payload.spm) : null;
-  if (explicitSpm) {
-    return {
-      ...payload,
-      spm: explicitSpm,
-    };
-  }
-
-  if (!shouldAttachCurrentSpm(path)) {
+  const attribution = explicitSpm ?? resolveCurrentSpmAttribution();
+  if (!attribution || !shouldAttachCurrentSpm(path)) {
     return payload;
   }
 
-  const currentSpm = resolveCurrentSpmAttribution();
-  if (!currentSpm) return payload;
-
   return {
     ...payload,
-    spm: currentSpm,
+    spm: attribution,
+    sourceQr:
+      typeof payload.sourceQr === "string" && payload.sourceQr.trim().length > 0
+        ? payload.sourceQr
+        : attribution,
   };
-};
-
-const isLegacyEventName = (
-  value: AnalyticsEventName,
-): value is LegacyAnalyticsEventName => {
-  return Object.prototype.hasOwnProperty.call(
-    LEGACY_ANALYTICS_EVENT_NAME_MAP,
-    value,
-  );
-};
-
-const toCanonicalEventName = (
-  event: AnalyticsEventName,
-): CanonicalAnalyticsEventName => {
-  if (isLegacyEventName(event)) {
-    return LEGACY_ANALYTICS_EVENT_NAME_MAP[event];
-  }
-  return event;
 };
 
 const getCurrentPath = (): string => {
@@ -114,37 +89,37 @@ const createSessionId = (): string => {
 };
 
 const resolveSessionId = (): string => {
-  if (analyticsSessionId) return analyticsSessionId;
+  if (telemetrySessionId) return telemetrySessionId;
   if (typeof window === "undefined") {
-    analyticsSessionId = "server";
-    return analyticsSessionId;
+    telemetrySessionId = "server";
+    return telemetrySessionId;
   }
 
   try {
     const fromStorage = window.sessionStorage.getItem(SESSION_ID_STORAGE_KEY);
     if (fromStorage) {
-      analyticsSessionId = fromStorage;
-      return analyticsSessionId;
+      telemetrySessionId = fromStorage;
+      return telemetrySessionId;
     }
   } catch {
     // Ignore sessionStorage access errors.
   }
 
-  analyticsSessionId = createSessionId();
+  telemetrySessionId = createSessionId();
   try {
-    window.sessionStorage.setItem(SESSION_ID_STORAGE_KEY, analyticsSessionId);
+    window.sessionStorage.setItem(SESSION_ID_STORAGE_KEY, telemetrySessionId);
   } catch {
     // Ignore sessionStorage write errors.
   }
-  return analyticsSessionId;
+  return telemetrySessionId;
 };
 
 const pushDebugEvent = (
-  record: AnalyticsEventRecord<CanonicalAnalyticsEventName>,
+  record: TelemetryEventRecord<TelemetryEventName>,
 ): void => {
   if (typeof window === "undefined") return;
-  window.__PARTNER_UP_ANALYTICS_EVENTS__ ??= [];
-  const events = window.__PARTNER_UP_ANALYTICS_EVENTS__;
+  window.__PARTNER_UP_TELEMETRY_EVENTS__ ??= [];
+  const events = window.__PARTNER_UP_TELEMETRY_EVENTS__;
   events.push(record);
   if (events.length > MAX_QUEUE_SIZE) {
     events.splice(0, events.length - MAX_QUEUE_SIZE);
@@ -160,7 +135,7 @@ const scheduleFlush = (delayMs: number): void => {
   }, delayMs);
 };
 
-const enqueueEvent = (event: PendingAnalyticsEvent): void => {
+const enqueueEvent = (event: PendingTelemetryEvent): void => {
   pendingQueue.push(event);
   if (pendingQueue.length > MAX_QUEUE_SIZE) {
     pendingQueue.splice(0, pendingQueue.length - MAX_QUEUE_SIZE);
@@ -202,13 +177,13 @@ const flushPendingEvents = async (): Promise<void> => {
       },
     });
     if (!response.ok) {
-      throw new Error(`Analytics ingest failed: ${response.status}`);
+      throw new Error(`Telemetry ingest failed: ${response.status}`);
     }
   } catch (error) {
     pendingQueue.unshift(...batch);
     scheduleFlush(FLUSH_RETRY_MS);
     if (import.meta.env.DEV) {
-      console.warn("[analytics] failed to flush batch", error);
+      console.warn("[telemetry] failed to flush batch", error);
     }
   } finally {
     flushInFlight = false;
@@ -219,16 +194,15 @@ const flushPendingEvents = async (): Promise<void> => {
   }
 };
 
-export const trackEvent = <TEvent extends AnalyticsEventName>(
+export const trackEvent = <TEvent extends TelemetryEventName>(
   event: TEvent,
-  payload: AnalyticsPayload<TEvent>,
+  payload: TelemetryPayload<TEvent>,
 ): void => {
-  const canonicalEvent = toCanonicalEventName(event);
   const occurredAt = new Date().toISOString();
   const currentPath = getCurrentPath();
-  const payloadRecord = withCurrentSpm(asRecord(payload), currentPath);
-  const record: AnalyticsEventRecord<CanonicalAnalyticsEventName> = {
-    event: canonicalEvent,
+  const payloadRecord = withCurrentAttribution(asRecord(payload), currentPath);
+  const record: TelemetryEventRecord<TelemetryEventName> = {
+    event,
     payload: payloadRecord,
     at: occurredAt,
     path: currentPath,
@@ -237,13 +211,14 @@ export const trackEvent = <TEvent extends AnalyticsEventName>(
   setupTransportLifecycleHooks();
   pushDebugEvent(record);
   enqueueEvent({
-    type: canonicalEvent,
+    type: event,
+    source: "frontend",
     payload: payloadRecord,
     occurredAt,
     sessionId: resolveSessionId(),
   });
 
   if (import.meta.env.DEV) {
-    console.debug("[analytics]", record);
+    console.debug("[telemetry]", record);
   }
 };

@@ -1,5 +1,7 @@
 # Task Packet - Issue 179 Join Gates
 
+> Supersession note: Issue 188 split join and waitlist frontend flows. Backend join-gate projection now returns configured gates only. Fallback confirmation is injected by the frontend flow through `PRJoinGates`, so the older `FALLBACK_CONFIRM` backend projection notes below are historical context.
+
 ## Objective & Hypothesis
 
 Objective: implement configurable join gates for `PR` join flows, including join notice agreement and booking contact collection, while keeping gate configuration separate from gate resolution facts.

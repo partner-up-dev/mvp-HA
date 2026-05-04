@@ -2,10 +2,13 @@ import type { PRStatus } from "@partner-up-dev/backend";
 
 export type PRKind = "ANCHOR" | "COMMUNITY";
 
-export type CanonicalAnalyticsEventName =
+export type TelemetryActionResult = "success" | "failure" | "blocked";
+
+export type TelemetryEventName =
   | "page_view"
-  | "pr_create_success"
-  | "pr_join_success"
+  | "pr_create_result"
+  | "pr_join_result"
+  | "pr_waitlist_result"
   | "pr_exit_success"
   | "pr_confirm_success"
   | "pr_checkin_submitted"
@@ -32,40 +35,24 @@ export type CanonicalAnalyticsEventName =
   | "home_bookmark_nudge_shown"
   | "home_bookmark_action_click"
   | "anchor_event_form_impression"
+  | "anchor_event_form_started"
   | "anchor_event_form_recommendation_impression"
+  | "anchor_event_recommendation_result"
   | "anchor_event_form_result_action_click"
   | "anchor_event_form_create_fallback_click"
-  | "anchor_event_form_join_longpress_complete"
+  | "event_assisted_create_result"
   | "pr_primary_cta_impression"
   | "pr_primary_cta_click"
   | "pr_lane_expand"
   | "pr_recovery_accept"
   | "pr_secondary_action_click";
 
-export type LegacyAnalyticsEventName =
-  | "join_success"
-  | "slot_confirmed"
-  | "check_in_submitted"
-  | "share_clicked";
-
-export type AnalyticsEventName =
-  | CanonicalAnalyticsEventName
-  | LegacyAnalyticsEventName;
-
-export const LEGACY_ANALYTICS_EVENT_NAME_MAP: Record<
-  LegacyAnalyticsEventName,
-  CanonicalAnalyticsEventName
-> = {
-  join_success: "pr_join_success",
-  slot_confirmed: "pr_confirm_success",
-  check_in_submitted: "pr_checkin_submitted",
-  share_clicked: "share_method_switch",
-};
-
 type AnalyticsContextPayload = {
   scenarioType?: string;
+  activityType?: string;
   actorId?: string;
   spm?: string;
+  sourceQr?: string;
 };
 
 type PRContextPayload = AnalyticsContextPayload & {
@@ -85,17 +72,35 @@ type ShareLifecyclePayload = ShareContextPayload & {
   revision?: string;
 };
 
-type CanonicalAnalyticsPayloadMap = {
+type ResultTelemetryPayload = {
+  actionResult: TelemetryActionResult;
+  failureCode?: string;
+  failureReason?: string;
+};
+
+export type TelemetryPayloadMap = {
   page_view: PRContextPayload & {
     page: string;
     routeName?: string;
   };
-  pr_create_success: PRContextPayload & {
+  pr_create_result: PRContextPayload &
+    ResultTelemetryPayload & {
     prId: number;
     status: PRStatus;
   };
-  pr_join_success: PRContextPayload & {
+  pr_join_result: PRContextPayload &
+    ResultTelemetryPayload & {
     prId: number;
+    eventId?: number;
+    entrySurface?: "pr_detail" | "form_mode_matched" | "form_mode_candidate";
+    candidateRank?: number | null;
+  };
+  pr_waitlist_result: PRContextPayload &
+    ResultTelemetryPayload & {
+    prId: number;
+    eventId?: number;
+    entrySurface?: "pr_detail" | "form_mode_matched" | "form_mode_candidate";
+    candidateRank?: number | null;
   };
   pr_exit_success: PRContextPayload & {
     prId: number;
@@ -192,14 +197,21 @@ type CanonicalAnalyticsPayloadMap = {
     environment: "wechat" | "browser";
   };
   home_bookmark_action_click: PRContextPayload & {
-    action:
-      | "open_web_page_qr"
-      | "open_official_account_qr"
-      | "dismiss";
+    action: "open_web_page_qr" | "open_official_account_qr" | "dismiss";
     environment: "wechat" | "browser";
   };
   anchor_event_form_impression: AnalyticsContextPayload & {
     eventId: number;
+  };
+  anchor_event_form_started: AnalyticsContextPayload & {
+    eventId: number;
+    trigger: "location" | "time" | "preference" | "primary_cta";
+    hasDefaultSelection: boolean;
+    locationId?: string;
+    locationType?: "preset" | "user_submitted";
+    startAt?: string;
+    timeType?: "preset" | "user_submitted";
+    preferenceCount?: number;
   };
   anchor_event_form_recommendation_impression: AnalyticsContextPayload & {
     eventId: number;
@@ -210,6 +222,18 @@ type CanonicalAnalyticsPayloadMap = {
     startAt: string;
     preferenceCount: number;
   };
+  anchor_event_recommendation_result: AnalyticsContextPayload &
+    ResultTelemetryPayload & {
+      eventId: number;
+      locationId: string;
+      locationType: "preset" | "user_submitted";
+      startAt: string;
+      timeType: "preset" | "user_submitted";
+      preferenceCount: number;
+      outcome?: "matched" | "no_match";
+      matchedPrId?: number | null;
+      candidateCount?: number;
+    };
   anchor_event_form_result_action_click: AnalyticsContextPayload & {
     eventId: number;
     action:
@@ -226,29 +250,37 @@ type CanonicalAnalyticsPayloadMap = {
     startAt: string;
     preferenceCount: number;
   };
-  anchor_event_form_join_longpress_complete: AnalyticsContextPayload & {
-    eventId: number;
-    prId: number | null;
-    locationId: string;
-    startAt: string;
-    preferenceCount: number;
-  };
+  event_assisted_create_result: AnalyticsContextPayload &
+    ResultTelemetryPayload & {
+      eventId: number;
+      prId?: number;
+      activityType?: string;
+      locationId: string;
+      locationType: "preset" | "user_submitted";
+      startAt: string;
+      timeType: "preset" | "user_submitted";
+      preferenceCount: number;
+    };
   pr_primary_cta_impression: PRContextPayload & {
     prId: number;
-    ctaType: "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT";
+    ctaType: "JOIN" | "WAITLIST" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT";
     viewerState:
       | "CREATOR"
       | "PARTICIPANT"
       | "VISITOR_JOINABLE"
+      | "VISITOR_WAITLISTABLE"
+      | "VISITOR_WAITLISTED"
       | "VISITOR_BLOCKED";
   };
   pr_primary_cta_click: PRContextPayload & {
     prId: number;
-    ctaType: "JOIN" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT";
+    ctaType: "JOIN" | "WAITLIST" | "CONFIRM_SLOT" | "CHECK_IN" | "EXIT";
     viewerState:
       | "CREATOR"
       | "PARTICIPANT"
       | "VISITOR_JOINABLE"
+      | "VISITOR_WAITLISTABLE"
+      | "VISITOR_WAITLISTED"
       | "VISITOR_BLOCKED";
   };
   pr_lane_expand: PRContextPayload & {
@@ -278,15 +310,5 @@ type CanonicalAnalyticsPayloadMap = {
   };
 };
 
-type LegacyAnalyticsPayloadMap = {
-  join_success: CanonicalAnalyticsPayloadMap["pr_join_success"];
-  slot_confirmed: CanonicalAnalyticsPayloadMap["pr_confirm_success"];
-  check_in_submitted: CanonicalAnalyticsPayloadMap["pr_checkin_submitted"];
-  share_clicked: CanonicalAnalyticsPayloadMap["share_method_switch"];
-};
-
-export type AnalyticsPayloadMap = CanonicalAnalyticsPayloadMap &
-  LegacyAnalyticsPayloadMap;
-
-export type AnalyticsPayload<TEvent extends AnalyticsEventName> =
-  AnalyticsPayloadMap[TEvent];
+export type TelemetryPayload<TEvent extends TelemetryEventName> =
+  TelemetryPayloadMap[TEvent];

@@ -280,6 +280,11 @@
   "prPage": {
     "join": "加入",
     "joining": "加入中...",
+    "waitlist": "候补",
+    "waitlisting": "候补中...",
+    "waitlisted": "已候补",
+    "waitlistedNotice": "你已提交候补。名额释放后会按提交时间顺序自动补位。",
+    "waitlistRankNotice": "你已候补，当前排第 {rank} 位。名额释放后会按提交时间顺序自动补位。",
     "exit": "退出",
     "exiting": "退出中...",
     "confirmSlot": "确认参与",
@@ -295,6 +300,7 @@
     "slotJoined": "你已加入（{partnerId}）",
     "slotConfirmed": "你已确认（{partnerId}）",
     "slotAttended": "你已到场（{partnerId}）",
+    "slotPending": "你已候补",
     "slotNotJoined": "你可以加入",
     "slotExited": "你已主动退出该活动",
     "slotReleased": "你的名额已被释放",
@@ -310,6 +316,10 @@
       "title": "PIN",
       "description": "您不需要注册，但是为了避免其他人随意修改您的搭子请求，我们为您生成了 PIN，请妥善保管。",
       "currentPin": "您的 PIN：{pin}"
+    },
+    "eventAssistedCreateHandoff": {
+      "title": "已为你创建搭子请求",
+      "description": "当前没有可直接加入的候选场次，我们已按你的条件创建搭子请求，可以分享给合适的人加入。"
     },
     "displayFallbackTitle": "搭子请求",
     "metaFallbackTitle": "搭子请求 - 搭一把",
@@ -394,6 +404,12 @@
           "disabledHint": "暂无可用通知",
           "unconfiguredHint": "当前环境未配置“碰头地点更新”通知模板。"
         },
+        "WAITLIST_PROMOTED": {
+          "title": "候补补位",
+          "enabledHint": "候补成功补位时提醒",
+          "disabledHint": "暂无可用通知",
+          "unconfiguredHint": "当前环境未配置“候补补位”通知模板。"
+        },
         "PR_MESSAGE": {
           "title": "留言",
           "enabledHint": "有新留言时提醒",
@@ -412,6 +428,12 @@
         },
         "NEW_PARTNER": "有人加入时及时知道当前搭子人数，方便确认成团进展。",
         "MEETING_POINT_UPDATED": "碰头地点更新后及时收到提醒，减少到场前找不到集合点的风险。"
+      }
+    },
+    "waitlistSuccessSubscriptions": {
+      "description": "候补已提交，现在可以开启补位通知。",
+      "notificationReasons": {
+        "WAITLIST_PROMOTED": "候补成功补位时及时收到提醒，方便确认后续安排。"
       }
     },
     "shareEntry": {
@@ -1252,6 +1274,7 @@
     "fetchMyCreatedRequestsFailed": "获取我创建的搭子请求失败",
     "fetchMyJoinedRequestsFailed": "获取我加入的搭子请求失败",
     "joinRequestFailed": "加入搭子请求失败",
+    "waitlistRequestFailed": "提交候补失败",
     "exitRequestFailed": "退出搭子请求失败",
     "confirmSlotFailed": "确认参与失败",
     "checkInSlotFailed": "签到反馈失败",

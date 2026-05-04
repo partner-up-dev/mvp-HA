@@ -57,6 +57,14 @@ export type WeChatSubscriptionChannelMessage =
       page: string | null;
     }
   | {
+      kind: "WAITLIST_PROMOTED";
+      openId: string;
+      title: string;
+      status: string;
+      remark: string;
+      page: string | null;
+    }
+  | {
       kind: "PR_MESSAGE";
       openId: string;
       threadTitle: string;
@@ -90,7 +98,9 @@ const resolveFailureReason = (
 ): NotificationDispatchFailureReason =>
   errorCode === "43101" ? "RECIPIENT_PERMISSION_REVOKED" : "TRANSPORT_ERROR";
 
-export const toChannelErrorLike = (error: unknown): NotificationChannelErrorLike => {
+export const toChannelErrorLike = (
+  error: unknown,
+): NotificationChannelErrorLike => {
   if (error instanceof Error) {
     return {
       code: null,

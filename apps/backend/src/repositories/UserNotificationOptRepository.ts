@@ -91,6 +91,13 @@ export class UserNotificationOptRepository {
         remainingCount: opt.wechatMeetingPointUpdatedRemainingCount,
       };
     }
+    if (kind === "WAITLIST_PROMOTED") {
+      return {
+        enabled: opt.wechatWaitlistPromotedRemainingCount > 0,
+        optInAt: opt.wechatWaitlistPromotedOptInAt,
+        remainingCount: opt.wechatWaitlistPromotedRemainingCount,
+      };
+    }
     return {
       enabled: opt.wechatNewPartnerRemainingCount > 0,
       optInAt: opt.wechatNewPartnerOptInAt,
@@ -103,7 +110,11 @@ export class UserNotificationOptRepository {
     kind: WeChatNotificationKind,
     enabled: boolean,
   ): Promise<UserNotificationOpt | null> {
-    return this.setWechatNotificationRemainingCount(userId, kind, enabled ? 1 : 0);
+    return this.setWechatNotificationRemainingCount(
+      userId,
+      kind,
+      enabled ? 1 : 0,
+    );
   }
 
   async setWechatNotificationRemainingCount(
@@ -224,6 +235,29 @@ export class UserNotificationOptRepository {
             wechatMeetingPointUpdatedRemainingCount: normalizedCount,
             wechatMeetingPointUpdatedOptIn: enabled,
             wechatMeetingPointUpdatedOptInAt: optInAt,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
+    if (kind === "WAITLIST_PROMOTED") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatWaitlistPromotedRemainingCount: normalizedCount,
+          wechatWaitlistPromotedOptIn: enabled,
+          wechatWaitlistPromotedOptInAt: optInAt,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatWaitlistPromotedRemainingCount: normalizedCount,
+            wechatWaitlistPromotedOptIn: enabled,
+            wechatWaitlistPromotedOptInAt: optInAt,
             updatedAt: now,
           },
         })
@@ -374,6 +408,29 @@ export class UserNotificationOptRepository {
       return result[0] ?? null;
     }
 
+    if (kind === "WAITLIST_PROMOTED") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatWaitlistPromotedRemainingCount: 1,
+          wechatWaitlistPromotedOptIn: true,
+          wechatWaitlistPromotedOptInAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatWaitlistPromotedRemainingCount: sql`${userNotificationOpts.wechatWaitlistPromotedRemainingCount} + 1`,
+            wechatWaitlistPromotedOptIn: true,
+            wechatWaitlistPromotedOptInAt: now,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
     const result = await db
       .insert(userNotificationOpts)
       .values({
@@ -445,7 +502,10 @@ export class UserNotificationOptRepository {
         .where(
           and(
             eq(userNotificationOpts.userId, userId),
-            gt(userNotificationOpts.wechatActivityStartReminderRemainingCount, 0),
+            gt(
+              userNotificationOpts.wechatActivityStartReminderRemainingCount,
+              0,
+            ),
           ),
         )
         .returning();
@@ -525,6 +585,30 @@ export class UserNotificationOptRepository {
       return {
         consumed: row !== null,
         remainingCount: row?.wechatMeetingPointUpdatedRemainingCount ?? 0,
+        row,
+      };
+    }
+
+    if (kind === "WAITLIST_PROMOTED") {
+      const result = await db
+        .update(userNotificationOpts)
+        .set({
+          wechatWaitlistPromotedRemainingCount: sql`${userNotificationOpts.wechatWaitlistPromotedRemainingCount} - 1`,
+          wechatWaitlistPromotedOptIn: sql`(${userNotificationOpts.wechatWaitlistPromotedRemainingCount} - 1) > 0`,
+          wechatWaitlistPromotedOptInAt: sql`case when (${userNotificationOpts.wechatWaitlistPromotedRemainingCount} - 1) > 0 then ${userNotificationOpts.wechatWaitlistPromotedOptInAt} else null end`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(userNotificationOpts.userId, userId),
+            gt(userNotificationOpts.wechatWaitlistPromotedRemainingCount, 0),
+          ),
+        )
+        .returning();
+      const row = result[0] ?? null;
+      return {
+        consumed: row !== null,
+        remainingCount: row?.wechatWaitlistPromotedRemainingCount ?? 0,
         row,
       };
     }

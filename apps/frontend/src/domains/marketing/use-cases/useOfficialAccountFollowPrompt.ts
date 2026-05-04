@@ -4,7 +4,8 @@ import { useWeChatOfficialAccountFollowStatus } from "@/shared/wechat/queries/us
 
 export type OfficialAccountFollowPromptSource =
   | "anchor_event"
-  | "pr_join_success";
+  | "pr_join_result"
+  | "pr_waitlist_result";
 
 type StoredPromptCooldown = {
   cooldownUntilMs: number;
@@ -27,7 +28,8 @@ const isStoredPromptCooldown = (
     typeof record.cooldownUntilMs === "number" &&
     Number.isFinite(record.cooldownUntilMs) &&
     (record.source === "anchor_event" ||
-      record.source === "pr_join_success") &&
+      record.source === "pr_join_result" ||
+      record.source === "pr_waitlist_result") &&
     (record.action === "shown" ||
       record.action === "dismissed" ||
       record.action === "completed") &&

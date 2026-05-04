@@ -2,6 +2,7 @@ import type { PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import type {
   ActiveParticipantSummary,
+  PendingParticipantSummary,
   RosterParticipantSummary,
 } from "../../../repositories/PartnerRepository";
 import {
@@ -24,6 +25,7 @@ export type PartnerSectionActionBlockedReason =
   | "BOOKING_CONTACT_REQUIRED"
   | "OUTSIDE_CONFIRM_WINDOW"
   | "NOT_JOINED"
+  | "ALREADY_WAITLISTED"
   | "ALREADY_JOINED"
   | "ALREADY_CONFIRMED"
   | "CHECKIN_NOT_OPEN";
@@ -46,6 +48,7 @@ export type PartnerSectionView = {
     max: number | null;
     remaining: number | null;
     neededToReady: number;
+    pending: number;
     readiness: "NEEDS_MORE" | "READY" | "FULL" | "ACTIVE" | "UNAVAILABLE";
   };
   roster: PartnerSectionRosterItem[];
@@ -53,18 +56,24 @@ export type PartnerSectionView = {
     isCreator: boolean;
     isParticipant: boolean;
     myPartnerId: number | null;
+    pendingPartnerId: number | null;
+    isWaitlisted: boolean;
+    waitlistRank: number | null;
     slotState:
       | "NOT_JOINED"
+      | "PENDING"
       | "JOINED"
       | "CONFIRMED"
       | "ATTENDED"
       | "EXITED"
       | "RELEASED";
     canJoin: boolean;
+    canWaitlist: boolean;
     canExit: boolean;
     canConfirm: boolean;
     canCheckIn: boolean;
     joinBlockedReason: PartnerSectionActionBlockedReason;
+    waitlistBlockedReason: PartnerSectionActionBlockedReason;
     exitBlockedReason: PartnerSectionActionBlockedReason;
     confirmBlockedReason: PartnerSectionActionBlockedReason;
     checkInBlockedReason: PartnerSectionActionBlockedReason;
@@ -164,6 +173,7 @@ const resolveRosterState = (
 const buildBaseSection = (
   publicPR: PublicPR,
   activeParticipants: ActiveParticipantSummary[],
+  pendingParticipants: PendingParticipantSummary[],
   rosterParticipants: RosterParticipantSummary[],
   viewerUserId: UserId | null,
   releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
@@ -203,6 +213,18 @@ const buildBaseSection = (
         null;
   const isCreator = Boolean(viewerUserId && publicPR.createdBy === viewerUserId);
   const isParticipant = publicPR.myPartnerId !== null;
+  const selfPendingSlot =
+    publicPR.myPendingPartnerId === null
+      ? null
+      : pendingParticipants.find(
+          (item) => item.partnerId === publicPR.myPendingPartnerId,
+        ) ?? null;
+  const waitlistRank =
+    selfPendingSlot === null
+      ? null
+      : pendingParticipants.findIndex(
+            (item) => item.partnerId === selfPendingSlot.partnerId,
+          ) + 1;
   const releasedSlot = viewerUserId
     ? rosterParticipants
         .filter(
@@ -227,6 +249,7 @@ const buildBaseSection = (
 
   const slotState: PartnerSectionView["viewer"]["slotState"] =
     selfActiveSlot?.status ??
+    selfPendingSlot?.status ??
     releasedSlotState ??
     "NOT_JOINED";
 
@@ -237,6 +260,7 @@ const buildBaseSection = (
       max,
       remaining,
       neededToReady,
+      pending: pendingParticipants.length,
       readiness,
     },
     roster,
@@ -244,8 +268,12 @@ const buildBaseSection = (
       isCreator,
       isParticipant,
       myPartnerId: publicPR.myPartnerId,
+      pendingPartnerId: publicPR.myPendingPartnerId,
+      isWaitlisted: selfPendingSlot !== null,
+      waitlistRank,
       slotState,
       canJoin: false,
+      canWaitlist: false,
       canExit: false,
       canConfirm: false,
       canCheckIn: false,
@@ -253,6 +281,7 @@ const buildBaseSection = (
       exitBlockedReason: "NONE",
       confirmBlockedReason: "NONE",
       checkInBlockedReason: "NONE",
+      waitlistBlockedReason: "NONE",
       releasedSlot: releasedSlot
         ? {
             partnerId: releasedSlot.partnerId,
@@ -280,6 +309,7 @@ const DEFAULT_BOOKING_CONTACT_STATE: PartnerSectionBookingContact = {
 export function buildPRPartnerSection(params: {
   publicPR: PublicPR;
   activeParticipants: ActiveParticipantSummary[];
+  pendingParticipants?: PendingParticipantSummary[];
   rosterParticipants: RosterParticipantSummary[];
   viewerUserId: UserId | null;
   policy?: ResolvedAnchorParticipationPolicy | null;
@@ -296,6 +326,7 @@ export function buildPRPartnerSection(params: {
   const {
     publicPR,
     activeParticipants,
+    pendingParticipants = [],
     rosterParticipants,
     viewerUserId,
     policy = null,
@@ -309,6 +340,7 @@ export function buildPRPartnerSection(params: {
   const base = buildBaseSection(
     publicPR,
     activeParticipants,
+    pendingParticipants,
     rosterParticipants,
     viewerUserId,
     releaseStateByPartnerId,
@@ -333,6 +365,9 @@ export function buildPRPartnerSection(params: {
   if (base.viewer.isParticipant) {
     canJoin = false;
     joinBlockedReason = "ALREADY_JOINED";
+  } else if (publicPR.status === "FULL") {
+    canJoin = false;
+    joinBlockedReason = "FULL";
   } else if (!isJoinableStatus(publicPR.status)) {
     canJoin = false;
     joinBlockedReason = "NOT_JOINABLE_STATUS";
@@ -342,6 +377,20 @@ export function buildPRPartnerSection(params: {
   } else if (joinLocked) {
     canJoin = false;
     joinBlockedReason = "JOIN_LOCKED";
+  }
+
+  let canWaitlist = false;
+  let waitlistBlockedReason: PartnerSectionActionBlockedReason = "NONE";
+  if (base.viewer.isParticipant) {
+    waitlistBlockedReason = "ALREADY_JOINED";
+  } else if (base.viewer.isWaitlisted) {
+    waitlistBlockedReason = "ALREADY_WAITLISTED";
+  } else if (publicPR.status !== "FULL") {
+    waitlistBlockedReason = "NOT_JOINABLE_STATUS";
+  } else if (joinLocked) {
+    waitlistBlockedReason = "JOIN_LOCKED";
+  } else {
+    canWaitlist = true;
   }
 
   let canExit = true;
@@ -405,10 +454,12 @@ export function buildPRPartnerSection(params: {
     viewer: {
       ...base.viewer,
       canJoin,
+      canWaitlist,
       canExit,
       canConfirm,
       canCheckIn,
       joinBlockedReason,
+      waitlistBlockedReason,
       exitBlockedReason,
       confirmBlockedReason,
       checkInBlockedReason,
@@ -453,6 +504,7 @@ export function buildCommunityPartnerSection(
   return buildPRPartnerSection({
     publicPR,
     activeParticipants,
+    pendingParticipants: [],
     rosterParticipants,
     viewerUserId,
     releaseStateByPartnerId,
@@ -462,6 +514,7 @@ export function buildCommunityPartnerSection(
 export function buildAnchorPartnerSection(params: {
   publicPR: PublicPR;
   activeParticipants: ActiveParticipantSummary[];
+  pendingParticipants: PendingParticipantSummary[];
   rosterParticipants: RosterParticipantSummary[];
   viewerUserId: UserId | null;
   policy: ResolvedAnchorParticipationPolicy;
@@ -486,6 +539,7 @@ export function buildAnchorPartnerSection(params: {
   return buildPRPartnerSection({
     publicPR: params.publicPR,
     activeParticipants: params.activeParticipants,
+    pendingParticipants: params.pendingParticipants,
     rosterParticipants: params.rosterParticipants,
     viewerUserId: params.viewerUserId,
     policy: params.policy,

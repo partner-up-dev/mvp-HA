@@ -14,7 +14,6 @@ import {
 } from "../services/time-window.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import {
   cancelWeChatActivityStartReminderJobsForParticipant,
@@ -24,6 +23,7 @@ import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 import { resolveBookingContactState } from "../../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 import { resetPRJoinGateResolutionsForUser } from "../services/join-gates.service";
+import { promoteWaitlistedPartners } from "../services/waitlist.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -95,15 +95,6 @@ export async function exitPRByUserId(
   await recalculatePRStatus(id);
   await syncAnchorBookingTriggeredState(id);
 
-  // Emit domain event
-  const event = await eventBus.publish(
-    "partner.exited",
-    "partner_request",
-    String(id),
-    { prId: id, partnerId: activeSlot.id, userId },
-  );
-  void writeToOutbox(event);
-
   operationLogService.log({
     actorId: userId,
     action: "partner.exit",
@@ -111,6 +102,8 @@ export async function exitPRByUserId(
     aggregateId: String(id),
     detail: { partnerId: activeSlot.id },
   });
+
+  await promoteWaitlistedPartners(id);
 
   const latest = await prRepo.findById(id);
   if (!latest) {

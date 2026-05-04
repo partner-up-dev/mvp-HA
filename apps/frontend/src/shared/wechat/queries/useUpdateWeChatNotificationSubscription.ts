@@ -14,6 +14,7 @@ type WeChatNotificationKind =
   | "BOOKING_RESULT"
   | "NEW_PARTNER"
   | "MEETING_POINT_UPDATED"
+  | "WAITLIST_PROMOTED"
   | "PR_MESSAGE";
 
 type WeChatNotificationAction = "ADD_ONE" | "CLEAR";

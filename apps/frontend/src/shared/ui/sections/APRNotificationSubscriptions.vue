@@ -86,9 +86,7 @@
 
   <WeChatMiniProgramJssdkNoticeModal
     :open="showMiniProgramWebViewNotice"
-    :operation-label="
-      t('wechatMiniProgramWebView.operations.openSubscribe')
-    "
+    :operation-label="t('wechatMiniProgramWebView.operations.openSubscribe')"
     @close="showMiniProgramWebViewNotice = false"
   />
 </template>
@@ -118,6 +116,7 @@ const props = withDefaults(
         "BOOKING_RESULT",
         "NEW_PARTNER",
         "MEETING_POINT_UPDATED",
+        "WAITLIST_PROMOTED",
         "PR_MESSAGE",
       ] as const,
     outlineProfile: "primary",

@@ -26,6 +26,7 @@ import {
   searchPRs,
   updatePRContent,
   updatePRStatus,
+  waitlistPRByIdentity,
 } from "../domains/pr";
 import { createEventAssistedPR } from "../domains/anchor-event";
 import { updatePRBookingContactPhone } from "../domains/pr-booking-support";
@@ -60,18 +61,15 @@ const prRepo = new PartnerRequestRepository();
 const isoDateSearchParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const eventPRSearchQuerySchema = z.object({
   eventId: z.coerce.number().int().positive(),
-  date: z.preprocess(
-    (value) => {
-      if (Array.isArray(value)) {
-        return value;
-      }
-      if (typeof value === "string") {
-        return [value];
-      }
-      return [];
-    },
-    z.array(isoDateSearchParamSchema).min(1).max(28),
-  ),
+  date: z.preprocess((value) => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (typeof value === "string") {
+      return [value];
+    }
+    return [];
+  }, z.array(isoDateSearchParamSchema).min(1).max(28)),
 });
 const createStructuredPRCommandSchema = z.union([
   z.object({
@@ -266,12 +264,16 @@ export const partnerRequestRoute = app
       return c.json(result);
     },
   )
-  .get("/:id/booking-support", zValidator("param", prIdParamSchema), async (c) => {
-    const { id } = c.req.valid("param");
-    await getPROr404(id);
-    const result = await getPRBookingSupport(id, getAuthenticatedUserId(c));
-    return c.json(result);
-  })
+  .get(
+    "/:id/booking-support",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await getPROr404(id);
+      const result = await getPRBookingSupport(id, getAuthenticatedUserId(c));
+      return c.json(result);
+    },
+  )
   .put(
     "/:id/booking-contact/phone",
     zValidator("param", prIdParamSchema),
@@ -289,13 +291,17 @@ export const partnerRequestRoute = app
       return c.json(result);
     },
   )
-  .get("/:id/reimbursement/status", zValidator("param", prIdParamSchema), async (c) => {
-    const { id } = c.req.valid("param");
-    await getPROr404(id);
-    const userId = requireSessionUserId(c);
-    const result = await getReimbursementStatus(id, userId);
-    return c.json(result);
-  })
+  .get(
+    "/:id/reimbursement/status",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await getPROr404(id);
+      const userId = requireSessionUserId(c);
+      const result = await getReimbursementStatus(id, userId);
+      return c.json(result);
+    },
+  )
   .get("/:id/join-gates", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);
@@ -431,6 +437,17 @@ export const partnerRequestRoute = app
       });
     },
   )
+  .post("/:id/waitlist", zValidator("param", prIdParamSchema), async (c) => {
+    const { id } = c.req.valid("param");
+    await getPROr404(id);
+    const participantIdentity = await buildCreatorIdentity(c);
+    const result = await waitlistPRByIdentity(id, participantIdentity);
+    const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);
+    return c.json({
+      ...result.pr,
+      auth,
+    });
+  })
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);

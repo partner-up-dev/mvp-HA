@@ -17,7 +17,7 @@ Current runtime facts:
 ## WeChat Notification Template Sources
 
 Subscription-message template ids for confirmation-reminder / activity-start-reminder /
-booking-result / new-partner / meeting-point-updated / pr-message
+booking-result / new-partner / meeting-point-updated / waitlist-promoted / pr-message
 can be supplied from either:
 
 - backend `config` rows:
@@ -26,6 +26,7 @@ can be supplied from either:
   - `wechat.submsg_booking_result_template_id`
   - `wechat.submsg_new_partner_template_id`
   - `wechat.submsg_meeting_point_updated_template_id`
+  - `wechat.submsg_waitlist_promoted_template_id`
   - `wechat.submsg_pr_message_template_id`
 - backend environment variables with the same semantic mapping:
   - `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`
@@ -33,6 +34,7 @@ can be supplied from either:
   - `WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID`
   - `WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID`
   - `WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID`
+  - `WECHAT_SUBMSG_WAITLIST_PROMOTED_TEMPLATE_ID`
   - `WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID`
 
 The `config` table remains the higher-priority source; env vars are operational
@@ -88,6 +90,7 @@ configured:
 - `WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID`
 - `WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID`
 - `WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID`
+- `WECHAT_SUBMSG_WAITLIST_PROMOTED_TEMPLATE_ID`
 - `WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID`
 
 `AUTH_JWT_SECRET` must be at least 32 characters for staging and production

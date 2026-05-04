@@ -1,66 +1,66 @@
 <template>
   <slot
     :open="open"
-    :close="closeJoinFlowModal"
+    :close="closeWaitlistFlowModal"
     :pending="flowPending"
     :disabled="openDisabled"
     :joined="joined"
-    :error-message="joinFlowError"
+    :error-message="waitlistFlowError"
   />
 
   <Modal
-    :open="showJoinFlowModal"
+    :open="showWaitlistFlowModal"
     max-width="420px"
-    title="加入活动"
-    @close="closeJoinFlowModal"
+    title="提交候补"
+    @close="closeWaitlistFlowModal"
   >
     <PRJoinGates
       :pr-id="props.prId"
-      :enabled="showJoinFlowModal"
+      :enabled="showWaitlistFlowModal"
       :pending="flowPending"
-      :error="joinFlowError"
-      :fallback-confirm-gate="PRJoinFallbackConfirmGate"
-      @cancel="closeJoinFlowModal"
-      @completed="finalizeJoinFlow"
+      :error="waitlistFlowError"
+      :fallback-confirm-gate="PRWaitlistFallbackConfirmGate"
+      @cancel="closeWaitlistFlowModal"
+      @completed="finalizeWaitlistFlow"
       @error="emitFlowError"
       @resolved="applyAuthPayloadFromResult"
     />
   </Modal>
 
-  <Modal :open="showJoinSubscriptionModal" @close="closeJoinSuccessPrompt">
-    <div class="join-success-modal">
-      <template v-if="joinSuccessPromptStep === 'SUBSCRIPTIONS'">
-        <p class="join-success-modal__text">
-          {{ t("prPage.joinSuccessSubscriptions.description") }}
+  <Modal :open="showWaitlistSubscriptionModal" @close="closeWaitlistPrompt">
+    <div class="waitlist-success-modal">
+      <template v-if="waitlistPromptStep === 'SUBSCRIPTIONS'">
+        <p class="waitlist-success-modal__text">
+          {{ t("prPage.waitlistSuccessSubscriptions.description") }}
         </p>
 
         <WeChatNotificationSubscriptionsCard
           :title="t('prPage.notificationSubscriptions.title')"
         >
           <APRNotificationSubscriptions
-            :visible-kinds="JOIN_SUCCESS_NOTIFICATION_KINDS"
-            :description-prefixes="joinSuccessNotificationDescriptionPrefixes"
+            :visible-kinds="WAITLIST_SUCCESS_NOTIFICATION_KINDS"
+            :description-prefixes="waitlistNotificationDescriptionPrefixes"
             :updating-label="t('prPage.wechatReminder.updating')"
             outline-profile="surface"
           />
         </WeChatNotificationSubscriptionsCard>
 
-        <Button tone="surface" block @click="handleJoinSuccessSubscriptionDone">
+        <Button tone="surface" block @click="handleWaitlistSubscriptionDone">
           {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
         </Button>
       </template>
 
       <template v-else>
         <OfficialAccountFollowPanel />
-        <div class="join-success-modal__actions">
+        <div class="waitlist-success-modal__actions">
           <Button
             tone="surface"
             type="button"
-            @click="handleCloseJoinOfficialAccountPrompt"
+            @click="handleCloseWaitlistOfficialAccountPrompt"
           >
             {{ t("officialAccountFollow.laterAction") }}
           </Button>
-          <Button type="button" @click="handleJoinOfficialAccountDone">
+          <Button type="button" @click="handleWaitlistOfficialAccountDone">
             {{ t("officialAccountFollow.doneAction") }}
           </Button>
         </div>
@@ -84,9 +84,9 @@ import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFo
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
-import { useJoinPR } from "@/domains/pr/queries/usePRActions";
+import { useWaitlistPR } from "@/domains/pr/queries/usePRActions";
 import PRJoinGates from "@/domains/pr/ui/composites/PRJoinGates.vue";
-import PRJoinFallbackConfirmGate from "@/domains/pr/ui/gates/PRJoinFallbackConfirmGate.vue";
+import PRWaitlistFallbackConfirmGate from "@/domains/pr/ui/gates/PRWaitlistFallbackConfirmGate.vue";
 import {
   useUserSessionStore,
   type AuthSessionPayload,
@@ -94,15 +94,14 @@ import {
 import type { ApiError } from "@/shared/api/error";
 import { trackEvent } from "@/shared/telemetry/track";
 import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
-import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type JoinSuccessPromptStep = "SUBSCRIPTIONS" | "OFFICIAL_ACCOUNT";
-type PRJoinEntrySurface =
+type WaitlistPromptStep = "SUBSCRIPTIONS" | "OFFICIAL_ACCOUNT";
+type PRWaitlistEntrySurface =
   | "pr_detail"
   | "form_mode_matched"
   | "form_mode_candidate";
 
-export type PRJoinFlowSlotProps = {
+export type PRWaitlistFlowSlotProps = {
   open: () => Promise<void>;
   close: () => void;
   pending: boolean;
@@ -121,7 +120,7 @@ const props = withDefaults(
     showSuccessPrompt?: boolean;
     writeJoinEntryOnAuth?: boolean;
     eventId?: number | null;
-    entrySurface?: PRJoinEntrySurface | null;
+    entrySurface?: PRWaitlistEntrySurface | null;
     candidateRank?: number | null;
   }>(),
   {
@@ -144,7 +143,7 @@ const emit = defineEmits<{
 }>();
 
 defineSlots<{
-  default(props: PRJoinFlowSlotProps): unknown;
+  default(props: PRWaitlistFlowSlotProps): unknown;
 }>();
 
 const route = useRoute();
@@ -152,62 +151,44 @@ const router = useRouter();
 const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
 const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
-const JOIN_SUCCESS_NOTIFICATION_KINDS = [
-  "REMINDER_CONFIRMATION",
-  "NEW_PARTNER",
-  "MEETING_POINT_UPDATED",
+const WAITLIST_SUCCESS_NOTIFICATION_KINDS = [
+  "WAITLIST_PROMOTED",
 ] as const satisfies readonly WeChatNotificationKind[];
 
-const showJoinFlowModal = ref(false);
-const joinFlowPending = ref(false);
-const joinFlowError = ref<string | null>(null);
+const showWaitlistFlowModal = ref(false);
+const waitlistFlowPending = ref(false);
+const waitlistFlowError = ref<string | null>(null);
 const joined = ref(false);
-const joinSuccessPromptStep = ref<JoinSuccessPromptStep>("SUBSCRIPTIONS");
-const successPromptOpenForJoin = ref(false);
+const waitlistPromptStep = ref<WaitlistPromptStep>("SUBSCRIPTIONS");
+const successPromptOpenForWaitlist = ref(false);
 
-const joinMutation = useJoinPR();
+const waitlistMutation = useWaitlistPR();
 const {
-  isOpen: showJoinSubscriptionModal,
-  open: openJoinSuccessNotificationPrompt,
-  close: closeJoinSuccessNotificationPrompt,
+  isOpen: showWaitlistSubscriptionModal,
+  open: openWaitlistNotificationPrompt,
+  close: closeWaitlistNotificationPrompt,
 } = useJoinSuccessNotificationPrompt();
 const officialAccountFollowPrompt =
-  useOfficialAccountFollowPrompt("pr_join_result");
+  useOfficialAccountFollowPrompt("pr_waitlist_result");
 
-const confirmationDeadlineText = computed(() => {
-  const deadline = props.confirmationDeadlineAt?.trim() ?? "";
-  if (deadline.length === 0) {
-    return null;
-  }
-  return formatLocalDateTimeValue(deadline) ?? deadline;
-});
-const joinSuccessNotificationDescriptionPrefixes = computed<
+const waitlistNotificationDescriptionPrefixes = computed<
   Partial<Record<WeChatNotificationKind, string>>
 >(() => ({
-  REMINDER_CONFIRMATION: confirmationDeadlineText.value
-    ? t(
-        "prPage.joinSuccessSubscriptions.notificationReasons.REMINDER_CONFIRMATION.withDeadline",
-        { deadline: confirmationDeadlineText.value },
-      )
-    : t(
-        "prPage.joinSuccessSubscriptions.notificationReasons.REMINDER_CONFIRMATION.fallback",
-      ),
-  NEW_PARTNER: t(
-    "prPage.joinSuccessSubscriptions.notificationReasons.NEW_PARTNER",
-  ),
-  MEETING_POINT_UPDATED: t(
-    "prPage.joinSuccessSubscriptions.notificationReasons.MEETING_POINT_UPDATED",
+  WAITLIST_PROMOTED: t(
+    "prPage.waitlistSuccessSubscriptions.notificationReasons.WAITLIST_PROMOTED",
   ),
 }));
 const flowPending = computed(
-  () => joinFlowPending.value || joinMutation.isPending.value,
+  () => waitlistFlowPending.value || waitlistMutation.isPending.value,
 );
 const openDisabled = computed(
   () => props.disabled || props.prId === null || joined.value,
 );
 
 useBodyScrollLock(
-  computed(() => showJoinSubscriptionModal.value || showJoinFlowModal.value),
+  computed(
+    () => showWaitlistSubscriptionModal.value || showWaitlistFlowModal.value,
+  ),
 );
 
 const readAuthPayload = (result: unknown): AuthSessionPayload | null => {
@@ -226,7 +207,7 @@ const applyAuthPayloadFromResult = async (result: unknown): Promise<void> => {
     await router.replace({
       query: {
         ...route.query,
-        entry: "join",
+        entry: "waitlist",
       },
     });
   }
@@ -236,11 +217,11 @@ const resolveErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : t("common.operationFailed");
 
 const emitFlowError = (message: string): void => {
-  joinFlowError.value = message;
+  waitlistFlowError.value = message;
   emit("error", message);
 };
 
-const trackJoinResult = (payload: {
+const trackWaitlistResult = (payload: {
   actionResult: "success" | "failure" | "blocked";
   failureCode?: string;
   failureReason?: string;
@@ -250,7 +231,7 @@ const trackJoinResult = (payload: {
     return;
   }
 
-  trackEvent("pr_join_result", {
+  trackEvent("pr_waitlist_result", {
     prId,
     scenarioType: props.scenarioType ?? undefined,
     eventId: props.eventId ?? undefined,
@@ -260,45 +241,45 @@ const trackJoinResult = (payload: {
   });
 };
 
-const closeJoinFlowModal = (): void => {
-  showJoinFlowModal.value = false;
-  joinFlowPending.value = false;
-  joinFlowError.value = null;
+const closeWaitlistFlowModal = (): void => {
+  showWaitlistFlowModal.value = false;
+  waitlistFlowPending.value = false;
+  waitlistFlowError.value = null;
 };
 
-const finishSuccessPrompt = (): void => {
-  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
-  closeJoinSuccessNotificationPrompt();
-  if (successPromptOpenForJoin.value) {
-    successPromptOpenForJoin.value = false;
+const finishWaitlistPrompt = (): void => {
+  waitlistPromptStep.value = "SUBSCRIPTIONS";
+  closeWaitlistNotificationPrompt();
+  if (successPromptOpenForWaitlist.value) {
+    successPromptOpenForWaitlist.value = false;
     emit("success-closed");
   }
 };
 
-const closeJoinSuccessPrompt = (): void => {
-  if (joinSuccessPromptStep.value === "OFFICIAL_ACCOUNT") {
+const closeWaitlistPrompt = (): void => {
+  if (waitlistPromptStep.value === "OFFICIAL_ACCOUNT") {
     officialAccountFollowPrompt.dismissPrompt();
   }
-  finishSuccessPrompt();
+  finishWaitlistPrompt();
 };
 
-const handleJoinSuccessSubscriptionDone = (): void => {
+const handleWaitlistSubscriptionDone = (): void => {
   if (officialAccountFollowPrompt.canPromptNow()) {
     officialAccountFollowPrompt.markPromptPresented();
-    joinSuccessPromptStep.value = "OFFICIAL_ACCOUNT";
+    waitlistPromptStep.value = "OFFICIAL_ACCOUNT";
     return;
   }
-  finishSuccessPrompt();
+  finishWaitlistPrompt();
 };
 
-const handleCloseJoinOfficialAccountPrompt = (): void => {
+const handleCloseWaitlistOfficialAccountPrompt = (): void => {
   officialAccountFollowPrompt.dismissPrompt();
-  finishSuccessPrompt();
+  finishWaitlistPrompt();
 };
 
-const handleJoinOfficialAccountDone = (): void => {
+const handleWaitlistOfficialAccountDone = (): void => {
   officialAccountFollowPrompt.markPromptCompleted();
-  finishSuccessPrompt();
+  finishWaitlistPrompt();
 };
 
 const openSuccessPrompt = (): void => {
@@ -306,64 +287,68 @@ const openSuccessPrompt = (): void => {
     emit("success-closed");
     return;
   }
-  successPromptOpenForJoin.value = true;
-  joinSuccessPromptStep.value = "SUBSCRIPTIONS";
-  openJoinSuccessNotificationPrompt();
+  successPromptOpenForWaitlist.value = true;
+  waitlistPromptStep.value = "SUBSCRIPTIONS";
+  openWaitlistNotificationPrompt();
 };
 
-const finalizeJoinFlow = async (): Promise<void> => {
+const finalizeWaitlistFlow = async (): Promise<void> => {
   const prId = props.prId;
-  if (prId === null || joinFlowPending.value || joinMutation.isPending.value) {
+  if (
+    prId === null ||
+    waitlistFlowPending.value ||
+    waitlistMutation.isPending.value
+  ) {
     return;
   }
 
-  joinFlowPending.value = true;
-  joinFlowError.value = null;
+  waitlistFlowPending.value = true;
+  waitlistFlowError.value = null;
   try {
     await ensureAuthSessionBootstrapped();
-    const result = await joinMutation.mutateAsync({ id: prId });
+    const result = await waitlistMutation.mutateAsync({ id: prId });
     await applyAuthPayloadFromResult(result);
     joined.value = true;
-    trackJoinResult({ actionResult: "success" });
+    trackWaitlistResult({ actionResult: "success" });
     emit("joined", result);
-    closeJoinFlowModal();
+    closeWaitlistFlowModal();
     openSuccessPrompt();
   } catch (error) {
     const apiError = error as ApiError;
     if (apiError.code === PR_JOIN_GATE_UNRESOLVED_CODE) {
-      trackJoinResult({
+      trackWaitlistResult({
         actionResult: "blocked",
         failureCode: PR_JOIN_GATE_UNRESOLVED_CODE,
         failureReason: resolveErrorMessage(error),
       });
-      showJoinFlowModal.value = true;
+      showWaitlistFlowModal.value = true;
       return;
     }
-    trackJoinResult(
+    trackWaitlistResult(
       resolveTelemetryFailurePayload(
         error,
-        "PR_JOIN_FAILED",
+        "PR_WAITLIST_FAILED",
         resolveErrorMessage(error),
       ),
     );
     emitFlowError(resolveErrorMessage(error));
   } finally {
-    joinFlowPending.value = false;
+    waitlistFlowPending.value = false;
   }
 };
 
 const open = async (): Promise<void> => {
   if (openDisabled.value || flowPending.value) return;
-  joinFlowError.value = null;
-  showJoinFlowModal.value = true;
+  waitlistFlowError.value = null;
+  showWaitlistFlowModal.value = true;
 };
 
 watch(
   () => props.prId,
   () => {
     joined.value = false;
-    closeJoinFlowModal();
-    finishSuccessPrompt();
+    closeWaitlistFlowModal();
+    finishWaitlistPrompt();
   },
 );
 
@@ -378,30 +363,30 @@ watch(
 
 defineExpose({
   open,
-  close: closeJoinFlowModal,
+  close: closeWaitlistFlowModal,
 });
 </script>
 
 <style lang="scss" scoped>
-.join-success-modal {
+.waitlist-success-modal {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-medium);
 }
 
-.join-success-modal__text {
+.waitlist-success-modal__text {
   margin: 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
 
-.join-success-modal__actions {
+.waitlist-success-modal__actions {
   display: flex;
   gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
-.join-success-modal__actions > button {
+.waitlist-success-modal__actions > button {
   flex: 1 1 180px;
 }
 </style>

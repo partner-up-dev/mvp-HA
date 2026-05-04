@@ -14,7 +14,9 @@ import {
 
 const service = new WeChatSubscriptionMessageService();
 
-const classifyWeChatSubscriptionError = (error: unknown): {
+const classifyWeChatSubscriptionError = (
+  error: unknown,
+): {
   code: string | null;
   message: string;
 } => {
@@ -45,6 +47,9 @@ export const isWeChatSubscriptionNotificationConfigured = async (
   }
   if (kind === "MEETING_POINT_UPDATED") {
     return service.isMeetingPointUpdatedConfigured();
+  }
+  if (kind === "WAITLIST_PROMOTED") {
+    return service.isWaitlistPromotedConfigured();
   }
   return service.isPRMessageConfigured();
 };
@@ -118,6 +123,16 @@ const send = async (
       operatorName: message.operatorName,
       updatedAt: message.updatedAt,
       meetingPointDescription: message.meetingPointDescription,
+      page: message.page,
+    });
+  }
+
+  if (message.kind === "WAITLIST_PROMOTED") {
+    return service.sendWaitlistPromotedNotification({
+      openId: message.openId,
+      title: message.title,
+      status: message.status,
+      remark: message.remark,
       page: message.page,
     });
   }

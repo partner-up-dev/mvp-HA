@@ -1,4 +1,3 @@
-export { registerNotificationOutboxHandlers } from "./outbox-handlers";
 export {
   ACTIVITY_START_REMINDER_NOTIFICATION_KIND,
   BOOKING_RESULT_NOTIFICATION_KIND,
@@ -6,6 +5,7 @@ export {
   NEW_PARTNER_NOTIFICATION_KIND,
   PR_MESSAGE_NOTIFICATION_KIND,
   REMINDER_CONFIRMATION_NOTIFICATION_KIND,
+  WAITLIST_PROMOTED_NOTIFICATION_KIND,
   notificationKindSchema,
   type NotificationKind,
 } from "./model/notification-kind";
@@ -107,6 +107,17 @@ export {
   type MeetingPointUpdatedDispatchPreparation,
   type MeetingPointUpdatedNotificationJobPayload,
 } from "./services/meeting-point-updated-dispatch.service";
+export {
+  buildWaitlistPromotedDedupeKey,
+  buildWaitlistPromotedDedupePrefixForUser,
+  clearWaitlistPromotedNotificationCredits,
+  consumeWaitlistPromotedNotificationCredit,
+  prepareWaitlistPromotedNotificationDispatch,
+  recordWaitlistPromotedNotificationDelivery,
+  waitlistPromotedNotificationJobPayloadSchema,
+  type WaitlistPromotedDispatchPreparation,
+  type WaitlistPromotedNotificationJobPayload,
+} from "./services/waitlist-promoted-dispatch.service";
 export {
   createNotificationOpportunity,
   markNotificationOpportunityScheduled,

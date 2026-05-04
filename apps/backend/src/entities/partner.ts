@@ -17,6 +17,7 @@ export const partnerIdSchema = z.number().int().positive();
 export type PartnerId = z.infer<typeof partnerIdSchema>;
 
 export const partnerStatusSchema = z.enum([
+  "PENDING",
   "JOINED",
   "CONFIRMED",
   "EXITED",
@@ -53,6 +54,7 @@ export const partners = pgTable("partners", {
     .$type<UserId>()
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  waitlistedAt: timestamp("waitlisted_at"),
   confirmedAt: timestamp("confirmed_at"),
   exitedAt: timestamp("exited_at"),
   releasedAt: timestamp("released_at"),

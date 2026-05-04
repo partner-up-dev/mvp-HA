@@ -1,7 +1,4 @@
-import {
-  NO_LATE_TOLERANCE_UNITS,
-  type ScheduleOnceConfig,
-} from "../jobs";
+import { NO_LATE_TOLERANCE_UNITS, type ScheduleOnceConfig } from "../jobs";
 
 export type JobSchedulePolicy = Pick<
   ScheduleOnceConfig,
@@ -36,6 +33,12 @@ export const newPartnerSchedulePolicy: JobSchedulePolicy = {
 };
 
 export const meetingPointUpdatedSchedulePolicy: JobSchedulePolicy = {
+  resolutionMs: SECOND_RESOLUTION_MS,
+  earlyToleranceUnits: 0,
+  lateToleranceUnits: NO_LATE_TOLERANCE_UNITS,
+};
+
+export const waitlistPromotedSchedulePolicy: JobSchedulePolicy = {
   resolutionMs: SECOND_RESOLUTION_MS,
   earlyToleranceUnits: 0,
   lateToleranceUnits: NO_LATE_TOLERANCE_UNITS,

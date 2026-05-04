@@ -3,6 +3,7 @@ import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/telemetry/track";
+import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
 import { useExitPR, useJoinPR } from "@/domains/pr/queries/usePRActions";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import type { ApiError } from "@/shared/api/error";
@@ -65,9 +66,7 @@ export const useSharedPRActions = ({
     resolveSlotStateText(pr.value?.partnerSection.viewer.slotState),
   );
 
-  const joinPending = computed(() =>
-    joinMutation.isPending.value,
-  );
+  const joinPending = computed(() => joinMutation.isPending.value);
   const exitPending = computed(() => exitMutation.isPending.value);
   const joinErrorMessage = computed(() => {
     const error = joinMutation.error.value as ApiError | null;
@@ -82,7 +81,7 @@ export const useSharedPRActions = ({
       return t("prPage.bookingContact.verifyFailed");
     }
     if (error.code === PR_JOIN_GATE_UNRESOLVED_CODE) {
-      return "请先完成加入门槛";
+      return "请先完成加入前置项";
     }
     if (
       error.code === WECHAT_AUTH_REQUIRED_CODE ||
@@ -102,17 +101,26 @@ export const useSharedPRActions = ({
 
     try {
       await ensureAuthSessionBootstrapped();
-      const result =
-        await joinMutation.mutateAsync({
-          id: id.value,
-        });
-      trackEvent("pr_join_success", {
+      const result = await joinMutation.mutateAsync({
+        id: id.value,
+      });
+      trackEvent("pr_join_result", {
         prId: id.value,
         ...analyticsPRContext.value,
+        actionResult: "success",
       });
       onActionSuccess?.();
       return result;
-    } catch {
+    } catch (error) {
+      trackEvent("pr_join_result", {
+        prId: id.value,
+        ...analyticsPRContext.value,
+        ...resolveTelemetryFailurePayload(
+          error,
+          "PR_JOIN_FAILED",
+          t("errors.joinRequestFailed"),
+        ),
+      });
       return null;
     }
   };
@@ -159,6 +167,8 @@ export const useSharedPRActions = ({
         return t("prPage.slotConfirmed", { partnerId: shortPartnerId.value });
       case "ATTENDED":
         return t("prPage.slotAttended", { partnerId: shortPartnerId.value });
+      case "PENDING":
+        return t("prPage.slotPending");
       case "EXITED":
         return t("prPage.slotExited");
       case "RELEASED":
