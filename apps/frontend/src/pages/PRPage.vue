@@ -5,7 +5,7 @@
 
     <template v-else-if="prDetail">
       <PageHeader
-        :title="prDetail.title ?? t('prPage.metaFallbackTitle')"
+        :title="prDisplayTitle"
         :back-fallback-to="backFallbackTo"
         data-region="summary"
       >
@@ -102,6 +102,7 @@
           :pr-id="id"
           :disabled="joinDockAction?.disabled ?? true"
           :scenario-type="prDetail.core.type"
+          :confirmation-deadline-at="confirmationDeadlineAt"
           :viewer-is-participant="prDetail.partnerSection.viewer.isParticipant"
           write-join-entry-on-auth
           @joined="handleJoinFlowJoined"
@@ -153,7 +154,6 @@
             {{ nonJoinPrimaryDockAction.tip }}
           </p>
         </div>
-
         <div v-if="showExitActionInContext" class="secondary-danger-action">
           <Button
             tone="danger"
@@ -404,6 +404,18 @@ const userSessionStore = useUserSessionStore();
 const { data, isLoading, error, refetch } = usePRDetail(id);
 const prDetail = computed(() => data.value);
 const currentDetail = computed(() => prDetail.value);
+const prDisplayTitle = computed(() => {
+  const explicitTitle = prDetail.value?.title?.trim() ?? "";
+  if (explicitTitle.length > 0) return explicitTitle;
+  const location = prDetail.value?.core.location?.trim() ?? "";
+  if (location.length > 0) return location;
+  const type = prDetail.value?.core.type?.trim() ?? "";
+  if (type.length > 0) return type;
+  return t("prPage.displayFallbackTitle");
+});
+const confirmationDeadlineAt = computed(
+  () => prDetail.value?.partnerSection.timeline?.confirmationEndAt ?? null,
+);
 const supportsEventContextFeatures = computed(
   () => prDetail.value?.partnerSection.reminder.supported ?? false,
 );

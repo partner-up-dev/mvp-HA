@@ -346,6 +346,7 @@ export interface MessageSchema {
       description: string;
       currentPin: string;
     };
+    displayFallbackTitle: string;
     metaFallbackTitle: string;
     metaFallbackDescription: string;
     metaTitleWithName: string;
@@ -427,6 +428,14 @@ export interface MessageSchema {
     joinSuccessSubscriptions: {
       description: string;
       closeAction: string;
+      notificationReasons: {
+        REMINDER_CONFIRMATION: {
+          withDeadline: string;
+          fallback: string;
+        };
+        NEW_PARTNER: string;
+        MEETING_POINT_UPDATED: string;
+      };
     };
     shareEntry: {
       title: string;
@@ -486,6 +495,9 @@ export interface MessageSchema {
       rosterBoardTitle: string;
       rosterTitle: string;
       rosterCount: string;
+      rosterCapacityCurrent: string;
+      rosterCapacityMin: string;
+      rosterCapacityMax: string;
       rosterEmpty: string;
       rosterCurrentEmpty: string;
       rosterHistoryTitle: string;

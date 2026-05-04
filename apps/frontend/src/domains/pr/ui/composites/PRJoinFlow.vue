@@ -19,6 +19,8 @@
           :title="t('prPage.notificationSubscriptions.title')"
         >
           <APRNotificationSubscriptions
+            :visible-kinds="JOIN_SUCCESS_NOTIFICATION_KINDS"
+            :description-prefixes="joinSuccessNotificationDescriptionPrefixes"
             :updating-label="t('prPage.wechatReminder.updating')"
             outline-profile="surface"
           />
@@ -70,6 +72,7 @@ import Modal from "@/shared/ui/overlay/Modal.vue";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
+import type { WeChatNotificationKind } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFollowPanel.vue";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
@@ -87,6 +90,7 @@ import {
 } from "@/shared/auth/useUserSessionStore";
 import type { ApiError } from "@/shared/api/error";
 import { trackEvent } from "@/shared/telemetry/track";
+import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type JoinNoticeGate = Extract<
   PRJoinGateProjectionItem,
@@ -112,6 +116,7 @@ const props = withDefaults(
     prId: PRId | null;
     disabled?: boolean;
     scenarioType?: string | null;
+    confirmationDeadlineAt?: string | null;
     viewerIsParticipant?: boolean | null;
     showSuccessPrompt?: boolean;
     writeJoinEntryOnAuth?: boolean;
@@ -119,6 +124,7 @@ const props = withDefaults(
   {
     disabled: false,
     scenarioType: null,
+    confirmationDeadlineAt: null,
     viewerIsParticipant: null,
     showSuccessPrompt: true,
     writeJoinEntryOnAuth: false,
@@ -140,6 +146,11 @@ const router = useRouter();
 const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
 const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
+const JOIN_SUCCESS_NOTIFICATION_KINDS = [
+  "REMINDER_CONFIRMATION",
+  "NEW_PARTNER",
+  "MEETING_POINT_UPDATED",
+] as const satisfies readonly WeChatNotificationKind[];
 
 const prIdRef = computed(() => props.prId);
 const showJoinFlowModal = ref(false);
@@ -163,6 +174,31 @@ const officialAccountFollowPrompt =
 const joinGateItems = computed<PRJoinGateProjectionItem[]>(
   () => joinGatesQuery.data.value?.gates ?? [],
 );
+const confirmationDeadlineText = computed(() => {
+  const deadline = props.confirmationDeadlineAt?.trim() ?? "";
+  if (deadline.length === 0) {
+    return null;
+  }
+  return formatLocalDateTimeValue(deadline) ?? deadline;
+});
+const joinSuccessNotificationDescriptionPrefixes = computed<
+  Partial<Record<WeChatNotificationKind, string>>
+>(() => ({
+  REMINDER_CONFIRMATION: confirmationDeadlineText.value
+    ? t(
+        "prPage.joinSuccessSubscriptions.notificationReasons.REMINDER_CONFIRMATION.withDeadline",
+        { deadline: confirmationDeadlineText.value },
+      )
+    : t(
+        "prPage.joinSuccessSubscriptions.notificationReasons.REMINDER_CONFIRMATION.fallback",
+      ),
+  NEW_PARTNER: t(
+    "prPage.joinSuccessSubscriptions.notificationReasons.NEW_PARTNER",
+  ),
+  MEETING_POINT_UPDATED: t(
+    "prPage.joinSuccessSubscriptions.notificationReasons.MEETING_POINT_UPDATED",
+  ),
+}));
 const flowPending = computed(
   () =>
     joinFlowPending.value ||

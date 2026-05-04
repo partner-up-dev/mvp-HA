@@ -1,19 +1,7 @@
 <template>
-  <SurfaceCard
-    v-bind="$attrs"
-    as="section"
-    class="pr-facts-card"
-    gap="md"
-  >
-    <LoadingIndicator
-      v-if="isLoading"
-      :message="t('common.loading')"
-    />
-    <ErrorToast
-      v-else-if="error"
-      :message="error.message"
-      persistent
-    />
+  <SurfaceCard v-bind="$attrs" as="section" class="pr-facts-card" gap="sm">
+    <LoadingIndicator v-if="isLoading" :message="t('common.loading')" />
+    <ErrorToast v-else-if="error" :message="error.message" persistent />
 
     <template v-else-if="prDetail">
       <h2 class="facts-title">活动信息</h2>
@@ -46,7 +34,10 @@
           {{ prDetail.core.location ?? t("prPage.partnerSection.notSet") }}
         </InfoRow>
 
-        <p v-if="interactive && locationGalleryAvailable" class="facts-entry__value">
+        <p
+          v-if="interactive && locationGalleryAvailable"
+          class="facts-entry__value"
+        >
           {{ prDetail.core.location ?? t("prPage.partnerSection.notSet") }}
         </p>
       </section>
@@ -94,41 +85,33 @@
         {{ localizedTimeText }}
       </InfoRow>
 
-      <InfoRow :label="t('prCard.preferences')" layout="stack" align="start">
+      <InfoRow
+        v-if="hasPreferences"
+        :label="t('prCard.preferences')"
+        layout="stack"
+        align="start"
+      >
         <ChipGroup>
           <Chip v-for="item in prDetail.core.preferences" :key="item">
             {{ item }}
           </Chip>
         </ChipGroup>
-        <span v-if="prDetail.core.preferences.length === 0" class="facts-empty">
-          {{ t("prPage.partnerSection.notSet") }}
-        </span>
       </InfoRow>
 
       <section class="facts-entry">
-        <Button
+        <InfoRowAction
           v-if="interactive"
-          class="facts-entry-button"
-          tone="ghost"
-          block
+          label="参与概览"
+          :value="participantCountText"
+          :aria-label="t('prPage.partnerSection.rosterBoardTitle')"
           @click="showRosterModal = true"
-        >
-          <span class="facts-entry-button__content">
-            <span class="facts-entry-button__label">参与概览</span>
-            <span class="facts-entry-button__trailing">
-              <span
-                class="facts-entry-button__icon i-mdi-chevron-right"
-                aria-hidden="true"
-              />
-            </span>
-          </span>
-        </Button>
+        />
 
-        <h3 v-else class="facts-entry__heading">参与概览</h3>
+        <InfoRow v-else label="参与概览">
+          {{ participantCountText }}
+        </InfoRow>
 
-        <div class="facts-entry__stack">
-          <p class="facts-overview">{{ participantOverviewText }}</p>
-
+        <div class="facts-entry__value facts-entry__value--badges">
           <ChipGroup v-if="rosterPreview.length > 0">
             <template v-for="item in rosterPreview" :key="item.partnerId">
               <RouterLink
@@ -144,7 +127,7 @@
               </Chip>
             </template>
 
-            <span v-if="hasMoreRoster" class="roster-chip-overflow"> ... </span>
+            <span v-if="hasMoreRoster" class="roster-chip-overflow">...</span>
           </ChipGroup>
 
           <span v-else class="facts-empty">
@@ -195,6 +178,7 @@ import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import InfoRow from "@/shared/ui/display/InfoRow.vue";
+import InfoRowAction from "@/shared/ui/display/InfoRowAction.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
 import ChipGroup from "@/shared/ui/display/ChipGroup.vue";
 import Button from "@/shared/ui/actions/Button.vue";
@@ -247,10 +231,13 @@ watch(locationId, () => {
   showLocationGalleryModal.value = false;
 });
 
-const locationGalleryAvailable = computed(() => locationGallery.value.length > 0);
+const locationGalleryAvailable = computed(
+  () => locationGallery.value.length > 0,
+);
 
 const meetingPointDescription = computed(() => {
-  const description = prDetail.value?.core.meetingPoint?.description?.trim() ?? "";
+  const description =
+    prDetail.value?.core.meetingPoint?.description?.trim() ?? "";
   return description.length > 0 ? description : null;
 });
 
@@ -263,6 +250,9 @@ const normalizedNotes = computed(() => {
   const trimmed = prDetail.value?.core.notes?.trim() ?? "";
   return trimmed.length > 0 ? trimmed : null;
 });
+const hasPreferences = computed(
+  () => (prDetail.value?.core.preferences.length ?? 0) > 0,
+);
 
 const extractFactsTimeDatePart = (formatted: string | null): string | null => {
   if (!formatted) {
@@ -359,12 +349,11 @@ const localizedTimeText = computed(() => {
   return start ?? end ?? t("prPage.partnerSection.notSet");
 });
 
-const participantOverviewText = computed(() => {
+const participantCountText = computed(() => {
   if (!prDetail.value) return "";
   const current = prDetail.value.partnerSection.capacity.current;
-  const min = prDetail.value.partnerSection.capacity.min;
-  if (min === null) return `${current} 人已加入，当前未设置最低成团人数。`;
-  return `${current} 人已加入，最低成团人数 ${min} 人。`;
+  const max = prDetail.value.partnerSection.capacity.max;
+  return max === null ? String(current) : `${current}/${max}`;
 });
 
 const isActiveRosterState = (state: RosterPreviewItem["state"]): boolean =>
@@ -408,12 +397,13 @@ watch(
 .facts-title {
   margin: 0;
   @include mx.pu-font(title-medium);
+  color: var(--sys-color-on-surface);
 }
 
 .facts-entry {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xsmall);
+  gap: calc(var(--sys-spacing-xsmall) / 2);
   min-width: 0;
 }
 
@@ -423,18 +413,15 @@ watch(
   color: var(--sys-color-on-surface-variant);
 }
 
-.facts-entry__value,
-.facts-overview {
+.facts-entry__value {
   margin: 0;
   @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface);
   overflow-wrap: anywhere;
 }
 
-.facts-entry__stack {
+.facts-entry__value--badges {
   display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xsmall);
-  min-width: 0;
 }
 
 .facts-entry-button {
@@ -470,10 +457,12 @@ watch(
 
 .facts-entry-button__action {
   @include mx.pu-font(label-medium);
+  color: var(--sys-color-secondary);
 }
 
 .facts-entry-button__icon {
-  @include mx.pu-icon(smallall);
+  @include mx.pu-icon(small);
+  color: var(--sys-color-secondary);
 }
 
 .facts-empty {
@@ -484,6 +473,7 @@ watch(
 .facts-notes {
   margin: 0;
   @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: break-word;

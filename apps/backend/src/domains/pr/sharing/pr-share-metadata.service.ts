@@ -40,12 +40,17 @@ const resolveTitle = (pr: PublicPR): string => {
     return explicitTitle;
   }
 
-  const type = normalizeWhitespace(pr.type);
-  if (type.length > 0) {
-    return `${type} - 搭一把`;
+  const location = normalizeWhitespace(pr.location);
+  if (location.length > 0) {
+    return location;
   }
 
-  return "搭子请求 - 搭一把";
+  const type = normalizeWhitespace(pr.type);
+  if (type.length > 0) {
+    return type;
+  }
+
+  return "搭子请求";
 };
 
 const resolveDescription = (pr: PublicPR): string => {

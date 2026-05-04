@@ -311,6 +311,7 @@
       "description": "您不需要注册，但是为了避免其他人随意修改您的搭子请求，我们为您生成了 PIN，请妥善保管。",
       "currentPin": "您的 PIN：{pin}"
     },
+    "displayFallbackTitle": "搭子请求",
     "metaFallbackTitle": "搭子请求 - 搭一把",
     "metaFallbackDescription": "查看搭子请求",
     "metaTitleWithName": "{title} - 搭一把",
@@ -403,7 +404,15 @@
     },
     "joinSuccessSubscriptions": {
       "description": "刚加入成功，现在可以顺手开启你关心的提醒。",
-      "closeAction": "完成"
+      "closeAction": "完成",
+      "notificationReasons": {
+        "REMINDER_CONFIRMATION": {
+          "withDeadline": "若未在 {deadline} 前完成确认，席位将被释放。",
+          "fallback": "若未在限定时间内完成确认，席位将被释放。"
+        },
+        "NEW_PARTNER": "有人加入时及时知道当前搭子人数，方便确认成团进展。",
+        "MEETING_POINT_UPDATED": "碰头地点更新后及时收到提醒，减少到场前找不到集合点的风险。"
+      }
     },
     "shareEntry": {
       "title": "分享邀请",
@@ -467,6 +476,9 @@
       "rosterBoardTitle": "搭子花名册",
       "rosterTitle": "当前搭子",
       "rosterCount": "{count} 人",
+      "rosterCapacityCurrent": "当前 {current} 人",
+      "rosterCapacityMin": "最低成团 {min} 人",
+      "rosterCapacityMax": "最多 {max} 人",
       "rosterEmpty": "还没有其它搭子，加入后你将成为该搭子请求的所有者。",
       "rosterCurrentEmpty": "当前没有在场搭子。",
       "rosterHistoryTitle": "历史搭子",

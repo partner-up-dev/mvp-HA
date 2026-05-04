@@ -9,6 +9,7 @@
 - PR messaging currently uses a dedicated `/pr/:id/messages` page rather than an inline detail-page composer.
 - PR messaging may contain both participant-authored messages and operator-authored system messages; system messages are part of the same thread and remain visually identifiable as system-authored context.
 - PR meeting-point guidance is a public auxiliary fact that answers where participants should meet at or inside the primary location.
+- When a `PR` has no explicit title, user-facing detail and share surfaces identify it by primary location first, then by type, then by a generic `PR` label.
 
 ## 2. Creation And Publish Rules
 
@@ -100,6 +101,7 @@
 - PR messaging is a non-realtime coordination layer and must not introduce chat-room semantics such as presence, typing, or read receipts.
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
 - Successful join in a PR that supports reminder registration should immediately offer the notification-subscription modal while still leaving a durable management path on the detail page.
+- The successful-join notification-subscription modal focuses on confirmation reminders, new-partner reminders, and meeting-point reminders, with copy explaining the reason to subscribe. Confirmation reminder copy includes the confirmation deadline when that deadline is known.
 - PR message notifications are limited to at most one send per `PR / recipient / unread wave`.
 - The current `PR_MESSAGE` timing policy is one fixed short-debounce summary opportunity per unread wave.
 - Before a PR message notification is sent, the system must re-validate that the recipient is still a current active participant of that PR.

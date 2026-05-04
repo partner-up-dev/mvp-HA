@@ -158,6 +158,7 @@ Important coordination note:
   - canonical path
   - default image path
   - revision token
+- Canonical PR share title fallback order is explicit title, primary location, type, then the generic `PR` label.
 - Frontend treats that metadata as the source for base share descriptors rather than recomputing a separate share truth in page-local code.
 - Rich descriptions, thumbnails, and posters remain optional enhancements; failure to produce them must not remove or invalidate the base share descriptor.
 - WeChat share coordination distinguishes:

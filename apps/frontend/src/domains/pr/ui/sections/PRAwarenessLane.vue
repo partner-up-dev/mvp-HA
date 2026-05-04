@@ -4,14 +4,11 @@
       <h2 class="lane-title">
         {{ t("prPage.partnerSection.rosterBoardTitle") }}
       </h2>
-      <span class="lane-meta">
-        {{
-          t("prPage.partnerSection.rosterCount", {
-            count: section.roster.length,
-          })
-        }}
-      </span>
     </header>
+
+    <p class="lane-capacity">
+      {{ capacitySummaryText }}
+    </p>
 
     <p v-if="section.roster.length === 0" class="lane-empty">
       {{ t("prPage.partnerSection.rosterEmpty") }}
@@ -19,19 +16,6 @@
 
     <template v-else>
       <section class="roster-group">
-        <header class="roster-group__header">
-          <h3 class="roster-group__title">
-            {{ t("prPage.partnerSection.rosterTitle") }}
-          </h3>
-          <span class="roster-group__count">
-            {{
-              t("prPage.partnerSection.rosterCount", {
-                count: activeRoster.length,
-              })
-            }}
-          </span>
-        </header>
-
         <p v-if="activeRoster.length === 0" class="lane-empty">
           {{ t("prPage.partnerSection.rosterCurrentEmpty") }}
         </p>
@@ -134,6 +118,22 @@ const activeRoster = computed(() =>
 const historyRoster = computed(() =>
   props.section.roster.filter((item) => !isActiveRosterState(item.state)),
 );
+const capacitySummaryText = computed(() => {
+  const parts = [
+    t("prPage.partnerSection.rosterCapacityCurrent", {
+      current: props.section.capacity.current,
+    }),
+  ];
+  const min = props.section.capacity.min;
+  const max = props.section.capacity.max;
+  if (min !== null) {
+    parts.push(t("prPage.partnerSection.rosterCapacityMin", { min }));
+  }
+  if (max !== null) {
+    parts.push(t("prPage.partnerSection.rosterCapacityMax", { max }));
+  }
+  return parts.join(" · ");
+});
 
 const partnerProfilePath = (partnerId: number): string =>
   prPartnerProfilePath(props.prId, partnerId);
@@ -170,7 +170,7 @@ const rosterAvatarFallback = (displayName: string): string => {
   @include mx.pu-font(title-medium);
 }
 
-.lane-meta,
+.lane-capacity,
 .lane-empty {
   margin: 0;
   @include mx.pu-font(body-medium);
@@ -194,27 +194,6 @@ const rosterAvatarFallback = (displayName: string): string => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-small);
-}
-
-.roster-group__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--sys-spacing-small);
-}
-
-.roster-group__title,
-.roster-group__count {
-  margin: 0;
-}
-
-.roster-group__title {
-  @include mx.pu-font(title-small);
-}
-
-.roster-group__count {
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .roster-history {

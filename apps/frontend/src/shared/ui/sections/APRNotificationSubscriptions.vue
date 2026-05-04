@@ -106,6 +106,7 @@ import WeChatMiniProgramJssdkNoticeModal from "@/shared/wechat/WeChatMiniProgram
 const props = withDefaults(
   defineProps<{
     visibleKinds?: readonly WeChatNotificationKind[];
+    descriptionPrefixes?: Partial<Record<WeChatNotificationKind, string>>;
     updatingLabel: string;
     outlineProfile?: "primary" | "surface";
   }>(),
@@ -133,7 +134,19 @@ const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
 });
 const showMiniProgramWebViewNotice = ref(false);
 
-const items = computed(() => notificationSubscriptions.items.value);
+const items = computed(() =>
+  notificationSubscriptions.items.value.map((item) => {
+    const prefix = props.descriptionPrefixes?.[item.key]?.trim() ?? "";
+    if (prefix.length === 0) {
+      return item;
+    }
+
+    return {
+      ...item,
+      description: `${prefix} ${item.description}`,
+    };
+  }),
+);
 const actionButtonTone = computed(() =>
   props.outlineProfile === "surface" ? "outline" : "primary-outline",
 );

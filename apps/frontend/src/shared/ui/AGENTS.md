@@ -24,6 +24,7 @@ Do not move a component into `shared/ui` just because two pages happen to look s
 - `forms/WheelPicker.vue`: finite vertical option picker with centered snap selection for generic single-value choices.
 - `forms/ProductLocalDateCalendarPicker.vue`: product-local date-key calendar grid for fixed-window multi-select flows; keep date-window policy in the owning page or domain.
 - `display/InfoRow.vue`: neutral label/value layout for metadata.
+- `display/InfoRowAction.vue`: label row with a right-side inline action button for metadata rows whose action target is only the trailing affordance.
 - `display/Cell.vue`: compact title/value row with optional suffix icon or suffix slot for generic list and settings surfaces; pass `border` to show the bottom divider.
 - `display/Chip.vue` and `display/ChipGroup.vue`: lightweight shared tag/group primitives.
 - `feedback/InlineNotice.vue`: inline notice banner for page-level or section-level feedback.

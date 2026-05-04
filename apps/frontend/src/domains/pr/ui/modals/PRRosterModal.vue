@@ -1,19 +1,10 @@
 <template>
   <Modal
     :open="open"
-    :title="t('prPage.partnerSection.rosterBoardTitle')"
     max-width="560px"
     @close="emit('close')"
   >
     <div class="roster-modal">
-      <p class="roster-modal__meta">
-        {{
-          t("prPage.partnerSection.rosterCount", {
-            count: section.roster.length,
-          })
-        }}
-      </p>
-
       <PRAwarenessLane :pr-id="prId" :section="section" />
 
       <Button tone="surface" block @click="emit('close')">
@@ -50,11 +41,5 @@ const { t } = useI18n();
   display: flex;
   flex-direction: column;
   gap: var(--sys-spacing-medium);
-}
-
-.roster-modal__meta {
-  margin: 0;
-  @include mx.pu-font(body-small);
-  color: var(--sys-color-on-surface-variant);
 }
 </style>
