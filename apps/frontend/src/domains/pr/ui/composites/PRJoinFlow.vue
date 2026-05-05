@@ -30,20 +30,29 @@
   <Modal :open="showJoinSubscriptionModal" @close="closeJoinSuccessPrompt">
     <div class="join-success-modal">
       <template v-if="joinSuccessPromptStep === 'SUBSCRIPTIONS'">
-        <p class="join-success-modal__text">
-          {{ t("prPage.joinSuccessSubscriptions.description") }}
-        </p>
-
-        <WeChatNotificationSubscriptionsCard
-          :title="t('prPage.notificationSubscriptions.title')"
+        <section
+          class="join-success-modal__subscriptions"
+          aria-labelledby="join-success-subscriptions-title"
         >
+          <div class="join-success-modal__subscriptions-heading">
+            <h2
+              id="join-success-subscriptions-title"
+              class="join-success-modal__subscriptions-title"
+            >
+              {{ t("prPage.notificationSubscriptions.title") }}
+            </h2>
+            <p class="join-success-modal__subscriptions-description">
+              {{ t("prPage.joinSuccessSubscriptions.description") }}
+            </p>
+          </div>
+
           <APRNotificationSubscriptions
             :visible-kinds="JOIN_SUCCESS_NOTIFICATION_KINDS"
             :description-prefixes="joinSuccessNotificationDescriptionPrefixes"
             :updating-label="t('prPage.wechatReminder.updating')"
             outline-profile="surface"
           />
-        </WeChatNotificationSubscriptionsCard>
+        </section>
 
         <Button tone="surface" block @click="handleJoinSuccessSubscriptionDone">
           {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
@@ -78,7 +87,6 @@ import Button from "@/shared/ui/actions/Button.vue";
 import Modal from "@/shared/ui/overlay/Modal.vue";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
-import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
 import type { WeChatNotificationKind } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFollowPanel.vue";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
@@ -389,7 +397,24 @@ defineExpose({
   gap: var(--sys-spacing-medium);
 }
 
-.join-success-modal__text {
+.join-success-modal__subscriptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-medium);
+}
+
+.join-success-modal__subscriptions-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-xsmall);
+}
+
+.join-success-modal__subscriptions-title {
+  margin: 0;
+  @include mx.pu-font(title-medium);
+}
+
+.join-success-modal__subscriptions-description {
   margin: 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);

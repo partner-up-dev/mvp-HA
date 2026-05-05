@@ -37,3 +37,10 @@ Hypothesis:
 - After restoring partner badges as the participant-row value, `pnpm --filter @partner-up-dev/frontend build` and `git diff --check` passed.
 - After extracting `InfoRowAction`, `pnpm --filter @partner-up-dev/frontend build` and `git diff --check` passed; token governance still reports the existing `src/domains/event/ui/surfaces/AnchorEventListModeSurface.vue:696` finding.
 - After roster modal IA cleanup, `pnpm --filter @partner-up-dev/frontend build` and `git diff --check` passed; token governance still reports the existing `src/domains/event/ui/surfaces/AnchorEventListModeSurface.vue:696` finding.
+
+## Slices
+
+- `01-current-ia.md`: current PR Page information architecture baseline and utility-row verification.
+- `02-implementation-boundary-smell-map.md`: read-only implementation and boundary smell map for the next refactor slice.
+- `03-boundary-topology.md`: topology view of current ownership pressure and candidate target boundaries.
+- `04-cohesion-refactor.md`: implementation record for moving contextual, utility, and creator-local data into owning components.
