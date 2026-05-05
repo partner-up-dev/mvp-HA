@@ -1,4 +1,4 @@
-import type { PRId, UserId } from "../../../entities";
+import type { PartnerId, PRId, UserId } from "../../../entities";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 
 const partnerRepo = new PartnerRepository();
@@ -24,4 +24,22 @@ export const resolveBookingContactOwner = async (
   }
 
   return null;
+};
+
+export const resolveBookingContactOwnerByPartner = async (params: {
+  prId: PRId;
+  partnerId: PartnerId;
+}): Promise<BookingContactOwnerCandidate | null> => {
+  const participant = await partnerRepo.findActiveParticipantSummaryByPrIdAndPartnerId(
+    params.prId,
+    params.partnerId,
+  );
+  if (!participant?.userId) {
+    return null;
+  }
+
+  return {
+    partnerId: participant.partnerId,
+    userId: participant.userId,
+  };
 };

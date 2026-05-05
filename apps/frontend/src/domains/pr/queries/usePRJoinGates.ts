@@ -134,12 +134,6 @@ export const usePRJoinGates = (
         },
       );
       queryClient.invalidateQueries({
-        queryKey: queryKeys.pr.detail(variables.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.pr.bookingSupport(variables.id),
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.pr.joinGates(variables.id),
       });
     },

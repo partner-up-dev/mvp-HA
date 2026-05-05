@@ -41,6 +41,7 @@
           maxlength="11"
           placeholder="请输入 11 位大陆手机号"
           :disabled="interactionPending"
+          data-testid="pr-detail.join-gate.booking-contact.input"
         />
       </label>
       <p v-if="phoneInputError" class="action-error">
@@ -58,6 +59,7 @@
         <Button
           type="button"
           :loading="interactionPending"
+          data-testid="pr-detail.join-gate.booking-contact.submit"
           @click="resolveBookingContact(activeGate)"
         >
           提交

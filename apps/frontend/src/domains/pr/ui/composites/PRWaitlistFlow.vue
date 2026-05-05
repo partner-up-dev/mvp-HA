@@ -30,7 +30,10 @@
   <Modal :open="showWaitlistSubscriptionModal" @close="closeWaitlistPrompt">
     <div class="waitlist-success-modal">
       <template v-if="waitlistPromptStep === 'SUBSCRIPTIONS'">
-        <p class="waitlist-success-modal__text">
+        <p
+          class="waitlist-success-modal__text"
+          data-testid="pr-detail.waitlist-success.subscriptions"
+        >
           {{ t("prPage.waitlistSuccessSubscriptions.description") }}
         </p>
 
@@ -45,7 +48,12 @@
           />
         </WeChatNotificationSubscriptionsCard>
 
-        <Button tone="surface" block @click="handleWaitlistSubscriptionDone">
+        <Button
+          tone="surface"
+          block
+          data-testid="pr-detail.waitlist-success.done"
+          @click="handleWaitlistSubscriptionDone"
+        >
           {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
         </Button>
       </template>

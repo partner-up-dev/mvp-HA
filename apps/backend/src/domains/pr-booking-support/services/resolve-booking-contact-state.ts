@@ -3,7 +3,10 @@ import { normalizePRJoinGateConfig } from "../../../entities";
 import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { getEffectiveBookingDeadline } from "./get-effective-booking-deadline";
-import { resolveBookingContactOwner } from "./resolve-booking-contact-owner";
+import {
+  resolveBookingContactOwner,
+  resolveBookingContactOwnerByPartner,
+} from "./resolve-booking-contact-owner";
 
 const bookingContactRepo = new PRBookingContactRepository();
 const prRepo = new PartnerRequestRepository();
@@ -52,15 +55,15 @@ export const resolveBookingContactState = async (params: {
 
   const owner = await resolveBookingContactOwner(params.prId);
 
-  if (
-    contact &&
-    contact.ownerPartnerId !== null &&
-    (!owner ||
-      contact.ownerPartnerId !== owner.partnerId ||
-      contact.ownerUserId !== owner.userId)
-  ) {
-    await bookingContactRepo.deleteByPrId(params.prId);
-    contact = null;
+  if (contact && contact.ownerPartnerId !== null) {
+    const contactOwner = await resolveBookingContactOwnerByPartner({
+      prId: params.prId,
+      partnerId: contact.ownerPartnerId,
+    });
+    if (!contactOwner || contact.ownerUserId !== contactOwner.userId) {
+      await bookingContactRepo.deleteByPrId(params.prId);
+      contact = null;
+    }
   }
 
   if (

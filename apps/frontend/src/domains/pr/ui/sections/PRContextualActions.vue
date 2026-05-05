@@ -21,6 +21,7 @@
       v-if="waitlistNoticeText"
       tone="info"
       :message="waitlistNoticeText"
+      data-testid="pr-detail.waitlist.notice"
     />
 
     <div v-if="showCancelWaitlistActionInContext" class="secondary-action">
@@ -107,6 +108,7 @@
             :disabled="disabled"
             :loading="pending"
             block
+            data-testid="pr-detail.waitlist.open"
             @click="handleDockJoinAction(joinDockAction, open)"
           >
             {{

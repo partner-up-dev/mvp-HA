@@ -87,6 +87,11 @@ HEADED=true pnpm test:scenario system
 - Put `data-testid` on the real interactive element when the node is an action.
 - Use role, label, and visible text for supplementary assertions that intentionally track user-facing copy.
 
-The first minimal scenario is `pr-core/pr-detail-join.scenario.test.ts`: a
-joiner opens a PR detail page, joins through the fallback confirmation gate, and
-reaches the post-join confirm action.
+Current PR detail coverage:
+
+- `pr-core/pr-detail-join.scenario.test.ts`: a joiner opens a PR detail page,
+  joins through the fallback confirmation gate, and reaches the post-join
+  confirm action.
+- `pr-core/pr-detail-participation.scenario.test.ts`: covers booking contact
+  Join gate, participant confirmation, and waitlist promotion after an active
+  participant exits.

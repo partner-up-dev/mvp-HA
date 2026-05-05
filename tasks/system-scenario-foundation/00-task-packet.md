@@ -8,7 +8,9 @@ and an isolated Postgres database.
 
 Hypothesis: system scenarios belong under `tests/scenario/` because the runner
 coordinates both app units and runtime infrastructure. The first slice proves
-the path with the PR detail join workflow.
+the path with the PR detail join workflow. The next slice extends PR detail
+coverage to booking contact Join gate, participant confirmation, and waitlist
+promotion.
 
 ## Guardrails Touched
 
@@ -22,11 +24,21 @@ the path with the PR detail join workflow.
 ## Verification
 
 - `pnpm test:scenario system`
+- `pnpm build:backend`
+- `pnpm build:frontend`
+- `pnpm --filter @partner-up-dev/backend typecheck`
+- `git diff --check`
 - Minimal scenario: `pr_detail_join_flow_reaches_confirm_action`
-- PR detail scenario uses `data-testid` semantic nodes for browser actions and the post-join assertion.
+- Added scenarios:
+  - `pr_detail_join_with_booking_contact_gate_reaches_participant_state`
+  - `pr_detail_participant_confirms_slot`
+  - `pr_detail_waitlist_promotes_after_active_participant_exit`
+- PR detail scenario uses `data-testid` semantic nodes for browser actions and
+  post-flow assertions.
 
 ## Notes
 
 - The first demo asserts user-visible post-join UI state.
-- Backend probes remain available for future scenarios that need persistence or
-  hidden side-effect proof.
+- Booking contact Join gate uses a backend probe because the important side
+  effect is hidden persistence: the phone record must be owned by the joined
+  partner slot after the frontend flow completes.
