@@ -115,12 +115,12 @@
           </p>
         </div>
 
-        <component
-          :is="joinFlowComponent"
-          v-if="joinDockAction"
+        <PRJoinFlow
           ref="joinFlowRef"
           :pr-id="id"
-          :disabled="joinDockAction?.disabled ?? true"
+          :disabled="
+            joinDockAction?.key !== 'JOIN' || (joinDockAction?.disabled ?? true)
+          "
           :scenario-type="prDetail.core.type"
           :event-id="routeEventId"
           :entry-surface="joinEntrySurface"
@@ -132,7 +132,7 @@
           <template
             #default="{ open, pending, disabled, joined, errorMessage }"
           >
-            <div v-if="joinDockAction" class="primary-action">
+            <div v-if="joinDockAction?.key === 'JOIN'" class="primary-action">
               <Button
                 class="primary-action__button"
                 :tone="buttonToneForAction(joinDockAction)"
@@ -143,9 +143,7 @@
               >
                 {{
                   joined
-                    ? joinDockAction.key === "WAITLIST"
-                      ? t("prPage.waitlisted")
-                      : t("prPage.partnerSection.rosterJoined")
+                    ? t("prPage.partnerSection.rosterJoined")
                     : pending
                       ? joinDockAction.pendingLabel
                       : joinDockAction.label
@@ -159,7 +157,55 @@
               </p>
             </div>
           </template>
-        </component>
+        </PRJoinFlow>
+
+        <PRWaitlistFlow
+          ref="waitlistFlowRef"
+          :pr-id="id"
+          :disabled="
+            joinDockAction?.key !== 'WAITLIST' ||
+            (joinDockAction?.disabled ?? true)
+          "
+          :scenario-type="prDetail.core.type"
+          :event-id="routeEventId"
+          :entry-surface="joinEntrySurface"
+          :confirmation-deadline-at="confirmationDeadlineAt"
+          :viewer-is-participant="prDetail.partnerSection.viewer.isParticipant"
+          write-join-entry-on-auth
+          @joined="handleJoinFlowJoined"
+        >
+          <template
+            #default="{ open, pending, disabled, joined, errorMessage }"
+          >
+            <div
+              v-if="joinDockAction?.key === 'WAITLIST'"
+              class="primary-action"
+            >
+              <Button
+                class="primary-action__button"
+                :tone="buttonToneForAction(joinDockAction)"
+                :disabled="disabled"
+                :loading="pending"
+                block
+                @click="handleDockJoinAction(joinDockAction, open)"
+              >
+                {{
+                  joined
+                    ? t("prPage.waitlisted")
+                    : pending
+                      ? joinDockAction.pendingLabel
+                      : joinDockAction.label
+                }}
+              </Button>
+              <p v-if="errorMessage" class="action-error">
+                {{ errorMessage }}
+              </p>
+              <p v-if="joinDockAction.tip" class="action-tip">
+                {{ joinDockAction.tip }}
+              </p>
+            </div>
+          </template>
+        </PRWaitlistFlow>
 
         <div v-if="nonJoinPrimaryDockAction" class="primary-action">
           <Button
@@ -497,6 +543,7 @@ const lastPrimaryImpressionKey = ref("");
 const factsCardTargetRef = ref<HTMLElement | null>(null);
 const matchedPRHandoff = useMatchedPRHandoff();
 const joinFlowRef = ref<{ open: () => Promise<void> } | null>(null);
+const waitlistFlowRef = ref<{ open: () => Promise<void> } | null>(null);
 const cancelWaitlistMutation = useCancelWaitlistPR();
 
 const editableFields = computed<PRFormFields>(() => ({
@@ -736,9 +783,6 @@ const joinDockAction = computed(() =>
     ? primaryDockAction.value
     : null,
 );
-const joinFlowComponent = computed(() =>
-  joinDockAction.value?.key === "WAITLIST" ? PRWaitlistFlow : PRJoinFlow,
-);
 const nonJoinPrimaryDockAction = computed(() =>
   primaryDockAction.value &&
   primaryDockAction.value.key !== "JOIN" &&
@@ -887,6 +931,10 @@ const handleConfirmWithBookingContact = async () => {
 const openJoinFlow = async (): Promise<void> => {
   bookingContactActionError.value = null;
   await nextTick();
+  if (joinDockAction.value?.key === "WAITLIST") {
+    await waitlistFlowRef.value?.open();
+    return;
+  }
   await joinFlowRef.value?.open();
 };
 
