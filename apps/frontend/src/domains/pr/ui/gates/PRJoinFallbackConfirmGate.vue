@@ -11,7 +11,12 @@
       >
         取消
       </Button>
-      <Button type="button" :loading="pending" @click="emit('confirm')">
+      <Button
+        type="button"
+        :loading="pending"
+        data-testid="pr-detail.join.confirm"
+        @click="emit('confirm')"
+      >
         确认加入
       </Button>
     </div>

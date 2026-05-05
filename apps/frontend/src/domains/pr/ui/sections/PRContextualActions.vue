@@ -3,6 +3,7 @@
     v-if="showContextualActionArea"
     class="contextual-area"
     data-region="actions"
+    data-testid="pr-detail.actions"
   >
     <InlineNotice
       v-if="releaseNoticeText"
@@ -62,6 +63,7 @@
             :disabled="disabled"
             :loading="pending"
             block
+            data-testid="pr-detail.join.open"
             @click="handleDockJoinAction(joinDockAction, open)"
           >
             {{
@@ -132,6 +134,7 @@
         :disabled="nonJoinPrimaryDockAction.disabled"
         :loading="nonJoinPrimaryDockAction.pending"
         block
+        :data-testid="primaryActionTestId(nonJoinPrimaryDockAction)"
         @click="handleDockAction(nonJoinPrimaryDockAction)"
       >
         {{
@@ -647,6 +650,12 @@ function mapDockActionToTrackType(
   if (key === "CONFIRM") return "CONFIRM_SLOT";
   if (key === "CHECKIN_ATTENDED") return "CHECK_IN";
   return null;
+}
+
+function primaryActionTestId(action: DockActionItem): string | undefined {
+  if (action.key === "CONFIRM") return "pr-detail.participant.confirm-action";
+  if (action.key === "CHECKIN_ATTENDED") return "pr-detail.participant.check-in-action";
+  return undefined;
 }
 
 function resolveConfirmTip(): string {

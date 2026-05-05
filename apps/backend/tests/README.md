@@ -27,13 +27,19 @@ pnpm install --frozen-lockfile
 docker compose up -d postgres
 ```
 
-Recommended workspace mode:
+Recommended backend-suite mode:
+
+```bash
+pnpm test:scenario backend
+```
+
+The workspace script loads `apps/frontend/.env` and `apps/backend/.env`, then invokes the requested scenario suite. Shell and CI environment variables have the highest priority; for backend scenario runs, `apps/backend/.env` has priority over `apps/frontend/.env` when both files define the same key.
+
+Run all scenario suites:
 
 ```bash
 pnpm test:scenario
 ```
-
-The workspace script loads `apps/frontend/.env` and `apps/backend/.env`, then invokes the backend scenario runner. Shell and CI environment variables have the highest priority; for backend scenario runs, `apps/backend/.env` has priority over `apps/frontend/.env` when both files define the same key.
 
 If your local Docker compose uses a custom `POSTGRES_PORT`, use that port in the URL.
 

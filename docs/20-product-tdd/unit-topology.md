@@ -30,6 +30,7 @@ Owns:
 ## Supporting Containers That Are Not Separate Technical Units
 
 - repo root workflows under `scripts/` and `.github/`
+- root system scenario tests under `tests/scenario/`
 - documentation under `docs/`
 - deployment descriptors such as `apps/backend/s.yaml`
 

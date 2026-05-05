@@ -32,6 +32,7 @@
       <template v-if="joinSuccessPromptStep === 'SUBSCRIPTIONS'">
         <section
           class="join-success-modal__subscriptions"
+          data-testid="pr-detail.join-success.subscriptions"
           aria-labelledby="join-success-subscriptions-title"
         >
           <div class="join-success-modal__subscriptions-heading">
@@ -54,7 +55,12 @@
           />
         </section>
 
-        <Button tone="surface" block @click="handleJoinSuccessSubscriptionDone">
+        <Button
+          tone="surface"
+          block
+          data-testid="pr-detail.join-success.done"
+          @click="handleJoinSuccessSubscriptionDone"
+        >
           {{ t("prPage.joinSuccessSubscriptions.closeAction") }}
         </Button>
       </template>

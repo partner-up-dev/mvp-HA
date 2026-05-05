@@ -43,6 +43,8 @@ Useful commands:
 - Container vs feature split: keep container components presentational-only; they should provide layout and shell and should not own feature side effects.
 - Usage-site assembly: pages should assemble container plus feature components and only own page context such as visibility, section placement, and page-level error aggregation.
 - Reuse-first rule: if a second page needs the same feature behavior, reuse the extracted feature component rather than duplicating handlers in page scope.
+- Scenario testability: when implementing a route workflow that may be covered by scenario or E2E tests, add stable `data-testid` values to the semantic nodes the workflow needs: primary actions, modal actions, and result-state affordances.
+- `data-testid` names should describe the route and workflow node, for example `pr-detail.join.open`, and should live on the real interactive element for actions.
 
 ## File Structure
 

@@ -22,10 +22,14 @@ const suites = {
     command: "test:scenario",
     filter: "@partner-up-dev/backend",
   },
+  system: {
+    command: "test:scenario:system",
+    filter: null,
+  },
 };
 
 function printUsage() {
-  console.error("Usage: node scripts/run-scenario-tests.mjs [backend]");
+  console.error("Usage: node scripts/run-scenario-tests.mjs [backend|system]");
 }
 
 function loadEnvFile(relativePath) {
@@ -86,11 +90,11 @@ async function runSuite(suiteName) {
     return 1;
   }
 
-  return runPnpm([
-    "--filter",
-    suite.filter,
-    suite.command,
-  ], suiteName);
+  const args = suite.filter
+    ? ["--filter", suite.filter, suite.command]
+    : [suite.command];
+
+  return runPnpm(args, suiteName);
 }
 
 for (const envFile of workspaceEnvFiles) {
