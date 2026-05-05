@@ -1,4 +1,4 @@
-export type AnchorEventLandingMode = "FORM" | "CARD_RICH";
+export type AnchorEventLandingMode = "FORM" | "CARD_RICH" | "LIST";
 
 const STORAGE_KEY_PREFIX = "partnerup:anchor-event-landing-mode";
 
@@ -10,7 +10,7 @@ const buildStorageKey = (
 const isValidAnchorEventLandingMode = (
   value: unknown,
 ): value is AnchorEventLandingMode =>
-  value === "FORM" || value === "CARD_RICH";
+  value === "FORM" || value === "CARD_RICH" || value === "LIST";
 
 export const readStoredAnchorEventLandingMode = (
   eventId: number,

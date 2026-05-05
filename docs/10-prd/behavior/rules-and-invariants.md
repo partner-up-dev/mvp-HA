@@ -26,6 +26,7 @@
 - Publishing a `DRAFT` PR requires an authenticated account.
 - Direct creation of an `OPEN` PR, including event-assisted create, requires an authenticated account.
 - `/e/:eventId` is an Anchor Event landing entry distinct from `/events/:eventId`; the two routes address the same event object with different product roles.
+- `/e/:eventId` landing mode supports `FORM`, `CARD_RICH`, and `LIST`. `LIST` uses the same Anchor Event list browsing semantics as the list view on `/events/:eventId`.
 - The same user should keep a stable landing mode for the same event until the operator changes that event's landing assignment revision.
 - If `/e/:eventId` cannot obtain its landing mode decision in time, it should still enter a usable `FORM` fallback experience.
 - Form Mode recommendation and candidate ordering are backend-authored even though the user chooses location, start time, and preferences on the page.

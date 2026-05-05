@@ -10,7 +10,11 @@
     </router-link>
   </div>
 
-  <div v-else-if="detail" class="date-section">
+  <div
+    v-else-if="detail"
+    class="date-section"
+    data-testid="anchor-event-list-mode.surface"
+  >
     <TabBar
       v-if="dateTabs.length > 0"
       :items="dateTabs"
@@ -20,7 +24,11 @@
     />
 
     <div class="date-content" role="tabpanel">
-      <div class="batch-list" data-region="pr-list">
+      <div
+        class="batch-list"
+        data-region="pr-list"
+        data-testid="anchor-event-list-mode.pr-list"
+      >
         <div v-if="visiblePRItems.length > 0" class="pr-list">
           <AnchorEventPRCard
             v-for="item in visiblePRItems"

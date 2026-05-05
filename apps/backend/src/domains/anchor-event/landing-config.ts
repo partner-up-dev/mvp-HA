@@ -1,7 +1,11 @@
 import { z } from "zod";
 import type { AnchorEventId } from "../../entities/anchor-event";
 
-export const anchorEventLandingModeSchema = z.enum(["FORM", "CARD_RICH"]);
+export const anchorEventLandingModeSchema = z.enum([
+  "FORM",
+  "CARD_RICH",
+  "LIST",
+]);
 export type AnchorEventLandingMode = z.infer<
   typeof anchorEventLandingModeSchema
 >;
@@ -9,6 +13,7 @@ export type AnchorEventLandingMode = z.infer<
 export const anchorEventLandingVariantRatioOverrideSchema = z.object({
   FORM: z.number().int().nonnegative(),
   CARD_RICH: z.number().int().nonnegative(),
+  LIST: z.number().int().nonnegative().default(0),
 });
 export type AnchorEventLandingVariantRatioOverride = z.infer<
   typeof anchorEventLandingVariantRatioOverrideSchema
@@ -80,6 +85,7 @@ const normalizeVariantRatioOverride = (
     return {
       FORM: 100,
       CARD_RICH: 0,
+      LIST: 0,
     };
   }
 
@@ -91,6 +97,7 @@ const normalizeVariantRatioOverride = (
   return {
     FORM: normalizeNonNegativeInteger(value.FORM),
     CARD_RICH: normalizeNonNegativeInteger(value.CARD_RICH),
+    LIST: normalizeNonNegativeInteger(value.LIST),
   };
 };
 
@@ -145,17 +152,20 @@ const resolveVariantWeights = (
   const variantRatioOverride = config.variantRatioOverride ?? {
     FORM: 1,
     CARD_RICH: 1,
+    LIST: 0,
   };
 
   const weights: AnchorEventLandingVariantRatioOverride = {
     FORM: variantRatioOverride.FORM,
     CARD_RICH: variantRatioOverride.CARD_RICH,
+    LIST: variantRatioOverride.LIST,
   };
 
-  if (weights.FORM + weights.CARD_RICH <= 0) {
+  if (weights.FORM + weights.CARD_RICH + weights.LIST <= 0) {
     return {
       FORM: 1,
       CARD_RICH: 0,
+      LIST: 0,
     };
   }
 
@@ -167,13 +177,33 @@ export const assignAnchorEventLandingModeFromConfig = (
   randomValue = Math.random(),
 ): AnchorEventLandingMode => {
   const weights = resolveVariantWeights(config);
-  const totalWeight = weights.FORM + weights.CARD_RICH;
+  const totalWeight = weights.FORM + weights.CARD_RICH + weights.LIST;
   if (totalWeight <= 0) {
     return "FORM";
   }
 
   const resolvedRandomValue = Math.min(Math.max(randomValue, 0), 1);
-  const formThreshold = weights.FORM / totalWeight;
+  const weightedModes: Array<{
+    mode: AnchorEventLandingMode;
+    weight: number;
+  }> = [
+    { mode: "FORM", weight: weights.FORM },
+    { mode: "CARD_RICH", weight: weights.CARD_RICH },
+    { mode: "LIST", weight: weights.LIST },
+  ];
+  let cumulativeWeight = 0;
 
-  return resolvedRandomValue < formThreshold ? "FORM" : "CARD_RICH";
+  let lastPositiveMode: AnchorEventLandingMode = "FORM";
+
+  for (const entry of weightedModes) {
+    if (entry.weight > 0) {
+      lastPositiveMode = entry.mode;
+    }
+    cumulativeWeight += entry.weight;
+    if (resolvedRandomValue < cumulativeWeight / totalWeight) {
+      return entry.mode;
+    }
+  }
+
+  return lastPositiveMode;
 };

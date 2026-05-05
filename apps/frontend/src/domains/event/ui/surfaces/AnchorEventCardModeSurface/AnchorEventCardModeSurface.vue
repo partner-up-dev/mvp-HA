@@ -10,7 +10,13 @@
     </router-link>
   </div>
 
-  <div v-else-if="resolvedActiveDemandCard" class="card-mode" data-region="pr-list">
+  <div
+    v-else-if="resolvedActiveDemandCard"
+    class="card-mode"
+    data-region="pr-list"
+    data-testid="anchor-event-card-mode.surface"
+    data-mode-state="active"
+  >
     <div class="card-stage">
       <div class="card-stage__label-rail" aria-hidden="true">
         <span
@@ -132,7 +138,12 @@
     </p>
   </div>
 
-  <div v-else class="card-empty-stack">
+  <div
+    v-else
+    class="card-empty-stack"
+    data-testid="anchor-event-card-mode.surface"
+    data-mode-state="empty"
+  >
     <div class="card-empty">
       <p class="card-empty__title">
         {{ cardEmptyTitle }}

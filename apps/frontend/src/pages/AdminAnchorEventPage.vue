@@ -436,6 +436,17 @@
                     min="0"
                   />
                 </label>
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminAnchorEvents.listRatioLabel")
+                  }}</span>
+                  <input
+                    v-model.number="landingConfigForm.listRatio"
+                    class="field-input"
+                    type="number"
+                    min="0"
+                  />
+                </label>
               </div>
 
               <label class="field">
@@ -702,6 +713,7 @@ type EventForm = {
 type LandingConfigForm = {
   formRatio: number;
   cardRichRatio: number;
+  listRatio: number;
   assignmentRevision: number;
 };
 
@@ -747,6 +759,7 @@ const emptyEventForm = (): EventForm => ({
 const emptyLandingConfigForm = (): LandingConfigForm => ({
   formRatio: 50,
   cardRichRatio: 50,
+  listRatio: 0,
   assignmentRevision: 1,
 });
 
@@ -849,6 +862,7 @@ const toLandingConfigForm = (
 ): LandingConfigForm => ({
   formRatio: config.variantRatioOverride?.FORM ?? 50,
   cardRichRatio: config.variantRatioOverride?.CARD_RICH ?? 50,
+  listRatio: config.variantRatioOverride?.LIST ?? 0,
   assignmentRevision: config.assignmentRevision,
 });
 
@@ -1140,6 +1154,9 @@ const landingConfigValidationMessage = computed(() => {
   const cardRichRatio = normalizeNullableNonNegativeInteger(
     landingConfigForm.value.cardRichRatio,
   );
+  const listRatio = normalizeNullableNonNegativeInteger(
+    landingConfigForm.value.listRatio,
+  );
   const assignmentRevision = normalizeNullableNonNegativeInteger(
     landingConfigForm.value.assignmentRevision,
   );
@@ -1148,11 +1165,11 @@ const landingConfigValidationMessage = computed(() => {
     return t("adminAnchorEvents.assignmentRevisionValidation");
   }
 
-  if (formRatio === null || cardRichRatio === null) {
+  if (formRatio === null || cardRichRatio === null || listRatio === null) {
     return t("adminAnchorEvents.landingRatioValidation");
   }
 
-  if (formRatio + cardRichRatio !== 100) {
+  if (formRatio + cardRichRatio + listRatio !== 100) {
     return t("adminAnchorEvents.landingRatioValidation");
   }
 
@@ -1328,6 +1345,8 @@ const handleSaveLandingConfig = async () => {
     normalizeNullableNonNegativeInteger(landingConfigForm.value.formRatio) ?? 100;
   const cardRichRatio =
     normalizeNullableNonNegativeInteger(landingConfigForm.value.cardRichRatio) ?? 0;
+  const listRatio =
+    normalizeNullableNonNegativeInteger(landingConfigForm.value.listRatio) ?? 0;
   const assignmentRevision =
     normalizeNullableNonNegativeInteger(
       landingConfigForm.value.assignmentRevision,
@@ -1340,6 +1359,7 @@ const handleSaveLandingConfig = async () => {
         variantRatioOverride: {
           FORM: formRatio,
           CARD_RICH: cardRichRatio,
+          LIST: listRatio,
         },
         assignmentRevision,
       },

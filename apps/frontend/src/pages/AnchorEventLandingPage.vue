@@ -2,6 +2,7 @@
   <FooterRevealPageScaffold
     class="anchor-event-landing-page"
     data-page="event-landing"
+    data-testid="anchor-event-landing.page"
     :content-placement="pageStatePlacement"
   >
     <template #header>
@@ -44,6 +45,11 @@
       ref="formModeSurfaceRef"
       :event-id="eventId"
       @result-state-change="formModeResultState = $event"
+    />
+
+    <AnchorEventListModeSurface
+      v-else-if="resolvedMode === 'LIST' && eventId !== null"
+      :event-id="eventId"
     />
 
     <template v-else-if="detail">
@@ -113,6 +119,7 @@ import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
 import AnchorEventCardModeSurface from "@/domains/event/ui/surfaces/AnchorEventCardModeSurface/AnchorEventCardModeSurface.vue";
 import AnchorEventFormModeSurface from "@/domains/event/ui/surfaces/AnchorEventFormModeSurface.vue";
+import AnchorEventListModeSurface from "@/domains/event/ui/surfaces/AnchorEventListModeSurface.vue";
 import OfficialAccountFollowNudge from "@/domains/marketing/ui/OfficialAccountFollowNudge.vue";
 import { useAnchorEventDetail } from "@/domains/event/queries/useAnchorEventDetail";
 import { useAnchorEventDemandCards } from "@/domains/event/queries/useAnchorEventDemandCards";
@@ -219,6 +226,10 @@ const isLoading = computed(() => {
 
   if (resolvedMode.value === "CARD_RICH") {
     return isDetailLoading.value || isDemandCardsLoading.value;
+  }
+
+  if (resolvedMode.value === "LIST") {
+    return isDetailLoading.value;
   }
 
   return false;

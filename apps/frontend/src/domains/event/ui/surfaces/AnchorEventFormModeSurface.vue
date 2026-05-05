@@ -1,5 +1,5 @@
 <template>
-  <section class="anchor-event-form-mode">
+  <section class="anchor-event-form-mode" data-testid="anchor-event-form-mode.surface">
     <LoadingIndicator
       v-if="formModeQuery.isLoading.value"
       :message="t('common.loading')"

@@ -116,7 +116,7 @@ Important coordination note:
 - The frontend PR join flow is owned by a reusable PR-domain flow component. PR detail, Form Mode matched handoff, Form Mode no-match candidate actions, and waitlist entry provide their own button controls through slots while sharing join-gate resolution, command execution, auth payload application, and post-command notification prompts.
 - `DELETE /api/admin/prs/:id` is an admin-only hard-delete command for one PR. Backend deletes the `partner_requests` root row and relies on PR-owned cascade constraints to remove Partner rows, PR support resources, messages, booking support rows, and notification records. Frontend must show an explicit destructive confirmation before sending this command and refresh Admin PR workspace caches after success.
 - `/events/search` is a PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
-- `/e/:eventId` is the ad-scan-first Anchor Event landing entry; it may render `FORM` or `CARD_RICH` mode while `/events/:eventId` keeps the existing rich page responsibility
+- `/e/:eventId` is the ad-scan-first Anchor Event landing entry; it may render `FORM`, `CARD_RICH`, or `LIST` mode while `/events/:eventId` keeps the existing rich page responsibility
 - `/events/:eventId` and `/e/:eventId` may trigger the official-account follow nudge after 3 seconds when the follow-status contract returns `UNKNOWN` or is unavailable and the local cooldown admits another prompt.
 - `/e/:eventId` owns the Form Mode selection state, no-match candidate result state, and zero-candidate assisted-create handoff in one route-level state machine.
 - `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative display policy, so frontend should treat it as opaque instead of hardcoded ranking truth; it does not own PR search results
@@ -135,6 +135,7 @@ Important coordination note:
 - `GET /api/pr/search` is the PR search read contract; it queries by active `Anchor Event` id plus repeated local-date values and returns matching visible actionable PR candidates under that event's current activity type and time-pool rules
 - if PR search has exactly one result, frontend may replace-route to `/pr/:id` while avoiding a browser-back auto-redirect loop
 - `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`
+- `/e/:eventId` `LIST` landing mode renders the event-domain List Mode surface and follows the same date grouping, PR visibility, event-assisted create, beta-group, and other-event browsing semantics as `/events/:eventId` list view
 - that `mode` query is a frontend route-state hint for initial rendering only in the current version; switching modes in-page does not rewrite the URL, and `spm` remains attribution-only rather than a UI-mode switch
 - frontend stabilizes `/e/:eventId` landing mode through local storage keyed by `eventId + assignmentRevision`; timeout fallback enters `FORM`
 - `/pr/:id` participant roster UI should use the existing `/pr/:id/partners/:partnerId` profile route for participant-badge navigation rather than introducing a second profile-route family
@@ -165,7 +166,7 @@ Important coordination note:
 - Backend exposes build metadata through `/api/meta/build`.
 - Frontend relies on those endpoints to avoid hardcoding operationally managed values.
 - Event-specific beta-group QR codes are not public config values; they are Anchor Event fields and flow through the Anchor Event read and admin contracts.
-- Event-owned landing rollout config is persisted through the infra `config` table while Anchor Event owns the namespace, payload schema, parse / serialize rules, and admin contract. Product-side rollout control is expressed through landing ratio override plus assignment revision; `CARD_RICH` ratio `0` means pure `FORM` rollout.
+- Event-owned landing rollout config is persisted through the infra `config` table while Anchor Event owns the namespace, payload schema, parse / serialize rules, and admin contract. Product-side rollout control is expressed through per-mode landing ratio override plus assignment revision; modes with ratio `0` are excluded from weighted assignment, and an all-zero override resolves to `FORM`.
 - Admin edits event-owned landing rollout config through `GET /api/admin/events/:eventId/landing-config` and `PUT /api/admin/events/:eventId/landing-config`.
 - Event-owned preset preference tags and their moderation state are persisted through dedicated Anchor Event tables instead of config blobs; admin reads them through `GET /api/admin/events/:eventId/preference-tags`, replaces published tags through `PUT /api/admin/events/:eventId/preference-tags/published`, and moderates pending tags through `POST /api/admin/events/:eventId/preference-tags/:tagId/publish|reject`.
 - Admin edits Anchor Event time-window description copy through `timePoolConfig.startRules[].description`; the admin workspace preview returns the materialized description for each generated time window.
@@ -219,3 +220,13 @@ Important coordination note:
 - Rules that affect eligibility, status, timing, or identity must coordinate through backend-owned contracts; frontend may optimize UX and does not invent new domain truth.
 - Best-effort outbox and job processing may complete after the initiating API response, so frontend must not assume all downstream side effects have already happened unless the API contract says so.
 - Unsupported browser capabilities and auth or config gaps surface through backend status and code plus frontend fallback UX rather than through separate frontend-owned policy logic.
+
+## 12. System Scenario Verification Contract
+
+- Root-owned system scenario tests live under `tests/scenario/`.
+- System scenarios verify user journeys through a real browser page, real frontend dev server, real backend HTTP server, and isolated Postgres state.
+- Scenario `Given` setup may reuse backend scenario builders when they express the target business state without browser setup noise.
+- Scenario `When` and minimal user-visible `Then` assertions should operate through the browser page.
+- Backend probes are reserved for persistence or hidden side-effect proof that is not observable through the frontend workflow result.
+- Frontend routes that participate in system scenarios should expose stable `data-testid` semantic nodes for primary actions, modal actions, and result-state affordances.
+- `data-testid` names should follow route and workflow meaning, for example `pr-detail.join.open`, and action nodes should live on the real interactive element.

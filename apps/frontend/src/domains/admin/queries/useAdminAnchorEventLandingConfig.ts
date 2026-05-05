@@ -24,6 +24,7 @@ export type AdminAnchorEventLandingConfigInput = {
   variantRatioOverride: {
     FORM: number;
     CARD_RICH: number;
+    LIST: number;
   } | null;
   assignmentRevision: number;
 };

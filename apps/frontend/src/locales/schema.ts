@@ -1119,6 +1119,7 @@ export interface MessageSchema {
     selectEventForLandingConfigHint: string;
     formRatioLabel: string;
     cardRichRatioLabel: string;
+    listRatioLabel: string;
     assignmentRevisionLabel: string;
     landingFallbackHint: string;
     landingRatioValidation: string;
