@@ -15,6 +15,7 @@ import {
   type ScenarioPartnerRequest,
 } from "./_kit/builders/partner-requests";
 import {
+  givenAnonymousUser,
   givenAdminUser,
   givenUser,
   type ScenarioUser,
@@ -28,9 +29,42 @@ import {
   prBookingContacts,
   prJoinNoticeAcceptances,
   prSupportResources,
+  type PartnerRequestFields,
+  type PRId,
+  type PRStatus,
 } from "../../src/entities";
 import type { PartnerStatus } from "../../src/entities/partner";
 import { and, desc, eq, sql } from "drizzle-orm";
+
+type AuthSessionResponse = {
+  role: "anonymous" | "authenticated" | "service";
+  userId: string | null;
+  accessToken: string;
+};
+
+type CreateDraftPRResponse = {
+  id: PRId;
+  createdBy: string | null;
+  status: PRStatus;
+  canonicalPath: string;
+};
+
+type PublishDraftPRResponse = {
+  id: PRId;
+  pr: {
+    status: PRStatus;
+    createdBy: string | null;
+    partners: number[];
+  };
+  auth: AuthSessionResponse;
+};
+
+type DraftContentUpdateResponse = {
+  id: PRId;
+  status: PRStatus;
+  title?: string;
+  createdBy: string | null;
+};
 
 type JoinGateProjectionResponse = {
   gates: Array<{
@@ -62,6 +96,50 @@ type WaitlistDetailResponse = {
     };
   };
 };
+
+let draftFieldsSequence = 0;
+
+function buildScenarioFields(title: string): PartnerRequestFields {
+  const sequence = draftFieldsSequence++;
+  const day = String(10 + Math.floor(sequence / 8)).padStart(2, "0");
+  const startHour = String(8 + (sequence % 8)).padStart(2, "0");
+  const endHour = String(9 + (sequence % 8)).padStart(2, "0");
+
+  return {
+    title,
+    type: "badminton",
+    time: [
+      `2031-01-${day}T${startHour}:00:00.000Z`,
+      `2031-01-${day}T${endHour}:00:00.000Z`,
+    ],
+    location: `Scenario Court ${sequence}`,
+    minPartners: 2,
+    maxPartners: null,
+    partners: [],
+    budget: null,
+    preferences: [],
+    notes: null,
+  };
+}
+
+async function createDraftPartnerRequest(input: {
+  creator: ScenarioUser;
+  title: string;
+}): Promise<ScenarioPartnerRequest> {
+  const response = await requestJson("/api/pr/new/form", {
+    method: "POST",
+    token: input.creator.token,
+    body: {
+      fields: buildScenarioFields(input.title),
+      createSource: "FORM",
+    },
+  });
+  const body = await expectJsonResponse<CreateDraftPRResponse>(response, 201);
+  assert.equal(body.status, "DRAFT");
+  assert.equal(body.createdBy, null);
+
+  return { id: body.id };
+}
 
 async function waitlistPartnerRequest(input: {
   pr: ScenarioPartnerRequest;
@@ -150,6 +228,123 @@ async function expectPendingWaitlistCount(
     .where(and(eq(partners.prId, pr.id), eq(partners.status, "PENDING")));
   assert.equal(pendingSlots[0]?.count ?? 0, expected);
 }
+
+scenario("anonymous_uuid_restores_session", async (ctx) => {
+  const anonymous = await givenAnonymousUser("session-restore");
+  ctx.record("anonymousUserId", anonymous.user.id);
+
+  const session = await expectJsonResponse<AuthSessionResponse>(
+    await requestJson("/api/auth/session", {
+      method: "POST",
+      body: {
+        userId: anonymous.user.id,
+      },
+    }),
+    200,
+  );
+
+  assert.equal(session.role, "anonymous");
+  assert.equal(session.userId, anonymous.user.id);
+  assert.ok(session.accessToken.length > 0);
+});
+
+scenario("anonymous_publish_draft_requires_authenticated_user", async (ctx) => {
+  const anonymous = await givenAnonymousUser("draft-publisher");
+  const pr = await createDraftPartnerRequest({
+    creator: anonymous,
+    title: "Scenario draft publish auth required",
+  });
+  ctx.record("anonymousUserId", anonymous.user.id);
+  ctx.record("prId", pr.id);
+
+  const response = await requestJson(`/api/pr/${pr.id}/publish`, {
+    method: "POST",
+    token: anonymous.token,
+  });
+  assert.match(
+    response.headers.get("content-type") ?? "",
+    /^application\/problem\+json/,
+  );
+  const body = await expectJsonResponse<ProblemDetailsResponse>(response, 403);
+  assert.equal(body.code, "AUTHENTICATED_REQUIRED");
+});
+
+scenario("authenticated_user_publish_claims_creatorless_draft", async (ctx) => {
+  const anonymous = await givenAnonymousUser("draft-author");
+  const publisher = await givenUser("draft-publisher");
+  const pr = await createDraftPartnerRequest({
+    creator: anonymous,
+    title: "Scenario authenticated draft publish",
+  });
+  ctx.record("anonymousUserId", anonymous.user.id);
+  ctx.record("publisherUserId", publisher.user.id);
+  ctx.record("prId", pr.id);
+
+  const result = await expectJsonResponse<PublishDraftPRResponse>(
+    await requestJson(`/api/pr/${pr.id}/publish`, {
+      method: "POST",
+      token: publisher.token,
+    }),
+    200,
+  );
+
+  assert.equal(result.id, pr.id);
+  assert.equal(result.pr.createdBy, publisher.user.id);
+  assert.equal(result.pr.status, "OPEN");
+  assert.equal(result.auth.role, "authenticated");
+  assert.equal(result.auth.userId, publisher.user.id);
+  await expectActiveParticipantsInclude(pr, [publisher.user.id]);
+
+  const db = getTestDb();
+  const [stored] = await db
+    .select({
+      createdBy: partnerRequests.createdBy,
+      status: partnerRequests.status,
+    })
+    .from(partnerRequests)
+    .where(eq(partnerRequests.id, pr.id));
+  assert.equal(stored?.createdBy, publisher.user.id);
+  assert.equal(stored?.status, "OPEN");
+});
+
+scenario("anonymous_user_can_edit_creatorless_draft_content", async (ctx) => {
+  const draftAuthor = await givenAnonymousUser("draft-content-author");
+  const editor = await givenAnonymousUser("draft-content-editor");
+  const pr = await createDraftPartnerRequest({
+    creator: draftAuthor,
+    title: "Scenario draft content initial",
+  });
+  const updatedFields = buildScenarioFields("Scenario draft content updated");
+  ctx.record("draftAuthorUserId", draftAuthor.user.id);
+  ctx.record("editorUserId", editor.user.id);
+  ctx.record("prId", pr.id);
+
+  const result = await expectJsonResponse<DraftContentUpdateResponse>(
+    await requestJson(`/api/pr/${pr.id}/content`, {
+      method: "PATCH",
+      token: editor.token,
+      body: {
+        fields: updatedFields,
+      },
+    }),
+    200,
+  );
+
+  assert.equal(result.status, "DRAFT");
+  assert.equal(result.title, updatedFields.title);
+  assert.equal(result.createdBy, null);
+
+  const db = getTestDb();
+  const [stored] = await db
+    .select({
+      title: partnerRequests.title,
+      createdBy: partnerRequests.createdBy,
+    })
+    .from(partnerRequests)
+    .where(eq(partnerRequests.id, pr.id));
+  assert.equal(stored?.title, updatedFields.title);
+  assert.equal(stored?.createdBy, null);
+});
 
 scenario("open_pr_join_reaches_ready", async (ctx) => {
   // Comprehension coverage:

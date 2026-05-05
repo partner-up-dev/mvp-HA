@@ -1,12 +1,11 @@
 export type SessionRole = "anonymous" | "authenticated" | "service";
 
 const STORAGE_USER_ID_KEY = "partner_up_user_id";
-const STORAGE_USER_PIN_KEY = "partner_up_user_pin";
 const STORAGE_ACCESS_TOKEN_KEY = "partner_up_access_token";
 const STORAGE_SESSION_ROLE_KEY = "partner_up_session_role";
+const LEGACY_STORAGE_USER_PIN_KEY = "partner_up_user_pin";
 
 let memoryUserId: string | null = null;
-let memoryUserPin: string | null = null;
 let memoryAccessToken: string | null = null;
 let memoryRole: SessionRole = "anonymous";
 
@@ -39,6 +38,7 @@ const writeStorage = (key: string, value: string | null): void => {
 };
 
 export const getStoredUserId = (): string | null => {
+  writeStorage(LEGACY_STORAGE_USER_PIN_KEY, null);
   if (typeof window === "undefined") {
     return memoryUserId;
   }
@@ -47,19 +47,8 @@ export const getStoredUserId = (): string | null => {
 
 export const setStoredUserId = (userId: string | null): void => {
   memoryUserId = userId;
+  writeStorage(LEGACY_STORAGE_USER_PIN_KEY, null);
   writeStorage(STORAGE_USER_ID_KEY, userId);
-};
-
-export const getStoredUserPin = (): string | null => {
-  if (typeof window === "undefined") {
-    return memoryUserPin;
-  }
-  return readStorage(STORAGE_USER_PIN_KEY);
-};
-
-export const setStoredUserPin = (userPin: string | null): void => {
-  memoryUserPin = userPin;
-  writeStorage(STORAGE_USER_PIN_KEY, userPin);
 };
 
 export const getStoredAccessToken = (): string | null => {
@@ -99,12 +88,11 @@ export const setStoredSessionRole = (role: SessionRole): void => {
 
 export const clearStoredSession = (): void => {
   memoryUserId = null;
-  memoryUserPin = null;
   memoryAccessToken = null;
   memoryRole = "anonymous";
 
   writeStorage(STORAGE_USER_ID_KEY, null);
-  writeStorage(STORAGE_USER_PIN_KEY, null);
   writeStorage(STORAGE_ACCESS_TOKEN_KEY, null);
   writeStorage(STORAGE_SESSION_ROLE_KEY, null);
+  writeStorage(LEGACY_STORAGE_USER_PIN_KEY, null);
 };

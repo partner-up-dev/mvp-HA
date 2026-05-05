@@ -35,13 +35,11 @@ type PRCheckInInput = {
 type PRUpdateContentInput = {
   id: PRId;
   fields: PRFormFields;
-  pin?: string;
 };
 
 type PRUpdateStatusInput = {
   id: PRId;
   status: PRStatusManual;
-  pin?: string;
 };
 
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
@@ -389,10 +387,10 @@ export const useUpdatePRContent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, fields, pin }: PRUpdateContentInput) => {
+    mutationFn: async ({ id, fields }: PRUpdateContentInput) => {
       const res = await client.api.pr[":id"].content.$patch({
         param: { id: id.toString() },
-        json: pin ? { fields, pin } : { fields },
+        json: { fields },
       });
 
       if (!res.ok) {
@@ -420,10 +418,10 @@ export const useUpdatePRStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status, pin }: PRUpdateStatusInput) => {
+    mutationFn: async ({ id, status }: PRUpdateStatusInput) => {
       const res = await client.api.pr[":id"].status.$patch({
         param: { id: id.toString() },
-        json: pin ? { status, pin } : { status },
+        json: { status },
       });
 
       if (!res.ok) {

@@ -92,14 +92,14 @@
 ## 4. Identity And Authentication Rules
 
 - Browsing does not require upfront login.
-- PR join and exit support local account plus PIN.
-- Actions that require stronger identity guarantees use an authenticated local session plus a bound WeChat `openid`.
+- Anonymous UUID continuity supports revisit without an upfront login gate.
+- Actions that require stronger identity guarantees use an authenticated session plus a bound WeChat `openid`.
 - Identity should support collaboration instead of becoming the initial gate for every path.
 
 ### User Relationship Progression
 
 1. anonymous browse
-2. local account creation or recovery
+2. anonymous UUID session recovery
 3. authenticated session continuity
 4. optional WeChat binding
 5. participation in actions that require stronger identity guarantees

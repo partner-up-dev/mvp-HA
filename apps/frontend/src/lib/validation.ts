@@ -7,10 +7,6 @@ const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
 const isoDateOrDateTimeSchema = z.union([isoDateTimeSchema, isoDateSchema]);
 
-export const pinSchema = z
-  .string()
-  .regex(/^\d{4}$/, i18n.global.t("validation.pinMustBeFourDigits"));
-
 const MIN_MANUAL_PARTNERS = 1;
 const MIN_PRESENT_MAX_PARTNERS = 2;
 

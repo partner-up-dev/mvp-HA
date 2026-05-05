@@ -2,7 +2,7 @@
 
 ## 1. PartnerRequest Core x Identity And Session
 
-- PR publish, join, and exit support local account plus PIN.
+- PR revisit and anonymous continuity use UUID-backed anonymous sessions.
 - PR actions that require stronger identity guarantees depend on authenticated session plus WeChat binding.
 - Identity is not an independent endpoint. It exists to support the collaboration path.
 

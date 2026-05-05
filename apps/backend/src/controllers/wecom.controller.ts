@@ -291,6 +291,7 @@ export const wecomRoute = app
         nowWeekday,
         {
           authenticatedUserId: null,
+          anonymousUserId: null,
           oauthOpenId: null,
         },
       );
@@ -301,7 +302,7 @@ export const wecomRoute = app
       }
 
       const shareUrl = `${normalizeFrontendUrl(frontendUrl)}/cpr/${id}`;
-      const reply = `搭子请求草稿已创建：${shareUrl}\n打开链接发布后会生成你的用户 PIN。`;
+      const reply = `搭子请求草稿已创建：${shareUrl}\n打开链接并完成微信登录后即可发布。`;
 
       await wecomService.sendTextMessage({
         toUser: fromUser,

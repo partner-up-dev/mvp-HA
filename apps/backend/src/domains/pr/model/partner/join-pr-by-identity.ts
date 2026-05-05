@@ -2,11 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import type { PRId } from "../../../../entities/partner-request";
 import type { User, UserId } from "../../../../entities/user";
 import { UserRepository } from "../../../../repositories/UserRepository";
-import {
-  createLocalUserWithGeneratedPin,
-  ensureUserHasPin,
-  resolveUserByOpenId,
-} from "../../../user";
+import { resolveUserByOpenId } from "../../../user";
 import { joinPRAsUser } from "../../../pr-core/use-cases/join-pr";
 import { waitlistPRAsUser } from "../../../pr-core/use-cases/waitlist-pr";
 import type { PublicPR } from "../../read-models/public-pr-view.service";
@@ -15,50 +11,56 @@ const userRepo = new UserRepository();
 
 export type PRParticipantIdentityInput = {
   authenticatedUserId: UserId | null;
+  anonymousUserId: UserId | null;
   oauthOpenId: string | null;
 };
 
 export type JoinPRByIdentityResult = {
   pr: PublicPR;
   userId: UserId;
-  generatedUserPin: string | null;
 };
 
 export type WaitlistPRByIdentityResult = {
   pr: PublicPR;
   userId: UserId;
-  generatedUserPin: string | null;
 };
 
 export const resolvePRParticipantUser = async (
   input: PRParticipantIdentityInput,
-): Promise<{ user: User; generatedUserPin: string | null }> => {
+): Promise<{ user: User }> => {
   if (input.authenticatedUserId) {
     const user = await userRepo.findById(input.authenticatedUserId);
-    if (!user) {
+    if (!user || user.status !== "ACTIVE") {
       throw new HTTPException(401, { message: "Invalid authenticated user" });
     }
 
-    const ensured = await ensureUserHasPin(user);
     return {
-      user: ensured.user,
-      generatedUserPin: ensured.userPin,
+      user,
     };
   }
 
   if (input.oauthOpenId) {
     const user = await resolveUserByOpenId(input.oauthOpenId);
-    const ensured = await ensureUserHasPin(user);
     return {
-      user: ensured.user,
-      generatedUserPin: ensured.userPin,
+      user,
     };
   }
 
-  const local = await createLocalUserWithGeneratedPin();
+  if (!input.anonymousUserId) {
+    throw new HTTPException(401, { message: "Session required" });
+  }
+
+  const anonymous = await userRepo.findById(input.anonymousUserId);
+  if (
+    !anonymous ||
+    anonymous.status !== "ACTIVE" ||
+    anonymous.role !== "anonymous"
+  ) {
+    throw new HTTPException(401, { message: "Invalid anonymous user session" });
+  }
+
   return {
-    user: local.user,
-    generatedUserPin: local.userPin,
+    user: anonymous,
   };
 };
 
@@ -77,7 +79,6 @@ export async function joinPRByIdentity(
   return {
     pr,
     userId: participant.user.id,
-    generatedUserPin: participant.generatedUserPin,
   };
 }
 
@@ -91,6 +92,5 @@ export async function waitlistPRByIdentity(
   return {
     pr,
     userId: participant.user.id,
-    generatedUserPin: participant.generatedUserPin,
   };
 }

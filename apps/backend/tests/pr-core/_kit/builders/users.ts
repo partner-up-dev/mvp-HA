@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
+  issueAnonymousAuth,
   issueAuthForUser,
   issueUserAuth,
 } from "../../../../src/auth/middleware";
@@ -28,6 +29,26 @@ export async function givenUser(label: string): Promise<ScenarioUser> {
   return {
     user,
     token: issueUserAuth(user.id).token,
+  };
+}
+
+export async function givenAnonymousUser(
+  label: string,
+): Promise<ScenarioUser> {
+  const user = await userRepo.create({
+    id: randomUUID(),
+    role: "anonymous",
+    nickname: `scenario-anonymous-${label}`,
+    status: "ACTIVE",
+  });
+
+  if (!user) {
+    throw new Error(`Failed to create scenario anonymous user: ${label}`);
+  }
+
+  return {
+    user,
+    token: issueAnonymousAuth(user.id).token,
   };
 }
 

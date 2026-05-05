@@ -31,7 +31,10 @@ Contract implication:
 
 ## 3. Session Contract
 
-- Frontend stores local user and admin access tokens in browser storage.
+- Frontend stores user and admin access tokens in browser storage.
+- Frontend stores the anonymous user UUID in localStorage and sends it to session bootstrap so the backend can restore anonymous visitor continuity.
+- Anonymous and authenticated user sessions both use `Authorization: Bearer <JWT>` transport.
+- Backend distinguishes anonymous, authenticated, and service sessions from JWT role claims plus current persisted user state.
 - Backend may rotate tokens through the `x-access-token` response header.
 - Frontend must preserve `credentials: "include"` on flows that rely on cookie-backed session state, especially WeChat OAuth, OAuth handoff, and bind paths.
 - Admin and user sessions are separate client contexts.
@@ -95,6 +98,8 @@ Important coordination note:
 - backend resolves create result state from the caller's auth context:
   - authenticated create persists and publishes in one command path
   - anonymous create persists `DRAFT` and returns that draft id for later authenticated publish
+- `POST /api/pr/:id/publish` requires an authenticated user. Anonymous calls return stable code `AUTHENTICATED_REQUIRED`, and frontend should record the pending publish action before starting WeChat login.
+- `DRAFT` content edits are open to any current session. Published PR content and status mutations remain governed by creator session authorization.
 - Anchor Event assisted create prepares the same PR-owned structured payload and submits `POST /api/pr/new/form`
 - event-assisted create carries transient create source or event referral through command context, while persisted PR state remains the same PR-owned field set used by structured create
 - event-assisted create targets direct `OPEN` creation and therefore requires an authenticated account

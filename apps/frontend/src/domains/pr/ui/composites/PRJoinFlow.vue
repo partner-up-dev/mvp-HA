@@ -222,7 +222,7 @@ const applyAuthPayloadFromResult = async (result: unknown): Promise<void> => {
   if (authPayload) {
     userSessionStore.applyAuthSession(authPayload);
   }
-  if (authPayload?.userPin && props.writeJoinEntryOnAuth) {
+  if (authPayload && props.writeJoinEntryOnAuth) {
     await router.replace({
       query: {
         ...route.query,

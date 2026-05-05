@@ -353,11 +353,6 @@ export interface MessageSchema {
       action: string;
       pending: string;
     };
-    pinHelp: {
-      title: string;
-      description: string;
-      currentPin: string;
-    };
     eventAssistedCreateHandoff: {
       title: string;
       description: string;
@@ -737,11 +732,6 @@ export interface MessageSchema {
     title: string;
     description: string;
     loading: string;
-    register: {
-      title: string;
-      action: string;
-      pending: string;
-    };
     profile: {
       title: string;
       description: string;
@@ -775,17 +765,6 @@ export interface MessageSchema {
       action: string;
       pending: string;
     };
-    pinLogin: {
-      title: string;
-      description: string;
-      userIdLabel: string;
-      userIdPlaceholder: string;
-      pinLabel: string;
-      pinPlaceholder: string;
-      pinFormatHint: string;
-      action: string;
-      pending: string;
-    };
     reminder: {
       title: string;
       authHint: string;
@@ -797,11 +776,7 @@ export interface MessageSchema {
       title: string;
       description: string;
       userIdLabel: string;
-      userPinLabel: string;
       missingUserId: string;
-      missingUserPin: string;
-      showPin: string;
-      hidePin: string;
     };
     history: {
       title: string;
@@ -878,7 +853,6 @@ export interface MessageSchema {
   };
   modifyStatusModal: {
     title: string;
-    pinLabel: string;
     confirmAction: string;
     updateFailed: string;
   };
@@ -939,13 +913,6 @@ export interface MessageSchema {
   prInput: {
     label: string;
     placeholder: string;
-  };
-  pinInput: {
-    label: string;
-    hint: string;
-    placeholder: string;
-    regenerateTitle: string;
-    info: string;
   };
   nlForm: {
     submit: string;
@@ -1383,7 +1350,6 @@ export interface MessageSchema {
     booleanNo: string;
   };
   validation: {
-    pinMustBeFourDigits: string;
     typeRequired: string;
     naturalLanguageRequired: string;
     naturalLanguageWordLimit: string;
@@ -1434,8 +1400,6 @@ export interface MessageSchema {
     updateCurrentUserProfileFailed: string;
     updateCurrentUserAvatarFailed: string;
     startWechatBindFailed: string;
-    loginWithPinFailed: string;
-    registerLocalAccountFailed: string;
   };
   posterStyles: {
     fresh: string;

@@ -36,7 +36,7 @@ import { PartnerRequestRepository } from "../repositories/PartnerRequestReposito
 import {
   anchorUpdateContentSchema,
   buildCreatorIdentity,
-  getAuthenticatedUserId,
+  getSessionUserId,
   issueAuthPayload,
   nlWordCountSchema,
   prMessageCreateSchema,
@@ -45,7 +45,6 @@ import {
   prPartnerProfileParamSchema,
   requireAnchorAuthenticatedIdentity,
   requireAuthenticatedOpenId,
-  requireAuthenticatedUserId,
   requireSessionUserId,
   resolveAvatarUrl,
   tryReadAnchorAuthenticatedIdentity,
@@ -147,6 +146,7 @@ export const partnerRequestRoute = app
               const identity = await requireAnchorAuthenticatedIdentity(c);
               return {
                 authenticatedUserId: identity.userId,
+                anonymousUserId: null,
                 oauthOpenId: identity.openId,
               };
             })()
@@ -183,7 +183,7 @@ export const partnerRequestRoute = app
     await getPROr404(id);
     const creatorIdentity = await buildCreatorIdentity(c);
     const result = await publishPR(id, creatorIdentity);
-    const auth = issueAuthPayload(c, result.createdBy, result.generatedUserPin);
+    const auth = await issueAuthPayload(c, result.createdBy);
 
     return c.json({
       id: result.pr.id,
@@ -192,12 +192,12 @@ export const partnerRequestRoute = app
     });
   })
   .get("/mine/created", async (c) => {
-    const userId = requireAuthenticatedUserId(c);
+    const userId = requireSessionUserId(c);
     const items = await getMyCreatedPRs(userId);
     return c.json(items);
   })
   .get("/mine/joined", async (c) => {
-    const userId = requireAuthenticatedUserId(c);
+    const userId = requireSessionUserId(c);
     const items = await getMyJoinedPRs(userId);
     return c.json(items);
   })
@@ -271,7 +271,7 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       await getPROr404(id);
-      const result = await getPRBookingSupport(id, getAuthenticatedUserId(c));
+      const result = await getPRBookingSupport(id, getSessionUserId(c));
       return c.json(result);
     },
   )
@@ -306,7 +306,7 @@ export const partnerRequestRoute = app
   .get("/:id/join-gates", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);
-    const userId = getAuthenticatedUserId(c);
+    const userId = getSessionUserId(c);
     const result = await getPRJoinGateProjection({
       prId: id,
       viewerUserId: userId,
@@ -329,11 +329,7 @@ export const partnerRequestRoute = app
         viewerUserId: participant.user.id,
         payload,
       });
-      const auth = issueAuthPayload(
-        c,
-        participant.user.id,
-        participant.generatedUserPin,
-      );
+      const auth = await issueAuthPayload(c, participant.user.id);
       return c.json({
         ...result,
         auth,
@@ -347,14 +343,13 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       await getPROr404(id);
-      const { status, pin } = c.req.valid("json");
+      const { status } = c.req.valid("json");
       const auth = c.get("auth");
 
       const creatorAuth = await authorizeCreatorMutation(
         id,
         auth,
         "status",
-        pin,
       );
 
       if (creatorAuth.request.status === "DRAFT") {
@@ -363,21 +358,10 @@ export const partnerRequestRoute = app
         });
       }
 
-      if (creatorAuth.upgradedAuth) {
-        c.set("auth", creatorAuth.upgradedAuth);
-      }
-
       const result = await updatePRStatus(id, status, creatorAuth.actorUserId);
       return c.json({
         ...result,
-        auth: creatorAuth.upgradedAuth
-          ? {
-              role: creatorAuth.upgradedAuth.role,
-              userId: creatorAuth.upgradedAuth.userId,
-              userPin: pin ?? null,
-              accessToken: creatorAuth.upgradedAuth.token,
-            }
-          : null,
+        auth: null,
       });
     },
   )
@@ -395,11 +379,7 @@ export const partnerRequestRoute = app
         id,
         auth,
         "content",
-        "pin" in payload ? payload.pin : undefined,
       );
-      if (creatorAuth.upgradedAuth) {
-        c.set("auth", creatorAuth.upgradedAuth);
-      }
 
       const result = await updatePRContent(
         id,
@@ -408,14 +388,7 @@ export const partnerRequestRoute = app
       );
       return c.json({
         ...result,
-        auth: creatorAuth.upgradedAuth
-          ? {
-              role: creatorAuth.upgradedAuth.role,
-              userId: creatorAuth.upgradedAuth.userId,
-              userPin: payload.pin ?? null,
-              accessToken: creatorAuth.upgradedAuth.token,
-            }
-          : null,
+        auth: null,
       });
     },
   )
@@ -431,7 +404,7 @@ export const partnerRequestRoute = app
       const result = await joinPRByIdentity(id, participantIdentity, {
         bookingContactPhone: bookingContactPhone ?? null,
       });
-      const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);
+      const auth = await issueAuthPayload(c, result.userId);
       return c.json({
         ...result.pr,
         auth,
@@ -443,7 +416,7 @@ export const partnerRequestRoute = app
     await getPROr404(id);
     const participantIdentity = await buildCreatorIdentity(c);
     const result = await waitlistPRByIdentity(id, participantIdentity);
-    const auth = issueAuthPayload(c, result.userId, result.generatedUserPin);
+    const auth = await issueAuthPayload(c, result.userId);
     return c.json({
       ...result.pr,
       auth,
@@ -455,7 +428,7 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       await getPROr404(id);
-      const userId = requireAuthenticatedUserId(c);
+      const userId = requireSessionUserId(c);
       const result = await cancelWaitlistPRByUserId(id, userId);
       return c.json(result);
     },
@@ -463,7 +436,7 @@ export const partnerRequestRoute = app
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);
-    const userId = requireAuthenticatedUserId(c);
+    const userId = requireSessionUserId(c);
     const result = await exitPRByUserId(id, userId);
     return c.json(result);
   })
@@ -499,7 +472,7 @@ export const partnerRequestRoute = app
     zValidator("param", prPartnerProfileParamSchema),
     async (c) => {
       const { id, partnerId } = c.req.valid("param");
-      const viewerUserId = getAuthenticatedUserId(c);
+      const viewerUserId = getSessionUserId(c);
       const profile = await getPRPartnerProfile({
         prId: id,
         partnerId,
@@ -515,7 +488,7 @@ export const partnerRequestRoute = app
   .get("/:id", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     const openId = await tryReadAuthenticatedOpenId(c);
-    const userId = getAuthenticatedUserId(c);
+    const userId = getSessionUserId(c);
     const result = await getPRDetail(id, { userId, openId });
     return c.json(result);
   });

@@ -73,10 +73,10 @@
 - Claim Intent: let collaboration start lightly and strengthen identity only when the scenario requires more trust.
 - Evaluation Dimensions:
   - anonymous browsing is allowed
-  - local account plus PIN can support lightweight ownership and revisit
+  - anonymous UUID continuity can support lightweight revisit
   - stronger identity requirements appear only on the actions that carry those requirements
 - Evidence Expectation:
-  - core `PR` creation and join flows remain compatible with local account plus PIN
+  - core `PR` creation and revisit flows remain compatible with anonymous UUID continuity
   - actions that require stronger identity remain gated by authenticated session plus WeChat binding
 - Source Rationale:
   - `../_drivers/market-and-user-pressures.md`

@@ -24,7 +24,6 @@ import { UserRepository } from "../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
 import {
   bindWeChatToCurrentUser,
-  ensureUserHasPin,
   upgradeAnonymousUserWithWeChat,
 } from "../domains/user";
 import {
@@ -100,7 +99,6 @@ const oauthStateCookiePayloadSchema = z.object({
 const oauthCallbackAuthPayloadSchema = z.object({
   role: z.enum(["authenticated", "service"]),
   userId: z.string().uuid(),
-  userPin: z.string().nullable(),
   accessToken: z.string().min(1),
 });
 
@@ -876,14 +874,12 @@ const issueOAuthCallbackAuth = async (
   c: Context<AuthEnv>,
   user: User,
 ): Promise<OAuthCallbackAuthPayload> => {
-  const ensured = await ensureUserHasPin(user);
-  const authenticated = issueAuthForUser(ensured.user);
+  const authenticated = issueAuthForUser(user);
   c.set("auth", authenticated);
 
   return {
     role: authenticated.role === "service" ? "service" : "authenticated",
-    userId: ensured.user.id,
-    userPin: ensured.userPin,
+    userId: user.id,
     accessToken: authenticated.token,
   };
 };

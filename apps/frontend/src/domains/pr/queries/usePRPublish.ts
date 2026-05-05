@@ -4,18 +4,20 @@ import type { PRId } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 import { queryKeys } from "@/shared/api/query-keys";
+import {
+  buildApiError,
+  readApiErrorPayload,
+  resolveApiErrorMessage,
+} from "@/shared/api/error";
+import {
+  handleWeChatAuthRequiredError,
+  isWeChatAuthRequiredError,
+} from "@/processes/wechat/auth-error";
+import { setPendingWeChatAction } from "@/processes/wechat/pending-wechat-action";
 
 export type PublishPRResponse = InferResponseType<
   (typeof client.api.pr)[":id"]["publish"]["$post"]
 >;
-
-const readErrorMessage = async (
-  response: Response,
-  fallback: string,
-): Promise<string> => {
-  const payload = (await response.json()) as { error?: string };
-  return payload.error || fallback;
-};
 
 export const usePublishPR = () => {
   const queryClient = useQueryClient();
@@ -27,11 +29,31 @@ export const usePublishPR = () => {
       });
 
       if (!res.ok) {
-        throw new Error(
-          await readErrorMessage(
-            res,
+        const payload = await readApiErrorPayload(res);
+        if (isWeChatAuthRequiredError(res.status, payload)) {
+          setPendingWeChatAction({
+            kind: "PR_PUBLISH",
+            prId: id,
+          });
+        }
+        if (
+          typeof window !== "undefined" &&
+          handleWeChatAuthRequiredError(res.status, payload, window.location.href)
+        ) {
+          throw buildApiError(
+            resolveApiErrorMessage(
+              payload,
+              i18n.global.t("prPage.wechatReminder.loginHint"),
+            ),
+            payload,
+          );
+        }
+        throw buildApiError(
+          resolveApiErrorMessage(
+            payload,
             i18n.global.t("errors.publishRequestFailed"),
           ),
+          payload,
         );
       }
 

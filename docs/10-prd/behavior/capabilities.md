@@ -38,7 +38,7 @@
 
 ## 4. Identity And Revisit
 
-- restore local account plus PIN continuity
+- restore anonymous UUID continuity
 - log in and bind through WeChat
 - access `/me`
 - access `/pr/mine`

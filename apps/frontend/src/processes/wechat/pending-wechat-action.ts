@@ -27,6 +27,11 @@ type PendingPRConfirmAction = PendingActionBase & {
   prId: number;
 };
 
+type PendingPRPublishAction = PendingActionBase & {
+  kind: "PR_PUBLISH";
+  prId: number;
+};
+
 type PendingAnchorCreateAction = PendingActionBase & {
   kind: "EVENT_ASSISTED_PR_CREATE";
   eventId: number;
@@ -46,6 +51,7 @@ export type PendingWeChatAction =
   | PendingPRWaitlistAction
   | PendingPRExitAction
   | PendingPRConfirmAction
+  | PendingPRPublishAction
   | PendingAnchorCreateAction;
 
 type NewPendingWeChatAction =
@@ -63,6 +69,10 @@ type NewPendingWeChatAction =
     }
   | {
       kind: "PR_CONFIRM";
+      prId: number;
+    }
+  | {
+      kind: "PR_PUBLISH";
       prId: number;
     }
   | {
@@ -107,6 +117,9 @@ const isPendingWeChatAction = (
     return isPositiveInteger(candidate.prId);
   }
   if (candidate.kind === "PR_CONFIRM") {
+    return isPositiveInteger(candidate.prId);
+  }
+  if (candidate.kind === "PR_PUBLISH") {
     return isPositiveInteger(candidate.prId);
   }
   if (candidate.kind === "EVENT_ASSISTED_PR_CREATE") {

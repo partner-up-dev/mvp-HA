@@ -25,7 +25,7 @@
 
 1. The user opens `/pr/:id`.
 2. The user reads the request details, current count, visible status, participant list, and public meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
-3. Joining uses local account plus PIN by default; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
+3. Revisit continuity uses the restored anonymous UUID session; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, context-specific rules, and any PR-owned join gates.
 5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the frontend injects the relevant fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or booking-contact phone collection.
 6. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal with confirmation reminder, new-partner reminder, and meeting-point reminder recommendations. Each recommendation explains why it is useful, and the confirmation reminder includes the confirmation deadline when known. The persistent notification-subscriptions section remains available on the detail page for later revisit.
@@ -73,7 +73,7 @@
 ## 5. Revisit and History Entry
 
 1. When the user returns, the system restores existing session continuity when possible.
-2. The user can inspect profile, binding, notifications, and local credentials through `/me`.
+2. The user can inspect profile, binding, notifications, and anonymous UUID continuity through `/me`.
 3. The user can revisit created and joined history through `/pr/mine`.
 
 ## 6. Share and Distribution

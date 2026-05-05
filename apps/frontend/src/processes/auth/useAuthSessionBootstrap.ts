@@ -4,7 +4,10 @@ import {
   useUserSessionStore,
   type AuthSessionPayload,
 } from "@/shared/auth/useUserSessionStore";
-import { getStoredAccessToken } from "@/shared/auth/session-storage";
+import {
+  getStoredAccessToken,
+  getStoredUserId,
+} from "@/shared/auth/session-storage";
 import { hasPendingWeChatOAuthHandoff } from "@/processes/wechat/oauth-handoff";
 
 let hasBootstrappedAuthSession = false;
@@ -33,8 +36,9 @@ const runAuthSessionBootstrap = async (): Promise<AuthSessionBootstrapResult> =>
   const store = useUserSessionStore();
 
   const existingToken = getStoredAccessToken();
+  const storedUserId = store.userId ?? getStoredUserId();
 
-  if (!existingToken) {
+  if (!existingToken && !storedUserId) {
     const registerRes = await client.api.auth.register.anonymous.$post(
       undefined,
       {
@@ -49,14 +53,12 @@ const runAuthSessionBootstrap = async (): Promise<AuthSessionBootstrapResult> =>
     }
   }
 
-  const currentUserId = store.userId;
-  const currentUserPin = store.userPin;
+  const currentUserId = store.userId ?? storedUserId;
 
   const res = await client.api.auth.session.$post(
     {
       json: {
         userId: currentUserId,
-        userPin: currentUserPin,
       },
     },
     {

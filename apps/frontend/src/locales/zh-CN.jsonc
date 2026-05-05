@@ -144,7 +144,7 @@
       "officialAccountAction": "关注公众号",
       "webPageQrAction": "保存网页二维码",
       "secondaryMineTitle": "进入我的中心",
-      "secondaryMineDescription": "绑定微信、查看本地 PIN 和用户 ID，并进入我的活动记录。",
+      "secondaryMineDescription": "绑定微信、查看匿名用户 ID，并进入我的活动记录。",
       "secondaryMineAction": "打开我的页面",
       "footerIntroTitle": "搭一把 / PartnerUp",
       "footerIntroBody": "安全、快速地找对搭子",
@@ -317,11 +317,6 @@
       "description": "草稿发布后会进入招募状态，并自动绑定创建者身份。",
       "action": "发布并开始招募",
       "pending": "发布中..."
-    },
-    "pinHelp": {
-      "title": "PIN",
-      "description": "您不需要注册，但是为了避免其他人随意修改您的搭子请求，我们为您生成了 PIN，请妥善保管。",
-      "currentPin": "您的 PIN：{pin}"
     },
     "eventAssistedCreateHandoff": {
       "title": "已为你创建搭子请求",
@@ -731,11 +726,11 @@
   },
   "adminLogin": {
     "title": "管理员登录",
-    "subtitle": "使用已 seed 的 service 角色 UUID 与 PIN 登录后台。",
+    "subtitle": "使用已 seed 的 service 角色 UUID 与密码登录后台。",
     "userIdLabel": "Admin UUID",
     "userIdPlaceholder": "输入 admin 用户 UUID",
-    "passwordLabel": "密码 / PIN",
-    "passwordPlaceholder": "输入 admin PIN",
+    "passwordLabel": "密码",
+    "passwordPlaceholder": "输入 admin 密码",
     "loggingIn": "登录中...",
     "loginAction": "登录",
     "seedHint": "本地 seed 默认 admin：00000000-0000-0000-0000-000000000001 / 0000"
@@ -1019,13 +1014,8 @@
   },
   "mePage": {
     "title": "我的",
-    "description": "管理微信绑定、服务通知、本地 PIN 和账户资料。",
+    "description": "管理微信绑定、服务通知、匿名用户 ID 和账户资料。",
     "loading": "正在加载你的资料...",
-    "register": {
-      "title": "注册本地账户",
-      "action": "立即注册",
-      "pending": "注册中..."
-    },
     "profile": {
       "title": "个人资料",
       "description": "修改头像和昵称；已绑定微信时，这里仍以你的手动资料为准。",
@@ -1059,33 +1049,18 @@
       "action": "微信登录",
       "pending": "拉起授权中..."
     },
-    "pinLogin": {
-      "title": "PIN 登录",
-      "description": "输入你保存的用户 ID 与 PIN，恢复本地账户。",
-      "userIdLabel": "用户 ID",
-      "userIdPlaceholder": "输入用户 ID",
-      "pinLabel": "PIN",
-      "pinPlaceholder": "输入 4 位 PIN",
-      "pinFormatHint": "PIN 需要是 4 位数字。",
-      "action": "PIN 登录",
-      "pending": "登录中..."
-    },
     "reminder": {
       "title": "服务通知",
-      "authHint": "先拥有本地账户，再去微信里开启服务通知。",
-      "authAction": "先获得本地账户",
+      "authHint": "先完成微信登录，再开启服务通知。",
+      "authAction": "去微信登录",
       "wechatOnlyAction": "仅支持微信内开启",
       "unavailableAction": "当前不可用"
     },
     "credentials": {
-      "title": "本地凭据",
-      "description": "这些信息保存在当前设备浏览器里，用于恢复你的本地账户。",
+      "title": "匿名身份",
+      "description": "当前设备浏览器会保存这个 ID，用于下次回来时恢复你的匿名身份。",
       "userIdLabel": "用户 ID",
-      "userPinLabel": "PIN",
-      "missingUserId": "当前设备还没有本地用户 ID",
-      "missingUserPin": "当前设备还没有本地 PIN",
-      "showPin": "显示 PIN",
-      "hidePin": "隐藏 PIN"
+      "missingUserId": "当前设备还没有用户 ID"
     },
     "history": {
       "title": "我的搭子请求",
@@ -1170,7 +1145,6 @@
   },
   "modifyStatusModal": {
     "title": "修改需求状态",
-    "pinLabel": "输入PIN码确认",
     "confirmAction": "确认修改",
     "updateFailed": "修改失败"
   },
@@ -1231,13 +1205,6 @@
   "prInput": {
     "label": "自然语言描述你的搭子需求",
     "placeholder": "如：{example}"
-  },
-  "pinInput": {
-    "label": "PIN码",
-    "hint": "(4位数字)",
-    "placeholder": "••••",
-    "regenerateTitle": "重新生成",
-    "info": "匿名编辑内容或状态时会需要，请保存好此 PIN 码"
   },
   "nlForm": {
     "submit": "解析",
@@ -1307,7 +1274,6 @@
     "partnersAtMost": "最多{max}人"
   },
   "validation": {
-    "pinMustBeFourDigits": "PIN 必须是 4 位数字",
     "typeRequired": "类型不能为空",
     "naturalLanguageRequired": "请输入你的请求",
     "naturalLanguageWordLimit": "自然语言输入不能超过 50 个词",
@@ -1358,8 +1324,6 @@
     "updateCurrentUserProfileFailed": "更新当前用户资料失败",
     "updateCurrentUserAvatarFailed": "更新当前头像失败",
     "startWechatBindFailed": "发起微信绑定失败",
-    "loginWithPinFailed": "PIN 登录失败",
-    "registerLocalAccountFailed": "注册本地账户失败",
     "fetchReimbursementStatusFailed": "获取报销状态失败",
     "verifyBookingContactFailed": "预订联系人手机号授权失败"
   },

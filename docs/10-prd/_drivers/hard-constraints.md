@@ -9,8 +9,8 @@
 ## Interaction And Identity Constraints
 
 - one `PR` object supports shared participation semantics across multiple entry paths and reliability configurations.
-- baseline PR join and exit flows depend on local account plus PIN.
-- higher-trust PR participation actions require an authenticated local session plus a bound WeChat `openid`.
+- baseline revisit continuity depends on anonymous UUID session recovery.
+- higher-trust PR participation actions require an authenticated session plus a bound WeChat `openid`.
 - The current version primarily targets H5 and WeChat-related environments rather than a native app.
 
 ## Cold-Start And Distribution Constraints

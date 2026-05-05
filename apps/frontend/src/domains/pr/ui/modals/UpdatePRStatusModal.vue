@@ -17,24 +17,12 @@
       </ChoiceCard>
     </div>
 
-    <div v-if="requiresPin" class="pin-input">
-      <label>{{ t("modifyStatusModal.pinLabel") }}</label>
-      <PinInput
-        v-model="modifyPin"
-        :auto-generate="false"
-        :allow-regenerate="false"
-        :show-label="false"
-        :show-info="false"
-      />
-    </div>
-
     <div class="modal-actions">
       <Button tone="outline" @click="handleClose">
         {{ t("common.cancel") }}
       </Button>
       <Button
         :loading="isUpdatePending"
-        :disabled="requiresPin && (!modifyPin || modifyPin.length !== 4)"
         @click="handleConfirm"
       >
         {{ t("modifyStatusModal.confirmAction") }}
@@ -54,15 +42,10 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import Modal from "@/shared/ui/overlay/Modal.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
-import PinInput from "@/shared/ui/forms/PinInput.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import { useUpdatePRStatus } from "@/domains/pr/queries/usePRActions";
 import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
-import {
-  useUserSessionStore,
-  type AuthSessionPayload,
-} from "@/shared/auth/useUserSessionStore";
 
 interface StatusOption {
   value: PRStatusManual;
@@ -87,36 +70,21 @@ const statusOptions: StatusOption[] = [
 ];
 
 const updateMutation = useUpdatePRStatus();
-const userSessionStore = useUserSessionStore();
 const selectedStatus = ref<PRStatusManual>("OPEN");
-const modifyPin = ref("");
-const requiresPin = computed(() => userSessionStore.role === "anonymous");
 const isUpdatePending = computed(() => updateMutation.isPending.value);
 const updateError = computed(() => updateMutation.error.value);
 const hasUpdateError = computed(() => Boolean(updateError.value));
 
 const handleClose = () => {
   selectedStatus.value = "OPEN";
-  modifyPin.value = "";
   emit("close");
 };
 
 const handleConfirm = async () => {
-  const pin = requiresPin.value ? modifyPin.value : undefined;
-  if (requiresPin.value && (!pin || pin.length !== 4)) {
-    return;
-  }
-
-  const result = await updateMutation.mutateAsync({
+  await updateMutation.mutateAsync({
     id: props.prId,
     status: selectedStatus.value,
-    pin,
   });
-
-  const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
-  if (authPayload) {
-    userSessionStore.applyAuthSession(authPayload);
-  }
 
   handleClose();
 };
@@ -138,17 +106,6 @@ const resetUpdateMutation = () => {
   flex: 1;
   justify-content: center;
   min-width: 0;
-}
-
-.pin-input {
-  margin-bottom: var(--sys-spacing-medium);
-
-  label {
-    @include mx.pu-font(label-medium);
-    display: block;
-    margin-bottom: var(--sys-spacing-xsmall);
-    color: var(--sys-color-on-surface-variant);
-  }
 }
 
 .modal-actions {

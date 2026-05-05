@@ -27,7 +27,7 @@ Focus:
 
 Focus:
 
-- local account plus PIN
+- anonymous UUID continuity
 - authenticated session continuity
 - WeChat login and binding
 - `/me` and revisit restoration

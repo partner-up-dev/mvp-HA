@@ -55,9 +55,10 @@ export const useSharedPRActions = ({
 
   const showEditContentAction = computed(() => {
     const status = pr.value?.status;
-    return Boolean(
-      isCreator.value && (status === "OPEN" || status === "DRAFT"),
-    );
+    if (status === "DRAFT") {
+      return true;
+    }
+    return Boolean(isCreator.value && status === "OPEN");
   });
 
   const showModifyStatusAction = computed(() => Boolean(isCreator.value));

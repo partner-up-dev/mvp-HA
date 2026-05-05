@@ -10,7 +10,7 @@
         data-region="summary"
       >
         <template #top-actions>
-          <div v-if="isCreator" class="header-quick-actions">
+          <div v-if="showHeaderQuickActions" class="header-quick-actions">
             <Button
               v-if="sharedActions.showEditContentAction.value"
               tone="outline"
@@ -57,16 +57,6 @@
           </Button>
         </template>
       </InlineNotice>
-
-      <InlineNotice
-        v-if="showPinHelpCard"
-        tone="info"
-        :message="
-          userSessionStore.userPin
-            ? t('prPage.pinHelp.currentPin', { pin: userSessionStore.userPin })
-            : t('prPage.pinHelp.description')
-        "
-      />
 
       <InlineNotice
         v-if="showEventAssistedCreateHandoffNotice"
@@ -547,6 +537,11 @@ const sharedActions = useSharedPRActions({
   isCreator,
   onActionSuccess: resetLivePolling,
 });
+const showHeaderQuickActions = computed(
+  () =>
+    sharedActions.showEditContentAction.value ||
+    sharedActions.showModifyStatusAction.value,
+);
 const attendanceActions = usePRAttendanceActions({
   id,
   pr: currentDetail,
@@ -568,14 +563,6 @@ const joinEntrySurface = computed(() =>
   handoffEntry.value === "matched_pr" ? "form_mode_matched" : "pr_detail",
 );
 const showDraftPublishCard = computed(() => prDetail.value?.status === "DRAFT");
-const showPinHelpCard = computed(() => {
-  if (prDetail.value?.status !== "DRAFT") return false;
-  if (creationEntry.value === "join") {
-    return Boolean(userSessionStore.userPin);
-  }
-  if (!isCreator.value) return false;
-  return creationEntry.value === "create" || creationEntry.value === "publish";
-});
 const showEventAssistedCreateHandoffNotice = computed(
   () => isCreator.value && handoffEntry.value === "event_assisted_create",
 );
@@ -920,7 +907,8 @@ const matchPendingActionForCurrentPR = (
     pending.kind === "PR_JOIN" ||
     pending.kind === "PR_WAITLIST" ||
     pending.kind === "PR_EXIT" ||
-    pending.kind === "PR_CONFIRM"
+    pending.kind === "PR_CONFIRM" ||
+    pending.kind === "PR_PUBLISH"
   ) {
     return pending.prId === id.value ? pending : null;
   }
@@ -956,6 +944,19 @@ const attemptPendingWeChatActionReplay = async () => {
     if (pending.kind === "PR_EXIT") {
       if (!sharedActions.canExit.value) return;
       await sharedActions.handleExit();
+      return;
+    }
+
+    if (pending.kind === "PR_PUBLISH") {
+      if (currentDetail.value.status !== "DRAFT" || id.value === null) return;
+      const result = await publishMutation.mutateAsync({ id: id.value });
+      const authPayload = (result as { auth?: AuthSessionPayload | null } | null)
+        ?.auth;
+      if (authPayload) {
+        userSessionStore.applyAuthSession(authPayload);
+      }
+      await router.replace({ query: { ...route.query, entry: "publish" } });
+      await refetch();
       return;
     }
 

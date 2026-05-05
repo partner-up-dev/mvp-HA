@@ -7,9 +7,10 @@ import type { UserId } from "../../../entities/user";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import {
   resolvePublishedCreator,
+  throwAuthenticatedRequired,
   type CreatorIdentityInput,
 } from "../services/creator-identity.service";
-import { ensureUserHasPin, resolveUserByOpenId } from "../../user";
+import { resolveUserByOpenId } from "../../user";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
@@ -22,7 +23,6 @@ const userRepo = new UserRepository();
 export type PublishPRResult = {
   pr: PublicPR;
   createdBy: UserId;
-  generatedUserPin: string | null;
 };
 
 const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
@@ -67,7 +67,6 @@ export async function publishPR(
   }
 
   let creatorUserId: UserId;
-  let generatedUserPin: string | null = null;
 
   if (request.createdBy) {
     if (creatorIdentity.authenticatedUserId) {
@@ -80,9 +79,7 @@ export async function publishPR(
       if (!user) {
         throw new HTTPException(404, { message: "Draft creator user not found" });
       }
-      const ensured = await ensureUserHasPin(user);
-      creatorUserId = ensured.user.id;
-      generatedUserPin = ensured.userPin;
+      creatorUserId = user.id;
     } else if (creatorIdentity.oauthOpenId) {
       const oauthUser = await resolveUserByOpenId(creatorIdentity.oauthOpenId);
       if (oauthUser.id !== request.createdBy) {
@@ -90,18 +87,13 @@ export async function publishPR(
           message: "Only the draft creator can publish this partner request",
         });
       }
-      const ensured = await ensureUserHasPin(oauthUser);
-      creatorUserId = ensured.user.id;
-      generatedUserPin = ensured.userPin;
+      creatorUserId = oauthUser.id;
     } else {
-      throw new HTTPException(401, {
-        message: "Authentication required to publish claimed draft",
-      });
+      return throwAuthenticatedRequired();
     }
   } else {
     const creator = await resolvePublishedCreator(creatorIdentity);
     creatorUserId = creator.user.id;
-    generatedUserPin = creator.generatedUserPin;
     await prRepo.setCreatedBy(id, creatorUserId);
   }
 
@@ -138,6 +130,5 @@ export async function publishPR(
   return {
     pr: await toPublicPR(latest, creatorUserId),
     createdBy: creatorUserId,
-    generatedUserPin,
   };
 }

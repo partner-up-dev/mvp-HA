@@ -13,4 +13,4 @@ Rules:
 Current local bootstrap account:
 
 - Admin UUID: `00000000-0000-0000-0000-000000000001`
-- Admin PIN: `admin123`
+- Admin password: `admin123`
