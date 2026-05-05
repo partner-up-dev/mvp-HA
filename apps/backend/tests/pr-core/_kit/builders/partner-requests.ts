@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import {
   expectJsonResponse,
   requestJson,
@@ -19,6 +20,13 @@ type CreatePRResponse = {
   canonicalPath: string;
 };
 
+type CreateDraftPRResponse = {
+  id: PRId;
+  createdBy: string | null;
+  status: PRStatus;
+  canonicalPath: string;
+};
+
 export type GivenPublishedPartnerRequestInput = {
   creator: ScenarioUser;
   maxPartners?: number | null;
@@ -31,6 +39,50 @@ const defaultTimeWindow = (): [string, string] => [
   "2030-01-01T10:00:00.000Z",
   "2030-01-01T12:00:00.000Z",
 ];
+
+let scenarioFieldsSequence = 0;
+
+export function buildScenarioFields(title: string): PartnerRequestFields {
+  const sequence = scenarioFieldsSequence++;
+  const day = String(10 + Math.floor(sequence / 8)).padStart(2, "0");
+  const startHour = String(8 + (sequence % 8)).padStart(2, "0");
+  const endHour = String(9 + (sequence % 8)).padStart(2, "0");
+
+  return {
+    title,
+    type: "badminton",
+    time: [
+      `2031-01-${day}T${startHour}:00:00.000Z`,
+      `2031-01-${day}T${endHour}:00:00.000Z`,
+    ],
+    location: `Scenario Court ${sequence}`,
+    minPartners: 2,
+    maxPartners: null,
+    partners: [],
+    budget: null,
+    preferences: [],
+    notes: null,
+  };
+}
+
+export async function givenDraftPR(input: {
+  creator: ScenarioUser;
+  title: string;
+}): Promise<ScenarioPartnerRequest> {
+  const response = await requestJson("/api/pr/new/form", {
+    method: "POST",
+    token: input.creator.token,
+    body: {
+      fields: buildScenarioFields(input.title),
+      createSource: "FORM",
+    },
+  });
+  const body = await expectJsonResponse<CreateDraftPRResponse>(response, 201);
+  assert.equal(body.status, "DRAFT");
+  assert.equal(body.createdBy, null);
+
+  return { id: body.id };
+}
 
 export async function givenPublishedPartnerRequest(
   input: GivenPublishedPartnerRequestInput,
