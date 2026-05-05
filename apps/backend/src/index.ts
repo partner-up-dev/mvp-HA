@@ -265,6 +265,7 @@ export {
   createNaturalLanguagePRSchema,
   createPRStructuredStatusSchema,
 } from "./entities/partner-request";
+export type { ImageUploadPurpose } from "./infra/storage/image-storage.service";
 export { PR_MESSAGE_BODY_MAX_LENGTH } from "./entities/pr-message";
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export {

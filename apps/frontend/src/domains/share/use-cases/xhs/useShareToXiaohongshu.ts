@@ -73,7 +73,7 @@ export const useShareToXiaohongshu = ({
     useGenerateXiaohongshuCaption();
   const { mutateAsync: generatePosterHtmlAsync } = useGenerateXhsPosterHtml();
   const { generatePoster } = useGeneratePoster();
-  const { uploadFile } = useCloudStorage();
+  const { uploadImage } = useCloudStorage();
   const { openXiaohongshu } = useAppScheme();
 
   const inWeChatBrowser = computed(() => isWeChatBrowser());
@@ -188,7 +188,7 @@ export const useShareToXiaohongshu = ({
 
       let nextPosterUrl: string;
       try {
-        nextPosterUrl = await uploadFile(blob, "poster.png");
+        nextPosterUrl = await uploadImage(blob, { purpose: "poster" });
       } catch (uploadError) {
         console.warn("Upload failed, falling back to blob URL:", uploadError);
         nextPosterUrl = URL.createObjectURL(blob);

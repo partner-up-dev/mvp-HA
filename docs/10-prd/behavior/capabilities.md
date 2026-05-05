@@ -68,5 +68,6 @@
 - expose repository and frontend/backend commit hashes in `/about`
 - let operator tooling maintain Anchor/Event/POI/Booking Support semantics
 - let operator tooling publish or reject user-submitted POI location applications
+- let operator tooling upload and maintain POI gallery images, Anchor Event cover images, and event beta-group QR images
 - let operator tooling process booking fulfillment results and release invalid booking contacts
 - let configuration materially shape the real user experience

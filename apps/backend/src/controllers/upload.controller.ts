@@ -1,71 +1,74 @@
 import { Hono } from "hono";
-import { promises as fs } from "fs";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
-import { env } from "../lib/env";
+import { z } from "zod";
+import { zValidator } from "@hono/zod-validator";
+import { HTTPException } from "hono/http-exception";
+import {
+  imageUploadPurposes,
+  ImageStorageError,
+  readStoredImage,
+  saveImageFile,
+} from "../infra/storage/image-storage.service";
 
 const app = new Hono();
 
-// Ensure posters directory exists
-const defaultPostersDir =
-  process.platform === "win32"
-    ? path.join(process.cwd(), "posters")
-    : "/mnt/oss/posters";
-const postersDir = env.POSTERS_DIR ?? defaultPostersDir;
-
-export const uploadRoute = app.post("/poster", async (c) => {
-  try {
-    // Ensure directory exists
-    await fs.mkdir(postersDir, { recursive: true });
-
-    const formData = await c.req.formData();
-    const file = formData.get("poster") as File;
-
-    if (!file || !file.type.startsWith("image/")) {
-      return c.json({ error: "Invalid file" }, 400);
-    }
-
-    const key = uuidv4();
-    const filename = `${key}.png`;
-    const filepath = path.join(postersDir, filename);
-
-    const buffer = await file.arrayBuffer();
-    await fs.writeFile(filepath, Buffer.from(buffer));
-
-    return c.json({ key });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return c.json({ error: "Upload failed" }, 500);
-  }
+const uploadPurposeSchema = z.object({
+  purpose: z.enum(imageUploadPurposes),
 });
 
-// Download endpoint
-app.get("/download/:key", async (c) => {
-  try {
-    const key = c.req.param("key");
-    if (!key) {
-      return c.json({ error: "Key is required" }, 400);
-    }
-
-    const filename = `${key}.png`;
-    const filepath = path.join(postersDir, filename);
-
-    // Check if file exists
-    try {
-      await fs.access(filepath);
-    } catch {
-      return c.json({ error: "File not found" }, 404);
-    }
-
-    // Read and serve the file
-    const fileBuffer = await fs.readFile(filepath);
-    return c.body(fileBuffer, 200, {
-      "Content-Type": "image/png",
-      "Content-Disposition": `inline; filename="${filename}"`,
-      "Cache-Control": "public, max-age=31536000", // Cache for 1 year
-    });
-  } catch (error) {
-    console.error("Download error:", error);
-    return c.json({ error: "Download failed" }, 500);
-  }
+const imageKeySchema = uploadPurposeSchema.extend({
+  key: z.string().uuid(),
 });
+
+const imageUploadFormSchema = z.object({
+  image: z.instanceof(File),
+});
+
+const toHttpException = (error: ImageStorageError): HTTPException =>
+  new HTTPException(error.status, { message: error.message });
+
+export const uploadRoute = app
+  .post(
+    "/images/:purpose",
+    zValidator("param", uploadPurposeSchema),
+    zValidator("form", imageUploadFormSchema),
+    async (c) => {
+      const { purpose } = c.req.valid("param");
+      const { image } = c.req.valid("form");
+
+      try {
+        const storedImage = await saveImageFile(purpose, image);
+        return c.json({
+          key: storedImage.key,
+          url: `/api/upload/images/${purpose}/${storedImage.key}`,
+        });
+      } catch (error) {
+        if (error instanceof ImageStorageError) {
+          throw toHttpException(error);
+        }
+        throw error;
+      }
+    },
+  )
+  .get(
+    "/images/:purpose/:key",
+    zValidator("param", imageKeySchema),
+    async (c) => {
+      const { purpose, key } = c.req.valid("param");
+
+      try {
+        const storedImage = await readStoredImage(purpose, key);
+        const responseBytes = new Uint8Array(storedImage.buffer.byteLength);
+        responseBytes.set(storedImage.buffer);
+        return c.body(responseBytes, 200, {
+          "Content-Type": storedImage.contentType,
+          "Content-Disposition": `inline; filename="${storedImage.key}"`,
+          "Cache-Control": "public, max-age=31536000",
+        });
+      } catch (error) {
+        if (error instanceof ImageStorageError) {
+          throw toHttpException(error);
+        }
+        throw error;
+      }
+    },
+  );

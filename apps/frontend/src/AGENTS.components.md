@@ -133,4 +133,5 @@ Prohibited:
 
 ## Composables
 
-- `shared/upload/useCloudStorage.ts`: Handles file uploads to the backend and returns download URLs.
+- `shared/upload/ImageUrlInput.vue`: Reusable image URL control with purpose-scoped backend upload, manual URL entry, upload progress, error text, and preview.
+- `shared/upload/useCloudStorage.ts`: Handles purpose-scoped image uploads to the backend and returns download URLs.

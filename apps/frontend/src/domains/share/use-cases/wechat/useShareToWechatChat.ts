@@ -89,7 +89,7 @@ export const useShareToWechatChat = ({
   } = useGenerateWechatThumbHtml();
   const { generateThumb, isGenerating: isFallbackThumbGenerating } =
     useGenerateWechatThumbPoster();
-  const { uploadFile, isUploading, uploadError } = useCloudStorage();
+  const { uploadImage, isUploading, uploadError } = useCloudStorage();
 
   const isWorking = computed(
     () =>
@@ -315,7 +315,7 @@ export const useShareToWechatChat = ({
         isRendering.value = false;
       }
 
-      const thumbnailUrl = await uploadFile(blob);
+      const thumbnailUrl = await uploadImage(blob, { purpose: "poster" });
       if (!isCurrentScopeActive(targetScopeVersion, routeSessionAtStart)) {
         return;
       }

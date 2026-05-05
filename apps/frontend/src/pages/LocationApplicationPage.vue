@@ -35,49 +35,19 @@
 
           <FormField
             :label="t('locationApplicationPage.imageLabel')"
-            for-id="location-application-image"
+            for-id="location-application-image-url"
             :hint="imageHint"
             required
           >
-            <div class="image-field">
-              <input
-                id="location-application-image"
-                ref="imageInputRef"
-                class="sr-only"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                @change="handleImageChange"
-              />
-              <Button
-                appearance="pill"
-                tone="outline"
-                size="sm"
-                type="button"
-                :disabled="isUploading"
-                :loading="isUploading"
-                @click="handlePickImage"
-              >
-                {{ t("locationApplicationPage.pickImageAction") }}
-              </Button>
-              <img
-                v-if="imageUrl"
-                class="image-preview"
-                :src="imageUrl"
-                :alt="t('locationApplicationPage.imagePreviewAlt')"
-              />
-            </div>
-          </FormField>
-
-          <FormField
-            :label="t('locationApplicationPage.imageUrlLabel')"
-            for-id="location-application-image-url"
-          >
-            <input
-              id="location-application-image-url"
+            <ImageUrlInput
               v-model="imageUrlDraft"
-              class="text-input"
-              type="url"
+              v-model:uploading="isUploadingImage"
+              input-id="location-application-image-url"
+              purpose="poi"
               :placeholder="t('locationApplicationPage.imageUrlPlaceholder')"
+              :upload-label="t('locationApplicationPage.pickImageAction')"
+              :uploading-label="t('common.loading')"
+              :preview-alt="t('locationApplicationPage.imagePreviewAlt')"
             />
           </FormField>
 
@@ -154,7 +124,7 @@ import Chip from "@/shared/ui/display/Chip.vue";
 import InlineNotice from "@/shared/ui/feedback/InlineNotice.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
-import { useCloudStorage } from "@/shared/upload/useCloudStorage";
+import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
 import {
   useMyPoiApplications,
   useSubmitPoiApplication,
@@ -165,12 +135,10 @@ type PoiApplicationStatus = "PENDING" | "PUBLISHED" | "REJECTED";
 
 const { t } = useI18n();
 const route = useRoute();
-const { uploadFile, isUploading, uploadError } = useCloudStorage();
-
 const sessionReady = ref(false);
 const titleDraft = ref("");
 const imageUrlDraft = ref("");
-const imageInputRef = ref<HTMLInputElement | null>(null);
+const isUploadingImage = ref(false);
 const submitSuccessTitle = ref<string | null>(null);
 
 const applicationsQuery = useMyPoiApplications(sessionReady);
@@ -202,7 +170,7 @@ const canSubmit = computed(
   () =>
     normalizedTitle.value.length > 0 &&
     imageUrl.value !== null &&
-    !isUploading.value &&
+    !isUploadingImage.value &&
     !submitMutation.isPending.value,
 );
 const imageHint = computed(() =>
@@ -214,31 +182,10 @@ const pageError = computed(() => {
   const candidates = [
     applicationsQuery.error.value,
     submitMutation.error.value,
-    uploadError.value ? new Error(uploadError.value) : null,
   ];
   const first = candidates.find((candidate) => candidate instanceof Error);
   return first instanceof Error ? first.message : null;
 });
-
-const handlePickImage = () => {
-  imageInputRef.value?.click();
-};
-
-const handleImageChange = async (event: Event) => {
-  const input = event.target as HTMLInputElement | null;
-  const file = input?.files?.[0] ?? null;
-  if (!file) {
-    return;
-  }
-
-  try {
-    imageUrlDraft.value = await uploadFile(file, "poi-application.png");
-  } finally {
-    if (input) {
-      input.value = "";
-    }
-  }
-};
 
 const handleSubmit = async () => {
   if (!canSubmit.value || !imageUrl.value) {
@@ -332,21 +279,6 @@ onMounted(async () => {
   color: var(--sys-color-on-surface);
 }
 
-.image-field {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--sys-spacing-small);
-}
-
-.image-preview {
-  width: min(100%, 18rem);
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: var(--sys-radius-small);
-  border: 1px solid var(--sys-color-outline-variant);
-}
-
 .empty-text {
   margin: 0;
   @include mx.pu-font(body-medium);
@@ -394,18 +326,6 @@ onMounted(async () => {
 
 .application-card__reason {
   color: var(--sys-color-error);
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 @media (max-width: 640px) {

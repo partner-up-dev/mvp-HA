@@ -83,6 +83,7 @@ Required GitHub Environment variables:
 Optional GitHub Environment variables that are passed to backend runtime when
 configured:
 
+- `IMAGES_DIR`
 - `WECHAT_OAUTH_CALLBACK_URL`
 - `WECHAT_REMINDER_TEMPLATE_ID`
 - `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`

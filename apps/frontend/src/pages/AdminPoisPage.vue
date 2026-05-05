@@ -189,38 +189,25 @@
             </p>
           </div>
 
-          <div class="action-row">
-            <Button
-              appearance="pill"
-              tone="outline"
-              size="sm"
-              type="button"
-              :disabled="selectedPoiId === null || isUploadingGalleryImage"
-              @click="handleChooseGalleryImage"
-            >
-              {{
-                isUploadingGalleryImage
-                  ? t("adminPois.uploadingImage")
-                  : t("adminPois.uploadImageAction")
-              }}
-            </Button>
-          </div>
-
-          <input
-            ref="galleryInputRef"
-            class="hidden-input"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            @change="handleGalleryFileChange"
-          />
-
-          <label class="field">
+          <div class="field">
             <span class="field-label">{{ t("adminPois.galleryHint") }}</span>
             <div class="manual-url-row">
-              <input
+              <ImageUrlInput
                 v-model="manualGalleryUrl"
-                class="field-input"
+                v-model:uploading="isUploadingGalleryImage"
+                input-id="admin-poi-gallery-image-url"
+                purpose="poi"
                 :placeholder="t('adminPois.manualUrlPlaceholder')"
+                :upload-label="t('adminPois.uploadImageAction')"
+                :uploading-label="t('adminPois.uploadingImage')"
+                :preview-alt="
+                  t('adminPois.imageAlt', {
+                    index: selectedPoiGallery.length + 1,
+                    poiId: selectedPoiId ?? '',
+                  })
+                "
+                :disabled="selectedPoiId === null"
+                @uploaded="handleGalleryUploaded"
               />
               <Button
                 appearance="pill"
@@ -233,7 +220,7 @@
                 {{ t("adminPois.addUrlAction") }}
               </Button>
             </div>
-          </label>
+          </div>
 
           <p v-if="selectedPoiGallery.length === 0" class="hint">
             {{ t("adminPois.emptyGallery") }}
@@ -452,7 +439,7 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import Chip from "@/shared/ui/display/Chip.vue";
-import { useCloudStorage } from "@/shared/upload/useCloudStorage";
+import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
 
 type PoiRecord = NonNullable<AdminPoisResponse>[number];
 type PoiStatus = PoiRecord["status"];
@@ -507,13 +494,12 @@ const poisQuery = useAdminPois(isAdmin);
 const upsertPoiMutation = useUpsertAdminPoi();
 const publishPoiMutation = usePublishAdminPoi();
 const rejectPoiMutation = useRejectAdminPoi();
-const { uploadFile, isUploading: isUploadingGalleryImage } = useCloudStorage();
 
 const selectedPoiIdRaw = ref("");
 const newPoiId = ref("");
 const manualGalleryUrl = ref("");
+const isUploadingGalleryImage = ref(false);
 const rejectReasonDraft = ref("");
-const galleryInputRef = ref<HTMLInputElement | null>(null);
 const poiGalleryById = ref<PoiGalleryMap>({});
 const poiCapById = ref<PoiCapMap>({});
 const poiMeetingPointById = ref<PoiMeetingPointMap>({});
@@ -939,26 +925,9 @@ const handleAddManualUrl = () => {
   manualGalleryUrl.value = "";
 };
 
-const handleChooseGalleryImage = () => {
-  galleryInputRef.value?.click();
-};
-
-const handleGalleryFileChange = async (event: Event) => {
-  const target = event.target as HTMLInputElement | null;
-  const file = target?.files?.[0];
-  if (!file || selectedPoiId.value === null) {
-    if (target) target.value = "";
-    return;
-  }
-
-  try {
-    const uploadedUrl = await uploadFile(file, `poi-${selectedPoiId.value}.png`);
-    setSelectedPoiGallery([...selectedPoiGallery.value, uploadedUrl]);
-  } finally {
-    if (target) {
-      target.value = "";
-    }
-  }
+const handleGalleryUploaded = (uploadedUrl: string) => {
+  setSelectedPoiGallery([...selectedPoiGallery.value, uploadedUrl]);
+  manualGalleryUrl.value = "";
 };
 
 const handleRemoveGalleryImage = (index: number) => {
@@ -1232,10 +1201,6 @@ const handleRejectPoi = async () => {
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
   word-break: break-all;
-}
-
-.hidden-input {
-  display: none;
 }
 
 @media (max-width: 720px) {

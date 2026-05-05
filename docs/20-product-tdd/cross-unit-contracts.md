@@ -11,6 +11,16 @@ Contract implication:
 - route shape, payload shape, and many response shapes are shared by type rather than duplicated manually
 - some contract-breaking API changes are intentionally compile-time visible to the frontend workspace
 
+## 1.1 Image Upload Contract
+
+- The active image upload surface is `POST /api/upload/images/:purpose` with multipart field `image`.
+- Backend accepts the allowlisted image purposes: `poster`, `poi`, `anchor-event-cover`, and `anchor-event-beta-group-qr`.
+- Backend generates one UUID key per uploaded image. The key is independent from client filenames and is also the stored image filename.
+- Backend stores image bytes under the purpose-owned prefix: `posters/`, `pois/`, `anchor-event-covers/`, or `anchor-event-beta-group-qrs/`.
+- Backend serves uploaded images through `GET /api/upload/images/:purpose/:key` and derives the response content type from the stored image bytes.
+- Frontend upload flows use the Hono RPC client and pass the purpose explicitly at the upload boundary.
+- Xiaohongshu and WeChat generated poster assets use purpose `poster`; POI application and Admin POI Gallery uploads use purpose `poi`; Admin Anchor Event cover and beta-group QR uploads use their Anchor Event media purposes.
+
 ## 2. PR Lifecycle Contract
 
 - Backend owns `PartnerRequestStatus` and legal state transitions.

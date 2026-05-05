@@ -1190,6 +1190,12 @@ export interface MessageSchema {
     eventMeetingPointImageUrlLabel: string;
     eventCoverImageLabel: string;
     eventBetaGroupQrCodeLabel: string;
+    eventImageUrlPlaceholder: string;
+    uploadEventCoverImageAction: string;
+    uploadEventBetaGroupQrCodeAction: string;
+    uploadingEventImage: string;
+    eventCoverImagePreviewAlt: string;
+    eventBetaGroupQrCodePreviewAlt: string;
     eventStatusLabel: string;
     eventDefaultMinPartnersLabel: string;
     eventDefaultMaxPartnersLabel: string;

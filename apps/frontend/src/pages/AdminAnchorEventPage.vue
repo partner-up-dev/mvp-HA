@@ -86,19 +86,37 @@
                 ></textarea>
               </label>
 
-              <label class="field">
+              <div class="field">
                 <span class="field-label">{{
                   t("adminPR.eventCoverImageLabel")
                 }}</span>
-                <input v-model="eventForm.coverImage" class="field-input" />
-              </label>
+                <ImageUrlInput
+                  v-model="eventForm.coverImage"
+                  v-model:uploading="isUploadingEventCoverImage"
+                  input-id="admin-anchor-event-cover-image"
+                  purpose="anchor-event-cover"
+                  :placeholder="t('adminPR.eventImageUrlPlaceholder')"
+                  :upload-label="t('adminPR.uploadEventCoverImageAction')"
+                  :uploading-label="t('adminPR.uploadingEventImage')"
+                  :preview-alt="t('adminPR.eventCoverImagePreviewAlt')"
+                />
+              </div>
 
-              <label class="field">
+              <div class="field">
                 <span class="field-label">{{
                   t("adminPR.eventBetaGroupQrCodeLabel")
                 }}</span>
-                <input v-model="eventForm.betaGroupQrCode" class="field-input" />
-              </label>
+                <ImageUrlInput
+                  v-model="eventForm.betaGroupQrCode"
+                  v-model:uploading="isUploadingEventBetaGroupQrCode"
+                  input-id="admin-anchor-event-beta-group-qr"
+                  purpose="anchor-event-beta-group-qr"
+                  :placeholder="t('adminPR.eventImageUrlPlaceholder')"
+                  :upload-label="t('adminPR.uploadEventBetaGroupQrCodeAction')"
+                  :uploading-label="t('adminPR.uploadingEventImage')"
+                  :preview-alt="t('adminPR.eventBetaGroupQrCodePreviewAlt')"
+                />
+              </div>
 
               <label class="field">
                 <span class="field-label">{{ t("adminPR.eventStatusLabel") }}</span>
@@ -163,7 +181,9 @@
                   updateEventMutation.isPending.value ||
                   Boolean(eventBoundsValidationMessage) ||
                   Boolean(timePoolValidationMessage) ||
-                  Boolean(policyValidationMessage)
+                  Boolean(policyValidationMessage) ||
+                  isUploadingEventCoverImage ||
+                  isUploadingEventBetaGroupQrCode
                 "
                 @click="handleSaveEvent"
               >
@@ -628,6 +648,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
 import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
+import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
 import PRJoinGateConfigEditor from "@/domains/pr/ui/forms/PRJoinGateConfigEditor.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import {
@@ -790,6 +811,8 @@ const replaceLandingConfigMutation = useReplaceAdminAnchorEventLandingConfig();
 const selectedEventIdRaw = ref("");
 const isCreatingEvent = ref(false);
 const eventForm = ref<EventForm>(emptyEventForm());
+const isUploadingEventCoverImage = ref(false);
+const isUploadingEventBetaGroupQrCode = ref(false);
 const landingConfigForm = ref<LandingConfigForm>(emptyLandingConfigForm());
 const publishedPreferenceTagRows = ref<PreferenceTagFormRow[]>([]);
 

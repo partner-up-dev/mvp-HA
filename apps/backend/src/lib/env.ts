@@ -76,8 +76,8 @@ const envSchema = z.object({
     .nonnegative()
     .default(3_600),
 
-  // Poster storage directory (used by upload controller)
-  POSTERS_DIR: optionalStringFromEnv,
+  // Purpose-scoped image storage directory (used by upload controller)
+  IMAGES_DIR: optionalStringFromEnv,
   AVATARS_DIR: optionalStringFromEnv,
 
   // Internal endpoint auth token for external job tick trigger.
