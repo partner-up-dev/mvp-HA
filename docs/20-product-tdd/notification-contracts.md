@@ -75,6 +75,8 @@ At dispatch time, backend reloads current state and revalidates:
 - PR message unread wave is still pending when dispatching `PR_MESSAGE`
 - the target channel is configured
 
+`REMINDER_CONFIRMATION` scheduling treats `CONFIRM_START` as an exact lower-bound attention event: the earliest job claim time is at or after the resolved `confirmationStartAt`, while late execution remains allowed. `CONFIRM_END_MINUS_30M` keeps the coarse reminder tolerance policy.
+
 Channel adapters return a neutral dispatch result:
 
 - `SENT`

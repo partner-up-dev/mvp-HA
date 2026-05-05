@@ -34,8 +34,8 @@ import { PartnerRepository } from "../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../repositories/PartnerRequestRepository";
 import { jobRunner, type JobHandlerContext } from "../jobs";
 import {
-  confirmationReminderSchedulePolicy,
   newPartnerSchedulePolicy,
+  resolveConfirmationReminderSchedulePolicy,
 } from "./job-schedule-policy";
 import {
   isWeChatSubscriptionNotificationConfigured,
@@ -180,7 +180,7 @@ export async function scheduleWeChatReminderJobsForParticipant(
     const scheduleResult = await jobRunner.scheduleOnce({
       jobType: WECHAT_REMINDER_JOB_TYPE,
       runAt,
-      ...confirmationReminderSchedulePolicy,
+      ...resolveConfirmationReminderSchedulePolicy(trigger),
       dedupeKey,
       payload: {
         prId: request.id,
