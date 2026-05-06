@@ -43,6 +43,7 @@
                   type="button"
                   tone="surface"
                   block
+                  data-testid="anchor-event-form-mode.matched.cancel"
                   :disabled="pending"
                   @click="handleCancel"
                 >
@@ -51,6 +52,7 @@
                 <Button
                   type="button"
                   block
+                  data-testid="anchor-event-form-mode.matched.join"
                   :loading="pending"
                   :disabled="disabled"
                   @click="handleConfirm(open)"

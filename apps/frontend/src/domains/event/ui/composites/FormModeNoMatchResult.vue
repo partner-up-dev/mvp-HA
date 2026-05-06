@@ -4,6 +4,7 @@
       v-if="props.candidates.length > 0"
       class="candidate-list"
       data-region="form-mode-candidates"
+      data-testid="anchor-event-form-mode.candidate-list"
     >
       <h2 class="candidate-list__title">
         {{ t("anchorEvent.formMode.candidateListTitle") }}
@@ -16,6 +17,8 @@
           :pr="candidate.pr"
           :time-label="buildCandidateTimeLabel(candidate.pr.time[0])"
           :cover-image="props.resolveCoverImage(candidate.pr.location)"
+          data-testid="anchor-event-form-mode.candidate-card"
+          :data-pr-id="candidate.pr.id"
         >
           <template #actions>
             <PRJoinFlow
@@ -39,6 +42,9 @@
                     appearance="rect"
                     type="button"
                     block
+                    data-testid="anchor-event-form-mode.candidate.join"
+                    :data-pr-id="candidate.pr.id"
+                    :data-rank="index + 1"
                     :loading="pending"
                     :disabled="disabled"
                     @click="
@@ -71,6 +77,7 @@
         tone="tertiary"
         type="button"
         block
+        data-testid="anchor-event-form-mode.create-fallback"
         :loading="props.createPending"
         :disabled="props.createDisabled"
         @click="emit('create-fallback')"

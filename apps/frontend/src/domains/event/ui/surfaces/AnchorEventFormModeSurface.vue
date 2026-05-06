@@ -70,6 +70,7 @@
             :pending="recommendationSubmissionPending"
             :pending-label="t('anchorEvent.formMode.primaryCtaPending')"
             :disabled="!canSubmitRecommendation"
+            data-testid="anchor-event-form-mode.primary-action"
             @complete="handleSubmitRecommendation"
           />
         </div>

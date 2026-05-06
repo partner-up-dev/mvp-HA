@@ -2,11 +2,13 @@
   <InlineNotice
     v-if="showDraftPublishCard"
     tone="warning"
+    data-testid="pr-detail.draft-publish.notice"
     :message="t('prPage.publishDraft.description')"
   >
     <template #actions>
       <Button
         type="button"
+        data-testid="pr-detail.draft-publish.action"
         :loading="publishMutation.isPending.value"
         @click="handlePublishDraft"
       >

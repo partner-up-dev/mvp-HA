@@ -33,6 +33,7 @@
       <InlineNotice
         v-if="showEventAssistedCreateHandoffNotice"
         tone="success"
+        data-testid="pr-detail.event-assisted-create.notice"
         :title="t('prPage.eventAssistedCreateHandoff.title')"
         :message="t('prPage.eventAssistedCreateHandoff.description')"
       />

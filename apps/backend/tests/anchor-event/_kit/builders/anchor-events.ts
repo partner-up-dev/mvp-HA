@@ -28,7 +28,9 @@ export type ScenarioAnchorEvent = {
   title: string;
   type: string;
   locationId: string;
+  locationIds: string[];
   timeWindow: [string, string];
+  timeWindows: Array<[string, string]>;
 };
 
 type CreatePRResponse = {
@@ -52,32 +54,36 @@ const buildScenarioTimeWindow = (sequence: number): [string, string] => {
 
 export async function givenAnchorEvent(input: {
   label: string;
+  locationIds?: string[];
+  timeWindows?: Array<[string, string]>;
+  defaultMinPartners?: number | null;
+  defaultMaxPartners?: number | null;
 }): Promise<ScenarioAnchorEvent> {
   const sequence = scenarioAnchorEventSequence++;
-  const timeWindow = buildScenarioTimeWindow(sequence);
+  const timeWindows = input.timeWindows ?? [buildScenarioTimeWindow(sequence)];
   const type = `system-anchor-landing-${input.label}-${sequence}`;
   const title = `System Anchor Landing ${input.label}`;
-  const locationId = `System Landing Court ${sequence}`;
+  const locationIds = input.locationIds ?? [`System Landing Court ${sequence}`];
+  const locationId = locationIds[0] ?? `System Landing Court ${sequence}`;
+  const timeWindow = timeWindows[0] ?? buildScenarioTimeWindow(sequence);
 
   const event = await anchorEventRepo.create({
     title,
     type,
     description: `System scenario anchor event for ${input.label}`,
-    locationPool: [locationId],
+    locationPool: locationIds,
     timePoolConfig: {
       durationMinutes: 60,
       earliestLeadMinutes: null,
-      startRules: [
-        {
-          id: "system-scenario-start",
-          kind: "ABSOLUTE",
-          startAt: timeWindow[0],
-          description: "System scenario start window",
-        },
-      ],
+      startRules: timeWindows.map((window, index) => ({
+        id: `system-scenario-start-${index + 1}`,
+        kind: "ABSOLUTE",
+        startAt: window[0],
+        description: `System scenario start window ${index + 1}`,
+      })),
     },
-    defaultMinPartners: 2,
-    defaultMaxPartners: null,
+    defaultMinPartners: input.defaultMinPartners ?? 2,
+    defaultMaxPartners: input.defaultMaxPartners ?? null,
     defaultConfirmationStartOffsetMinutes:
       DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
     defaultConfirmationEndOffsetMinutes: DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
@@ -95,7 +101,9 @@ export async function givenAnchorEvent(input: {
     title: event.title,
     type: event.type,
     locationId,
+    locationIds,
     timeWindow,
+    timeWindows,
   };
 }
 
@@ -103,17 +111,23 @@ export async function givenAnchorEventVisiblePR(input: {
   creator: ScenarioUser;
   event: ScenarioAnchorEvent;
   title: string;
+  location?: string;
+  timeWindow?: [string, string];
+  preferences?: string[];
+  minPartners?: number | null;
+  maxPartners?: number | null;
+  expectedStatus?: PRStatus;
 }): Promise<{ id: PRId }> {
   const fields: PartnerRequestFields = {
     title: input.title,
     type: input.event.type,
-    time: input.event.timeWindow,
-    location: input.event.locationId,
-    minPartners: 2,
-    maxPartners: null,
+    time: input.timeWindow ?? input.event.timeWindow,
+    location: input.location ?? input.event.locationId,
+    minPartners: input.minPartners ?? 2,
+    maxPartners: input.maxPartners ?? null,
     partners: [],
     budget: null,
-    preferences: ["场景:分流"],
+    preferences: input.preferences ?? ["场景:分流"],
     notes: "System scenario visible PR",
   };
 
@@ -127,7 +141,7 @@ export async function givenAnchorEventVisiblePR(input: {
   });
   const body = await expectJsonResponse<CreatePRResponse>(response, 201);
 
-  assert.equal(body.status, "OPEN");
+  assert.equal(body.status, input.expectedStatus ?? "OPEN");
 
   return { id: body.id };
 }

@@ -18,6 +18,8 @@
       <template #item="{ item, selected }">
         <article
           class="location-card"
+          data-testid="anchor-event-form-mode.location.option"
+          :data-location-id="String(asLocationCardViewModel(item).id)"
           :class="{
             'location-card--selected': selected,
             'location-card--create': asLocationCardViewModel(item).isCreateCard,
@@ -127,9 +129,18 @@ const handleUpdateLocation = (value: string | number | null) => {
 };
 
 const handleCardClick = (card: LocationCardViewModel) => {
+  if (!card.isCreateCard) {
+    activeCardId.value = String(card.id);
+    emit("update:modelValue", String(card.id));
+    return;
+  }
+
   if (card.isCreateCard && activeCardId.value === CREATE_LOCATION_CARD_ID) {
     emit("createLocation");
+    return;
   }
+
+  activeCardId.value = CREATE_LOCATION_CARD_ID;
 };
 
 const handleCarouselKeydown = (event: KeyboardEvent) => {
