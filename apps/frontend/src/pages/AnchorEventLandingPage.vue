@@ -99,7 +99,9 @@
       :model-value="selectedOtherEventId"
       :events="otherEventCandidates"
       :aria-label="t('anchorEvent.otherEvents.title')"
-      @update:model-value="handleSelectOtherEvent"
+      activate-on-card-click
+      @update:model-value="selectedOtherEventId = $event"
+      @activate="handleSelectOtherEvent"
     />
   </BottomDrawer>
 
@@ -196,7 +198,7 @@ const { assignmentQuery, resolvedMode, isTimeoutFallback } =
 const { data: detail, isLoading: isDetailLoading, isError: isDetailError } =
   useAnchorEventDetail(eventId);
 const otherEventsQuery = useAnchorEvents();
-const selectedOtherEventId = computed(() => eventId.value);
+const selectedOtherEventId = ref<number | null>(null);
 const otherEventCandidates = computed(() =>
   (otherEventsQuery.data.value ?? []).filter(
     (item) => item.id !== null && item.id !== eventId.value,
@@ -288,6 +290,22 @@ const handleLandingBack = async () => {
 watch([eventId, resolvedMode], () => {
   formModeResultState.value = "selection";
 });
+
+watch(
+  otherEventCandidates,
+  (candidates) => {
+    const selectedId = selectedOtherEventId.value;
+    if (
+      selectedId !== null &&
+      candidates.some((candidate) => candidate.id === selectedId)
+    ) {
+      return;
+    }
+
+    selectedOtherEventId.value = candidates[0]?.id ?? null;
+  },
+  { immediate: true },
+);
 
 const createEventAssistedPRMutation = useCreateEventAssistedPR();
 const isCreatePending = computed(

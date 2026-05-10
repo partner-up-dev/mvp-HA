@@ -247,7 +247,9 @@ const handleOptionKeydown = (event: KeyboardEvent, index: number) => {
 };
 
 const isGesturePointer = (event: PointerEvent): boolean =>
-  event.pointerType === "touch" || event.pointerType === "pen";
+  event.pointerType === "touch" ||
+  event.pointerType === "pen" ||
+  event.pointerType === "mouse";
 
 const releasePointerCapture = (pointerId: number) => {
   const carousel = carouselRef.value;
@@ -276,6 +278,10 @@ const resetGestureState = () => {
 
 const handlePointerDown = (event: PointerEvent) => {
   if (!canSwipe.value || !isGesturePointer(event) || event.isPrimary === false) {
+    return;
+  }
+
+  if (event.pointerType === "mouse" && event.button !== 0) {
     return;
   }
 
@@ -421,6 +427,8 @@ const optionStyle = (index: number): CSSProperties => {
 
   width: 100%;
   min-width: 0;
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .peek-radio-carousel__viewport {
