@@ -444,6 +444,9 @@ export function buildPRPartnerSection(params: {
   } else if (!base.viewer.isParticipant) {
     canCheckIn = false;
     checkInBlockedReason = "NOT_JOINED";
+  } else if (base.viewer.slotState === "ATTENDED") {
+    canCheckIn = false;
+    checkInBlockedReason = "ALREADY_CONFIRMED";
   } else if (!started) {
     canCheckIn = false;
     checkInBlockedReason = "CHECKIN_NOT_OPEN";

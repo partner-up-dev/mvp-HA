@@ -410,7 +410,7 @@ const dockActions = computed<DockActionItem[]>(() => {
     ];
   }
 
-  if (viewer.slotState === "CONFIRMED" || viewer.slotState === "ATTENDED") {
+  if (viewer.slotState === "CONFIRMED") {
     const checkInTip = viewer.canCheckIn ? null : resolveCheckInTip();
     return [
       {
