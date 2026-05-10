@@ -11,6 +11,7 @@ import {
   prStatusManualSchema,
   visibilityStatusSchema,
 } from "../entities";
+import { feedbackQuestionnaireDefinitionSchema } from "../entities/feedback-questionnaire";
 import {
   adminAuthMiddleware,
   type AdminAuthEnv,
@@ -38,6 +39,11 @@ import {
   updateAdminPRStatus,
   updateAdminPRVisibility,
 } from "../domains/admin-anchor-management";
+import {
+  createAdminFeedbackQuestionnaireTemplate,
+  listAdminFeedbackQuestionnaireTemplates,
+  updateAdminFeedbackQuestionnaireTemplate,
+} from "../domains/feedback-questionnaire";
 import { prMessageCreateSchema } from "./pr-controller.shared";
 import { anchorEventLandingConfigSchema } from "../domains/anchor-event/landing-config";
 
@@ -49,6 +55,9 @@ const eventIdParamSchema = z.object({
 
 const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
+});
+const feedbackQuestionnaireTemplateIdParamSchema = z.object({
+  templateId: z.coerce.number().int().positive(),
 });
 const prMessageIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -130,6 +139,12 @@ const adminUpdatePRVisibilitySchema = z.object({
 const adminUpdatePRFeedbackQuestionnaireInstanceSchema = z.object({
   feedbackQuestionnaireInstanceId: z.number().int().positive().nullable(),
 });
+const adminFeedbackQuestionnaireTemplateInputSchema = z.object({
+  key: z.string().trim().min(1).max(120),
+  version: z.string().trim().min(1).max(40),
+  title: z.string().trim().min(1).max(200),
+  definition: feedbackQuestionnaireDefinitionSchema,
+});
 const adminPreferenceTagsReplaceSchema = z.object({
   tags: z.array(
     z.object({
@@ -170,6 +185,33 @@ export const adminAnchorManagementRoute = app
     const result = await getAdminPRWorkspace();
     return c.json(result);
   })
+  .get("/feedback-questionnaires/templates", async (c) => {
+    const result = await listAdminFeedbackQuestionnaireTemplates();
+    return c.json(result);
+  })
+  .post(
+    "/feedback-questionnaires/templates",
+    zValidator("json", adminFeedbackQuestionnaireTemplateInputSchema),
+    async (c) => {
+      const payload = c.req.valid("json");
+      const result = await createAdminFeedbackQuestionnaireTemplate(payload);
+      return c.json(result);
+    },
+  )
+  .patch(
+    "/feedback-questionnaires/templates/:templateId",
+    zValidator("param", feedbackQuestionnaireTemplateIdParamSchema),
+    zValidator("json", adminFeedbackQuestionnaireTemplateInputSchema),
+    async (c) => {
+      const { templateId } = c.req.valid("param");
+      const payload = c.req.valid("json");
+      const result = await updateAdminFeedbackQuestionnaireTemplate(
+        templateId,
+        payload,
+      );
+      return c.json(result);
+    },
+  )
   .put(
     "/events/:eventId/landing-config",
     zValidator("param", eventIdParamSchema),

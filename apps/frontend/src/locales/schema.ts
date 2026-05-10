@@ -992,6 +992,7 @@ export interface MessageSchema {
     navBookingSupport: string;
     navBookingExecution: string;
     navPois: string;
+    navFeedbackQuestionnaires: string;
     logoutAction: string;
   };
   adminLogin: {
@@ -1114,6 +1115,32 @@ export interface MessageSchema {
     ruleMonthDaysLabel: string;
     ruleMonthsLabel: string;
     ruleNumberListPlaceholder: string;
+  };
+  adminFeedbackQuestionnaires: {
+    title: string;
+    subtitle: string;
+    templatesTitle: string;
+    templateCount: string;
+    templateLabel: string;
+    newTemplateAction: string;
+    newTemplateOption: string;
+    createFormTitle: string;
+    editFormTitle: string;
+    formHint: string;
+    keyLabel: string;
+    keyPlaceholder: string;
+    versionLabel: string;
+    versionPlaceholder: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+    definitionLabel: string;
+    createAction: string;
+    saveAction: string;
+    saving: string;
+    invalidJson: string;
+    invalidDefinition: string;
+    created: string;
+    saved: string;
   };
   adminAnchorEvents: {
     title: string;

@@ -28,6 +28,8 @@ const AdminBookingSupportPage = () =>
 const AdminBookingExecutionPage = () =>
   import("@/pages/AdminBookingExecutionPage.vue");
 const AdminPoisPage = () => import("@/pages/AdminPoisPage.vue");
+const AdminFeedbackQuestionnairesPage = () =>
+  import("@/pages/AdminFeedbackQuestionnairesPage.vue");
 const ContactAuthorPage = () => import("@/pages/ContactAuthorPage.vue");
 const ContactSupportPage = () => import("@/pages/ContactSupportPage.vue");
 const AboutPage = () => import("@/pages/AboutPage.vue");
@@ -168,6 +170,15 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/pois",
     name: "admin-pois",
     component: AdminPoisPage,
+    meta: {
+      wechatSharePolicy: "route",
+      requiresAdminAuth: true,
+    },
+  },
+  {
+    path: "/admin/feedback-questionnaires",
+    name: "admin-feedback-questionnaires",
+    component: AdminFeedbackQuestionnairesPage,
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,

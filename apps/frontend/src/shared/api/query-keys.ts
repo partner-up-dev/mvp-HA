@@ -60,6 +60,8 @@ export const queryKeys = {
       ["admin", "anchor-events", "preference-tags", eventId] as const,
     pois: () => ["admin", "pois"] as const,
     poisByIds: (idsCsv: string) => ["admin", "pois", "by-ids", idsCsv] as const,
+    feedbackQuestionnaireTemplates: () =>
+      ["admin", "feedback-questionnaires", "templates"] as const,
     bookingSupport: (eventId: number | null) =>
       ["admin", "booking-support", eventId] as const,
     bookingExecutionWorkspace: () =>

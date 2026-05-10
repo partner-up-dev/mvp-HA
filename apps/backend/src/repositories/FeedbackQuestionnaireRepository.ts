@@ -5,6 +5,7 @@ import {
   feedbackQuestionnaireResponses,
   feedbackQuestionnaireTemplates,
   type FeedbackQuestionnaireAnswers,
+  type FeedbackQuestionnaireDefinition,
   type FeedbackQuestionnaireInstance,
   type FeedbackQuestionnaireInstanceId,
   type FeedbackQuestionnaireTemplateId,
@@ -31,6 +32,42 @@ export class FeedbackQuestionnaireRepository {
       .select()
       .from(feedbackQuestionnaireTemplates)
       .where(eq(feedbackQuestionnaireTemplates.id, id));
+    return result[0] ?? null;
+  }
+
+  async findTemplateByKeyVersion(input: {
+    key: string;
+    version: string;
+  }) {
+    const result = await db
+      .select()
+      .from(feedbackQuestionnaireTemplates)
+      .where(
+        and(
+          eq(feedbackQuestionnaireTemplates.key, input.key),
+          eq(feedbackQuestionnaireTemplates.version, input.version),
+        ),
+      );
+    return result[0] ?? null;
+  }
+
+  async updateTemplate(
+    id: FeedbackQuestionnaireTemplateId,
+    data: {
+      key: string;
+      version: string;
+      title: string;
+      definition: FeedbackQuestionnaireDefinition;
+    },
+  ) {
+    const result = await db
+      .update(feedbackQuestionnaireTemplates)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(feedbackQuestionnaireTemplates.id, id))
+      .returning();
     return result[0] ?? null;
   }
 

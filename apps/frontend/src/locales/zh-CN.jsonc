@@ -670,6 +670,7 @@
     "navBookingSupport": "预订与资助配置",
     "navBookingExecution": "预订执行控制台",
     "navPois": "POIs 配置",
+    "navFeedbackQuestionnaires": "反馈问卷",
     "logoutAction": "退出登录"
   },
   "adminPois": {
@@ -736,6 +737,32 @@
     "ruleMonthDaysLabel": "日期",
     "ruleMonthsLabel": "月份",
     "ruleNumberListPlaceholder": "用英文逗号分隔，例如 1,15,31"
+  },
+  "adminFeedbackQuestionnaires": {
+    "title": "反馈问卷",
+    "subtitle": "维护可挂载到活动的问卷模板。PR 创建时会按活动模板物化一份问卷实例。",
+    "templatesTitle": "问卷模板",
+    "templateCount": "共 {count} 个模板",
+    "templateLabel": "模板",
+    "newTemplateAction": "新建模板",
+    "newTemplateOption": "新建模板",
+    "createFormTitle": "创建问卷模板",
+    "editFormTitle": "编辑问卷模板",
+    "formHint": "当前阶段直接编辑 definition JSON；保存时后端会执行问卷结构校验。",
+    "keyLabel": "Key",
+    "keyPlaceholder": "post-event-feedback",
+    "versionLabel": "Version",
+    "versionPlaceholder": "1.0.0",
+    "titleLabel": "标题",
+    "titlePlaceholder": "活动反馈",
+    "definitionLabel": "Definition JSON",
+    "createAction": "创建模板",
+    "saveAction": "保存模板",
+    "saving": "保存中...",
+    "invalidJson": "Definition JSON 格式无效。",
+    "invalidDefinition": "Definition 需要是 JSON object。",
+    "created": "模板已创建。",
+    "saved": "模板已保存。"
   },
   "adminLogin": {
     "title": "管理员登录",

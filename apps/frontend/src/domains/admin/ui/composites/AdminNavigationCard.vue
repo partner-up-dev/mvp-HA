@@ -38,6 +38,12 @@
       >
         {{ t("adminCommon.navPois") }}
       </ChoiceCard>
+      <ChoiceCard
+        :to="{ name: 'admin-feedback-questionnaires' }"
+        class="admin-navigation-card__link"
+      >
+        {{ t("adminCommon.navFeedbackQuestionnaires") }}
+      </ChoiceCard>
     </nav>
 
     <Button
