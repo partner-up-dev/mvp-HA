@@ -1,8 +1,11 @@
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type {
+  AnchorEventId,
+  PRJoinGateConfig,
+} from "../../../entities";
+import type {
   PartnerRequestFields,
 } from "../../../entities/partner-request";
-import type { PRJoinGateConfig } from "../../../entities";
 import { initializeSlotsForPR } from "../services/slot-management.service";
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
@@ -15,6 +18,7 @@ import {
   finalizeCreatedPR,
   type CreatePRCommandResult,
 } from "./create-pr.shared";
+import { materializeEventDefaultsForPR } from "../services/event-default-materialization.service";
 
 const prRepo = new PartnerRequestRepository();
 
@@ -24,6 +28,7 @@ export async function createPRFromStructured(
   fields: PartnerRequestFields,
   creatorIdentity: CreatorIdentityInput,
   options: {
+    anchorEventId?: AnchorEventId;
     createSource?: StructuredCreateSource;
     joinGateConfig?: PRJoinGateConfig;
   } = {},
@@ -58,6 +63,15 @@ export async function createPRFromStructured(
     request.id,
     null,
   );
+
+  await materializeEventDefaultsForPR({
+    prId: request.id,
+    anchorEventId: options.anchorEventId,
+    type: request.type,
+    location: request.location,
+    timeWindow: request.time,
+    prJoinGateConfig: options.joinGateConfig,
+  });
 
   operationLogService.log({
     actorId: createdBy,

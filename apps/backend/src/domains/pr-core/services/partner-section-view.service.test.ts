@@ -33,6 +33,7 @@ const buildPublicPR = (
     notes: null,
     meetingPoint: null,
     joinGateConfig: [],
+    feedbackQuestionnaireInstanceId: null,
     createdBy: null,
     xiaohongshuPoster: null,
     wechatThumbnail: null,

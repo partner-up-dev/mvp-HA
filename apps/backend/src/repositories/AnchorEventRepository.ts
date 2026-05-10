@@ -85,6 +85,7 @@ export class AnchorEventRepository {
         | "meetingPoint"
         | "locationMeetingPoints"
         | "joinGateConfig"
+        | "feedbackQuestionnaireTemplateId"
         | "coverImage"
         | "betaGroupQrCode"
         | "status"

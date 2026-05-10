@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   uuid,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -19,6 +20,10 @@ import {
   type PRJoinGateConfig,
 } from "./join-gate";
 import { users, type UserId } from "./user";
+import {
+  feedbackQuestionnaireInstances,
+  type FeedbackQuestionnaireInstanceId,
+} from "./feedback-questionnaire";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
@@ -158,6 +163,13 @@ export const partnerRequests = pgTable("partner_requests", {
     .$type<PRJoinGateConfig>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  feedbackQuestionnaireInstanceId: bigint("feedback_questionnaire_instance_id", {
+    mode: "number",
+  })
+    .$type<FeedbackQuestionnaireInstanceId | null>()
+    .references(() => feedbackQuestionnaireInstances.id, {
+      onDelete: "set null",
+    }),
   createdBy: uuid("created_by")
     .$type<UserId | null>()
     .references(() => users.id, { onDelete: "set null" }),

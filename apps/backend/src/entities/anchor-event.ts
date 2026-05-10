@@ -5,6 +5,7 @@ import {
   jsonb,
   timestamp,
   integer,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -19,6 +20,10 @@ import {
   prJoinGateConfigSchema,
   type PRJoinGateConfig,
 } from "./join-gate";
+import {
+  feedbackQuestionnaireTemplates,
+  type FeedbackQuestionnaireTemplateId,
+} from "./feedback-questionnaire";
 
 // ---------------------------------------------------------------------------
 // Zod schemas
@@ -353,6 +358,14 @@ export const anchorEvents = pgTable("anchor_events", {
     .$type<PRJoinGateConfig>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  feedbackQuestionnaireTemplateId: bigint(
+    "feedback_questionnaire_template_id",
+    { mode: "number" },
+  )
+    .$type<FeedbackQuestionnaireTemplateId | null>()
+    .references(() => feedbackQuestionnaireTemplates.id, {
+      onDelete: "set null",
+    }),
   locationMeetingPoints: jsonb("location_meeting_points")
     .$type<MeetingPointConfigMap>()
     .notNull()

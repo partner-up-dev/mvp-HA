@@ -22,3 +22,4 @@ export * from "./notification-opportunity";
 export * from "./notification-wave";
 export * from "./poi";
 export * from "./anchor-event-preference-tag";
+export * from "./feedback-questionnaire";

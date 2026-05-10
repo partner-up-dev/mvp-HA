@@ -1,0 +1,252 @@
+<template>
+  <form class="feedback-form" @submit.prevent="handleSubmit">
+    <div class="feedback-form__questions">
+      <fieldset
+        v-for="question in definition.questions"
+        :key="question.id"
+        class="feedback-form__question"
+      >
+        <legend class="feedback-form__label">
+          {{ question.label }}
+          <span v-if="question.required" aria-hidden="true">*</span>
+        </legend>
+
+        <div v-if="question.type === 'single_choice'" class="choice-list">
+          <label
+            v-for="option in question.options"
+            :key="option.value"
+            class="choice-row"
+          >
+            <input
+              type="radio"
+              :name="question.id"
+              :value="option.value"
+              :checked="readSingleChoiceValue(question.id) === option.value"
+              :disabled="pending"
+              @change="setSingleChoiceAnswer(question.id, option.value)"
+            />
+            <span>{{ option.label }}</span>
+          </label>
+        </div>
+
+        <textarea
+          v-else-if="question.type === 'textarea'"
+          class="feedback-form__textarea"
+          :value="readTextareaValue(question.id)"
+          :maxlength="question.maxLength"
+          :disabled="pending"
+          @input="setTextareaAnswer(question.id, $event)"
+        ></textarea>
+
+        <ImageUrlInput
+          v-else
+          :model-value="readImageUrl(question.id)"
+          :input-id="`feedback-${instanceId}-${question.id}`"
+          purpose="feedback"
+          upload-label="上传图片"
+          uploading-label="上传中..."
+          preview-alt="反馈图片预览"
+          :disabled="pending"
+          data-testid="pr-detail.feedback.image-upload"
+          @update:model-value="setImageAnswer(question.id, $event)"
+        />
+      </fieldset>
+    </div>
+
+    <p v-if="validationMessage" class="feedback-form__error">
+      {{ validationMessage }}
+    </p>
+
+    <div class="feedback-form__actions">
+      <Button
+        type="submit"
+        :loading="pending"
+        :disabled="pending"
+        data-testid="pr-detail.feedback.submit"
+      >
+        {{ pending ? "提交中..." : "提交反馈" }}
+      </Button>
+      <Button
+        type="button"
+        tone="surface"
+        :disabled="pending"
+        @click="$emit('cancel')"
+      >
+        稍后填写
+      </Button>
+    </div>
+  </form>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import type {
+  FeedbackQuestionnaireAnswers,
+  FeedbackQuestionnaireDefinition,
+} from "@partner-up-dev/backend";
+import Button from "@/shared/ui/actions/Button.vue";
+import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
+
+const props = defineProps<{
+  instanceId: number;
+  definition: FeedbackQuestionnaireDefinition;
+  pending: boolean;
+}>();
+
+const emit = defineEmits<{
+  submit: [answers: FeedbackQuestionnaireAnswers];
+  cancel: [];
+}>();
+
+const answers = ref<FeedbackQuestionnaireAnswers>({});
+const validationMessage = ref<string | null>(null);
+
+const readSingleChoiceValue = (questionId: string): string | null => {
+  const answer = answers.value[questionId];
+  return answer?.type === "single_choice" ? answer.value : null;
+};
+
+const readTextareaValue = (questionId: string): string => {
+  const answer = answers.value[questionId];
+  return answer?.type === "textarea" ? answer.value : "";
+};
+
+const readImageUrl = (questionId: string): string => {
+  const answer = answers.value[questionId];
+  return answer?.type === "image_upload" ? answer.imageUrl : "";
+};
+
+const setSingleChoiceAnswer = (questionId: string, value: string): void => {
+  validationMessage.value = null;
+  answers.value = {
+    ...answers.value,
+    [questionId]: {
+      type: "single_choice",
+      value,
+    },
+  };
+};
+
+const setTextareaAnswer = (questionId: string, event: Event): void => {
+  validationMessage.value = null;
+  const target = event.target as HTMLTextAreaElement | null;
+  answers.value = {
+    ...answers.value,
+    [questionId]: {
+      type: "textarea",
+      value: target?.value ?? "",
+    },
+  };
+};
+
+const setImageAnswer = (questionId: string, imageUrl: string): void => {
+  validationMessage.value = null;
+  answers.value = {
+    ...answers.value,
+    [questionId]: {
+      type: "image_upload",
+      imageUrl,
+    },
+  };
+};
+
+const isAnswered = (questionId: string): boolean => {
+  const answer = answers.value[questionId];
+  if (!answer) return false;
+  if (answer.type === "single_choice") return answer.value.trim().length > 0;
+  if (answer.type === "textarea") return answer.value.trim().length > 0;
+  return answer.imageUrl.trim().length > 0;
+};
+
+const handleSubmit = (): void => {
+  const missingQuestion = props.definition.questions.find(
+    (question) => question.required && !isAnswered(question.id),
+  );
+  if (missingQuestion) {
+    validationMessage.value = `请填写「${missingQuestion.label}」`;
+    return;
+  }
+
+  emit("submit", answers.value);
+};
+</script>
+
+<style lang="scss" scoped>
+.feedback-form,
+.feedback-form__questions,
+.feedback-form__question,
+.choice-list {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.feedback-form {
+  gap: var(--sys-spacing-medium);
+}
+
+.feedback-form__questions {
+  gap: var(--sys-spacing-medium);
+}
+
+.feedback-form__question {
+  gap: var(--sys-spacing-small);
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.feedback-form__label {
+  margin: 0;
+  padding: 0;
+  @include mx.pu-font(label-large);
+  color: var(--sys-color-on-surface);
+}
+
+.choice-list {
+  gap: var(--sys-spacing-xsmall);
+}
+
+.choice-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sys-spacing-small);
+  color: var(--sys-color-on-surface);
+  @include mx.pu-font(body-medium);
+}
+
+.feedback-form__textarea {
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface-container-lowest);
+  color: var(--sys-color-on-surface);
+  padding: var(--sys-spacing-small);
+  @include mx.pu-font(body-medium);
+
+  &:focus {
+    border-color: var(--sys-color-primary);
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: 1px;
+  }
+}
+
+.feedback-form__error {
+  margin: 0;
+  color: var(--sys-color-error);
+  @include mx.pu-font(body-small);
+}
+
+.feedback-form__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sys-spacing-small);
+}
+
+@media (max-width: 560px) {
+  .feedback-form__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

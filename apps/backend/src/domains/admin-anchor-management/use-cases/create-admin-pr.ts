@@ -4,6 +4,7 @@ import { initializeSlotsForPR } from "../../pr/services";
 import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import {
   assertManualPartnerBoundsValid,
+  materializeEventDefaultsForPR,
   assertPRTimeWindowAvailableAtLocation,
   validateAnchorParticipationPolicyOffsets,
 } from "../../pr/services";
@@ -84,6 +85,14 @@ export async function createAdminPR(
   });
 
   await initializeSlotsForPR(createdRoot.id, null);
+
+  await materializeEventDefaultsForPR({
+    prId: createdRoot.id,
+    type: createdRoot.type,
+    location: createdRoot.location,
+    timeWindow: createdRoot.time,
+    prJoinGateConfig: input.joinGateConfig,
+  });
 
   return {
     root: createdRoot,

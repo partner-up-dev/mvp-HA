@@ -1,5 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
@@ -9,6 +10,7 @@ import type {
   MeetingPointConfig,
   MeetingPointConfigMap,
   PRJoinGateConfig,
+  FeedbackQuestionnaireTemplateId,
 } from "../../../entities";
 import {
   normalizeAnchorEventTimePoolConfig,
@@ -24,6 +26,7 @@ import {
 } from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
+const feedbackRepo = new FeedbackQuestionnaireRepository();
 
 export interface UpdateAdminAnchorEventInput {
   title: string;
@@ -39,6 +42,7 @@ export interface UpdateAdminAnchorEventInput {
   meetingPoint?: MeetingPointConfig | null;
   locationMeetingPoints?: MeetingPointConfigMap;
   joinGateConfig?: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: AnchorEventStatus;
@@ -71,6 +75,16 @@ export async function updateAdminAnchorEvent(
       message: `Anchor event type already exists: ${input.type}`,
     });
   }
+  if (input.feedbackQuestionnaireTemplateId !== null && input.feedbackQuestionnaireTemplateId !== undefined) {
+    const template = await feedbackRepo.findTemplateById(
+      input.feedbackQuestionnaireTemplateId,
+    );
+    if (!template) {
+      throw new HTTPException(404, {
+        message: "Feedback questionnaire template not found",
+      });
+    }
+  }
 
   const affectedRequests =
     await listRequestsAffectedByAnchorEventMeetingPoint(
@@ -99,6 +113,7 @@ export async function updateAdminAnchorEvent(
       input.locationMeetingPoints,
     ),
     joinGateConfig: input.joinGateConfig ?? [],
+    feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     status: input.status,

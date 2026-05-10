@@ -93,3 +93,4 @@ export {
   type PRJoinGateProjectionItem,
   type ResolveJoinGatePayload,
 } from "../../pr-core/services/join-gates.service";
+export { materializeEventDefaultsForPR } from "../../pr-core/services/event-default-materialization.service";

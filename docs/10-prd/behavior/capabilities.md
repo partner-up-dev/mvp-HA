@@ -17,6 +17,7 @@
 - post and read non-realtime PR messages, including operator-authored system messages inside the same PR thread
 - confirm participation when the `Partner` submodule carries confirmation rules
 - submit PR check-in feedback when the attendance module is active
+- submit a mounted post-event feedback questionnaire when the PR carries one
 - progress status based on partner thresholds and time windows
 
 ## 3. Event-Context Collaboration
@@ -69,5 +70,6 @@
 - let operator tooling maintain Anchor/Event/POI/Booking Support semantics
 - let operator tooling publish or reject user-submitted POI location applications
 - let operator tooling upload and maintain POI gallery images, Anchor Event cover images, and event beta-group QR images
+- let operator tooling select Anchor Event feedback questionnaire templates and override a PR's mounted questionnaire instance pointer
 - let operator tooling process booking fulfillment results and release invalid booking contacts
 - let configuration materially shape the real user experience

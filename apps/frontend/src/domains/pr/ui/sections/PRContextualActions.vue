@@ -150,6 +150,18 @@
       </p>
     </div>
 
+    <div v-if="showFeedbackRetryAction" class="primary-action">
+      <Button
+        class="primary-action__button"
+        tone="primary-outline"
+        block
+        data-testid="pr-detail.feedback.open"
+        @click="openFeedbackQuestionnaire"
+      >
+        {{ t("prPage.feedbackQuestionnaire.openAction") }}
+      </Button>
+    </div>
+
     <div v-if="showExitActionInContext" class="secondary-danger-action">
       <Button
         tone="danger"
@@ -213,7 +225,7 @@
         <Button
           type="button"
           :disabled="attendanceActions.checkInPending.value"
-          @click="attendanceActions.submitCheckIn(true)"
+          @click="submitCheckInThenFeedback(true)"
         >
           {{ t("prPage.wouldJoinAgainYes") }}
         </Button>
@@ -221,7 +233,7 @@
           tone="primary-outline"
           type="button"
           :disabled="attendanceActions.checkInPending.value"
-          @click="attendanceActions.submitCheckIn(false)"
+          @click="submitCheckInThenFeedback(false)"
         >
           {{ t("prPage.wouldJoinAgainNo") }}
         </Button>
@@ -235,13 +247,21 @@
         </Button>
       </div>
     </Modal>
+
+    <PRFeedbackQuestionnaireModal
+      :open="feedbackModalOpen"
+      :questionnaire="feedbackQuestionnaire"
+      :pending="submitFeedbackMutation.isPending.value"
+      @close="feedbackModalOpen = false"
+      @submit="submitFeedbackQuestionnaire"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PRId } from "@partner-up-dev/backend";
+import type { FeedbackQuestionnaireAnswers, PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
 import Button from "@/shared/ui/actions/Button.vue";
 import InlineNotice from "@/shared/ui/feedback/InlineNotice.vue";
@@ -253,8 +273,10 @@ import PRWaitlistFlow from "@/domains/pr/ui/composites/PRWaitlistFlow.vue";
 import { useSharedPRActions } from "@/domains/pr/use-cases/useSharedPRActions";
 import { usePRAttendanceActions } from "@/domains/pr/use-cases/usePRAttendanceActions";
 import { useCancelWaitlistPR } from "@/domains/pr/queries/usePRActions";
+import { useSubmitFeedbackQuestionnaire } from "@/domains/feedback/queries/useSubmitFeedbackQuestionnaire";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import { trackEvent } from "@/shared/telemetry/track";
+import PRFeedbackQuestionnaireModal from "./PRFeedbackQuestionnaireModal.vue";
 
 type ContextualReplayKind = "PR_JOIN" | "PR_WAITLIST" | "PR_EXIT" | "PR_CONFIRM";
 type DockActionKey = "JOIN" | "WAITLIST" | "CONFIRM" | "CHECKIN_ATTENDED";
@@ -303,10 +325,12 @@ const showCancelWaitlistConfirmModal = ref(false);
 const bookingContactActionError = ref<string | null>(null);
 const exitActionError = ref<string | null>(null);
 const cancelWaitlistActionError = ref<string | null>(null);
+const feedbackModalOpen = ref(false);
 const lastPrimaryImpressionKey = ref("");
 const joinFlowRef = ref<{ open: () => Promise<void> } | null>(null);
 const waitlistFlowRef = ref<{ open: () => Promise<void> } | null>(null);
 const cancelWaitlistMutation = useCancelWaitlistPR();
+const submitFeedbackMutation = useSubmitFeedbackQuestionnaire();
 
 const notifyActionSuccess = () => {
   emit("action-success");
@@ -329,12 +353,24 @@ const primaryActionErrorMessage = computed(
   () => bookingContactActionError.value,
 );
 
+const feedbackQuestionnaire = computed(() => props.pr.feedbackQuestionnaire);
+const hasPendingFeedbackQuestionnaire = computed(
+  () =>
+    feedbackQuestionnaire.value?.responseState.status === "NOT_SUBMITTED",
+);
+const showFeedbackRetryAction = computed(
+  () =>
+    props.pr.partnerSection.viewer.slotState === "ATTENDED" &&
+    hasPendingFeedbackQuestionnaire.value,
+);
+
 useBodyScrollLock(
   computed(
     () =>
       showExitConfirmModal.value ||
       showCancelWaitlistConfirmModal.value ||
-      attendanceActions.showCheckInFollowup.value,
+      attendanceActions.showCheckInFollowup.value ||
+      feedbackModalOpen.value,
   ),
 );
 
@@ -483,6 +519,7 @@ const showContextualActionArea = computed(() =>
       primaryBlockedMessage.value ||
       waitlistNoticeText.value ||
       primaryDockAction.value ||
+      showFeedbackRetryAction.value ||
       showCancelWaitlistActionInContext.value ||
       showExitActionInContext.value ||
       primaryActionErrorMessage.value,
@@ -524,6 +561,32 @@ const handleConfirmWithBookingContact = async () => {
     bookingContactActionError.value =
       error instanceof Error ? error.message : t("errors.confirmSlotFailed");
   }
+};
+
+const openFeedbackQuestionnaire = (): void => {
+  if (!hasPendingFeedbackQuestionnaire.value) return;
+  feedbackModalOpen.value = true;
+};
+
+const submitCheckInThenFeedback = async (wouldJoinAgain: boolean) => {
+  await attendanceActions.submitCheckIn(wouldJoinAgain);
+  if (hasPendingFeedbackQuestionnaire.value) {
+    feedbackModalOpen.value = true;
+  }
+};
+
+const submitFeedbackQuestionnaire = async (
+  answers: FeedbackQuestionnaireAnswers,
+) => {
+  const questionnaire = feedbackQuestionnaire.value;
+  if (!questionnaire) return;
+  await submitFeedbackMutation.mutateAsync({
+    instanceId: questionnaire.instanceId,
+    prId: props.prId,
+    answers,
+  });
+  feedbackModalOpen.value = false;
+  notifyActionSuccess();
 };
 
 const openJoinFlow = async (): Promise<void> => {

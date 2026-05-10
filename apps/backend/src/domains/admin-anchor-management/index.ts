@@ -18,3 +18,4 @@ export * from "./use-cases/update-admin-pr-content";
 export * from "./use-cases/release-admin-pr-partner";
 export * from "./use-cases/update-admin-pr-status";
 export * from "./use-cases/update-admin-pr-visibility";
+export * from "./use-cases/update-admin-pr-feedback-questionnaire-instance";

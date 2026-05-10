@@ -1,4 +1,5 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
   AnchorEvent,
   AnchorEventStatus,
@@ -7,6 +8,7 @@ import type {
   MeetingPointConfig,
   MeetingPointConfigMap,
   PRJoinGateConfig,
+  FeedbackQuestionnaireTemplateId,
 } from "../../../entities";
 import {
   normalizeAnchorEventTimePoolConfig,
@@ -20,6 +22,7 @@ import {
 } from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
+const feedbackRepo = new FeedbackQuestionnaireRepository();
 
 export interface CreateAdminAnchorEventInput {
   title: string;
@@ -34,6 +37,7 @@ export interface CreateAdminAnchorEventInput {
   defaultJoinLockOffsetMinutes: number;
   meetingPoint?: MeetingPointConfig | null;
   joinGateConfig?: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   locationMeetingPoints?: MeetingPointConfigMap;
   coverImage: string | null;
   betaGroupQrCode: string | null;
@@ -61,6 +65,16 @@ export async function createAdminAnchorEvent(
       message: `Anchor event type already exists: ${input.type}`,
     });
   }
+  if (input.feedbackQuestionnaireTemplateId !== null && input.feedbackQuestionnaireTemplateId !== undefined) {
+    const template = await feedbackRepo.findTemplateById(
+      input.feedbackQuestionnaireTemplateId,
+    );
+    if (!template) {
+      throw new HTTPException(404, {
+        message: "Feedback questionnaire template not found",
+      });
+    }
+  }
 
   return await anchorEventRepo.create({
     title: input.title,
@@ -77,6 +91,7 @@ export async function createAdminAnchorEvent(
     defaultJoinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
     meetingPoint: normalizeMeetingPointConfig(input.meetingPoint),
     joinGateConfig: input.joinGateConfig ?? [],
+    feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     locationMeetingPoints: normalizeMeetingPointConfigMap(
       input.locationMeetingPoints,
     ),

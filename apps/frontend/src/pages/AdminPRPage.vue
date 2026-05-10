@@ -315,6 +315,50 @@
                 }}
               </p>
 
+              <div v-if="!isCreatingPR && selectedPR !== null" class="stack stack--tight">
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminPR.prFeedbackQuestionnaireInstanceLabel")
+                  }}</span>
+                  <select
+                    class="field-input"
+                    :value="prForm.feedbackQuestionnaireInstanceId ?? ''"
+                    data-testid="admin-pr.feedback-instance"
+                    @change="
+                      prForm.feedbackQuestionnaireInstanceId =
+                        parseNullableId($event)
+                    "
+                  >
+                    <option value="">{{ t("adminPR.noFeedbackQuestionnaire") }}</option>
+                    <option
+                      v-for="instance in feedbackQuestionnaireInstances"
+                      :key="instance.id"
+                      :value="instance.id"
+                    >
+                      #{{ instance.id }} / {{ instance.title }}
+                    </option>
+                  </select>
+                </label>
+                <Button
+                  appearance="pill"
+                  tone="outline"
+                  size="sm"
+                  type="button"
+                  :disabled="
+                    selectedPRId === null ||
+                    updatePRFeedbackQuestionnaireInstanceMutation.isPending.value
+                  "
+                  data-testid="admin-pr.feedback-instance.save"
+                  @click="handleSavePRFeedbackQuestionnaireInstance"
+                >
+                  {{
+                    updatePRFeedbackQuestionnaireInstanceMutation.isPending.value
+                      ? t("adminPR.saving")
+                      : t("adminPR.saveFeedbackQuestionnaireInstanceAction")
+                  }}
+                </Button>
+              </div>
+
               <div class="actions actions--inline">
                 <Button
                   appearance="pill"
@@ -563,6 +607,7 @@ import {
   useDeleteAdminPR,
   useDeleteAdminPRMessage,
   useUpdateAdminPRContent,
+  useUpdateAdminPRFeedbackQuestionnaireInstance,
   useUpdateAdminPRMessage,
   useUpdateAdminPRStatus,
   useUpdateAdminPRVisibility,
@@ -594,6 +639,7 @@ type PRForm = {
   meetingPointDescription: string;
   meetingPointImageUrl: string;
   joinGateConfig: PRJoinGateConfig;
+  feedbackQuestionnaireInstanceId: number | null;
   status: "OPEN" | "READY" | "ACTIVE" | "CLOSED";
   visibilityStatus: "VISIBLE" | "HIDDEN";
 };
@@ -618,6 +664,7 @@ const emptyPRForm = (): PRForm => ({
   meetingPointDescription: "",
   meetingPointImageUrl: "",
   joinGateConfig: [],
+  feedbackQuestionnaireInstanceId: null,
   status: "OPEN",
   visibilityStatus: "VISIBLE",
 });
@@ -664,6 +711,7 @@ const toPRForm = (pr: PRRecord): PRForm => ({
   meetingPointDescription: pr.meetingPoint?.description ?? "",
   meetingPointImageUrl: pr.meetingPoint?.imageUrl ?? "",
   joinGateConfig: pr.joinGateConfig,
+  feedbackQuestionnaireInstanceId: pr.feedbackQuestionnaireInstanceId ?? null,
   status: pr.status as PRForm["status"],
   visibilityStatus: pr.visibilityStatus as PRForm["visibilityStatus"],
 });
@@ -680,6 +728,8 @@ const deleteMessageMutation = useDeleteAdminPRMessage();
 const updatePRContentMutation = useUpdateAdminPRContent();
 const updatePRStatusMutation = useUpdateAdminPRStatus();
 const updatePRVisibilityMutation = useUpdateAdminPRVisibility();
+const updatePRFeedbackQuestionnaireInstanceMutation =
+  useUpdateAdminPRFeedbackQuestionnaireInstance();
 
 const filters = ref({
   type: "",
@@ -702,6 +752,9 @@ const pendingDeletePRId = ref<number | null>(null);
 const workspace = computed<Workspace | null>(() => workspaceQuery.data.value ?? null);
 const prs = computed<PRRecord[]>(() => workspace.value?.prs ?? []);
 const typeOptions = computed(() => workspace.value?.typeOptions ?? []);
+const feedbackQuestionnaireInstances = computed(
+  () => workspace.value?.feedbackQuestionnaireInstances ?? [],
+);
 const poiOptions = computed<string[]>(() =>
   [...(poisQuery.data.value ?? [])]
     .map((poi) => poi.id)
@@ -848,7 +901,8 @@ const isSavingPR = computed(
     createPRMutation.isPending.value ||
     updatePRContentMutation.isPending.value ||
     updatePRStatusMutation.isPending.value ||
-    updatePRVisibilityMutation.isPending.value,
+    updatePRVisibilityMutation.isPending.value ||
+    updatePRFeedbackQuestionnaireInstanceMutation.isPending.value,
 );
 const isDeletingPR = computed(() => deletePRMutation.isPending.value);
 
@@ -859,6 +913,7 @@ const mutationErrorMessage = computed(
     updatePRContentMutation.error.value?.message ||
     updatePRStatusMutation.error.value?.message ||
     updatePRVisibilityMutation.error.value?.message ||
+    updatePRFeedbackQuestionnaireInstanceMutation.error.value?.message ||
     null,
 );
 
@@ -947,6 +1002,12 @@ const buildMeetingPointInput = (
   };
 };
 
+const parseNullableId = (event: Event): number | null => {
+  const target = event.target as HTMLSelectElement | null;
+  const parsed = Number(target?.value ?? "");
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
 const prepareNewPR = () => {
   isCreatingPR.value = true;
   selectedPRIdRaw.value = "";
@@ -965,6 +1026,7 @@ const resetMutationErrors = () => {
   updatePRContentMutation.reset();
   updatePRStatusMutation.reset();
   updatePRVisibilityMutation.reset();
+  updatePRFeedbackQuestionnaireInstanceMutation.reset();
 };
 
 const requestDeletePR = (prId: number) => {
@@ -1077,6 +1139,22 @@ const handleDeleteMessage = async (messageId: number) => {
   } catch (error) {
     messageActionError.value =
       error instanceof Error ? error.message : t("common.operationFailed");
+  }
+};
+
+const handleSavePRFeedbackQuestionnaireInstance = async () => {
+  if (selectedPRId.value === null) return;
+
+  try {
+    await updatePRFeedbackQuestionnaireInstanceMutation.mutateAsync({
+      prId: selectedPRId.value,
+      input: {
+        feedbackQuestionnaireInstanceId:
+          prForm.value.feedbackQuestionnaireInstanceId,
+      },
+    });
+  } catch {
+    // Mutation state already drives page-level feedback.
   }
 };
 

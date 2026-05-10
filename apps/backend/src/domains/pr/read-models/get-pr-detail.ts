@@ -1,9 +1,11 @@
 import { HTTPException } from "hono/http-exception";
 import type { PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
+import type { FeedbackQuestionnaireDefinition } from "../../../entities/feedback-questionnaire";
 import { resolveUserByOpenId } from "../../user";
 import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import {
   buildBookingSupportPreview,
   getEffectiveBookingDeadline,
@@ -27,6 +29,7 @@ import { toPublicPR } from "./public-pr-view.service";
 
 const prSupportRepo = new PRSupportResourceRepository();
 const partnerRepo = new PartnerRepository();
+const feedbackRepo = new FeedbackQuestionnaireRepository();
 
 export type PRDetail = {
   id: number;
@@ -69,6 +72,21 @@ export type PRDetail = {
       effectiveBookingDeadlineAt: string | null;
     };
   };
+  feedbackQuestionnaire: {
+    instanceId: number;
+    title: string;
+    definition: FeedbackQuestionnaireDefinition;
+    responseState:
+      | {
+          status: "NOT_SUBMITTED";
+        }
+      | {
+          status: "SUBMITTED";
+          responseId: number;
+          submittedAt: string;
+          updatedAt: string;
+        };
+  } | null;
   partnerSection: PartnerSectionView;
 };
 
@@ -116,6 +134,16 @@ export async function getPRDetailView(
   const policy = hasAnchorParticipationPolicy(request)
     ? resolveAnchorParticipationPolicy(request, request.time)
     : null;
+  const feedbackInstance = request.feedbackQuestionnaireInstanceId
+    ? await feedbackRepo.findInstanceById(request.feedbackQuestionnaireInstanceId)
+    : null;
+  const feedbackResponse =
+    feedbackInstance && viewerUserId
+      ? await feedbackRepo.findResponseByInstanceAndUser({
+          instanceId: feedbackInstance.id,
+          respondentUserId: viewerUserId,
+        })
+      : null;
 
   return {
     id: publicPR.id,
@@ -160,6 +188,23 @@ export async function getPRDetailView(
           bookingSupportPreview.effectiveBookingDeadlineAt,
       },
     },
+    feedbackQuestionnaire: feedbackInstance
+      ? {
+          instanceId: feedbackInstance.id,
+          title: feedbackInstance.title,
+          definition: feedbackInstance.definition,
+          responseState: feedbackResponse
+            ? {
+                status: "SUBMITTED",
+                responseId: feedbackResponse.id,
+                submittedAt: feedbackResponse.submittedAt.toISOString(),
+                updatedAt: feedbackResponse.updatedAt.toISOString(),
+              }
+            : {
+                status: "NOT_SUBMITTED",
+              },
+        }
+      : null,
     partnerSection: buildPRPartnerSection({
       publicPR,
       activeParticipants,

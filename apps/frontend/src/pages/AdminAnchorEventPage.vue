@@ -172,6 +172,30 @@
                 :allow-booking-contact="false"
               />
 
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminPR.eventFeedbackQuestionnaireTemplateLabel")
+                }}</span>
+                <select
+                  class="field-input"
+                  :value="eventForm.feedbackQuestionnaireTemplateId ?? ''"
+                  data-testid="admin-anchor-event.feedback-template"
+                  @change="
+                    eventForm.feedbackQuestionnaireTemplateId =
+                      parseNullableId($event)
+                  "
+                >
+                  <option value="">{{ t("adminPR.noFeedbackQuestionnaire") }}</option>
+                  <option
+                    v-for="template in feedbackQuestionnaireTemplates"
+                    :key="template.id"
+                    :value="template.id"
+                  >
+                    {{ template.title }}
+                  </option>
+                </select>
+              </label>
+
               <Button
                 appearance="pill"
                 size="sm"
@@ -696,6 +720,7 @@ type EventForm = {
   meetingPointImageUrl: string;
   locationMeetingPoints: Record<string, EditableMeetingPointForm>;
   joinGateConfig: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId: number | null;
   durationMinutes: number | null;
   earliestLeadMinutes: number | null;
   absoluteRulesText: string;
@@ -741,6 +766,7 @@ const emptyEventForm = (): EventForm => ({
   meetingPointImageUrl: "",
   locationMeetingPoints: {},
   joinGateConfig: [],
+  feedbackQuestionnaireTemplateId: null,
   durationMinutes: null,
   earliestLeadMinutes: null,
   absoluteRulesText: "",
@@ -781,6 +807,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
     event.locationMeetingPoints,
   ),
   joinGateConfig: event.joinGateConfig,
+  feedbackQuestionnaireTemplateId: event.feedbackQuestionnaireTemplateId ?? null,
   durationMinutes: event.timePoolConfig.durationMinutes ?? null,
   earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
   absoluteRulesText: event.timePoolConfig.startRules
@@ -833,6 +860,9 @@ const workspace = computed<Workspace | null>(
   () => workspaceQuery.data.value ?? null,
 );
 const events = computed<EventRecord[]>(() => workspace.value?.events ?? []);
+const feedbackQuestionnaireTemplates = computed(
+  () => workspace.value?.feedbackQuestionnaireTemplates ?? [],
+);
 
 const selectedEventId = computed<number | null>(() => {
   const parsed = Number(selectedEventIdRaw.value);
@@ -947,6 +977,12 @@ const getLocationMeetingPointImageUrl = (location: string): string =>
 const readInputEventValue = (event: Event): string => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement | null;
   return target?.value ?? "";
+};
+
+const parseNullableId = (event: Event): number | null => {
+  const target = event.target as HTMLSelectElement | null;
+  const parsed = Number(target?.value ?? "");
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
 const updateLocationMeetingPoint = (
@@ -1312,6 +1348,8 @@ const handleSaveEvent = async () => {
       eventForm.value.locationMeetingPoints,
     ),
     joinGateConfig: eventForm.value.joinGateConfig,
+    feedbackQuestionnaireTemplateId:
+      eventForm.value.feedbackQuestionnaireTemplateId,
     coverImage: eventForm.value.coverImage.trim() || null,
     betaGroupQrCode: eventForm.value.betaGroupQrCode.trim() || null,
     status: eventForm.value.status,

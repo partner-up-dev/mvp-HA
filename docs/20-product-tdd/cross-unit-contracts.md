@@ -14,12 +14,12 @@ Contract implication:
 ## 1.1 Image Upload Contract
 
 - The active image upload surface is `POST /api/upload/images/:purpose` with multipart field `image`.
-- Backend accepts the allowlisted image purposes: `poster`, `poi`, `anchor-event-cover`, and `anchor-event-beta-group-qr`.
+- Backend accepts the allowlisted image purposes: `poster`, `poi`, `anchor-event-cover`, `anchor-event-beta-group-qr`, and `feedback`.
 - Backend generates one UUID key per uploaded image. The key is independent from client filenames and is also the stored image filename.
-- Backend stores image bytes under the purpose-owned prefix: `posters/`, `pois/`, `anchor-event-covers/`, or `anchor-event-beta-group-qrs/`.
+- Backend stores image bytes under the purpose-owned prefix: `posters/`, `pois/`, `anchor-event-covers/`, `anchor-event-beta-group-qrs/`, or `feedback/`.
 - Backend serves uploaded images through `GET /api/upload/images/:purpose/:key` and derives the response content type from the stored image bytes.
 - Frontend upload flows use the Hono RPC client and pass the purpose explicitly at the upload boundary.
-- Xiaohongshu and WeChat generated poster assets use purpose `poster`; POI application and Admin POI Gallery uploads use purpose `poi`; Admin Anchor Event cover and beta-group QR uploads use their Anchor Event media purposes.
+- Xiaohongshu and WeChat generated poster assets use purpose `poster`; POI application and Admin POI Gallery uploads use purpose `poi`; Admin Anchor Event cover and beta-group QR uploads use their Anchor Event media purposes; feedback questionnaire image answers use purpose `feedback`.
 
 ## 2. PR Lifecycle Contract
 
@@ -105,8 +105,11 @@ Important coordination note:
 - event-assisted create targets direct `OPEN` creation and therefore requires an authenticated account
 - the old public batch-specific event-create route is retired from the public contract surface
 - structured PR creation accepts arbitrary `type` input with event-type suggestions and accepts one resolved `time_window`; batch and free are UI modes rather than separate persisted PR models
+- PR creation resolves event-owned defaults by PR type when that type maps to an Anchor Event. The created PR receives materialized PR-owned state for event-owned join gates, support resources, and feedback questionnaire instance pointer. This materialization rule applies to public structured create, event-assisted create, admin create, and system auto-expansion.
 - `/pr/:id` remains the primary PR detail route for read, join, exit, confirm, check-in, share, and booking-support handoff; it keeps the persistent notification-subscriptions section mounted there when reminder registration is relevant for that PR and links into adjacent PR sub-routes instead of absorbing all secondary actions inline
 - `GET /api/pr/:id` returns `core.meetingPoint`, the backend-resolved public meeting-point guidance. Fallback order is PR-specific configuration, Anchor Event location-specific configuration, Anchor Event default configuration, then POI configuration. Frontend renders this value under the primary location in the facts card.
+- `GET /api/pr/:id` returns a feedback projection when the PR has a mounted feedback questionnaire instance. The projection includes the instance id, the questionnaire definition snapshot needed for rendering, and the current viewer's response state so the frontend can offer submission or retry without deriving feedback truth locally.
+- `POST /api/feedback/:instanceId` is the feedback questionnaire submission contract. The route treats `instanceId` as a `FeedbackQuestionnaireInstance` id, validates answers against that instance's definition snapshot, and upserts one `FeedbackQuestionnaireResponse` for the current respondent identity. PR participation, attendance, and slot ownership gating live in PR integration surfaces rather than in this generic feedback command.
 - `GET /api/pr/:id/join-gates` is the PR join-gate projection contract. It returns the current viewer's configured join gates with per-gate resolved state. The projection reads PR-owned `joinGateConfig`; when that config is empty it returns an empty gate list; booking-contact gate resolution comes from `pr_booking_contacts`; join-notice gate resolution comes from the current viewer's notice acceptance record.
 - `POST /api/pr/:id/join-gates/:gateKey/resolve` resolves one configured join gate before join or waitlist. `JOIN_NOTICE` writes a viewer-scoped notice acceptance for the gate key and version. `BOOKING_CONTACT` validates and records the PR booking contact phone. Fallback confirmation is a frontend-injected confirmation view and has no backend projection item or durable resolve command.
 - `POST /api/pr/:id/join` rejects unresolved configured join gates with problem code `PR_JOIN_GATE_UNRESOLVED`. Frontend should refresh `GET /api/pr/:id/join-gates` and continue the join-gate modal when it sees this code.
@@ -120,6 +123,7 @@ Important coordination note:
 - The frontend PR join flow is owned by a reusable PR-domain flow component. PR detail, Form Mode matched handoff, Form Mode no-match candidate actions, and waitlist entry provide their own button controls through slots while sharing join-gate resolution, command execution, auth payload application, and post-command notification prompts.
 - The frontend waitlist flow owns only the opt-in checkbox presentation and submits the checkbox value through the typed waitlist command. Backend owns alternative candidate selection, dispatch-time eligibility, source-slot closure, and notification delivery persistence.
 - `DELETE /api/admin/prs/:id` is an admin-only hard-delete command for one PR. Backend deletes the `partner_requests` root row and relies on PR-owned cascade constraints to remove Partner rows, PR support resources, messages, booking support rows, and notification records. Frontend must show an explicit destructive confirmation before sending this command and refresh Admin PR workspace caches after success.
+- `PATCH /api/admin/prs/:id/feedback-questionnaire-instance` is the admin-only PR feedback override command. It replaces the PR's mounted feedback questionnaire instance pointer and leaves general PR content, Anchor Event template selection, and prior response records under their owning persistence rules.
 - `/events/search` is a PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
 - `/e/:eventId` is the ad-scan-first Anchor Event landing entry; it may render `FORM`, `CARD_RICH`, or `LIST` mode while `/events/:eventId` keeps the existing rich page responsibility
 - `/events/:eventId` and `/e/:eventId` may trigger the official-account follow nudge after 3 seconds when the follow-status contract returns `UNKNOWN` or is unavailable and the local cooldown admits another prompt.
@@ -175,6 +179,7 @@ Important coordination note:
 - Admin edits event-owned landing rollout config through `GET /api/admin/events/:eventId/landing-config` and `PUT /api/admin/events/:eventId/landing-config`.
 - Event-owned preset preference tags and their moderation state are persisted through dedicated Anchor Event tables instead of config blobs; admin reads them through `GET /api/admin/events/:eventId/preference-tags`, replaces published tags through `PUT /api/admin/events/:eventId/preference-tags/published`, and moderates pending tags through `POST /api/admin/events/:eventId/preference-tags/:tagId/publish|reject`.
 - Admin edits Anchor Event time-window description copy through `timePoolConfig.startRules[].description`; the admin workspace preview returns the materialized description for each generated time window.
+- Admin selects the Anchor Event feedback questionnaire template pointer through Anchor Event management. That pointer affects future PR materialization for PRs whose type resolves to the Anchor Event. Existing PRs keep their mounted questionnaire instance until a PR-specific pointer override changes it.
 
 ## 9. Share Descriptor Contract
 

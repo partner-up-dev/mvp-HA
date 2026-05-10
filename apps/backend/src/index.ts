@@ -14,6 +14,7 @@ import { authRoute } from "./controllers/auth.controller";
 import { userRoute } from "./controllers/user.controller";
 import { llmRoute } from "./controllers/llm.controller";
 import { uploadRoute } from "./controllers/upload.controller";
+import { feedbackQuestionnaireRoute } from "./controllers/feedback-questionnaire.controller";
 import { wechatRoute } from "./controllers/wechat.controller";
 import { shareRoute } from "./controllers/share.controller";
 import { wecomRoute } from "./controllers/wecom.controller";
@@ -141,6 +142,7 @@ export const routes = app
   .route("/api/llm", llmRoute)
   .route("/api/share", shareRoute)
   .route("/api/upload", uploadRoute)
+  .route("/api/feedback", feedbackQuestionnaireRoute)
   .route("/api/wechat", wechatRoute)
   .route("/api/wecom", wecomRoute)
   .route("/api/config", configRoute)
@@ -268,6 +270,12 @@ export {
   createPRStructuredStatusSchema,
 } from "./entities/partner-request";
 export type { ImageUploadPurpose } from "./infra/storage/image-storage.service";
+export type {
+  FeedbackQuestionnaireAnswers,
+  FeedbackQuestionnaireDefinition,
+  FeedbackQuestionnaireInstanceId,
+  FeedbackQuestionnaireTemplateId,
+} from "./entities/feedback-questionnaire";
 export { PR_MESSAGE_BODY_MAX_LENGTH } from "./entities/pr-message";
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export {

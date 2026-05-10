@@ -17,6 +17,7 @@ import {
   finalizeCreatedPR,
   type CreatePRCommandResult,
 } from "./create-pr.shared";
+import { materializeEventDefaultsForPR } from "../services/event-default-materialization.service";
 
 const prRepo = new PartnerRequestRepository();
 const aiService = new PartnerRequestAIService();
@@ -60,6 +61,13 @@ export async function createPRFromNaturalLanguage(
     request.id,
     null,
   );
+
+  await materializeEventDefaultsForPR({
+    prId: request.id,
+    type: request.type,
+    location: request.location,
+    timeWindow: request.time,
+  });
 
   operationLogService.log({
     actorId: createdBy,

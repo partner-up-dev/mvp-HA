@@ -16,7 +16,7 @@
 2. The `type` field accepts arbitrary input and may offer suggestion options from known event types.
 3. The `time_window` field uses batch or free UI mode. Batch mode offers suggested windows from known event-side availability. Free mode allows direct manual time entry.
 4. The UI resolves those inputs into one PR-owned create payload with one concrete `type` and one concrete `time_window`.
-5. The frontend submits the structured create command.
+5. The frontend submits the structured create command. If the selected `type` resolves to an Anchor Event, PR creation materializes that event's PR defaults such as join gates, support resources, and mounted feedback questionnaire instance onto the created PR.
 6. If the user already has an authenticated account, the backend creates and publishes the PR inside the same creation flow.
 7. If the user is anonymous, the backend creates a `DRAFT` and waits for a later authenticated publish step.
 8. The publish step assigns creator ownership and returns a shareable, revisitable `PR`.
@@ -58,7 +58,7 @@
 20. The event page submits the same structured create command used by the form path. If the user already has an authenticated account, the backend creates and publishes the PR inside that same command.
 21. The current Anchor Event and downstream PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-context collaboration journey entirely.
 22. The user may then join, continue browsing other visible PRs in that event context, or view booking-support information.
-23. The resulting PR may continue through timing and reliability loops such as confirmation, reminders, and attendance follow-up when the corresponding modules are active.
+23. The resulting PR may continue through timing and reliability loops such as confirmation, reminders, attendance follow-up, and mounted post-event feedback when the corresponding modules are active.
 
 ## 4.1 Submit And Review A POI Location Application
 
@@ -99,6 +99,7 @@
 2. The relevant command path enforces whether immediate confirmation is required, whether additional joining is still allowed, and whether unconfirmed slots are released.
 3. If the user still has relevant notification quota, the responsible modules may register reminder, new-partner, or booking-result notifications.
 4. After the event, the attendance module may collect check-in feedback and contribute to the reliability loop.
+5. When the PR has a mounted feedback questionnaire instance, the PR detail flow may ask the participant to submit that questionnaire after check-in. The feedback command stores questionnaire answers in the feedback system, while the PR flow controls when the questionnaire is presented.
 
 ## 9. Admin Booking Execution
 
@@ -115,4 +116,5 @@
 3. The user can also reach `/about` from that path, inspect product and repository metadata, choose which active activity beta group to join, and open the official-account QR modal.
 4. Operator pages maintain event, POI, booking-support, and related capabilities so the above workflows remain operable.
 5. Operator pages review, publish, or reject user-submitted POI location applications.
-5. PR Admin lets an operator hard-delete a selected PR after explicit confirmation. The delete removes the PR root plus the corresponding Partner rows and PR-owned resource rows.
+6. PR Admin lets an operator hard-delete a selected PR after explicit confirmation. The delete removes the PR root plus the corresponding Partner rows and PR-owned resource rows.
+7. Anchor Event Admin lets an operator select the feedback questionnaire template used for future PR materialization, and PR Admin lets an operator replace a specific PR's mounted questionnaire instance pointer.

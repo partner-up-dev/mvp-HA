@@ -3,14 +3,18 @@ import type {
   MeetingPointConfig,
   MeetingPointConfigMap,
   PRJoinGateConfig,
+  FeedbackQuestionnaireTemplate,
+  FeedbackQuestionnaireTemplateId,
 } from "../../../entities";
 import type { AnchorEventPRContextRecord } from "../../../repositories/AnchorEventPRContextRepository";
+import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 import { readAnchorEventPRContextRecordsByEventTimeWindow } from "../../pr/services";
 import { listAnchorEventTimeWindowDetails } from "../../anchor-event/services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
+const feedbackRepo = new FeedbackQuestionnaireRepository();
 
 type AdminPRSummary = {
   prId: number;
@@ -75,6 +79,7 @@ export type AdminAnchorEventSummary = {
   meetingPoint: MeetingPointConfig | null;
   locationMeetingPoints: MeetingPointConfigMap;
   joinGateConfig: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId: FeedbackQuestionnaireTemplateId | null;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   betaGroupQrCode: string | null;
@@ -86,6 +91,12 @@ export type AdminAnchorEventSummary = {
 
 export interface AdminAnchorEventWorkspace {
   events: AdminAnchorEventSummary[];
+  feedbackQuestionnaireTemplates: Array<{
+    id: FeedbackQuestionnaireTemplate["id"];
+    key: string;
+    version: string;
+    title: string;
+  }>;
 }
 
 const toAdminPRSummary = async (
@@ -164,6 +175,8 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         meetingPoint: event.meetingPoint,
         locationMeetingPoints: event.locationMeetingPoints,
         joinGateConfig: event.joinGateConfig,
+        feedbackQuestionnaireTemplateId:
+          event.feedbackQuestionnaireTemplateId ?? null,
         timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,
@@ -175,5 +188,15 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
     }),
   );
 
-  return { events: eventSummaries };
+  const templates = await feedbackRepo.listTemplates();
+
+  return {
+    events: eventSummaries,
+    feedbackQuestionnaireTemplates: templates.map((template) => ({
+      id: template.id,
+      key: template.key,
+      version: template.version,
+      title: template.title,
+    })),
+  };
 }

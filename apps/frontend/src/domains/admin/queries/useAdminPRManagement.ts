@@ -9,6 +9,8 @@ type AdminApi = typeof adminClient.api.admin;
 type PRWorkspaceRoute = AdminApi["pr"]["workspace"];
 type PRsRoute = AdminApi["prs"];
 type PRRoute = PRsRoute[":id"];
+type PRFeedbackQuestionnaireInstanceRoute =
+  PRRoute["feedback-questionnaire-instance"];
 type PRMessagesRoute = PRRoute["messages"];
 type PRMessageRoute = PRMessagesRoute[":messageId"];
 
@@ -39,6 +41,9 @@ export type UpdateAdminPRStatusResponse = InferResponseType<
 export type UpdateAdminPRVisibilityResponse = InferResponseType<
   PRRoute["visibility"]["$patch"]
 >;
+
+export type UpdateAdminPRFeedbackQuestionnaireInstanceResponse =
+  InferResponseType<PRFeedbackQuestionnaireInstanceRoute["$patch"]>;
 
 export type CreateAdminPRMessageResponse = InferResponseType<
   PRRoute["messages"]["$post"]
@@ -95,6 +100,10 @@ export type AdminUpdatePRStatusInput = {
 
 export type AdminUpdatePRVisibilityInput = {
   visibilityStatus: "VISIBLE" | "HIDDEN";
+};
+
+export type AdminUpdatePRFeedbackQuestionnaireInstanceInput = {
+  feedbackQuestionnaireInstanceId: number | null;
 };
 
 export type AdminCreatePRMessageInput = {
@@ -276,6 +285,37 @@ export const useUpdateAdminPRVisibility = () => {
       });
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.anchorEventWorkspace(),
+      });
+    },
+  });
+};
+
+export const useUpdateAdminPRFeedbackQuestionnaireInstance = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    UpdateAdminPRFeedbackQuestionnaireInstanceResponse,
+    Error,
+    { prId: number; input: AdminUpdatePRFeedbackQuestionnaireInstanceInput }
+  >({
+    mutationFn: async ({ prId, input }) => {
+      const res = await adminClient.api.admin.prs[":id"][
+        "feedback-questionnaire-instance"
+      ].$patch({
+        param: { id: prId.toString() },
+        json: input,
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "更新反馈问卷实例失败"));
+      }
+      return await res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.prWorkspace(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.prId),
       });
     },
   });

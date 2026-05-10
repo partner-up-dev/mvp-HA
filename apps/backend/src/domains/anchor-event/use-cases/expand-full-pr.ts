@@ -8,7 +8,6 @@ import { initializeSlotsForPR } from "../../pr/services";
 import type { PRId } from "../../../entities/partner-request";
 import { operationLogService } from "../../../infra/operation-log";
 import { resolvePublicEventLocationPool } from "../services/event-scope";
-import { materializePRSupportResources } from "../../pr-booking-support";
 import { hasAnchorParticipationPolicy } from "../../pr/services";
 import {
   isActiveVisiblePRStatus,
@@ -17,6 +16,7 @@ import {
 } from "../../pr/services";
 import { normalizeAutomaticPartnerBounds } from "../../pr/services";
 import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../../pr-core/services/waitlist-alternative-reminder.service";
+import { materializeEventDefaultsForPR } from "../../pr/services";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -127,7 +127,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     maxPartners: partnerBounds.maxPartners,
     preferences: fullPR.root.preferences,
     notes: fullPR.root.notes,
-    joinGateConfig: fullPR.root.joinGateConfig,
+    joinGateConfig: [],
     confirmationStartOffsetMinutes:
       fullPR.root.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: fullPR.root.confirmationEndOffsetMinutes,
@@ -135,9 +135,10 @@ export async function expandFullPR(prId: PRId): Promise<void> {
   });
 
   await initializeSlotsForPR(createdRoot.id, null);
-  await materializePRSupportResources({
+  await materializeEventDefaultsForPR({
     prId: createdRoot.id,
     anchorEventId: fullPR.anchor.anchorEventId,
+    type: createdRoot.type,
     location: createdRoot.location,
     timeWindow: createdRoot.time,
   });

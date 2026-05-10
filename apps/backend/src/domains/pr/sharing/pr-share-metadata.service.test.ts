@@ -26,6 +26,7 @@ const buildPublicPR = (overrides: Partial<PublicPR> = {}): PublicPR => ({
   notes: null,
   meetingPoint: null,
   joinGateConfig: [],
+  feedbackQuestionnaireInstanceId: null,
   createdBy: null,
   xiaohongshuPoster: null,
   wechatThumbnail: null,

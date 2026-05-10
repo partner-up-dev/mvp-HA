@@ -303,6 +303,9 @@
     "checkInFollowupForMissed": "我未到场",
     "wouldJoinAgainYes": "愿意再参加",
     "wouldJoinAgainNo": "暂时不考虑",
+    "feedbackQuestionnaire": {
+      "openAction": "填写活动反馈"
+    },
     "slotJoined": "你已加入（{partnerId}）",
     "slotConfirmed": "你已确认（{partnerId}）",
     "slotAttended": "你已到场（{partnerId}）",
@@ -801,6 +804,7 @@
     "eventMeetingPointImageUrlLabel": "默认碰头地点图片 URL",
     "eventCoverImageLabel": "封面图 URL",
     "eventBetaGroupQrCodeLabel": "内测群二维码 URL",
+    "eventFeedbackQuestionnaireTemplateLabel": "活动反馈问卷模板",
     "eventImageUrlPlaceholder": "粘贴图片 URL，或上传图片后自动填入",
     "uploadEventCoverImageAction": "上传封面图",
     "uploadEventBetaGroupQrCodeAction": "上传二维码",
@@ -860,6 +864,9 @@
     "prNotesLabel": "备注",
     "prMeetingPointDescriptionLabel": "碰头地点说明",
     "prMeetingPointImageUrlLabel": "碰头地点图片 URL",
+    "prFeedbackQuestionnaireInstanceLabel": "PR 反馈问卷实例",
+    "noFeedbackQuestionnaire": "不挂载反馈问卷",
+    "saveFeedbackQuestionnaireInstanceAction": "保存问卷实例",
     "prLocationHint": "当前活动还没有可选场地。请先在「POIs 配置」页面补充 POIs，再创建或编辑 PR。",
     "prTimeHint": "时间由选中的时间窗口决定，不能在这里单独修改。",
     "prContentLockedHint": "当前状态下仅允许修改状态和可见性。",

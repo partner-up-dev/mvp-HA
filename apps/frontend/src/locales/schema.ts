@@ -338,6 +338,9 @@ export interface MessageSchema {
     checkInFollowupForMissed: string;
     wouldJoinAgainYes: string;
     wouldJoinAgainNo: string;
+    feedbackQuestionnaire: {
+      openAction: string;
+    };
     slotJoined: string;
     slotConfirmed: string;
     slotAttended: string;
@@ -1168,6 +1171,7 @@ export interface MessageSchema {
     eventMeetingPointImageUrlLabel: string;
     eventCoverImageLabel: string;
     eventBetaGroupQrCodeLabel: string;
+    eventFeedbackQuestionnaireTemplateLabel: string;
     eventImageUrlPlaceholder: string;
     uploadEventCoverImageAction: string;
     uploadEventBetaGroupQrCodeAction: string;
@@ -1215,6 +1219,9 @@ export interface MessageSchema {
     prNotesLabel: string;
     prMeetingPointDescriptionLabel: string;
     prMeetingPointImageUrlLabel: string;
+    prFeedbackQuestionnaireInstanceLabel: string;
+    noFeedbackQuestionnaire: string;
+    saveFeedbackQuestionnaireInstanceAction: string;
     prLocationHint: string;
     prTimeHint: string;
     prContentLockedHint: string;

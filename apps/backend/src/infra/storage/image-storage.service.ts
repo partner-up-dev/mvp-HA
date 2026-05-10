@@ -8,6 +8,7 @@ export const imageUploadPurposes = [
   "poi",
   "anchor-event-cover",
   "anchor-event-beta-group-qr",
+  "feedback",
 ] as const;
 
 export type ImageUploadPurpose = (typeof imageUploadPurposes)[number];
@@ -44,6 +45,7 @@ const purposePrefixByPurpose: Record<ImageUploadPurpose, string> = {
   poi: "pois",
   "anchor-event-cover": "anchor-event-covers",
   "anchor-event-beta-group-qr": "anchor-event-beta-group-qrs",
+  feedback: "feedback",
 };
 
 const uuidKeyPattern =

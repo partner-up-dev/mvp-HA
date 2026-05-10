@@ -11,6 +11,7 @@ import {
   type PartnerRequestFields,
 } from "../entities/partner-request";
 import type { PRJoinGateConfig } from "../entities/join-gate";
+import type { FeedbackQuestionnaireInstanceId } from "../entities/feedback-questionnaire";
 import type { TimeWindowEntry } from "../entities/anchor-event";
 import type { UserId } from "../entities/user";
 import { and, desc, eq, inArray } from "drizzle-orm";
@@ -162,6 +163,20 @@ export class PartnerRequestRepository {
       .update(partnerRequests)
       .set({
         joinGateConfig,
+      })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
+  async updateFeedbackQuestionnaireInstanceId(
+    id: PRId,
+    feedbackQuestionnaireInstanceId: FeedbackQuestionnaireInstanceId | null,
+  ): Promise<PartnerRequest | null> {
+    const result = await db
+      .update(partnerRequests)
+      .set({
+        feedbackQuestionnaireInstanceId,
       })
       .where(eq(partnerRequests.id, id))
       .returning();

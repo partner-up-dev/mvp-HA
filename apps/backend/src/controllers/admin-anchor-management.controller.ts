@@ -34,6 +34,7 @@ import {
   updateAdminPRMessage,
   updateAdminAnchorEvent,
   updateAdminPRContent,
+  updateAdminPRFeedbackQuestionnaireInstance,
   updateAdminPRStatus,
   updateAdminPRVisibility,
 } from "../domains/admin-anchor-management";
@@ -80,6 +81,7 @@ const adminAnchorEventInputSchema = z.object({
   defaultJoinLockOffsetMinutes: z.number().int().nonnegative(),
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
   joinGateConfig: prJoinGateConfigSchema.optional(),
+  feedbackQuestionnaireTemplateId: z.number().int().positive().nullable().optional(),
   locationMeetingPoints: meetingPointConfigMapSchema.optional(),
   coverImage: z.string().trim().nullable(),
   betaGroupQrCode: z.string().trim().nullable(),
@@ -124,6 +126,9 @@ const adminUpdatePRStatusSchema = z.object({
 
 const adminUpdatePRVisibilitySchema = z.object({
   visibilityStatus: visibilityStatusSchema,
+});
+const adminUpdatePRFeedbackQuestionnaireInstanceSchema = z.object({
+  feedbackQuestionnaireInstanceId: z.number().int().positive().nullable(),
 });
 const adminPreferenceTagsReplaceSchema = z.object({
   tags: z.array(
@@ -364,6 +369,20 @@ export const adminAnchorManagementRoute = app
       const { visibilityStatus } = c.req.valid("json");
       await updateAdminPRVisibility(id, visibilityStatus);
       return c.json({ ok: true });
+    },
+  )
+  .patch(
+    "/prs/:id/feedback-questionnaire-instance",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", adminUpdatePRFeedbackQuestionnaireInstanceSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { feedbackQuestionnaireInstanceId } = c.req.valid("json");
+      const result = await updateAdminPRFeedbackQuestionnaireInstance(
+        id,
+        feedbackQuestionnaireInstanceId,
+      );
+      return c.json(result);
     },
   )
   .post(

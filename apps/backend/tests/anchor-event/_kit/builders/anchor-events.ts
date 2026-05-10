@@ -5,6 +5,7 @@ import {
   DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
 } from "../../../../src/domains/pr/services";
 import type { AnchorEventId } from "../../../../src/entities";
+import type { FeedbackQuestionnaireTemplateId } from "../../../../src/entities/feedback-questionnaire";
 import type {
   PartnerRequestFields,
   PRId,
@@ -58,6 +59,7 @@ export async function givenAnchorEvent(input: {
   timeWindows?: Array<[string, string]>;
   defaultMinPartners?: number | null;
   defaultMaxPartners?: number | null;
+  feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
 }): Promise<ScenarioAnchorEvent> {
   const sequence = scenarioAnchorEventSequence++;
   const timeWindows = input.timeWindows ?? [buildScenarioTimeWindow(sequence)];
@@ -90,6 +92,8 @@ export async function givenAnchorEvent(input: {
     defaultJoinLockOffsetMinutes: DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
     meetingPoint: null,
     joinGateConfig: [],
+    feedbackQuestionnaireTemplateId:
+      input.feedbackQuestionnaireTemplateId ?? null,
     locationMeetingPoints: {},
     coverImage: null,
     betaGroupQrCode: null,

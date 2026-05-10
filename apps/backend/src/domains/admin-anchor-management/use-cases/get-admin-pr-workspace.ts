@@ -1,7 +1,13 @@
 import type { PartnerRequest, PRJoinGateConfig } from "../../../entities";
 import type { MeetingPointConfig } from "../../../entities";
+import type {
+  FeedbackQuestionnaireInstance,
+  FeedbackQuestionnaireInstanceId,
+  FeedbackQuestionnaireTemplate,
+} from "../../../entities";
 import { normalizeLocationPool } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import {
   countActivePartnersForPR,
@@ -12,6 +18,7 @@ import {
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 
 const anchorEventRepo = new AnchorEventRepository();
+const feedbackRepo = new FeedbackQuestionnaireRepository();
 const prRepo = new PartnerRequestRepository();
 
 export type AdminPRWorkspaceSummary = {
@@ -28,6 +35,7 @@ export type AdminPRWorkspaceSummary = {
   notes: string | null;
   meetingPoint: MeetingPointConfig | null;
   joinGateConfig: PRJoinGateConfig;
+  feedbackQuestionnaireInstanceId: FeedbackQuestionnaireInstanceId | null;
   partnerCount: number;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
@@ -46,11 +54,23 @@ export type AdminPRTypeOption = {
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
   joinGateConfig: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId: FeedbackQuestionnaireTemplate["id"] | null;
 };
 
 export interface AdminPRWorkspace {
   prs: AdminPRWorkspaceSummary[];
   typeOptions: AdminPRTypeOption[];
+  feedbackQuestionnaireTemplates: Array<{
+    id: FeedbackQuestionnaireTemplate["id"];
+    key: string;
+    version: string;
+    title: string;
+  }>;
+  feedbackQuestionnaireInstances: Array<{
+    id: FeedbackQuestionnaireInstance["id"];
+    templateId: FeedbackQuestionnaireInstance["templateId"];
+    title: string;
+  }>;
 }
 
 const toAdminPRWorkspaceSummary = async (
@@ -69,6 +89,8 @@ const toAdminPRWorkspaceSummary = async (
   notes: root.notes,
   meetingPoint: root.meetingPoint,
   joinGateConfig: root.joinGateConfig,
+  feedbackQuestionnaireInstanceId:
+    root.feedbackQuestionnaireInstanceId ?? null,
   partnerCount: await countActivePartnersForPR(root.id),
   confirmationStartOffsetMinutes:
     root.confirmationStartOffsetMinutes ??
@@ -113,11 +135,29 @@ export async function getAdminPRWorkspace(): Promise<AdminPRWorkspace> {
       defaultJoinLockOffsetMinutes:
         event.defaultJoinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
       joinGateConfig: event.joinGateConfig,
+      feedbackQuestionnaireTemplateId:
+        event.feedbackQuestionnaireTemplateId ?? null,
     });
   }
+
+  const [templates, instances] = await Promise.all([
+    feedbackRepo.listTemplates(),
+    feedbackRepo.listInstances(),
+  ]);
 
   return {
     prs,
     typeOptions: Array.from(typeOptionsByType.values()),
+    feedbackQuestionnaireTemplates: templates.map((template) => ({
+      id: template.id,
+      key: template.key,
+      version: template.version,
+      title: template.title,
+    })),
+    feedbackQuestionnaireInstances: instances.map((instance) => ({
+      id: instance.id,
+      templateId: instance.templateId,
+      title: instance.title,
+    })),
   };
 }

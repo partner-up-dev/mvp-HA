@@ -18,6 +18,7 @@
 - If the creator is anonymous, that create flow persists a `DRAFT` and waits for a later authenticated publish step.
 - Structured creation uses one PR-owned form contract. Its `type` field accepts arbitrary input and may offer suggestion options from known event types.
 - Structured creation uses one PR-owned `time_window` result. The UI may expose batch and free modes, while the persisted PR still owns one resolved time window.
+- PR creation resolves Anchor Event context by PR type when a matching Anchor Event exists. Event-owned PR defaults such as join gates, support resources, and feedback questionnaire template selection materialize into PR-owned runtime state at creation time.
 - Event-context PR creation is one assisted mode inside the Anchor Event domain.
 - Event-assisted create resolves event-side choices into the same structured PR fields used by `/pr/new`. Any event referral or create-source marker is transient request context rather than durable PR identity.
 - PR existence does not depend on Anchor Event identity or time-pool selection.
@@ -61,6 +62,9 @@
 - Join notice gates are viewer-scoped agreements; each viewer must accept the current gate key and version before joining.
 - Booking contact gates collect the phone contact required for the PR; their presence is explicit join-gate configuration rather than an implicit result of booking-required or platform-handled booking flags.
 - `Partner` submodule may carry explicit confirmation and join-lock settings. Attendance follow-up may appear when the relevant collaboration module is active.
+- Post-event feedback questionnaires are a capability parallel to PR. Anchor Event selects a reusable feedback questionnaire template, PR stores one mounted questionnaire instance pointer, and each submitted answer set is stored as a feedback questionnaire response.
+- A questionnaire instance represents the mounted question definition snapshot for a consumer such as PR. Participant answers belong to response records keyed by the mounted instance and respondent identity.
+- PR participation gating for mounted feedback is owned by PR integration. The feedback submission command validates questionnaire answers against the mounted instance and stores responses in the feedback capability.
 - PR messages are visible only to current active participants; users who exit or are released must no longer see that PR's message thread.
 - Only current active participants may view the thread or act on read markers and participant posting, while operators may inject system messages through admin tooling without becoming participants themselves.
 - PR detail keeps notification-subscription management visible as a persistent section when reminder registration is relevant for that PR.
@@ -111,6 +115,7 @@
 
 - Partner admission may have a confirmation window when its explicit configuration carries one. Unconfirmed slots may be released inside that window, and late joining may be blocked.
 - Check-in feedback is not mandatory by default; absence of check-in should remain "unknown" rather than auto-converted into "did not attend".
+- Mounted post-event feedback is optional unless the PR integration presents it for the current collaboration. Absence of a questionnaire response is tracked as missing feedback for that questionnaire instance, separate from attendance state.
 - PR messaging is a non-realtime coordination layer and must not introduce chat-room semantics such as presence, typing, or read receipts.
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
 - Successful join in a PR that supports reminder registration should immediately offer the notification-subscription modal while still leaving a durable management path on the detail page.
