@@ -1,5 +1,22 @@
 # Rollout
 
+## CI Validation Gates
+
+Hosted PR validation is split by gate owner:
+
+- backend gate: `.github/workflows/backend-gate.yml`; backend typecheck, backend unit tests, DB artifact lint, and backend scenario tests
+- frontend gate: `.github/workflows/frontend-gate.yml`; frontend build and frontend-owned static quality checks
+- E2E gate: `.github/workflows/e2e-gate.yml`; root-owned system scenario tests through `pnpm test:scenario system`
+
+Backend and frontend gates run for PRs targeting `develop` or `master` when
+their owned surfaces or workspace install inputs change.
+
+E2E gate runs for PRs targeting `master`. It is also available through
+`workflow_dispatch` for release qualification and diagnosis. The E2E gate uses
+GitHub Actions Postgres service state via `SCENARIO_DATABASE_ADMIN_URL`,
+installs Chromium through Playwright, and lets the scenario runner start the
+Vite frontend server, backend HTTP server, and isolated temporary database.
+
 ## Backend CI/CD Flow
 
 Primary workflow: `.github/workflows/backend-fc-deploy.yml`

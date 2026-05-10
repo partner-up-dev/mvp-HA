@@ -1,22 +1,25 @@
-name: Backend Scenario Tests
+name: E2E Gate
 
 on:
   pull_request:
     branches:
       - master
-      - develop
     paths:
+      - "apps/frontend/**"
       - "apps/backend/**"
+      - "tests/scenario/**"
+      - "scripts/run-scenario-tests.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".node-version"
-      - ".github/workflows/backend-scenario-tests.yml"
+      - ".github/workflows/e2e-gate.yml"
   workflow_dispatch:
 
 jobs:
-  backend-scenario-tests:
+  e2e-gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17-alpine
@@ -48,17 +51,11 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
 
-      - name: Install dependencies (workspace)
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck backend
-        run: pnpm --filter @partner-up-dev/backend typecheck
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run backend unit tests
-        run: pnpm test:backend:unit
-
-      - name: Lint backend DB artifacts
-        run: pnpm db:lint
-
-      - name: Run backend scenario tests
-        run: pnpm test:scenario
+      - name: Run system scenario tests
+        run: pnpm test:scenario system

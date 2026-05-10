@@ -11,6 +11,7 @@ This layer exists because the product is realized by at least two meaningful uni
 - technical units and their responsibilities
 - authoritative state boundaries
 - cross-unit contracts that must stay coherent
+- cross-unit scenario verification boundaries
 - how major product claims are realized across units
 
 ## What Must Not Appear Here

@@ -230,3 +230,6 @@ Important coordination note:
 - Backend probes are reserved for persistence or hidden side-effect proof that is not observable through the frontend workflow result.
 - Frontend routes that participate in system scenarios should expose stable `data-testid` semantic nodes for primary actions, modal actions, and result-state affordances.
 - `data-testid` names should follow route and workflow meaning, for example `pr-detail.join.open`, and action nodes should live on the real interactive element.
+- CI validation is separated by verification owner: backend gate for backend-local proof, frontend gate for frontend-local proof, and E2E gate for cross-unit browser-to-Postgres user journeys.
+- Backend and frontend gates protect ordinary PR integration into `develop` and `master`.
+- E2E gate protects PRs whose base branch is `master`, with manual dispatch available for release qualification or diagnosis.

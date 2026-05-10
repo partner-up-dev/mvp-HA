@@ -35,6 +35,9 @@ Owns:
 - deployment descriptors such as `apps/backend/s.yaml`
 
 These support delivery and operations but do not own independent product behavior.
+`tests/scenario/` coordinates real frontend rendering, real backend HTTP, and
+isolated database state to verify cross-unit user journeys from the browser
+edge.
 
 ## Internal Subsystem Clusters
 

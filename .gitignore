@@ -110,3 +110,4 @@ __pycache__/
 
 # Special case
 tasks/frontend-screenshot-capture/**/*
+apps/backend/images/**/*
