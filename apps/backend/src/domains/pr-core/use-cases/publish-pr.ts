@@ -15,6 +15,7 @@ import { recalculatePRStatus } from "../services/slot-management.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
 import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
 import { operationLogService } from "../../../infra/operation-log";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -126,6 +127,8 @@ export async function publishPR(
     aggregateId: String(id),
     detail: { fromStatus: "DRAFT", toStatus: latest.status },
   });
+
+  await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
 
   return {
     pr: await toPublicPR(latest, creatorUserId),

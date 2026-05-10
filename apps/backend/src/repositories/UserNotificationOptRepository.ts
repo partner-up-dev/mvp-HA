@@ -98,6 +98,13 @@ export class UserNotificationOptRepository {
         remainingCount: opt.wechatWaitlistPromotedRemainingCount,
       };
     }
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      return {
+        enabled: opt.wechatWaitlistAlternativeAvailableRemainingCount > 0,
+        optInAt: opt.wechatWaitlistAlternativeAvailableOptInAt,
+        remainingCount: opt.wechatWaitlistAlternativeAvailableRemainingCount,
+      };
+    }
     return {
       enabled: opt.wechatNewPartnerRemainingCount > 0,
       optInAt: opt.wechatNewPartnerOptInAt,
@@ -265,6 +272,29 @@ export class UserNotificationOptRepository {
       return result[0] ?? null;
     }
 
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatWaitlistAlternativeAvailableRemainingCount: normalizedCount,
+          wechatWaitlistAlternativeAvailableOptIn: enabled,
+          wechatWaitlistAlternativeAvailableOptInAt: optInAt,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatWaitlistAlternativeAvailableRemainingCount: normalizedCount,
+            wechatWaitlistAlternativeAvailableOptIn: enabled,
+            wechatWaitlistAlternativeAvailableOptInAt: optInAt,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
     const result = await db
       .insert(userNotificationOpts)
       .values({
@@ -424,6 +454,29 @@ export class UserNotificationOptRepository {
             wechatWaitlistPromotedRemainingCount: sql`${userNotificationOpts.wechatWaitlistPromotedRemainingCount} + 1`,
             wechatWaitlistPromotedOptIn: true,
             wechatWaitlistPromotedOptInAt: now,
+            updatedAt: now,
+          },
+        })
+        .returning();
+      return result[0] ?? null;
+    }
+
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      const result = await db
+        .insert(userNotificationOpts)
+        .values({
+          userId,
+          wechatWaitlistAlternativeAvailableRemainingCount: 1,
+          wechatWaitlistAlternativeAvailableOptIn: true,
+          wechatWaitlistAlternativeAvailableOptInAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: userNotificationOpts.userId,
+          set: {
+            wechatWaitlistAlternativeAvailableRemainingCount: sql`${userNotificationOpts.wechatWaitlistAlternativeAvailableRemainingCount} + 1`,
+            wechatWaitlistAlternativeAvailableOptIn: true,
+            wechatWaitlistAlternativeAvailableOptInAt: now,
             updatedAt: now,
           },
         })
@@ -609,6 +662,34 @@ export class UserNotificationOptRepository {
       return {
         consumed: row !== null,
         remainingCount: row?.wechatWaitlistPromotedRemainingCount ?? 0,
+        row,
+      };
+    }
+
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      const result = await db
+        .update(userNotificationOpts)
+        .set({
+          wechatWaitlistAlternativeAvailableRemainingCount: sql`${userNotificationOpts.wechatWaitlistAlternativeAvailableRemainingCount} - 1`,
+          wechatWaitlistAlternativeAvailableOptIn: sql`(${userNotificationOpts.wechatWaitlistAlternativeAvailableRemainingCount} - 1) > 0`,
+          wechatWaitlistAlternativeAvailableOptInAt: sql`case when (${userNotificationOpts.wechatWaitlistAlternativeAvailableRemainingCount} - 1) > 0 then ${userNotificationOpts.wechatWaitlistAlternativeAvailableOptInAt} else null end`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(userNotificationOpts.userId, userId),
+            gt(
+              userNotificationOpts.wechatWaitlistAlternativeAvailableRemainingCount,
+              0,
+            ),
+          ),
+        )
+        .returning();
+      const row = result[0] ?? null;
+      return {
+        consumed: row !== null,
+        remainingCount:
+          row?.wechatWaitlistAlternativeAvailableRemainingCount ?? 0,
         row,
       };
     }

@@ -15,10 +15,13 @@ import {
   syncAnchorBookingTriggeredState,
 } from "../../pr/services";
 import { operationLogService } from "../../../infra/operation-log";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../../pr-core/services/waitlist-alternative-reminder.service";
+import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 
 const eventContextRepo = new AnchorEventPRContextRepository();
 const bookingContactRepo = new PRBookingContactRepository();
 const partnerRepo = new PartnerRepository();
+const prRepo = new PartnerRequestRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 
 const isReleaseableStatus = (status: string): boolean =>
@@ -103,6 +106,10 @@ export async function releaseAdminPRPartner(input: {
   });
 
   await promoteWaitlistedPartners(input.prId);
+  const latest = await prRepo.findById(input.prId);
+  if (latest) {
+    await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
+  }
 
   return {
     ok: true as const,

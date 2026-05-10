@@ -16,6 +16,7 @@ export const wechatNotificationKindSchema = z.enum([
   "NEW_PARTNER",
   "MEETING_POINT_UPDATED",
   "WAITLIST_PROMOTED",
+  "WAITLIST_ALTERNATIVE_AVAILABLE",
   "PR_MESSAGE",
 ]);
 export type WeChatNotificationKind = z.infer<
@@ -82,6 +83,19 @@ export const userNotificationOpts = pgTable("user_notification_opts", {
   ),
   wechatWaitlistPromotedRemainingCount: integer(
     "wechat_waitlist_promoted_remaining_count",
+  )
+    .notNull()
+    .default(0),
+  wechatWaitlistAlternativeAvailableOptIn: boolean(
+    "wechat_waitlist_alternative_available_opt_in",
+  )
+    .notNull()
+    .default(false),
+  wechatWaitlistAlternativeAvailableOptInAt: timestamp(
+    "wechat_waitlist_alternative_available_opt_in_at",
+  ),
+  wechatWaitlistAlternativeAvailableRemainingCount: integer(
+    "wechat_waitlist_alternative_available_remaining_count",
   )
     .notNull()
     .default(0),

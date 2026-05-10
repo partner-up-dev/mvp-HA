@@ -78,6 +78,7 @@ Read the smallest useful set and keep durable docs current:
 - Controller layer (`src/controllers`): protocol conversion only; see `src/controllers/AGENTS.md`.
 - Infra layer (`src/infra`): job runner, telemetry ingest, analytics read/export queries, notifications, and operation log.
 - Unit tests under `src/**/*.test.ts` cover local rules, pure domain services, schema/bounds logic, and isolated error mapping. Scenario tests under `tests/<domain>/**/*.scenario.test.ts` cover cross-module behavior through HTTP APIs with real Postgres migrations, especially persisted state transitions, route/controller/use-case/repository coordination, and user-visible business promises.
+- Backend scenario verification should be launched from the repository root with `pnpm test:scenario backend`. The root runner loads workspace `.env` files before invoking the backend package script.
 - Better not use intervals or in-process background jobs; the backend runs in scale-to-0 serverless.
 
 ## Database Workflow

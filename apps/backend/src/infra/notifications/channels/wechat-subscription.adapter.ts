@@ -51,6 +51,9 @@ export const isWeChatSubscriptionNotificationConfigured = async (
   if (kind === "WAITLIST_PROMOTED") {
     return service.isWaitlistPromotedConfigured();
   }
+  if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+    return service.isWaitlistPromotedConfigured();
+  }
   return service.isPRMessageConfigured();
 };
 
@@ -127,7 +130,10 @@ const send = async (
     });
   }
 
-  if (message.kind === "WAITLIST_PROMOTED") {
+  if (
+    message.kind === "WAITLIST_PROMOTED" ||
+    message.kind === "WAITLIST_ALTERNATIVE_AVAILABLE"
+  ) {
     return service.sendWaitlistPromotedNotification({
       openId: message.openId,
       title: message.title,

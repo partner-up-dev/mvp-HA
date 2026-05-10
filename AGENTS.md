@@ -93,6 +93,7 @@ Pause and ask for human confirmation when:
 - Use GitHub CLI (`gh`) for GitHub operations and issue workflows.
 - Before starting your own frontend dev server, check whether ports `4001` or `4002` already have the corresponding dev server running. Other sessions may already own a usable local server, so reuse it when appropriate.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
+- Run scenario suites from the repository root through the workspace runner: `pnpm test:scenario backend`, `pnpm test:scenario system`, or `pnpm test:scenario`. That runner loads `apps/frontend/.env` and `apps/backend/.env` before dispatching to package-level scenario scripts.
 - Cross-unit user journey scenario tests belong under `tests/scenario/` and should run through the real frontend, real backend HTTP, and an isolated database when the behavior crosses both app units.
 - Frontend route workflow changes that may be covered by scenario tests should expose stable `data-testid` semantic nodes for primary actions, modal actions, and result-state affordances.
 - Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.

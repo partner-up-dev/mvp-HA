@@ -38,7 +38,7 @@ pnpm install --frozen-lockfile
 docker compose up -d postgres
 ```
 
-Run only system scenarios:
+Run only system scenarios from the repository root:
 
 ```bash
 pnpm test:scenario system
@@ -50,7 +50,7 @@ Run all scenario suites:
 pnpm test:scenario
 ```
 
-The runner loads `apps/frontend/.env` and `apps/backend/.env`. Shell and CI
+The root runner `scripts/run-scenario-tests.mjs` loads `apps/frontend/.env` and `apps/backend/.env`. Shell and CI
 environment variables have the highest priority. Backend `.env` values override
 frontend `.env` values when both files define the same key.
 

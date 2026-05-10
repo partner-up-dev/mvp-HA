@@ -54,6 +54,8 @@
 - Waitlist entries are stored as `Partner.status = PENDING`. Cancelled waitlist entries are stored as `Partner.status = CANCELLED` and no longer hold queue position.
 - Pending users are not current active participants, cannot see PR messages, and do not count toward active capacity.
 - When an active slot is released or exited, the system promotes waitlisted users by earliest `waitlistedAt` first, subject to current eligibility checks. Promotion converts the existing pending slot into an active partner slot.
+- A user entering a waitlist may opt in to cross-PR alternative availability reminders. The match rule is exact normalized PR type plus exact normalized PR location, and the source waitlist slot keeps its queue position while reminders are sent.
+- Cross-PR alternative availability is an invitation to inspect or join another PR with capacity. The source waitlist slot closes as `CANCELLED` after the same user successfully joins a matching alternative PR.
 - `PR` may carry join gates that must be completed before joining. Join gate definitions are PR-owned runtime configuration, while their resolved state comes from the owning fact for each gate kind.
 - When a PR has no configured custom join gate, the frontend flow injects the relevant fallback confirmation view. When any custom join gate exists, the fallback confirmation is absent.
 - Join notice gates are viewer-scoped agreements; each viewer must accept the current gate key and version before joining.
@@ -115,6 +117,7 @@
 - The successful-join notification-subscription modal focuses on confirmation reminders, new-partner reminders, and meeting-point reminders, with copy explaining the reason to subscribe. Confirmation reminder copy includes the confirmation deadline when that deadline is known.
 - Confirmation-start reminders must become claimable and deliverable at or after the configured confirmation-start instant, because the linked confirm action is backend-gated by the same window.
 - Successful waitlist entry should offer a focused `WAITLIST_PROMOTED` subscription prompt so the user can receive one notification when the pending slot becomes active.
+- Successful waitlist entry may also offer `WAITLIST_ALTERNATIVE_AVAILABLE` when the user selected cross-PR alternative reminders for that waitlist slot.
 - PR message notifications are limited to at most one send per `PR / recipient / unread wave`.
 - The current `PR_MESSAGE` timing policy is one fixed short-debounce summary opportunity per unread wave.
 - Before a PR message notification is sent, the system must re-validate that the recipient is still a current active participant of that PR.

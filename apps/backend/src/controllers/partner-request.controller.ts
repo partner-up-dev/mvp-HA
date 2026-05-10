@@ -91,6 +91,11 @@ const anchorJoinSchema = z
     bookingContactPhone: z.string().trim().min(1).optional(),
   })
   .default({});
+const waitlistCommandSchema = z
+  .object({
+    alternativePrReminderOptIn: z.boolean().optional(),
+  })
+  .default({});
 const slotCheckInSchema = z.object({
   didAttend: z.boolean().optional(),
   wouldJoinAgain: z.boolean().nullable().optional(),
@@ -411,17 +416,25 @@ export const partnerRequestRoute = app
       });
     },
   )
-  .post("/:id/waitlist", zValidator("param", prIdParamSchema), async (c) => {
-    const { id } = c.req.valid("param");
-    await getPROr404(id);
-    const participantIdentity = await buildCreatorIdentity(c);
-    const result = await waitlistPRByIdentity(id, participantIdentity);
-    const auth = await issueAuthPayload(c, result.userId);
-    return c.json({
-      ...result.pr,
-      auth,
-    });
-  })
+  .post(
+    "/:id/waitlist",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", waitlistCommandSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await getPROr404(id);
+      const payload = c.req.valid("json");
+      const participantIdentity = await buildCreatorIdentity(c);
+      const result = await waitlistPRByIdentity(id, participantIdentity, {
+        alternativePrReminderOptIn: payload.alternativePrReminderOptIn === true,
+      });
+      const auth = await issueAuthPayload(c, result.userId);
+      return c.json({
+        ...result.pr,
+        auth,
+      });
+    },
+  )
   .post(
     "/:id/waitlist/cancel",
     zValidator("param", prIdParamSchema),

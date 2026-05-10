@@ -10,6 +10,7 @@ import { refreshTemporalStatus } from "../temporal-refresh";
 import { operationLogService } from "../../../infra/operation-log";
 import { assertPRJoinGatesResolvedForUser } from "../services/join-gates.service";
 import { isWaitlistOpenForRequest } from "../services/waitlist.service";
+import { scheduleAlternativeWaitlistNotificationsForSource } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -17,6 +18,7 @@ const partnerRepo = new PartnerRepository();
 export async function waitlistPRAsUser(
   id: PRId,
   user: Pick<User, "id" | "status">,
+  options: { alternativePrReminderOptIn?: boolean } = {},
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -81,11 +83,14 @@ export async function waitlistPRAsUser(
   const latestHistoricalSlot =
     await partnerRepo.findReusableInactiveByPrIdAndUserId(id, user.id);
   const pendingSlot = latestHistoricalSlot
-    ? await partnerRepo.markPending(latestHistoricalSlot.id)
+    ? await partnerRepo.markPending(latestHistoricalSlot.id, {
+        alternativePrReminderOptIn: options.alternativePrReminderOptIn,
+      })
     : await partnerRepo.createSlot({
         prId: id,
         userId: user.id,
         status: "PENDING",
+        alternativePrReminderOptIn: options.alternativePrReminderOptIn,
       });
   if (!pendingSlot) {
     throw new HTTPException(500, {
@@ -98,8 +103,20 @@ export async function waitlistPRAsUser(
     action: "partner.waitlist_join",
     aggregateType: "partner_request",
     aggregateId: String(id),
-    detail: { partnerId: pendingSlot.id },
+    detail: {
+      partnerId: pendingSlot.id,
+      alternativePrReminderOptIn:
+        options.alternativePrReminderOptIn === true,
+    },
   });
+
+  if (options.alternativePrReminderOptIn === true) {
+    await scheduleAlternativeWaitlistNotificationsForSource({
+      sourceRequest: refreshedRequest,
+      sourcePartnerId: pendingSlot.id,
+      recipientUserId: user.id,
+    });
+  }
 
   const latest = await prRepo.findById(id);
   if (!latest) {

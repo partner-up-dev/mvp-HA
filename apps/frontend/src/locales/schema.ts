@@ -434,6 +434,12 @@ export interface MessageSchema {
           disabledHint: string;
           unconfiguredHint: string;
         };
+        WAITLIST_ALTERNATIVE_AVAILABLE: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
         PR_MESSAGE: {
           title: string;
           enabledHint: string;
@@ -458,7 +464,11 @@ export interface MessageSchema {
       description: string;
       notificationReasons: {
         WAITLIST_PROMOTED: string;
+        WAITLIST_ALTERNATIVE_AVAILABLE: string;
       };
+    };
+    waitlistAlternativeReminder: {
+      optionLabel: string;
     };
     shareEntry: {
       title: string;

@@ -20,6 +20,7 @@ export type WeChatNotificationKind =
   | "NEW_PARTNER"
   | "MEETING_POINT_UPDATED"
   | "WAITLIST_PROMOTED"
+  | "WAITLIST_ALTERNATIVE_AVAILABLE"
   | "PR_MESSAGE";
 
 type NotificationActionKind =
@@ -318,6 +319,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.title",
       );
     }
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.title",
+      );
+    }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.title");
   };
 
@@ -352,6 +358,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.enabledHint",
       );
     }
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.enabledHint",
+      );
+    }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.enabledHint");
   };
 
@@ -384,6 +395,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (kind === "WAITLIST_PROMOTED") {
       return t(
         "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.disabledHint",
+      );
+    }
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.disabledHint",
       );
     }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.disabledHint");
@@ -435,6 +451,10 @@ export const useWeChatNotificationSubscriptionsPanel = ({
         } else if (kind === "WAITLIST_PROMOTED") {
           description = t(
             "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.unconfiguredHint",
+          );
+        } else if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+          description = t(
+            "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.unconfiguredHint",
           );
         } else if (kind === "PR_MESSAGE") {
           description = t(

@@ -40,6 +40,7 @@ import {
   registerWeChatNewPartnerJobs,
   registerWeChatPRMessageJobs,
   registerWeChatReminderJobs,
+  registerWeChatWaitlistAlternativeAvailableJobs,
   registerWeChatWaitlistPromotedJobs,
 } from "./infra/notifications";
 import { env } from "./lib/env";
@@ -62,6 +63,7 @@ registerWeChatBookingResultJobs();
 registerWeChatPRMessageJobs();
 registerWeChatMeetingPointUpdatedJobs();
 registerWeChatWaitlistPromotedJobs();
+registerWeChatWaitlistAlternativeAvailableJobs();
 registerOfficialAccountFollowSyncJobs();
 if (process.env.BACKEND_SCENARIO_DISABLE_BOOTSTRAP !== "true") {
   void bootstrapOfficialAccountFollowSyncJob().catch((error) => {

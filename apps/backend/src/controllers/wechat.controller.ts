@@ -26,6 +26,7 @@ import {
   bindWeChatToCurrentUser,
   upgradeAnonymousUserWithWeChat,
 } from "../domains/user";
+import { scheduleAlternativeWaitlistNotificationsForUserSources } from "../domains/pr-core/services/waitlist-alternative-reminder.service";
 import {
   clearAnonymousSessionCookie,
   readAnonymousSessionCookie,
@@ -37,6 +38,7 @@ import {
   cancelWeChatPRMessageJobsForUser,
   cancelWeChatReminderJobsForUser,
   cancelWeChatWaitlistPromotedJobsForUser,
+  cancelWeChatWaitlistAlternativeAvailableJobsForUser,
   rebuildWeChatActivityStartReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
@@ -175,6 +177,10 @@ const buildNotificationChannelState = async (): Promise<{
     NotificationSubscriptionState,
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
+  waitlistAlternativeAvailable: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
 }> => {
   const [
     reminderTemplateId,
@@ -260,6 +266,13 @@ const buildNotificationChannelState = async (): Promise<{
         Boolean(waitlistPromotedTemplateId),
       templateId: waitlistPromotedTemplateId,
     },
+    waitlistAlternativeAvailable: {
+      configured: waitlistPromotedSubmsgConfigured,
+      requiresOpenSubscribe:
+        waitlistPromotedSubmsgConfigured &&
+        Boolean(waitlistPromotedTemplateId),
+      templateId: waitlistPromotedTemplateId,
+    },
   };
 };
 
@@ -330,6 +343,15 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
           channels.waitlistPromoted.requiresOpenSubscribe,
         templateId: channels.waitlistPromoted.templateId,
       },
+      WAITLIST_ALTERNATIVE_AVAILABLE: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.waitlistAlternativeAvailable.configured,
+        requiresOpenSubscribe:
+          channels.waitlistAlternativeAvailable.requiresOpenSubscribe,
+        templateId: channels.waitlistAlternativeAvailable.templateId,
+      },
     },
   };
 };
@@ -373,6 +395,11 @@ const buildAuthenticatedSubscriptionsResponse = async (
     notificationOpt,
     "WAITLIST_PROMOTED",
   );
+  const waitlistAlternativeAvailable =
+    userNotificationOptRepo.getSubscriptionSnapshot(
+      notificationOpt,
+      "WAITLIST_ALTERNATIVE_AVAILABLE",
+    );
 
   return {
     configured: true,
@@ -446,6 +473,17 @@ const buildAuthenticatedSubscriptionsResponse = async (
           channels.waitlistPromoted.requiresOpenSubscribe,
         templateId: channels.waitlistPromoted.templateId,
       },
+      WAITLIST_ALTERNATIVE_AVAILABLE: {
+        enabled: waitlistAlternativeAvailable.enabled,
+        optInAt: waitlistAlternativeAvailable.optInAt
+          ? waitlistAlternativeAvailable.optInAt.toISOString()
+          : null,
+        remainingCount: waitlistAlternativeAvailable.remainingCount,
+        configured: channels.waitlistAlternativeAvailable.configured,
+        requiresOpenSubscribe:
+          channels.waitlistAlternativeAvailable.requiresOpenSubscribe,
+        templateId: channels.waitlistAlternativeAvailable.templateId,
+      },
     },
   };
 };
@@ -492,6 +530,21 @@ const applyNotificationSubscriptionSideEffects = async (
 
   if (kind === "WAITLIST_PROMOTED" && nextRemainingCount <= 0) {
     return cancelWeChatWaitlistPromotedJobsForUser(userId);
+  }
+
+  if (
+    kind === "WAITLIST_ALTERNATIVE_AVAILABLE" &&
+    nextRemainingCount <= 0
+  ) {
+    return cancelWeChatWaitlistAlternativeAvailableJobsForUser(userId);
+  }
+  if (
+    kind === "WAITLIST_ALTERNATIVE_AVAILABLE" &&
+    previousRemainingCount <= 0 &&
+    nextRemainingCount > 0
+  ) {
+    await scheduleAlternativeWaitlistNotificationsForUserSources(userId);
+    return 0;
   }
 
   return 0;

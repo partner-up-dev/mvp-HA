@@ -85,9 +85,14 @@ export async function joinPRByIdentity(
 export async function waitlistPRByIdentity(
   id: PRId,
   identity: PRParticipantIdentityInput,
+  options: {
+    alternativePrReminderOptIn?: boolean;
+  } = {},
 ): Promise<WaitlistPRByIdentityResult> {
   const participant = await resolvePRParticipantUser(identity);
-  const pr = await waitlistPRAsUser(id, participant.user);
+  const pr = await waitlistPRAsUser(id, participant.user, {
+    alternativePrReminderOptIn: options.alternativePrReminderOptIn,
+  });
 
   return {
     pr,

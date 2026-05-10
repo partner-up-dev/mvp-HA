@@ -42,3 +42,9 @@ export {
   scheduleWeChatWaitlistPromotedNotificationForParticipant,
   cancelWeChatWaitlistPromotedJobsForUser,
 } from "./wechat-waitlist-promoted";
+
+export {
+  registerWeChatWaitlistAlternativeAvailableJobs,
+  scheduleWeChatWaitlistAlternativeAvailableNotification,
+  cancelWeChatWaitlistAlternativeAvailableJobsForUser,
+} from "./wechat-waitlist-alternative-available";

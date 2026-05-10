@@ -6,6 +6,7 @@ import { isActivatableStatus } from "../services/status-rules";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { operationLogService } from "../../../infra/operation-log";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 
@@ -44,6 +45,8 @@ export async function updatePRStatus(
     aggregateId: String(id),
     detail: { fromStatus: currentStatus, toStatus: status },
   });
+
+  await scheduleAlternativeWaitlistNotificationsForCandidate(updated);
 
   return toPublicPR(updated, null);
 }

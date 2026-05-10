@@ -38,6 +38,7 @@ import {
   hasBookingContactJoinGate,
   BOOKING_CONTACT_PHONE_INVALID_CODE,
 } from "../services/join-gates.service";
+import { closeAlternativeWaitlistSourcesAfterJoin } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -244,6 +245,11 @@ export async function joinPRAsUser(
     await scheduleWeChatReminderJobsForParticipant(latest, user.id);
     await scheduleWeChatActivityStartReminderJobForParticipant(latest, user.id);
   }
+  await closeAlternativeWaitlistSourcesAfterJoin({
+    alternativeRequest: latest,
+    userId: user.id,
+    alternativePartnerId: assignedPartnerId,
+  });
   return toPublicPR(latest, user.id);
 }
 

@@ -60,6 +60,12 @@ export const waitlistPromotedSchedulePolicy: JobSchedulePolicy = {
   lateToleranceUnits: NO_LATE_TOLERANCE_UNITS,
 };
 
+export const waitlistAlternativeAvailableSchedulePolicy: JobSchedulePolicy = {
+  resolutionMs: SECOND_RESOLUTION_MS,
+  earlyToleranceUnits: 0,
+  lateToleranceUnits: NO_LATE_TOLERANCE_UNITS,
+};
+
 export const prMessageSchedulePolicy: JobSchedulePolicy = {
   resolutionMs: SECOND_RESOLUTION_MS,
   earlyToleranceUnits: 0,

@@ -15,11 +15,16 @@ export type WaitlistPRResponse = {
 export async function waitlistPR(input: {
   pr: ScenarioPartnerRequest;
   user: ScenarioUser;
+  alternativePrReminderOptIn?: boolean;
 }): Promise<WaitlistPRResponse> {
   const result = await expectJsonResponse<WaitlistPRResponse>(
     await requestJson(`/api/pr/${input.pr.id}/waitlist`, {
       method: "POST",
       token: input.user.token,
+      body: {
+        alternativePrReminderOptIn:
+          input.alternativePrReminderOptIn === true,
+      },
     }),
     200,
   );

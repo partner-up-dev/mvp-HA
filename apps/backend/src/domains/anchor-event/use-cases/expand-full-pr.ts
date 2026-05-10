@@ -16,6 +16,7 @@ import {
   readVisibleAnchorEventPRContextRecordsByEventTimeWindowAndLocation,
 } from "../../pr/services";
 import { normalizeAutomaticPartnerBounds } from "../../pr/services";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../../pr-core/services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -155,4 +156,6 @@ export async function expandFullPR(prId: PRId): Promise<void> {
       activeCountAtSource: activeCount,
     },
   });
+
+  await scheduleAlternativeWaitlistNotificationsForCandidate(createdRoot);
 }

@@ -37,6 +37,7 @@ One-shot notifications represent a single opportunity created from a business co
 - `NEW_PARTNER`
 - `MEETING_POINT_UPDATED`
 - `WAITLIST_PROMOTED`
+- `WAITLIST_ALTERNATIVE_AVAILABLE`
 
 Wave notifications represent a bounded attention window:
 
@@ -48,6 +49,10 @@ The `MEETING_POINT_UPDATED` policy creates one-shot notifications to current act
 
 The `WAITLIST_PROMOTED` policy creates one one-shot notification for the user whose pending waitlist slot has just become active. Dispatch revalidates that the recipient is still active, still owns the promoted active partner slot, and still has enabled quota for this notification kind.
 
+The `WAITLIST_ALTERNATIVE_AVAILABLE` policy creates one one-shot notification for a user who opted in from a source pending waitlist slot when another visible same-type and same-location PR has joinable capacity. Dispatch revalidates recipient activity, bound openId, enabled quota, source pending slot ownership and opt-in, source/candidate type-location match, candidate PR availability, and recipient time-window compatibility.
+
+When `WAITLIST_ALTERNATIVE_AVAILABLE` quota turns positive, backend rescans that user's opted-in pending source waitlist slots so existing alternatives can be scheduled after the post-waitlist subscription prompt.
+
 ## Creation Contract
 
 Business domains emit business events such as:
@@ -55,6 +60,7 @@ Business domains emit business events such as:
 - `pr.message_created`
 - `partner.joined`
 - explicit waitlist promotion scheduling from PR participation logic
+- exact same-type and same-location alternative PR availability from PR waitlist and candidate-availability logic
 - booking execution submission through the admin booking execution flow
 
 `domains/notification` evaluates those facts or the scheduling input, creates `notification_opportunities` / `notification_waves`, and emits notification-owned events:
@@ -72,6 +78,9 @@ At dispatch time, backend reloads current state and revalidates:
 - recipient has a usable channel identity such as `openid`
 - recipient still has enabled subscription quota for the notification kind
 - PR participant membership is still active when the notification depends on PR membership
+- source waitlist slot is still pending and opted in when dispatching `WAITLIST_ALTERNATIVE_AVAILABLE`
+- source PR and candidate PR still share exact normalized type and location when dispatching `WAITLIST_ALTERNATIVE_AVAILABLE`
+- candidate PR remains visible, joinable, and capacity-available when dispatching `WAITLIST_ALTERNATIVE_AVAILABLE`
 - PR message unread wave is still pending when dispatching `PR_MESSAGE`
 - the target channel is configured
 
@@ -125,4 +134,4 @@ Backend owns:
 
 Frontend renders notification subscription management and prompts users after successful PR join when reminder registration is relevant for that PR, then relies on backend responses and durable state for delivery-adjacent truth.
 
-Frontend also prompts after successful waitlist entry for the focused `WAITLIST_PROMOTED` notification kind.
+Frontend also prompts after successful waitlist entry for the focused `WAITLIST_PROMOTED` notification kind, and includes `WAITLIST_ALTERNATIVE_AVAILABLE` when the waitlist entry selected cross-PR alternative reminders.

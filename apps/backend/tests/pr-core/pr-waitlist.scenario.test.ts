@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { scenario } from "../_infra/scenario/scenario";
+import { WAITLIST_ALTERNATIVE_AVAILABLE_NOTIFICATION_KIND } from "../../src/domains/notification";
+import { prepareWaitlistAlternativeAvailableNotificationDispatch } from "../../src/domains/notification/services/waitlist-alternative-available-dispatch.service";
+import { PartnerRepository } from "../../src/repositories/PartnerRepository";
+import { UserNotificationOptRepository } from "../../src/repositories/UserNotificationOptRepository";
 import { exitPR } from "./_kit/actions/exit";
 import { joinPartnerRequest } from "./_kit/actions/join";
+import { bindScenarioWeChatOpenId } from "./_kit/actions/system-state";
 import { cancelWaitlistPR, waitlistPR } from "./_kit/actions/waitlist";
 import {
   expectMessageThreadForbidden,
@@ -20,7 +25,20 @@ import {
 import { givenPublishedPartnerRequest } from "./_kit/builders/partner-requests";
 import { givenUser } from "./_kit/builders/users";
 import { probeMessageThreadVisibility } from "./_kit/probes/messages";
-import { getWaitlistDetail } from "./_kit/probes/waitlist";
+import {
+  getWaitlistDetail,
+  probePartnerSlotStatus,
+} from "./_kit/probes/waitlist";
+
+const partnerRepo = new PartnerRepository();
+const userNotificationOptRepo = new UserNotificationOptRepository();
+
+function requirePendingPartnerId(value: number | null): number {
+  if (value === null) {
+    throw new Error("Expected pending partner id");
+  }
+  return value;
+}
 
 scenario(
   "full_pr_waitlist_promotes_earliest_pending_after_exit",
@@ -186,5 +204,174 @@ scenario(
     expectMessageThreadForbidden(
       await probeMessageThreadVisibility({ pr, viewer: thirdCandidate }),
     );
+  },
+);
+
+scenario(
+  "cross_pr_waitlist_alternative_dispatch_requires_slot_opt_in",
+  async (ctx) => {
+    const sourceCreator = await givenUser("cross-alt-source-creator");
+    const sourceJoiner = await givenUser("cross-alt-source-joiner");
+    const alternativeCreator = await givenUser("cross-alt-alt-creator");
+    const candidate = await givenUser("cross-alt-candidate");
+    const sourcePr = await givenPublishedPartnerRequest({
+      creator: sourceCreator,
+      minPartners: 1,
+      maxPartners: 2,
+      expectedCreatedStatus: "READY",
+      title: "Cross alternative source",
+    });
+    const alternativePr = await givenPublishedPartnerRequest({
+      creator: alternativeCreator,
+      minPartners: 1,
+      maxPartners: 2,
+      expectedCreatedStatus: "READY",
+      title: "Cross alternative candidate",
+    });
+
+    ctx.record("sourcePrId", sourcePr.id);
+    ctx.record("alternativePrId", alternativePr.id);
+    ctx.record("candidateUserId", candidate.user.id);
+
+    const joined = await joinPartnerRequest({
+      pr: sourcePr,
+      user: sourceJoiner,
+    });
+    assert.equal(joined.status, "FULL");
+
+    await bindScenarioWeChatOpenId({
+      user: candidate,
+      openId: "openid-cross-alt-candidate",
+    });
+    await userNotificationOptRepo.addOneWechatNotificationCredit(
+      candidate.user.id,
+      WAITLIST_ALTERNATIVE_AVAILABLE_NOTIFICATION_KIND,
+    );
+
+    await waitlistPR({
+      pr: sourcePr,
+      user: candidate,
+      alternativePrReminderOptIn: true,
+    });
+    const sourceDetail = await getWaitlistDetail({
+      pr: sourcePr,
+      user: candidate,
+    });
+    const sourcePartnerId = requirePendingPartnerId(
+      sourceDetail.partnerSection.viewer.pendingPartnerId,
+    );
+    ctx.record("sourcePartnerId", sourcePartnerId);
+
+    const sourceSlots =
+      await partnerRepo.listPendingAlternativeReminderSlotsByTypeAndLocation({
+        type: "badminton",
+        location: "Scenario Court",
+        excludePrId: alternativePr.id,
+      });
+    assert.ok(
+      sourceSlots.some((slot) => slot.partnerId === sourcePartnerId),
+      "Expected opted-in waitlist slot to be eligible as an alternative reminder source",
+    );
+
+    const prepared =
+      await prepareWaitlistAlternativeAvailableNotificationDispatch({
+        sourcePrId: sourcePr.id,
+        sourcePartnerId,
+        candidatePrId: alternativePr.id,
+        recipientUserId: candidate.user.id,
+      });
+    assert.equal(prepared.status, "READY");
+    if (prepared.status === "READY") {
+      assert.equal(prepared.message.status, "有可加入名额");
+      assert.equal(prepared.message.remark, "同类同地点有其它 PR 可加入");
+    }
+
+    await joinPartnerRequest({ pr: alternativePr, user: candidate });
+
+    await expectPartnerSlotStatus({
+      pr: sourcePr,
+      user: candidate,
+      status: "CANCELLED",
+    });
+    await expectPartnerSlotStatus({
+      pr: alternativePr,
+      user: candidate,
+      status: "JOINED",
+    });
+    assert.equal(
+      await probePartnerSlotStatus({ pr: sourcePr, user: candidate }),
+      "CANCELLED",
+    );
+  },
+);
+
+scenario(
+  "cross_pr_waitlist_alternative_dispatch_skips_without_slot_opt_in",
+  async (ctx) => {
+    const sourceCreator = await givenUser("cross-alt-noopt-source-creator");
+    const sourceJoiner = await givenUser("cross-alt-noopt-source-joiner");
+    const alternativeCreator = await givenUser("cross-alt-noopt-alt-creator");
+    const candidate = await givenUser("cross-alt-noopt-candidate");
+    const sourcePr = await givenPublishedPartnerRequest({
+      creator: sourceCreator,
+      minPartners: 1,
+      maxPartners: 2,
+      expectedCreatedStatus: "READY",
+      title: "Cross alternative no opt source",
+    });
+    const alternativePr = await givenPublishedPartnerRequest({
+      creator: alternativeCreator,
+      minPartners: 1,
+      maxPartners: 2,
+      expectedCreatedStatus: "READY",
+      title: "Cross alternative no opt candidate",
+    });
+
+    ctx.record("sourcePrId", sourcePr.id);
+    ctx.record("alternativePrId", alternativePr.id);
+    ctx.record("candidateUserId", candidate.user.id);
+
+    await joinPartnerRequest({ pr: sourcePr, user: sourceJoiner });
+    await bindScenarioWeChatOpenId({
+      user: candidate,
+      openId: "openid-cross-alt-noopt-candidate",
+    });
+    await userNotificationOptRepo.addOneWechatNotificationCredit(
+      candidate.user.id,
+      WAITLIST_ALTERNATIVE_AVAILABLE_NOTIFICATION_KIND,
+    );
+
+    await waitlistPR({ pr: sourcePr, user: candidate });
+    const sourceDetail = await getWaitlistDetail({
+      pr: sourcePr,
+      user: candidate,
+    });
+    const sourcePartnerId = requirePendingPartnerId(
+      sourceDetail.partnerSection.viewer.pendingPartnerId,
+    );
+    ctx.record("sourcePartnerId", sourcePartnerId);
+
+    const sourceSlots =
+      await partnerRepo.listPendingAlternativeReminderSlotsByTypeAndLocation({
+        type: "badminton",
+        location: "Scenario Court",
+        excludePrId: alternativePr.id,
+      });
+    assert.equal(
+      sourceSlots.some((slot) => slot.partnerId === sourcePartnerId),
+      false,
+    );
+
+    const prepared =
+      await prepareWaitlistAlternativeAvailableNotificationDispatch({
+        sourcePrId: sourcePr.id,
+        sourcePartnerId,
+        candidatePrId: alternativePr.id,
+        recipientUserId: candidate.user.id,
+      });
+    assert.equal(prepared.status, "SKIPPED");
+    if (prepared.status !== "READY") {
+      assert.equal(prepared.errorCode, "SOURCE_WAITLIST_SLOT_NOT_PENDING");
+    }
   },
 );

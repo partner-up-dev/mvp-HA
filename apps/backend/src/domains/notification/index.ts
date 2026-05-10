@@ -5,6 +5,7 @@ export {
   NEW_PARTNER_NOTIFICATION_KIND,
   PR_MESSAGE_NOTIFICATION_KIND,
   REMINDER_CONFIRMATION_NOTIFICATION_KIND,
+  WAITLIST_ALTERNATIVE_AVAILABLE_NOTIFICATION_KIND,
   WAITLIST_PROMOTED_NOTIFICATION_KIND,
   notificationKindSchema,
   type NotificationKind,
@@ -118,6 +119,17 @@ export {
   type WaitlistPromotedDispatchPreparation,
   type WaitlistPromotedNotificationJobPayload,
 } from "./services/waitlist-promoted-dispatch.service";
+export {
+  buildWaitlistAlternativeAvailableDedupeKey,
+  buildWaitlistAlternativeAvailableDedupePrefixForUser,
+  clearWaitlistAlternativeAvailableNotificationCredits,
+  consumeWaitlistAlternativeAvailableNotificationCredit,
+  prepareWaitlistAlternativeAvailableNotificationDispatch,
+  recordWaitlistAlternativeAvailableNotificationDelivery,
+  waitlistAlternativeAvailableNotificationJobPayloadSchema,
+  type WaitlistAlternativeAvailableDispatchPreparation,
+  type WaitlistAlternativeAvailableNotificationJobPayload,
+} from "./services/waitlist-alternative-available-dispatch.service";
 export {
   createNotificationOpportunity,
   markNotificationOpportunityScheduled,

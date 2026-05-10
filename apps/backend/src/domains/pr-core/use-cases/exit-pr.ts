@@ -24,6 +24,7 @@ import { resolveBookingContactState } from "../../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
 import { resetPRJoinGateResolutionsForUser } from "../services/join-gates.service";
 import { promoteWaitlistedPartners } from "../services/waitlist.service";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -111,6 +112,7 @@ export async function exitPRByUserId(
       message: "Failed to reload partner request",
     });
   }
+  await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
   return toPublicPR(latest, userId);
 }
 

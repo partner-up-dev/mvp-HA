@@ -14,6 +14,18 @@
     title="提交候补"
     @close="closeWaitlistFlowModal"
   >
+    <label class="alternative-reminder-option">
+      <input
+        v-model="alternativePrReminderOptIn"
+        class="alternative-reminder-option__control"
+        type="checkbox"
+        :disabled="flowPending"
+        data-testid="pr-detail.waitlist.alternative-reminder"
+      />
+      <span class="alternative-reminder-option__text">
+        {{ t("prPage.waitlistAlternativeReminder.optionLabel") }}
+      </span>
+    </label>
     <PRJoinGates
       :pr-id="props.prId"
       :enabled="showWaitlistFlowModal"
@@ -41,7 +53,7 @@
           :title="t('prPage.notificationSubscriptions.title')"
         >
           <APRNotificationSubscriptions
-            :visible-kinds="WAITLIST_SUCCESS_NOTIFICATION_KINDS"
+            :visible-kinds="waitlistSuccessNotificationKinds"
             :description-prefixes="waitlistNotificationDescriptionPrefixes"
             :updating-label="t('prPage.wechatReminder.updating')"
             outline-profile="surface"
@@ -159,14 +171,11 @@ const router = useRouter();
 const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
 const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
-const WAITLIST_SUCCESS_NOTIFICATION_KINDS = [
-  "WAITLIST_PROMOTED",
-] as const satisfies readonly WeChatNotificationKind[];
-
 const showWaitlistFlowModal = ref(false);
 const waitlistFlowPending = ref(false);
 const waitlistFlowError = ref<string | null>(null);
 const joined = ref(false);
+const alternativePrReminderOptIn = ref(false);
 const waitlistPromptStep = ref<WaitlistPromptStep>("SUBSCRIPTIONS");
 const successPromptOpenForWaitlist = ref(false);
 
@@ -185,7 +194,16 @@ const waitlistNotificationDescriptionPrefixes = computed<
   WAITLIST_PROMOTED: t(
     "prPage.waitlistSuccessSubscriptions.notificationReasons.WAITLIST_PROMOTED",
   ),
+  WAITLIST_ALTERNATIVE_AVAILABLE: t(
+    "prPage.waitlistSuccessSubscriptions.notificationReasons.WAITLIST_ALTERNATIVE_AVAILABLE",
+  ),
 }));
+const waitlistSuccessNotificationKinds = computed<WeChatNotificationKind[]>(
+  () =>
+    alternativePrReminderOptIn.value
+      ? ["WAITLIST_PROMOTED", "WAITLIST_ALTERNATIVE_AVAILABLE"]
+      : ["WAITLIST_PROMOTED"],
+);
 const flowPending = computed(
   () => waitlistFlowPending.value || waitlistMutation.isPending.value,
 );
@@ -314,7 +332,10 @@ const finalizeWaitlistFlow = async (): Promise<void> => {
   waitlistFlowError.value = null;
   try {
     await ensureAuthSessionBootstrapped();
-    const result = await waitlistMutation.mutateAsync({ id: prId });
+    const result = await waitlistMutation.mutateAsync({
+      id: prId,
+      alternativePrReminderOptIn: alternativePrReminderOptIn.value,
+    });
     await applyAuthPayloadFromResult(result);
     joined.value = true;
     trackWaitlistResult({ actionResult: "success" });
@@ -355,6 +376,7 @@ watch(
   () => props.prId,
   () => {
     joined.value = false;
+    alternativePrReminderOptIn.value = false;
     closeWaitlistFlowModal();
     finishWaitlistPrompt();
   },
@@ -396,5 +418,26 @@ defineExpose({
 
 .waitlist-success-modal__actions > button {
   flex: 1 1 180px;
+}
+
+.alternative-reminder-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sys-spacing-xsmall);
+  margin-bottom: var(--sys-spacing-medium);
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface-container-low);
+}
+
+.alternative-reminder-option__control {
+  flex: 0 0 auto;
+  margin-top: 0.125rem;
+}
+
+.alternative-reminder-option__text {
+  @include mx.pu-font(body-medium);
+  color: var(--sys-color-on-surface);
 }
 </style>

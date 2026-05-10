@@ -4,10 +4,11 @@ import {
   type PartnerId,
   type PartnerStatus,
 } from "../entities/partner";
+import { partnerRequests } from "../entities/partner-request";
 import type { PRId } from "../entities/partner-request";
 import type { UserId } from "../entities/user";
 import { users } from "../entities/user";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 
 export type ActiveParticipantSummary = {
   partnerId: PartnerId;
@@ -23,6 +24,13 @@ export type PendingParticipantSummary = {
   userId: UserId;
   nickname: string | null;
   avatar: string | null;
+  waitlistedAt: Date | null;
+};
+
+export type AlternativeWaitlistReminderSlot = {
+  partnerId: PartnerId;
+  prId: PRId;
+  userId: UserId;
   waitlistedAt: Date | null;
 };
 
@@ -311,9 +319,12 @@ export class PartnerRepository {
     prId: PRId;
     userId: UserId;
     status: PartnerStatus;
+    alternativePrReminderOptIn?: boolean;
   }) {
     const now = new Date();
     const nextStatus = data.status;
+    const alternativePrReminderOptIn =
+      nextStatus === "PENDING" && data.alternativePrReminderOptIn === true;
     const result = await db
       .insert(partners)
       .values({
@@ -321,6 +332,8 @@ export class PartnerRepository {
         userId: data.userId,
         status: nextStatus,
         waitlistedAt: nextStatus === "PENDING" ? now : null,
+        alternativePrReminderOptIn,
+        alternativePrReminderOptedInAt: alternativePrReminderOptIn ? now : null,
         exitedAt: nextStatus === "EXITED" ? now : null,
         confirmedAt: nextStatus === "CONFIRMED" ? now : null,
         releasedAt: nextStatus === "RELEASED" ? now : null,
@@ -377,13 +390,20 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
-  async markPending(id: PartnerId) {
+  async markPending(
+    id: PartnerId,
+    options: { alternativePrReminderOptIn?: boolean } = {},
+  ) {
     const now = new Date();
+    const alternativePrReminderOptIn =
+      options.alternativePrReminderOptIn === true;
     const result = await db
       .update(partners)
       .set({
         status: "PENDING",
         waitlistedAt: now,
+        alternativePrReminderOptIn,
+        alternativePrReminderOptedInAt: alternativePrReminderOptIn ? now : null,
         confirmedAt: null,
         exitedAt: null,
         releasedAt: null,
@@ -442,6 +462,8 @@ export class PartnerRepository {
       .set({
         status: "CANCELLED",
         waitlistedAt: null,
+        alternativePrReminderOptIn: false,
+        alternativePrReminderOptedInAt: null,
         confirmedAt: null,
         exitedAt: null,
         releasedAt: null,
@@ -461,6 +483,87 @@ export class PartnerRepository {
       .where(and(eq(partners.id, id), eq(partners.status, "PENDING")))
       .returning();
     return result[0] ?? null;
+  }
+
+  async listPendingAlternativeReminderSlotsByTypeAndLocation(input: {
+    type: string;
+    location: string;
+    excludePrId: PRId;
+  }): Promise<AlternativeWaitlistReminderSlot[]> {
+    const rows = await db
+      .select({
+        partnerId: partners.id,
+        prId: partners.prId,
+        userId: partners.userId,
+        waitlistedAt: partners.waitlistedAt,
+      })
+      .from(partners)
+      .innerJoin(partnerRequests, eq(partnerRequests.id, partners.prId))
+      .where(
+        and(
+          eq(partners.status, "PENDING"),
+          eq(partners.alternativePrReminderOptIn, true),
+          eq(partnerRequests.type, input.type),
+          eq(partnerRequests.location, input.location),
+          ne(partners.prId, input.excludePrId),
+        ),
+      )
+      .orderBy(asc(partners.waitlistedAt), asc(partners.id));
+
+    return rows;
+  }
+
+  async listPendingAlternativeReminderSlotsByUserForAlternative(input: {
+    userId: UserId;
+    type: string;
+    location: string;
+    excludePrId: PRId;
+  }): Promise<AlternativeWaitlistReminderSlot[]> {
+    const rows = await db
+      .select({
+        partnerId: partners.id,
+        prId: partners.prId,
+        userId: partners.userId,
+        waitlistedAt: partners.waitlistedAt,
+      })
+      .from(partners)
+      .innerJoin(partnerRequests, eq(partnerRequests.id, partners.prId))
+      .where(
+        and(
+          eq(partners.userId, input.userId),
+          eq(partners.status, "PENDING"),
+          eq(partners.alternativePrReminderOptIn, true),
+          eq(partnerRequests.type, input.type),
+          eq(partnerRequests.location, input.location),
+          ne(partners.prId, input.excludePrId),
+        ),
+      )
+      .orderBy(asc(partners.waitlistedAt), asc(partners.id));
+
+    return rows;
+  }
+
+  async listPendingAlternativeReminderSlotsByUser(
+    userId: UserId,
+  ): Promise<AlternativeWaitlistReminderSlot[]> {
+    const rows = await db
+      .select({
+        partnerId: partners.id,
+        prId: partners.prId,
+        userId: partners.userId,
+        waitlistedAt: partners.waitlistedAt,
+      })
+      .from(partners)
+      .where(
+        and(
+          eq(partners.userId, userId),
+          eq(partners.status, "PENDING"),
+          eq(partners.alternativePrReminderOptIn, true),
+        ),
+      )
+      .orderBy(asc(partners.waitlistedAt), asc(partners.id));
+
+    return rows;
   }
 
   async markConfirmed(id: PartnerId) {

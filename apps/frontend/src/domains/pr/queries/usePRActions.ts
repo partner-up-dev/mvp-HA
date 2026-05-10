@@ -24,6 +24,9 @@ type PRActionInput = {
 type PRJoinInput = PRActionInput;
 
 type PRWaitlistInput = PRActionInput;
+type PRWaitlistMutationInput = PRWaitlistInput & {
+  alternativePrReminderOptIn?: boolean;
+};
 
 type PRCancelWaitlistInput = PRActionInput;
 
@@ -144,10 +147,16 @@ export const useWaitlistPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id }: PRWaitlistInput) => {
+    mutationFn: async ({
+      id,
+      alternativePrReminderOptIn,
+    }: PRWaitlistMutationInput) => {
       const res = await client.api.pr[":id"].waitlist.$post(
         {
           param: { id: id.toString() },
+          json: {
+            alternativePrReminderOptIn: alternativePrReminderOptIn === true,
+          },
         },
         {
           init: {

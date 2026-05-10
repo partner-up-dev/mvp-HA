@@ -60,6 +60,12 @@ export const partners = pgTable("partners", {
   exitedAt: timestamp("exited_at"),
   releasedAt: timestamp("released_at"),
   releaseReason: text("release_reason"),
+  alternativePrReminderOptIn: boolean("alternative_pr_reminder_opt_in")
+    .notNull()
+    .default(false),
+  alternativePrReminderOptedInAt: timestamp(
+    "alternative_pr_reminder_opted_in_at",
+  ),
   attendedAt: timestamp("attended_at"),
   checkInAt: timestamp("check_in_at"),
   didAttend: boolean("did_attend"),
