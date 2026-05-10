@@ -17,7 +17,6 @@ const userReliabilityRepo = new UserReliabilityRepository();
 export async function checkIn(
   id: PRId,
   openId: string,
-  payload: { wouldJoinAgain: boolean | null },
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -44,7 +43,7 @@ export async function checkIn(
     });
   }
 
-  const updatedSlot = await partnerRepo.reportCheckIn(slot.id, payload);
+  const updatedSlot = await partnerRepo.reportCheckIn(slot.id);
   if (!updatedSlot) {
     throw new HTTPException(500, { message: "Failed to submit check-in" });
   }

@@ -48,6 +48,7 @@
               :upload-label="t('locationApplicationPage.pickImageAction')"
               :uploading-label="t('common.loading')"
               :preview-alt="t('locationApplicationPage.imagePreviewAlt')"
+              :allow-url-input="false"
             />
           </FormField>
 

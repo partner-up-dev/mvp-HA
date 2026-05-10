@@ -376,7 +376,6 @@ export class PartnerRepository {
         attendedAt: null,
         checkInAt: null,
         didAttend: null,
-        wouldJoinAgain: null,
         paymentStatus: "NONE",
         reimbursementRequested: false,
         reimbursementStatus: "NONE",
@@ -411,7 +410,6 @@ export class PartnerRepository {
         attendedAt: null,
         checkInAt: null,
         didAttend: null,
-        wouldJoinAgain: null,
         paymentStatus: "NONE",
         reimbursementRequested: false,
         reimbursementStatus: "NONE",
@@ -442,7 +440,6 @@ export class PartnerRepository {
         attendedAt: null,
         checkInAt: null,
         didAttend: null,
-        wouldJoinAgain: null,
         paymentStatus: "NONE",
         reimbursementRequested: false,
         reimbursementStatus: "NONE",
@@ -471,7 +468,6 @@ export class PartnerRepository {
         attendedAt: null,
         checkInAt: null,
         didAttend: null,
-        wouldJoinAgain: null,
         paymentStatus: "NONE",
         reimbursementRequested: false,
         reimbursementStatus: "NONE",
@@ -597,7 +593,6 @@ export class PartnerRepository {
         attendedAt: null,
         checkInAt: null,
         didAttend: null,
-        wouldJoinAgain: null,
         paymentStatus: "NONE",
         reimbursementRequested: false,
         reimbursementStatus: "NONE",
@@ -643,12 +638,7 @@ export class PartnerRepository {
     return result[0] ?? null;
   }
 
-  async reportCheckIn(
-    id: PartnerId,
-    payload: {
-      wouldJoinAgain: boolean | null;
-    },
-  ) {
+  async reportCheckIn(id: PartnerId) {
     const now = new Date();
     const result = await db
       .update(partners)
@@ -658,7 +648,6 @@ export class PartnerRepository {
         attendedAt: now,
         checkInAt: now,
         didAttend: true,
-        wouldJoinAgain: payload.wouldJoinAgain,
       })
       .where(eq(partners.id, id))
       .returning();

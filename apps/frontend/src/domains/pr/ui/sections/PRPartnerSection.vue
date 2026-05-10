@@ -84,7 +84,7 @@
         tone="primary-outline"
         type="button"
         :disabled="checkInPending"
-        @click="emit('prepare-check-in')"
+        @click="emit('submit-check-in')"
       >
         {{
           checkInPending ? t("prPage.checkingIn") : t("prPage.checkInAttended")
@@ -99,41 +99,6 @@
     <p v-if="availabilityNote" class="partner-section__availability-note">
       {{ availabilityNote }}
     </p>
-
-    <section v-if="showCheckInFollowup" class="partner-section__followup">
-      <p class="partner-section__followup-text">
-        {{
-          t("prPage.checkInFollowupQuestion", {
-            status: checkInFollowupStatusLabel,
-          })
-        }}
-      </p>
-      <div class="partner-section__followup-actions">
-        <Button
-          type="button"
-          :disabled="checkInPending"
-          @click="emit('submit-check-in', true)"
-        >
-          {{ t("prPage.wouldJoinAgainYes") }}
-        </Button>
-        <Button
-          tone="primary-outline"
-          type="button"
-          :disabled="checkInPending"
-          @click="emit('submit-check-in', false)"
-        >
-          {{ t("prPage.wouldJoinAgainNo") }}
-        </Button>
-        <Button
-          tone="surface"
-          type="button"
-          :disabled="checkInPending"
-          @click="emit('cancel-check-in')"
-        >
-          {{ t("common.cancel") }}
-        </Button>
-      </div>
-    </section>
 
     <section class="partner-section__panel">
       <div class="partner-section__panel-header">
@@ -284,8 +249,6 @@ const props = withDefaults(
     confirmPending?: boolean;
     checkInPending?: boolean;
     joinErrorMessage?: string | null;
-    showCheckInFollowup?: boolean;
-    checkInFollowupStatusLabel?: string;
     canToggleReminder?: boolean;
     reminderEnabled?: boolean;
     reminderTogglePending?: boolean;
@@ -301,8 +264,6 @@ const props = withDefaults(
     confirmPending: false,
     checkInPending: false,
     joinErrorMessage: null,
-    showCheckInFollowup: false,
-    checkInFollowupStatusLabel: "",
     canToggleReminder: false,
     reminderEnabled: false,
     reminderTogglePending: false,
@@ -318,9 +279,7 @@ const emit = defineEmits<{
   join: [];
   exit: [];
   "confirm-slot": [];
-  "prepare-check-in": [];
-  "submit-check-in": [wouldJoinAgain: boolean];
-  "cancel-check-in": [];
+  "submit-check-in": [];
   "toggle-reminder": [];
   "go-wechat-login": [];
   "accept-alternative-batch": [timeWindow: TimeWindow];
@@ -499,8 +458,7 @@ function blockedReasonText(
   margin-bottom: var(--sys-spacing-small);
 }
 
-.partner-section__panel,
-.partner-section__followup {
+.partner-section__panel {
   padding: var(--sys-spacing-small);
   border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container-high);
@@ -595,7 +553,6 @@ function blockedReasonText(
 }
 
 .partner-section__actions,
-.partner-section__followup-actions,
 .partner-section__links,
 .partner-section__alternatives,
 .partner-section__roster,
@@ -646,14 +603,12 @@ function blockedReasonText(
 }
 
 @media (min-width: 880px) {
-  .partner-section__actions,
-  .partner-section__followup-actions {
+  .partner-section__actions {
     flex-direction: row;
     flex-wrap: wrap;
   }
 
-  .partner-section__actions > button,
-  .partner-section__followup-actions > button {
+  .partner-section__actions > button {
     flex: 1 1 220px;
   }
 }

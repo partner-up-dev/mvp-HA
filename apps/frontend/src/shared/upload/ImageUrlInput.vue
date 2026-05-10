@@ -9,15 +9,19 @@
       @change="handleFileChange"
     />
 
-    <div class="image-url-input__row">
-      <input
-        :id="inputId"
-        class="image-url-input__text"
+    <div
+      class="image-url-input__row"
+      :class="{ 'image-url-input__row--upload-only': !allowUrlInput }"
+    >
+      <TextInput
+        v-if="allowUrlInput"
+        :input-id="inputId"
         type="url"
-        :value="modelValue"
+        inputmode="url"
+        :model-value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
-        @input="handleUrlInput"
+        @update:model-value="handleUrlInput"
       />
       <Button
         appearance="pill"
@@ -49,6 +53,7 @@
 import { computed, ref, watch } from "vue";
 import type { ImageUploadPurpose } from "@partner-up-dev/backend";
 import Button from "@/shared/ui/actions/Button.vue";
+import TextInput from "@/shared/ui/forms/TextInput.vue";
 import { useCloudStorage } from "@/shared/upload/useCloudStorage";
 
 const props = withDefaults(
@@ -63,12 +68,14 @@ const props = withDefaults(
     accept?: string;
     disabled?: boolean;
     uploading?: boolean;
+    allowUrlInput?: boolean;
   }>(),
   {
     placeholder: "",
     accept: "image/png,image/jpeg,image/webp",
     disabled: false,
     uploading: false,
+    allowUrlInput: true,
   },
 );
 
@@ -98,9 +105,8 @@ const handlePickImage = () => {
   fileInputRef.value?.click();
 };
 
-const handleUrlInput = (event: Event) => {
-  const target = event.target as HTMLInputElement | null;
-  emit("update:modelValue", target?.value ?? "");
+const handleUrlInput = (value: string) => {
+  emit("update:modelValue", value);
   clearError();
 };
 
@@ -149,20 +155,8 @@ const handleFileChange = async (event: Event) => {
   align-items: center;
 }
 
-.image-url-input__text {
-  min-width: 0;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-small);
-  background: var(--sys-color-surface-container-lowest);
-  color: var(--sys-color-on-surface);
-  padding: var(--sys-spacing-small);
-  @include mx.pu-font(body-medium);
-
-  &:focus {
-    border-color: var(--sys-color-primary);
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 1px;
-  }
+.image-url-input__row--upload-only {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .image-url-input__preview {

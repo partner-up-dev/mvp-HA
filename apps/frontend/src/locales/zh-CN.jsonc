@@ -298,11 +298,6 @@
     "checkInAttended": "我已到场",
     "checkInMissed": "我未到场",
     "checkingIn": "提交中...",
-    "checkInFollowupQuestion": "你选择了“{status}”，是否愿意再参加同类活动？",
-    "checkInFollowupForAttended": "我已到场",
-    "checkInFollowupForMissed": "我未到场",
-    "wouldJoinAgainYes": "愿意再参加",
-    "wouldJoinAgainNo": "暂时不考虑",
     "feedbackQuestionnaire": {
       "openAction": "填写活动反馈"
     },

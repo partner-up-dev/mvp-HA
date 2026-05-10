@@ -30,10 +30,7 @@ type PRWaitlistMutationInput = PRWaitlistInput & {
 
 type PRCancelWaitlistInput = PRActionInput;
 
-type PRCheckInInput = {
-  id: PRId;
-  wouldJoinAgain: boolean | null;
-};
+type PRCheckInInput = PRActionInput;
 
 type PRUpdateContentInput = {
   id: PRId;
@@ -345,13 +342,11 @@ export const useCheckInPRSlot = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, wouldJoinAgain }: PRCheckInInput) => {
+    mutationFn: async ({ id }: PRCheckInInput) => {
       const res = await client.api.pr[":id"]["check-in"].$post(
         {
           param: { id: id.toString() },
-          json: {
-            wouldJoinAgain,
-          },
+          json: {},
         },
         {
           init: {

@@ -69,7 +69,6 @@ export const partners = pgTable("partners", {
   attendedAt: timestamp("attended_at"),
   checkInAt: timestamp("check_in_at"),
   didAttend: boolean("did_attend"),
-  wouldJoinAgain: boolean("would_join_again"),
   paymentStatus: text("payment_status")
     .$type<PartnerPaymentStatus>()
     .notNull()

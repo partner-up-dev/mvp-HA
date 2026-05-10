@@ -3,7 +3,9 @@ import {
   partnerRequests,
   users,
   type PRJoinGateConfig,
+  type PRId,
 } from "../../../../src/entities";
+import type { FeedbackQuestionnaireInstanceId } from "../../../../src/entities/feedback-questionnaire";
 import { getTestDb } from "../../../_infra/probes/sql-probe";
 import type { ScenarioPartnerRequest } from "../builders/partner-requests";
 import type { ScenarioUser } from "../builders/users";
@@ -33,6 +35,42 @@ export async function configureOpenConfirmationWindow(
       joinLockOffsetMinutes: 30,
     })
     .where(eq(partnerRequests.id, pr.id));
+}
+
+export async function configureStartedEvent(
+  pr: ScenarioPartnerRequest,
+): Promise<void> {
+  const startAt = new Date(Date.now() - 30 * 60 * 1000);
+  const endAt = new Date(Date.now() + 90 * 60 * 1000);
+
+  await getTestDb()
+    .update(partnerRequests)
+    .set({
+      time: [startAt.toISOString(), endAt.toISOString()],
+      confirmationStartOffsetMinutes: 120,
+      confirmationEndOffsetMinutes: 30,
+      joinLockOffsetMinutes: 30,
+    })
+    .where(eq(partnerRequests.id, pr.id));
+}
+
+export async function configureStartedEventWithFeedback(input: {
+  prId: PRId;
+  feedbackQuestionnaireInstanceId: FeedbackQuestionnaireInstanceId;
+}): Promise<void> {
+  const startAt = new Date(Date.now() - 30 * 60 * 1000);
+  const endAt = new Date(Date.now() + 90 * 60 * 1000);
+
+  await getTestDb()
+    .update(partnerRequests)
+    .set({
+      time: [startAt.toISOString(), endAt.toISOString()],
+      confirmationStartOffsetMinutes: 120,
+      confirmationEndOffsetMinutes: 30,
+      joinLockOffsetMinutes: 30,
+      feedbackQuestionnaireInstanceId: input.feedbackQuestionnaireInstanceId,
+    })
+    .where(eq(partnerRequests.id, input.prId));
 }
 
 export async function bindScenarioWeChatOpenId(input: {

@@ -153,7 +153,7 @@
     <div v-if="showFeedbackRetryAction" class="primary-action">
       <Button
         class="primary-action__button"
-        tone="primary-outline"
+        tone="primary"
         block
         data-testid="pr-detail.feedback.open"
         @click="openFeedbackQuestionnaire"
@@ -212,42 +212,6 @@
       @confirm="confirmCancelWaitlist"
     />
 
-    <Modal
-      :open="attendanceActions.showCheckInFollowup.value"
-      :title="
-        t('prPage.checkInFollowupQuestion', {
-          status: attendanceActions.checkInFollowupStatusLabel.value,
-        })
-      "
-      @close="attendanceActions.cancelPendingCheckIn"
-    >
-      <div class="modal-actions modal-actions--stack">
-        <Button
-          type="button"
-          :disabled="attendanceActions.checkInPending.value"
-          @click="submitCheckInThenFeedback(true)"
-        >
-          {{ t("prPage.wouldJoinAgainYes") }}
-        </Button>
-        <Button
-          tone="primary-outline"
-          type="button"
-          :disabled="attendanceActions.checkInPending.value"
-          @click="submitCheckInThenFeedback(false)"
-        >
-          {{ t("prPage.wouldJoinAgainNo") }}
-        </Button>
-        <Button
-          tone="surface"
-          type="button"
-          :disabled="attendanceActions.checkInPending.value"
-          @click="attendanceActions.cancelPendingCheckIn"
-        >
-          {{ t("common.cancel") }}
-        </Button>
-      </div>
-    </Modal>
-
     <PRFeedbackQuestionnaireModal
       :open="feedbackModalOpen"
       :questionnaire="feedbackQuestionnaire"
@@ -265,7 +229,6 @@ import type { FeedbackQuestionnaireAnswers, PRId } from "@partner-up-dev/backend
 import type { PRDetailView } from "@/domains/pr/model/types";
 import Button from "@/shared/ui/actions/Button.vue";
 import InlineNotice from "@/shared/ui/feedback/InlineNotice.vue";
-import Modal from "@/shared/ui/overlay/Modal.vue";
 import ConfirmDialog from "@/shared/ui/overlay/ConfirmDialog.vue";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import PRJoinFlow from "@/domains/pr/ui/composites/PRJoinFlow.vue";
@@ -369,7 +332,6 @@ useBodyScrollLock(
     () =>
       showExitConfirmModal.value ||
       showCancelWaitlistConfirmModal.value ||
-      attendanceActions.showCheckInFollowup.value ||
       feedbackModalOpen.value,
   ),
 );
@@ -568,8 +530,8 @@ const openFeedbackQuestionnaire = (): void => {
   feedbackModalOpen.value = true;
 };
 
-const submitCheckInThenFeedback = async (wouldJoinAgain: boolean) => {
-  await attendanceActions.submitCheckIn(wouldJoinAgain);
+const submitCheckInAndOpenFeedback = async (): Promise<void> => {
+  await attendanceActions.submitCheckIn();
   if (hasPendingFeedbackQuestionnaire.value) {
     feedbackModalOpen.value = true;
   }
@@ -636,7 +598,7 @@ const handleDockAction = async (action: DockActionItem) => {
     return;
   }
   if (action.key === "CHECKIN_ATTENDED") {
-    attendanceActions.prepareCheckIn();
+    await submitCheckInAndOpenFeedback();
   }
 };
 
@@ -850,17 +812,4 @@ function buttonToneForAction(
   margin-top: var(--sys-spacing-small);
 }
 
-.modal-actions {
-  display: flex;
-  gap: var(--sys-spacing-small);
-  flex-wrap: wrap;
-}
-
-.modal-actions > button {
-  flex: 1 1 180px;
-}
-
-.modal-actions--stack {
-  flex-direction: column;
-}
 </style>

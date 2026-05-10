@@ -1,56 +1,72 @@
 <template>
   <form class="feedback-form" @submit.prevent="handleSubmit">
     <div class="feedback-form__questions">
-      <fieldset
+      <template
         v-for="question in definition.questions"
         :key="question.id"
-        class="feedback-form__question"
       >
-        <legend class="feedback-form__label">
-          {{ question.label }}
-          <span v-if="question.required" aria-hidden="true">*</span>
-        </legend>
+        <fieldset
+          v-if="question.type === 'single_choice'"
+          class="feedback-form__question"
+        >
+          <legend class="feedback-form__label">
+            {{ question.label }}
+            <span v-if="question.required" aria-hidden="true">*</span>
+          </legend>
 
-        <div v-if="question.type === 'single_choice'" class="choice-list">
-          <label
-            v-for="option in question.options"
-            :key="option.value"
-            class="choice-row"
-          >
-            <input
-              type="radio"
-              :name="question.id"
-              :value="option.value"
-              :checked="readSingleChoiceValue(question.id) === option.value"
-              :disabled="pending"
-              @change="setSingleChoiceAnswer(question.id, option.value)"
-            />
-            <span>{{ option.label }}</span>
-          </label>
-        </div>
-
-        <textarea
+          <div class="choice-list">
+            <label
+              v-for="option in question.options"
+              :key="option.value"
+              class="choice-row"
+            >
+              <input
+                type="radio"
+                :name="question.id"
+                :value="option.value"
+                :checked="readSingleChoiceValue(question.id) === option.value"
+                :disabled="pending"
+                @change="setSingleChoiceAnswer(question.id, option.value)"
+              />
+              <span>{{ option.label }}</span>
+            </label>
+          </div>
+        </fieldset>
+        <FormField
           v-else-if="question.type === 'textarea'"
-          class="feedback-form__textarea"
-          :value="readTextareaValue(question.id)"
-          :maxlength="question.maxLength"
-          :disabled="pending"
-          @input="setTextareaAnswer(question.id, $event)"
-        ></textarea>
-
-        <ImageUrlInput
+          :label="question.label"
+          :for-id="feedbackFieldId(question.id)"
+          :required="question.required"
+        >
+          <TextareaInput
+            :input-id="feedbackFieldId(question.id)"
+            :model-value="readTextareaValue(question.id)"
+            :max-length="question.maxLength"
+            :disabled="pending"
+            show-count
+            @update:model-value="setTextareaAnswer(question.id, $event)"
+          />
+        </FormField>
+        <FormField
           v-else
-          :model-value="readImageUrl(question.id)"
-          :input-id="`feedback-${instanceId}-${question.id}`"
-          purpose="feedback"
-          upload-label="上传图片"
-          uploading-label="上传中..."
-          preview-alt="反馈图片预览"
-          :disabled="pending"
-          data-testid="pr-detail.feedback.image-upload"
-          @update:model-value="setImageAnswer(question.id, $event)"
-        />
-      </fieldset>
+          :label="question.label"
+          :for-id="feedbackFieldId(question.id)"
+          :required="question.required"
+        >
+          <ImageUrlInput
+            :model-value="readImageUrl(question.id)"
+            :input-id="feedbackFieldId(question.id)"
+            purpose="feedback"
+            upload-label="上传图片"
+            uploading-label="上传中..."
+            preview-alt="反馈图片预览"
+            :disabled="pending"
+            :allow-url-input="false"
+            data-testid="pr-detail.feedback.image-upload"
+            @update:model-value="setImageAnswer(question.id, $event)"
+          />
+        </FormField>
+      </template>
     </div>
 
     <p v-if="validationMessage" class="feedback-form__error">
@@ -86,6 +102,8 @@ import type {
 } from "@partner-up-dev/backend";
 import Button from "@/shared/ui/actions/Button.vue";
 import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
+import FormField from "@/shared/ui/forms/FormField.vue";
+import TextareaInput from "@/shared/ui/forms/TextareaInput.vue";
 
 const props = defineProps<{
   instanceId: number;
@@ -116,6 +134,9 @@ const readImageUrl = (questionId: string): string => {
   return answer?.type === "image_upload" ? answer.imageUrl : "";
 };
 
+const feedbackFieldId = (questionId: string): string =>
+  `feedback-${props.instanceId}-${questionId}`;
+
 const setSingleChoiceAnswer = (questionId: string, value: string): void => {
   validationMessage.value = null;
   answers.value = {
@@ -127,14 +148,13 @@ const setSingleChoiceAnswer = (questionId: string, value: string): void => {
   };
 };
 
-const setTextareaAnswer = (questionId: string, event: Event): void => {
+const setTextareaAnswer = (questionId: string, value: string): void => {
   validationMessage.value = null;
-  const target = event.target as HTMLTextAreaElement | null;
   answers.value = {
     ...answers.value,
     [questionId]: {
       type: "textarea",
-      value: target?.value ?? "",
+      value,
     },
   };
 };
@@ -200,7 +220,7 @@ const handleSubmit = (): void => {
   margin: 0;
   padding: 0;
   @include mx.pu-font(label-large);
-  color: var(--sys-color-on-surface);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .choice-list {
@@ -213,23 +233,6 @@ const handleSubmit = (): void => {
   gap: var(--sys-spacing-small);
   color: var(--sys-color-on-surface);
   @include mx.pu-font(body-medium);
-}
-
-.feedback-form__textarea {
-  min-height: 120px;
-  resize: vertical;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-small);
-  background: var(--sys-color-surface-container-lowest);
-  color: var(--sys-color-on-surface);
-  padding: var(--sys-spacing-small);
-  @include mx.pu-font(body-medium);
-
-  &:focus {
-    border-color: var(--sys-color-primary);
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 1px;
-  }
 }
 
 .feedback-form__error {

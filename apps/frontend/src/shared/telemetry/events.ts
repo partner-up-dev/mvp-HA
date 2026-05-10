@@ -111,7 +111,6 @@ export type TelemetryPayloadMap = {
   pr_checkin_submitted: PRContextPayload & {
     prId: number;
     didAttend: boolean;
-    wouldJoinAgain: boolean;
   };
   share_method_switch: ShareContextPayload & {
     methodId: string;

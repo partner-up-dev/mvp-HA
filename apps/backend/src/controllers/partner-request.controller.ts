@@ -98,7 +98,6 @@ const waitlistCommandSchema = z
   .default({});
 const slotCheckInSchema = z.object({
   didAttend: z.boolean().optional(),
-  wouldJoinAgain: z.boolean().nullable().optional(),
 });
 const joinGateParamSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -468,15 +467,13 @@ export const partnerRequestRoute = app
       const { id } = c.req.valid("param");
       await getPROr404(id);
       const { openId } = await requireAnchorAuthenticatedIdentity(c);
-      const { didAttend, wouldJoinAgain } = c.req.valid("json");
+      const { didAttend } = c.req.valid("json");
       if (didAttend === false) {
         throw new HTTPException(400, {
           message: "didAttend=false is no longer supported",
         });
       }
-      const result = await checkIn(id, openId, {
-        wouldJoinAgain: wouldJoinAgain ?? null,
-      });
+      const result = await checkIn(id, openId);
       return c.json(result);
     },
   )

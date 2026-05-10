@@ -7,9 +7,9 @@ Handle GitHub issue #189 by separating the existing check-in feedback bug from t
 Hypothesis:
 
 - The existing PR Page check-in bug can be fixed locally by making the backend PR partner-section read model expose an already-submitted check-in as completed, and by keeping the frontend primary CTA aligned with that state.
-- The existing `wouldJoinAgain` value is already persisted on the partner slot, so the bug slice should verify persistence and CTA disappearance before expanding the model.
 - A minimal custom questionnaire system should treat post-event feedback as a questionnaire capability parallel to PR. PR depends on and integrates with the questionnaire capability.
-- Questionnaire responses should be persisted by the feedback/questionnaire system. The existing `partners.would_join_again` column can remain for the current check-in command and as an optional PR integration projection if a later flow maps a stable questionnaire answer back to the partner slot.
+- Questionnaire responses should be persisted by the feedback/questionnaire system. Future willingness-to-join-again questions are normal questionnaire questions, configured through templates and mounted instances.
+- The legacy `wouldJoinAgain` partner-slot projection should be retired. Check-in persists attendance only.
 - This task should stay split across documents and implementation slices to avoid turning the PR page or a single task note into a monofile.
 
 ## Current Confirmed Scope
@@ -25,11 +25,12 @@ Hypothesis:
 - PR override admin entry: in scope for the existing Admin PR page.
 - Result review/export: out of scope for this phase.
 - Admin-facing result browser/export: out of scope for this phase.
+- Legacy `wouldJoinAgain`: remove the hardcoded check-in follow-up, API payload, partner-slot column, frontend strings, and telemetry property. Willingness questions live only in configured questionnaire instances.
 
 ## Input Classification
 
 - `Reality`: PR Page currently continues to show `我已到场` after the viewer submits check-in feedback.
-- `Reality`: `wouldJoinAgain` appears to be submitted through the existing RPC and persisted to `partners.would_join_again`; this needs verification coverage.
+- `Reality`: `wouldJoinAgain` existed as a PR-specific follow-up projection, but the current product model puts willingness feedback inside the questionnaire capability.
 - `Intent`: activity-specific post-event feedback should become a configurable questionnaire capability.
 - `Constraint`: questionnaire is a parallel capability that PR integrates with as a consumer.
 - `Constraint`: Anchor Event points to questionnaire template; PR points to questionnaire instance.
@@ -66,10 +67,10 @@ Hypothesis:
 
 - PR Page route assembles `PRContextualActions`.
 - `PRContextualActions` shows the `CHECKIN_ATTENDED` primary action for `slotState === "CONFIRMED" || slotState === "ATTENDED"`.
-- `usePRAttendanceActions.submitCheckIn(wouldJoinAgain)` sends `wouldJoinAgain` to the Hono RPC client.
-- `POST /api/pr/:id/check-in` accepts `wouldJoinAgain`.
+- `usePRAttendanceActions.submitCheckIn()` submits only the attendance command.
+- `POST /api/pr/:id/check-in` accepts only the attendance command body.
 - `checkIn` calls `PartnerRepository.reportCheckIn`.
-- `PartnerRepository.reportCheckIn` sets `status = "ATTENDED"`, `didAttend = true`, and `wouldJoinAgain = payload.wouldJoinAgain`.
+- `PartnerRepository.reportCheckIn` sets `status = "ATTENDED"` and `didAttend = true`.
 - `buildPRPartnerSection` currently leaves `canCheckIn` true for participants after event start while `ATTENDED` represents an already-submitted check-in.
 - GitHub issue #189 is open, labeled `domain:pr`, assigned to `xiaoland`, has no discussion comments, and still describes the same two-part scope: hide the check-in CTA after attendance submission, verify `wouldJoinAgain` persistence, and add configurable post-event feedback for food tasting.
 - Existing support-resource materialization path:
@@ -88,18 +89,18 @@ Address and Object:
 State Diff:
 
 - From: `ATTENDED` participants can still receive `canCheckIn = true` and the PR Page can keep rendering `我已到场`.
-- To: after a successful check-in, the viewer has `slotState = "ATTENDED"`, `canCheckIn = false`, persisted feedback is verified, and the primary check-in CTA disappears.
+- To: after a successful check-in, the viewer has `slotState = "ATTENDED"`, `canCheckIn = false`, attendance persistence is verified, and the primary check-in CTA disappears.
 
 Invariants:
 
 - `ATTENDED` remains an active participant state for roster/capacity purposes.
 - Absence of check-in remains the unknown state.
 - Check-in remains available only for PRs with the participation policy and after event start.
-- Existing `wouldJoinAgain` submissions remain accepted.
+- Check-in remains limited to attendance state. Questionnaire submission owns post-event feedback answers.
 
 Verification:
 
-- Backend scenario or existing probe asserts `status`, `didAttend`, and `wouldJoinAgain` after check-in.
+- Backend scenario or existing probe asserts `status` and `didAttend` after check-in.
 - Browser scenario asserts the check-in CTA disappears after successful submission.
 - Relevant frontend/backend build or type checks pass.
 
@@ -143,7 +144,6 @@ Persistence Direction:
 - Add feedback-owned response persistence. Each submitted questionnaire answer set belongs in a response record; the questionnaire instance stores the mounted question definition snapshot, not the participant's answer payload.
 - Add feedback questionnaire templates and instances.
 - Add PR questionnaire instance pointer, populated from Anchor Event template materialization during PR creation and replaceable through Admin PR pointer override.
-- Keep `partners.would_join_again` as an optional integration projection when the PR flow submits a legacy willingness answer.
 - Store uploaded image URLs as answer values after the existing upload service returns a URL.
 
 Invariants:
@@ -154,14 +154,14 @@ Invariants:
 - PR participation gating lives in PR integration; feedback submission stays generic.
 - User-facing feedback edit entry is out of scope, but backend persistence can upsert/update to preserve future editability.
 - Admin result viewing and export stay outside this phase.
-- Generic survey builder breadth stays limited to the food-tasting and legacy willingness cases.
+- Generic survey builder breadth stays limited to configured template use cases.
 
 Verification:
 
 - Backend scenario proves any PR creation path whose type resolves to an Anchor Event materializes the Anchor Event template to a questionnaire instance that PR points to, and PR pointer override wins when present.
 - Admin PR scenario or focused frontend coverage proves the PR override entry can update the PR's questionnaire instance pointer.
 - Backend scenario proves feedback-owned response submission persists answers through `POST /api/feedback/:id`.
-- PR integration scenario proves the composed PR flow preserves the current check-in persistence behavior and can later project a stable questionnaire willingness answer when that mapping is enabled.
+- PR integration scenario proves the composed PR flow preserves attendance persistence and opens a pending questionnaire instance when mounted.
 - Frontend scenario covers one minimal food-tasting branch if implementation cost stays bounded.
 - Existing check-in and PR detail participation scenarios continue to pass.
 
@@ -171,7 +171,6 @@ Verification:
 - Should Admin PR override choose from existing instances, create a new instance from a selected template before updating the pointer, or support both paths?
 - Should questionnaire submission identify the respondent by current authenticated user/session, an explicit response key, or both?
 - Should feedback responses be keyed by `questionnaireInstanceId + submitter identity`, or should the model also include an integration subject such as PR/partner slot for future consumers?
-- Where should a future legacy `wouldJoinAgain` projection live if the generic feedback command remains questionnaire-owned?
 - How should PR detail expose feedback retry state when check-in succeeds but questionnaire submission fails?
 - Should Admin PR pointer override use a dedicated command instead of being folded into general PR content update?
 
@@ -199,6 +198,14 @@ Verification:
 - 2026-05-10: Feedback Questionnaire Admin implemented. Backend Admin API now supports template list/create/update with schema validation and key/version uniqueness guards; frontend adds `/admin/feedback-questionnaires` with template selection, create/edit fields, and definition JSON editing. Test writing was delegated to sub-agent Lagrange, which added backend scenario coverage for create/list, update/list, and duplicate key/version conflicts. Verification passed: `pnpm test:scenario backend`, `pnpm --filter @partner-up-dev/backend typecheck`, and `pnpm --filter @partner-up-dev/frontend build`.
 - 2026-05-10: User identified an Admin PR gap for legacy PRs created before questionnaire instance materialization. Existing Admin PR override can only pick existing questionnaire instances, so templates are not available as mount sources. Next slice adds a dedicated Admin PR action that materializes a new questionnaire instance from a selected template and points the PR to that instance. Existing instance-pointer override stays available.
 - 2026-05-10: Admin PR template mount implemented. Backend adds `POST /api/admin/prs/:id/feedback-questionnaire-instance/from-template`, which creates a questionnaire instance from the selected template and updates the PR instance pointer. Admin PR page now offers both existing instance override and template-based create-and-mount. Test writing was delegated to sub-agent Banach, which added backend scenario coverage for legacy PR mount success, missing template, and missing PR. Verification passed: `pnpm test:scenario backend`, `pnpm --filter @partner-up-dev/backend typecheck`, and `pnpm --filter @partner-up-dev/frontend build`.
+- 2026-05-10: User reported PR Page check-in follow-up still shows only the legacy `wouldJoinAgain` question after a questionnaire instance is mounted. Investigation found PR detail projects the mounted questionnaire, while `PRContextualActions` still routes `CHECKIN_ATTENDED` into the legacy follow-up modal first. Next fix: when a pending feedback questionnaire exists, `我已到场` should submit check-in with `wouldJoinAgain: null` and open the questionnaire modal; the legacy willingness prompt remains the fallback for PRs without a pending questionnaire.
+- 2026-05-10: PR Page check-in questionnaire flow fixed. With a pending mounted feedback questionnaire, `我已到场` now submits check-in with `wouldJoinAgain: null` and opens the questionnaire modal directly; the legacy willingness prompt remains for PRs without pending questionnaire feedback. Test writing was delegated to sub-agent Galileo, which added a system scenario covering check-in opening the questionnaire, `ATTENDED` slot persistence, and `wouldJoinAgain = null`. Verification passed: `pnpm test:scenario system`, `pnpm --filter @partner-up-dev/backend typecheck`, and `pnpm --filter @partner-up-dev/frontend build`.
+- 2026-05-10: User clarified `wouldJoinAgain` should be deleted and represented only as an optional questionnaire question. Current slice removes the hardcoded follow-up UI, check-in payload field, telemetry field, partner-slot schema column, repository writes, and tests/probes that assert partner-slot willingness. Check-in now persists only attendance and opens a mounted pending questionnaire when one exists.
+- 2026-05-10: User reported the retry CTA `填写活动反馈` is actionable but styled like a disabled action. Investigation found the CTA uses `primary-outline` while it is the main recovery action after attendance is already submitted. Updated the CTA to solid `primary` styling while keeping behavior unchanged.
+- 2026-05-10: User asked whether the questionnaire reused existing form controls because textarea/input styling looked unusual. Investigation found questionnaire textarea was hand-styled, while image URL input reused `ImageUrlInput` but carried a different internal input style. Updated questionnaire textarea to reuse `TextareaInput`, wrapped non-choice controls in `FormField`, and aligned `ImageUrlInput` text input styling with the existing form-control visual contract.
+- 2026-05-10: User clarified image URL input should reuse an ordinary single-line input control. Added shared `TextInput` and updated `ImageUrlInput` to use it for the URL field; textarea usage remains limited to textarea questionnaire questions.
+- 2026-05-10: User observed `TextInput` padding is too large for a normal single-line input. Reduced vertical and horizontal padding from `medium` to `small`.
+- 2026-05-10: User clarified ordinary user-facing image upload surfaces should not allow manual Image URL entry. Added an `allowUrlInput` switch to `ImageUrlInput`; Admin surfaces keep URL input by default, while participant feedback questionnaire and public location application now expose upload-only image input.
 
 ## Slices
 

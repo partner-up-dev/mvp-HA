@@ -13,6 +13,7 @@ import type { ScenarioUser } from "../builders/users";
 export type PartnerSlotProbe = {
   id: PartnerId;
   status: PartnerStatus;
+  didAttend: boolean | null;
 };
 
 export type BookingContactProbe = {
@@ -29,6 +30,7 @@ export async function probeLatestPartnerSlot(input: {
     .select({
       id: partners.id,
       status: partners.status,
+      didAttend: partners.didAttend,
     })
     .from(partners)
     .where(

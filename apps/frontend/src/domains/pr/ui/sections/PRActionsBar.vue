@@ -19,14 +19,10 @@
     :has-joined="hasJoined"
     :can-confirm="canConfirm"
     :can-check-in="canCheckIn"
-    :show-check-in-followup="showCheckInFollowup"
-    :check-in-followup-status-label="checkInFollowupStatusLabel"
     :confirm-pending="confirmPending"
     :check-in-pending="checkInPending"
     @confirm-slot="emit('confirm-slot')"
-    @prepare-check-in="emit('prepare-check-in')"
-    @submit-check-in="emit('submit-check-in', $event)"
-    @cancel-check-in="emit('cancel-check-in')"
+    @submit-check-in="emit('submit-check-in')"
   />
 </template>
 
@@ -43,8 +39,6 @@ defineProps<{
   canCheckIn: boolean;
   showEditContentAction: boolean;
   showModifyStatusAction: boolean;
-  showCheckInFollowup: boolean;
-  checkInFollowupStatusLabel: string;
   slotStateText: string;
   joinPending: boolean;
   exitPending: boolean;
@@ -56,9 +50,7 @@ const emit = defineEmits<{
   join: [];
   exit: [];
   "confirm-slot": [];
-  "prepare-check-in": [];
-  "submit-check-in": [wouldJoinAgain: boolean];
-  "cancel-check-in": [];
+  "submit-check-in": [];
   "edit-content": [];
   "modify-status": [];
 }>();

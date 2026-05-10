@@ -10,6 +10,8 @@ import { scenario } from "../_infra/scenario/scenario";
 import {
   configureJoinGate,
   configureOpenConfirmationWindow,
+  configureStartedEvent,
+  configureStartedEventWithFeedback,
   bindScenarioWeChatOpenId,
 } from "../../../apps/backend/tests/pr-core/_kit/actions/system-state";
 import {
@@ -18,6 +20,10 @@ import {
 } from "../../../apps/backend/tests/pr-core/_kit/probes/system-state";
 import { givenPublishedPartnerRequest } from "../../../apps/backend/tests/pr-core/_kit/builders/partner-requests";
 import { givenUser } from "../../../apps/backend/tests/pr-core/_kit/builders/users";
+import {
+  givenFeedbackQuestionnaireInstance,
+  givenFeedbackQuestionnaireTemplate,
+} from "../../../apps/backend/tests/feedback-questionnaire/_kit/builders/questionnaires";
 
 type PRActionResponse = {
   status: string;
@@ -145,6 +151,139 @@ scenario("pr_detail_participant_confirms_slot", async (ctx) => {
   const slot = await probeLatestPartnerSlot({ pr, user: participant });
   assert.equal(slot?.status, "CONFIRMED");
 });
+
+scenario(
+  "pr_detail_check_in_opens_pending_feedback_questionnaire",
+  async (ctx) => {
+    const creator = await givenUser("system-checkin-feedback-creator");
+    const participant = await givenUser("system-checkin-feedback-participant");
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 2,
+      maxPartners: null,
+      title: "System scenario feedback check-in partner request",
+    });
+    const template = await givenFeedbackQuestionnaireTemplate({
+      label: "system-checkin-feedback",
+    });
+    const questionnaire = await givenFeedbackQuestionnaireInstance({ template });
+
+    await bindScenarioWeChatOpenId({
+      user: participant,
+      openId: "system-checkin-feedback-participant-openid",
+    });
+    await joinThroughBackend({ prId: pr.id, token: participant.token });
+    await configureOpenConfirmationWindow(pr);
+
+    ctx.record("prId", pr.id);
+    ctx.record("participantUserId", participant.user.id);
+    ctx.record("feedbackQuestionnaireInstanceId", questionnaire.id);
+
+    await withScenarioPage(async (page) => {
+      await installScenarioUserSession(page, participant);
+      await installDeterministicShareSidecarStubs(page);
+
+      await page.goto(`/pr/${pr.id}`);
+      await page.getByTestId("pr-detail.participant.confirm-action").click();
+      await page.getByTestId("pr-detail.participant.check-in-action").waitFor({
+        state: "visible",
+        timeout: 10_000,
+      });
+
+      await configureStartedEventWithFeedback({
+        prId: pr.id,
+        feedbackQuestionnaireInstanceId: questionnaire.id,
+      });
+
+      await page.reload();
+      const checkInResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes(`/api/pr/${pr.id}/check-in`) &&
+          response.request().method() === "POST",
+      );
+      await page.getByTestId("pr-detail.participant.check-in-action").click();
+      const checkInResponse = await checkInResponsePromise;
+      assert.equal(checkInResponse.status(), 200);
+      await page.getByTestId("pr-detail.feedback.submit").waitFor({
+        state: "visible",
+        timeout: 10_000,
+      });
+      await page.getByText("Taste rating").waitFor({
+        state: "visible",
+        timeout: 10_000,
+      });
+    });
+
+    const slot = await probeLatestPartnerSlot({ pr, user: participant });
+    assert.equal(slot?.status, "ATTENDED");
+    assert.equal(slot?.didAttend, true);
+  },
+);
+
+scenario(
+  "pr_detail_check_in_submits_directly_when_feedback_questionnaire_absent",
+  async (ctx) => {
+    const creator = await givenUser("system-checkin-direct-creator");
+    const participant = await givenUser("system-checkin-direct-participant");
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 2,
+      maxPartners: null,
+      title: "System scenario direct check-in partner request",
+    });
+
+    await bindScenarioWeChatOpenId({
+      user: participant,
+      openId: "system-checkin-direct-participant-openid",
+    });
+    await joinThroughBackend({ prId: pr.id, token: participant.token });
+    await configureOpenConfirmationWindow(pr);
+
+    ctx.record("prId", pr.id);
+    ctx.record("participantUserId", participant.user.id);
+
+    await withScenarioPage(async (page) => {
+      await installScenarioUserSession(page, participant);
+      await installDeterministicShareSidecarStubs(page);
+
+      await page.goto(`/pr/${pr.id}`);
+      await page.getByTestId("pr-detail.participant.confirm-action").click();
+      await page.getByTestId("pr-detail.participant.check-in-action").waitFor({
+        state: "visible",
+        timeout: 10_000,
+      });
+
+      await configureStartedEvent(pr);
+      await page.reload();
+
+      const checkInResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes(`/api/pr/${pr.id}/check-in`) &&
+          response.request().method() === "POST",
+      );
+      await page.getByTestId("pr-detail.participant.check-in-action").click();
+      const checkInResponse = await checkInResponsePromise;
+      assert.equal(checkInResponse.status(), 200);
+
+      await page.getByText("愿意再参加").waitFor({
+        state: "hidden",
+        timeout: 1_000,
+      });
+      await page.getByText("暂时不考虑").waitFor({
+        state: "hidden",
+        timeout: 1_000,
+      });
+      await page.getByTestId("pr-detail.feedback.submit").waitFor({
+        state: "hidden",
+        timeout: 1_000,
+      });
+    });
+
+    const slot = await probeLatestPartnerSlot({ pr, user: participant });
+    assert.equal(slot?.status, "ATTENDED");
+    assert.equal(slot?.didAttend, true);
+  },
+);
 
 scenario(
   "pr_detail_waitlist_promotes_after_active_participant_exit",
