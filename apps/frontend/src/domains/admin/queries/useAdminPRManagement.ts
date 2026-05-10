@@ -11,6 +11,8 @@ type PRsRoute = AdminApi["prs"];
 type PRRoute = PRsRoute[":id"];
 type PRFeedbackQuestionnaireInstanceRoute =
   PRRoute["feedback-questionnaire-instance"];
+type PRFeedbackQuestionnaireInstanceFromTemplateRoute =
+  PRFeedbackQuestionnaireInstanceRoute["from-template"];
 type PRMessagesRoute = PRRoute["messages"];
 type PRMessageRoute = PRMessagesRoute[":messageId"];
 
@@ -44,6 +46,9 @@ export type UpdateAdminPRVisibilityResponse = InferResponseType<
 
 export type UpdateAdminPRFeedbackQuestionnaireInstanceResponse =
   InferResponseType<PRFeedbackQuestionnaireInstanceRoute["$patch"]>;
+
+export type MaterializeAdminPRFeedbackQuestionnaireInstanceResponse =
+  InferResponseType<PRFeedbackQuestionnaireInstanceFromTemplateRoute["$post"]>;
 
 export type CreateAdminPRMessageResponse = InferResponseType<
   PRRoute["messages"]["$post"]
@@ -104,6 +109,10 @@ export type AdminUpdatePRVisibilityInput = {
 
 export type AdminUpdatePRFeedbackQuestionnaireInstanceInput = {
   feedbackQuestionnaireInstanceId: number | null;
+};
+
+export type AdminMaterializePRFeedbackQuestionnaireInstanceInput = {
+  feedbackQuestionnaireTemplateId: number;
 };
 
 export type AdminCreatePRMessageInput = {
@@ -307,6 +316,40 @@ export const useUpdateAdminPRFeedbackQuestionnaireInstance = () => {
       });
       if (!res.ok) {
         throw new Error(await readErrorMessage(res, "更新反馈问卷实例失败"));
+      }
+      return await res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.prWorkspace(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pr.detail(variables.prId),
+      });
+    },
+  });
+};
+
+export const useMaterializeAdminPRFeedbackQuestionnaireInstance = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    MaterializeAdminPRFeedbackQuestionnaireInstanceResponse,
+    Error,
+    {
+      prId: number;
+      input: AdminMaterializePRFeedbackQuestionnaireInstanceInput;
+    }
+  >({
+    mutationFn: async ({ prId, input }) => {
+      const res = await adminClient.api.admin.prs[":id"][
+        "feedback-questionnaire-instance"
+      ]["from-template"].$post({
+        param: { id: prId.toString() },
+        json: input,
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "挂载反馈问卷模板失败"));
       }
       return await res.json();
     },

@@ -5,6 +5,7 @@ import {
   givenAnchorEvent,
   givenAnchorEventVisiblePR,
 } from "../anchor-event/_kit/builders/anchor-events";
+import { givenPublishedPartnerRequest } from "../pr-core/_kit/builders/partner-requests";
 import { givenAdminUser, givenUser } from "../pr-core/_kit/builders/users";
 import {
   buildNeedsImprovementFeedbackAnswers,
@@ -331,6 +332,122 @@ scenario(
     assert.equal(instance.templateId, template.id);
     assert.equal(instance.title, template.title);
     assert.deepEqual(instance.definition, template.definition);
+  },
+);
+
+scenario(
+  "admin_pr_feedback_questionnaire_template_mount_materializes_and_points_legacy_pr",
+  async (ctx) => {
+    const admin = await givenAdminUser("feedback-template-mount-admin");
+    const creator = await givenUser("feedback-template-mount-creator");
+    const template = await givenFeedbackQuestionnaireTemplate({
+      label: "admin-template-mount",
+    });
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 2,
+      title: "Scenario feedback template mount legacy PR",
+    });
+
+    const beforePR = await probePartnerRequest(pr.id);
+    assert.equal(beforePR.feedbackQuestionnaireInstanceId, null);
+
+    ctx.record("prId", pr.id);
+    ctx.record("templateId", template.id);
+
+    const response = await requestJson(
+      `/api/admin/prs/${pr.id}/feedback-questionnaire-instance/from-template`,
+      {
+        method: "POST",
+        token: admin.token,
+        body: {
+          feedbackQuestionnaireTemplateId: template.id,
+        },
+      },
+    );
+    const body =
+      await expectJsonResponse<AdminFeedbackQuestionnaireOverrideResponse>(
+        response,
+        200,
+      );
+
+    assert.equal(body.id, pr.id);
+    assert.notEqual(body.feedbackQuestionnaireInstanceId, null);
+
+    const afterPR = await probePartnerRequest(pr.id);
+    assert.equal(
+      afterPR.feedbackQuestionnaireInstanceId,
+      body.feedbackQuestionnaireInstanceId,
+    );
+
+    const instance = await probeFeedbackQuestionnaireInstance(
+      body.feedbackQuestionnaireInstanceId,
+    );
+    assert.equal(instance.templateId, template.id);
+    assert.equal(instance.title, template.title);
+    assert.deepEqual(instance.definition, template.definition);
+  },
+);
+
+scenario(
+  "admin_pr_feedback_questionnaire_template_mount_returns_404_for_missing_template",
+  async (ctx) => {
+    const admin = await givenAdminUser("feedback-template-missing-admin");
+    const creator = await givenUser("feedback-template-missing-creator");
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 2,
+      title: "Scenario feedback missing template PR",
+    });
+    const missingTemplateId = 2147483647;
+
+    ctx.record("prId", pr.id);
+    ctx.record("missingTemplateId", missingTemplateId);
+
+    const response = await requestJson(
+      `/api/admin/prs/${pr.id}/feedback-questionnaire-instance/from-template`,
+      {
+        method: "POST",
+        token: admin.token,
+        body: {
+          feedbackQuestionnaireTemplateId: missingTemplateId,
+        },
+      },
+    );
+    const body = await expectJsonResponse<{ error: string }>(response, 404);
+
+    assert.match(body.error, /template not found/i);
+
+    const afterPR = await probePartnerRequest(pr.id);
+    assert.equal(afterPR.feedbackQuestionnaireInstanceId, null);
+  },
+);
+
+scenario(
+  "admin_pr_feedback_questionnaire_template_mount_returns_404_for_missing_pr",
+  async (ctx) => {
+    const admin = await givenAdminUser("feedback-pr-missing-admin");
+    const template = await givenFeedbackQuestionnaireTemplate({
+      label: "admin-missing-pr",
+    });
+    const missingPRId = 2147483647;
+
+    ctx.record("templateId", template.id);
+    ctx.record("missingPRId", missingPRId);
+
+    const response = await requestJson(
+      `/api/admin/prs/${missingPRId}/feedback-questionnaire-instance/from-template`,
+      {
+        method: "POST",
+        token: admin.token,
+        body: {
+          feedbackQuestionnaireTemplateId: template.id,
+        },
+      },
+    );
+    const body = await expectJsonResponse<{ error: string }>(response, 404);
+
+    assert.match(body.error, /pr not found/i);
   },
 );
 

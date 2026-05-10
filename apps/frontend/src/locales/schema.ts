@@ -1247,8 +1247,10 @@ export interface MessageSchema {
     prMeetingPointDescriptionLabel: string;
     prMeetingPointImageUrlLabel: string;
     prFeedbackQuestionnaireInstanceLabel: string;
+    prFeedbackQuestionnaireTemplateLabel: string;
     noFeedbackQuestionnaire: string;
     saveFeedbackQuestionnaireInstanceAction: string;
+    mountFeedbackQuestionnaireTemplateAction: string;
     prLocationHint: string;
     prTimeHint: string;
     prContentLockedHint: string;

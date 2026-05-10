@@ -26,6 +26,7 @@ import {
   getAdminAnchorEventPreferenceTags,
   getAdminAnchorEventWorkspace,
   listAdminPRMessages,
+  materializeAdminPRFeedbackQuestionnaireInstance,
   publishAdminAnchorEventPreferenceTag,
   getAdminPRWorkspace,
   rejectAdminAnchorEventPreferenceTag,
@@ -138,6 +139,9 @@ const adminUpdatePRVisibilitySchema = z.object({
 });
 const adminUpdatePRFeedbackQuestionnaireInstanceSchema = z.object({
   feedbackQuestionnaireInstanceId: z.number().int().positive().nullable(),
+});
+const adminMaterializePRFeedbackQuestionnaireInstanceSchema = z.object({
+  feedbackQuestionnaireTemplateId: z.number().int().positive(),
 });
 const adminFeedbackQuestionnaireTemplateInputSchema = z.object({
   key: z.string().trim().min(1).max(120),
@@ -424,6 +428,20 @@ export const adminAnchorManagementRoute = app
         id,
         feedbackQuestionnaireInstanceId,
       );
+      return c.json(result);
+    },
+  )
+  .post(
+    "/prs/:id/feedback-questionnaire-instance/from-template",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", adminMaterializePRFeedbackQuestionnaireInstanceSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { feedbackQuestionnaireTemplateId } = c.req.valid("json");
+      const result = await materializeAdminPRFeedbackQuestionnaireInstance({
+        prId: id,
+        feedbackQuestionnaireTemplateId,
+      });
       return c.json(result);
     },
   )

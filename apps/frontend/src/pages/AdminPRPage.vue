@@ -357,6 +357,49 @@
                       : t("adminPR.saveFeedbackQuestionnaireInstanceAction")
                   }}
                 </Button>
+
+                <label class="field">
+                  <span class="field-label">{{
+                    t("adminPR.prFeedbackQuestionnaireTemplateLabel")
+                  }}</span>
+                  <select
+                    class="field-input"
+                    :value="mountFeedbackQuestionnaireTemplateId ?? ''"
+                    data-testid="admin-pr.feedback-template"
+                    @change="
+                      mountFeedbackQuestionnaireTemplateId =
+                        parseNullableId($event)
+                    "
+                  >
+                    <option value="">{{ t("adminPR.noFeedbackQuestionnaire") }}</option>
+                    <option
+                      v-for="template in feedbackQuestionnaireTemplates"
+                      :key="template.id"
+                      :value="template.id"
+                    >
+                      {{ template.key }}@{{ template.version }} / {{ template.title }}
+                    </option>
+                  </select>
+                </label>
+                <Button
+                  appearance="pill"
+                  tone="outline"
+                  size="sm"
+                  type="button"
+                  :disabled="
+                    selectedPRId === null ||
+                    mountFeedbackQuestionnaireTemplateId === null ||
+                    materializePRFeedbackQuestionnaireInstanceMutation.isPending.value
+                  "
+                  data-testid="admin-pr.feedback-template.mount"
+                  @click="handleMaterializePRFeedbackQuestionnaireInstance"
+                >
+                  {{
+                    materializePRFeedbackQuestionnaireInstanceMutation.isPending.value
+                      ? t("adminPR.saving")
+                      : t("adminPR.mountFeedbackQuestionnaireTemplateAction")
+                  }}
+                </Button>
               </div>
 
               <div class="actions actions--inline">
@@ -606,6 +649,7 @@ import {
   useCreateAdminPRMessage,
   useDeleteAdminPR,
   useDeleteAdminPRMessage,
+  useMaterializeAdminPRFeedbackQuestionnaireInstance,
   useUpdateAdminPRContent,
   useUpdateAdminPRFeedbackQuestionnaireInstance,
   useUpdateAdminPRMessage,
@@ -730,6 +774,8 @@ const updatePRStatusMutation = useUpdateAdminPRStatus();
 const updatePRVisibilityMutation = useUpdateAdminPRVisibility();
 const updatePRFeedbackQuestionnaireInstanceMutation =
   useUpdateAdminPRFeedbackQuestionnaireInstance();
+const materializePRFeedbackQuestionnaireInstanceMutation =
+  useMaterializeAdminPRFeedbackQuestionnaireInstance();
 
 const filters = ref({
   type: "",
@@ -742,6 +788,7 @@ const filters = ref({
 const selectedPRIdRaw = ref("");
 const isCreatingPR = ref(false);
 const prForm = ref<PRForm>(emptyPRForm());
+const mountFeedbackQuestionnaireTemplateId = ref<number | null>(null);
 const lastAppliedType = ref<string | null>(null);
 const messageDraftBody = ref("");
 const messageActionError = ref<string | null>(null);
@@ -754,6 +801,9 @@ const prs = computed<PRRecord[]>(() => workspace.value?.prs ?? []);
 const typeOptions = computed(() => workspace.value?.typeOptions ?? []);
 const feedbackQuestionnaireInstances = computed(
   () => workspace.value?.feedbackQuestionnaireInstances ?? [],
+);
+const feedbackQuestionnaireTemplates = computed(
+  () => workspace.value?.feedbackQuestionnaireTemplates ?? [],
 );
 const poiOptions = computed<string[]>(() =>
   [...(poisQuery.data.value ?? [])]
@@ -902,7 +952,8 @@ const isSavingPR = computed(
     updatePRContentMutation.isPending.value ||
     updatePRStatusMutation.isPending.value ||
     updatePRVisibilityMutation.isPending.value ||
-    updatePRFeedbackQuestionnaireInstanceMutation.isPending.value,
+    updatePRFeedbackQuestionnaireInstanceMutation.isPending.value ||
+    materializePRFeedbackQuestionnaireInstanceMutation.isPending.value,
 );
 const isDeletingPR = computed(() => deletePRMutation.isPending.value);
 
@@ -914,6 +965,7 @@ const mutationErrorMessage = computed(
     updatePRStatusMutation.error.value?.message ||
     updatePRVisibilityMutation.error.value?.message ||
     updatePRFeedbackQuestionnaireInstanceMutation.error.value?.message ||
+    materializePRFeedbackQuestionnaireInstanceMutation.error.value?.message ||
     null,
 );
 
@@ -946,10 +998,14 @@ watch(
     editingMessageBody.value = "";
     if (creating || !pr) {
       prForm.value = emptyPRForm();
+      mountFeedbackQuestionnaireTemplateId.value = null;
       lastAppliedType.value = null;
       return;
     }
     prForm.value = toPRForm(pr);
+    mountFeedbackQuestionnaireTemplateId.value =
+      typeOptions.value.find((option) => option.type === pr.type)
+        ?.feedbackQuestionnaireTemplateId ?? null;
     lastAppliedType.value = null;
   },
   { immediate: true },
@@ -1012,6 +1068,7 @@ const prepareNewPR = () => {
   isCreatingPR.value = true;
   selectedPRIdRaw.value = "";
   prForm.value = emptyPRForm();
+  mountFeedbackQuestionnaireTemplateId.value = null;
   lastAppliedType.value = null;
 };
 
@@ -1027,6 +1084,7 @@ const resetMutationErrors = () => {
   updatePRStatusMutation.reset();
   updatePRVisibilityMutation.reset();
   updatePRFeedbackQuestionnaireInstanceMutation.reset();
+  materializePRFeedbackQuestionnaireInstanceMutation.reset();
 };
 
 const requestDeletePR = (prId: number) => {
@@ -1153,6 +1211,34 @@ const handleSavePRFeedbackQuestionnaireInstance = async () => {
           prForm.value.feedbackQuestionnaireInstanceId,
       },
     });
+  } catch {
+    // Mutation state already drives page-level feedback.
+  }
+};
+
+const handleMaterializePRFeedbackQuestionnaireInstance = async () => {
+  if (
+    selectedPRId.value === null ||
+    mountFeedbackQuestionnaireTemplateId.value === null
+  ) {
+    return;
+  }
+
+  try {
+    const result =
+      await materializePRFeedbackQuestionnaireInstanceMutation.mutateAsync({
+        prId: selectedPRId.value,
+        input: {
+          feedbackQuestionnaireTemplateId:
+            mountFeedbackQuestionnaireTemplateId.value,
+        },
+      });
+    if (!result) return;
+    prForm.value = {
+      ...prForm.value,
+      feedbackQuestionnaireInstanceId:
+        result.feedbackQuestionnaireInstanceId ?? null,
+    };
   } catch {
     // Mutation state already drives page-level feedback.
   }
