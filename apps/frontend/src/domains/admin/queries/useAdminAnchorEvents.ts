@@ -67,6 +67,7 @@ export type AdminAnchorEventInput = {
   locationMeetingPoints?: Record<string, MeetingPointInput>;
   joinGateConfig: PRJoinGateConfig;
   feedbackQuestionnaireTemplateId: number | null;
+  defaultPrNotes: string | null;
   timePoolConfig: AdminAnchorTimePoolConfigInput;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;

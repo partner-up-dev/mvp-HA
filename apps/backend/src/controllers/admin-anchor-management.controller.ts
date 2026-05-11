@@ -86,6 +86,7 @@ const adminAnchorEventInputSchema = z.object({
   timePoolConfig: anchorEventTimePoolConfigSchema,
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
+  defaultPrNotes: z.string().trim().nullable().optional(),
   defaultConfirmationStartOffsetMinutes: z.number().int().nonnegative(),
   defaultConfirmationEndOffsetMinutes: z.number().int().nonnegative(),
   defaultJoinLockOffsetMinutes: z.number().int().nonnegative(),
@@ -271,6 +272,7 @@ export const adminAnchorManagementRoute = app
         ...payload,
         description: payload.description || null,
         locationPool: normalizeLocationPool(payload.locationPool),
+        defaultPrNotes: payload.defaultPrNotes || null,
         coverImage: payload.coverImage || null,
         betaGroupQrCode: payload.betaGroupQrCode || null,
       });
@@ -288,6 +290,7 @@ export const adminAnchorManagementRoute = app
         ...payload,
         description: payload.description || null,
         locationPool: normalizeLocationPool(payload.locationPool),
+        defaultPrNotes: payload.defaultPrNotes || null,
         coverImage: payload.coverImage || null,
         betaGroupQrCode: payload.betaGroupQrCode || null,
       });

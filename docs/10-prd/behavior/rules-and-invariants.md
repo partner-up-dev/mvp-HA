@@ -18,7 +18,7 @@
 - If the creator is anonymous, that create flow persists a `DRAFT` and waits for a later authenticated publish step.
 - Structured creation uses one PR-owned form contract. Its `type` field accepts arbitrary input and may offer suggestion options from known event types.
 - Structured creation uses one PR-owned `time_window` result. The UI may expose batch and free modes, while the persisted PR still owns one resolved time window.
-- PR creation resolves Anchor Event context by PR type when a matching Anchor Event exists. Event-owned PR defaults such as join gates, support resources, and feedback questionnaire template selection materialize into PR-owned runtime state at creation time.
+- PR creation resolves Anchor Event context by PR type when a matching Anchor Event exists. Event-owned PR defaults such as default notes, join gates, support resources, and feedback questionnaire template selection materialize into PR-owned runtime state at creation time. Existing PR notes remain PR-owned content when the event default later changes.
 - Event-context PR creation is one assisted mode inside the Anchor Event domain.
 - Event-assisted create resolves event-side choices into the same structured PR fields used by `/pr/new`. Any event referral or create-source marker is transient request context rather than durable PR identity.
 - PR existence does not depend on Anchor Event identity or time-pool selection.

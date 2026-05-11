@@ -16,7 +16,7 @@
 2. The `type` field accepts arbitrary input and may offer suggestion options from known event types.
 3. The `time_window` field uses batch or free UI mode. Batch mode offers suggested windows from known event-side availability. Free mode allows direct manual time entry.
 4. The UI resolves those inputs into one PR-owned create payload with one concrete `type` and one concrete `time_window`.
-5. The frontend submits the structured create command. If the selected `type` resolves to an Anchor Event, PR creation materializes that event's PR defaults such as join gates, support resources, and mounted feedback questionnaire instance onto the created PR.
+5. The frontend submits the structured create command. If the selected `type` resolves to an Anchor Event, PR creation materializes that event's PR defaults such as default notes when the create payload has no notes, join gates, support resources, and mounted feedback questionnaire instance onto the created PR.
 6. If the user already has an authenticated account, the backend creates and publishes the PR inside the same creation flow.
 7. If the user is anonymous, the backend creates a `DRAFT` and waits for a later authenticated publish step.
 8. The publish step assigns creator ownership and returns a shareable, revisitable `PR`.

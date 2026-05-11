@@ -1161,6 +1161,8 @@ export interface MessageSchema {
     landingRatioValidation: string;
     assignmentRevisionValidation: string;
     saveLandingConfigAction: string;
+    defaultPrNotesTitle: string;
+    defaultPrNotesPlaceholder: string;
     preferenceTagsTitle: string;
     preferenceTagsDescription: string;
     selectEventForPreferenceTagsHint: string;

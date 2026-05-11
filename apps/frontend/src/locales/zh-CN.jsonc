@@ -793,6 +793,8 @@
     "landingRatioValidation": "FORM、CARD_RICH 与 LIST 比例总和需要等于 100。",
     "assignmentRevisionValidation": "Assignment revision 需要是大于 0 的整数。",
     "saveLandingConfigAction": "保存 Landing Rollout",
+    "defaultPrNotesTitle": "PR 默认备注",
+    "defaultPrNotesPlaceholder": "创建同类型 PR 时，若 PR 未填写备注，将自动带入这里的内容。",
     "preferenceTagsTitle": "偏好标签池",
     "preferenceTagsDescription": "维护当前活动在 Form Mode 中可见的已发布标签，并审核用户提交的新标签。",
     "selectEventForPreferenceTagsHint": "请先选择一个已有活动，再编辑偏好标签。",

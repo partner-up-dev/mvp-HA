@@ -67,6 +67,7 @@ export async function createPRFromNaturalLanguage(
     type: request.type,
     location: request.location,
     timeWindow: request.time,
+    prNotes: request.notes,
   });
 
   operationLogService.log({

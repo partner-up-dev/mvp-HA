@@ -73,6 +73,7 @@ export type AdminAnchorEventSummary = {
   };
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultPrNotes: string | null;
   defaultConfirmationStartOffsetMinutes: number | null;
   defaultConfirmationEndOffsetMinutes: number | null;
   defaultJoinLockOffsetMinutes: number | null;
@@ -167,6 +168,7 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         timePoolConfig: event.timePoolConfig,
         defaultMinPartners: event.defaultMinPartners ?? null,
         defaultMaxPartners: event.defaultMaxPartners ?? null,
+        defaultPrNotes: event.defaultPrNotes ?? null,
         defaultConfirmationStartOffsetMinutes:
           event.defaultConfirmationStartOffsetMinutes ?? null,
         defaultConfirmationEndOffsetMinutes:

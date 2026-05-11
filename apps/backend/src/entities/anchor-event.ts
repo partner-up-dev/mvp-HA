@@ -344,6 +344,7 @@ export const anchorEvents = pgTable("anchor_events", {
     .notNull(),
   defaultMinPartners: integer("default_min_partners"),
   defaultMaxPartners: integer("default_max_partners"),
+  defaultPrNotes: text("default_pr_notes"),
   defaultConfirmationStartOffsetMinutes: integer(
     "default_confirmation_start_offset_minutes",
   ),

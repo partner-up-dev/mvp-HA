@@ -91,6 +91,7 @@ export async function createAdminPR(
     type: createdRoot.type,
     location: createdRoot.location,
     timeWindow: createdRoot.time,
+    prNotes: createdRoot.notes,
     prJoinGateConfig: input.joinGateConfig,
   });
 

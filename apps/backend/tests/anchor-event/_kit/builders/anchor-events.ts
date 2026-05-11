@@ -59,6 +59,7 @@ export async function givenAnchorEvent(input: {
   timeWindows?: Array<[string, string]>;
   defaultMinPartners?: number | null;
   defaultMaxPartners?: number | null;
+  defaultPrNotes?: string | null;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
 }): Promise<ScenarioAnchorEvent> {
   const sequence = scenarioAnchorEventSequence++;
@@ -86,6 +87,7 @@ export async function givenAnchorEvent(input: {
     },
     defaultMinPartners: input.defaultMinPartners ?? 2,
     defaultMaxPartners: input.defaultMaxPartners ?? null,
+    defaultPrNotes: input.defaultPrNotes ?? null,
     defaultConfirmationStartOffsetMinutes:
       DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
     defaultConfirmationEndOffsetMinutes: DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,

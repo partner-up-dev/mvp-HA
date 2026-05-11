@@ -196,6 +196,17 @@
                 </select>
               </label>
 
+              <label class="field">
+                <span class="field-label">{{
+                  t("adminAnchorEvents.defaultPrNotesTitle")
+                }}</span>
+                <textarea
+                  v-model="eventForm.defaultPrNotes"
+                  class="field-input field-textarea"
+                  :placeholder="t('adminAnchorEvents.defaultPrNotesPlaceholder')"
+                ></textarea>
+              </label>
+
               <Button
                 appearance="pill"
                 size="sm"
@@ -721,6 +732,7 @@ type EventForm = {
   locationMeetingPoints: Record<string, EditableMeetingPointForm>;
   joinGateConfig: PRJoinGateConfig;
   feedbackQuestionnaireTemplateId: number | null;
+  defaultPrNotes: string;
   durationMinutes: number | null;
   earliestLeadMinutes: number | null;
   absoluteRulesText: string;
@@ -767,6 +779,7 @@ const emptyEventForm = (): EventForm => ({
   locationMeetingPoints: {},
   joinGateConfig: [],
   feedbackQuestionnaireTemplateId: null,
+  defaultPrNotes: "",
   durationMinutes: null,
   earliestLeadMinutes: null,
   absoluteRulesText: "",
@@ -808,6 +821,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
   ),
   joinGateConfig: event.joinGateConfig,
   feedbackQuestionnaireTemplateId: event.feedbackQuestionnaireTemplateId ?? null,
+  defaultPrNotes: event.defaultPrNotes ?? "",
   durationMinutes: event.timePoolConfig.durationMinutes ?? null,
   earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
   absoluteRulesText: event.timePoolConfig.startRules
@@ -1350,6 +1364,7 @@ const handleSaveEvent = async () => {
     joinGateConfig: eventForm.value.joinGateConfig,
     feedbackQuestionnaireTemplateId:
       eventForm.value.feedbackQuestionnaireTemplateId,
+    defaultPrNotes: eventForm.value.defaultPrNotes.trim() || null,
     coverImage: eventForm.value.coverImage.trim() || null,
     betaGroupQrCode: eventForm.value.betaGroupQrCode.trim() || null,
     status: eventForm.value.status,

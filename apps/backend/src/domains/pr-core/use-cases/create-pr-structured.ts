@@ -70,6 +70,7 @@ export async function createPRFromStructured(
     type: request.type,
     location: request.location,
     timeWindow: request.time,
+    prNotes: request.notes,
     prJoinGateConfig: options.joinGateConfig,
   });
 

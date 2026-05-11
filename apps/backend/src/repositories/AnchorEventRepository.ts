@@ -79,6 +79,7 @@ export class AnchorEventRepository {
         | "timePoolConfig"
         | "defaultMinPartners"
         | "defaultMaxPartners"
+        | "defaultPrNotes"
         | "defaultConfirmationStartOffsetMinutes"
         | "defaultConfirmationEndOffsetMinutes"
         | "defaultJoinLockOffsetMinutes"

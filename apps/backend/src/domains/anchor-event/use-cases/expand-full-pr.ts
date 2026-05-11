@@ -126,7 +126,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     minPartners: partnerBounds.minPartners,
     maxPartners: partnerBounds.maxPartners,
     preferences: fullPR.root.preferences,
-    notes: fullPR.root.notes,
+    notes: null,
     joinGateConfig: [],
     confirmationStartOffsetMinutes:
       fullPR.root.confirmationStartOffsetMinutes,
@@ -141,6 +141,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     type: createdRoot.type,
     location: createdRoot.location,
     timeWindow: createdRoot.time,
+    prNotes: createdRoot.notes,
   });
 
   const activeCount = await partnerRepo.countActiveByPrId(prId);
