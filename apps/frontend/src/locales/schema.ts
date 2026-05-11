@@ -743,6 +743,7 @@ export interface MessageSchema {
     profile: {
       title: string;
       description: string;
+      wechatIdentityLabel: string;
       wechatBound: string;
       wechatUnbound: string;
       avatarAlt: string;

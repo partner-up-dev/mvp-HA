@@ -65,7 +65,7 @@
 1. The user enters the location-application page from the Form Mode location control.
 2. The user submits one location name and one image.
 3. The backend creates a `PENDING` `POI`; the location name is the POI id.
-4. The user can revisit submitted POI applications from the submit-success page and from `/me`.
+4. The user can revisit submitted POI applications from the submit-success page and from the `/me` personal-center shortcut.
 5. Operators review submitted POIs in the POI management surface.
 6. Publishing changes the POI status to `PUBLISHED`; rejected applications remain hidden from public location reads and may carry a rejection reason.
 7. Published POIs are available to the global POI library, but Form Mode still shows only locations referenced by the current Anchor Event location pool.
@@ -73,8 +73,10 @@
 ## 5. Revisit and History Entry
 
 1. When the user returns, the system restores existing session continuity when possible.
-2. The user can inspect profile, binding, notifications, and anonymous UUID continuity through `/me`.
-3. The user can revisit created and joined history through `/pr/mine`.
+2. The user can inspect and manage profile, WeChat identity, service notifications, and anonymous UUID continuity through `/me`.
+3. The `/me` personal profile card keeps identity facts together: avatar, nickname, WeChat binding state or bind action, and the anonymous user id copy affordance.
+4. The user can enter PR history and POI application history from two equal shortcuts under the personal profile card.
+5. The user can revisit created and joined PR history through `/pr/mine`.
 
 ## 6. Share and Distribution
 
