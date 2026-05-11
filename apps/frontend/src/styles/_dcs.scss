@@ -13,4 +13,10 @@ $all: (
   event: (
     form-mode-location-card-height: clamp(7.2rem, 19.2vh, 10.4rem),
   ),
+  pr: (
+    preview-card-radius: 10px,
+    preview-card-content-padding-block: 0.75rem,
+    preview-card-content-padding-inline: 1rem,
+    preview-card-header-gap: 0.5rem,
+  ),
 );

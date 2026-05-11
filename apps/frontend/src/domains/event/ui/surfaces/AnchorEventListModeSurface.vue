@@ -30,10 +30,10 @@
         data-testid="anchor-event-list-mode.pr-list"
       >
         <div v-if="visiblePRItems.length > 0" class="pr-list">
-          <AnchorEventPRCard
+          <PRPreviewCard
             v-for="item in visiblePRItems"
             :key="`${item.timeWindowKey}:${item.pr.id}`"
-            :pr="item.pr"
+            :pr-id="item.pr.id"
             :time-label="item.timeLabel"
             :cover-image="resolveCoverImage(item.pr.location)"
           />
@@ -102,7 +102,7 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
-import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
+import PRPreviewCard from "@/domains/pr/ui/primitives/PRPreviewCard.vue";
 import EventPRCreateCard from "@/domains/event/ui/primitives/EventPRCreateCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";

@@ -11,10 +11,10 @@
       </h2>
 
       <div class="candidate-list__items">
-        <AnchorEventPRCard
+        <PRPreviewCard
           v-for="(candidate, index) in props.candidates"
           :key="candidate.pr.id"
-          :pr="candidate.pr"
+          :pr-id="candidate.pr.id"
           :time-label="buildCandidateTimeLabel(candidate.pr.time[0])"
           :cover-image="props.resolveCoverImage(candidate.pr.location)"
           data-testid="anchor-event-form-mode.candidate-card"
@@ -67,7 +67,7 @@
               </template>
             </PRJoinFlow>
           </template>
-        </AnchorEventPRCard>
+        </PRPreviewCard>
       </div>
     </section>
 
@@ -104,7 +104,7 @@ import {
   isValidFormModeDateTime,
 } from "@/domains/event/model/form-mode";
 import Button from "@/shared/ui/actions/Button.vue";
-import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
+import PRPreviewCard from "@/domains/pr/ui/primitives/PRPreviewCard.vue";
 import PRJoinFlow from "@/domains/pr/ui/composites/PRJoinFlow.vue";
 
 type RecommendationCandidate =

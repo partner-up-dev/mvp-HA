@@ -42,6 +42,17 @@ const { data: user, isLoading, error } = useUser(Number(route.params.id));
 </script>
 ```
 
+### Entity Preview Data Ownership
+
+When a reusable domain component renders canonical facts for an entity, prefer
+an id-based API and let the component own the canonical detail query. Callers
+may provide caller-owned context such as route override, cover image,
+contextual time label, analytics surface, or action slots.
+
+Add snapshot or fallback props only when that fallback is an explicit product
+contract with meaningful user-visible value. Low-value first-paint fallbacks add
+interface complexity and keep stale data responsibilities alive at call sites.
+
 ### Ownership
 
 Use the architecture rules in `src/ARCHITECTURE.md`.
@@ -124,6 +135,7 @@ Prohibited:
 - `shared/ui/identity/Avatar.vue`: Shared avatar with image and fallback initial. Prefer it over per-page avatar fallback markup when the need is generic identity display.
 - `shared/ui/overlay/Modal.vue`: Generic modal primitive. Add scroll locking with `useBodyScrollLock(computed(() => open.value))` in the parent when needed.
 - `domains/event/ui/composites/AnchorEventRadioCardCarousel.vue`: Event-domain carousel selector that centers and enlarges the selected Anchor Event card while keeping event-card content reuse local to the event domain.
+- `domains/pr/ui/primitives/PRPreviewCard.vue`: PR-domain preview card for PR list rows and search results. Accepts `prId`, owns the PR detail query, and supports route override, cover image, contextual time label, and an `actions` slot. Keep canonical PR facts inside the owned detail query; keep call-site props limited to caller context.
 - `domains/pr/ui/forms/DateTimeRangePicker.vue`: Standalone time-window picker for start/end date-time.
 - `domains/pr/ui/forms/PRForm.vue`: Structured PR create/edit form using `src/lib/validation`.
 - `domains/share/ui/composites/PRShareCarousel.vue`: Share-method carousel host.

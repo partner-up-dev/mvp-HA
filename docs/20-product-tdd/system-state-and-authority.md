@@ -36,6 +36,13 @@ This state improves UX and continuity but does not define product truth.
 
 ## Authority Boundary Rules
 
+Canonical entity reads are the source for entity facts used across routes and
+surfaces. A frontend preview or list component that renders stable facts for an
+entity should receive the entity id and load those facts through the canonical
+read contract for that entity. Caller-provided data should represent caller
+context, such as placement, route override, cover media, time label, or action
+slots.
+
 The backend is authoritative for:
 
 - PartnerRequest and partner-slot state

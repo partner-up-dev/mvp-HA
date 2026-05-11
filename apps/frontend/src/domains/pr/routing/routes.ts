@@ -1,4 +1,4 @@
-import type { PartnerRequestSummary, PRId } from "@partner-up-dev/backend";
+import type { PRId } from "@partner-up-dev/backend";
 
 export const prCreatePath = (): string => "/pr/new";
 export const prDetailPath = (id: PRId): string => `/pr/${id}`;
@@ -13,10 +13,6 @@ export const prPartnerProfilePath = (
 export const resolvePRDetailPath = (input: {
   id: PRId;
 }): string => prDetailPath(input.id);
-
-export const resolvePRSummaryPath = (
-  summary: Pick<PartnerRequestSummary, "id" | "canonicalPath">,
-): string => prDetailPath(summary.id);
 
 export const parsePRIdFromPathname = (
   pathname: string,
