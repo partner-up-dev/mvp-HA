@@ -6,7 +6,6 @@ import { useCreatePRFromStructured } from "@/domains/pr/queries/usePRCreate";
 import { usePublishPR } from "@/domains/pr/queries/usePRPublish";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { trackEvent } from "@/shared/telemetry/track";
-import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import {
   toPartnerRequestFields,
@@ -48,13 +47,11 @@ export const usePRCreateFlow = () => {
     buildInitialFields(resolveTopic(route.query.topic)),
   );
 
-  const formRef = ref<InstanceType<typeof PRForm> | null>(null);
   const pendingStatus = ref<CreateSubmissionMode>("PUBLISH");
   const allowDraftSave = computed(() => !userSessionStore.isAuthenticated);
 
   const submitAs = (status: CreateSubmissionMode) => {
     pendingStatus.value = status;
-    formRef.value?.submitForm();
   };
 
   const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
@@ -97,7 +94,6 @@ export const usePRCreateFlow = () => {
     createMutation,
     publishMutation,
     initialFields,
-    formRef,
     pendingStatus,
     allowDraftSave,
     submitAs,

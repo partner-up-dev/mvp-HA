@@ -7,11 +7,13 @@
           <input
             v-model="startDate"
             type="date"
+            data-testid="pr-create.form.start-date"
             :placeholder="t('dateTimeRangePicker.startDatePlaceholder')"
           />
           <input
             v-model="startTime"
             type="time"
+            data-testid="pr-create.form.start-time"
             :placeholder="t('dateTimeRangePicker.startTimePlaceholder')"
             :disabled="!startDate"
           />
@@ -44,11 +46,13 @@
           <input
             v-model="endDate"
             type="date"
+            data-testid="pr-create.form.end-date"
             :placeholder="t('dateTimeRangePicker.endDatePlaceholder')"
           />
           <input
             v-model="endTime"
             type="time"
+            data-testid="pr-create.form.end-time"
             :placeholder="t('dateTimeRangePicker.endTimePlaceholder')"
             :disabled="!endDate"
           />

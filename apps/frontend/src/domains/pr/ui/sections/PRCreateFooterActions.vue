@@ -3,8 +3,10 @@
     <Button
       v-if="allowDraftSave"
       tone="outline"
-      type="button"
+      type="submit"
+      :form="formId"
       :disabled="pending"
+      data-testid="pr-create.save-draft"
       @click="emit('submit-as', 'DRAFT')"
     >
       {{
@@ -14,8 +16,10 @@
       }}
     </Button>
     <Button
-      type="button"
+      type="submit"
+      :form="formId"
       :disabled="pending"
+      data-testid="pr-create.publish"
       @click="emit('submit-as', 'PUBLISH')"
     >
       {{
@@ -36,6 +40,7 @@ defineProps<{
   pending: boolean;
   pendingStatus: CreateSubmissionMode;
   allowDraftSave: boolean;
+  formId: string;
 }>();
 
 const emit = defineEmits<{

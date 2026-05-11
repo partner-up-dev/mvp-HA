@@ -1,10 +1,16 @@
 <template>
-  <form class="partner-request-form" @submit.prevent="submitForm">
+  <form
+    :id="formId"
+    class="partner-request-form"
+    data-testid="pr-create.form"
+    @submit.prevent="submitForm"
+  >
     <div class="form-field">
       <label>{{ t("partnerRequestForm.title") }}</label>
       <input
         v-model="titleInput"
         type="text"
+        data-testid="pr-create.form.title"
         :placeholder="t('partnerRequestForm.titlePlaceholder')"
       />
     </div>
@@ -19,6 +25,7 @@
       <input
         v-model="typeModel"
         type="text"
+        data-testid="pr-create.form.type"
         :placeholder="t('partnerRequestForm.typePlaceholder')"
       />
       <span v-if="errors['fields.type']" class="error-message">
@@ -31,6 +38,7 @@
       class="advanced-toggle"
       tone="dashed"
       block
+      data-testid="pr-create.form.advanced-toggle"
       :aria-expanded="isAdvancedOpen"
       @click="isAdvancedOpen = !isAdvancedOpen"
     >
@@ -50,6 +58,7 @@
           <input
             v-model="locationInput"
             type="text"
+            data-testid="pr-create.form.location"
             :placeholder="t('partnerRequestForm.locationPlaceholder')"
           />
         </div>
@@ -60,6 +69,7 @@
             :value="minPartnersInput"
             type="number"
             min="1"
+            data-testid="pr-create.form.min-partners"
             :placeholder="t('partnerRequestForm.minPartnersPlaceholder')"
             @input="onMinPartnersInput"
           />
@@ -74,6 +84,7 @@
             :value="maxPartnersInput"
             type="number"
             min="2"
+            data-testid="pr-create.form.max-partners"
             :placeholder="t('partnerRequestForm.maxPartnersPlaceholder')"
             @input="onMaxPartnersInput"
           />
@@ -87,6 +98,7 @@
           <input
             v-model="budgetInput"
             type="text"
+            data-testid="pr-create.form.budget"
             :placeholder="t('partnerRequestForm.budgetPlaceholder')"
           />
         </div>
@@ -113,6 +125,7 @@
             <input
               v-model="newPreference"
               type="text"
+              data-testid="pr-create.form.preference-input"
               :placeholder="t('partnerRequestForm.preferencesPlaceholder')"
               @keydown.enter.prevent="addPreference"
             />
@@ -124,6 +137,7 @@
           <textarea
             v-model="notesInput"
             rows="3"
+            data-testid="pr-create.form.notes"
             :placeholder="t('partnerRequestForm.notesPlaceholder')"
           />
         </div>
@@ -145,6 +159,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 
 const props = withDefaults(
   defineProps<{
+    formId?: string;
     initialFields: PRFormFields;
     showBudgetField?: boolean;
     showTimeField?: boolean;

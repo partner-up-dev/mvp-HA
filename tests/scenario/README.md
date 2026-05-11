@@ -89,6 +89,8 @@ HEADED=true pnpm test:scenario system
 
 Current PR detail coverage:
 
+- `pr-core/pr-create.scenario.test.ts`: covers structured form draft creation
+  for anonymous users and published PR creation for authenticated users.
 - `pr-core/pr-detail-join.scenario.test.ts`: a joiner opens a PR detail page,
   joins through the fallback confirmation gate, and reaches the post-join
   confirm action.
