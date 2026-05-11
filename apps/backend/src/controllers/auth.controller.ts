@@ -6,15 +6,15 @@ import {
   authMiddleware,
   issueAnonymousAuth,
   issueAuthForUser,
-  readLocalCredentialHeaders,
 } from "../auth/middleware";
 import type { AuthEnv } from "../auth/middleware";
+import type { UserId } from "../entities/user";
 import { UserRepository } from "../repositories/UserRepository";
-import { verifyUserPin } from "../domains/pr-core/services/user-pin-auth.service";
-import { registerLocalUser } from "../domains/user/use-cases/register-local-user";
-import { registerAnonymousUser } from "../domains/user/use-cases/register-anonymous-user";
 import {
-  clearAnonymousSessionCookie,
+  registerAnonymousUser,
+  verifyUserCredential,
+} from "../domains/user";
+import {
   setAnonymousSessionCookie,
 } from "../auth/anonymous-session";
 
@@ -22,12 +22,7 @@ const app = new Hono<AuthEnv>();
 const userRepo = new UserRepository();
 
 const authSessionSchema = z.object({
-  userId: z.string().trim().min(1).optional().nullable(),
-  userPin: z
-    .string()
-    .regex(/^\d{4}$/)
-    .optional()
-    .nullable(),
+  userId: z.string().uuid().optional().nullable(),
 });
 
 const adminLoginSchema = z.object({
@@ -43,7 +38,7 @@ export const authRoute = app
     if (
       !user ||
       user.role !== "service" ||
-      !(await verifyUserPin(user, password))
+      !(await verifyUserCredential(user, password))
     ) {
       throw new HTTPException(401, { message: "Invalid admin credentials" });
     }
@@ -53,23 +48,8 @@ export const authRoute = app
     return c.json({
       role: authenticated.role,
       userId: user.id,
-      userPin: null,
       accessToken: authenticated.token,
     });
-  })
-  .post("/register/local", async (c) => {
-    const auth = c.get("auth");
-    if (auth.role !== "anonymous" || auth.userId) {
-      return c.json({
-        role: auth.role,
-        userId: auth.userId,
-        userPin: null,
-        accessToken: auth.token,
-      });
-    }
-
-    const registered = await registerLocalUser();
-    return c.json(registered);
   })
   .post("/register/anonymous", async (c) => {
     const auth = c.get("auth");
@@ -78,7 +58,6 @@ export const authRoute = app
       return c.json({
         role: "anonymous",
         userId: auth.userId,
-        userPin: null,
         accessToken: auth.token,
       });
     }
@@ -94,32 +73,32 @@ export const authRoute = app
       return c.json({
         role: auth.role,
         userId: auth.userId,
-        userPin: null,
         accessToken: auth.token,
       });
     }
 
     const body = c.req.valid("json");
-    const headerCreds = readLocalCredentialHeaders(c);
+    const candidateUserId = body.userId ?? null;
 
-    const candidateUserId = body.userId ?? headerCreds.userId;
-    const candidateUserPin = body.userPin ?? headerCreds.userPin;
-
-    if (candidateUserId && candidateUserPin) {
-      const localUser = await userRepo.findById(candidateUserId);
-      if (!localUser || !(await verifyUserPin(localUser, candidateUserPin))) {
+    if (candidateUserId) {
+      const candidateUser = await userRepo.findById(candidateUserId as UserId);
+      if (
+        !candidateUser ||
+        candidateUser.status !== "ACTIVE" ||
+        candidateUser.role !== "anonymous"
+      ) {
         throw new HTTPException(401, {
-          message: "Invalid local user credentials",
+          message: "Invalid anonymous user session",
         });
       }
 
-      const authenticated = issueAuthForUser(localUser);
-      c.set("auth", authenticated);
+      const anonymous = issueAnonymousAuth(candidateUser.id);
+      c.set("auth", anonymous);
+      await setAnonymousSessionCookie(c, candidateUser.id);
       return c.json({
-        role: authenticated.role,
-        userId: localUser.id,
-        userPin: localUser.role === "service" ? null : candidateUserPin,
-        accessToken: authenticated.token,
+        role: "anonymous" as const,
+        userId: candidateUser.id,
+        accessToken: anonymous.token,
       });
     }
 
@@ -127,7 +106,6 @@ export const authRoute = app
       return c.json({
         role: auth.role,
         userId: auth.userId,
-        userPin: null,
         accessToken: auth.token,
       });
     }
@@ -136,7 +114,6 @@ export const authRoute = app
     return c.json({
       role: "anonymous" as const,
       userId: null,
-      userPin: null,
       accessToken: anonymous.token,
     });
   });

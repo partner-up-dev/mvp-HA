@@ -1,12 +1,15 @@
-import type { PRId, UserId, AnchorPRSupportResource } from "../../../entities";
-import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import type { PRId, UserId, PRSupportResource } from "../../../entities";
+import { normalizePRJoinGateConfig } from "../../../entities";
+import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
+import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { getEffectiveBookingDeadline } from "./get-effective-booking-deadline";
-import { isBookingContactRequiredFromResources } from "./is-booking-contact-required";
-import { resolveBookingContactOwner } from "./resolve-booking-contact-owner";
+import {
+  resolveBookingContactOwner,
+  resolveBookingContactOwnerByPartner,
+} from "./resolve-booking-contact-owner";
 
-const bookingContactRepo = new AnchorPRBookingContactRepository();
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const bookingContactRepo = new PRBookingContactRepository();
+const prRepo = new PartnerRequestRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -24,12 +27,13 @@ export type BookingContactState = {
 export const resolveBookingContactState = async (params: {
   prId: PRId;
   viewerUserId: UserId | null;
-  supportResources?: AnchorPRSupportResource[];
+  supportResources?: PRSupportResource[];
   effectiveBookingDeadlineAt?: Date | null;
 }): Promise<BookingContactState> => {
-  const supportResources =
-    params.supportResources ?? (await prSupportRepo.findByPrId(params.prId));
-  const required = isBookingContactRequiredFromResources(supportResources);
+  const request = await prRepo.findById(params.prId);
+  const required = normalizePRJoinGateConfig(request?.joinGateConfig).some(
+    (gate) => gate.kind === "BOOKING_CONTACT",
+  );
   let contact = await bookingContactRepo.findByPrId(params.prId);
 
   if (!required && contact) {
@@ -51,11 +55,22 @@ export const resolveBookingContactState = async (params: {
 
   const owner = await resolveBookingContactOwner(params.prId);
 
+  if (contact && contact.ownerPartnerId !== null) {
+    const contactOwner = await resolveBookingContactOwnerByPartner({
+      prId: params.prId,
+      partnerId: contact.ownerPartnerId,
+    });
+    if (!contactOwner || contact.ownerUserId !== contactOwner.userId) {
+      await bookingContactRepo.deleteByPrId(params.prId);
+      contact = null;
+    }
+  }
+
   if (
     contact &&
-    (!owner ||
-      contact.ownerPartnerId !== owner.partnerId ||
-      contact.ownerUserId !== owner.userId)
+    contact.ownerPartnerId === null &&
+    owner &&
+    contact.ownerUserId !== owner.userId
   ) {
     await bookingContactRepo.deleteByPrId(params.prId);
     contact = null;
@@ -68,8 +83,12 @@ export const resolveBookingContactState = async (params: {
   return {
     required,
     state: !required ? "NOT_REQUIRED" : contact ? "VERIFIED" : "MISSING",
-    ownerPartnerId: owner?.partnerId ?? null,
-    ownerIsCurrentViewer: Boolean(owner && params.viewerUserId === owner.userId),
+    ownerPartnerId: contact?.ownerPartnerId ?? owner?.partnerId ?? null,
+    ownerIsCurrentViewer: Boolean(
+      contact
+        ? params.viewerUserId === contact.ownerUserId
+        : owner && params.viewerUserId === owner.userId,
+    ),
     maskedPhone: contact?.phoneMasked ?? null,
     verifiedAt: toIsoString(contact?.verifiedAt),
     deadlineAt: toIsoString(effectiveBookingDeadlineAt),

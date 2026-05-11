@@ -22,18 +22,23 @@ import {
 } from "../services/WeChatOAuthService";
 import { UserRepository } from "../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
-import { bindWeChatToCurrentUser } from "../domains/user/use-cases/current-user";
-import { upgradeAnonymousUserWithWeChat } from "../domains/user/use-cases/upgrade-anonymous-user";
-import { ensureUserHasPin } from "../domains/pr-core/services/user-pin-auth.service";
+import {
+  bindWeChatToCurrentUser,
+  upgradeAnonymousUserWithWeChat,
+} from "../domains/user";
+import { scheduleAlternativeWaitlistNotificationsForUserSources } from "../domains/pr-core/services/waitlist-alternative-reminder.service";
 import {
   clearAnonymousSessionCookie,
   readAnonymousSessionCookie,
 } from "../auth/anonymous-session";
 import {
   cancelWeChatActivityStartReminderJobsForUser,
+  cancelWeChatMeetingPointUpdatedJobsForUser,
   cancelWeChatNewPartnerJobsForUser,
   cancelWeChatPRMessageJobsForUser,
   cancelWeChatReminderJobsForUser,
+  cancelWeChatWaitlistPromotedJobsForUser,
+  cancelWeChatWaitlistAlternativeAvailableJobsForUser,
   rebuildWeChatActivityStartReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
@@ -43,7 +48,6 @@ import {
   type WeChatNotificationKind,
 } from "../entities/user-notification-opt";
 import { WeChatSubscriptionMessageService } from "../services/WeChatSubscriptionMessageService";
-import { WeChatTemplateMessageService } from "../services/WeChatTemplateMessageService";
 
 const app = new Hono<AuthEnv>();
 const jssdkService = new WeChatJssdkService();
@@ -51,10 +55,13 @@ const oauthService = new WeChatOAuthService();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
 const subscriptionMessageService = new WeChatSubscriptionMessageService();
-const templateMessageService = new WeChatTemplateMessageService();
 
 const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
 const OAUTH_STATE_TTL_SECONDS = 10 * 60;
+const OAUTH_HANDOFF_COOKIE_NAME = "wechat_oauth_handoff";
+const OAUTH_HANDOFF_TTL_SECONDS = 2 * 60;
+const OAUTH_HANDOFF_QUERY_PARAM = "wechatOAuthHandoff";
+const OAUTH_HANDOFF_COOKIE_PATH = "/api/wechat/oauth/handoff";
 const OAUTH_MOCK_CODE = "mock-oauth-code";
 const ANCHOR_USER_AUTH_REQUIRED_CODE = "ANCHOR_USER_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
@@ -76,12 +83,28 @@ const oauthCallbackQuerySchema = z.object({
   state: z.string().min(1).optional(),
 });
 
+const oauthHandoffQuerySchema = z.object({
+  handoff: z.string().min(1),
+});
+
 const oauthStateCookiePayloadSchema = z.object({
   nonce: z.string().min(1),
   returnTo: z.string().url(),
   mode: z.enum(["login", "bind"]),
   bindUserId: z.string().uuid().nullable(),
   anonymousUserId: z.string().uuid().nullable(),
+  expiresAtMs: z.number().int().positive(),
+});
+
+const oauthCallbackAuthPayloadSchema = z.object({
+  role: z.enum(["authenticated", "service"]),
+  userId: z.string().uuid(),
+  accessToken: z.string().min(1),
+});
+
+const oauthHandoffCookiePayloadSchema = z.object({
+  nonce: z.string().min(1),
+  userId: z.string().uuid(),
   expiresAtMs: z.number().int().positive(),
 });
 const reminderSubscriptionUpdateSchema = z.object({
@@ -95,6 +118,10 @@ const notificationSubscriptionUpdateSchema = z.object({
 
 type OAuthStateCookiePayload = z.infer<typeof oauthStateCookiePayloadSchema>;
 type OAuthStateMode = OAuthStateCookiePayload["mode"];
+type OAuthHandoffCookiePayload = z.infer<
+  typeof oauthHandoffCookiePayloadSchema
+>;
+type OAuthCallbackAuthPayload = z.infer<typeof oauthCallbackAuthPayloadSchema>;
 type NotificationSubscriptionState = {
   enabled: boolean;
   optInAt: string | null;
@@ -140,6 +167,18 @@ const buildNotificationChannelState = async (): Promise<{
     NotificationSubscriptionState,
     "configured" | "requiresOpenSubscribe" | "templateId"
   >;
+  meetingPointUpdated: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
+  waitlistPromoted: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
+  waitlistAlternativeAvailable: Pick<
+    NotificationSubscriptionState,
+    "configured" | "requiresOpenSubscribe" | "templateId"
+  >;
 }> => {
   const [
     reminderTemplateId,
@@ -147,12 +186,16 @@ const buildNotificationChannelState = async (): Promise<{
     bookingResultTemplateId,
     newPartnerTemplateId,
     prMessageTemplateId,
+    meetingPointUpdatedTemplateId,
+    waitlistPromotedTemplateId,
   ] = await Promise.all([
     subscriptionMessageService.getConfirmationReminderTemplateId(),
     subscriptionMessageService.getActivityStartReminderTemplateId(),
     subscriptionMessageService.getBookingResultTemplateId(),
     subscriptionMessageService.getNewPartnerTemplateId(),
     subscriptionMessageService.getPRMessageTemplateId(),
+    subscriptionMessageService.getMeetingPointUpdatedTemplateId(),
+    subscriptionMessageService.getWaitlistPromotedTemplateId(),
   ]);
 
   const [
@@ -161,19 +204,21 @@ const buildNotificationChannelState = async (): Promise<{
     bookingResultSubmsgConfigured,
     newPartnerSubmsgConfigured,
     prMessageSubmsgConfigured,
+    meetingPointUpdatedSubmsgConfigured,
+    waitlistPromotedSubmsgConfigured,
   ] = await Promise.all([
     subscriptionMessageService.isConfirmationReminderConfigured(),
     subscriptionMessageService.isActivityStartReminderConfigured(),
     subscriptionMessageService.isBookingResultConfigured(),
     subscriptionMessageService.isNewPartnerConfigured(),
     subscriptionMessageService.isPRMessageConfigured(),
+    subscriptionMessageService.isMeetingPointUpdatedConfigured(),
+    subscriptionMessageService.isWaitlistPromotedConfigured(),
   ]);
 
   return {
     reminder: {
-      configured:
-        reminderSubmsgConfigured ||
-        templateMessageService.isReminderConfigured(),
+      configured: reminderSubmsgConfigured,
       requiresOpenSubscribe:
         reminderSubmsgConfigured && Boolean(reminderTemplateId),
       templateId: reminderTemplateId,
@@ -202,6 +247,27 @@ const buildNotificationChannelState = async (): Promise<{
       requiresOpenSubscribe:
         prMessageSubmsgConfigured && Boolean(prMessageTemplateId),
       templateId: prMessageTemplateId,
+    },
+    meetingPointUpdated: {
+      configured: meetingPointUpdatedSubmsgConfigured,
+      requiresOpenSubscribe:
+        meetingPointUpdatedSubmsgConfigured &&
+        Boolean(meetingPointUpdatedTemplateId),
+      templateId: meetingPointUpdatedTemplateId,
+    },
+    waitlistPromoted: {
+      configured: waitlistPromotedSubmsgConfigured,
+      requiresOpenSubscribe:
+        waitlistPromotedSubmsgConfigured &&
+        Boolean(waitlistPromotedTemplateId),
+      templateId: waitlistPromotedTemplateId,
+    },
+    waitlistAlternativeAvailable: {
+      configured: waitlistPromotedSubmsgConfigured,
+      requiresOpenSubscribe:
+        waitlistPromotedSubmsgConfigured &&
+        Boolean(waitlistPromotedTemplateId),
+      templateId: waitlistPromotedTemplateId,
     },
   };
 };
@@ -255,6 +321,33 @@ const buildAnonymousSubscriptionsResponse = async (configured: boolean) => {
         requiresOpenSubscribe: channels.prMessage.requiresOpenSubscribe,
         templateId: channels.prMessage.templateId,
       },
+      MEETING_POINT_UPDATED: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.meetingPointUpdated.configured,
+        requiresOpenSubscribe:
+          channels.meetingPointUpdated.requiresOpenSubscribe,
+        templateId: channels.meetingPointUpdated.templateId,
+      },
+      WAITLIST_PROMOTED: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.waitlistPromoted.configured,
+        requiresOpenSubscribe:
+          channels.waitlistPromoted.requiresOpenSubscribe,
+        templateId: channels.waitlistPromoted.templateId,
+      },
+      WAITLIST_ALTERNATIVE_AVAILABLE: {
+        enabled: false,
+        optInAt: null,
+        remainingCount: 0,
+        configured: channels.waitlistAlternativeAvailable.configured,
+        requiresOpenSubscribe:
+          channels.waitlistAlternativeAvailable.requiresOpenSubscribe,
+        templateId: channels.waitlistAlternativeAvailable.templateId,
+      },
     },
   };
 };
@@ -290,6 +383,19 @@ const buildAuthenticatedSubscriptionsResponse = async (
     notificationOpt,
     "PR_MESSAGE",
   );
+  const meetingPointUpdated = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "MEETING_POINT_UPDATED",
+  );
+  const waitlistPromoted = userNotificationOptRepo.getSubscriptionSnapshot(
+    notificationOpt,
+    "WAITLIST_PROMOTED",
+  );
+  const waitlistAlternativeAvailable =
+    userNotificationOptRepo.getSubscriptionSnapshot(
+      notificationOpt,
+      "WAITLIST_ALTERNATIVE_AVAILABLE",
+    );
 
   return {
     configured: true,
@@ -341,6 +447,39 @@ const buildAuthenticatedSubscriptionsResponse = async (
         requiresOpenSubscribe: channels.prMessage.requiresOpenSubscribe,
         templateId: channels.prMessage.templateId,
       },
+      MEETING_POINT_UPDATED: {
+        enabled: meetingPointUpdated.enabled,
+        optInAt: meetingPointUpdated.optInAt
+          ? meetingPointUpdated.optInAt.toISOString()
+          : null,
+        remainingCount: meetingPointUpdated.remainingCount,
+        configured: channels.meetingPointUpdated.configured,
+        requiresOpenSubscribe:
+          channels.meetingPointUpdated.requiresOpenSubscribe,
+        templateId: channels.meetingPointUpdated.templateId,
+      },
+      WAITLIST_PROMOTED: {
+        enabled: waitlistPromoted.enabled,
+        optInAt: waitlistPromoted.optInAt
+          ? waitlistPromoted.optInAt.toISOString()
+          : null,
+        remainingCount: waitlistPromoted.remainingCount,
+        configured: channels.waitlistPromoted.configured,
+        requiresOpenSubscribe:
+          channels.waitlistPromoted.requiresOpenSubscribe,
+        templateId: channels.waitlistPromoted.templateId,
+      },
+      WAITLIST_ALTERNATIVE_AVAILABLE: {
+        enabled: waitlistAlternativeAvailable.enabled,
+        optInAt: waitlistAlternativeAvailable.optInAt
+          ? waitlistAlternativeAvailable.optInAt.toISOString()
+          : null,
+        remainingCount: waitlistAlternativeAvailable.remainingCount,
+        configured: channels.waitlistAlternativeAvailable.configured,
+        requiresOpenSubscribe:
+          channels.waitlistAlternativeAvailable.requiresOpenSubscribe,
+        templateId: channels.waitlistAlternativeAvailable.templateId,
+      },
     },
   };
 };
@@ -381,6 +520,29 @@ const applyNotificationSubscriptionSideEffects = async (
     return cancelWeChatPRMessageJobsForUser(userId);
   }
 
+  if (kind === "MEETING_POINT_UPDATED" && nextRemainingCount <= 0) {
+    return cancelWeChatMeetingPointUpdatedJobsForUser(userId);
+  }
+
+  if (kind === "WAITLIST_PROMOTED" && nextRemainingCount <= 0) {
+    return cancelWeChatWaitlistPromotedJobsForUser(userId);
+  }
+
+  if (
+    kind === "WAITLIST_ALTERNATIVE_AVAILABLE" &&
+    nextRemainingCount <= 0
+  ) {
+    return cancelWeChatWaitlistAlternativeAvailableJobsForUser(userId);
+  }
+  if (
+    kind === "WAITLIST_ALTERNATIVE_AVAILABLE" &&
+    previousRemainingCount <= 0 &&
+    nextRemainingCount > 0
+  ) {
+    await scheduleAlternativeWaitlistNotificationsForUserSources(userId);
+    return 0;
+  }
+
   return 0;
 };
 
@@ -412,6 +574,41 @@ const isSecureRequest = (c: Context): boolean => {
   } catch {
     return false;
   }
+};
+
+const firstForwardedHeaderValue = (
+  rawValue: string | undefined,
+): string | null => {
+  const value = rawValue?.split(",")[0]?.trim();
+  return value && value.length > 0 ? value : null;
+};
+
+const resolveForwardedProtocol = (
+  rawValue: string | undefined,
+): string | null => {
+  const value = firstForwardedHeaderValue(rawValue)?.toLowerCase();
+  if (value === "http" || value === "http:") return "http:";
+  if (value === "https" || value === "https:") return "https:";
+  return null;
+};
+
+const resolvePublicRequestUrl = (c: Context): URL => {
+  const url = new URL(c.req.url);
+  const forwardedProtocol = resolveForwardedProtocol(
+    c.req.header("x-forwarded-proto"),
+  );
+  if (forwardedProtocol) {
+    url.protocol = forwardedProtocol;
+  }
+
+  const forwardedHost =
+    firstForwardedHeaderValue(c.req.header("x-forwarded-host")) ??
+    firstForwardedHeaderValue(c.req.header("host"));
+  if (forwardedHost) {
+    url.host = forwardedHost;
+  }
+
+  return url;
 };
 
 const resolveCookieBaseOptions = (c: Context) => ({
@@ -468,13 +665,28 @@ const clearOAuthStateCookieByNonce = (c: Context, nonce: string): void => {
   );
 };
 
+const resolveOAuthHandoffCookieName = (nonce: string): string =>
+  `${OAUTH_HANDOFF_COOKIE_NAME}_${nonce}`;
+
+const resolveOAuthHandoffCookieOptions = (c: Context) => ({
+  ...resolveCookieBaseOptions(c),
+  sameSite: isSecureRequest(c) ? ("None" as const) : ("Lax" as const),
+  secure: isSecureRequest(c),
+  path: OAUTH_HANDOFF_COOKIE_PATH,
+});
+
+const clearOAuthHandoffCookieByNonce = (c: Context, nonce: string): void => {
+  deleteCookie(
+    c,
+    resolveOAuthHandoffCookieName(nonce),
+    resolveOAuthHandoffCookieOptions(c),
+  );
+};
+
 const collectAllowedReturnToOrigins = (c: Context): Set<string> => {
   const origins = new Set<string>();
 
-  const requestUrl = parseHttpUrl(c.req.url);
-  if (requestUrl) {
-    origins.add(requestUrl.origin);
-  }
+  origins.add(resolvePublicRequestUrl(c).origin);
 
   const frontendUrl = parseHttpUrl(env.FRONTEND_URL);
   if (frontendUrl) {
@@ -505,7 +717,7 @@ const resolveFallbackReturnTo = (c: Context): string => {
     return frontendUrl.toString();
   }
 
-  const requestUrl = new URL(c.req.url);
+  const requestUrl = resolvePublicRequestUrl(c);
   requestUrl.pathname = "/";
   requestUrl.search = "";
   requestUrl.hash = "";
@@ -523,7 +735,7 @@ const resolveReturnTo = (
 
   let parsed: URL;
   try {
-    parsed = new URL(trimmedReturnTo, new URL(c.req.url).origin);
+    parsed = new URL(trimmedReturnTo, resolvePublicRequestUrl(c).origin);
   } catch {
     throw new Error("Invalid returnTo");
   }
@@ -541,16 +753,14 @@ const resolveReturnTo = (
 };
 
 const resolveOAuthCallbackUrl = (c: Context): string => {
-  const frontendUrl = parseHttpUrl(env.FRONTEND_URL);
-  if (frontendUrl) {
-    const frontendCallbackUrl = new URL(frontendUrl);
-    frontendCallbackUrl.pathname = "/wechat/oauth/callback";
-    frontendCallbackUrl.search = "";
-    frontendCallbackUrl.hash = "";
-    return frontendCallbackUrl.toString();
+  const configuredCallbackUrl = parseHttpUrl(env.WECHAT_OAUTH_CALLBACK_URL);
+  if (configuredCallbackUrl) {
+    configuredCallbackUrl.search = "";
+    configuredCallbackUrl.hash = "";
+    return configuredCallbackUrl.toString();
   }
 
-  const backendCallbackUrl = new URL(c.req.url);
+  const backendCallbackUrl = resolvePublicRequestUrl(c);
   backendCallbackUrl.pathname = backendCallbackUrl.pathname.replace(
     /\/oauth\/(?:login|bind)$/,
     "/oauth/callback",
@@ -561,7 +771,7 @@ const resolveOAuthCallbackUrl = (c: Context): string => {
 };
 
 const resolveMockOAuthAuthorizeUrl = (c: Context, state: string): string => {
-  const authorizeUrl = new URL(c.req.url);
+  const authorizeUrl = resolvePublicRequestUrl(c);
   authorizeUrl.pathname = authorizeUrl.pathname.replace(
     /\/oauth\/(?:login|bind)$/,
     "/oauth/mock/authorize",
@@ -575,26 +785,12 @@ const resolveMockOAuthAuthorizeUrl = (c: Context, state: string): string => {
 const resolveMockOAuthCallbackUrl = (
   c: Context,
   state: string,
-  returnTo: string | null,
 ): string => {
-  let callbackUrl: URL;
-
-  try {
-    if (returnTo) {
-      const parsedReturnTo = new URL(returnTo);
-      if (isHttpProtocol(parsedReturnTo.protocol)) {
-        callbackUrl = parsedReturnTo;
-      } else {
-        callbackUrl = new URL(resolveFallbackReturnTo(c));
-      }
-    } else {
-      callbackUrl = new URL(resolveFallbackReturnTo(c));
-    }
-  } catch {
-    callbackUrl = new URL(resolveFallbackReturnTo(c));
-  }
-
-  callbackUrl.pathname = "/wechat/oauth/callback";
+  const callbackUrl = resolvePublicRequestUrl(c);
+  callbackUrl.pathname = callbackUrl.pathname.replace(
+    /\/oauth\/mock\/authorize$/,
+    "/oauth/callback",
+  );
   callbackUrl.search = "";
   callbackUrl.searchParams.set("state", state);
   callbackUrl.searchParams.set("code", OAUTH_MOCK_CODE);
@@ -608,6 +804,15 @@ const appendBindResultToReturnTo = (
 ): string => {
   const url = new URL(returnTo);
   url.searchParams.set("wechatBind", result);
+  return url.toString();
+};
+
+const appendOAuthHandoffToReturnTo = (
+  returnTo: string,
+  handoffNonce: string,
+): string => {
+  const url = new URL(returnTo);
+  url.searchParams.set(OAUTH_HANDOFF_QUERY_PARAM, handoffNonce);
   return url.toString();
 };
 
@@ -641,6 +846,27 @@ const setOAuthStateCookie = async (
   );
 };
 
+const setOAuthHandoffCookie = async (
+  c: Context,
+  payload: OAuthHandoffCookiePayload,
+): Promise<void> => {
+  const sessionSecret = resolveOAuthSessionSecret();
+  if (!sessionSecret) {
+    throw new Error("WeChat OAuth handoff secret is not configured");
+  }
+
+  await setSignedCookie(
+    c,
+    resolveOAuthHandoffCookieName(payload.nonce),
+    encodeSignedPayload(payload),
+    sessionSecret,
+    {
+      ...resolveOAuthHandoffCookieOptions(c),
+      maxAge: OAUTH_HANDOFF_TTL_SECONDS,
+    },
+  );
+};
+
 const buildOAuthStatePayload = (
   returnTo: string,
   mode: OAuthStateMode,
@@ -654,6 +880,27 @@ const buildOAuthStatePayload = (
   anonymousUserId,
   expiresAtMs: nowMs() + OAUTH_STATE_TTL_SECONDS * 1000,
 });
+
+const buildOAuthHandoffPayload = (
+  userId: UserId,
+): OAuthHandoffCookiePayload => ({
+  nonce: randomUUID(),
+  userId,
+  expiresAtMs: nowMs() + OAUTH_HANDOFF_TTL_SECONDS * 1000,
+});
+
+const isOAuthCallbackNavigationRequest = (c: Context): boolean => {
+  const secFetchMode = c.req.header("sec-fetch-mode")?.toLowerCase();
+  if (secFetchMode === "navigate") {
+    return true;
+  }
+  if (secFetchMode === "cors") {
+    return false;
+  }
+
+  const accept = c.req.header("accept")?.toLowerCase() ?? "";
+  return accept.includes("text/html");
+};
 
 const requireAuthenticatedUserId = (c: Context): UserId => {
   const auth = c.get("auth");
@@ -672,25 +919,16 @@ const readSessionUserId = (c: Context<AuthEnv>): UserId | null => {
   return auth.userId as UserId;
 };
 
-type OAuthCallbackAuthPayload = {
-  role: "authenticated" | "service";
-  userId: UserId;
-  userPin: string | null;
-  accessToken: string;
-};
-
 const issueOAuthCallbackAuth = async (
   c: Context<AuthEnv>,
   user: User,
 ): Promise<OAuthCallbackAuthPayload> => {
-  const ensured = await ensureUserHasPin(user);
-  const authenticated = issueAuthForUser(ensured.user);
+  const authenticated = issueAuthForUser(user);
   c.set("auth", authenticated);
 
   return {
     role: authenticated.role === "service" ? "service" : "authenticated",
-    userId: ensured.user.id,
-    userPin: ensured.userPin,
+    userId: user.id,
     accessToken: authenticated.token,
   };
 };
@@ -769,6 +1007,32 @@ export const wechatRoute = app
       }
     },
   )
+  .get("/official-account/follow-status", async (c) => {
+    const userId = readSessionUserId(c);
+    if (!userId) {
+      return c.json({
+        status: "UNKNOWN" as const,
+        followedAt: null,
+      });
+    }
+
+    const user = await userRepo.findById(userId);
+    if (
+      !user ||
+      user.status !== "ACTIVE" ||
+      !user.wechatOfficialAccountFollowedAt
+    ) {
+      return c.json({
+        status: "UNKNOWN" as const,
+        followedAt: null,
+      });
+    }
+
+    return c.json({
+      status: "FOLLOWED" as const,
+      followedAt: user.wechatOfficialAccountFollowedAt.toISOString(),
+    });
+  })
   .get("/notifications/subscriptions", async (c) => {
     if (!isOAuthRuntimeAvailable()) {
       return c.json(await buildAnonymousSubscriptionsResponse(false));
@@ -965,33 +1229,7 @@ export const wechatRoute = app
       }
 
       const { state } = c.req.valid("query");
-      const sessionSecret = resolveOAuthSessionSecret();
-      const statePayload = sessionSecret
-        ? ((await readSignedCookiePayload(
-            c,
-            resolveOAuthStateCookieName(state),
-            sessionSecret,
-            oauthStateCookiePayloadSchema,
-          )) ??
-          (await readSignedCookiePayload(
-            c,
-            OAUTH_STATE_COOKIE_NAME,
-            sessionSecret,
-            oauthStateCookiePayloadSchema,
-          )))
-        : null;
-
-      const returnToFromState =
-        statePayload &&
-        statePayload.nonce === state &&
-        statePayload.expiresAtMs > nowMs()
-          ? statePayload.returnTo
-          : null;
-
-      return c.redirect(
-        resolveMockOAuthCallbackUrl(c, state, returnToFromState),
-        302,
-      );
+      return c.redirect(resolveMockOAuthCallbackUrl(c, state), 302);
     },
   )
   .get(
@@ -1112,6 +1350,44 @@ export const wechatRoute = app
     return c.json({ authorizeUrl });
   })
   .get(
+    "/oauth/handoff",
+    zValidator("query", oauthHandoffQuerySchema),
+    async (c) => {
+      const { handoff } = c.req.valid("query");
+      const sessionSecret = resolveOAuthSessionSecret();
+      if (!sessionSecret) {
+        return c.json({ error: "WeChat OAuth is not configured" }, 503);
+      }
+
+      const payload = await readSignedCookiePayload(
+        c,
+        resolveOAuthHandoffCookieName(handoff),
+        sessionSecret,
+        oauthHandoffCookiePayloadSchema,
+      );
+
+      clearOAuthHandoffCookieByNonce(c, handoff);
+
+      if (!payload) {
+        return c.json({ error: "Invalid OAuth handoff" }, 400);
+      }
+      if (payload.expiresAtMs <= nowMs()) {
+        return c.json({ error: "OAuth handoff expired" }, 400);
+      }
+      if (payload.nonce !== handoff) {
+        return c.json({ error: "OAuth handoff mismatch" }, 400);
+      }
+
+      const user = await userRepo.findById(payload.userId as UserId);
+      if (!user || user.status !== "ACTIVE") {
+        return c.json({ error: "OAuth handoff user not found" }, 401);
+      }
+
+      const authPayload = await issueOAuthCallbackAuth(c, user);
+      return c.json({ ok: true, auth: authPayload });
+    },
+  )
+  .get(
     "/oauth/callback",
     zValidator("query", oauthCallbackQuerySchema),
     async (c) => {
@@ -1121,10 +1397,29 @@ export const wechatRoute = app
         returnTo?: string | null,
       ) =>
         c.json({ ok: false, error, returnTo: returnTo ?? undefined }, status);
-      const respondSuccess = (
+      const respondSuccess = async (returnTo: string) => {
+        if (!isOAuthCallbackNavigationRequest(c)) {
+          return c.json({ ok: true, returnTo });
+        }
+
+        return c.redirect(returnTo, 302);
+      };
+      const respondAuthenticatedSuccess = async (
         returnTo: string,
-        auth?: OAuthCallbackAuthPayload,
-      ) => c.json({ ok: true, returnTo, auth });
+        user: User,
+      ) => {
+        if (!isOAuthCallbackNavigationRequest(c)) {
+          const authPayload = await issueOAuthCallbackAuth(c, user);
+          return c.json({ ok: true, returnTo, auth: authPayload });
+        }
+
+        const handoffPayload = buildOAuthHandoffPayload(user.id);
+        await setOAuthHandoffCookie(c, handoffPayload);
+        return c.redirect(
+          appendOAuthHandoffToReturnTo(returnTo, handoffPayload.nonce),
+          302,
+        );
+      };
       const resolveActiveUserById = async (userId: UserId): Promise<User> => {
         const user = await userRepo.findById(userId);
         if (!user || user.status !== "ACTIVE") {
@@ -1196,14 +1491,13 @@ export const wechatRoute = app
 
           const occupiedUser = await userRepo.findByOpenId(bindOpenId);
           if (occupiedUser && occupiedUser.status === "ACTIVE") {
-            const authPayload = await issueOAuthCallbackAuth(c, occupiedUser);
             clearAnonymousSessionCookie(c);
             clearOAuthStateCookieByNonce(c, state);
             clearOAuthStateCookie(c);
 
-            return respondSuccess(
+            return respondAuthenticatedSuccess(
               appendBindResultToReturnTo(statePayload.returnTo, "success"),
-              authPayload,
+              occupiedUser,
             );
           }
 
@@ -1227,14 +1521,13 @@ export const wechatRoute = app
             boundUser = await resolveActiveUserById(bindTargetUser.id);
           }
 
-          const authPayload = await issueOAuthCallbackAuth(c, boundUser);
           clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
 
-          return respondSuccess(
+          return respondAuthenticatedSuccess(
             appendBindResultToReturnTo(statePayload.returnTo, "success"),
-            authPayload,
+            boundUser,
           );
         }
 
@@ -1259,11 +1552,13 @@ export const wechatRoute = app
 
         const existingUser = await userRepo.findByOpenId(loginOpenId);
         if (existingUser) {
-          const authPayload = await issueOAuthCallbackAuth(c, existingUser);
           clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
-          return respondSuccess(statePayload.returnTo, authPayload);
+          return respondAuthenticatedSuccess(
+            statePayload.returnTo,
+            existingUser,
+          );
         }
 
         const bindCandidateUserId =
@@ -1294,14 +1589,13 @@ export const wechatRoute = app
             }
 
             if (boundCandidate && boundCandidate.status === "ACTIVE") {
-              const authPayload = await issueOAuthCallbackAuth(
-                c,
-                boundCandidate,
-              );
               clearAnonymousSessionCookie(c);
               clearOAuthStateCookieByNonce(c, state);
               clearOAuthStateCookie(c);
-              return respondSuccess(statePayload.returnTo, authPayload);
+              return respondAuthenticatedSuccess(
+                statePayload.returnTo,
+                boundCandidate,
+              );
             }
           }
         }
@@ -1321,11 +1615,13 @@ export const wechatRoute = app
           throw new Error("Failed to create user for WeChat OAuth login");
         }
 
-        const authPayload = await issueOAuthCallbackAuth(c, resolvedUser);
         clearAnonymousSessionCookie(c);
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);
-        return respondSuccess(statePayload.returnTo, authPayload);
+        return respondAuthenticatedSuccess(
+          statePayload.returnTo,
+          resolvedUser,
+        );
       } catch (error) {
         clearOAuthStateCookieByNonce(c, state);
         clearOAuthStateCookie(c);

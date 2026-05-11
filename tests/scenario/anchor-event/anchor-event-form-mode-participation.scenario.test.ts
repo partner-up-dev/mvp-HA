@@ -1,0 +1,392 @@
+import assert from "node:assert/strict";
+import type { Page } from "playwright";
+import { installScenarioUserSession } from "../_infra/browser/session";
+import { installDeterministicShareSidecarStubs } from "../_infra/browser/share-sidecars";
+import { withScenarioPage } from "../_infra/browser/browser";
+import {
+  expectBackendJsonResponse,
+  requestBackendJson,
+} from "../_infra/http/backend";
+import { scenario } from "../_infra/scenario/scenario";
+import {
+  givenAnchorEvent,
+  givenAnchorEventVisiblePR,
+  setAnchorEventLandingRollout,
+  type ScenarioAnchorEvent,
+} from "../../../apps/backend/tests/anchor-event/_kit/builders/anchor-events";
+import { bindScenarioWeChatOpenId } from "../../../apps/backend/tests/pr-core/_kit/actions/system-state";
+import { probeLatestPartnerSlot } from "../../../apps/backend/tests/pr-core/_kit/probes/system-state";
+import {
+  givenUser,
+  type ScenarioUser,
+} from "../../../apps/backend/tests/pr-core/_kit/builders/users";
+
+const FORM_ONLY = {
+  FORM: 100,
+  CARD_RICH: 0,
+  LIST: 0,
+};
+
+type PRDetailProbe = {
+  id: number;
+  status: string;
+  createdBy?: string | null;
+  core: {
+    type: string;
+    location: string | null;
+    time: [string | null, string | null];
+  };
+};
+
+type FormModeRecommendationProbe = {
+  selection: {
+    locationId: string;
+  };
+  matchedRecommendation: {
+    pr: {
+      id: number;
+    };
+  } | null;
+  orderedCandidates: Array<{
+    pr: {
+      id: number;
+    };
+  }>;
+};
+
+const expectFormMode = async (page: Page): Promise<void> => {
+  await page.getByTestId("anchor-event-form-mode.surface").waitFor({
+    state: "visible",
+    timeout: 10_000,
+  });
+};
+
+const forceFormMode = async (event: ScenarioAnchorEvent): Promise<void> => {
+  await setAnchorEventLandingRollout({
+    eventId: event.id,
+    ratios: FORM_ONLY,
+    assignmentRevision: 1,
+  });
+};
+
+const givenWeChatBoundUser = async (label: string): Promise<ScenarioUser> => {
+  const user = await givenUser(label);
+  await bindScenarioWeChatOpenId({
+    user,
+    openId: `${label}-openid`,
+  });
+  return user;
+};
+
+const selectLocation = async (page: Page, locationId: string): Promise<void> => {
+  const selector = `[data-testid="anchor-event-form-mode.location.option"][data-location-id="${locationId}"]`;
+  const option = page.locator(selector);
+  await option.waitFor({ state: "attached", timeout: 10_000 });
+  await option.evaluate((element) => {
+    if (!(element instanceof HTMLElement)) {
+      throw new Error("Location option should be an HTMLElement");
+    }
+    element.click();
+  });
+  await page.waitForFunction(
+    (selectorValue) => {
+      const element = document.querySelector(selectorValue);
+      return element?.classList.contains("location-card--selected") === true;
+    },
+    selector,
+    { timeout: 10_000 },
+  );
+};
+
+const completePrimaryLongPress = async (page: Page): Promise<void> => {
+  const primaryAction = page.getByTestId("anchor-event-form-mode.primary-action");
+  await primaryAction.waitFor({ state: "visible", timeout: 10_000 });
+  await primaryAction.scrollIntoViewIfNeeded();
+
+  const box = await primaryAction.boundingBox();
+  assert.ok(box, "Form Mode primary action should have a browser box");
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(1_250);
+  await page.mouse.up();
+};
+
+const submitFormAndReadRecommendation = async (input: {
+  page: Page;
+  event: ScenarioAnchorEvent;
+}): Promise<FormModeRecommendationProbe> => {
+  const responsePromise = input.page.waitForResponse(
+    (response) =>
+      response.url().includes(
+        `/api/events/${input.event.id}/form-mode/recommendation`,
+      ) && response.request().method() === "POST",
+    { timeout: 20_000 },
+  );
+
+  await completePrimaryLongPress(input.page);
+  const response = await responsePromise;
+  assert.equal(response.status(), 200);
+  return (await response.json()) as FormModeRecommendationProbe;
+};
+
+const expectJoinedSlot = async (input: {
+  prId: number;
+  user: ScenarioUser;
+}): Promise<void> => {
+  const slot = await probeLatestPartnerSlot({
+    pr: { id: input.prId },
+    user: input.user,
+  });
+  assert.equal(slot?.status, "JOINED");
+};
+
+const readPrIdFromCurrentUrl = (page: Page): number => {
+  const url = new URL(page.url());
+  const match = /^\/pr\/(\d+)$/.exec(url.pathname);
+  assert.ok(match, `Expected PR detail URL, got ${url.pathname}`);
+  const prId = Number(match[1]);
+  assert.ok(Number.isInteger(prId) && prId > 0);
+  return prId;
+};
+
+const expectCreatedPRDetail = async (input: {
+  prId: number;
+  token: string;
+  creatorUserId: string;
+  event: ScenarioAnchorEvent;
+  locationId: string;
+}): Promise<void> => {
+  const detail = await expectBackendJsonResponse<PRDetailProbe>(
+    await requestBackendJson(`/api/pr/${input.prId}`, {
+      token: input.token,
+    }),
+    200,
+  );
+
+  assert.equal(detail.createdBy, input.creatorUserId);
+  assert.equal(detail.status, "OPEN");
+  assert.equal(detail.core.type, input.event.type);
+  assert.equal(detail.core.location, input.locationId);
+};
+
+const waitForJoinResultDetail = async (
+  page: Page,
+  prId: number,
+): Promise<void> => {
+  await page.waitForURL(
+    (url) =>
+      url.pathname === `/pr/${prId}` &&
+      url.searchParams.get("entry") === "join",
+    { timeout: 20_000 },
+  );
+  await page.getByTestId("pr-detail.participant.confirm-action").waitFor({
+    state: "visible",
+    timeout: 10_000,
+  });
+};
+
+const closeJoinSuccessPrompt = async (page: Page): Promise<void> => {
+  await page.getByTestId("pr-detail.join-success.subscriptions").waitFor({
+    state: "visible",
+    timeout: 10_000,
+  });
+  await page.getByTestId("pr-detail.join-success.done").click();
+};
+
+scenario("anchor_event_form_mode_matched_join_reaches_pr_detail", async (ctx) => {
+  const creator = await givenUser("system-form-mode-matched-creator");
+  const visitor = await givenUser("system-form-mode-matched-visitor");
+  const event = await givenAnchorEvent({ label: "form-mode-matched-join" });
+  const pr = await givenAnchorEventVisiblePR({
+    creator,
+    event,
+    title: "System Form Mode matched PR",
+  });
+  await forceFormMode(event);
+
+  ctx.record("eventId", event.id);
+  ctx.record("prId", pr.id);
+  ctx.record("visitorUserId", visitor.user.id);
+
+  await withScenarioPage(async (page) => {
+    await installScenarioUserSession(page, visitor);
+    await installDeterministicShareSidecarStubs(page);
+
+    await page.goto(`/e/${event.id}`);
+    await expectFormMode(page);
+    const recommendation = await submitFormAndReadRecommendation({ page, event });
+    assert.equal(recommendation.matchedRecommendation?.pr.id, pr.id);
+
+    await page.getByTestId("anchor-event-form-mode.matched.join").click();
+    await page.getByTestId("pr-detail.join.confirm").click();
+    await closeJoinSuccessPrompt(page);
+    await waitForJoinResultDetail(page, pr.id);
+  });
+
+  await expectJoinedSlot({ prId: pr.id, user: visitor });
+});
+
+scenario(
+  "anchor_event_form_mode_unmatched_candidate_join_reaches_pr_detail",
+  async (ctx) => {
+    const creator = await givenUser("system-form-mode-candidate-creator");
+    const visitor = await givenUser("system-form-mode-candidate-visitor");
+    const targetLocation = "System Form Mode Target Court";
+    const candidateLocation = "System Form Mode Candidate Court";
+    const event = await givenAnchorEvent({
+      label: "form-mode-candidate-join",
+      locationIds: [targetLocation, candidateLocation],
+    });
+    const candidate = await givenAnchorEventVisiblePR({
+      creator,
+      event,
+      location: candidateLocation,
+      title: "System Form Mode candidate PR",
+    });
+    await forceFormMode(event);
+
+    ctx.record("eventId", event.id);
+    ctx.record("candidatePrId", candidate.id);
+    ctx.record("visitorUserId", visitor.user.id);
+
+    await withScenarioPage(async (page) => {
+      await installScenarioUserSession(page, visitor);
+      await installDeterministicShareSidecarStubs(page);
+
+      await page.goto(`/e/${event.id}`);
+      await expectFormMode(page);
+      await selectLocation(page, targetLocation);
+      const recommendation = await submitFormAndReadRecommendation({ page, event });
+      assert.equal(recommendation.selection.locationId, targetLocation);
+      assert.equal(recommendation.matchedRecommendation, null);
+      assert.equal(recommendation.orderedCandidates[0]?.pr.id, candidate.id);
+
+      await page.getByTestId("anchor-event-form-mode.candidate-list").waitFor({
+        state: "visible",
+        timeout: 15_000,
+      });
+      await page
+        .locator(
+          `[data-testid="anchor-event-form-mode.candidate.join"][data-pr-id="${candidate.id}"]`,
+        )
+        .click();
+      await page.getByTestId("pr-detail.join.confirm").click();
+      await closeJoinSuccessPrompt(page);
+      await waitForJoinResultDetail(page, candidate.id);
+    });
+
+    await expectJoinedSlot({ prId: candidate.id, user: visitor });
+  },
+);
+
+scenario(
+  "anchor_event_form_mode_unmatched_create_reaches_published_pr_detail",
+  async (ctx) => {
+    const creator = await givenUser("system-form-mode-create-creator");
+    const visitor = await givenWeChatBoundUser("system-form-mode-create-visitor");
+    const targetLocation = "System Form Mode Create Target Court";
+    const candidateLocation = "System Form Mode Create Candidate Court";
+    const event = await givenAnchorEvent({
+      label: "form-mode-unmatched-create",
+      locationIds: [targetLocation, candidateLocation],
+    });
+    const candidate = await givenAnchorEventVisiblePR({
+      creator,
+      event,
+      location: candidateLocation,
+      title: "System Form Mode manual fallback candidate PR",
+    });
+    await forceFormMode(event);
+
+    ctx.record("eventId", event.id);
+    ctx.record("candidatePrId", candidate.id);
+    ctx.record("visitorUserId", visitor.user.id);
+
+    await withScenarioPage(async (page) => {
+      await installScenarioUserSession(page, visitor);
+      await installDeterministicShareSidecarStubs(page);
+
+      await page.goto(`/e/${event.id}`);
+      await expectFormMode(page);
+      await selectLocation(page, targetLocation);
+      const recommendation = await submitFormAndReadRecommendation({ page, event });
+      assert.equal(recommendation.selection.locationId, targetLocation);
+      assert.equal(recommendation.matchedRecommendation, null);
+      assert.equal(recommendation.orderedCandidates[0]?.pr.id, candidate.id);
+
+      await page.getByTestId("anchor-event-form-mode.candidate-list").waitFor({
+        state: "visible",
+        timeout: 15_000,
+      });
+      await page.getByTestId("anchor-event-form-mode.create-fallback").click();
+
+      await page.waitForURL(
+        (url) =>
+          /^\/pr\/\d+$/.test(url.pathname) &&
+          url.searchParams.get("entry") === "create" &&
+          url.searchParams.get("fromEvent") === String(event.id),
+        { timeout: 20_000 },
+      );
+      const createdPrId = readPrIdFromCurrentUrl(page);
+      assert.notEqual(createdPrId, candidate.id);
+      await expectCreatedPRDetail({
+        prId: createdPrId,
+        token: visitor.token,
+        creatorUserId: visitor.user.id,
+        event,
+        locationId: targetLocation,
+      });
+    });
+  },
+);
+
+scenario(
+  "anchor_event_form_mode_unmatched_zero_candidates_auto_creates_pr",
+  async (ctx) => {
+    const visitor = await givenWeChatBoundUser(
+      "system-form-mode-zero-candidates-visitor",
+    );
+    const event = await givenAnchorEvent({
+      label: "form-mode-zero-candidates",
+    });
+    await forceFormMode(event);
+
+    ctx.record("eventId", event.id);
+    ctx.record("visitorUserId", visitor.user.id);
+
+    await withScenarioPage(async (page) => {
+      await installScenarioUserSession(page, visitor);
+      await installDeterministicShareSidecarStubs(page);
+
+      await page.goto(`/e/${event.id}`);
+      await expectFormMode(page);
+      const recommendation = await submitFormAndReadRecommendation({ page, event });
+      assert.equal(recommendation.matchedRecommendation, null);
+      assert.deepEqual(recommendation.orderedCandidates, []);
+
+      await page.waitForURL(
+        (url) =>
+          /^\/pr\/\d+$/.test(url.pathname) &&
+          url.searchParams.get("entry") === "create" &&
+          url.searchParams.get("fromEvent") === String(event.id) &&
+          url.searchParams.get("handoff") === "event_assisted_create",
+        { timeout: 20_000 },
+      );
+      const createdPrId = readPrIdFromCurrentUrl(page);
+      await page
+        .getByTestId("pr-detail.event-assisted-create.notice")
+        .waitFor({
+          state: "visible",
+          timeout: 10_000,
+        });
+      await expectCreatedPRDetail({
+        prId: createdPrId,
+        token: visitor.token,
+        creatorUserId: visitor.user.id,
+        event,
+        locationId: event.locationId,
+      });
+    });
+  },
+);

@@ -3,31 +3,50 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   anchorEventStatusSchema,
-  anchorEventBatchStatusSchema,
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
-  userLocationEntrySchema,
+  anchorEventTimePoolConfigSchema,
+  meetingPointConfigMapSchema,
+  meetingPointConfigSchema,
+  normalizeLocationPool,
+  prJoinGateConfigSchema,
   prStatusManualSchema,
   visibilityStatusSchema,
 } from "../entities";
+import { feedbackQuestionnaireDefinitionSchema } from "../entities/feedback-questionnaire";
 import {
   adminAuthMiddleware,
   type AdminAuthEnv,
 } from "../auth/admin-middleware";
 import {
   createAdminAnchorEvent,
-  createAdminAnchorEventBatch,
-  createAdminAnchorPR,
-  createAdminAnchorPRMessage,
-  getAdminAnchorWorkspace,
-  releaseAdminAnchorPRPartner,
+  createAdminPR,
+  createAdminPRMessage,
+  deleteAdminPR,
+  deleteAdminPRMessage,
+  getAdminAnchorLandingConfig,
+  getAdminAnchorEventPreferenceTags,
+  getAdminAnchorEventWorkspace,
+  listAdminPRMessages,
+  materializeAdminPRFeedbackQuestionnaireInstance,
+  publishAdminAnchorEventPreferenceTag,
+  getAdminPRWorkspace,
+  rejectAdminAnchorEventPreferenceTag,
+  releaseAdminPRPartner,
+  replaceAdminAnchorEventPreferenceTags,
+  updateAdminAnchorLandingConfig,
+  updateAdminPRMessage,
   updateAdminAnchorEvent,
-  updateAdminAnchorEventBatch,
-  updateAdminAnchorPRContent,
-  updateAdminAnchorPRStatus,
-  updateAdminAnchorPRVisibility,
+  updateAdminPRContent,
+  updateAdminPRFeedbackQuestionnaireInstance,
+  updateAdminPRStatus,
+  updateAdminPRVisibility,
 } from "../domains/admin-anchor-management";
+import {
+  createAdminFeedbackQuestionnaireTemplate,
+  listAdminFeedbackQuestionnaireTemplates,
+  updateAdminFeedbackQuestionnaireTemplate,
+} from "../domains/feedback-questionnaire";
 import { prMessageCreateSchema } from "./pr-controller.shared";
+import { anchorEventLandingConfigSchema } from "../domains/anchor-event/landing-config";
 
 const app = new Hono<AdminAuthEnv>();
 
@@ -35,12 +54,19 @@ const eventIdParamSchema = z.object({
   eventId: z.coerce.number().int().positive(),
 });
 
-const batchIdParamSchema = z.object({
-  batchId: z.coerce.number().int().positive(),
-});
-
 const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
+});
+const feedbackQuestionnaireTemplateIdParamSchema = z.object({
+  templateId: z.coerce.number().int().positive(),
+});
+const prMessageIdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  messageId: z.coerce.number().int().positive(),
+});
+const preferenceTagIdParamSchema = z.object({
+  eventId: z.coerce.number().int().positive(),
+  tagId: z.coerce.number().int().positive(),
 });
 const partnerIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -56,53 +82,81 @@ const adminAnchorEventInputSchema = z.object({
   title: z.string().trim().min(1),
   type: z.string().trim().min(1),
   description: z.string().trim().nullable(),
-  systemLocationPool: z.array(z.string().trim().min(1)),
-  userLocationPool: z.array(userLocationEntrySchema),
+  locationPool: z.array(z.string().trim().min(1)),
+  timePoolConfig: anchorEventTimePoolConfigSchema,
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
+  defaultPrNotes: z.string().trim().nullable().optional(),
+  defaultConfirmationStartOffsetMinutes: z.number().int().nonnegative(),
+  defaultConfirmationEndOffsetMinutes: z.number().int().nonnegative(),
+  defaultJoinLockOffsetMinutes: z.number().int().nonnegative(),
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
+  joinGateConfig: prJoinGateConfigSchema.optional(),
+  feedbackQuestionnaireTemplateId: z.number().int().positive().nullable().optional(),
+  locationMeetingPoints: meetingPointConfigMapSchema.optional(),
   coverImage: z.string().trim().nullable(),
   betaGroupQrCode: z.string().trim().nullable(),
   status: anchorEventStatusSchema,
 });
 
-const adminAnchorBatchInputSchema = z.object({
+const adminCreatePRInputSchema = z.object({
   timeWindow: timeWindowSchema,
-  status: anchorEventBatchStatusSchema,
-  description: z.string().trim().nullable(),
-});
-
-const adminCreateAnchorPRInputSchema = z.object({
   title: z.string().trim().nullable(),
-  type: z.string().trim().nullable(),
+  type: z.string().trim().min(1),
   location: z.string().trim().min(1),
   minPartners: z.number().int().nonnegative().nullable(),
   maxPartners: z.number().int().nonnegative().nullable(),
   preferences: z.array(z.string().trim()),
   notes: z.string().trim().nullable(),
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
+  joinGateConfig: prJoinGateConfigSchema.optional(),
   confirmationStartOffsetMinutes: z.number().int().nonnegative(),
   confirmationEndOffsetMinutes: z.number().int().nonnegative(),
   joinLockOffsetMinutes: z.number().int().nonnegative(),
 });
 
-const adminUpdateAnchorPRContentSchema = z.object({
+const adminUpdatePRContentSchema = z.object({
   title: z.string().trim().nullable(),
   type: z.string().trim().min(1),
+  timeWindow: timeWindowSchema,
   location: z.string().trim().nullable(),
   minPartners: z.number().int().nonnegative().nullable(),
   maxPartners: z.number().int().nonnegative().nullable(),
   preferences: z.array(z.string().trim()),
   notes: z.string().trim().nullable(),
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
+  joinGateConfig: prJoinGateConfigSchema.optional(),
   confirmationStartOffsetMinutes: z.number().int().nonnegative(),
   confirmationEndOffsetMinutes: z.number().int().nonnegative(),
   joinLockOffsetMinutes: z.number().int().nonnegative(),
 });
 
-const adminUpdateAnchorPRStatusSchema = z.object({
+const adminUpdatePRStatusSchema = z.object({
   status: prStatusManualSchema,
 });
 
-const adminUpdateAnchorPRVisibilitySchema = z.object({
+const adminUpdatePRVisibilitySchema = z.object({
   visibilityStatus: visibilityStatusSchema,
+});
+const adminUpdatePRFeedbackQuestionnaireInstanceSchema = z.object({
+  feedbackQuestionnaireInstanceId: z.number().int().positive().nullable(),
+});
+const adminMaterializePRFeedbackQuestionnaireInstanceSchema = z.object({
+  feedbackQuestionnaireTemplateId: z.number().int().positive(),
+});
+const adminFeedbackQuestionnaireTemplateInputSchema = z.object({
+  key: z.string().trim().min(1).max(120),
+  version: z.string().trim().min(1).max(40),
+  title: z.string().trim().min(1).max(200),
+  definition: feedbackQuestionnaireDefinitionSchema,
+});
+const adminPreferenceTagsReplaceSchema = z.object({
+  tags: z.array(
+    z.object({
+      label: z.string().trim().min(1).max(80),
+      description: z.string().trim().max(280).nullable(),
+    }),
+  ),
 });
 const adminManualReleaseSchema = z.object({
   reason: z.string().trim().min(1),
@@ -110,10 +164,105 @@ const adminManualReleaseSchema = z.object({
 
 export const adminAnchorManagementRoute = app
   .use("*", adminAuthMiddleware)
-  .get("/anchor-pr/workspace", async (c) => {
-    const result = await getAdminAnchorWorkspace();
+  .get("/anchor-events/workspace", async (c) => {
+    const result = await getAdminAnchorEventWorkspace();
     return c.json(result);
   })
+  .get(
+    "/events/:eventId/landing-config",
+    zValidator("param", eventIdParamSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const result = await getAdminAnchorLandingConfig(eventId);
+      return c.json(result);
+    },
+  )
+  .get(
+    "/events/:eventId/preference-tags",
+    zValidator("param", eventIdParamSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const result = await getAdminAnchorEventPreferenceTags(eventId);
+      return c.json(result);
+    },
+  )
+  .get("/pr/workspace", async (c) => {
+    const result = await getAdminPRWorkspace();
+    return c.json(result);
+  })
+  .get("/feedback-questionnaires/templates", async (c) => {
+    const result = await listAdminFeedbackQuestionnaireTemplates();
+    return c.json(result);
+  })
+  .post(
+    "/feedback-questionnaires/templates",
+    zValidator("json", adminFeedbackQuestionnaireTemplateInputSchema),
+    async (c) => {
+      const payload = c.req.valid("json");
+      const result = await createAdminFeedbackQuestionnaireTemplate(payload);
+      return c.json(result);
+    },
+  )
+  .patch(
+    "/feedback-questionnaires/templates/:templateId",
+    zValidator("param", feedbackQuestionnaireTemplateIdParamSchema),
+    zValidator("json", adminFeedbackQuestionnaireTemplateInputSchema),
+    async (c) => {
+      const { templateId } = c.req.valid("param");
+      const payload = c.req.valid("json");
+      const result = await updateAdminFeedbackQuestionnaireTemplate(
+        templateId,
+        payload,
+      );
+      return c.json(result);
+    },
+  )
+  .put(
+    "/events/:eventId/landing-config",
+    zValidator("param", eventIdParamSchema),
+    zValidator("json", anchorEventLandingConfigSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const payload = c.req.valid("json");
+      const result = await updateAdminAnchorLandingConfig(eventId, payload);
+      return c.json(result);
+    },
+  )
+  .put(
+    "/events/:eventId/preference-tags/published",
+    zValidator("param", eventIdParamSchema),
+    zValidator("json", adminPreferenceTagsReplaceSchema),
+    async (c) => {
+      const { eventId } = c.req.valid("param");
+      const { tags } = c.req.valid("json");
+      const result = await replaceAdminAnchorEventPreferenceTags(eventId, tags);
+      return c.json(result);
+    },
+  )
+  .post(
+    "/events/:eventId/preference-tags/:tagId/publish",
+    zValidator("param", preferenceTagIdParamSchema),
+    async (c) => {
+      const { eventId, tagId } = c.req.valid("param");
+      const result = await publishAdminAnchorEventPreferenceTag({
+        eventId,
+        tagId,
+      });
+      return c.json(result);
+    },
+  )
+  .post(
+    "/events/:eventId/preference-tags/:tagId/reject",
+    zValidator("param", preferenceTagIdParamSchema),
+    async (c) => {
+      const { eventId, tagId } = c.req.valid("param");
+      const result = await rejectAdminAnchorEventPreferenceTag({
+        eventId,
+        tagId,
+      });
+      return c.json(result);
+    },
+  )
   .post(
     "/anchor-events",
     zValidator("json", adminAnchorEventInputSchema),
@@ -122,10 +271,8 @@ export const adminAnchorManagementRoute = app
       const result = await createAdminAnchorEvent({
         ...payload,
         description: payload.description || null,
-        systemLocationPool: normalizeSystemLocationPool(
-          payload.systemLocationPool,
-        ),
-        userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
+        locationPool: normalizeLocationPool(payload.locationPool),
+        defaultPrNotes: payload.defaultPrNotes || null,
         coverImage: payload.coverImage || null,
         betaGroupQrCode: payload.betaGroupQrCode || null,
       });
@@ -142,10 +289,8 @@ export const adminAnchorManagementRoute = app
       const result = await updateAdminAnchorEvent(eventId, {
         ...payload,
         description: payload.description || null,
-        systemLocationPool: normalizeSystemLocationPool(
-          payload.systemLocationPool,
-        ),
-        userLocationPool: normalizeUserLocationPool(payload.userLocationPool),
+        locationPool: normalizeLocationPool(payload.locationPool),
+        defaultPrNotes: payload.defaultPrNotes || null,
         coverImage: payload.coverImage || null,
         betaGroupQrCode: payload.betaGroupQrCode || null,
       });
@@ -153,51 +298,42 @@ export const adminAnchorManagementRoute = app
     },
   )
   .post(
-    "/anchor-events/:eventId/batches",
-    zValidator("param", eventIdParamSchema),
-    zValidator("json", adminAnchorBatchInputSchema),
+    "/prs",
+    zValidator("json", adminCreatePRInputSchema),
     async (c) => {
-      const { eventId } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await createAdminAnchorEventBatch(eventId, {
-        ...payload,
-        description: payload.description || null,
-      });
-      return c.json(result);
-    },
-  )
-  .patch(
-    "/batches/:batchId",
-    zValidator("param", batchIdParamSchema),
-    zValidator("json", adminAnchorBatchInputSchema),
-    async (c) => {
-      const { batchId } = c.req.valid("param");
-      const payload = c.req.valid("json");
-      const result = await updateAdminAnchorEventBatch(batchId, {
-        ...payload,
-        description: payload.description || null,
-      });
-      return c.json(result);
-    },
-  )
-  .post(
-    "/batches/:batchId/anchor-prs",
-    zValidator("param", batchIdParamSchema),
-    zValidator("json", adminCreateAnchorPRInputSchema),
-    async (c) => {
-      const { batchId } = c.req.valid("param");
-      const payload = c.req.valid("json");
-      const result = await createAdminAnchorPR(batchId, {
+      const result = await createAdminPR(payload.timeWindow, {
         ...payload,
         title: payload.title || null,
-        type: payload.type || null,
         notes: payload.notes || null,
       });
       return c.json(result);
     },
   )
+  .delete(
+    "/prs/:id",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const auth = c.get("auth");
+      const result = await deleteAdminPR({
+        prId: id,
+        actorUserId: auth.userId ?? null,
+      });
+      return c.json(result);
+    },
+  )
+  .get(
+    "/prs/:id/messages",
+    zValidator("param", prIdParamSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const result = await listAdminPRMessages(id);
+      return c.json(result);
+    },
+  )
   .post(
-    "/anchor-prs/:id/messages",
+    "/prs/:id/messages",
     zValidator("param", prIdParamSchema),
     zValidator("json", prMessageCreateSchema),
     async (c) => {
@@ -207,7 +343,7 @@ export const adminAnchorManagementRoute = app
       if (!auth.userId) {
         throw new Error("Admin user id missing after admin auth");
       }
-      const result = await createAdminAnchorPRMessage({
+      const result = await createAdminPRMessage({
         prId: id,
         body,
         actorUserId: auth.userId,
@@ -216,13 +352,44 @@ export const adminAnchorManagementRoute = app
     },
   )
   .patch(
-    "/anchor-prs/:id/content",
+    "/prs/:id/messages/:messageId",
+    zValidator("param", prMessageIdParamSchema),
+    zValidator("json", prMessageCreateSchema),
+    async (c) => {
+      const { id, messageId } = c.req.valid("param");
+      const { body } = c.req.valid("json");
+      const auth = c.get("auth");
+      const result = await updateAdminPRMessage({
+        prId: id,
+        messageId,
+        body,
+        actorUserId: auth.userId ?? null,
+      });
+      return c.json(result);
+    },
+  )
+  .delete(
+    "/prs/:id/messages/:messageId",
+    zValidator("param", prMessageIdParamSchema),
+    async (c) => {
+      const { id, messageId } = c.req.valid("param");
+      const auth = c.get("auth");
+      const result = await deleteAdminPRMessage({
+        prId: id,
+        messageId,
+        actorUserId: auth.userId ?? null,
+      });
+      return c.json(result);
+    },
+  )
+  .patch(
+    "/prs/:id/content",
     zValidator("param", prIdParamSchema),
-    zValidator("json", adminUpdateAnchorPRContentSchema),
+    zValidator("json", adminUpdatePRContentSchema),
     async (c) => {
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const result = await updateAdminAnchorPRContent(id, {
+      const result = await updateAdminPRContent(id, {
         ...payload,
         title: payload.title || null,
         location: payload.location || null,
@@ -232,36 +399,64 @@ export const adminAnchorManagementRoute = app
     },
   )
   .patch(
-    "/anchor-prs/:id/status",
+    "/prs/:id/status",
     zValidator("param", prIdParamSchema),
-    zValidator("json", adminUpdateAnchorPRStatusSchema),
+    zValidator("json", adminUpdatePRStatusSchema),
     async (c) => {
       const { id } = c.req.valid("param");
       const { status } = c.req.valid("json");
-      const result = await updateAdminAnchorPRStatus(id, status);
+      const result = await updateAdminPRStatus(id, status);
       return c.json(result);
     },
   )
   .patch(
-    "/anchor-prs/:id/visibility",
+    "/prs/:id/visibility",
     zValidator("param", prIdParamSchema),
-    zValidator("json", adminUpdateAnchorPRVisibilitySchema),
+    zValidator("json", adminUpdatePRVisibilitySchema),
     async (c) => {
       const { id } = c.req.valid("param");
       const { visibilityStatus } = c.req.valid("json");
-      await updateAdminAnchorPRVisibility(id, visibilityStatus);
+      await updateAdminPRVisibility(id, visibilityStatus);
       return c.json({ ok: true });
     },
   )
+  .patch(
+    "/prs/:id/feedback-questionnaire-instance",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", adminUpdatePRFeedbackQuestionnaireInstanceSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { feedbackQuestionnaireInstanceId } = c.req.valid("json");
+      const result = await updateAdminPRFeedbackQuestionnaireInstance(
+        id,
+        feedbackQuestionnaireInstanceId,
+      );
+      return c.json(result);
+    },
+  )
   .post(
-    "/anchor-prs/:id/partners/:partnerId/release",
+    "/prs/:id/feedback-questionnaire-instance/from-template",
+    zValidator("param", prIdParamSchema),
+    zValidator("json", adminMaterializePRFeedbackQuestionnaireInstanceSchema),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { feedbackQuestionnaireTemplateId } = c.req.valid("json");
+      const result = await materializeAdminPRFeedbackQuestionnaireInstance({
+        prId: id,
+        feedbackQuestionnaireTemplateId,
+      });
+      return c.json(result);
+    },
+  )
+  .post(
+    "/prs/:id/partners/:partnerId/release",
     zValidator("param", partnerIdParamSchema),
     zValidator("json", adminManualReleaseSchema),
     async (c) => {
       const { id, partnerId } = c.req.valid("param");
       const { reason } = c.req.valid("json");
       const auth = c.get("auth");
-      const result = await releaseAdminAnchorPRPartner({
+      const result = await releaseAdminPRPartner({
         prId: id,
         partnerId,
         reason,

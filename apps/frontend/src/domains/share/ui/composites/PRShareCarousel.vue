@@ -1,23 +1,31 @@
 <template>
   <section class="share-pr">
     <div class="carousel-header">
-      <button
+      <Button
         class="nav-btn"
+        appearance="pill"
+        tone="ghost"
+        size="sm"
+        type="button"
         @click="goToPrevMethod"
         :disabled="enabledMethods.length <= 1"
         :aria-label="t('share.prevMethodAria')"
       >
         <div class="i-mdi-chevron-left"></div>
-      </button>
+      </Button>
       <h3 class="method-label">{{ currentMethod.label }}</h3>
-      <button
+      <Button
         class="nav-btn"
+        appearance="pill"
+        tone="ghost"
+        size="sm"
+        type="button"
         @click="goToNextMethod"
         :disabled="enabledMethods.length <= 1"
         :aria-label="t('share.nextMethodAria')"
       >
         <div class="i-mdi-chevron-right"></div>
-      </button>
+      </Button>
     </div>
 
     <div
@@ -67,6 +75,7 @@ import ShareAsLink from "@/domains/share/ui/methods/as-link/ShareAsLink.vue";
 import ShareToXiaohongshuMethod from "@/domains/share/ui/methods/xhs/ShareToXiaohongshu.vue";
 import ShareToWechatChatMethod from "@/domains/share/ui/methods/wechat/ShareToWechatChat.vue";
 import type { PRShareProps } from "@/domains/share/model/types";
+import Button from "@/shared/ui/actions/Button.vue";
 import {
   useShareCarousel,
   type ShareMethod,
@@ -117,6 +126,7 @@ const {
   allMethods,
   defaultMethodId: props.defaultMethodId,
   autoRotateIntervalMs: props.autoRotateIntervalMs,
+  spmRouteKey: props.spmRouteKey,
 });
 </script>
 
@@ -125,34 +135,13 @@ const {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  margin-bottom: var(--sys-spacing-medium);
 }
 
 .nav-btn {
-  @include mx.pu-pill-action(transparent, small);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-width: var(--sys-size-large);
   min-height: var(--sys-size-large);
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover:not(:disabled) {
-    background: var(--sys-color-surface-container-highest);
-  }
-
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
 
   div {
     @include mx.pu-font(title-large);
@@ -232,11 +221,11 @@ const {
 }
 
 .empty-state {
-  padding: var(--sys-spacing-med);
+  padding: var(--sys-spacing-medium);
   text-align: center;
   color: var(--sys-color-on-surface-variant);
   background: var(--sys-color-surface-container);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
 
   p {
     margin: 0;

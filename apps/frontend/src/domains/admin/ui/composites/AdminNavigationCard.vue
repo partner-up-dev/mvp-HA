@@ -8,51 +8,61 @@
     </div>
 
     <nav class="admin-navigation-card__nav">
-      <RouterLink
-        :to="{ name: 'admin-anchor-pr' }"
+      <ChoiceCard
+        :to="{ name: 'admin-anchor-events' }"
         class="admin-navigation-card__link"
       >
-        {{ t("adminCommon.navAnchorPR") }}
-      </RouterLink>
-      <RouterLink
-        :to="{ name: 'admin-anchor-pr-messages' }"
+        {{ t("adminCommon.navAnchorEvents") }}
+      </ChoiceCard>
+      <ChoiceCard
+        :to="{ name: 'admin-pr' }"
         class="admin-navigation-card__link"
       >
-        {{ t("adminCommon.navAnchorPRMessages") }}
-      </RouterLink>
-      <RouterLink
+        {{ t("adminCommon.navPR") }}
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-booking-support' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navBookingSupport") }}
-      </RouterLink>
-      <RouterLink
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-booking-execution' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navBookingExecution") }}
-      </RouterLink>
-      <RouterLink
+      </ChoiceCard>
+      <ChoiceCard
         :to="{ name: 'admin-pois' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navPois") }}
-      </RouterLink>
+      </ChoiceCard>
+      <ChoiceCard
+        :to="{ name: 'admin-feedback-questionnaires' }"
+        class="admin-navigation-card__link"
+      >
+        {{ t("adminCommon.navFeedbackQuestionnaires") }}
+      </ChoiceCard>
     </nav>
 
-    <button
+    <Button
       v-if="showLogout"
-      class="admin-navigation-card__logout"
+      appearance="pill"
+      tone="outline"
+      size="sm"
       type="button"
       @click="$emit('logout')"
     >
       {{ t("adminCommon.logoutAction") }}
-    </button>
+    </Button>
   </section>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import Button from "@/shared/ui/actions/Button.vue";
+import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
 
 defineProps<{
   showLogout?: boolean;
@@ -69,9 +79,10 @@ const { t } = useI18n();
 .admin-navigation-card {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  padding: var(--sys-spacing-med);
-  @include mx.pu-surface-panel(admin-workspace);
+  gap: var(--sys-spacing-medium);
+  padding: var(--sys-spacing-medium);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-large);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
     var(--sys-color-surface-container);
@@ -80,7 +91,7 @@ const { t } = useI18n();
 .admin-navigation-card__header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .admin-navigation-card__eyebrow {
@@ -100,21 +111,11 @@ const { t } = useI18n();
 .admin-navigation-card__nav {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .admin-navigation-card__link {
   @include mx.pu-font(body-medium);
-  @include mx.pu-selection-card(default);
 }
 
-.admin-navigation-card__link.router-link-active {
-  @include mx.pu-selection-card(active);
-}
-
-.admin-navigation-card__logout {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-pill-action(outline-transparent, small);
-  cursor: pointer;
-}
 </style>

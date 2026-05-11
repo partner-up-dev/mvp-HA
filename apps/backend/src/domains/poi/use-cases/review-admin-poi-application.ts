@@ -1,0 +1,63 @@
+import { HTTPException } from "hono/http-exception";
+import type { UserId } from "../../../entities/user";
+import { PoiRepository } from "../../../repositories/PoiRepository";
+import { operationLogService } from "../../../infra/operation-log";
+import {
+  normalizePoiRejectReason,
+  toPoiApplicationView,
+} from "../services/poi-application";
+
+const poiRepo = new PoiRepository();
+
+export async function publishAdminPoiApplication(input: {
+  poiId: string;
+  reviewedByUserId: UserId | null;
+}) {
+  const updated = await poiRepo.updateReviewState(input.poiId, {
+    status: "PUBLISHED",
+    reviewedByUserId: input.reviewedByUserId,
+  });
+  if (!updated) {
+    throw new HTTPException(404, { message: "POI not found" });
+  }
+
+  operationLogService.log({
+    actorId: input.reviewedByUserId,
+    action: "poi.application.publish",
+    aggregateType: "poi",
+    aggregateId: updated.id,
+    detail: {
+      status: updated.status,
+    },
+  });
+
+  return toPoiApplicationView(updated);
+}
+
+export async function rejectAdminPoiApplication(input: {
+  poiId: string;
+  reviewedByUserId: UserId | null;
+  rejectReason: string | null;
+}) {
+  const updated = await poiRepo.updateReviewState(input.poiId, {
+    status: "REJECTED",
+    reviewedByUserId: input.reviewedByUserId,
+    rejectReason: normalizePoiRejectReason(input.rejectReason),
+  });
+  if (!updated) {
+    throw new HTTPException(404, { message: "POI not found" });
+  }
+
+  operationLogService.log({
+    actorId: input.reviewedByUserId,
+    action: "poi.application.reject",
+    aggregateType: "poi",
+    aggregateId: updated.id,
+    detail: {
+      status: updated.status,
+      rejectReason: updated.rejectReason,
+    },
+  });
+
+  return toPoiApplicationView(updated);
+}

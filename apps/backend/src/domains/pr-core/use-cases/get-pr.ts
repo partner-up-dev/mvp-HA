@@ -1,6 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import type { PRId } from "../../../entities/partner-request";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { readPartnerRequestById } from "../services/pr-read.service";
 

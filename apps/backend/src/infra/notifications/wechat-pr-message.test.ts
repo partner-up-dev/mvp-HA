@@ -8,7 +8,7 @@ test("resolvePRMessageNotificationRunAt adds a fixed debounce window", async () 
   const {
     PR_MESSAGE_DEBOUNCE_WINDOW_MS,
     resolvePRMessageNotificationRunAt,
-  } = await import("./wechat-pr-message");
+  } = await import("../../domains/notification");
 
   const firstUnreadMessageCreatedAt = new Date("2026-04-14T04:00:00.000Z");
   const runAt = resolvePRMessageNotificationRunAt(firstUnreadMessageCreatedAt);
@@ -58,7 +58,6 @@ test("scheduleWeChatPRMessageNotification uses delayed runAt and wave payload", 
     const firstUnreadMessageCreatedAt = new Date("2026-04-14T04:00:00.000Z");
     const request = {
       id: 42,
-      prKind: "ANCHOR",
       title: "周三羽球搭子",
       type: "运动",
     } as unknown as PartnerRequest;

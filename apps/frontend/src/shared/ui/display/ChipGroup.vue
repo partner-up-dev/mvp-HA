@@ -33,15 +33,15 @@ withDefaults(
 }
 
 .chip-group--gap-xs {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .chip-group--gap-sm {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .chip-group--gap-md {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .chip-group--align-start {

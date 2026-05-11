@@ -1,14 +1,18 @@
 import { useQuery } from "@tanstack/vue-query";
-import type { PartnerRequestSummary } from "@partner-up-dev/backend";
+import type { InferResponseType } from "hono";
 import { client } from "@/lib/rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 import { i18n } from "@/locales/i18n";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 
+export type MyJoinedPRsResponse = InferResponseType<
+  (typeof client.api.pr.mine.joined)["$get"]
+>;
+
 export const useMyJoinedPRs = () => {
   const userSessionStore = useUserSessionStore();
 
-  return useQuery<PartnerRequestSummary[]>({
+  return useQuery<MyJoinedPRsResponse>({
     queryKey: queryKeys.pr.mineJoined(),
     queryFn: async () => {
       const res = await client.api.pr.mine.joined.$get();

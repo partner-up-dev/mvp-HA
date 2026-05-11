@@ -4,3 +4,13 @@ name = "mvp-HA"
 
 [setup]
 script = "pnpm install"
+
+[[actions]]
+name = "Frontend Dev Server"
+icon = "run"
+command = 'powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-dev-server-if-port-free.ps1 -Service frontend'
+
+[[actions]]
+name = "Backend Dev Server"
+icon = "run"
+command = 'powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-dev-server-if-port-free.ps1 -Service backend'

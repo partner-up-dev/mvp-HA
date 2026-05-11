@@ -1,5 +1,8 @@
 <template>
-  <PageScaffold class="footer-reveal-page-scaffold">
+  <PageScaffold
+    class="footer-reveal-page-scaffold"
+    :class="`footer-reveal-page-scaffold--content-${props.contentPlacement}`"
+  >
     <div class="footer-reveal-page-scaffold__viewport">
       <header
         v-if="$slots.header"
@@ -24,6 +27,15 @@
 
 <script setup lang="ts">
 import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+
+const props = withDefaults(
+  defineProps<{
+    contentPlacement?: "start" | "center";
+  }>(),
+  {
+    contentPlacement: "start",
+  },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -36,12 +48,12 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
   --pu-page-padding-bottom: 0;
   --pu-page-padding-left: 0;
   --footer-reveal-first-screen-height: var(--pu-vh);
-  --footer-reveal-top-padding: calc(var(--sys-spacing-med) + var(--pu-safe-top));
+  --footer-reveal-top-padding: calc(var(--sys-spacing-medium) + var(--pu-safe-top));
   --footer-reveal-inline-start-padding: calc(
-    var(--sys-spacing-med) + var(--pu-safe-left)
+    var(--sys-spacing-medium) + var(--pu-safe-left)
   );
   --footer-reveal-inline-end-padding: calc(
-    var(--sys-spacing-med) + var(--pu-safe-right)
+    var(--sys-spacing-medium) + var(--pu-safe-right)
   );
   --footer-reveal-content-max-width: var(--dcs-layout-page-max-width);
 }
@@ -77,8 +89,12 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
   min-height: 0;
 }
 
+.footer-reveal-page-scaffold--content-center .footer-reveal-page-scaffold__content {
+  justify-content: center;
+}
+
 .footer-reveal-page-scaffold__footer {
-  --full-common-footer-padding-top: var(--sys-spacing-med);
+  --full-common-footer-padding-top: var(--sys-spacing-medium);
   --full-common-footer-padding-inline-start: var(
     --footer-reveal-inline-start-padding
   );

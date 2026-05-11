@@ -28,6 +28,6 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 </style>

@@ -31,7 +31,7 @@ export const internalMaintenanceRoute = app.post(
       return c.json(summary);
     }
 
-    if (summary.outbox.stoppedReason === "ERROR" || summary.jobsError !== null) {
+    if (summary.jobsError !== null) {
       return c.json(summary, 500);
     }
 

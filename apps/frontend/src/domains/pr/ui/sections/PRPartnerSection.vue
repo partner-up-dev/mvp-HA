@@ -6,7 +6,7 @@
           <h2 class="partner-section__title">
             {{ t("prPage.partnerSection.title") }}
           </h2>
-          <p class="partner-section__slot-state">{{ slotStateText }}</p>
+          <Chip tone="primary" size="lg">{{ slotStateText }}</Chip>
         </div>
         <p class="partner-section__subtitle">{{ subtitleText }}</p>
       </div>
@@ -48,45 +48,48 @@
     </div>
 
     <div class="partner-section__actions">
-      <button
+      <Button
         v-if="section.viewer.canJoin"
-        class="partner-section__primary-btn"
+        type="button"
         :disabled="joinPending"
         @click="emit('join')"
       >
         {{ joinPending ? t("prPage.joining") : t("prPage.join") }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-if="section.viewer.canExit"
-        class="partner-section__danger-btn"
+        tone="danger"
+        type="button"
         :disabled="exitPending"
         @click="emit('exit')"
       >
         {{ exitPending ? t("prPage.exiting") : t("prPage.exit") }}
-      </button>
+      </Button>
 
-      <button
-        v-if="section.scenario === 'ANCHOR' && section.viewer.canConfirm"
-        class="partner-section__secondary-btn"
+      <Button
+        v-if="section.viewer.canConfirm"
+        tone="primary-outline"
+        type="button"
         :disabled="confirmPending"
         @click="emit('confirm-slot')"
       >
         {{
           confirmPending ? t("prPage.confirmingSlot") : t("prPage.confirmSlot")
         }}
-      </button>
+      </Button>
 
-      <button
-        v-if="section.scenario === 'ANCHOR' && section.viewer.canCheckIn"
-        class="partner-section__secondary-btn"
+      <Button
+        v-if="section.viewer.canCheckIn"
+        tone="primary-outline"
+        type="button"
         :disabled="checkInPending"
-        @click="emit('prepare-check-in')"
+        @click="emit('submit-check-in')"
       >
         {{
           checkInPending ? t("prPage.checkingIn") : t("prPage.checkInAttended")
         }}
-      </button>
+      </Button>
     </div>
 
     <p v-if="joinErrorMessage" class="partner-section__error-note">
@@ -96,39 +99,6 @@
     <p v-if="availabilityNote" class="partner-section__availability-note">
       {{ availabilityNote }}
     </p>
-
-    <section v-if="showCheckInFollowup" class="partner-section__followup">
-      <p class="partner-section__followup-text">
-        {{
-          t("prPage.checkInFollowupQuestion", {
-            status: checkInFollowupStatusLabel,
-          })
-        }}
-      </p>
-      <div class="partner-section__followup-actions">
-        <button
-          class="partner-section__primary-btn"
-          :disabled="checkInPending"
-          @click="emit('submit-check-in', true)"
-        >
-          {{ t("prPage.wouldJoinAgainYes") }}
-        </button>
-        <button
-          class="partner-section__secondary-btn"
-          :disabled="checkInPending"
-          @click="emit('submit-check-in', false)"
-        >
-          {{ t("prPage.wouldJoinAgainNo") }}
-        </button>
-        <button
-          class="partner-section__ghost-btn"
-          :disabled="checkInPending"
-          @click="emit('cancel-check-in')"
-        >
-          {{ t("common.cancel") }}
-        </button>
-      </div>
-    </section>
 
     <section class="partner-section__panel">
       <div class="partner-section__panel-header">
@@ -149,78 +119,21 @@
       </p>
 
       <div v-else class="partner-section__roster">
-        <template v-for="item in section.roster" :key="item.partnerId">
-          <router-link
-            v-if="isRosterLinkable(item.state)"
-            :to="partnerProfilePath(item.partnerId)"
-            class="partner-section__roster-item partner-section__roster-link"
-          >
-            <div class="partner-section__roster-main">
-              <div class="partner-section__roster-identity">
-                <img
-                  v-if="item.avatarUrl"
-                  :src="item.avatarUrl"
-                  :alt="rosterAvatarAlt(item.displayName)"
-                  class="partner-section__roster-avatar"
-                />
-                <div
-                  v-else
-                  class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
-                  aria-hidden="true"
-                >
-                  <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                </div>
-                <span class="partner-section__roster-name">{{
-                  item.displayName
-                }}</span>
-              </div>
-              <div class="partner-section__roster-tags">
-                <span v-if="item.isSelf" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterSelf") }}
-                </span>
-                <span v-if="item.isCreator" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterCreator") }}
-                </span>
-              </div>
-            </div>
-            <span class="partner-section__state-badge">
-              {{ rosterStateText(item.state) }}
-            </span>
-          </router-link>
-          <div v-else class="partner-section__roster-item">
-            <div class="partner-section__roster-main">
-              <div class="partner-section__roster-identity">
-                <img
-                  v-if="item.avatarUrl"
-                  :src="item.avatarUrl"
-                  :alt="rosterAvatarAlt(item.displayName)"
-                  class="partner-section__roster-avatar"
-                />
-                <div
-                  v-else
-                  class="partner-section__roster-avatar partner-section__roster-avatar--fallback"
-                  aria-hidden="true"
-                >
-                  <span>{{ rosterAvatarFallback(item.displayName) }}</span>
-                </div>
-                <span class="partner-section__roster-name">{{
-                  item.displayName
-                }}</span>
-              </div>
-              <div class="partner-section__roster-tags">
-                <span v-if="item.isSelf" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterSelf") }}
-                </span>
-                <span v-if="item.isCreator" class="partner-section__tag">
-                  {{ t("prPage.partnerSection.rosterCreator") }}
-                </span>
-              </div>
-            </div>
-            <span class="partner-section__state-badge">
-              {{ rosterStateText(item.state) }}
-            </span>
-          </div>
-        </template>
+        <PRRosterItem
+          v-for="item in section.roster"
+          :key="item.partnerId"
+          :display-name="item.displayName"
+          :avatar-url="item.avatarUrl"
+          :avatar-alt="rosterAvatarAlt(item.displayName)"
+          :avatar-fallback="rosterAvatarFallback(item.displayName)"
+          :is-self="item.isSelf"
+          :is-creator="item.isCreator"
+          :self-label="t('prPage.partnerSection.rosterSelf')"
+          :creator-label="t('prPage.partnerSection.rosterCreator')"
+          :state-label="rosterStateText(item.state)"
+          :to="rosterItemProfilePath(item)"
+          variant="card"
+        />
       </div>
     </section>
 
@@ -269,17 +182,6 @@
             formatDateTime(section.timeline.bookingDeadlineAt)
           }}</span>
         </div>
-        <div
-          v-if="section.timeline.bookingTriggeredAt"
-          class="partner-section__timeline-item"
-        >
-          <span class="partner-section__timeline-label">{{
-            t("prPage.partnerSection.timelineBookingTriggered")
-          }}</span>
-          <span class="partner-section__timeline-value">{{
-            formatDateTime(section.timeline.bookingTriggeredAt)
-          }}</span>
-        </div>
       </div>
     </section>
 
@@ -295,9 +197,9 @@
 
       <p class="partner-section__note">{{ reminderHintText }}</p>
 
-      <button
+      <Button
         v-if="canToggleReminder"
-        class="partner-section__primary-btn"
+        type="button"
         :disabled="reminderTogglePending"
         @click="emit('toggle-reminder')"
       >
@@ -308,102 +210,32 @@
               ? t("prPage.wechatReminder.disableAction")
               : t("prPage.wechatReminder.enableAction")
         }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-else-if="isWeChatEnv && reminderConfigured && !reminderAuthenticated"
-        class="partner-section__ghost-btn"
+        tone="surface"
+        type="button"
         @click="emit('go-wechat-login')"
       >
         {{ t("prPage.wechatReminder.loginAction") }}
-      </button>
+      </Button>
     </section>
 
-    <section
-      v-if="
-        section.scenario === 'ANCHOR' &&
-        section.fallbacks.sameBatchAlternatives.length > 0
-      "
-      class="partner-section__panel"
-    >
-      <div class="partner-section__panel-header">
-        <h3 class="partner-section__panel-title">
-          {{ t("prPage.sameBatch.title") }}
-        </h3>
-      </div>
-      <p class="partner-section__note">{{ t("prPage.sameBatch.subtitle") }}</p>
-
-      <div class="partner-section__links">
-        <router-link
-          v-for="item in section.fallbacks.sameBatchAlternatives"
-          :key="item.id"
-          :to="anchorPRDetailPath(item.id)"
-          class="partner-section__link-card"
-        >
-          <span>{{ item.location }}</span>
-          <span class="partner-section__link-meta">{{
-            t(`prStatus.${item.status}`)
-          }}</span>
-        </router-link>
-      </div>
-    </section>
-
-    <section
-      v-if="
-        section.scenario === 'ANCHOR' &&
-        section.fallbacks.alternativeBatches.length > 0
-      "
-      class="partner-section__panel"
-    >
-      <div class="partner-section__panel-header">
-        <h3 class="partner-section__panel-title">
-          {{ t("prPage.alternativeBatch.title") }}
-        </h3>
-      </div>
-      <p class="partner-section__note">
-        {{ t("prPage.alternativeBatch.subtitle") }}
-      </p>
-
-      <div class="partner-section__alternatives">
-        <article
-          v-for="item in section.fallbacks.alternativeBatches"
-          :key="`${item.timeWindow[0]}-${item.timeWindow[1]}`"
-          class="partner-section__alternative-item"
-        >
-          <div class="partner-section__alternative-meta">
-            <strong>{{
-              formatWindow(item.timeWindow[0], item.timeWindow[1])
-            }}</strong>
-            <span class="partner-section__note">{{ item.location }}</span>
-          </div>
-          <button
-            class="partner-section__primary-btn"
-            :disabled="acceptAlternativeBatchPending"
-            @click="emit('accept-alternative-batch', item.timeWindow)"
-          >
-            {{ t("prPage.alternativeBatch.accept") }}
-          </button>
-        </article>
-      </div>
-    </section>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { AnchorPRDetailResponse } from "@/domains/pr/queries/useAnchorPR";
-import type { CommunityPRDetailResponse } from "@/domains/pr/queries/useCommunityPR";
-import {
-  anchorPRDetailPath,
-  anchorPRPartnerProfilePath,
-  communityPRPartnerProfilePath,
-} from "@/domains/pr/routing/routes";
+import type { PRPartnerSectionView } from "@/domains/pr/model/types";
+import { prPartnerProfilePath } from "@/domains/pr/routing/routes";
+import PRRosterItem from "@/domains/pr/ui/primitives/PRRosterItem.vue";
+import Button from "@/shared/ui/actions/Button.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
-type PartnerSectionView =
-  | AnchorPRDetailResponse["partnerSection"]
-  | CommunityPRDetailResponse["partnerSection"];
+type PartnerSectionView = PRPartnerSectionView;
 
 type TimeWindow = [string | null, string | null];
 
@@ -417,8 +249,6 @@ const props = withDefaults(
     confirmPending?: boolean;
     checkInPending?: boolean;
     joinErrorMessage?: string | null;
-    showCheckInFollowup?: boolean;
-    checkInFollowupStatusLabel?: string;
     canToggleReminder?: boolean;
     reminderEnabled?: boolean;
     reminderTogglePending?: boolean;
@@ -434,8 +264,6 @@ const props = withDefaults(
     confirmPending: false,
     checkInPending: false,
     joinErrorMessage: null,
-    showCheckInFollowup: false,
-    checkInFollowupStatusLabel: "",
     canToggleReminder: false,
     reminderEnabled: false,
     reminderTogglePending: false,
@@ -451,9 +279,7 @@ const emit = defineEmits<{
   join: [];
   exit: [];
   "confirm-slot": [];
-  "prepare-check-in": [];
-  "submit-check-in": [wouldJoinAgain: boolean];
-  "cancel-check-in": [];
+  "submit-check-in": [];
   "toggle-reminder": [];
   "go-wechat-login": [];
   "accept-alternative-batch": [timeWindow: TimeWindow];
@@ -462,7 +288,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const subtitleText = computed(() => {
-  if (props.section.scenario === "ANCHOR") {
+  if (props.section.reminder.supported || props.section.timeline) {
     return t("prPage.partnerSection.subtitleAnchor");
   }
   return t("prPage.partnerSection.subtitleCommunity");
@@ -495,7 +321,7 @@ const availabilityNote = computed(() => {
       return blockedReasonText(props.section.viewer.exitBlockedReason);
     }
     if (
-      props.section.scenario === "ANCHOR" &&
+      props.section.reminder.supported &&
       !props.section.viewer.canConfirm &&
       props.section.viewer.slotState === "JOINED"
     ) {
@@ -524,16 +350,17 @@ const formatWindow = (start: string | null, end: string | null): string => {
   return startLabel ?? endLabel ?? t("prPage.partnerSection.notSet");
 };
 
-const partnerProfilePath = (partnerId: number): string => {
-  if (props.section.scenario === "ANCHOR") {
-    return anchorPRPartnerProfilePath(props.prId, partnerId);
-  }
-  return communityPRPartnerProfilePath(props.prId, partnerId);
-};
+const partnerProfilePath = (partnerId: number): string =>
+  prPartnerProfilePath(props.prId, partnerId);
+
+const rosterItemProfilePath = (
+  item: PartnerSectionView["roster"][number],
+): string | null =>
+  isRosterLinkable(item.state) ? partnerProfilePath(item.partnerId) : null;
 
 const confirmWindowText = computed(() => {
   const notSet = t("prPage.partnerSection.notSet");
-  if (props.section.scenario !== "ANCHOR" || !props.section.timeline) {
+  if (!props.section.reminder.supported || !props.section.timeline) {
     return { confirmStart: notSet, confirmEnd: notSet };
   }
   return {
@@ -613,41 +440,43 @@ function blockedReasonText(
 
 <style lang="scss" scoped>
 .partner-section {
-  margin-top: var(--sys-spacing-lg);
-  @include mx.pu-surface-card(section);
+  margin-top: var(--sys-spacing-large);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
+  background: var(--sys-color-surface-container);
   border-top: 3px solid var(--sys-color-primary);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .partner-section__header,
 .partner-section__panel-header,
-.partner-section__roster-item,
 .partner-section__alternative-item {
   display: flex;
   justify-content: space-between;
-  margin-bottom: var(--sys-spacing-sm);
+  margin-bottom: var(--sys-spacing-small);
 }
 
-.partner-section__panel,
-.partner-section__followup {
-  @include mx.pu-surface-card(inset-high);
+.partner-section__panel {
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface-container-high);
   border: 1px solid var(--sys-color-outline-variant);
 }
 
 .partner-section__header {
   align-items: flex-start;
   flex-wrap: wrap;
-  row-gap: var(--sys-spacing-xs);
-  padding-bottom: var(--sys-spacing-sm);
+  row-gap: var(--sys-spacing-xsmall);
+  padding-bottom: var(--sys-spacing-small);
   border-bottom: 1px solid var(--sys-color-outline-variant);
 }
 
 .partner-section__header-main {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-width: 0;
 }
 
@@ -663,7 +492,6 @@ function blockedReasonText(
 }
 
 .partner-section__subtitle,
-.partner-section__slot-state,
 .partner-section__panel-meta,
 .partner-section__note,
 .partner-section__empty,
@@ -679,11 +507,6 @@ function blockedReasonText(
   color: var(--sys-color-error);
 }
 
-.partner-section__slot-state {
-  @include mx.pu-pill-badge(primary);
-  border-radius: 999px;
-}
-
 .partner-section__subtitle {
   line-height: 1.4;
 }
@@ -691,35 +514,36 @@ function blockedReasonText(
 .partner-section__summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .partner-section__availability-note {
-  @include mx.pu-surface-card(inset-high);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface-container-high);
   border-inline-start: 3px solid var(--sys-color-primary);
-  padding: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-xs);
-  margin-bottom: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
+  margin-bottom: var(--sys-spacing-xsmall);
 }
 
 .partner-section__summary-card {
-  @include mx.pu-surface-card(inset-high);
+  padding: var(--sys-spacing-small);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface-container-high);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
-  padding: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .partner-section__summary-label,
 .partner-section__timeline-label {
   @include mx.pu-font(label-large);
   color: var(--sys-color-on-surface-variant);
-  margin-right: var(--sys-spacing-sm);
+  margin-right: var(--sys-spacing-small);
 }
 
 .partner-section__summary-value,
-.partner-section__timeline-value,
-.partner-section__roster-name {
+.partner-section__timeline-value {
   @include mx.pu-font(body-large);
 }
 
@@ -729,168 +553,62 @@ function blockedReasonText(
 }
 
 .partner-section__actions,
-.partner-section__followup-actions,
 .partner-section__links,
 .partner-section__alternatives,
 .partner-section__roster,
 .partner-section__timeline {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
-.partner-section__primary-btn,
-.partner-section__danger-btn,
-.partner-section__secondary-btn,
-.partner-section__ghost-btn {
-  @include mx.pu-font(label-large);
-  border: none;
-  cursor: pointer;
-}
-
-.partner-section__primary-btn {
-  @include mx.pu-rect-action(primary, default);
-}
-
-.partner-section__danger-btn {
-  @include mx.pu-rect-action(danger, default);
-}
-
-.partner-section__secondary-btn {
-  @include mx.pu-rect-action(outline-primary, default);
-}
-
-.partner-section__ghost-btn {
-  @include mx.pu-rect-action(surface, default);
-}
-
-.partner-section__roster-main,
 .partner-section__alternative-meta {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
-}
-
-.partner-section__roster-identity {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-spacing-sm);
-  min-width: 0;
+  gap: var(--sys-spacing-xsmall);
 }
 
 .partner-section__roster {
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
-.partner-section__roster-item,
 .partner-section__link-card,
 .partner-section__alternative-item,
 .partner-section__timeline-item {
-  @include mx.pu-surface-card(outline);
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-small);
+  background: transparent;
 }
 
-.partner-section__roster-item,
 .partner-section__alternative-item,
 .partner-section__timeline-item {
   align-items: center;
 }
 
-.partner-section__roster-item {
-  align-items: flex-start;
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-}
-
-.partner-section__roster-link {
-  text-decoration: none;
-  color: inherit;
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--sys-color-primary) 40%, transparent);
-    background: color-mix(
-      in srgb,
-      var(--sys-color-primary) 6%,
-      var(--sys-color-surface-container-lowest)
-    );
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--sys-color-primary);
-    outline-offset: 2px;
-  }
-}
-
-.partner-section__roster-avatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.partner-section__roster-avatar {
-  object-fit: cover;
-}
-
-.partner-section__roster-avatar--fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: var(--sys-color-primary-container);
-  color: var(--sys-color-on-primary-container);
-
-  span {
-    @include mx.pu-font(label-large);
-  }
-}
-
-.partner-section__roster-name {
-  overflow-wrap: anywhere;
-}
-
-.partner-section__roster-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
-}
-
-.partner-section__tag,
-.partner-section__state-badge,
 .partner-section__link-meta {
   @include mx.pu-font(label-small);
-  padding: 2px 8px;
+  padding: calc(var(--sys-spacing-xsmall) / 2) var(--sys-spacing-small);
   border-radius: 999px;
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
 }
 
-.partner-section__state-badge {
-  align-self: center;
-  margin-left: auto;
-}
-
 .partner-section__link-card {
   display: flex;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   text-decoration: none;
   color: inherit;
 }
 
 @media (min-width: 880px) {
-  .partner-section__actions,
-  .partner-section__followup-actions {
+  .partner-section__actions {
     flex-direction: row;
     flex-wrap: wrap;
   }
 
-  .partner-section__actions > button,
-  .partner-section__followup-actions > button {
+  .partner-section__actions > button {
     flex: 1 1 220px;
   }
 }

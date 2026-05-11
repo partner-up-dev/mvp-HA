@@ -13,6 +13,9 @@ type WeChatNotificationKind =
   | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
   | "NEW_PARTNER"
+  | "MEETING_POINT_UPDATED"
+  | "WAITLIST_PROMOTED"
+  | "WAITLIST_ALTERNATIVE_AVAILABLE"
   | "PR_MESSAGE";
 
 type WeChatNotificationAction = "ADD_ONE" | "CLEAR";

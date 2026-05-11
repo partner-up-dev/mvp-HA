@@ -3,20 +3,20 @@ import bcrypt
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python gen_pin_hash.py <pin>")
+        print("Usage: python gen-pin-hash.py <credential>")
         sys.exit(1)
 
-    pin = sys.argv[1]
+    credential = sys.argv[1]
 
     # bcrypt expects bytes
-    pin_bytes = pin.encode("utf-8")
+    credential_bytes = credential.encode("utf-8")
 
     # cost factor (same as 10 in your TS code)
     salt = bcrypt.gensalt(rounds=10)
 
-    hash_bytes = bcrypt.hashpw(pin_bytes, salt)
+    hash_bytes = bcrypt.hashpw(credential_bytes, salt)
 
-    print("PIN:", pin)
+    print("Credential:", credential)
     print("Hash:", hash_bytes.decode())
 
 if __name__ == "__main__":

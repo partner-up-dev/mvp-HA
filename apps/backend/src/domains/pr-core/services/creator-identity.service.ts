@@ -1,23 +1,39 @@
 import { HTTPException } from "hono/http-exception";
 import type { User, UserId } from "../../../entities/user";
 import { UserRepository } from "../../../repositories/UserRepository";
-import { resolveUserByOpenId } from "./user-resolver.service";
-import {
-  createLocalUserWithGeneratedPin,
-  ensureUserHasPin,
-} from "./user-pin-auth.service";
+import { resolveUserByOpenId } from "../../user";
+import { ProblemDetailsError } from "../../../lib/problem-details";
 
 const userRepo = new UserRepository();
+export const AUTHENTICATED_REQUIRED_CODE = "AUTHENTICATED_REQUIRED";
 
 export type CreatorIdentityInput = {
   authenticatedUserId: UserId | null;
+  anonymousUserId: UserId | null;
   oauthOpenId: string | null;
 };
 
 export type CreatorIdentityResult = {
   user: User;
-  generatedUserPin: string | null;
-  source: "authenticated" | "wechat" | "local";
+  source: "authenticated" | "wechat";
+};
+
+export const throwAuthenticatedRequired = (): never => {
+  throw new ProblemDetailsError({
+    status: 403,
+    type: "https://partner-up.app/problems/auth.authenticated_required",
+    code: AUTHENTICATED_REQUIRED_CODE,
+    localizedText: {
+      zhCN: {
+        title: "需要登录",
+        detail: "请先完成微信登录后继续操作。",
+      },
+      enUS: {
+        title: "Login required",
+        detail: "Please log in with WeChat before continuing.",
+      },
+    },
+  });
 };
 
 export async function resolveDraftCreator(
@@ -25,7 +41,7 @@ export async function resolveDraftCreator(
 ): Promise<User | null> {
   if (input.authenticatedUserId) {
     const user = await userRepo.findById(input.authenticatedUserId);
-    if (!user) {
+    if (!user || user.status !== "ACTIVE") {
       throw new HTTPException(401, { message: "Invalid authenticated user" });
     }
     return user;
@@ -43,32 +59,23 @@ export async function resolvePublishedCreator(
 ): Promise<CreatorIdentityResult> {
   if (input.authenticatedUserId) {
     const user = await userRepo.findById(input.authenticatedUserId);
-    if (!user) {
+    if (!user || user.status !== "ACTIVE") {
       throw new HTTPException(401, { message: "Invalid authenticated user" });
     }
 
-    const ensured = await ensureUserHasPin(user);
     return {
-      user: ensured.user,
-      generatedUserPin: ensured.userPin,
+      user,
       source: "authenticated",
     };
   }
 
   if (input.oauthOpenId) {
     const user = await resolveUserByOpenId(input.oauthOpenId);
-    const ensured = await ensureUserHasPin(user);
     return {
-      user: ensured.user,
-      generatedUserPin: ensured.userPin,
+      user,
       source: "wechat",
     };
   }
 
-  const local = await createLocalUserWithGeneratedPin();
-  return {
-    user: local.user,
-    generatedUserPin: local.userPin,
-    source: "local",
-  };
+  return throwAuthenticatedRequired();
 }

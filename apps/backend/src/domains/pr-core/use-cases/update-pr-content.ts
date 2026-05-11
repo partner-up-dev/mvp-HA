@@ -1,6 +1,5 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import type {
   PRId,
   PartnerRequestFields,
@@ -14,18 +13,28 @@ import {
 } from "../services/slot-management.service";
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
+import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
+import {
+  captureEffectiveMeetingPointsForRequests,
+  scheduleMeetingPointNotificationsForChangedRequests,
+} from "../services/meeting-point-change-notifier.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
-const communityPRRepo = new CommunityPRRepository();
+
+export interface UpdatePRContentOptions {
+  bypassEditableStatusGuard?: boolean;
+  preserveStatus?: boolean;
+}
 
 export async function updatePRContent(
   id: PRId,
   fields: PartnerRequestFields,
   actorUserId: UserId | null,
+  options: UpdatePRContentOptions = {},
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
@@ -34,6 +43,7 @@ export async function updatePRContent(
   const refreshedRequest = await refreshTemporalStatus(request);
 
   if (
+    !options.bypassEditableStatusGuard &&
     refreshedRequest.status !== "OPEN" &&
     refreshedRequest.status !== "DRAFT"
   ) {
@@ -55,6 +65,13 @@ export async function updatePRContent(
     fields.maxPartners,
     currentParticipants,
   );
+  await assertPRTimeWindowAvailableAtLocation({
+    location: fields.location,
+    timeWindow: fields.time,
+  });
+  const previousMeetingPoints = await captureEffectiveMeetingPointsForRequests([
+    refreshedRequest,
+  ]);
 
   if (timeChanged && refreshedRequest.status !== "DRAFT") {
     const activeParticipants = await listActiveParticipantSummariesForPR(id);
@@ -75,21 +92,17 @@ export async function updatePRContent(
   if (!updated) {
     throw new HTTPException(500, { message: "Failed to update content" });
   }
-  if (refreshedRequest.prKind === "COMMUNITY") {
-    const updatedCommunity = await communityPRRepo.updateBudget(id, fields.budget);
-    if (!updatedCommunity) {
-      throw new HTTPException(500, {
-        message: "Failed to update community PR content",
-      });
-    }
-  }
 
   if (minMaxChanged) {
     await syncSlotCapacity(id, fields.maxPartners);
   }
   await prRepo.clearPosterCache(id);
 
-  if (minMaxChanged && refreshedRequest.status !== "DRAFT") {
+  if (
+    minMaxChanged &&
+    refreshedRequest.status !== "DRAFT" &&
+    !options.preserveStatus
+  ) {
     await recalculatePRStatus(id);
   }
 
@@ -100,21 +113,19 @@ export async function updatePRContent(
     });
   }
 
-  // Emit domain event
-  const event = await eventBus.publish(
-    "pr.content_updated",
-    "partner_request",
-    String(id),
-    { prId: id },
-  );
-  void writeToOutbox(event);
-
   operationLogService.log({
     actorId: actorUserId,
     action: "pr.update_content",
     aggregateType: "partner_request",
     aggregateId: String(id),
   });
+
+  await scheduleMeetingPointNotificationsForChangedRequests({
+    previous: previousMeetingPoints,
+    requests: [latest],
+    updatedAt: new Date(),
+  });
+  await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
 
   return toPublicPR(latest, null);
 }

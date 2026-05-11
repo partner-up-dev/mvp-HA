@@ -48,7 +48,7 @@ useBodyScrollLock(computed(() => props.open));
 .landing-web-qr-modal {
   display: grid;
   justify-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .landing-web-qr-modal__description {
@@ -60,7 +60,7 @@ useBodyScrollLock(computed(() => props.open));
 
 .landing-web-qr-modal__image {
   width: min(100%, 260px);
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
 }
 
 .landing-web-qr-modal__empty {

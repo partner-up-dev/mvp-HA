@@ -36,14 +36,15 @@
           />
         </label>
 
-        <button
-          class="admin-login-card__submit"
+        <Button
+          appearance="pill"
+          size="lg"
           type="button"
           :disabled="loginMutation.isPending.value"
           @click="handleSubmit"
         >
           {{ loginMutation.isPending.value ? t("adminLogin.loggingIn") : t("adminLogin.loginAction") }}
-        </button>
+        </Button>
 
         <p class="admin-login-card__hint">{{ t("adminLogin.seedHint") }}</p>
         <ErrorToast
@@ -64,6 +65,7 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import { useAdminLogin } from "@/domains/admin/queries/useAdminLogin";
 import { useAdminSessionStore } from "@/domains/admin/use-cases/useAdminSessionStore";
 import PageScaffoldCentered from "@/shared/ui/layout/PageScaffoldCentered.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -81,7 +83,7 @@ const resolveRedirectTarget = (): string => {
     return redirect;
   }
 
-  return "/admin/anchor-pr";
+  return "/admin/pr";
 };
 
 const handleSubmit = async () => {
@@ -122,7 +124,7 @@ watchEffect(() => {
 }
 
 .admin-login-page__header {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: center;
   text-align: center;
 }
@@ -144,8 +146,8 @@ watchEffect(() => {
 
 .admin-login-page__title {
   font-size: var(--dcs-typography-page-hero-size);
-  font-weight: var(--dcs-typography-page-hero-weight);
-  line-height: var(--dcs-typography-page-hero-line-height);
+  font-weight: 700;
+  line-height: 1.05;
 }
 
 .admin-login-page__subtitle,
@@ -156,8 +158,22 @@ watchEffect(() => {
 
 .admin-login-card {
   position: relative;
-  width: min(100%, var(--dcs-layout-panel-max-width));
-  @include mx.pu-surface-panel(admin-login);
+  width: min(100%, 30rem);
+  overflow: hidden;
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-large);
+  background:
+    radial-gradient(
+      circle at top left,
+      var(--sys-color-primary-container),
+      transparent 42%
+    ),
+    linear-gradient(
+      180deg,
+      var(--sys-color-surface),
+      var(--sys-color-surface-container)
+    );
+  box-shadow: var(--sys-shadow-2);
 }
 
 .admin-login-card__glow {
@@ -166,18 +182,18 @@ watchEffect(() => {
   width: 14rem;
   height: 14rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--sys-color-primary) 16%, transparent);
+  background: var(--sys-color-primary-container);
   filter: blur(36px);
 }
 
 .admin-login-card__content {
   position: relative;
-  gap: var(--sys-spacing-med);
-  padding: var(--dcs-space-admin-panel-padding);
+  gap: var(--sys-spacing-medium);
+  padding: calc(var(--sys-spacing-medium) + var(--sys-spacing-small));
 }
 
 .field {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .field__label {
@@ -185,19 +201,12 @@ watchEffect(() => {
 }
 
 .field__input {
-  @include mx.pu-field-shell;
+  width: 100%;
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
-.admin-login-card__submit {
-  @include mx.pu-font(label-large);
-  @include mx.pu-pill-action(solid-primary, large);
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.admin-login-card__submit:disabled {
-  cursor: default;
-  opacity: 0.72;
-}
 </style>

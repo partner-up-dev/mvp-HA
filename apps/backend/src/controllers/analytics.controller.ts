@@ -1,42 +1,27 @@
-/**
- * Analytics ingestion controller (INFRA-04).
- *
- * POST /api/analytics/events — legacy analytics ingest path.
- * POST /api/telemetry/events — current ingest path used by the frontend.
- */
-
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { ingestAnalyticsEvents } from "../infra/analytics";
-import { acceptedAnalyticsEventTypes } from "../infra/analytics";
+import { getColdStartAnalyticsSummary } from "../infra/analytics";
 
 const app = new Hono();
 
-const analyticsEventTypeSchema = z.enum(acceptedAnalyticsEventTypes);
-
-const analyticsEventSchema = z.object({
-  type: analyticsEventTypeSchema,
-  payload: z.record(z.unknown()),
-  occurredAt: z.string().datetime(),
-  sessionId: z.string().max(128).optional(),
+const coldStartSummaryQuerySchema = z.object({
+  startAt: z.string().datetime().optional(),
+  endAt: z.string().datetime().optional(),
 });
 
-const batchSchema = z.object({
-  events: z.array(analyticsEventSchema).min(1).max(100),
-});
+const parseOptionalDate = (value: string | undefined): Date | undefined =>
+  value ? new Date(value) : undefined;
 
-export const analyticsRoute = app.post(
-  "/events",
-  zValidator("json", batchSchema),
+export const analyticsRoute = app.get(
+  "/cold-start/summary",
+  zValidator("query", coldStartSummaryQuerySchema),
   async (c) => {
-    const { events } = c.req.valid("json");
-    const result = await ingestAnalyticsEvents(
-      events.map((e) => ({
-        ...e,
-        payload: e.payload as Record<string, unknown>,
-      })),
-    );
+    const query = c.req.valid("query");
+    const result = await getColdStartAnalyticsSummary({
+      startAt: parseOptionalDate(query.startAt),
+      endAt: parseOptionalDate(query.endAt),
+    });
     return c.json(result);
   },
 );

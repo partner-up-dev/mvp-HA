@@ -4,12 +4,18 @@ import {
   useUserSessionStore,
   type AuthSessionPayload,
 } from "@/shared/auth/useUserSessionStore";
-import { getStoredAccessToken } from "@/shared/auth/session-storage";
+import {
+  getStoredAccessToken,
+  getStoredUserId,
+} from "@/shared/auth/session-storage";
+import { hasPendingWeChatOAuthHandoff } from "@/processes/wechat/oauth-handoff";
 
 let hasBootstrappedAuthSession = false;
 let bootstrappingPromise: Promise<void> | null = null;
 
-const runAuthSessionBootstrap = async (): Promise<void> => {
+type AuthSessionBootstrapResult = "completed" | "deferred";
+
+const runAuthSessionBootstrap = async (): Promise<AuthSessionBootstrapResult> => {
   if (typeof window !== "undefined") {
     const isOAuthCallback =
       window.location.pathname === "/wechat/oauth/callback";
@@ -18,15 +24,21 @@ const runAuthSessionBootstrap = async (): Promise<void> => {
       const hasOAuthParams =
         Boolean(searchParams.get("code")) && Boolean(searchParams.get("state"));
       if (hasOAuthParams) {
-        return;
+        return "completed";
       }
     }
   }
 
-  const store = useUserSessionStore();
-  const existingToken = getStoredAccessToken();
+  if (hasPendingWeChatOAuthHandoff()) {
+    return "deferred";
+  }
 
-  if (!existingToken) {
+  const store = useUserSessionStore();
+
+  const existingToken = getStoredAccessToken();
+  const storedUserId = store.userId ?? getStoredUserId();
+
+  if (!existingToken && !storedUserId) {
     const registerRes = await client.api.auth.register.anonymous.$post(
       undefined,
       {
@@ -41,14 +53,12 @@ const runAuthSessionBootstrap = async (): Promise<void> => {
     }
   }
 
-  const currentUserId = store.userId;
-  const currentUserPin = store.userPin;
+  const currentUserId = store.userId ?? storedUserId;
 
   const res = await client.api.auth.session.$post(
     {
       json: {
         userId: currentUserId,
-        userPin: currentUserPin,
       },
     },
     {
@@ -65,11 +75,12 @@ const runAuthSessionBootstrap = async (): Promise<void> => {
 
     const rotated = getStoredAccessToken();
     store.setAccessToken(rotated);
-    return;
+    return "completed";
   }
 
   const payload = (await res.json()) as AuthSessionPayload;
   store.applyAuthSession(payload);
+  return "completed";
 };
 
 export const ensureAuthSessionBootstrapped = async (): Promise<void> => {
@@ -78,10 +89,15 @@ export const ensureAuthSessionBootstrapped = async (): Promise<void> => {
   }
 
   if (!bootstrappingPromise) {
-    bootstrappingPromise = runAuthSessionBootstrap().finally(() => {
-      hasBootstrappedAuthSession = true;
-      bootstrappingPromise = null;
-    });
+    bootstrappingPromise = runAuthSessionBootstrap()
+      .then((result) => {
+        if (result === "completed") {
+          hasBootstrappedAuthSession = true;
+        }
+      })
+      .finally(() => {
+        bootstrappingPromise = null;
+      });
   }
 
   await bootstrappingPromise;

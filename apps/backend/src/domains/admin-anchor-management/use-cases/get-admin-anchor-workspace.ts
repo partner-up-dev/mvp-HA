@@ -1,14 +1,22 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
-import { countActivePartnersForPR } from "../../pr-core/services/slot-management.service";
+import type {
+  MeetingPointConfig,
+  MeetingPointConfigMap,
+  PRJoinGateConfig,
+  FeedbackQuestionnaireTemplate,
+  FeedbackQuestionnaireTemplateId,
+} from "../../../entities";
+import type { AnchorEventPRContextRecord } from "../../../repositories/AnchorEventPRContextRepository";
+import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
+import { countActivePartnersForPR } from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
-import { readAnchorPRRecordsByBatchId } from "../../pr-core/services/pr-read.service";
+import { readAnchorEventPRContextRecordsByEventTimeWindow } from "../../pr/services";
+import { listAnchorEventTimeWindowDetails } from "../../anchor-event/services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
-const batchRepo = new AnchorEventBatchRepository();
+const feedbackRepo = new FeedbackQuestionnaireRepository();
 
-type AdminAnchorPRSummary = {
+type AdminPRSummary = {
   prId: number;
   title: string | null;
   type: string;
@@ -20,6 +28,8 @@ type AdminAnchorPRSummary = {
   maxPartners: number | null;
   preferences: string[];
   notes: string | null;
+  meetingPoint: MeetingPointConfig | null;
+  joinGateConfig: PRJoinGateConfig;
   partnerCount: number;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
@@ -29,12 +39,11 @@ type AdminAnchorPRSummary = {
   createdAt: string;
 };
 
-type AdminAnchorBatchSummary = {
-  id: number;
+type AdminAnchorTimeWindowSummary = {
+  key: string;
   timeWindow: [string | null, string | null];
-  status: string;
   description: string | null;
-  prs: AdminAnchorPRSummary[];
+  prs: AdminPRSummary[];
 };
 
 export type AdminAnchorEventSummary = {
@@ -42,29 +51,58 @@ export type AdminAnchorEventSummary = {
   title: string;
   type: string;
   description: string | null;
-  systemLocationPool: string[];
-  userLocationPool: Array<{
-    id: string;
-    perBatchCap: number;
-  }>;
+  locationPool: string[];
+  timePoolConfig: {
+    durationMinutes: number | null;
+    earliestLeadMinutes: number | null;
+    startRules: Array<
+      | {
+          id: string;
+          kind: "ABSOLUTE";
+          startAt: string;
+          description: string | null;
+        }
+      | {
+          id: string;
+          kind: "RECURRING";
+          weekdays: number[];
+          timeOfDay: string;
+          description: string | null;
+        }
+    >;
+  };
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultPrNotes: string | null;
+  defaultConfirmationStartOffsetMinutes: number | null;
+  defaultConfirmationEndOffsetMinutes: number | null;
+  defaultJoinLockOffsetMinutes: number | null;
+  meetingPoint: MeetingPointConfig | null;
+  locationMeetingPoints: MeetingPointConfigMap;
+  joinGateConfig: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId: FeedbackQuestionnaireTemplateId | null;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
-  batches: AdminAnchorBatchSummary[];
+  timeWindows: AdminAnchorTimeWindowSummary[];
 };
 
-export interface AdminAnchorWorkspace {
+export interface AdminAnchorEventWorkspace {
   events: AdminAnchorEventSummary[];
+  feedbackQuestionnaireTemplates: Array<{
+    id: FeedbackQuestionnaireTemplate["id"];
+    key: string;
+    version: string;
+    title: string;
+  }>;
 }
 
-const toAdminAnchorPRSummary = async (
-  record: AnchorPRRecord,
-): Promise<AdminAnchorPRSummary> => ({
+const toAdminPRSummary = async (
+  record: AnchorEventPRContextRecord,
+): Promise<AdminPRSummary> => ({
   prId: record.root.id,
   title: record.root.title,
   type: record.root.type,
@@ -76,6 +114,8 @@ const toAdminAnchorPRSummary = async (
   maxPartners: record.root.maxPartners,
   preferences: [...record.root.preferences],
   notes: record.root.notes,
+  meetingPoint: record.root.meetingPoint,
+  joinGateConfig: record.root.joinGateConfig,
   partnerCount: await countActivePartnersForPR(record.root.id),
   confirmationStartOffsetMinutes: record.anchor.confirmationStartOffsetMinutes,
   confirmationEndOffsetMinutes: record.anchor.confirmationEndOffsetMinutes,
@@ -86,35 +126,35 @@ const toAdminAnchorPRSummary = async (
   createdAt: record.root.createdAt.toISOString(),
 });
 
-export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
+export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWorkspace> {
   const events = await anchorEventRepo.listAll();
 
   const eventSummaries = await Promise.all(
     events.map(async (event) => {
-      const batches = await batchRepo.findByAnchorEventId(event.id);
-      const batchSummaries = await Promise.all(
-        [...batches]
-          .sort((left, right) => {
-            const leftStart = left.timeWindow[0] ?? "";
-            const rightStart = right.timeWindow[0] ?? "";
-            return leftStart.localeCompare(rightStart);
-          })
-          .map(async (batch) => {
-            const prs = await readAnchorPRRecordsByBatchId(batch.id, {
+      const timeWindowDetails = listAnchorEventTimeWindowDetails(event);
+      const timeWindowPool = timeWindowDetails.map(
+        (detail) => detail.timeWindow,
+      );
+      const timeWindowSummaries = await Promise.all(
+        timeWindowDetails.map(async (detail) => {
+          const prs = await readAnchorEventPRContextRecordsByEventTimeWindow(
+            event.id,
+            detail.timeWindow,
+            {
               consistency: "strong",
-            });
-            const prSummaries = await Promise.all(
-              prs.map((record) => toAdminAnchorPRSummary(record)),
-            );
+            },
+          );
+          const prSummaries = await Promise.all(
+            prs.map((record) => toAdminPRSummary(record)),
+          );
 
-            return {
-              id: batch.id,
-              timeWindow: batch.timeWindow,
-              status: batch.status,
-              description: batch.description,
-              prs: prSummaries,
-            };
-          }),
+          return {
+            key: detail.key,
+            timeWindow: detail.timeWindow,
+            description: detail.description,
+            prs: prSummaries,
+          };
+        }),
       );
 
       return {
@@ -122,31 +162,43 @@ export async function getAdminAnchorWorkspace(): Promise<AdminAnchorWorkspace> {
         title: event.title,
         type: event.type,
         description: event.description,
-        systemLocationPool: Array.isArray(event.systemLocationPool)
-          ? [...event.systemLocationPool]
+        locationPool: Array.isArray(event.locationPool)
+          ? [...event.locationPool]
           : [],
-        userLocationPool: Array.isArray(event.userLocationPool)
-          ? event.userLocationPool.map((entry) => ({
-              id: entry.id,
-              perBatchCap: entry.perBatchCap,
-            }))
-          : [],
+        timePoolConfig: event.timePoolConfig,
         defaultMinPartners: event.defaultMinPartners ?? null,
         defaultMaxPartners: event.defaultMaxPartners ?? null,
-        timeWindowPool: Array.isArray(event.timeWindowPool)
-          ? event.timeWindowPool.map(
-              (entry): [string | null, string | null] => [entry[0], entry[1]],
-            )
-          : [],
+        defaultPrNotes: event.defaultPrNotes ?? null,
+        defaultConfirmationStartOffsetMinutes:
+          event.defaultConfirmationStartOffsetMinutes ?? null,
+        defaultConfirmationEndOffsetMinutes:
+          event.defaultConfirmationEndOffsetMinutes ?? null,
+        defaultJoinLockOffsetMinutes: event.defaultJoinLockOffsetMinutes ?? null,
+        meetingPoint: event.meetingPoint,
+        locationMeetingPoints: event.locationMeetingPoints,
+        joinGateConfig: event.joinGateConfig,
+        feedbackQuestionnaireTemplateId:
+          event.feedbackQuestionnaireTemplateId ?? null,
+        timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,
         status: event.status,
         createdAt: event.createdAt.toISOString(),
         updatedAt: event.updatedAt.toISOString(),
-        batches: batchSummaries,
+        timeWindows: timeWindowSummaries,
       };
     }),
   );
 
-  return { events: eventSummaries };
+  const templates = await feedbackRepo.listTemplates();
+
+  return {
+    events: eventSummaries,
+    feedbackQuestionnaireTemplates: templates.map((template) => ({
+      id: template.id,
+      key: template.key,
+      version: template.version,
+      title: template.title,
+    })),
+  };
 }

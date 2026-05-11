@@ -10,7 +10,7 @@ import {
 import { prMessageBodySchema } from "../entities/pr-message";
 import type { UserId } from "../entities/user";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
-import { issueUserAuth } from "../auth/middleware";
+import { issueAnonymousAuth, issueAuthForUser } from "../auth/middleware";
 import type { AuthEnv } from "../auth/middleware";
 import { UserRepository } from "../repositories/UserRepository";
 import {
@@ -59,18 +59,10 @@ export const nlWordCountSchema = createNaturalLanguagePRSchema.refine(
 
 export const updateStatusSchema = z.object({
   status: prStatusManualSchema,
-  pin: z
-    .string()
-    .regex(/^\d{4}$/, "PIN must be 4 digits")
-    .optional(),
 });
 
 export const updateContentSchema = z.object({
   fields: partnerRequestFieldsSchema,
-  pin: z
-    .string()
-    .regex(/^\d{4}$/, "PIN must be 4 digits")
-    .optional(),
 });
 
 export const anchorUpdateContentFieldsSchema = partnerRequestFieldsSchema.omit({
@@ -80,10 +72,6 @@ export const anchorUpdateContentFieldsSchema = partnerRequestFieldsSchema.omit({
 
 export const anchorUpdateContentSchema = z.object({
   fields: anchorUpdateContentFieldsSchema,
-  pin: z
-    .string()
-    .regex(/^\d{4}$/, "PIN must be 4 digits")
-    .optional(),
 });
 
 export const prIdParamSchema = z.object({
@@ -231,6 +219,14 @@ export const getAuthenticatedUserId = (c: Context<AuthEnv>): UserId | null => {
   return auth.userId as UserId;
 };
 
+export const getSessionUserId = (c: Context<AuthEnv>): UserId | null => {
+  const auth = c.get("auth");
+  if (!auth.userId) {
+    return null;
+  }
+  return auth.userId as UserId;
+};
+
 export const requireSessionUserId = (c: Context<AuthEnv>): UserId => {
   const auth = c.get("auth");
   if (!auth.userId) {
@@ -249,26 +245,38 @@ export const requireAuthenticatedUserId = (c: Context<AuthEnv>): UserId => {
 
 export const buildCreatorIdentity = async (c: Context<AuthEnv>) => {
   const authenticatedUserId = getAuthenticatedUserId(c);
+  const sessionUserId = getSessionUserId(c);
   const openId = await tryReadAuthenticatedOpenId(c);
 
   return {
     authenticatedUserId,
+    anonymousUserId: authenticatedUserId === null ? sessionUserId : null,
     oauthOpenId: openId,
   };
 };
 
-export const issueAuthPayload = (
+export const issueAuthPayload = async (
   c: Context<AuthEnv>,
   userId: UserId,
-  userPin: string | null,
-) => {
-  const auth = issueUserAuth(userId);
+): Promise<{
+  role: "anonymous" | "authenticated" | "service";
+  userId: UserId;
+  accessToken: string;
+}> => {
+  const user = await userRepo.findById(userId);
+  if (!user || user.status !== "ACTIVE") {
+    throw new HTTPException(401, { message: "Invalid session user" });
+  }
+
+  const auth =
+    user.role === "anonymous"
+      ? issueAnonymousAuth(user.id)
+      : issueAuthForUser(user);
   c.set("auth", auth);
 
   return {
     role: auth.role,
-    userId,
-    userPin,
+    userId: user.id,
     accessToken: auth.token,
   };
 };

@@ -13,7 +13,7 @@ The product therefore has to accept capability differences across environments i
 
 ## 2. Reliability Depends on Feedback Loops, Not One-Time Promise Signals
 
-The current `Anchor PR` loop raises reliability through:
+The current PR reliability loop raises reliability through:
 
 - confirmation windows
 - check-in feedback

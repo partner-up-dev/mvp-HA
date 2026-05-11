@@ -29,15 +29,19 @@ const subscribeSendResponseSchema = z.object({
   msgid: z.union([z.number().int(), z.string()]).optional(),
 });
 
-const CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID =
+const CONFIG_KEY_CONFIRMATION_REMINDER_TEMPLATE_ID =
   "wechat.submsg_confirmation_reminder_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID =
+const CONFIG_KEY_ACTIVITY_START_REMINDER_TEMPLATE_ID =
   "wechat.submsg_activity_start_reminder_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID =
+const CONFIG_KEY_BOOKING_RESULT_TEMPLATE_ID =
   "wechat.submsg_booking_result_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
+const CONFIG_KEY_NEW_PARTNER_TEMPLATE_ID =
   "wechat.submsg_new_partner_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID =
+const CONFIG_KEY_MEETING_POINT_UPDATED_TEMPLATE_ID =
+  "wechat.submsg_meeting_point_updated_template_id";
+const CONFIG_KEY_WAITLIST_PROMOTED_TEMPLATE_ID =
+  "wechat.submsg_waitlist_promoted_template_id";
+const CONFIG_KEY_PR_MESSAGE_TEMPLATE_ID =
   "wechat.submsg_pr_message_template_id";
 
 type SubscriptionTemplateKind =
@@ -45,36 +49,24 @@ type SubscriptionTemplateKind =
   | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
   | "NEW_PARTNER"
+  | "MEETING_POINT_UPDATED"
+  | "WAITLIST_PROMOTED"
   | "PR_MESSAGE";
 
 const resolveTemplateConfigKey = (kind: SubscriptionTemplateKind): string =>
   kind === "REMINDER_CONFIRMATION"
-    ? CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
+    ? CONFIG_KEY_CONFIRMATION_REMINDER_TEMPLATE_ID
     : kind === "ACTIVITY_START_REMINDER"
-      ? CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
+      ? CONFIG_KEY_ACTIVITY_START_REMINDER_TEMPLATE_ID
       : kind === "BOOKING_RESULT"
-      ? CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
-      : kind === "NEW_PARTNER"
-        ? CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
-        : CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
-
-const resolveTemplateEnvFallback = (
-  kind: SubscriptionTemplateKind,
-): string | null => {
-  const value =
-    kind === "REMINDER_CONFIRMATION"
-      ? env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
-      : kind === "ACTIVITY_START_REMINDER"
-        ? env.WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
-        : kind === "BOOKING_RESULT"
-        ? env.WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
+        ? CONFIG_KEY_BOOKING_RESULT_TEMPLATE_ID
         : kind === "NEW_PARTNER"
-          ? env.WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
-          : env.WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
-
-  const trimmed = value?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : null;
-};
+          ? CONFIG_KEY_NEW_PARTNER_TEMPLATE_ID
+          : kind === "MEETING_POINT_UPDATED"
+            ? CONFIG_KEY_MEETING_POINT_UPDATED_TEMPLATE_ID
+            : kind === "WAITLIST_PROMOTED"
+              ? CONFIG_KEY_WAITLIST_PROMOTED_TEMPLATE_ID
+              : CONFIG_KEY_PR_MESSAGE_TEMPLATE_ID;
 
 export class WeChatSubscriptionMessageError extends Error {
   constructor(
@@ -134,6 +126,23 @@ export interface SendPRMessageNotificationParams {
   page: string | null;
 }
 
+export interface SendMeetingPointUpdatedNotificationParams {
+  openId: string;
+  updateType: string;
+  operatorName: string;
+  updatedAt: string;
+  meetingPointDescription: string;
+  page: string | null;
+}
+
+export interface SendWaitlistPromotedNotificationParams {
+  openId: string;
+  title: string;
+  status: string;
+  remark: string;
+  page: string | null;
+}
+
 const clipText = (value: string, max: number): string =>
   value.trim().slice(0, max);
 
@@ -162,6 +171,14 @@ export class WeChatSubscriptionMessageService {
     return this.isConfigured("NEW_PARTNER");
   }
 
+  async isMeetingPointUpdatedConfigured(): Promise<boolean> {
+    return this.isConfigured("MEETING_POINT_UPDATED");
+  }
+
+  async isWaitlistPromotedConfigured(): Promise<boolean> {
+    return this.isConfigured("WAITLIST_PROMOTED");
+  }
+
   async isPRMessageConfigured(): Promise<boolean> {
     return this.isConfigured("PR_MESSAGE");
   }
@@ -180,6 +197,14 @@ export class WeChatSubscriptionMessageService {
 
   async getNewPartnerTemplateId(): Promise<string | null> {
     return this.resolveTemplateId("NEW_PARTNER");
+  }
+
+  async getMeetingPointUpdatedTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("MEETING_POINT_UPDATED");
+  }
+
+  async getWaitlistPromotedTemplateId(): Promise<string | null> {
+    return this.resolveTemplateId("WAITLIST_PROMOTED");
   }
 
   async getPRMessageTemplateId(): Promise<string | null> {
@@ -242,14 +267,7 @@ export class WeChatSubscriptionMessageService {
   private async resolveTemplateId(
     kind: SubscriptionTemplateKind,
   ): Promise<string | null> {
-    const configuredTemplateId = await this.configService.getValue(
-      resolveTemplateConfigKey(kind),
-    );
-    if (configuredTemplateId) {
-      return configuredTemplateId;
-    }
-
-    return resolveTemplateEnvFallback(kind);
+    return this.configService.getValue(resolveTemplateConfigKey(kind));
   }
 
   private async getOfficialAccountConfig(
@@ -391,6 +409,37 @@ export class WeChatSubscriptionMessageService {
         time2: { value: clipText(params.sentAt, 32) },
         name3: { value: clipText(params.authorName, 10) },
         thing4: { value: clipText(params.messageSummary, 20) },
+      },
+    });
+  }
+
+  async sendMeetingPointUpdatedNotification(
+    params: SendMeetingPointUpdatedNotificationParams,
+  ): Promise<string | number | null> {
+    return this.sendSubscribeMessage({
+      kind: "MEETING_POINT_UPDATED",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        phrase1: { value: clipText(params.updateType, 20) },
+        thing2: { value: clipText(params.operatorName, 20) },
+        time3: { value: clipText(params.updatedAt, 32) },
+        thing6: { value: clipText(params.meetingPointDescription, 20) },
+      },
+    });
+  }
+
+  async sendWaitlistPromotedNotification(
+    params: SendWaitlistPromotedNotificationParams,
+  ): Promise<string | number | null> {
+    return this.sendSubscribeMessage({
+      kind: "WAITLIST_PROMOTED",
+      openId: params.openId,
+      page: params.page,
+      data: {
+        thing1: { value: clipText(params.title, 20) },
+        phrase3: { value: clipText(params.status, 20) },
+        thing4: { value: clipText(params.remark, 20) },
       },
     });
   }

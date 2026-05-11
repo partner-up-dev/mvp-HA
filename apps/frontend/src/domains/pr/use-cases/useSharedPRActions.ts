@@ -3,32 +3,22 @@ import { useI18n } from "vue-i18n";
 import type { PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/telemetry/track";
-import {
-  useExitAnchorPR,
-  useJoinAnchorPR,
-} from "@/domains/pr/queries/useAnchorPR";
-import {
-  useExitCommunityPR,
-  useJoinCommunityPR,
-} from "@/domains/pr/queries/useCommunityPR";
+import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
+import { useExitPR, useJoinPR } from "@/domains/pr/queries/usePRActions";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import type { ApiError } from "@/shared/api/error";
 
 const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
+const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
-
-type JoinActionOptions = {
-  bookingContactPhone?: string | null;
-};
 
 type UseSharedPRActionsOptions = {
   id: ComputedRef<PRId | null>;
   pr: ComputedRef<PRDetailView | undefined>;
   isCreator: ComputedRef<boolean>;
-  scenario: "ANCHOR" | "COMMUNITY";
   onActionSuccess?: () => void;
 };
 
@@ -36,24 +26,17 @@ export const useSharedPRActions = ({
   id,
   pr,
   isCreator,
-  scenario,
   onActionSuccess,
 }: UseSharedPRActionsOptions) => {
   const { t } = useI18n();
 
-  const communityJoinMutation = useJoinCommunityPR();
-  const communityExitMutation = useExitCommunityPR();
-  const anchorJoinMutation = useJoinAnchorPR();
-  const anchorExitMutation = useExitAnchorPR();
-
-  const getExitMutation = () =>
-    scenario === "ANCHOR" ? anchorExitMutation : communityExitMutation;
+  const joinMutation = useJoinPR();
+  const exitMutation = useExitPR();
 
   const hasJoined = computed(
     () => pr.value?.partnerSection.viewer.isParticipant ?? false,
   );
   const analyticsPRContext = computed(() => ({
-    prKind: pr.value?.prKind,
     scenarioType: pr.value?.core.type,
   }));
 
@@ -72,9 +55,10 @@ export const useSharedPRActions = ({
 
   const showEditContentAction = computed(() => {
     const status = pr.value?.status;
-    return Boolean(
-      isCreator.value && (status === "OPEN" || status === "DRAFT"),
-    );
+    if (status === "DRAFT") {
+      return true;
+    }
+    return Boolean(isCreator.value && status === "OPEN");
   });
 
   const showModifyStatusAction = computed(() => Boolean(isCreator.value));
@@ -83,17 +67,10 @@ export const useSharedPRActions = ({
     resolveSlotStateText(pr.value?.partnerSection.viewer.slotState),
   );
 
-  const joinPending = computed(() =>
-    scenario === "ANCHOR"
-      ? anchorJoinMutation.isPending.value
-      : communityJoinMutation.isPending.value,
-  );
-  const exitPending = computed(() => getExitMutation().isPending.value);
+  const joinPending = computed(() => joinMutation.isPending.value);
+  const exitPending = computed(() => exitMutation.isPending.value);
   const joinErrorMessage = computed(() => {
-    const error =
-      scenario === "ANCHOR"
-        ? (anchorJoinMutation.error.value as ApiError | null)
-        : (communityJoinMutation.error.value as ApiError | null);
+    const error = joinMutation.error.value as ApiError | null;
     if (!error) return null;
     if (error.code === JOIN_TIME_WINDOW_CONFLICT_CODE) {
       return t("prPage.partnerSection.blockedTimeWindowConflict");
@@ -104,6 +81,9 @@ export const useSharedPRActions = ({
     if (error.code === BOOKING_CONTACT_PHONE_INVALID_CODE) {
       return t("prPage.bookingContact.verifyFailed");
     }
+    if (error.code === PR_JOIN_GATE_UNRESOLVED_CODE) {
+      return "请先完成加入前置项";
+    }
     if (
       error.code === WECHAT_AUTH_REQUIRED_CODE ||
       error.code === WECHAT_BIND_REQUIRED_CODE
@@ -112,26 +92,36 @@ export const useSharedPRActions = ({
     }
     return null;
   });
+  const joinErrorCode = computed(() => {
+    const error = joinMutation.error.value as ApiError | null;
+    return error?.code ?? null;
+  });
 
-  const handleJoin = async (options: JoinActionOptions = {}) => {
+  const handleJoin = async () => {
     if (id.value === null) return;
 
     try {
       await ensureAuthSessionBootstrapped();
-      const result =
-        scenario === "ANCHOR"
-          ? await anchorJoinMutation.mutateAsync({
-              id: id.value,
-              bookingContactPhone: options.bookingContactPhone ?? null,
-            })
-          : await communityJoinMutation.mutateAsync({ id: id.value });
-      trackEvent("pr_join_success", {
+      const result = await joinMutation.mutateAsync({
+        id: id.value,
+      });
+      trackEvent("pr_join_result", {
         prId: id.value,
         ...analyticsPRContext.value,
+        actionResult: "success",
       });
       onActionSuccess?.();
       return result;
-    } catch {
+    } catch (error) {
+      trackEvent("pr_join_result", {
+        prId: id.value,
+        ...analyticsPRContext.value,
+        ...resolveTelemetryFailurePayload(
+          error,
+          "PR_JOIN_FAILED",
+          t("errors.joinRequestFailed"),
+        ),
+      });
       return null;
     }
   };
@@ -139,7 +129,9 @@ export const useSharedPRActions = ({
   const handleExit = async () => {
     if (id.value === null) return;
 
-    const result = await getExitMutation().mutateAsync({ id: id.value });
+    const result = await exitMutation.mutateAsync({
+      id: id.value,
+    });
     trackEvent("pr_exit_success", {
       prId: id.value,
       ...analyticsPRContext.value,
@@ -159,6 +151,7 @@ export const useSharedPRActions = ({
     joinPending,
     exitPending,
     joinErrorMessage,
+    joinErrorCode,
     handleJoin,
     handleExit,
   };
@@ -175,6 +168,8 @@ export const useSharedPRActions = ({
         return t("prPage.slotConfirmed", { partnerId: shortPartnerId.value });
       case "ATTENDED":
         return t("prPage.slotAttended", { partnerId: shortPartnerId.value });
+      case "PENDING":
+        return t("prPage.slotPending");
       case "EXITED":
         return t("prPage.slotExited");
       case "RELEASED":

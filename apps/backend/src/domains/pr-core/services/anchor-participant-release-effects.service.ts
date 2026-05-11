@@ -1,12 +1,12 @@
 import type { PRId, UserId } from "../../../entities";
-import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
+import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { resolveBookingContactState } from "../../pr-booking-support";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const bookingContactRepo = new AnchorPRBookingContactRepository();
+const bookingContactRepo = new PRBookingContactRepository();
 
 export type AnchorParticipantReleaseEffects = {
   creatorTransferredToUserId: UserId | null;
@@ -19,7 +19,7 @@ export const applyAnchorParticipantReleaseEffects = async (input: {
   releasedUserIds: UserId[];
 }): Promise<AnchorParticipantReleaseEffects> => {
   const request = await prRepo.findById(input.prId);
-  if (!request || request.prKind !== "ANCHOR") {
+  if (!request) {
     return {
       creatorTransferredToUserId: null,
       creatorTransferApplied: false,

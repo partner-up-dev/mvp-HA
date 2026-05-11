@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  canNotifyForUnreadWave,
   hasUnreadPRMessages,
   toPRMessageThreadItem,
 } from "./pr-message-thread.service";
+import { canNotifyForUnreadWave } from "../../notification/model/unread-wave";
 
 test("canNotifyForUnreadWave allows first notification when inbox state is missing", () => {
   assert.equal(canNotifyForUnreadWave(null), true);
@@ -54,6 +54,7 @@ test("toPRMessageThreadItem marks service-authored messages as system messages",
     authorUserId: "00000000-0000-0000-0000-000000000001",
     body: "预订已完成，请提前到场。",
     createdAt: new Date("2026-04-15T04:00:00.000Z"),
+    updatedAt: new Date("2026-04-15T04:00:00.000Z"),
     authorRole: "service",
     authorNickname: "运营后台",
     authorAvatar: null,

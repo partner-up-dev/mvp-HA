@@ -6,34 +6,23 @@
     @close="handleClose"
   >
     <div class="status-options">
-      <button
+      <ChoiceCard
         v-for="status in statusOptions"
         :key="status.value"
-        :class="['status-option', { active: selectedStatus === status.value }]"
+        class="status-option"
+        :active="selectedStatus === status.value"
         @click="selectedStatus = status.value"
       >
         {{ status.label }}
-      </button>
-    </div>
-
-    <div v-if="requiresPin" class="pin-input">
-      <label>{{ t("modifyStatusModal.pinLabel") }}</label>
-      <PinInput
-        v-model="modifyPin"
-        :auto-generate="false"
-        :allow-regenerate="false"
-        :show-label="false"
-        :show-info="false"
-      />
+      </ChoiceCard>
     </div>
 
     <div class="modal-actions">
-      <button class="cancel-btn" @click="handleClose">
+      <Button tone="outline" @click="handleClose">
         {{ t("common.cancel") }}
-      </button>
+      </Button>
       <Button
         :loading="isUpdatePending"
-        :disabled="requiresPin && (!modifyPin || modifyPin.length !== 4)"
         @click="handleConfirm"
       >
         {{ t("modifyStatusModal.confirmAction") }}
@@ -53,15 +42,10 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import Modal from "@/shared/ui/overlay/Modal.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
-import PinInput from "@/shared/ui/forms/PinInput.vue";
 import Button from "@/shared/ui/actions/Button.vue";
-import { useUpdateAnchorPRStatus } from "@/domains/pr/queries/useAnchorPR";
-import { useUpdateCommunityPRStatus } from "@/domains/pr/queries/useCommunityPR";
-import type { PRId, PRKind, PRStatusManual } from "@partner-up-dev/backend";
-import {
-  useUserSessionStore,
-  type AuthSessionPayload,
-} from "@/shared/auth/useUserSessionStore";
+import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
+import { useUpdatePRStatus } from "@/domains/pr/queries/usePRActions";
+import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
 
 interface StatusOption {
   value: PRStatusManual;
@@ -71,7 +55,6 @@ interface StatusOption {
 const props = defineProps<{
   open: boolean;
   prId: PRId;
-  scenario: PRKind;
 }>();
 const { t } = useI18n();
 
@@ -86,83 +69,48 @@ const statusOptions: StatusOption[] = [
   { value: "CLOSED", label: t("status.closed") },
 ];
 
-const communityUpdateMutation = useUpdateCommunityPRStatus();
-const anchorUpdateMutation = useUpdateAnchorPRStatus();
-const userSessionStore = useUserSessionStore();
+const updateMutation = useUpdatePRStatus();
 const selectedStatus = ref<PRStatusManual>("OPEN");
-const modifyPin = ref("");
-const requiresPin = computed(() => userSessionStore.role === "anonymous");
-const getUpdateMutation = () =>
-  props.scenario === "ANCHOR" ? anchorUpdateMutation : communityUpdateMutation;
-const isUpdatePending = computed(() => getUpdateMutation().isPending.value);
-const hasUpdateError = computed(() => getUpdateMutation().isError.value);
-const updateError = computed(() => getUpdateMutation().error.value);
+const isUpdatePending = computed(() => updateMutation.isPending.value);
+const updateError = computed(() => updateMutation.error.value);
+const hasUpdateError = computed(() => Boolean(updateError.value));
 
 const handleClose = () => {
   selectedStatus.value = "OPEN";
-  modifyPin.value = "";
   emit("close");
 };
 
 const handleConfirm = async () => {
-  const pin = requiresPin.value ? modifyPin.value : undefined;
-  if (requiresPin.value && (!pin || pin.length !== 4)) {
-    return;
-  }
-
-  const result = await getUpdateMutation().mutateAsync({
+  await updateMutation.mutateAsync({
     id: props.prId,
     status: selectedStatus.value,
-    pin,
   });
-
-  const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
-  if (authPayload) {
-    userSessionStore.applyAuthSession(authPayload);
-  }
 
   handleClose();
 };
 
 const resetUpdateMutation = () => {
-  getUpdateMutation().reset();
+  updateMutation.reset();
 };
 </script>
 
 <style lang="scss" scoped>
 .status-options {
   display: flex;
-  gap: var(--sys-spacing-sm);
-  margin-bottom: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  margin-bottom: var(--sys-spacing-medium);
 }
 
 .status-option {
   @include mx.pu-font(label-large);
-  @include mx.pu-selection-card(default);
   flex: 1;
   justify-content: center;
   min-width: 0;
-  cursor: pointer;
-
-  &.active {
-    @include mx.pu-selection-card(active);
-  }
-}
-
-.pin-input {
-  margin-bottom: var(--sys-spacing-med);
-
-  label {
-    @include mx.pu-font(label-medium);
-    display: block;
-    margin-bottom: var(--sys-spacing-xs);
-    color: var(--sys-color-on-surface-variant);
-  }
 }
 
 .modal-actions {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   :deep(.ui-button) {
     flex: 1;
@@ -170,11 +118,4 @@ const resetUpdateMutation = () => {
   }
 }
 
-.cancel-btn {
-  @include mx.pu-font(label-large);
-  @include mx.pu-rect-action(outline, default);
-  flex: 1;
-  min-width: 66px;
-  cursor: pointer;
-}
 </style>

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../lib/db";
 import {
   users,
@@ -8,6 +8,19 @@ import {
 } from "../entities/user";
 import { userReliability } from "../entities/user-reliability";
 import { userNotificationOpts } from "../entities/user-notification-opt";
+
+const OFFICIAL_ACCOUNT_FOLLOW_UPDATE_CHUNK_SIZE = 500;
+
+const uniqueNonEmptyStrings = (values: string[]): string[] => {
+  const unique = new Set<string>();
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      unique.add(trimmed);
+    }
+  }
+  return Array.from(unique);
+};
 
 export class UserRepository {
   async create(data: NewUser) {
@@ -133,5 +146,44 @@ export class UserRepository {
       .where(eq(users.id, userId))
       .returning();
     return result[0] ?? null;
+  }
+
+  async markOfficialAccountFollowersByOpenIds(
+    openIds: string[],
+    followedAt = new Date(),
+  ): Promise<number> {
+    const uniqueOpenIds = uniqueNonEmptyStrings(openIds);
+    if (uniqueOpenIds.length === 0) {
+      return 0;
+    }
+
+    let updatedCount = 0;
+    const updatedAt = new Date();
+    for (
+      let index = 0;
+      index < uniqueOpenIds.length;
+      index += OFFICIAL_ACCOUNT_FOLLOW_UPDATE_CHUNK_SIZE
+    ) {
+      const chunk = uniqueOpenIds.slice(
+        index,
+        index + OFFICIAL_ACCOUNT_FOLLOW_UPDATE_CHUNK_SIZE,
+      );
+      const updatedRows = await db
+        .update(users)
+        .set({
+          wechatOfficialAccountFollowedAt: followedAt,
+          updatedAt,
+        })
+        .where(
+          and(
+            inArray(users.openId, chunk),
+            isNull(users.wechatOfficialAccountFollowedAt),
+          ),
+        )
+        .returning({ id: users.id });
+      updatedCount += updatedRows.length;
+    }
+
+    return updatedCount;
   }
 }

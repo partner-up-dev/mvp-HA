@@ -30,16 +30,20 @@ Owns:
 ## Supporting Containers That Are Not Separate Technical Units
 
 - repo root workflows under `scripts/` and `.github/`
+- root system scenario tests under `tests/scenario/`
 - documentation under `docs/`
 - deployment descriptors such as `apps/backend/s.yaml`
 
 These support delivery and operations but do not own independent product behavior.
+`tests/scenario/` coordinates real frontend rendering, real backend HTTP, and
+isolated database state to verify cross-unit user journeys from the browser
+edge.
 
 ## Internal Subsystem Clusters
 
 Backend clusters:
 
-- PR lifecycle: `pr-core`, `pr-community`, `pr-anchor`
+- PR lifecycle and coordination: `pr`
 - event and booking support: `anchor-event`, `pr-booking-support`
 - identity and user: `auth`, `user`
 - admin and operations: admin management, POI/config/meta

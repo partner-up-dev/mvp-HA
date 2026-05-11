@@ -29,16 +29,6 @@
             <h2>{{ t("mePage.profile.title") }}</h2>
             <p>{{ t("mePage.profile.description") }}</p>
           </div>
-          <span
-            class="status-pill"
-            :class="{ 'status-pill--bound': wechatBound }"
-          >
-            {{
-              wechatBound
-                ? t("mePage.profile.wechatBound")
-                : t("mePage.profile.wechatUnbound")
-            }}
-          </span>
         </div>
 
         <div class="profile-panel">
@@ -101,129 +91,102 @@
             </div>
           </div>
         </div>
+
+        <div class="profile-meta-list">
+          <div class="profile-meta-row profile-meta-row--identity">
+            <div class="profile-meta-copy">
+              <span class="profile-meta-label">
+                {{ t("mePage.profile.wechatIdentityLabel") }}
+              </span>
+              <p>{{ wechatIdentityHintText }}</p>
+
+              <Chip
+                v-if="wechatBound"
+                class="status-pill"
+                tone="primary"
+                size="md"
+              >
+                {{ t("mePage.profile.wechatBound") }}
+              </Chip>
+              <Button
+                v-else
+                class="wechat-identity-action"
+                appearance="pill"
+                size="sm"
+                type="button"
+                :disabled="wechatIdentityActionDisabled"
+                :loading="wechatIdentityActionPending"
+                @click="handleStartWeChatIdentity"
+              >
+                {{ wechatIdentityActionLabel }}
+              </Button>
+            </div>
+          </div>
+
+          <div class="profile-meta-row profile-meta-row--compact">
+            <div class="profile-meta-copy">
+              <span class="profile-meta-label">{{
+                t("mePage.credentials.userIdLabel")
+              }}</span>
+              <code class="credential-value">{{ storedUserIdLabel }}</code>
+            </div>
+            <Button
+              class="credential-copy-button"
+              appearance="pill"
+              tone="ghost"
+              size="sm"
+              type="button"
+              :disabled="!storedUserId"
+              @click="handleCopyCredential(storedUserId)"
+            >
+              <span class="sr-only">
+                {{
+                  copiedField === "userId"
+                    ? t("common.copied")
+                    : t("common.copy")
+                }}
+              </span>
+              <span
+                :class="
+                  copiedField === 'userId'
+                    ? 'i-mdi:check'
+                    : 'i-mdi:content-copy'
+                "
+                aria-hidden="true"
+              ></span>
+            </Button>
+          </div>
+        </div>
       </SurfaceCard>
 
-      <template v-if="!userSessionStore.isAuthenticated">
-        <SurfaceCard gap="md">
-          <div class="section-header">
-            <div>
-              <h2>{{ t("mePage.wechatLogin.title") }}</h2>
-              <p>{{ wechatLoginHintText }}</p>
-            </div>
+      <div class="shortcut-grid">
+        <RouterLink class="shortcut-card" :to="{ name: 'pr-mine' }">
+          <div class="shortcut-card__copy">
+            <h2>{{ t("mePage.history.title") }}</h2>
+            <p>{{ t("mePage.history.description") }}</p>
           </div>
+          <span
+            class="shortcut-card__icon i-mdi:arrow-right"
+            aria-hidden="true"
+          ></span>
+        </RouterLink>
 
-          <Button
-            v-if="isWeChatEnv"
-            appearance="pill"
-            size="sm"
-            type="button"
-            :disabled="wechatLoginPending"
-            :loading="wechatLoginPending"
-            @click="handleStartWeChatLogin"
-          >
-            {{ t("mePage.wechatLogin.action") }}
-          </Button>
-        </SurfaceCard>
-
-        <SurfaceCard gap="md">
-          <div class="section-header">
-            <div>
-              <h2>{{ t("mePage.pinLogin.title") }}</h2>
-              <p>{{ t("mePage.pinLogin.description") }}</p>
-            </div>
+        <RouterLink
+          class="shortcut-card"
+          :to="{ name: 'poi-location-apply', query: { view: 'mine' } }"
+        >
+          <div class="shortcut-card__copy">
+            <h2>{{ t("mePage.locationApplications.title") }}</h2>
+            <p>{{ t("mePage.locationApplications.description") }}</p>
           </div>
+          <span
+            class="shortcut-card__icon i-mdi:arrow-right"
+            aria-hidden="true"
+          ></span>
+        </RouterLink>
+      </div>
 
-          <div class="pin-login-fields">
-            <FormField
-              :label="t('mePage.pinLogin.userIdLabel')"
-              for-id="me-login-user-id"
-            >
-              <input
-                id="me-login-user-id"
-                v-model="pinLoginDraft.userId"
-                class="text-input"
-                type="text"
-                :placeholder="t('mePage.pinLogin.userIdPlaceholder')"
-                autocomplete="username"
-                @keydown.enter.prevent="handlePinLogin"
-              />
-            </FormField>
-
-            <FormField
-              :label="t('mePage.pinLogin.pinLabel')"
-              for-id="me-login-user-pin"
-              :hint="
-                showPinFormatHint ? t('mePage.pinLogin.pinFormatHint') : null
-              "
-            >
-              <input
-                id="me-login-user-pin"
-                v-model="pinLoginDraft.userPin"
-                class="text-input"
-                type="password"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                maxlength="4"
-                :placeholder="t('mePage.pinLogin.pinPlaceholder')"
-                autocomplete="one-time-code"
-                @keydown.enter.prevent="handlePinLogin"
-              />
-            </FormField>
-          </div>
-
-          <div class="profile-actions">
-            <Button
-              appearance="pill"
-              size="sm"
-              type="button"
-              :disabled="!canSubmitPinLogin"
-              :loading="loginWithPinMutation.isPending.value"
-              @click="handlePinLogin"
-            >
-              {{ t("mePage.pinLogin.action") }}
-            </Button>
-            <Button
-              appearance="pill"
-              tone="outline"
-              size="sm"
-              type="button"
-              :disabled="registerLocalAccountMutation.isPending.value"
-              :loading="registerLocalAccountMutation.isPending.value"
-              @click="handleRegisterLocalAccount"
-            >
-              {{ t("mePage.register.action") }}
-            </Button>
-          </div>
-        </SurfaceCard>
-      </template>
-
-      <template v-else>
-        <SurfaceCard gap="md">
-          <div class="section-header">
-            <div>
-              <h2>{{ t("mePage.wechat.title") }}</h2>
-              <p>{{ bindHintText }}</p>
-            </div>
-          </div>
-
-          <Button
-            appearance="pill"
-            size="sm"
-            type="button"
-            :disabled="bindActionDisabled"
-            :loading="startWeChatBindMutation.isPending.value"
-            @click="handleStartWeChatBind"
-          >
-            {{
-              startWeChatBindMutation.isPending.value
-                ? t("mePage.wechat.bindingAction")
-                : wechatBound
-                  ? t("mePage.wechat.boundAction")
-                  : t("mePage.wechat.bindAction")
-            }}
-          </Button>
-        </SurfaceCard>
-
+      <template v-if="userSessionStore.isAuthenticated">
         <WeChatNotificationSubscriptionsCard
           :title="t('mePage.reminder.title')"
         >
@@ -233,90 +196,6 @@
           />
         </WeChatNotificationSubscriptionsCard>
 
-        <SurfaceCard gap="md">
-          <div class="section-header">
-            <div>
-              <h2>{{ t("mePage.credentials.title") }}</h2>
-              <p>{{ t("mePage.credentials.description") }}</p>
-            </div>
-          </div>
-
-          <div class="credential-list">
-            <div class="credential-item">
-              <div class="credential-copy">
-                <span class="credential-label">{{
-                  t("mePage.credentials.userIdLabel")
-                }}</span>
-                <code class="credential-value">{{ storedUserIdLabel }}</code>
-              </div>
-              <Button
-                appearance="pill"
-                tone="outline"
-                size="sm"
-                type="button"
-                :disabled="!storedUserId"
-                @click="handleCopyCredential('userId', storedUserId)"
-              >
-                {{
-                  copiedField === "userId" ? t("common.copied") : t("common.copy")
-                }}
-              </Button>
-            </div>
-
-            <div class="credential-item">
-              <div class="credential-copy">
-                <span class="credential-label">{{
-                  t("mePage.credentials.userPinLabel")
-                }}</span>
-                <code class="credential-value">{{ displayedUserPin }}</code>
-              </div>
-              <div class="credential-actions">
-                <Button
-                  appearance="pill"
-                  tone="outline"
-                  size="sm"
-                  type="button"
-                  :disabled="!storedUserPin"
-                  @click="pinVisible = !pinVisible"
-                >
-                  {{
-                    pinVisible
-                      ? t("mePage.credentials.hidePin")
-                      : t("mePage.credentials.showPin")
-                  }}
-                </Button>
-                <Button
-                  appearance="pill"
-                  tone="outline"
-                  size="sm"
-                  type="button"
-                  :disabled="!storedUserPin"
-                  @click="handleCopyCredential('userPin', storedUserPin)"
-                >
-                  {{
-                    copiedField === "userPin"
-                      ? t("common.copied")
-                      : t("common.copy")
-                  }}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </SurfaceCard>
-
-        <RouterLink class="history-link" :to="{ name: 'pr-mine' }">
-          <div class="history-link__copy">
-            <h2>{{ t("mePage.history.title") }}</h2>
-            <p>{{ t("mePage.history.description") }}</p>
-          </div>
-          <span class="history-link__action">
-            {{ t("mePage.history.action") }}
-            <span
-              class="history-link__icon i-mdi:arrow-right"
-              aria-hidden="true"
-            ></span>
-          </span>
-        </RouterLink>
       </template>
     </div>
 
@@ -327,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
@@ -340,6 +219,7 @@ import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import FormField from "@/shared/ui/forms/FormField.vue";
 import Avatar from "@/shared/ui/identity/Avatar.vue";
 import Button from "@/shared/ui/actions/Button.vue";
+import Chip from "@/shared/ui/display/Chip.vue";
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
@@ -347,13 +227,9 @@ import { useCurrentUserProfile } from "@/domains/user/queries/useCurrentUserProf
 import { useUpdateCurrentUserProfile } from "@/domains/user/queries/useUpdateCurrentUserProfile";
 import { useUpdateCurrentUserAvatar } from "@/domains/user/queries/useUpdateCurrentUserAvatar";
 import { useStartWeChatBind } from "@/domains/user/queries/useStartWeChatBind";
-import { useRegisterLocalAccount } from "@/domains/user/queries/useRegisterLocalAccount";
-import { useLoginWithPin } from "@/domains/user/queries/useLoginWithPin";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { copyToClipboard } from "@/lib/clipboard";
 import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
-
-const PIN_PATTERN = /^\d{4}$/;
 
 const route = useRoute();
 const { t } = useI18n();
@@ -363,20 +239,13 @@ const currentUserQuery = useCurrentUserProfile();
 const updateProfileMutation = useUpdateCurrentUserProfile();
 const updateAvatarMutation = useUpdateCurrentUserAvatar();
 const startWeChatBindMutation = useStartWeChatBind();
-const registerLocalAccountMutation = useRegisterLocalAccount();
-const loginWithPinMutation = useLoginWithPin();
 
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const nicknameDraft = ref("");
-const pinVisible = ref(false);
-const copiedField = ref<"userId" | "userPin" | null>(null);
+const copiedField = ref<"userId" | null>(null);
 const copyErrorMessage = ref<string | null>(null);
 const notificationSubscriptionsPanelError = ref<Error | null>(null);
 const wechatLoginPending = ref(false);
-const pinLoginDraft = reactive({
-  userId: "",
-  userPin: "",
-});
 
 const currentUser = computed(() => currentUserQuery.data.value ?? null);
 const canEditProfile = computed(
@@ -385,35 +254,11 @@ const canEditProfile = computed(
 const avatarUrl = computed(() => currentUser.value?.avatar ?? null);
 const wechatBound = computed(() => currentUser.value?.wechatBound ?? false);
 const storedUserId = computed(() => userSessionStore.userId ?? null);
-const storedUserPin = computed(() => userSessionStore.userPin ?? null);
 const storedUserIdLabel = computed(
   () => storedUserId.value ?? t("mePage.credentials.missingUserId"),
 );
-const displayedUserPin = computed(() => {
-  if (!storedUserPin.value) return t("mePage.credentials.missingUserPin");
-  if (pinVisible.value) return storedUserPin.value;
-  return "•".repeat(storedUserPin.value.length);
-});
 const isWeChatEnv = computed(() =>
   typeof navigator === "undefined" ? false : isWeChatBrowser(),
-);
-const wechatLoginHintText = computed(() =>
-  isWeChatEnv.value
-    ? t("mePage.wechatLogin.wechatHint")
-    : t("mePage.wechatLogin.nonWechatHint"),
-);
-const normalizedPinLoginUserId = computed(() => pinLoginDraft.userId.trim());
-const normalizedPinLoginPin = computed(() => pinLoginDraft.userPin.trim());
-const showPinFormatHint = computed(
-  () =>
-    normalizedPinLoginPin.value.length > 0 &&
-    !PIN_PATTERN.test(normalizedPinLoginPin.value),
-);
-const canSubmitPinLogin = computed(
-  () =>
-    !loginWithPinMutation.isPending.value &&
-    normalizedPinLoginUserId.value.length > 0 &&
-    PIN_PATTERN.test(normalizedPinLoginPin.value),
 );
 const bindFeedbackCode = computed(() => {
   const raw = route.query.wechatBind;
@@ -448,19 +293,32 @@ const canSaveNickname = computed(() => {
     !updateProfileMutation.isPending.value
   );
 });
-const bindActionDisabled = computed(
+const wechatIdentityActionPending = computed(() =>
+  userSessionStore.isAuthenticated
+    ? startWeChatBindMutation.isPending.value
+    : wechatLoginPending.value,
+);
+const wechatIdentityActionLabel = computed(() =>
+  wechatIdentityActionPending.value
+    ? t("mePage.wechat.bindingAction")
+    : t("mePage.wechat.bindAction"),
+);
+const wechatIdentityActionDisabled = computed(
   () =>
-    currentUser.value === null ||
     wechatBound.value ||
     !isWeChatEnv.value ||
-    startWeChatBindMutation.isPending.value,
+    wechatIdentityActionPending.value ||
+    (userSessionStore.isAuthenticated && currentUser.value === null),
 );
-const bindHintText = computed(() => {
+const wechatIdentityHintText = computed(() => {
   if (wechatBound.value) {
     return t("mePage.wechat.boundHint");
   }
   if (!isWeChatEnv.value) {
     return t("mePage.wechat.nonWechatHint");
+  }
+  if (!userSessionStore.isAuthenticated) {
+    return t("mePage.wechatLogin.wechatHint");
   }
   return t("mePage.wechat.unboundHint");
 });
@@ -471,8 +329,6 @@ const errorMessage = computed(() => {
     updateProfileMutation.error.value,
     updateAvatarMutation.error.value,
     startWeChatBindMutation.error.value,
-    registerLocalAccountMutation.error.value,
-    loginWithPinMutation.error.value,
     notificationSubscriptionsPanelError.value,
   ];
 
@@ -522,19 +378,10 @@ const handleStartWeChatLogin = () => {
   redirectToWeChatOAuthLogin(window.location.href);
 };
 
-const handlePinLogin = async () => {
-  if (!canSubmitPinLogin.value) return;
-
-  const payload = await loginWithPinMutation.mutateAsync({
-    userId: normalizedPinLoginUserId.value,
-    userPin: normalizedPinLoginPin.value,
-  });
-  userSessionStore.applyAuthSession(payload);
-  pinLoginDraft.userPin = "";
-};
-
 const handleStartWeChatBind = async () => {
-  if (bindActionDisabled.value || typeof window === "undefined") return;
+  if (wechatIdentityActionDisabled.value || typeof window === "undefined") {
+    return;
+  }
 
   const result = await startWeChatBindMutation.mutateAsync({
     returnTo: window.location.href,
@@ -542,27 +389,29 @@ const handleStartWeChatBind = async () => {
   window.location.assign(result.authorizeUrl);
 };
 
-const handleRegisterLocalAccount = async () => {
-  const payload = await registerLocalAccountMutation.mutateAsync();
-  userSessionStore.applyAuthSession(payload);
+const handleStartWeChatIdentity = async () => {
+  if (wechatIdentityActionDisabled.value) return;
+  if (!userSessionStore.isAuthenticated) {
+    handleStartWeChatLogin();
+    return;
+  }
+
+  await handleStartWeChatBind();
 };
 
 const handleNotificationSubscriptionErrorChange = (error: Error | null) => {
   notificationSubscriptionsPanelError.value = error;
 };
 
-const handleCopyCredential = async (
-  field: "userId" | "userPin",
-  value: string | null,
-) => {
+const handleCopyCredential = async (value: string | null) => {
   if (!value) return;
 
   try {
     await copyToClipboard(value);
     copyErrorMessage.value = null;
-    copiedField.value = field;
+    copiedField.value = "userId";
     window.setTimeout(() => {
-      if (copiedField.value === field) {
+      if (copiedField.value === "userId") {
         copiedField.value = null;
       }
     }, 1500);
@@ -577,18 +426,14 @@ const handleCopyCredential = async (
 .page-main {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-lg);
-}
-
-.history-link {
-  @include mx.pu-surface-card(section);
+  gap: var(--sys-spacing-large);
 }
 
 .section-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   h2,
   p {
@@ -601,77 +446,89 @@ const handleCopyCredential = async (
   }
 
   p {
-    margin-top: var(--sys-spacing-xs);
+    margin-top: var(--sys-spacing-xsmall);
     @include mx.pu-font(body-medium);
     color: var(--sys-color-on-surface-variant);
   }
 }
 
 .status-pill {
-  @include mx.pu-pill-badge(secondary);
   flex-shrink: 0;
-}
-
-.status-pill--bound {
-  @include mx.pu-pill-badge(primary);
 }
 
 .profile-panel {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
   align-items: center;
 }
 
-.profile-form,
-.pin-login-fields {
+.profile-form {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.pin-login-fields {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
 }
 
 .text-input {
-  @include mx.pu-field-shell;
+  width: 100%;
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
-.profile-actions,
-.credential-actions {
+.profile-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
-.credential-list {
+.profile-meta-list {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
+  padding-top: var(--sys-spacing-small);
+  border-top: 1px solid var(--sys-color-outline-variant);
 }
 
-.credential-item {
+.profile-meta-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-md);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
-  background: var(--sys-color-surface-container-lowest);
+  gap: var(--sys-spacing-small);
 }
 
-.credential-copy {
+.profile-meta-row--compact {
+  align-items: flex-start;
+}
+
+.profile-meta-row--identity {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.profile-meta-copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
+
+  p {
+    @include mx.pu-font(body-small);
+    margin: 0;
+    color: var(--sys-color-on-surface-variant);
+  }
 }
 
-.credential-label {
+.profile-meta-label {
   @include mx.pu-font(label-medium);
   color: var(--sys-color-on-surface-variant);
+}
+
+.wechat-identity-action {
+  margin-top: var(--sys-spacing-xsmall);
+  align-self: flex-start;
 }
 
 .credential-value {
@@ -680,21 +537,42 @@ const handleCopyCredential = async (
   overflow-wrap: anywhere;
 }
 
-.history-link {
+.credential-copy-button {
+  flex-shrink: 0;
+  width: var(--sys-size-medium);
+  min-height: var(--sys-size-medium);
+  padding: 0;
+
+  :deep(.ui-button__content) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  :deep([class^="i-"]),
+  :deep([class*=" i-"]) {
+    @include mx.pu-icon(small);
+  }
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sys-spacing-small);
+}
+
+.shortcut-card {
   text-decoration: none;
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: var(--sys-spacing-sm);
-  align-items: center;
+  gap: var(--sys-spacing-small);
+  align-items: start;
   color: inherit;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    @include mx.pu-elevation(2);
-  }
+  min-height: 8rem;
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
+  border: 1px solid var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container);
 
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
@@ -702,10 +580,11 @@ const handleCopyCredential = async (
   }
 }
 
-.history-link__copy {
+.shortcut-card__copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
+  min-width: 0;
 
   h2,
   p {
@@ -713,26 +592,22 @@ const handleCopyCredential = async (
   }
 
   h2 {
-    @include mx.pu-font(title-medium);
+    @include mx.pu-font(title-small);
     color: var(--sys-color-on-surface);
+    overflow-wrap: anywhere;
   }
 
   p {
-    @include mx.pu-font(body-medium);
+    @include mx.pu-font(body-small);
     color: var(--sys-color-on-surface-variant);
+    overflow-wrap: anywhere;
   }
 }
 
-.history-link__action {
-  @include mx.pu-font(label-large);
-  color: var(--sys-color-primary);
-}
-
-.history-link__icon {
-  margin-left: var(--sys-spacing-xs);
+.shortcut-card__icon {
   display: inline-block;
-  vertical-align: middle;
   @include mx.pu-icon(medium);
+  color: var(--sys-color-primary);
 }
 
 .sr-only {
@@ -748,9 +623,7 @@ const handleCopyCredential = async (
 }
 
 @media (max-width: 768px) {
-  .profile-panel,
-  .history-link,
-  .credential-item {
+  .profile-panel {
     grid-template-columns: 1fr;
   }
 
@@ -758,8 +631,8 @@ const handleCopyCredential = async (
     justify-items: start;
   }
 
-  .credential-item {
-    align-items: stretch;
+  .profile-meta-row {
+    align-items: flex-start;
   }
 }
 </style>

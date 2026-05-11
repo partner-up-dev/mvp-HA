@@ -6,34 +6,37 @@ import {
 import { trackEvent } from "@/shared/telemetry/track";
 import { captureSpmAttributionFromUrl } from "@/shared/telemetry/spm-attribution";
 import { getStoredAdminHasAccess } from "@/domains/admin/model/admin-session-storage";
+import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
 
 const HomePage = () => import("@/pages/HomePage.vue");
 const MePage = () => import("@/pages/MePage.vue");
+const LocationApplicationPage = () =>
+  import("@/pages/LocationApplicationPage.vue");
 const MyPRsPage = () => import("@/pages/MyPRsPage.vue");
-const CommunityPRPage = () => import("@/pages/CommunityPRPage.vue");
-const CommunityPRCreatePage = () =>
-  import("@/pages/CommunityPRCreatePage.vue");
-const AnchorPRPage = () => import("@/pages/AnchorPRPage.vue");
-const AnchorPRMessagesPage = () =>
-  import("@/pages/AnchorPRMessagesPage.vue");
+const PRCreatePage = () => import("@/pages/PRCreatePage.vue");
+const PRPage = () => import("@/pages/PRPage.vue");
+const PRMessagesPage = () => import("@/pages/PRMessagesPage.vue");
 const UserProfilePage = () => import("@/pages/UserProfilePage.vue");
-const AnchorPRBookingSupportPage = () =>
-  import("@/pages/AnchorPRBookingSupportPage.vue");
+const PRBookingSupportPage = () =>
+  import("@/pages/PRBookingSupportPage.vue");
 const AdminLoginPage = () => import("@/pages/AdminLoginPage.vue");
-const AdminAnchorPRPage = () => import("@/pages/AdminAnchorPRPage.vue");
-const AdminAnchorPRMessagesPage = () =>
-  import("@/pages/AdminAnchorPRMessagesPage.vue");
+const AdminAnchorEventPage = () =>
+  import("@/pages/AdminAnchorEventPage.vue");
+const AdminPRPage = () => import("@/pages/AdminPRPage.vue");
 const AdminBookingSupportPage = () =>
   import("@/pages/AdminBookingSupportPage.vue");
 const AdminBookingExecutionPage = () =>
   import("@/pages/AdminBookingExecutionPage.vue");
 const AdminPoisPage = () => import("@/pages/AdminPoisPage.vue");
+const AdminFeedbackQuestionnairesPage = () =>
+  import("@/pages/AdminFeedbackQuestionnairesPage.vue");
 const ContactAuthorPage = () => import("@/pages/ContactAuthorPage.vue");
 const ContactSupportPage = () => import("@/pages/ContactSupportPage.vue");
 const AboutPage = () => import("@/pages/AboutPage.vue");
 const EventPlazaPage = () => import("@/pages/EventPlazaPage.vue");
-const AnchorPRSearchPage = () => import("@/pages/AnchorPRSearchPage.vue");
+const EventPRSearchPage = () => import("@/pages/EventPRSearchPage.vue");
 const AnchorEventPage = () => import("@/pages/AnchorEventPage.vue");
+const AnchorEventLandingPage = () => import("@/pages/AnchorEventLandingPage.vue");
 const WeChatOAuthCallbackPage = () =>
   import("@/pages/WeChatOAuthCallbackPage.vue");
 
@@ -55,6 +58,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/locations/apply",
+    name: "poi-location-apply",
+    component: LocationApplicationPage,
+    meta: {
+      wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
+    },
+  },
+  {
     path: "/pr/mine",
     name: "pr-mine",
     component: MyPRsPage,
@@ -63,52 +75,43 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/cpr/:id",
-    name: "community-pr",
-    component: CommunityPRPage,
-    meta: {
-      wechatSharePolicy: "route",
-    },
-  },
-  {
-    path: "/cpr/:id/partners/:partnerId",
-    name: "community-partner-profile",
-    component: UserProfilePage,
-    meta: {
-      wechatSharePolicy: "skip",
-    },
-  },
-  {
-    path: "/apr/:id",
-    name: "anchor-pr",
-    component: AnchorPRPage,
+    path: "/pr/:id",
+    name: "pr-detail",
+    component: PRPage,
     meta: {
       wechatSharePolicy: "route",
       wechatAutoLoginPolicy: "route",
     },
   },
   {
-    path: "/apr/:id/partners/:partnerId",
-    name: "anchor-partner-profile",
+    path: "/pr/new",
+    name: "pr-create",
+    component: PRCreatePage,
+    meta: {
+      wechatSharePolicy: "route",
+    },
+  },
+  {
+    path: "/pr/:id/partners/:partnerId",
+    name: "pr-partner-profile",
     component: UserProfilePage,
     meta: {
       wechatSharePolicy: "skip",
-      wechatAutoLoginPolicy: "skip",
     },
   },
   {
-    path: "/apr/:id/messages",
-    name: "anchor-pr-messages",
-    component: AnchorPRMessagesPage,
+    path: "/pr/:id/messages",
+    name: "pr-messages",
+    component: PRMessagesPage,
     meta: {
       wechatSharePolicy: "skip",
       wechatAutoLoginPolicy: "skip",
     },
   },
   {
-    path: "/apr/:id/booking-support",
-    name: "anchor-pr-booking-support",
-    component: AnchorPRBookingSupportPage,
+    path: "/pr/:id/booking-support",
+    name: "pr-booking-support",
+    component: PRBookingSupportPage,
     meta: {
       wechatSharePolicy: "skip",
       wechatAutoLoginPolicy: "skip",
@@ -123,22 +126,27 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/admin/anchor-pr",
-    name: "admin-anchor-pr",
-    component: AdminAnchorPRPage,
+    path: "/admin/anchor-events",
+    name: "admin-anchor-events",
+    component: AdminAnchorEventPage,
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,
     },
   },
   {
-    path: "/admin/anchor-pr-messages",
-    name: "admin-anchor-pr-messages",
-    component: AdminAnchorPRMessagesPage,
+    path: "/admin/pr",
+    name: "admin-pr",
+    component: AdminPRPage,
     meta: {
       wechatSharePolicy: "route",
       requiresAdminAuth: true,
     },
+  },
+  {
+    path: "/admin/pr-messages",
+    name: "admin-pr-messages",
+    redirect: { name: "admin-pr" },
   },
   {
     path: "/admin/booking-support",
@@ -168,11 +176,12 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/cpr/new",
-    name: "community-pr-create",
-    component: CommunityPRCreatePage,
+    path: "/admin/feedback-questionnaires",
+    name: "admin-feedback-questionnaires",
+    component: AdminFeedbackQuestionnairesPage,
     meta: {
       wechatSharePolicy: "route",
+      requiresAdminAuth: true,
     },
   },
   {
@@ -209,8 +218,8 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: "/events/search",
-    name: "anchor-pr-search",
-    component: AnchorPRSearchPage,
+    name: "event-pr-search",
+    component: EventPRSearchPage,
     meta: {
       wechatSharePolicy: "route",
     },
@@ -219,6 +228,15 @@ const routes: RouteRecordRaw[] = [
     path: "/events/:eventId",
     name: "anchor-event",
     component: AnchorEventPage,
+    meta: {
+      wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
+    },
+  },
+  {
+    path: "/e/:eventId",
+    name: "anchor-event-landing",
+    component: AnchorEventLandingPage,
     meta: {
       wechatSharePolicy: "skip",
       wechatAutoLoginPolicy: "skip",
@@ -282,7 +300,7 @@ router.afterEach((to) => {
   }
 
   trackEvent("page_view", {
-    page: to.fullPath,
+    page: sanitizeSensitiveRoutePath(to.fullPath),
     routeName: typeof to.name === "string" ? to.name : undefined,
     prId: parsePositiveInt(to.params.id),
   });

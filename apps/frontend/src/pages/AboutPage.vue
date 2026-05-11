@@ -88,13 +88,13 @@
           </div>
         </div>
 
-        <button
-          class="wechat-follow-action"
+        <Button
+          appearance="pill"
           type="button"
           @click="showOfficialAccountQrModal = true"
         >
           {{ t("home.landing.officialAccountAction") }}
-        </button>
+        </Button>
       </section>
 
       <p
@@ -145,6 +145,7 @@ import { frontendBuildInfo } from "@/shared/meta/build-info";
 import { useBackendBuildMetadata } from "@/shared/meta/queries/useBackendBuildMetadata";
 import OfficialAccountQrModal from "@/shared/wechat/OfficialAccountQrModal.vue";
 import Modal from "@/shared/ui/overlay/Modal.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 
 const { t } = useI18n();
@@ -226,7 +227,7 @@ const backendCommitHash = computed(() => {
   width: min(100%, 42rem);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .about-list {
@@ -234,16 +235,18 @@ const backendCommitHash = computed(() => {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .about-item {
-  @include mx.pu-surface-card(section);
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-medium);
+  background: var(--sys-color-surface-container);
 
   dt {
     @include mx.pu-font(label-large);
     color: var(--sys-color-on-surface-variant);
-    margin: 0 0 var(--sys-spacing-xs);
+    margin: 0 0 var(--sys-spacing-xsmall);
   }
 
   dd {
@@ -256,8 +259,8 @@ const backendCommitHash = computed(() => {
   code {
     @include mx.pu-font(label-medium);
     display: inline-block;
-    padding: var(--sys-spacing-xs);
-    border-radius: var(--sys-radius-sm);
+    padding: var(--sys-spacing-xsmall);
+    border-radius: var(--sys-radius-small);
     background: var(--sys-color-surface-container-low);
     color: var(--sys-color-on-surface);
   }
@@ -265,13 +268,13 @@ const backendCommitHash = computed(() => {
 
 .about-beta-groups {
   display: grid;
-  gap: var(--sys-spacing-sm);
-  scroll-margin-top: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-small);
+  scroll-margin-top: var(--sys-spacing-large);
 }
 
 .about-beta-groups__header {
   display: grid;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h2,
   p {
@@ -313,9 +316,9 @@ const backendCommitHash = computed(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) 0;
+  padding: var(--sys-spacing-small) 0;
 }
 
 .about-beta-groups-row + .about-beta-groups-row {
@@ -331,7 +334,7 @@ const backendCommitHash = computed(() => {
 .about-beta-groups-row__value {
   appearance: none;
   border: 0;
-  padding: var(--sys-spacing-xs);
+  padding: var(--sys-spacing-xsmall);
   background: transparent;
   @include mx.pu-font(label-large);
   color: var(--sys-color-primary);
@@ -343,13 +346,13 @@ const backendCommitHash = computed(() => {
 .about-beta-groups-row__value:focus-visible {
   outline: 2px solid var(--sys-color-primary);
   outline-offset: 2px;
-  border-radius: var(--sys-radius-xs);
+  border-radius: var(--sys-radius-xsmall);
 }
 
 .about-beta-group-modal {
   display: grid;
   justify-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .about-beta-group-modal__description,
@@ -362,13 +365,7 @@ const backendCommitHash = computed(() => {
 
 .about-beta-group-modal__qr {
   width: min(100%, 260px);
-  border-radius: var(--sys-radius-md);
-}
-
-.wechat-follow-action {
-  @include mx.pu-font(label-large);
-  @include mx.pu-pill-action(solid-primary);
-  width: fit-content;
+  border-radius: var(--sys-radius-medium);
 }
 
 .repo-link {
@@ -382,7 +379,7 @@ const backendCommitHash = computed(() => {
   &:focus-visible {
     outline: 2px solid var(--sys-color-primary);
     outline-offset: 2px;
-    border-radius: var(--sys-radius-xs);
+    border-radius: var(--sys-radius-xsmall);
   }
 }
 

@@ -1,9 +1,12 @@
 <template>
   <footer class="page-footer">
-    <button
-      class="save-btn"
-      type="button"
+    <Button
+      v-if="allowDraftSave"
+      tone="outline"
+      type="submit"
+      :form="formId"
       :disabled="pending"
+      data-testid="pr-create.save-draft"
       @click="emit('submit-as', 'DRAFT')"
     >
       {{
@@ -11,11 +14,12 @@
           ? t("createPage.savePending")
           : t("common.save")
       }}
-    </button>
-    <button
-      class="create-btn"
-      type="button"
+    </Button>
+    <Button
+      type="submit"
+      :form="formId"
       :disabled="pending"
+      data-testid="pr-create.publish"
       @click="emit('submit-as', 'PUBLISH')"
     >
       {{
@@ -23,17 +27,20 @@
           ? t("createPage.createPending")
           : t("common.create")
       }}
-    </button>
+    </Button>
   </footer>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import type { CreateSubmissionMode } from "@/domains/pr/use-cases/useCommunityPRCreateFlow";
+import type { CreateSubmissionMode } from "@/domains/pr/use-cases/usePRCreateFlow";
+import Button from "@/shared/ui/actions/Button.vue";
 
 defineProps<{
   pending: boolean;
   pendingStatus: CreateSubmissionMode;
+  allowDraftSave: boolean;
+  formId: string;
 }>();
 
 const emit = defineEmits<{
@@ -46,23 +53,12 @@ const { t } = useI18n();
 <style lang="scss" scoped>
 .page-footer {
   display: flex;
-  gap: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-small);
+  margin-top: var(--sys-spacing-large);
 }
 
-.save-btn,
-.create-btn {
-  @include mx.pu-font(label-large);
+.page-footer > button {
   flex: 1;
   min-width: 0;
-  cursor: pointer;
-}
-
-.save-btn {
-  @include mx.pu-rect-action(outline, default);
-}
-
-.create-btn {
-  @include mx.pu-rect-action(primary, default);
 }
 </style>

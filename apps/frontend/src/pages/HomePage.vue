@@ -28,7 +28,7 @@
           </header>
           <RouterLink
             class="creator-entry"
-            :to="{ name: 'community-pr-create' }"
+            :to="{ name: 'pr-create' }"
             @click="handleFallbackCreateClick"
           >
             <div class="creator-copy">
@@ -80,7 +80,7 @@ const handleHeroValuesReveal = () => {
 const handleFallbackCreateClick = () => {
   trackEvent("home_create_entry_click", {
     source: "fallback_section",
-    target: "community-pr-create",
+    target: "pr-create",
   });
 };
 
@@ -108,6 +108,25 @@ onUnmounted(() => {
   isolation: isolate;
   overflow-x: clip;
   min-height: var(--pu-vh);
+  --landing-section-gap: clamp(1rem, 4vw, 1.9rem);
+  --landing-section-gap-compact: clamp(1.35rem, 5vw, 2.3rem);
+  --landing-section-padding-block: clamp(1.25rem, 5vw, 3rem);
+  --landing-section-padding-inline-compact: clamp(1rem, 4.8vw, 1.3rem);
+  --landing-panel-gap: clamp(1rem, 4vw, 1.9rem);
+  --landing-panel-padding: clamp(1rem, 3.6vw, 1.4rem);
+  --landing-panel-padding-compact: clamp(1.12rem, 4.8vw, 1.58rem);
+  --landing-entry-padding: clamp(0.95rem, 3.8vw, 1.45rem);
+  --landing-entry-padding-compact: clamp(1.1rem, 4.8vw, 1.52rem);
+  --landing-hero-padding-block: clamp(2.5rem, 9vw, 4.5rem);
+  --landing-hero-padding-block-compact: clamp(2.7rem, 10.5vw, 4.7rem);
+  --landing-hero-gap-compact: clamp(0.9rem, 4vw, 1.3rem);
+  --landing-hero-title-measure: 9.5ch;
+  --landing-hero-title-measure-compact: 8.8ch;
+  --landing-hero-subtitle-measure: 30ch;
+  --landing-hero-subtitle-measure-compact: 25ch;
+  --landing-footer-gap: clamp(1.3rem, 4.8vw, 2rem);
+  --landing-footer-copy-measure: 34ch;
+  --landing-value-panel-max-height: 26rem;
 }
 
 .home-page::before,
@@ -159,10 +178,10 @@ onUnmounted(() => {
   scroll-snap-align: start;
   scroll-snap-stop: normal;
   justify-content: center;
-  gap: var(--dcs-space-landing-section-gap);
-  padding-block: var(--dcs-space-landing-section-padding-block);
-  padding-left: calc(var(--sys-spacing-med) + var(--pu-safe-left));
-  padding-right: calc(var(--sys-spacing-med) + var(--pu-safe-right));
+  gap: var(--landing-section-gap);
+  padding-block: var(--landing-section-padding-block);
+  padding-left: calc(var(--sys-spacing-medium) + var(--pu-safe-left));
+  padding-right: calc(var(--sys-spacing-medium) + var(--pu-safe-right));
   opacity: 0;
   transform: translate3d(0, 0.8rem, 0);
   animation: section-enter 620ms cubic-bezier(0.22, 0.72, 0.2, 1) forwards;
@@ -172,7 +191,7 @@ onUnmounted(() => {
   min-height: var(--pu-vh);
   justify-content: space-between;
   padding-top: calc(
-    var(--dcs-space-landing-section-padding-block) + var(--pu-safe-top)
+    var(--landing-section-padding-block) + var(--pu-safe-top)
   );
   animation-delay: 40ms;
 }
@@ -205,20 +224,19 @@ onUnmounted(() => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--dcs-space-landing-panel-gap);
+  gap: var(--landing-panel-gap);
 }
 
 .section-stack--creator {
   max-width: min(100%, 32rem);
-  padding-top: var(--sys-spacing-sm);
-  border-top: 1px dashed
-    color-mix(in srgb, var(--sys-color-outline) 44%, transparent);
+  padding-top: var(--sys-spacing-small);
+  border-top: 1px dashed var(--sys-color-outline-variant);
 }
 
 .section-header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h2 {
     @include mx.pu-font(headline-small);
@@ -241,13 +259,13 @@ onUnmounted(() => {
 .section-paper {
   width: 100%;
   min-width: 0;
-  border-radius: var(--sys-radius-lg);
+  border-radius: var(--sys-radius-large);
   border: 1px solid var(--sys-color-outline);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: var(--dcs-space-landing-panel-gap);
-  padding: var(--dcs-space-landing-panel-padding);
+  gap: var(--landing-panel-gap);
+  padding: var(--landing-panel-padding);
   @include mx.pu-elevation(1);
 }
 
@@ -260,19 +278,14 @@ onUnmounted(() => {
 
 .creator-entry {
   text-decoration: none;
-  padding: var(--dcs-space-landing-entry-padding);
+  padding: var(--landing-entry-padding);
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: var(--sys-spacing-sm);
-  border: 1px dashed
-    color-mix(in srgb, var(--sys-color-outline) 58%, transparent);
-  border-radius: var(--sys-radius-med);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-low) 72%,
-    transparent
-  );
+  gap: var(--sys-spacing-small);
+  border: 1px dashed var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-medium);
+  background: var(--sys-color-surface-container-low);
   transition:
     transform 210ms ease,
     border-color 210ms ease,
@@ -280,12 +293,8 @@ onUnmounted(() => {
 
   &:hover {
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--sys-color-primary) 45%, transparent);
-    background: color-mix(
-      in srgb,
-      var(--sys-color-primary-container) 34%,
-      var(--sys-color-surface-container-low)
-    );
+    border-color: var(--sys-color-primary);
+    background: var(--sys-color-primary-container);
   }
 
   &:active {
@@ -301,7 +310,7 @@ onUnmounted(() => {
 .creator-copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 
   h3 {
     @include mx.pu-font(headline-small);
@@ -325,7 +334,7 @@ onUnmounted(() => {
     color 180ms ease;
 
   .creator-action-icon {
-    margin-left: var(--sys-spacing-xs);
+    margin-left: var(--sys-spacing-xsmall);
     display: inline-block;
     vertical-align: middle;
     @include mx.pu-icon(medium);
@@ -338,19 +347,19 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .home-section {
-    gap: var(--dcs-space-landing-section-gap-compact);
+    gap: var(--landing-section-gap-compact);
     padding-left: calc(
-      var(--dcs-space-landing-section-padding-inline-compact) +
+      var(--landing-section-padding-inline-compact) +
         var(--pu-safe-left)
     );
     padding-right: calc(
-      var(--dcs-space-landing-section-padding-inline-compact) +
+      var(--landing-section-padding-inline-compact) +
         var(--pu-safe-right)
     );
   }
 
   .section-paper {
-    padding: var(--dcs-space-landing-panel-padding-compact);
+    padding: var(--landing-panel-padding-compact);
   }
 
   .section-header h2 {
@@ -363,7 +372,7 @@ onUnmounted(() => {
 
   .creator-entry {
     min-height: 3.7rem;
-    padding: var(--dcs-space-landing-entry-padding-compact);
+    padding: var(--landing-entry-padding-compact);
   }
 
   .creator-copy h3 {

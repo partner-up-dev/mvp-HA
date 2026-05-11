@@ -6,7 +6,7 @@
       </p>
       <Button
         appearance="rect"
-        tone="secondary"
+        tone="primary-outline"
         type="button"
         @click="showMiniProgramWebViewNotice = true"
       >
@@ -16,13 +16,14 @@
 
     <div v-else class="wechat-chat-method__main">
       <div class="options-section flex flex-col">
-        <button
-          class="outline-btn"
+        <Button
+          tone="outline"
+          type="button"
           @click="handleGenerateAndUpdate"
           :disabled="isWorking"
         >
           {{ switchButtonLabel }}
-        </button>
+        </Button>
       </div>
 
       <div class="preview-section">

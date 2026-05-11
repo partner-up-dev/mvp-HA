@@ -5,8 +5,8 @@ import type { UserId } from "../../../entities/user";
 import { isActivatableStatus } from "../services/status-rules";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 
@@ -38,20 +38,6 @@ export async function updatePRStatus(
     throw new HTTPException(500, { message: "Failed to update status" });
   }
 
-  // Emit domain event
-  const event = await eventBus.publish(
-    "pr.status_changed",
-    "partner_request",
-    String(id),
-    {
-      prId: id,
-      fromStatus: currentStatus,
-      toStatus: status,
-      trigger: "manual",
-    },
-  );
-  void writeToOutbox(event);
-
   operationLogService.log({
     actorId: actorUserId,
     action: "pr.update_status",
@@ -59,6 +45,8 @@ export async function updatePRStatus(
     aggregateId: String(id),
     detail: { fromStatus: currentStatus, toStatus: status },
   });
+
+  await scheduleAlternativeWaitlistNotificationsForCandidate(updated);
 
   return toPublicPR(updated, null);
 }

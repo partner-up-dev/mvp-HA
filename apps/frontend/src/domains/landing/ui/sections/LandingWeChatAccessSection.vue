@@ -54,16 +54,16 @@ const showOfficialAccountQrModal = ref(false);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-sm);
-  padding-top: var(--sys-spacing-md);
+  gap: var(--sys-spacing-small);
+  margin-top: var(--sys-spacing-small);
+  padding-top: var(--sys-spacing-medium);
 }
 
 .wechat-access-section__actions {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .wechat-access-section__hint {

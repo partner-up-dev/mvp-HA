@@ -6,11 +6,24 @@ import {
   timestamp,
   integer,
   uuid,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import {
+  meetingPointConfigSchema,
+  type MeetingPointConfig,
+} from "./meeting-point";
+import {
+  prJoinGateConfigSchema,
+  type PRJoinGateConfig,
+} from "./join-gate";
 import { users, type UserId } from "./user";
+import {
+  feedbackQuestionnaireInstances,
+  type FeedbackQuestionnaireInstanceId,
+} from "./feedback-questionnaire";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
@@ -34,6 +47,7 @@ export const partnerRequestFieldsSchema = z.object({
   budget: z.string().nullable(),
   preferences: z.array(z.string()),
   notes: z.string().nullable(),
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
 });
 
 export type PartnerRequestFields = z.infer<typeof partnerRequestFieldsSchema>;
@@ -57,9 +71,6 @@ export const prStatusManualSchema = z.enum([
   "CLOSED",
 ]);
 export type PRStatusManual = z.infer<typeof prStatusManualSchema>;
-
-export const prKindSchema = z.enum(["ANCHOR", "COMMUNITY"]);
-export type PRKind = z.infer<typeof prKindSchema>;
 
 export const visibilityStatusSchema = z.enum(["VISIBLE", "HIDDEN"]);
 export type VisibilityStatus = z.infer<typeof visibilityStatusSchema>;
@@ -85,21 +96,6 @@ export const createNaturalLanguagePRSchema = z.object({
   nowIso: z.string().datetime(),
   nowWeekday: weekdayLabelSchema.nullable().optional(),
 });
-
-export const partnerRequestSummarySchema = z.object({
-  id: z.number().int().positive(),
-  prKind: prKindSchema,
-  canonicalPath: z.string(),
-  status: prStatusSchema,
-  minPartners: z.number().int().nonnegative().nullable(),
-  maxPartners: z.number().int().nonnegative().nullable(),
-  partners: z.array(partnerSlotIdSchema),
-  createdAt: z.string(),
-  title: z.string().optional(),
-  type: z.string(),
-});
-
-export type PartnerRequestSummary = z.infer<typeof partnerRequestSummarySchema>;
 
 // Poster cache schemas
 export const xiaohongshuPosterSchema = z.object({
@@ -130,14 +126,36 @@ export const partnerRequests = pgTable("partner_requests", {
     .default(sql`ARRAY[NULL, NULL]::text[]`),
   location: text("location"),
   status: text("status").$type<PRStatus>().notNull().default("OPEN"),
+  visibilityStatus: text("visibility_status")
+    .$type<VisibilityStatus>()
+    .notNull()
+    .default("VISIBLE"),
+  confirmationStartOffsetMinutes: integer("confirmation_start_offset_minutes"),
+  confirmationEndOffsetMinutes: integer("confirmation_end_offset_minutes"),
+  joinLockOffsetMinutes: integer("join_lock_offset_minutes"),
   minPartners: integer("min_partners"),
   maxPartners: integer("max_partners"),
+  budget: text("budget"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   preferences: text("preferences")
     .array()
     .notNull()
     .default(sql`ARRAY[]::text[]`),
   notes: text("notes"),
+  meetingPoint: jsonb("meeting_point")
+    .$type<MeetingPointConfig | null>()
+    .default(null),
+  joinGateConfig: jsonb("join_gate_config")
+    .$type<PRJoinGateConfig>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  feedbackQuestionnaireInstanceId: bigint("feedback_questionnaire_instance_id", {
+    mode: "number",
+  })
+    .$type<FeedbackQuestionnaireInstanceId | null>()
+    .references(() => feedbackQuestionnaireInstances.id, {
+      onDelete: "set null",
+    }),
   createdBy: uuid("created_by")
     .$type<UserId | null>()
     .references(() => users.id, { onDelete: "set null" }),
@@ -147,7 +165,6 @@ export const partnerRequests = pgTable("partner_requests", {
   wechatThumbnail: jsonb("wechat_thumbnail")
     .$type<WechatThumbnailCache | null>()
     .default(null),
-  prKind: text("pr_kind").$type<PRKind>().notNull().default("COMMUNITY"),
 });
 
 // Zod schemas for validation
@@ -156,13 +173,20 @@ export const insertPartnerRequestSchema = createInsertSchema(partnerRequests, {
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
   status: prStatusSchema,
+  visibilityStatus: visibilityStatusSchema,
+  meetingPoint: meetingPointConfigSchema.nullable().optional(),
+  joinGateConfig: prJoinGateConfigSchema.optional(),
 });
 
 export const selectPartnerRequestSchema = createSelectSchema(partnerRequests, {
   time: partnerRequestFieldsSchema.shape.time,
   minPartners: partnerRequestFieldsSchema.shape.minPartners,
   maxPartners: partnerRequestFieldsSchema.shape.maxPartners,
+  budget: partnerRequestFieldsSchema.shape.budget,
   status: prStatusSchema,
+  visibilityStatus: visibilityStatusSchema,
+  meetingPoint: meetingPointConfigSchema.nullable(),
+  joinGateConfig: prJoinGateConfigSchema,
 });
 
 // Type inference

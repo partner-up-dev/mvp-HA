@@ -59,7 +59,7 @@ const handleClick = () => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .plaza-text,
@@ -96,7 +96,7 @@ const handleClick = () => {
 }
 
 .plaza-action-icon {
-  margin-left: var(--sys-spacing-xs);
+  margin-left: var(--sys-spacing-xsmall);
   display: inline-block;
   vertical-align: middle;
   @include mx.pu-icon(medium);

@@ -34,6 +34,7 @@ export const prMessages = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => ({
     prIdCreatedAtIdx: index("pr_messages_pr_id_created_at_idx").on(

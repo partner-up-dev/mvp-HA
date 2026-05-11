@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { InferResponseType } from "hono";
 import { computed, type Ref } from "vue";
+import type { PRJoinGateConfig } from "@partner-up-dev/backend";
 import { adminClient } from "@/lib/admin-rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
@@ -12,10 +13,6 @@ export type AdminBookingSupportConfigResponse = InferResponseType<
 
 export type ReplaceEventBookingSupportResourcesResponse = InferResponseType<
   (typeof adminClient.api.admin.events)[":eventId"]["booking-support-resources"]["$put"]
->;
-
-export type ReplaceBatchBookingSupportOverridesResponse = InferResponseType<
-  (typeof adminClient.api.admin.batches)[":batchId"]["booking-support-overrides"]["$put"]
 >;
 
 export type EventSupportResourceInput = {
@@ -35,26 +32,8 @@ export type EventSupportResourceInput = {
   requiresUserTransferToPlatform: boolean;
   summaryText: string;
   detailRules: string[];
+  joinGateConfig: PRJoinGateConfig;
   displayOrder: number;
-};
-
-export type BatchSupportOverrideInput = {
-  eventSupportResourceId: number;
-  disabled: boolean;
-  titleOverride?: string | null;
-  resourceKindOverride?: "VENUE" | "ITEM" | "SERVICE" | "OTHER" | null;
-  bookingRequiredOverride?: boolean | null;
-  bookingHandledByOverride?: BookingHandledBy | null;
-  bookingDeadlineRuleOverride?: string | null;
-  bookingLocksParticipantOverride?: boolean | null;
-  cancellationPolicyOverride?: string | null;
-  settlementModeOverride?: "NONE" | "PLATFORM_PREPAID" | "PLATFORM_POSTPAID" | null;
-  subsidyRateOverride?: number | null;
-  subsidyCapOverride?: number | null;
-  requiresUserTransferToPlatformOverride?: boolean | null;
-  summaryTextOverride?: string | null;
-  detailRulesOverride?: string[];
-  displayOrderOverride?: number | null;
 };
 
 const readErrorMessage = async (
@@ -112,34 +91,6 @@ export const useReplaceEventBookingSupportResources = () => {
       });
       if (!res.ok) {
         throw new Error(await readErrorMessage(res, "保存活动资助配置失败"));
-      }
-      return await res.json();
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.admin.bookingSupport(variables.eventId),
-      });
-    },
-  });
-};
-
-export const useReplaceBatchBookingSupportOverrides = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    ReplaceBatchBookingSupportOverridesResponse,
-    Error,
-    { eventId: number; batchId: number; overrides: BatchSupportOverrideInput[] }
-  >({
-    mutationFn: async ({ batchId, overrides }) => {
-      const res = await adminClient.api.admin.batches[":batchId"][
-        "booking-support-overrides"
-      ].$put({
-        param: { batchId: batchId.toString() },
-        json: { overrides },
-      });
-      if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "保存批次覆盖配置失败"));
       }
       return await res.json();
     },

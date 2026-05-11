@@ -17,6 +17,8 @@ export const partnerIdSchema = z.number().int().positive();
 export type PartnerId = z.infer<typeof partnerIdSchema>;
 
 export const partnerStatusSchema = z.enum([
+  "PENDING",
+  "CANCELLED",
   "JOINED",
   "CONFIRMED",
   "EXITED",
@@ -53,14 +55,20 @@ export const partners = pgTable("partners", {
     .$type<UserId>()
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  waitlistedAt: timestamp("waitlisted_at"),
   confirmedAt: timestamp("confirmed_at"),
   exitedAt: timestamp("exited_at"),
   releasedAt: timestamp("released_at"),
   releaseReason: text("release_reason"),
+  alternativePrReminderOptIn: boolean("alternative_pr_reminder_opt_in")
+    .notNull()
+    .default(false),
+  alternativePrReminderOptedInAt: timestamp(
+    "alternative_pr_reminder_opted_in_at",
+  ),
   attendedAt: timestamp("attended_at"),
   checkInAt: timestamp("check_in_at"),
   didAttend: boolean("did_attend"),
-  wouldJoinAgain: boolean("would_join_again"),
   paymentStatus: text("payment_status")
     .$type<PartnerPaymentStatus>()
     .notNull()

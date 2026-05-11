@@ -7,32 +7,38 @@
           <input
             v-model="startDate"
             type="date"
+            data-testid="pr-create.form.start-date"
             :placeholder="t('dateTimeRangePicker.startDatePlaceholder')"
           />
           <input
             v-model="startTime"
             type="time"
+            data-testid="pr-create.form.start-time"
             :placeholder="t('dateTimeRangePicker.startTimePlaceholder')"
             :disabled="!startDate"
           />
         </div>
         <div class="time-actions">
-          <button
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!startTime"
             @click="clearStartTime"
           >
             {{ t("dateTimeRangePicker.clearTime") }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!startDate && !startTime"
             @click="clearStart"
           >
             {{ t("dateTimeRangePicker.clear") }}
-          </button>
+          </Button>
         </div>
       </div>
       <div class="time-block">
@@ -40,32 +46,38 @@
           <input
             v-model="endDate"
             type="date"
+            data-testid="pr-create.form.end-date"
             :placeholder="t('dateTimeRangePicker.endDatePlaceholder')"
           />
           <input
             v-model="endTime"
             type="time"
+            data-testid="pr-create.form.end-time"
             :placeholder="t('dateTimeRangePicker.endTimePlaceholder')"
             :disabled="!endDate"
           />
         </div>
         <div class="time-actions">
-          <button
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!endTime"
             @click="clearEndTime"
           >
             {{ t("dateTimeRangePicker.clearTime") }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             class="clear-time"
+            tone="outline"
+            size="sm"
             :disabled="!endDate && !endTime"
             @click="clearEnd"
           >
             {{ t("dateTimeRangePicker.clear") }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -77,6 +89,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { PartnerRequestFields } from "@partner-up-dev/backend";
+import Button from "@/shared/ui/actions/Button.vue";
 
 type TimeWindow = PartnerRequestFields["time"];
 
@@ -188,64 +201,68 @@ const clearEndTime = () => {
 
 <style lang="scss" scoped>
 .form-field {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 
   label {
     @include mx.pu-font(label-medium);
     display: block;
-    margin-bottom: var(--sys-spacing-xs);
+    margin-bottom: var(--sys-spacing-xsmall);
     color: var(--sys-color-on-surface-variant);
   }
 }
 
 .time-range {
   display: grid;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .time-block {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .time-actions {
   display: grid;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .time-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex: 1;
 }
 
 input {
   @include mx.pu-font(body-large);
-  @include mx.pu-form-control(container);
+  width: 100%;
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline);
+  border-radius: var(--sys-radius-small);
+  color: var(--sys-color-on-surface);
+  background: var(--sys-color-surface-container);
   min-height: var(--sys-size-large);
+
+  &::placeholder {
+    color: var(--sys-color-on-surface-variant);
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: -1px;
+  }
 }
 
 .clear-time {
-  @include mx.pu-font(label-medium);
-  @include mx.pu-rect-action(outline);
   min-width: 64px;
-
-  &:hover:not(:disabled) {
-    background: var(--sys-color-surface-container);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 }
 
 .time-hint {
   @include mx.pu-font(body-small);
   color: var(--sys-color-on-surface-variant);
-  margin-top: var(--sys-spacing-xs);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 @media (max-width: 480px) {

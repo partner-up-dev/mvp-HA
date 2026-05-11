@@ -1,72 +1,42 @@
 <template>
   <section v-if="(hasJoined && canConfirm) || (hasJoined && canCheckIn)" class="actions">
-    <button
+    <Button
       v-if="hasJoined && canConfirm"
       class="confirm-slot-btn"
+      tone="primary-outline"
       @click="emit('confirm-slot')"
       :disabled="confirmPending"
     >
       {{ confirmPending ? t("prPage.confirmingSlot") : t("prPage.confirmSlot") }}
-    </button>
+    </Button>
 
-    <button
+    <Button
       v-if="hasJoined && canCheckIn"
       class="checkin-attended-btn"
-      @click="emit('prepare-check-in')"
+      tone="tertiary"
+      @click="emit('submit-check-in')"
       :disabled="checkInPending"
     >
       {{ checkInPending ? t("prPage.checkingIn") : t("prPage.checkInAttended") }}
-    </button>
-  </section>
-
-  <section v-if="showCheckInFollowup" class="checkin-followup">
-    <p class="checkin-followup-text">
-      {{ t("prPage.checkInFollowupQuestion", { status: checkInFollowupStatusLabel }) }}
-    </p>
-    <div class="checkin-followup-actions">
-      <button
-        class="checkin-followup-btn confirm"
-        :disabled="checkInPending"
-        @click="emit('submit-check-in', true)"
-      >
-        {{ t("prPage.wouldJoinAgainYes") }}
-      </button>
-      <button
-        class="checkin-followup-btn decline"
-        :disabled="checkInPending"
-        @click="emit('submit-check-in', false)"
-      >
-        {{ t("prPage.wouldJoinAgainNo") }}
-      </button>
-      <button
-        class="checkin-followup-btn cancel"
-        :disabled="checkInPending"
-        @click="emit('cancel-check-in')"
-      >
-        {{ t("common.cancel") }}
-      </button>
-    </div>
+    </Button>
   </section>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import Button from "@/shared/ui/actions/Button.vue";
 
 defineProps<{
   hasJoined: boolean;
   canConfirm: boolean;
   canCheckIn: boolean;
-  showCheckInFollowup: boolean;
-  checkInFollowupStatusLabel: string;
   confirmPending: boolean;
   checkInPending: boolean;
 }>();
 
 const emit = defineEmits<{
   "confirm-slot": [];
-  "prepare-check-in": [];
-  "submit-check-in": [wouldJoinAgain: boolean];
-  "cancel-check-in": [];
+  "submit-check-in": [];
 }>();
 
 const { t } = useI18n();
@@ -77,8 +47,8 @@ const { t } = useI18n();
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
-  margin-top: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
+  margin-top: var(--sys-spacing-small);
 }
 
 .actions > button {
@@ -87,54 +57,9 @@ const { t } = useI18n();
 
 .confirm-slot-btn,
 .checkin-attended-btn {
-  @include mx.pu-font(label-large);
   flex: 1;
   min-width: 0;
-  cursor: pointer;
   font-weight: 600;
 }
 
-.confirm-slot-btn {
-  @include mx.pu-rect-action(outline-primary, default);
-}
-
-.checkin-attended-btn {
-  @include mx.pu-rect-action(tertiary, default);
-}
-
-.checkin-followup {
-  margin-top: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-sm);
-  background: var(--sys-color-surface-container-low);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-sm);
-}
-
-.checkin-followup-text {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface);
-}
-
-.checkin-followup-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sys-spacing-sm);
-}
-
-.checkin-followup-btn {
-  @include mx.pu-font(label-large);
-  @include mx.pu-rect-action(outline, default);
-  cursor: pointer;
-}
-
-.checkin-followup-btn.confirm {
-  @include mx.pu-rect-action(primary, default);
-}
-
-.checkin-followup-btn.cancel {
-  grid-column: 1 / -1;
-}
 </style>

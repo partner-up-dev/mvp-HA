@@ -16,6 +16,7 @@ export type PRMessageWithAuthor = {
   authorUserId: UserId;
   body: string;
   createdAt: Date;
+  updatedAt: Date;
   authorRole: UserRole | null;
   authorNickname: string | null;
   authorAvatar: string | null;
@@ -46,6 +47,7 @@ export class PRMessageRepository {
         authorUserId: prMessages.authorUserId,
         body: prMessages.body,
         createdAt: prMessages.createdAt,
+        updatedAt: prMessages.updatedAt,
         authorRole: users.role,
         authorNickname: users.nickname,
         authorAvatar: users.avatar,
@@ -65,6 +67,7 @@ export class PRMessageRepository {
       authorUserId: row.authorUserId,
       body: row.body,
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
       authorRole: row.authorRole,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
@@ -79,6 +82,7 @@ export class PRMessageRepository {
         authorUserId: prMessages.authorUserId,
         body: prMessages.body,
         createdAt: prMessages.createdAt,
+        updatedAt: prMessages.updatedAt,
         authorRole: users.role,
         authorNickname: users.nickname,
         authorAvatar: users.avatar,
@@ -94,6 +98,7 @@ export class PRMessageRepository {
       authorUserId: row.authorUserId,
       body: row.body,
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
       authorRole: row.authorRole,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
@@ -116,6 +121,7 @@ export class PRMessageRepository {
         authorUserId: prMessages.authorUserId,
         body: prMessages.body,
         createdAt: prMessages.createdAt,
+        updatedAt: prMessages.updatedAt,
         authorRole: users.role,
         authorNickname: users.nickname,
         authorAvatar: users.avatar,
@@ -137,6 +143,7 @@ export class PRMessageRepository {
       authorUserId: row.authorUserId,
       body: row.body,
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
       authorRole: row.authorRole,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
@@ -164,6 +171,26 @@ export class PRMessageRepository {
 
   async create(data: NewPRMessage): Promise<PRMessage | null> {
     const result = await db.insert(prMessages).values(data).returning();
+    return result[0] ?? null;
+  }
+
+  async updateBody(id: PRMessageId, body: string): Promise<PRMessage | null> {
+    const result = await db
+      .update(prMessages)
+      .set({
+        body,
+        updatedAt: new Date(),
+      })
+      .where(eq(prMessages.id, id))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async deleteById(id: PRMessageId): Promise<PRMessage | null> {
+    const result = await db
+      .delete(prMessages)
+      .where(eq(prMessages.id, id))
+      .returning();
     return result[0] ?? null;
   }
 

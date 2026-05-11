@@ -1,13 +1,13 @@
 import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { AnchorPRRepository } from "../../../repositories/AnchorPRRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { PartnerStatus } from "../../../entities/partner";
 import type { User } from "../../../entities/user";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
 import {
+  hasAnchorParticipationPolicy,
   isJoinLockedByPolicy,
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,
@@ -20,28 +20,30 @@ import {
 } from "../services/slot-management.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
-import { expandFullAnchorPR } from "../../anchor-event";
+import { expandFullPR } from "../../anchor-event";
 import {
   scheduleWeChatActivityStartReminderJobForParticipant,
   scheduleWeChatNewPartnerNotificationsForJoin,
   scheduleWeChatReminderJobsForParticipant,
 } from "../../../infra/notifications";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
-import { AnchorPRBookingContactRepository } from "../../../repositories/AnchorPRBookingContactRepository";
+import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import {
   isBookingContactRequiredForPR,
   normalizeMainlandChinaMobilePhone,
 } from "../../pr-booking-support";
+import {
+  assertPRJoinGatesResolvedForUser,
+  hasBookingContactJoinGate,
+  BOOKING_CONTACT_PHONE_INVALID_CODE,
+} from "../services/join-gates.service";
+import { closeAlternativeWaitlistSourcesAfterJoin } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const anchorPRRepo = new AnchorPRRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
-const bookingContactRepo = new AnchorPRBookingContactRepository();
-const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
-const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
+const bookingContactRepo = new PRBookingContactRepository();
 
 type CodedHttpException = HTTPException & {
   code?: string;
@@ -73,21 +75,16 @@ export async function joinPRAsUser(
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
+  const hasParticipationPolicy = hasAnchorParticipationPolicy(refreshedRequest);
 
   let targetStatus: Extract<PartnerStatus, "JOINED" | "CONFIRMED"> = "JOINED";
-  const bookingContactRequired =
-    refreshedRequest.prKind === "ANCHOR"
-      ? await isBookingContactRequiredForPR(id)
-      : false;
+  const bookingContactRequired = await isBookingContactRequiredForPR(id);
 
-  if (refreshedRequest.prKind === "ANCHOR") {
-    const anchor = await anchorPRRepo.findByPrId(id);
-    if (!anchor) {
-      throw new HTTPException(500, {
-        message: "Anchor PR subtype row missing",
-      });
-    }
-    const policy = resolveAnchorParticipationPolicy(anchor, refreshedRequest.time);
+  if (hasParticipationPolicy) {
+    const policy = resolveAnchorParticipationPolicy(
+      refreshedRequest,
+      refreshedRequest.time,
+    );
     if (isJoinLockedByPolicy(policy)) {
       throw new HTTPException(400, {
         message: "Cannot join - event is locked after join lock",
@@ -117,7 +114,7 @@ export async function joinPRAsUser(
         message: "Failed to reload partner request",
       });
     }
-    if (latest.prKind === "ANCHOR") {
+    if (hasAnchorParticipationPolicy(latest)) {
       await scheduleWeChatReminderJobsForParticipant(latest, user.id);
       await scheduleWeChatActivityStartReminderJobForParticipant(latest, user.id);
     }
@@ -131,26 +128,10 @@ export async function joinPRAsUser(
   });
 
   const activeCount = await countActivePartnersForPR(id);
-  let bookingContactPhoneInput:
-    | {
-        phoneE164: string;
-        phoneMasked: string;
-      }
-    | null = null;
 
-  if (refreshedRequest.prKind === "ANCHOR" && bookingContactRequired) {
-    const isFirstActiveOwnerJoin = activeCount === 0;
-
-    if (isFirstActiveOwnerJoin) {
-      const phone = options.bookingContactPhone?.trim() ?? "";
-      if (!phone) {
-        return throwCodedHttpException(
-          409,
-          "Cannot join - first active participant must provide booking contact phone",
-          BOOKING_CONTACT_PHONE_REQUIRED_CODE,
-        );
-      }
-
+  if (bookingContactRequired) {
+    const phone = options.bookingContactPhone?.trim() ?? "";
+    if (phone) {
       const normalizedPhone = normalizeMainlandChinaMobilePhone(phone);
       if (!normalizedPhone) {
         return throwCodedHttpException(
@@ -160,9 +141,28 @@ export async function joinPRAsUser(
         );
       }
 
-      bookingContactPhoneInput = normalizedPhone;
+      const existingContact = await bookingContactRepo.findByPrId(id);
+      if (
+        !existingContact ||
+        existingContact.ownerPartnerId === null ||
+        existingContact.ownerUserId === user.id
+      ) {
+        await bookingContactRepo.upsertByPrId({
+          prId: id,
+          ownerPartnerId: existingContact?.ownerPartnerId ?? null,
+          ownerUserId: user.id,
+          phoneE164: normalizedPhone.phoneE164,
+          phoneMasked: normalizedPhone.phoneMasked,
+          verifiedSource: "PHONE_INPUT_FORM",
+        });
+      }
     }
   }
+
+  await assertPRJoinGatesResolvedForUser({
+    prId: id,
+    userId: user.id,
+  });
 
   if (
     refreshedRequest.maxPartners !== null &&
@@ -190,20 +190,18 @@ export async function joinPRAsUser(
   }
   const assignedPartnerId = joinedSlot.id;
 
-  if (
-    refreshedRequest.prKind === "ANCHOR" &&
-    bookingContactRequired &&
-    activeCount === 0 &&
-    bookingContactPhoneInput
-  ) {
-    await bookingContactRepo.upsertByPrId({
-      prId: id,
-      ownerPartnerId: assignedPartnerId,
-      ownerUserId: user.id,
-      phoneE164: bookingContactPhoneInput.phoneE164,
-      phoneMasked: bookingContactPhoneInput.phoneMasked,
-      verifiedSource: "PHONE_INPUT_FORM",
-    });
+  if (hasBookingContactJoinGate(refreshedRequest.joinGateConfig)) {
+    const contact = await bookingContactRepo.findByPrId(id);
+    if (
+      contact &&
+      contact.ownerPartnerId === null &&
+      contact.ownerUserId === user.id
+    ) {
+      await bookingContactRepo.updateOwnerPartner({
+        prId: id,
+        ownerPartnerId: assignedPartnerId,
+      });
+    }
   }
 
   await userReliabilityRepo.applyDelta(user.id, {
@@ -217,25 +215,11 @@ export async function joinPRAsUser(
   const afterRecalculate = await prRepo.findById(id);
   if (
     afterRecalculate &&
-    afterRecalculate.prKind === "ANCHOR" &&
+    hasAnchorParticipationPolicy(afterRecalculate) &&
     afterRecalculate.status === "FULL"
   ) {
-    await expandFullAnchorPR(id);
+    await expandFullPR(id);
   }
-
-  // Emit domain event
-  const event = await eventBus.publish(
-    "partner.joined",
-    "partner_request",
-    String(id),
-    {
-      prId: id,
-      partnerId: assignedPartnerId,
-      userId: user.id,
-      autoConfirmed: targetStatus === "CONFIRMED",
-    },
-  );
-  void writeToOutbox(event);
 
   operationLogService.log({
     actorId: user.id,
@@ -251,7 +235,7 @@ export async function joinPRAsUser(
       message: "Failed to reload partner request",
     });
   }
-  if (latest.prKind === "ANCHOR") {
+  if (hasAnchorParticipationPolicy(latest)) {
     await scheduleWeChatNewPartnerNotificationsForJoin({
       request: latest,
       joinedUserId: user.id,
@@ -261,6 +245,11 @@ export async function joinPRAsUser(
     await scheduleWeChatReminderJobsForParticipant(latest, user.id);
     await scheduleWeChatActivityStartReminderJobForParticipant(latest, user.id);
   }
+  await closeAlternativeWaitlistSourcesAfterJoin({
+    alternativeRequest: latest,
+    userId: user.id,
+    alternativePartnerId: assignedPartnerId,
+  });
   return toPublicPR(latest, user.id);
 }
 

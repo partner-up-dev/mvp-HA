@@ -8,22 +8,12 @@
     <PRForm
       ref="formRef"
       :initial-fields="initialFields"
-      :show-budget-field="scenario === 'COMMUNITY'"
-      :show-time-field="scenario === 'COMMUNITY'"
+      :show-budget-field="showBudgetField"
+      :show-time-field="showTimeField"
       @submit="handleSubmit"
     />
 
     <div class="modal-actions">
-      <div v-if="requiresPin" class="pin-input">
-        <label>{{ t("modifyStatusModal.pinLabel") }}</label>
-        <PinInput
-          v-model="editPin"
-          :auto-generate="false"
-          :allow-regenerate="false"
-          :show-label="false"
-          :show-info="false"
-        />
-      </div>
       <div class="action-buttons">
         <button type="button" class="cancel-btn" @click="handleClose">
           {{ t("common.cancel") }}
@@ -50,22 +40,15 @@
 <script setup lang="ts">
 import { computed, isRef, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import type { PRId, PRKind } from "@partner-up-dev/backend";
+import type { PRId } from "@partner-up-dev/backend";
 import type { PartnerRequestFormInput } from "@/lib/validation";
-import { useUpdateAnchorPRContent } from "@/domains/pr/queries/useAnchorPR";
-import { useUpdateCommunityPRContent } from "@/domains/pr/queries/useCommunityPR";
-import {
-  useUserSessionStore,
-  type AuthSessionPayload,
-} from "@/shared/auth/useUserSessionStore";
+import { useUpdatePRContent } from "@/domains/pr/queries/usePRActions";
 import Modal from "@/shared/ui/overlay/Modal.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
-import PinInput from "@/shared/ui/forms/PinInput.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import {
-  toAnchorPRFields,
-  toCommunityPRFields,
+  toPartnerRequestFields,
   type PRFormFields,
 } from "@/domains/pr/model/types";
 
@@ -73,7 +56,8 @@ interface Props {
   open: boolean;
   initialFields: PRFormFields;
   prId: PRId;
-  scenario: PRKind;
+  showBudgetField?: boolean;
+  showTimeField?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -83,59 +67,32 @@ const emit = defineEmits<{
   success: [];
 }>();
 
-const communityUpdateMutation = useUpdateCommunityPRContent();
-const anchorUpdateMutation = useUpdateAnchorPRContent();
-const userSessionStore = useUserSessionStore();
+const updateMutation = useUpdatePRContent();
 const formRef = ref<InstanceType<typeof PRForm> | null>(null);
-const editPin = ref("");
-const requiresPin = computed(() => userSessionStore.role === "anonymous");
-const getUpdateMutation = () =>
-  props.scenario === "ANCHOR" ? anchorUpdateMutation : communityUpdateMutation;
-const isUpdatePending = computed(() => getUpdateMutation().isPending.value);
-const hasUpdateError = computed(() => getUpdateMutation().isError.value);
-const updateError = computed(() => getUpdateMutation().error.value);
+const isUpdatePending = computed(() => updateMutation.isPending.value);
+const updateError = computed(() => updateMutation.error.value);
+const hasUpdateError = computed(() => Boolean(updateError.value));
 const isFormValid = computed(() => {
   const canSubmit = formRef.value?.canSubmit;
-  const formOk = isRef(canSubmit) ? canSubmit.value : Boolean(canSubmit);
-  if (!requiresPin.value) {
-    return formOk;
-  }
-  return formOk && editPin.value.length === 4;
+  return isRef(canSubmit) ? canSubmit.value : Boolean(canSubmit);
 });
 
 const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
-  const pin = requiresPin.value ? editPin.value : undefined;
-  if (requiresPin.value && (!pin || pin.length !== 4)) return;
-
-  const result =
-    props.scenario === "ANCHOR"
-      ? await anchorUpdateMutation.mutateAsync({
-          id: props.prId,
-          fields: toAnchorPRFields(fields),
-          pin,
-        })
-      : await communityUpdateMutation.mutateAsync({
-          id: props.prId,
-          fields: toCommunityPRFields(fields),
-          pin,
-        });
-
-  const authPayload = (result as { auth?: AuthSessionPayload | null }).auth;
-  if (authPayload) {
-    userSessionStore.applyAuthSession(authPayload);
-  }
+  await updateMutation.mutateAsync({
+    id: props.prId,
+    fields: toPartnerRequestFields(fields),
+  });
 
   emit("success");
   handleClose();
 };
 
 const handleClose = () => {
-  editPin.value = "";
   emit("close");
 };
 
 const resetUpdateMutation = () => {
-  getUpdateMutation().reset();
+  updateMutation.reset();
 };
 </script>
 
@@ -143,22 +100,13 @@ const resetUpdateMutation = () => {
 .modal-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  margin-top: var(--sys-spacing-lg);
-}
-
-.pin-input {
-  label {
-    @include mx.pu-font(label-medium);
-    display: block;
-    margin-bottom: var(--sys-spacing-xs);
-    color: var(--sys-color-on-surface-variant);
-  }
+  gap: var(--sys-spacing-medium);
+  margin-top: var(--sys-spacing-large);
 }
 
 .action-buttons {
   display: flex;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   :deep(.ui-button) {
     flex: 1;
@@ -170,9 +118,9 @@ const resetUpdateMutation = () => {
   @include mx.pu-font(label-large);
   flex: 1;
   min-width: 66px;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-xs);
+  border-radius: var(--sys-radius-xsmall);
   background: transparent;
   cursor: pointer;
 }

@@ -1,6 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import type { PartnerId } from "../../../entities/partner";
-import type { PRId, PRKind } from "../../../entities/partner-request";
+import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { readPartnerRequestById } from "../services/pr-read.service";
@@ -32,21 +32,17 @@ const resolveDisplayName = (
   return `搭子 #${partnerId}`;
 };
 
-const resolveNotFoundMessage = (prKind: PRKind): string =>
-  prKind === "COMMUNITY" ? "Community PR not found" : "Anchor PR not found";
-
 export async function getPRPartnerProfile(params: {
   prId: PRId;
   partnerId: PartnerId;
-  prKind: PRKind;
   viewerUserId?: UserId | null;
 }): Promise<PRPartnerProfile> {
-  const { prId, partnerId, prKind, viewerUserId = null } = params;
+  const { prId, partnerId, viewerUserId = null } = params;
   const request = await readPartnerRequestById(prId, {
     consistency: "eventual",
   });
-  if (!request || request.prKind !== prKind) {
-    throw new HTTPException(404, { message: resolveNotFoundMessage(prKind) });
+  if (!request) {
+    throw new HTTPException(404, { message: "Partner request not found" });
   }
 
   const participant =

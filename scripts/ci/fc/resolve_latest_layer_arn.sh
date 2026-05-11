@@ -5,7 +5,6 @@ required_vars=(
   ALIYUN_FC_REGION
   ALIYUN_FC_NODE_MODULES_LAYER_NAME
   ALIBABA_CLOUD_ACCOUNT_ID
-  GITHUB_OUTPUT
 )
 
 for var_name in "${required_vars[@]}"; do
@@ -24,4 +23,8 @@ normalized_arn="$(python3 scripts/fc_normalize_layer_arn.py \
   --raw-arn "$raw_arn" \
   --account-id "$ALIBABA_CLOUD_ACCOUNT_ID")"
 
-echo "layer_arn=${normalized_arn}" >> "$GITHUB_OUTPUT"
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  echo "layer_arn=${normalized_arn}" >> "$GITHUB_OUTPUT"
+fi
+
+echo "$normalized_arn"

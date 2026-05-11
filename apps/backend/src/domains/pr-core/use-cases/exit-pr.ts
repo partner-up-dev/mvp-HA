@@ -4,7 +4,8 @@ import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
+import { hasAnchorParticipationPolicy } from "../services/anchor-participation-policy.service";
 import { isExitAllowedStatus } from "../services/status-rules";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import {
@@ -13,7 +14,6 @@ import {
 } from "../services/time-window.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 import {
   cancelWeChatActivityStartReminderJobsForParticipant,
@@ -22,6 +22,9 @@ import {
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
 import { resolveBookingContactState } from "../../pr-booking-support";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
+import { resetPRJoinGateResolutionsForUser } from "../services/join-gates.service";
+import { promoteWaitlistedPartners } from "../services/waitlist.service";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -36,6 +39,7 @@ export async function exitPRByUserId(
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
+  const hasParticipationPolicy = hasAnchorParticipationPolicy(refreshedRequest);
 
   if (refreshedRequest.createdBy === userId) {
     throw new HTTPException(400, {
@@ -57,7 +61,7 @@ export async function exitPRByUserId(
   }
 
   if (
-    refreshedRequest.prKind === "ANCHOR" &&
+    hasParticipationPolicy &&
     (activeSlot.status === "CONFIRMED" || activeSlot.status === "ATTENDED")
   ) {
     const effectiveBookingDeadlineAt = await getEffectiveBookingDeadline(id);
@@ -68,15 +72,20 @@ export async function exitPRByUserId(
     }
   }
 
-  if (refreshedRequest.prKind === "ANCHOR" && hasEventStarted(refreshedRequest.time)) {
+  if (hasParticipationPolicy && hasEventStarted(refreshedRequest.time)) {
     throw new HTTPException(400, {
       message: "Cannot exit - event has already started",
     });
   }
 
   await partnerRepo.updateStatus(activeSlot.id, "EXITED");
+  await resetPRJoinGateResolutionsForUser({
+    prId: id,
+    userId,
+    partnerId: activeSlot.id,
+  });
   await userReliabilityRepo.applyDelta(userId, { released: 1 });
-  if (refreshedRequest.prKind === "ANCHOR") {
+  if (hasParticipationPolicy) {
     await cancelWeChatReminderJobsForParticipant(id, userId);
     await cancelWeChatActivityStartReminderJobsForParticipant(id, userId);
     await resolveBookingContactState({
@@ -87,15 +96,6 @@ export async function exitPRByUserId(
   await recalculatePRStatus(id);
   await syncAnchorBookingTriggeredState(id);
 
-  // Emit domain event
-  const event = await eventBus.publish(
-    "partner.exited",
-    "partner_request",
-    String(id),
-    { prId: id, partnerId: activeSlot.id, userId },
-  );
-  void writeToOutbox(event);
-
   operationLogService.log({
     actorId: userId,
     action: "partner.exit",
@@ -104,12 +104,15 @@ export async function exitPRByUserId(
     detail: { partnerId: activeSlot.id },
   });
 
+  await promoteWaitlistedPartners(id);
+
   const latest = await prRepo.findById(id);
   if (!latest) {
     throw new HTTPException(500, {
       message: "Failed to reload partner request",
     });
   }
+  await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
   return toPublicPR(latest, userId);
 }
 

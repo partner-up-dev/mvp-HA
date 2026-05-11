@@ -47,30 +47,6 @@ export const hasUnreadPRMessages = (input: {
   coalesceMessageId(input.latestVisibleMessageId) >
   coalesceMessageId(input.lastReadMessageId);
 
-export const hasUnreadWaveNotification = (
-  inboxState: Pick<
-    PRMessageInboxState,
-    "lastReadMessageId" | "lastNotifiedMessageId"
-  > | null,
-): boolean => {
-  const lastNotifiedMessageId = inboxState?.lastNotifiedMessageId ?? null;
-  if (lastNotifiedMessageId === null) {
-    return false;
-  }
-
-  return (
-    coalesceMessageId(lastNotifiedMessageId) >
-    coalesceMessageId(inboxState?.lastReadMessageId ?? null)
-  );
-};
-
-export const canNotifyForUnreadWave = (
-  inboxState: Pick<
-    PRMessageInboxState,
-    "lastReadMessageId" | "lastNotifiedMessageId"
-  > | null,
-): boolean => !hasUnreadWaveNotification(inboxState);
-
 export const toPRMessageThreadItem = (
   message: PRMessageWithAuthor,
 ): PRMessageThreadItem => ({

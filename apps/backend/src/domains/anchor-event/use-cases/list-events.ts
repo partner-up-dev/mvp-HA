@@ -5,9 +5,9 @@
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import {
   type AnchorEvent,
-  normalizeSystemLocationPool,
-  normalizeUserLocationPool,
+  normalizeLocationPool,
 } from "../../../entities/anchor-event";
+import { isPublishedPoi } from "../../../entities/poi";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 
 const repo = new AnchorEventRepository();
@@ -44,11 +44,7 @@ function normalizeLocationLookupKey(value: string): string {
 }
 
 function getLocationLabels(event: AnchorEvent): string[] {
-  const systemLocations = normalizeSystemLocationPool(event.systemLocationPool);
-  const userLocations = normalizeUserLocationPool(event.userLocationPool).map(
-    (entry) => entry.id,
-  );
-  return Array.from(new Set([...systemLocations, ...userLocations]));
+  return normalizeLocationPool(event.locationPool);
 }
 
 function toSummary(
@@ -87,7 +83,11 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   }
 
   const locationLabels = Array.from(uniqueLocationLabels);
-  const pois = await poiRepo.findByIds(locationLabels);
+  const exactPois = await poiRepo.findByIds(locationLabels, {
+    includeUnpublished: true,
+  });
+  const exactPoiById = new Map(exactPois.map((poi) => [poi.id, poi]));
+  const pois = exactPois.filter(isPublishedPoi);
   const poiById = new Map<string, { id: string; gallery: string[] }>();
   for (const poi of pois) {
     poiById.set(poi.id, {
@@ -104,6 +104,9 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   if (needNormalizedFallback) {
     const allPois = await poiRepo.listAll();
     for (const poi of allPois) {
+      if (!isPublishedPoi(poi)) {
+        continue;
+      }
       const normalizedPoiId = normalizeLocationLookupKey(poi.id);
       if (!normalizedPoiId) {
         continue;
@@ -119,7 +122,10 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   }
 
   return events.map((event) => {
-    const locationPool = getLocationLabels(event);
+    const locationPool = getLocationLabels(event).filter((label) => {
+      const poi = exactPoiById.get(label);
+      return !poi || isPublishedPoi(poi);
+    });
     const matchedPoisById = new Map<
       string,
       { id: string; gallery: string[] }

@@ -263,6 +263,17 @@ export interface MessageSchema {
       support: string;
     };
   };
+  officialAccountFollow: {
+    nudgeTitle: string;
+    nudgeDescription: string;
+    followAction: string;
+    laterAction: string;
+    modalTitle: string;
+    modalDescription: string;
+    qrAlt: string;
+    qrMissing: string;
+    doneAction: string;
+  };
   aboutPage: {
     title: string;
     description: string;
@@ -304,6 +315,17 @@ export interface MessageSchema {
   prPage: {
     join: string;
     joining: string;
+    waitlist: string;
+    waitlisting: string;
+    waitlisted: string;
+    waitlistedNotice: string;
+    waitlistRankNotice: string;
+    cancelWaitlist: string;
+    cancelWaitlisting: string;
+    cancelWaitlistConfirm: {
+      title: string;
+      message: string;
+    };
     exit: string;
     exiting: string;
     confirmSlot: string;
@@ -311,14 +333,13 @@ export interface MessageSchema {
     checkInAttended: string;
     checkInMissed: string;
     checkingIn: string;
-    checkInFollowupQuestion: string;
-    checkInFollowupForAttended: string;
-    checkInFollowupForMissed: string;
-    wouldJoinAgainYes: string;
-    wouldJoinAgainNo: string;
+    feedbackQuestionnaire: {
+      openAction: string;
+    };
     slotJoined: string;
     slotConfirmed: string;
     slotAttended: string;
+    slotPending: string;
     slotNotJoined: string;
     slotExited: string;
     slotReleased: string;
@@ -330,11 +351,11 @@ export interface MessageSchema {
       action: string;
       pending: string;
     };
-    pinHelp: {
+    eventAssistedCreateHandoff: {
       title: string;
       description: string;
-      currentPin: string;
     };
+    displayFallbackTitle: string;
     metaFallbackTitle: string;
     metaFallbackDescription: string;
     metaTitleWithName: string;
@@ -399,6 +420,24 @@ export interface MessageSchema {
           disabledHint: string;
           unconfiguredHint: string;
         };
+        MEETING_POINT_UPDATED: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
+        WAITLIST_PROMOTED: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
+        WAITLIST_ALTERNATIVE_AVAILABLE: {
+          title: string;
+          enabledHint: string;
+          disabledHint: string;
+          unconfiguredHint: string;
+        };
         PR_MESSAGE: {
           title: string;
           enabledHint: string;
@@ -410,6 +449,24 @@ export interface MessageSchema {
     joinSuccessSubscriptions: {
       description: string;
       closeAction: string;
+      notificationReasons: {
+        REMINDER_CONFIRMATION: {
+          withDeadline: string;
+          fallback: string;
+        };
+        NEW_PARTNER: string;
+        MEETING_POINT_UPDATED: string;
+      };
+    };
+    waitlistSuccessSubscriptions: {
+      description: string;
+      notificationReasons: {
+        WAITLIST_PROMOTED: string;
+        WAITLIST_ALTERNATIVE_AVAILABLE: string;
+      };
+    };
+    waitlistAlternativeReminder: {
+      optionLabel: string;
     };
     shareEntry: {
       title: string;
@@ -469,6 +526,9 @@ export interface MessageSchema {
       rosterBoardTitle: string;
       rosterTitle: string;
       rosterCount: string;
+      rosterCapacityCurrent: string;
+      rosterCapacityMin: string;
+      rosterCapacityMax: string;
       rosterEmpty: string;
       rosterCurrentEmpty: string;
       rosterHistoryTitle: string;
@@ -498,7 +558,7 @@ export interface MessageSchema {
     noEvents: string;
     loadFailed: string;
   };
-  anchorPRSearch: {
+  eventPRSearch: {
     title: string;
     resultTitle: string;
     resultSubtitleFallback: string;
@@ -578,6 +638,55 @@ export interface MessageSchema {
       title: string;
       action: string;
     };
+    landing: {
+      eyebrow: string;
+      placeholderTitle: string;
+      placeholderBody: string;
+    };
+    formMode: {
+      recommendationSummaryEyebrow: string;
+      modifyConditions: string;
+      locationEyebrow: string;
+      locationTitle: string;
+      locationAriaLabel: string;
+      locationCreateLabel: string;
+      timeEyebrow: string;
+      timeTitle: string;
+      dateWheelAriaLabel: string;
+      timeWheelAriaLabel: string;
+      advancedModeLabel: string;
+      preferenceEyebrow: string;
+      preferenceTitle: string;
+      preferenceSelectedCount: string;
+      preferencePlaceholder: string;
+      preferenceDrawerTitle: string;
+      preferenceCategoryDrawerTitle: string;
+      customTagTitle: string;
+      customTagPlaceholder: string;
+      addCustomTagAction: string;
+      removeCustomTagAction: string;
+      customTagSubmitFailed: string;
+      recommendationPageTitle: string;
+      viewAllSessions: string;
+      primaryCtaFallback: string;
+      primaryCta: string;
+      primaryCtaPending: string;
+      joinCandidateAction: string;
+      viewRecommendationDetail: string;
+      emptyRecommendationEyebrow: string;
+      emptyRecommendationTitle: string;
+      emptyRecommendationBody: string;
+      candidateListEyebrow: string;
+      candidateListTitle: string;
+      createFallbackAction: string;
+      recommendationFailed: string;
+      recommendationCardHeadline: string;
+      partnerCountWithMax: string;
+      partnerCountWithoutMax: string;
+      timePlaceholder: string;
+      locationPlaceholder: string;
+      otherEventsLoadFailed: string;
+    };
     discoverOthers: string;
     createCard: {
       title: string;
@@ -588,6 +697,7 @@ export interface MessageSchema {
       createAction: string;
       creatingAction: string;
       optionMaxReached: string;
+      optionTimeUnavailable: string;
       optionRemaining: string;
       errors: {
         timeWindowConflict: string;
@@ -630,14 +740,10 @@ export interface MessageSchema {
     title: string;
     description: string;
     loading: string;
-    register: {
-      title: string;
-      action: string;
-      pending: string;
-    };
     profile: {
       title: string;
       description: string;
+      wechatIdentityLabel: string;
       wechatBound: string;
       wechatUnbound: string;
       avatarAlt: string;
@@ -668,17 +774,6 @@ export interface MessageSchema {
       action: string;
       pending: string;
     };
-    pinLogin: {
-      title: string;
-      description: string;
-      userIdLabel: string;
-      userIdPlaceholder: string;
-      pinLabel: string;
-      pinPlaceholder: string;
-      pinFormatHint: string;
-      action: string;
-      pending: string;
-    };
     reminder: {
       title: string;
       authHint: string;
@@ -690,20 +785,45 @@ export interface MessageSchema {
       title: string;
       description: string;
       userIdLabel: string;
-      userPinLabel: string;
       missingUserId: string;
-      missingUserPin: string;
-      showPin: string;
-      hidePin: string;
     };
     history: {
       title: string;
       description: string;
       action: string;
     };
+    locationApplications: {
+      title: string;
+      description: string;
+      action: string;
+    };
+  };
+  locationApplicationPage: {
+    title: string;
+    subtitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    imageLabel: string;
+    imageHint: string;
+    imageReady: string;
+    pickImageAction: string;
+    imagePreviewAlt: string;
+    imageUrlLabel: string;
+    imageUrlPlaceholder: string;
+    submitAction: string;
+    submitSuccess: string;
+    mineTitle: string;
+    mineSubtitle: string;
+    emptyMine: string;
+    status: {
+      PENDING: string;
+      PUBLISHED: string;
+      REJECTED: string;
+    };
   };
   userProfilePage: {
     title: string;
+    subtitle: string;
     subtitleCommunity: string;
     subtitleAnchor: string;
     loading: string;
@@ -742,7 +862,6 @@ export interface MessageSchema {
   };
   modifyStatusModal: {
     title: string;
-    pinLabel: string;
     confirmAction: string;
     updateFailed: string;
   };
@@ -804,13 +923,6 @@ export interface MessageSchema {
     label: string;
     placeholder: string;
   };
-  pinInput: {
-    label: string;
-    hint: string;
-    placeholder: string;
-    regenerateTitle: string;
-    info: string;
-  };
   nlForm: {
     submit: string;
     parsing: string;
@@ -842,7 +954,10 @@ export interface MessageSchema {
     type: string;
     time: string;
     location: string;
+    meetingPoint: string;
     viewLocationImages: string;
+    viewMeetingPointImage: string;
+    meetingPointImageTitle: string;
     locationGallery: {
       title: string;
       empty: string;
@@ -867,11 +982,13 @@ export interface MessageSchema {
   adminCommon: {
     title: string;
     subtitle: string;
-    navAnchorPR: string;
-    navAnchorPRMessages: string;
+    navAnchorEvents: string;
+    navPR: string;
+    navPRMessages: string;
     navBookingSupport: string;
     navBookingExecution: string;
     navPois: string;
+    navFeedbackQuestionnaires: string;
     logoutAction: string;
   };
   adminLogin: {
@@ -945,17 +1062,123 @@ export interface MessageSchema {
     createPoiAction: string;
     creatingPoi: string;
     galleryHint: string;
+    perTimeWindowCapLabel: string;
+    perTimeWindowCapPlaceholder: string;
+    meetingPointDescriptionLabel: string;
+    meetingPointImageUrlLabel: string;
     uploadImageAction: string;
     uploadingImage: string;
     manualUrlPlaceholder: string;
     addUrlAction: string;
-    saveGalleryAction: string;
-    savingGallery: string;
+    savePoiAction: string;
+    savingPoi: string;
+    reviewStatusLabel: string;
+    statusPending: string;
+    statusPublished: string;
+    statusRejected: string;
+    submittedBy: string;
+    reviewedAt: string;
+    rejectReasonLabel: string;
+    rejectReasonPlaceholder: string;
+    publishPoiAction: string;
+    publishingPoi: string;
+    rejectPoiAction: string;
+    rejectingPoi: string;
     emptyGallery: string;
     removeImageAction: string;
     imageAlt: string;
+    availabilityRulesTitle: string;
+    addAvailabilityRuleAction: string;
+    emptyAvailabilityRules: string;
+    availabilityRuleTitle: string;
+    removeRuleAction: string;
+    ruleModeLabel: string;
+    ruleModeInclude: string;
+    ruleModeExclude: string;
+    ruleKindLabel: string;
+    ruleKindAbsolute: string;
+    ruleKindRecurring: string;
+    ruleStartAtLabel: string;
+    ruleEndAtLabel: string;
+    ruleFrequencyLabel: string;
+    frequencyDaily: string;
+    frequencyWeekly: string;
+    frequencyMonthly: string;
+    frequencyYearly: string;
+    ruleStartTimeLabel: string;
+    ruleEndTimeLabel: string;
+    ruleWeekdaysLabel: string;
+    ruleMonthDaysLabel: string;
+    ruleMonthsLabel: string;
+    ruleNumberListPlaceholder: string;
   };
-  adminAnchorPR: {
+  adminFeedbackQuestionnaires: {
+    title: string;
+    subtitle: string;
+    templatesTitle: string;
+    templateCount: string;
+    templateLabel: string;
+    newTemplateAction: string;
+    newTemplateOption: string;
+    createFormTitle: string;
+    editFormTitle: string;
+    formHint: string;
+    keyLabel: string;
+    keyPlaceholder: string;
+    versionLabel: string;
+    versionPlaceholder: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+    definitionLabel: string;
+    createAction: string;
+    saveAction: string;
+    saving: string;
+    invalidJson: string;
+    invalidDefinition: string;
+    created: string;
+    saved: string;
+  };
+  adminAnchorEvents: {
+    title: string;
+    subtitle: string;
+    eventsTitle: string;
+    newEventAction: string;
+    emptyEvents: string;
+    activityInfoTitle: string;
+    locationPoolsTitle: string;
+    timePoolStrategyTitle: string;
+    timeWindowsTitle: string;
+    participationDefaultsTitle: string;
+    participationDefaultsDescription: string;
+    landingRolloutTitle: string;
+    landingRolloutDescription: string;
+    selectEventForLandingConfigHint: string;
+    formRatioLabel: string;
+    cardRichRatioLabel: string;
+    listRatioLabel: string;
+    assignmentRevisionLabel: string;
+    landingFallbackHint: string;
+    landingRatioValidation: string;
+    assignmentRevisionValidation: string;
+    saveLandingConfigAction: string;
+    defaultPrNotesTitle: string;
+    defaultPrNotesPlaceholder: string;
+    preferenceTagsTitle: string;
+    preferenceTagsDescription: string;
+    selectEventForPreferenceTagsHint: string;
+    addPreferenceTagAction: string;
+    emptyPublishedPreferenceTags: string;
+    preferenceTagLabel: string;
+    preferenceTagDescription: string;
+    removePreferenceTagAction: string;
+    savePreferenceTagsAction: string;
+    pendingPreferenceTagsTitle: string;
+    emptyPendingPreferenceTags: string;
+    preferenceTagDescriptionEmpty: string;
+    publishPreferenceTagAction: string;
+    rejectPreferenceTagAction: string;
+  };
+  adminPR: {
     title: string;
     subtitle: string;
     loginTitle: string;
@@ -969,13 +1192,29 @@ export interface MessageSchema {
     eventNameLabel: string;
     eventTypeLabel: string;
     eventDescriptionLabel: string;
+    eventMeetingPointDescriptionLabel: string;
+    eventMeetingPointImageUrlLabel: string;
     eventCoverImageLabel: string;
     eventBetaGroupQrCodeLabel: string;
+    eventFeedbackQuestionnaireTemplateLabel: string;
+    eventImageUrlPlaceholder: string;
+    uploadEventCoverImageAction: string;
+    uploadEventBetaGroupQrCodeAction: string;
+    uploadingEventImage: string;
+    eventCoverImagePreviewAlt: string;
+    eventBetaGroupQrCodePreviewAlt: string;
     eventStatusLabel: string;
     eventDefaultMinPartnersLabel: string;
     eventDefaultMaxPartnersLabel: string;
     eventPoiHint: string;
     eventLocationPoolLabel: string;
+    eventDefaultMeetingPointTitle: string;
+    eventLocationMeetingPointsTitle: string;
+    eventLocationMeetingPointsLabel: string;
+    eventLocationMeetingPointsHint: string;
+    eventLocationMeetingPointsEmpty: string;
+    eventLocationMeetingPointDescriptionLabel: string;
+    eventLocationMeetingPointImageUrlLabel: string;
     eventTimeWindowHint: string;
     saveEventAction: string;
     createEventAction: string;
@@ -989,33 +1228,59 @@ export interface MessageSchema {
     batchStatusLabel: string;
     saveBatchAction: string;
     createBatchAction: string;
-    anchorPRsTitle: string;
-    newAnchorPRAction: string;
-    emptyAnchorPRs: string;
-    anchorPRFormTitle: string;
-    anchorPRTitleLabel: string;
-    anchorPRTypeLabel: string;
-    anchorPRLocationLabel: string;
+    prsTitle: string;
+    newPRAction: string;
+    emptyPRs: string;
+    prFormTitle: string;
+    prTitleLabel: string;
+    prTypeLabel: string;
+    prLocationLabel: string;
     noLocationOption: string;
-    anchorPRStatusLabel: string;
-    anchorPRVisibilityLabel: string;
-    anchorPRMinPartnersLabel: string;
-    anchorPRMaxPartnersLabel: string;
-    anchorPRPreferencesLabel: string;
-    anchorPRNotesLabel: string;
-    anchorPRLocationHint: string;
-    anchorPRTimeHint: string;
-    anchorPRContentLockedHint: string;
+    prStatusLabel: string;
+    prVisibilityLabel: string;
+    prMinPartnersLabel: string;
+    prMaxPartnersLabel: string;
+    prPreferencesLabel: string;
+    prNotesLabel: string;
+    prMeetingPointDescriptionLabel: string;
+    prMeetingPointImageUrlLabel: string;
+    prFeedbackQuestionnaireInstanceLabel: string;
+    prFeedbackQuestionnaireTemplateLabel: string;
+    noFeedbackQuestionnaire: string;
+    saveFeedbackQuestionnaireInstanceAction: string;
+    mountFeedbackQuestionnaireTemplateAction: string;
+    prLocationHint: string;
+    prTimeHint: string;
+    prContentLockedHint: string;
     participationPolicyTitle: string;
     participationPolicyDescription: string;
     bookingTriggeredAtLabel: string;
     policyValidationStartBeforeEnd: string;
     policyValidationJoinLockAfterConfirmationEnd: string;
     policyValidationDeadlineAfterConfirmationEnd: string;
-    saveAnchorPRAction: string;
-    createAnchorPRAction: string;
+    savePRAction: string;
+    createPRAction: string;
+    deletePRAction: string;
+    deletingPR: string;
+    deleteConfirmTitle: string;
+    deleteConfirmMessage: string;
+    deleteConfirmDescription: string;
     prListTitle: string;
     partnerCountWithValue: string;
+    filtersTitle: string;
+    filteredCountLabel: string;
+    searchTypeLabel: string;
+    searchLocationLabel: string;
+    searchStatusLabel: string;
+    searchStatusAll: string;
+    searchStartLabel: string;
+    searchEndLabel: string;
+    emptySearchResults: string;
+    prTimeStartLabel: string;
+    prTimeEndLabel: string;
+    typeDefaultsHint: string;
+    timeWindowRequired: string;
+    timeWindowValidationStartBeforeEnd: string;
     statusActive: string;
     statusArchived: string;
     statusPaused: string;
@@ -1026,17 +1291,20 @@ export interface MessageSchema {
     visibilityHidden: string;
     saving: string;
   };
-  adminAnchorPRMessages: {
+  adminPRMessages: {
     title: string;
     subtitle: string;
+    panelTitle: string;
+    panelHint: string;
     eventsTitle: string;
     batchesTitle: string;
-    anchorPRsTitle: string;
+    prsTitle: string;
     composerTitle: string;
     composerHint: string;
     emptyEvents: string;
     emptyBatches: string;
-    emptyAnchorPRs: string;
+    emptyMessages: string;
+    emptyPRs: string;
     selectEventHint: string;
     selectBatchHint: string;
     selectPRHint: string;
@@ -1050,6 +1318,13 @@ export interface MessageSchema {
     messagePlaceholder: string;
     messageAction: string;
     messageSending: string;
+    editAction: string;
+    deleteAction: string;
+    saveEditAction: string;
+    messageSaving: string;
+    messageDeleting: string;
+    editedAt: string;
+    deleteConfirm: string;
   };
   adminBookingExecution: {
     title: string;
@@ -1120,11 +1395,11 @@ export interface MessageSchema {
     booleanNo: string;
   };
   validation: {
-    pinMustBeFourDigits: string;
     typeRequired: string;
     naturalLanguageRequired: string;
     naturalLanguageWordLimit: string;
-    minPartnersAtLeastTwo: string;
+    minPartnersAtLeastOne: string;
+    maxPartnersAtLeastTwo: string;
     maxPartnersMustBeAtLeastMinPartners: string;
   };
   errors: {
@@ -1138,6 +1413,8 @@ export interface MessageSchema {
     fetchMyCreatedRequestsFailed: string;
     fetchMyJoinedRequestsFailed: string;
     joinRequestFailed: string;
+    waitlistRequestFailed: string;
+    cancelWaitlistFailed: string;
     exitRequestFailed: string;
     confirmSlotFailed: string;
     checkInSlotFailed: string;
@@ -1162,13 +1439,12 @@ export interface MessageSchema {
     fetchBackendBuildMetadataFailed: string;
     fetchPublicConfigFailed: string;
     fetchWechatReminderSubscriptionFailed: string;
+    fetchWechatOfficialAccountFollowStatusFailed: string;
     updateWechatReminderSubscriptionFailed: string;
     fetchCurrentUserProfileFailed: string;
     updateCurrentUserProfileFailed: string;
     updateCurrentUserAvatarFailed: string;
     startWechatBindFailed: string;
-    loginWithPinFailed: string;
-    registerLocalAccountFailed: string;
   };
   posterStyles: {
     fresh: string;

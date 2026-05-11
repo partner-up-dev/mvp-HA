@@ -23,6 +23,15 @@ export type AdminPoisResponse = InferResponseType<
 export type UpsertAdminPoiResponse = InferResponseType<
   (typeof adminClient.api.admin.pois)[":poiId"]["$put"]
 >;
+export type ReviewAdminPoiResponse = InferResponseType<
+  (typeof adminClient.api.admin.pois)[":poiId"]["publish"]["$post"]
+>;
+export type AdminPoiAvailabilityRulesInput =
+  AdminPoisResponse[number]["availabilityRules"];
+type MeetingPointInput = {
+  description: string | null;
+  imageUrl: string | null;
+};
 
 export const useAdminPois = (enabled: MaybeRef<boolean> = true) =>
   useQuery<AdminPoisResponse>({
@@ -80,15 +89,27 @@ export const useUpsertAdminPoi = () => {
   return useMutation<
     UpsertAdminPoiResponse,
     Error,
-    { poiId: string; gallery: string[] }
+    {
+      poiId: string;
+      gallery: string[];
+      perTimeWindowCap: number | null;
+      availabilityRules: AdminPoiAvailabilityRulesInput;
+      meetingPoint?: MeetingPointInput | null;
+    }
   >({
-    mutationFn: async ({ poiId, gallery }) => {
+    mutationFn: async ({
+      poiId,
+      gallery,
+      perTimeWindowCap,
+      availabilityRules,
+      meetingPoint,
+    }) => {
       const res = await adminClient.api.admin.pois[":poiId"].$put({
         param: { poiId },
-        json: { gallery },
+        json: { gallery, perTimeWindowCap, availabilityRules, meetingPoint },
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "保存 POI Gallery 失败"));
+        throw new Error(await readErrorMessage(res, "保存 POI 失败"));
       }
       return await res.json();
     },
@@ -99,3 +120,38 @@ export const useUpsertAdminPoi = () => {
     },
   });
 };
+
+const buildPoiReviewMutation = (action: "publish" | "reject") => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ReviewAdminPoiResponse,
+    Error,
+    { poiId: string; rejectReason?: string | null }
+  >({
+    mutationFn: async ({ poiId, rejectReason }) => {
+      const res =
+        action === "publish"
+          ? await adminClient.api.admin.pois[":poiId"].publish.$post({
+              param: { poiId },
+            })
+          : await adminClient.api.admin.pois[":poiId"].reject.$post({
+              param: { poiId },
+              json: { rejectReason: rejectReason ?? null },
+            });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "更新 POI 审批状态失败"));
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.pois(),
+      });
+    },
+  });
+};
+
+export const usePublishAdminPoi = () => buildPoiReviewMutation("publish");
+
+export const useRejectAdminPoi = () => buildPoiReviewMutation("reject");

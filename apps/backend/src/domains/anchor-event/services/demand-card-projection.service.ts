@@ -1,12 +1,13 @@
-import { AnchorEventBatchRepository } from "../../../repositories/AnchorEventBatchRepository";
-import type { AnchorPRRecord } from "../../../repositories/AnchorPRRepository";
-import type { AnchorEventId } from "../../../entities/anchor-event";
-import type { AnchorEventBatchId } from "../../../entities/anchor-event-batch";
-import type { TimeWindowEntry } from "../../../entities/anchor-event";
-import { readVisibleAnchorPRRecordsByBatchId } from "../../pr-core/services/pr-read.service";
-import { isJoinableStatus } from "../../pr-core/services/status-rules";
+import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import type {
+  AnchorEventId,
+  TimeWindowEntry,
+} from "../../../entities/anchor-event";
+import type { PartnerRequest } from "../../../entities/partner-request";
+import { readVisiblePartnerRequestsByType } from "../../pr/services";
+import { isJoinableStatus } from "../../pr/services";
 
-const batchRepo = new AnchorEventBatchRepository();
+const eventRepo = new AnchorEventRepository();
 
 const trimNullable = (value: string | null | undefined): string | null => {
   if (typeof value !== "string") {
@@ -30,16 +31,22 @@ const normalizeFingerprintPart = (value: string): string | null => {
 const normalizeCardKeySegment = (value: string): string =>
   value.trim().replace(/\s+/g, " ").toLowerCase();
 
+const buildTimeWindowKey = (timeWindow: TimeWindowEntry): string => {
+  const [start, end] = timeWindow;
+  return `${start ?? "_"}::${end ?? "_"}`;
+};
+
 export const buildDemandCardKey = (
-  batchId: number,
+  timeWindow: TimeWindowEntry,
   displayLocationName: string,
   preferenceFingerprint: string | null,
 ): string => {
+  const timeWindowSegment = buildTimeWindowKey(timeWindow);
   const locationSegment = normalizeCardKeySegment(displayLocationName);
   const preferenceSegment = preferenceFingerprint
     ? normalizeCardKeySegment(preferenceFingerprint)
     : "_";
-  return `${batchId}::${locationSegment}::${preferenceSegment}`;
+  return `${timeWindowSegment}::${locationSegment}::${preferenceSegment}`;
 };
 
 export const normalizePreferenceFingerprint = (
@@ -91,7 +98,6 @@ export type DemandCardCandidate = {
 
 export type DemandCardSummary = {
   cardKey: string;
-  batchId: number;
   timeWindow: TimeWindowEntry;
   batchStartTimestamp: number;
   displayLocationName: string;
@@ -104,7 +110,6 @@ export type DemandCardSummary = {
 
 type CandidateGroup = {
   cardKey: string;
-  batchId: AnchorEventBatchId;
   timeWindow: TimeWindowEntry;
   batchStartTimestamp: number;
   displayLocationName: string;
@@ -139,32 +144,29 @@ const compareCards = (left: DemandCardSummary, right: DemandCardSummary): number
   return left.cardKey.localeCompare(right.cardKey);
 };
 
-const toDemandCardCandidate = (record: AnchorPRRecord): DemandCardCandidate => ({
-  prId: record.root.id,
-  status: record.root.status,
-  createdAt: record.root.createdAt.toISOString(),
-  notes: trimNullable(record.root.notes),
+const toDemandCardCandidate = (record: PartnerRequest): DemandCardCandidate => ({
+  prId: record.id,
+  status: record.status,
+  createdAt: record.createdAt.toISOString(),
+  notes: trimNullable(record.notes),
 });
 
 const buildCandidateGroup = ({
-  batchId,
   timeWindow,
   displayLocationName,
   preferenceFingerprint,
   preferenceTags,
 }: {
-  batchId: AnchorEventBatchId;
   timeWindow: TimeWindowEntry;
   displayLocationName: string;
   preferenceFingerprint: string | null;
   preferenceTags: string[];
 }): CandidateGroup => ({
   cardKey: buildDemandCardKey(
-    batchId,
+    timeWindow,
     displayLocationName,
     preferenceFingerprint,
   ),
-  batchId,
   timeWindow,
   batchStartTimestamp: resolveDemandCardBatchStartTimestamp(timeWindow),
   displayLocationName,
@@ -176,50 +178,47 @@ const buildCandidateGroup = ({
 const groupJoinableCandidates = async (
   eventId: AnchorEventId,
 ): Promise<CandidateGroup[]> => {
-  const batches = await batchRepo.findByAnchorEventId(eventId);
-  const nonExpiredBatches = batches.filter((batch) => batch.status !== "EXPIRED");
+  const event = await eventRepo.findById(eventId);
+
+  if (!event) {
+    return [];
+  }
+
   const groupMap = new Map<string, CandidateGroup>();
+  const records = await readVisiblePartnerRequestsByType(event.type);
 
-  for (const batch of nonExpiredBatches) {
-    const records = await readVisibleAnchorPRRecordsByBatchId(batch.id);
-    for (const record of records) {
-      if (!isJoinableStatus(record.root.status)) {
-        continue;
-      }
+  for (const record of records) {
+    if (!isJoinableStatus(record.status)) {
+      continue;
+    }
 
-      if (record.anchor.anchorEventId !== eventId) {
-        continue;
-      }
+    const displayLocationName = trimNullable(record.location);
+    if (!displayLocationName) {
+      continue;
+    }
 
-      const displayLocationName = trimNullable(record.root.location);
-      if (!displayLocationName) {
-        continue;
-      }
+    const preferences = Array.isArray(record.preferences)
+      ? record.preferences
+      : [];
+    const preferenceTags = resolvePreferenceTags(preferences);
+    const preferenceFingerprint = normalizePreferenceFingerprint(preferenceTags);
+    const cardKey = buildDemandCardKey(
+      record.time,
+      displayLocationName,
+      preferenceFingerprint,
+    );
 
-      const preferences = Array.isArray(record.root.preferences)
-        ? record.root.preferences
-        : [];
-      const preferenceTags = resolvePreferenceTags(preferences);
-      const preferenceFingerprint = normalizePreferenceFingerprint(preferenceTags);
-      const cardKey = buildDemandCardKey(
-        batch.id,
+    const existing =
+      groupMap.get(cardKey) ??
+      buildCandidateGroup({
+        timeWindow: record.time,
         displayLocationName,
         preferenceFingerprint,
-      );
+        preferenceTags,
+      });
 
-      const existing =
-        groupMap.get(cardKey) ??
-        buildCandidateGroup({
-          batchId: batch.id,
-          timeWindow: batch.timeWindow,
-          displayLocationName,
-          preferenceFingerprint,
-          preferenceTags,
-        });
-
-      existing.candidates.push(toDemandCardCandidate(record));
-      groupMap.set(cardKey, existing);
-    }
+    existing.candidates.push(toDemandCardCandidate(record));
+    groupMap.set(cardKey, existing);
   }
 
   return Array.from(groupMap.values());
@@ -240,7 +239,6 @@ const materializeDemandCardSummary = (
 
   return {
     cardKey: group.cardKey,
-    batchId: group.batchId,
     timeWindow: group.timeWindow,
     batchStartTimestamp: group.batchStartTimestamp,
     displayLocationName: group.displayLocationName,

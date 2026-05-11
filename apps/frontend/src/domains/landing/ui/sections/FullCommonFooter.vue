@@ -41,29 +41,32 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
+const route = useRoute();
 
-const footerNavLinks = computed(() => [
-  {
-    routeName: "pr-mine",
-    label: t("myPrsPage.title"),
-  },
-  {
-    routeName: "me",
-    label: t("home.landing.footerNavMine"),
-  },
-  {
-    routeName: "contact-support",
-    label: t("contactSupportPage.title"),
-  },
-  {
-    routeName: "about",
-    label: t("aboutPage.title"),
-  },
-]);
+const footerNavLinks = computed(() =>
+  [
+    {
+      routeName: "pr-mine",
+      label: t("myPrsPage.title"),
+    },
+    {
+      routeName: "me",
+      label: t("home.landing.footerNavMine"),
+    },
+    {
+      routeName: "contact-support",
+      label: t("contactSupportPage.title"),
+    },
+    {
+      routeName: "about",
+      label: t("aboutPage.title"),
+    },
+  ].filter((link) => route.name !== link.routeName),
+);
 </script>
 
 <style lang="scss" scoped>
@@ -72,12 +75,12 @@ const footerNavLinks = computed(() => [
   flex-direction: column;
   min-width: 0;
   justify-content: flex-start;
-  gap: var(--dcs-space-footer-gap);
+  gap: var(--landing-footer-gap);
   padding-top: var(--full-common-footer-padding-top, 0);
   padding-left: var(--full-common-footer-padding-inline-start, 0);
   padding-right: var(--full-common-footer-padding-inline-end, 0);
   padding-bottom: calc(
-    var(--dcs-space-landing-section-padding-block) + var(--pu-safe-bottom)
+    var(--landing-section-padding-block) + var(--pu-safe-bottom)
   );
   animation-delay: 260ms;
   background-color: var(--sys-color-surface-container);
@@ -86,13 +89,13 @@ const footerNavLinks = computed(() => [
 .footer-brand {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .footer-brand-main {
   display: inline-flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 
   h2 {
     @include mx.pu-font(title-large);
@@ -105,21 +108,21 @@ const footerNavLinks = computed(() => [
 .footer-brand-logo {
   width: var(--sys-size-large);
   height: var(--sys-size-large);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   object-fit: cover;
 }
 
 .footer-brand p {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
-  max-width: var(--dcs-layout-landing-footer-copy-measure);
+  max-width: var(--landing-footer-copy-measure);
   margin: 0;
 }
 
 .footer-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .footer-nav-link {
@@ -149,7 +152,7 @@ const footerNavLinks = computed(() => [
   }
 
   .footer-nav-icon {
-    margin-left: var(--sys-spacing-xs);
+    margin-left: var(--sys-spacing-xsmall);
     display: inline-block;
     vertical-align: middle;
     // color: var(--sys-color-secondary);
@@ -178,7 +181,7 @@ const footerNavLinks = computed(() => [
 .footer-legal {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   color: var(--sys-color-on-surface-variant);
 }
 
@@ -217,17 +220,17 @@ const footerNavLinks = computed(() => [
   }
 
   .footer-nav {
-    gap: var(--sys-spacing-xs) var(--sys-spacing-med);
+    gap: var(--sys-spacing-xsmall) var(--sys-spacing-medium);
   }
 
   .footer-nav-link {
     @include mx.pu-font(title-small);
     min-height: 3rem;
-    padding: var(--sys-spacing-xs);
+    padding: var(--sys-spacing-xsmall);
   }
 
   .footer-legal {
-    gap: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-xsmall);
   }
 
   .footer-copyright,

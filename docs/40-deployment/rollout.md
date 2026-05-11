@@ -1,8 +1,38 @@
 # Rollout
 
+## CI Validation Gates
+
+Hosted PR validation is split by gate owner:
+
+- backend gate: `.github/workflows/backend-gate.yml`; backend typecheck, backend unit tests, DB artifact lint, and backend scenario tests
+- frontend gate: `.github/workflows/frontend-gate.yml`; frontend build and frontend-owned static quality checks
+- E2E gate: `.github/workflows/e2e-gate.yml`; root-owned system scenario tests through `pnpm test:scenario system`
+
+Backend and frontend gates run for PRs targeting `develop` or `master` when
+their owned surfaces or workspace install inputs change.
+
+E2E gate runs for PRs targeting `master`. It is also available through
+`workflow_dispatch` for release qualification and diagnosis. The E2E gate uses
+GitHub Actions Postgres service state via `SCENARIO_DATABASE_ADMIN_URL`,
+installs Chromium through Playwright, and lets the scenario runner start the
+Vite frontend server, backend HTTP server, and isolated temporary database.
+
 ## Backend CI/CD Flow
 
 Primary workflow: `.github/workflows/backend-fc-deploy.yml`
+
+The workflow prepares the GitHub runner and delegates deploy control flow to
+`scripts/ci/fc/deploy_backend.sh`. The script is the canonical executable
+rollout path for backend FC deployment.
+
+Runner toolchain versions are explicit: Node is read from `.node-version`,
+pnpm is read from the root `packageManager`, and Serverless Devs is pinned in
+`scripts/ci/fc/common.sh`. GitHub Action majors are kept on Node24-compatible
+releases while project commands run on Node 22.
+
+The backend deploy workflow is triggered by backend source changes and by root
+workspace/toolchain inputs used during install, build, or layer packaging:
+`.node-version`, `package.json`, `pnpm-lock.yaml`, and `pnpm-workspace.yaml`.
 
 ### Standard deploy path
 
@@ -19,6 +49,8 @@ Primary workflow: `.github/workflows/backend-fc-deploy.yml`
 11. inject `BACKEND_COMMIT_HASH` from `GITHUB_SHA`
 12. deploy backend FC function
 13. on `master`, publish function version and update `production` alias
+14. on `master`, create the backend GitHub Release after production alias
+    publication succeeds
 
 ## Rollout Guarantees
 
@@ -26,6 +58,38 @@ Primary workflow: `.github/workflows/backend-fc-deploy.yml`
 - backend deploys run serially through the `backend-fc-deploy` concurrency group
 - layer-only publish is supported via workflow dispatch input
 - runtime build metadata stays available even when the deployed package has no `.git` directory
+- backend GitHub Releases are gated by successful production deployment
+
+## Release Automation
+
+Primary workflow: `.github/workflows/release-please.yml`
+
+Release Please owns automated version bumps, changelog updates, release tags,
+and GitHub Release notes after the `0.3.0` bootstrap baseline.
+
+Tracked release units:
+
+- backend: `apps/backend/package.json`, `apps/backend/CHANGELOG.md`,
+  `backend-vX.Y.Z`
+- frontend: `apps/frontend/package.json`, `apps/frontend/CHANGELOG.md`,
+  `frontend-vX.Y.Z`
+
+The shared manifest is `.release-please-manifest.json`.
+
+Backend and frontend release semantics intentionally differ:
+
+- Backend Release Please PRs update source release metadata, but backend GitHub
+  Releases are skipped in the general release workflow. The backend deployment
+  workflow creates the backend GitHub Release only after the `master`
+  production rollout finishes successfully.
+- Frontend GitHub Releases are source releases. Frontend deployment is
+  currently pull-based, so GitHub Actions cannot prove that Aliyun ESA has
+  picked up and deployed the new frontend source.
+
+If release PR checks must run when opened by automation, configure
+`RELEASE_PLEASE_TOKEN` as a GitHub PAT or GitHub App token with repository
+contents, pull request, and issue-label permissions. Without that secret, the
+workflow falls back to `GITHUB_TOKEN`.
 
 ## DB Artifact Validation
 
@@ -42,7 +106,11 @@ This workflow:
 
 Separate workflow: `.github/workflows/job-runner-trigger-fc-deploy.yml`
 
-This deploys the trigger function that periodically calls the backend job tick endpoint.
+This deploys the trigger function that calls the backend job tick endpoint on
+cron expression `CRON_TZ=Asia/Shanghai 0 0/30 8-23 ? * ?`.
+
+The workflow delegates deployment to
+`scripts/ci/fc/deploy_job_runner_trigger.sh`.
 
 ## Frontend Rollout Reality
 
@@ -58,9 +126,13 @@ Repo-tracked rollout facts:
 
 The repo does not currently define a canonical GitHub Actions workflow for frontend ESA deploy.
 
+Frontend GitHub Releases do not assert deployment success under the current
+pull-based ESA rollout model.
+
 ## Manual Rollout Reality
 
-Manual backend deployment is supported through Serverless Devs commands, but the canonical rollout path is GitHub Actions.
+Manual backend deployment is supported through the same repository scripts used
+by GitHub Actions. GitHub Actions remains the canonical hosted rollout path.
 
 If manual deploy is used:
 

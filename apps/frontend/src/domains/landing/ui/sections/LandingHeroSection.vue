@@ -29,7 +29,7 @@
       </RouterLink>
       <RouterLink
         class="hero-action hero-action--secondary"
-        :to="{ name: 'community-pr-create' }"
+        :to="{ name: 'pr-create' }"
         @click="handleSecondaryClick"
       >
         {{ t("home.landing.heroSecondaryAction") }}
@@ -195,7 +195,7 @@ const handlePrimaryClick = () => {
 const handleSecondaryClick = () => {
   trackEvent("home_create_entry_click", {
     source: "hero_secondary",
-    target: "community-pr-create",
+    target: "pr-create",
   });
 };
 
@@ -212,17 +212,17 @@ onUnmounted(() => {
 .hero {
   position: relative;
   overflow: clip;
-  padding: var(--dcs-space-landing-hero-padding-block) 0;
+  padding: var(--landing-hero-padding-block) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .hero-title {
   @include mx.pu-font(display-large);
   color: var(--sys-color-on-surface);
   margin: 0;
-  max-width: var(--dcs-layout-landing-hero-title-measure);
+  max-width: var(--landing-hero-title-measure);
   line-height: 1.02;
   text-wrap: balance;
 }
@@ -249,7 +249,7 @@ onUnmounted(() => {
 .subtitle {
   @include mx.pu-font(body-large);
   color: var(--sys-color-on-surface-variant);
-  max-width: var(--dcs-layout-landing-hero-subtitle-measure);
+  max-width: var(--landing-hero-subtitle-measure);
   opacity: 0;
   transform: translate3d(0, 0.55rem, 0);
   transition:
@@ -265,8 +265,8 @@ onUnmounted(() => {
 .hero-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
-  margin-top: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-medium);
+  margin-top: var(--sys-spacing-small);
   z-index: 1;
   opacity: 0;
   transform: translate3d(0, 0.6rem, 0);
@@ -284,7 +284,20 @@ onUnmounted(() => {
 
 .hero-action {
   @include mx.pu-font(label-large);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-spacing-xsmall);
   width: fit-content;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
 
   &:active {
     opacity: 0.78;
@@ -298,25 +311,19 @@ onUnmounted(() => {
 }
 
 .hero-action--primary {
-  @include mx.pu-pill-action(transparent);
   color: var(--sys-color-on-primary-container);
   border-color: var(--sys-color-primary);
   background: var(--sys-color-primary-container);
   min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .hero-action--secondary {
-  @include mx.pu-pill-action(transparent);
   color: var(--sys-color-on-surface-variant);
-  border-color: color-mix(in srgb, var(--sys-color-outline) 50%, transparent);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-low) 60%,
-    transparent
-  );
+  border-color: var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container-low);
   min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .hero-action:hover {
@@ -381,21 +388,21 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .hero {
-    padding: var(--dcs-space-landing-hero-padding-block-compact) 0;
-    gap: var(--dcs-space-landing-hero-gap-compact);
+    padding: var(--landing-hero-padding-block-compact) 0;
+    gap: var(--landing-hero-gap-compact);
   }
 
   .hero-title {
-    max-width: var(--dcs-layout-landing-hero-title-measure-compact);
+    max-width: var(--landing-hero-title-measure-compact);
   }
 
   .subtitle {
     @include mx.pu-font(body-large);
-    max-width: var(--dcs-layout-landing-hero-subtitle-measure-compact);
+    max-width: var(--landing-hero-subtitle-measure-compact);
   }
 
   .hero-actions {
-    gap: var(--sys-spacing-sm);
+    gap: var(--sys-spacing-small);
   }
 
   .hero-action {
@@ -404,8 +411,8 @@ onUnmounted(() => {
 
   .hero-action--primary,
   .hero-action--secondary {
-    min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-    padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+    min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+    padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   }
 
   .hero-art-ring {

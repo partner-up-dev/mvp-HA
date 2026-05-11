@@ -225,15 +225,17 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
 .timeline-policy-picker {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-med);
-  @include mx.pu-surface-panel(subtle-inset);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-medium);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-large);
+  background: var(--sys-color-surface);
 }
 
 .timeline-policy-picker__header {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .timeline-policy-picker__title {
@@ -255,7 +257,7 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
 .timeline-policy-picker__preview {
   position: relative;
   min-height: 80px;
-  padding: var(--sys-spacing-lg) 0;
+  padding: var(--sys-spacing-large) 0;
 }
 
 .timeline-policy-picker__line {
@@ -272,7 +274,7 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: calc(var(--sys-spacing-xsmall) / 2);
   text-align: center;
 }
 
@@ -302,18 +304,18 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
 
 .timeline-policy-picker__controls {
   display: grid;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .timeline-policy-picker__control {
   display: grid;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .timeline-policy-picker__control-header {
   display: flex;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: baseline;
 }
 
@@ -331,6 +333,10 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
 }
 
 .timeline-policy-picker__number {
-  @include mx.pu-field-shell(compact-surface);
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 </style>

@@ -74,13 +74,9 @@ import SurfaceCard from "@/shared/ui/containers/SurfaceCard.vue";
 import Avatar from "@/shared/ui/identity/Avatar.vue";
 import MiniumCommonFooter from "@/domains/support/ui/sections/MiniumCommonFooter.vue";
 import {
-  anchorPRDetailPath,
-  communityPRDetailPath,
+  prDetailPath,
 } from "@/domains/pr/routing/routes";
-import {
-  usePRPartnerProfile,
-  type PRPartnerProfileScenario,
-} from "@/domains/user/queries/usePRPartnerProfile";
+import { usePRPartnerProfile } from "@/domains/user/queries/usePRPartnerProfile";
 
 const route = useRoute();
 const { t } = useI18n();
@@ -92,28 +88,13 @@ const parsePositiveInt = (value: unknown): number | null => {
   return parsed;
 };
 
-const scenario = computed<PRPartnerProfileScenario | null>(() => {
-  if (route.name === "community-partner-profile") return "COMMUNITY";
-  if (route.name === "anchor-partner-profile") return "ANCHOR";
-  return null;
-});
-
 const prId = computed(() => parsePositiveInt(route.params.id));
 const partnerId = computed(() => parsePositiveInt(route.params.partnerId));
 
-const { data, isLoading, error } = usePRPartnerProfile(
-  scenario,
-  prId,
-  partnerId,
-);
+const { data, isLoading, error } = usePRPartnerProfile(prId, partnerId);
 const profile = computed(() => data.value ?? null);
 
-const subtitle = computed(() => {
-  if (scenario.value === "ANCHOR") {
-    return t("userProfilePage.subtitleAnchor");
-  }
-  return t("userProfilePage.subtitleCommunity");
-});
+const subtitle = computed(() => t("userProfilePage.subtitle"));
 
 const displayName = computed(() => {
   const value = profile.value?.displayName?.trim();
@@ -147,12 +128,8 @@ const errorMessage = computed(() => {
 });
 
 const backFallbackTo = computed(() => {
-  if (prId.value !== null && scenario.value === "ANCHOR") {
-    return anchorPRDetailPath(prId.value as PRId);
-  }
-
   if (prId.value !== null) {
-    return communityPRDetailPath(prId.value as PRId);
+    return prDetailPath(prId.value as PRId);
   }
 
   return "/";
@@ -178,13 +155,13 @@ const backFallbackTo = computed(() => {
 .profile-row {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .profile-copy {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 

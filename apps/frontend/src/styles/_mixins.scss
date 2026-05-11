@@ -7,7 +7,6 @@
 @use 'sass:map';
 @use './functions' as fn;
 @use './ref' as ref;
-@forward './recipes';
 
 /* Typography Mixin - uses CSS variables (composite token) */
 @mixin pu-font($key, $mono: false) {

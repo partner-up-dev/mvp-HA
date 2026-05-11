@@ -23,11 +23,11 @@ defineEmits<{
 .error-toast {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
   background: var(--sys-color-error-container);
   color: var(--sys-color-on-error-container);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
 
   .icon {
     @include mx.flex-center;

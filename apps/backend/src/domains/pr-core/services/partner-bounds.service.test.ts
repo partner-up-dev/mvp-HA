@@ -25,14 +25,25 @@ test("assertManualPartnerBoundsValid rejects null and sub-minimum minPartners", 
     PARTNER_BOUNDS_ERROR_MESSAGES.minPartnersInvalid,
   );
   assertThrowsHttpException(
-    () => assertManualPartnerBoundsValid(1, null, 0),
+    () => assertManualPartnerBoundsValid(0, null, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.minPartnersInvalid,
+  );
+});
+
+test("assertManualPartnerBoundsValid accepts minPartners of 1 without maxPartners", () => {
+  assert.doesNotThrow(() => assertManualPartnerBoundsValid(1, null, 0));
+});
+
+test("assertManualPartnerBoundsValid rejects maxPartners of 1", () => {
+  assertThrowsHttpException(
+    () => assertManualPartnerBoundsValid(1, 1, 0),
+    PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersInvalid,
   );
 });
 
 test("assertManualPartnerBoundsValid rejects maxPartners below minPartners", () => {
   assertThrowsHttpException(
-    () => assertManualPartnerBoundsValid(2, 1, 0),
+    () => assertManualPartnerBoundsValid(3, 2, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersBelowMin,
   );
 });
@@ -42,15 +53,29 @@ test("normalizeAutomaticPartnerBounds defaults invalid minPartners to 2", () => 
     minPartners: 2,
     maxPartners: null,
   });
-  assert.deepEqual(normalizeAutomaticPartnerBounds(1, 4, 0), {
+  assert.deepEqual(normalizeAutomaticPartnerBounds(0, 4, 0), {
     minPartners: 2,
     maxPartners: 4,
   });
 });
 
-test("normalizeAutomaticPartnerBounds validates maxPartners against normalized minimum", () => {
+test("normalizeAutomaticPartnerBounds accepts minPartners of 1", () => {
+  assert.deepEqual(normalizeAutomaticPartnerBounds(1, null, 0), {
+    minPartners: 1,
+    maxPartners: null,
+  });
+});
+
+test("normalizeAutomaticPartnerBounds rejects maxPartners of 1", () => {
   assertThrowsHttpException(
     () => normalizeAutomaticPartnerBounds(1, 1, 0),
+    PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersInvalid,
+  );
+});
+
+test("normalizeAutomaticPartnerBounds validates maxPartners against normalized minimum", () => {
+  assertThrowsHttpException(
+    () => normalizeAutomaticPartnerBounds(3, 2, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersBelowMin,
   );
 });

@@ -113,21 +113,16 @@ const handleDismiss = () => {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--sys-spacing-med) + var(--pu-safe-bottom));
-  width: min(100% - (var(--sys-spacing-med) * 2), 24rem);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-surface-container-low) 92%,
-    transparent
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--sys-color-outline) 54%, transparent);
-  border-radius: var(--sys-radius-med);
-  padding: var(--sys-spacing-med);
+  bottom: calc(var(--sys-spacing-medium) + var(--pu-safe-bottom));
+  width: min(100% - (var(--sys-spacing-medium) * 2), 24rem);
+  background: var(--sys-color-surface-container-low);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-medium);
+  padding: var(--sys-spacing-medium);
   z-index: 20;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   backdrop-filter: blur(12px);
   @include mx.pu-elevation(4);
 }
@@ -162,27 +157,38 @@ const handleDismiss = () => {
   align-items: center;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-xs);
-  margin-top: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
+  margin-top: var(--sys-spacing-xsmall);
 }
 
 .nudge-action {
   @include mx.pu-font(label-large);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-spacing-xsmall);
+  min-height: auto;
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
+  border: 1px solid transparent;
+  border-radius: 999px;
   cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .nudge-action--ghost {
-  @include mx.pu-pill-action(outline-transparent);
   border-color: var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-low);
-  min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  color: var(--sys-color-on-surface);
 }
 
 .nudge-action--primary {
-  @include mx.pu-pill-action(solid-primary);
-  min-height: auto;
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .nudge-fade-enter-active,

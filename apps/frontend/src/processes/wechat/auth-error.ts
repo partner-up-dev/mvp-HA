@@ -6,14 +6,16 @@ import {
 
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
+const AUTHENTICATED_REQUIRED_CODE = "AUTHENTICATED_REQUIRED";
 
 export const isWeChatAuthRequiredError = (
   status: number,
   payload: ApiErrorPayload | null,
 ): boolean =>
-  status === 401 &&
+  (status === 401 || status === 403) &&
   (payload?.code === WECHAT_AUTH_REQUIRED_CODE ||
-    payload?.code === WECHAT_BIND_REQUIRED_CODE);
+    payload?.code === WECHAT_BIND_REQUIRED_CODE ||
+    payload?.code === AUTHENTICATED_REQUIRED_CODE);
 
 export const handleWeChatAuthRequiredError = (
   status: number,

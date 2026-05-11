@@ -1,18 +1,23 @@
-import type { PartnerRequestSummary } from "../../../entities/partner-request";
+import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { buildPartnerRequestSummaries } from "./get-pr-summaries";
 import { readPartnerRequestsByIds } from "../services/pr-read.service";
 
 const partnerRepo = new PartnerRepository();
 
+export type MyPRListItem = {
+  id: PRId;
+};
+
 export async function getMyJoinedPRs(
   userId: UserId,
-): Promise<PartnerRequestSummary[]> {
+): Promise<MyPRListItem[]> {
   const slots = await partnerRepo.findActiveByUserId(userId);
   const uniquePrIds = Array.from(new Set(slots.map((slot) => slot.prId)));
   const rows = await readPartnerRequestsByIds(uniquePrIds, {
     consistency: "strong",
   });
-  return buildPartnerRequestSummaries(rows);
+  return rows
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .map((row) => ({ id: row.id }));
 }

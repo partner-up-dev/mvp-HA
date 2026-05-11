@@ -1,42 +1,43 @@
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
 import { PartnerRequestAIService } from "../../../services/PartnerRequestAIService";
 import type {
   WeekdayLabel,
 } from "../../../entities/partner-request";
-import type { UserId } from "../../../entities/user";
 import {
   initializeSlotsForPR,
 } from "../services/slot-management.service";
 import { normalizeAutomaticPartnerBounds } from "../services/partner-bounds.service";
+import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
 import {
   resolveDraftCreator,
   type CreatorIdentityInput,
 } from "../services/creator-identity.service";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import {
+  finalizeCreatedPR,
+  type CreatePRCommandResult,
+} from "./create-pr.shared";
+import { materializeEventDefaultsForPR } from "../services/event-default-materialization.service";
 
 const prRepo = new PartnerRequestRepository();
-const communityPRRepo = new CommunityPRRepository();
 const aiService = new PartnerRequestAIService();
-
-export type CreatePRFromNLResult = {
-  id: number;
-  createdBy: UserId | null;
-};
 
 export async function createPRFromNaturalLanguage(
   rawText: string,
   nowIso: string,
   nowWeekday: WeekdayLabel | null,
   creatorIdentity: CreatorIdentityInput,
-): Promise<CreatePRFromNLResult> {
+): Promise<CreatePRCommandResult> {
   const fields = await aiService.parseRequest(rawText, nowIso, nowWeekday);
   const partnerBounds = normalizeAutomaticPartnerBounds(
     fields.minPartners,
     fields.maxPartners,
     0,
   );
+  await assertPRTimeWindowAvailableAtLocation({
+    location: fields.location,
+    timeWindow: fields.time,
+  });
 
   const creator = await resolveDraftCreator(creatorIdentity);
   const createdBy = creator?.id ?? null;
@@ -48,17 +49,12 @@ export async function createPRFromNaturalLanguage(
     location: fields.location,
     minPartners: partnerBounds.minPartners,
     maxPartners: partnerBounds.maxPartners,
+    budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
+    meetingPoint: fields.meetingPoint ?? null,
     status: "DRAFT",
     createdBy,
-    prKind: "COMMUNITY",
-  });
-  await communityPRRepo.create({
-    prId: request.id,
-    rawText,
-    budget: fields.budget,
-    creationSource: "NATURAL_LANGUAGE",
   });
 
   await initializeSlotsForPR(
@@ -66,18 +62,13 @@ export async function createPRFromNaturalLanguage(
     null,
   );
 
-  const event = await eventBus.publish(
-    "pr.created",
-    "partner_request",
-    String(request.id),
-    {
-      prId: request.id,
-      source: "natural_language",
-      status: "DRAFT",
-      creatorOpenId: creatorIdentity.oauthOpenId,
-    },
-  );
-  void writeToOutbox(event);
+  await materializeEventDefaultsForPR({
+    prId: request.id,
+    type: request.type,
+    location: request.location,
+    timeWindow: request.time,
+    prNotes: request.notes,
+  });
 
   operationLogService.log({
     actorId: createdBy,
@@ -87,8 +78,9 @@ export async function createPRFromNaturalLanguage(
     detail: { rawText, status: "DRAFT" },
   });
 
-  return {
+  return finalizeCreatedPR({
     id: request.id,
     createdBy,
-  };
+    creatorIdentity,
+  });
 }

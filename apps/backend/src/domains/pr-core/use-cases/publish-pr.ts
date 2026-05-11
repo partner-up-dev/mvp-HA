@@ -7,14 +7,15 @@ import type { UserId } from "../../../entities/user";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import {
   resolvePublishedCreator,
+  throwAuthenticatedRequired,
   type CreatorIdentityInput,
 } from "../services/creator-identity.service";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
-import { ensureUserHasPin } from "../services/user-pin-auth.service";
+import { resolveUserByOpenId } from "../../user";
 import { recalculatePRStatus } from "../services/slot-management.service";
 import { assertNoUserTimeWindowConflict } from "../services/participation-time-conflict.service";
-import { eventBus, writeToOutbox } from "../../../infra/events";
+import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
 import { operationLogService } from "../../../infra/operation-log";
+import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -23,7 +24,6 @@ const userRepo = new UserRepository();
 export type PublishPRResult = {
   pr: PublicPR;
   createdBy: UserId;
-  generatedUserPin: string | null;
 };
 
 const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
@@ -68,7 +68,6 @@ export async function publishPR(
   }
 
   let creatorUserId: UserId;
-  let generatedUserPin: string | null = null;
 
   if (request.createdBy) {
     if (creatorIdentity.authenticatedUserId) {
@@ -81,9 +80,7 @@ export async function publishPR(
       if (!user) {
         throw new HTTPException(404, { message: "Draft creator user not found" });
       }
-      const ensured = await ensureUserHasPin(user);
-      creatorUserId = ensured.user.id;
-      generatedUserPin = ensured.userPin;
+      creatorUserId = user.id;
     } else if (creatorIdentity.oauthOpenId) {
       const oauthUser = await resolveUserByOpenId(creatorIdentity.oauthOpenId);
       if (oauthUser.id !== request.createdBy) {
@@ -91,18 +88,13 @@ export async function publishPR(
           message: "Only the draft creator can publish this partner request",
         });
       }
-      const ensured = await ensureUserHasPin(oauthUser);
-      creatorUserId = ensured.user.id;
-      generatedUserPin = ensured.userPin;
+      creatorUserId = oauthUser.id;
     } else {
-      throw new HTTPException(401, {
-        message: "Authentication required to publish claimed draft",
-      });
+      return throwAuthenticatedRequired();
     }
   } else {
     const creator = await resolvePublishedCreator(creatorIdentity);
     creatorUserId = creator.user.id;
-    generatedUserPin = creator.generatedUserPin;
     await prRepo.setCreatedBy(id, creatorUserId);
   }
 
@@ -110,6 +102,10 @@ export async function publishPR(
     userId: creatorUserId,
     targetTimeWindow: request.time,
     excludePrId: id,
+  });
+  await assertPRTimeWindowAvailableAtLocation({
+    location: request.location,
+    timeWindow: request.time,
   });
 
   const updated = await prRepo.updateStatus(id, "OPEN");
@@ -124,30 +120,18 @@ export async function publishPR(
     throw new HTTPException(500, { message: "Failed to reload partner request" });
   }
 
-  const event = await eventBus.publish(
-    "pr.status_changed",
-    "partner_request",
-    String(id),
-    {
-      prId: id,
-      fromStatus: "DRAFT",
-      toStatus: "OPEN",
-      trigger: "manual",
-    },
-  );
-  void writeToOutbox(event);
-
   operationLogService.log({
     actorId: creatorUserId,
     action: "pr.publish",
     aggregateType: "partner_request",
     aggregateId: String(id),
-    detail: { fromStatus: "DRAFT", toStatus: "OPEN" },
+    detail: { fromStatus: "DRAFT", toStatus: latest.status },
   });
+
+  await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
 
   return {
     pr: await toPublicPR(latest, creatorUserId),
     createdBy: creatorUserId,
-    generatedUserPin,
   };
 }

@@ -116,16 +116,6 @@
                   </div>
                   <div class="meta-item">
                     <span class="meta-label">{{
-                      t("adminBookingExecution.batchLabel")
-                    }}</span>
-                    <strong>{{
-                      item.batchTimeWindow
-                        ? formatWindow(item.batchTimeWindow)
-                        : t("adminBookingExecution.noneText")
-                    }}</strong>
-                  </div>
-                  <div class="meta-item">
-                    <span class="meta-label">{{
                       t("adminBookingExecution.timeLabel")
                     }}</span>
                     <strong>{{ formatWindow(item.timeWindow) }}</strong>
@@ -264,8 +254,9 @@
                     {{ drafts[item.prId].errorMessage }}
                   </p>
                   <div class="action-row">
-                    <button
-                      class="primary-btn"
+                    <Button
+                      appearance="pill"
+                      size="sm"
                       type="button"
                       :disabled="isSubmitDisabled(item)"
                       @click="handleSubmit(item)"
@@ -275,9 +266,11 @@
                           ? t("adminBookingExecution.submittingAction")
                           : t("adminBookingExecution.submitAction")
                       }}
-                    </button>
-                    <button
-                      class="secondary-btn"
+                    </Button>
+                    <Button
+                      appearance="pill"
+                      tone="outline"
+                      size="sm"
                       type="button"
                       :disabled="isReleaseDisabled(item)"
                       @click="handleRelease(item)"
@@ -287,7 +280,7 @@
                           ? t("adminBookingExecution.releasingAction")
                           : t("adminBookingExecution.releaseAction")
                       }}
-                    </button>
+                    </Button>
                   </div>
                   <p
                     v-if="item.bookingContact.ownerPartnerId === null"
@@ -482,14 +475,15 @@ import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCa
 import {
   type AdminBookingExecutionWorkspaceResponse,
   useAdminBookingExecutionWorkspace,
-  useReleaseAdminAnchorPRPartnerForExecution,
-  useSubmitAdminAnchorPRBookingExecution,
+  useReleaseAdminPRPartnerForExecution,
+  useSubmitAdminPRBookingExecution,
 } from "@/domains/admin/queries/useAdminBookingExecution";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
 import { formatLocalDateTimeValue, formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 type Workspace = NonNullable<AdminBookingExecutionWorkspaceResponse>;
 type PendingItem = Workspace["pendingItems"][number];
@@ -507,8 +501,8 @@ type PendingDraft = {
 const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
 const workspaceQuery = useAdminBookingExecutionWorkspace(isAdmin);
-const submitMutation = useSubmitAdminAnchorPRBookingExecution();
-const releaseMutation = useReleaseAdminAnchorPRPartnerForExecution();
+const submitMutation = useSubmitAdminPRBookingExecution();
+const releaseMutation = useReleaseAdminPRPartnerForExecution();
 
 const searchText = ref("");
 const drafts = reactive<Record<number, PendingDraft>>({});
@@ -808,15 +802,15 @@ const handleRelease = async (item: PendingItem) => {
 .stack,
 .header,
 .card-list {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .stack--tight {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .header {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .title,
@@ -846,12 +840,14 @@ const handleRelease = async (item: PendingItem) => {
 
 .panel,
 .card {
-  padding: var(--sys-spacing-lg);
-  @include mx.pu-surface-panel(admin-workspace);
+  padding: var(--sys-spacing-large);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-large);
+  background: var(--sys-color-surface-container);
 }
 
 .card {
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .section-header,
@@ -860,12 +856,12 @@ const handleRelease = async (item: PendingItem) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   flex-wrap: wrap;
 }
 
 .stats-list {
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .stat-line {
@@ -874,13 +870,13 @@ const handleRelease = async (item: PendingItem) => {
 
 .resource-chip-list {
   display: flex;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   flex-wrap: wrap;
 }
 
 .resource-chip {
   @include mx.pu-font(label-small);
-  padding: var(--sys-spacing-2xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
   border-radius: var(--sys-radius-pill);
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-primary);
@@ -889,13 +885,13 @@ const handleRelease = async (item: PendingItem) => {
 .meta-grid,
 .field-grid {
   display: grid;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .meta-item {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-2xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .meta-label,
@@ -905,7 +901,7 @@ const handleRelease = async (item: PendingItem) => {
 }
 
 .field {
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
 }
 
 .field--full {
@@ -913,27 +909,17 @@ const handleRelease = async (item: PendingItem) => {
 }
 
 .field-input {
-  @include mx.pu-field-shell(compact-surface);
+  width: 100%;
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
 }
 
 .field-textarea {
   min-height: 96px;
   resize: vertical;
-}
-
-.primary-btn,
-.secondary-btn {
-  @include mx.pu-font(label-medium);
-  cursor: pointer;
-}
-
-.primary-btn {
-  @include mx.pu-pill-action(solid-primary, small);
-  border: none;
-}
-
-.secondary-btn {
-  @include mx.pu-pill-action(outline-transparent, small);
 }
 
 .field-error {

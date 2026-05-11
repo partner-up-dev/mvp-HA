@@ -48,6 +48,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const router = useRouter();
 const defaultBackFallbackTo: RouteLocationRaw = { path: "/" };
+const instance = getCurrentInstance();
 type RouterHistoryState = {
   back?: string | null;
 };
@@ -67,11 +68,10 @@ const resolveBackFallbackTo = (): RouteLocationRaw =>
   props.backFallbackTo ?? defaultBackFallbackTo;
 
 async function handleBack(): Promise<void> {
-  const inst = getCurrentInstance();
   const hasListener =
-    !!inst?.vnode.props &&
-    ((inst.vnode.props as Record<string, unknown>)["onBack"] ||
-      (inst.vnode.props as Record<string, unknown>)["onBack"] === null);
+    !!instance?.vnode.props &&
+    ((instance.vnode.props as Record<string, unknown>)["onBack"] ||
+      (instance.vnode.props as Record<string, unknown>)["onBack"] === null);
 
   if (hasListener) {
     emit("back");
@@ -89,15 +89,15 @@ async function handleBack(): Promise<void> {
 
 <style lang="scss" scoped>
 .page-header {
-  margin-bottom: var(--sys-spacing-med);
+  margin-bottom: var(--sys-spacing-medium);
 }
 
 .page-header__top {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   min-width: 0;
-  margin-bottom: var(--sys-spacing-sm);
+  margin-bottom: var(--sys-spacing-small);
 }
 
 .page-header__back-btn {
@@ -146,8 +146,8 @@ async function handleBack(): Promise<void> {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: var(--sys-spacing-sm);
-  gap: var(--sys-spacing-sm);
+  margin-top: var(--sys-spacing-small);
+  gap: var(--sys-spacing-small);
 }
 
 .page-header__meta--vertical {

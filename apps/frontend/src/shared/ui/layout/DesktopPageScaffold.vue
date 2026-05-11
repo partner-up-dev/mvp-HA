@@ -30,7 +30,7 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 .desktop-page-scaffold__layout {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xl, 2rem);
+  gap: var(--sys-spacing-xlarge, 2rem);
 }
 
 .desktop-page-scaffold__header {
@@ -40,7 +40,7 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 .desktop-page-scaffold__shell {
   display: grid;
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-  gap: var(--sys-spacing-xl, 2rem);
+  gap: var(--sys-spacing-xlarge, 2rem);
   align-items: start;
 }
 
@@ -52,7 +52,7 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 @media (min-width: 901px) {
   .desktop-page-scaffold__aside {
     position: sticky;
-    top: calc(var(--sys-spacing-med) + var(--pu-safe-top));
+    top: calc(var(--sys-spacing-medium) + var(--pu-safe-top));
   }
 }
 

@@ -15,6 +15,19 @@ export type AnchorEventDemandCardsResponse = InferResponseType<
   (typeof client.api.events)[":eventId"]["demand-cards"]["$get"]
 >;
 
-export type AnchorEventBatch = AnchorEventDetailResponse["batches"][number];
+export type AnchorEventFormModeResponse = InferResponseType<
+  (typeof client.api.events)[":eventId"]["form-mode"]["$get"]
+>;
 
-export type AnchorEventBatchPR = AnchorEventBatch["prs"][number];
+export type AnchorEventFormModeRecommendationResponse = InferResponseType<
+  (typeof client.api.events)[":eventId"]["form-mode"]["recommendation"]["$post"]
+>;
+
+export type AnchorEventPreferenceTagSubmissionResponse = InferResponseType<
+  (typeof client.api.events)[":eventId"]["preference-tags"]["submissions"]["$post"]
+>;
+
+export type AnchorEventTimeWindow =
+  AnchorEventDetailResponse["browseTimeWindows"][number];
+
+export type AnchorEventTimeWindowPR = AnchorEventTimeWindow["prs"][number];

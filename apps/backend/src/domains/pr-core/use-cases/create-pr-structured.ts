@@ -1,46 +1,48 @@
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { CommunityPRRepository } from "../../../repositories/CommunityPRRepository";
+import type {
+  AnchorEventId,
+  PRJoinGateConfig,
+} from "../../../entities";
 import type {
   PartnerRequestFields,
 } from "../../../entities/partner-request";
-import type { UserId } from "../../../entities/user";
 import { initializeSlotsForPR } from "../services/slot-management.service";
 import { assertManualPartnerBoundsValid } from "../services/partner-bounds.service";
+import { assertPRTimeWindowAvailableAtLocation } from "../services/poi-availability.service";
 import {
   resolveDraftCreator,
   type CreatorIdentityInput,
 } from "../services/creator-identity.service";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
+import {
+  finalizeCreatedPR,
+  type CreatePRCommandResult,
+} from "./create-pr.shared";
+import { materializeEventDefaultsForPR } from "../services/event-default-materialization.service";
 
 const prRepo = new PartnerRequestRepository();
-const communityPRRepo = new CommunityPRRepository();
 
-function buildStructuredFallbackRawText(fields: PartnerRequestFields): string {
-  const parts: string[] = [];
-  if (fields.title?.trim()) parts.push(fields.title.trim());
-  parts.push(`类型:${fields.type}`);
-  if (fields.location?.trim()) parts.push(`地点:${fields.location.trim()}`);
-  const [start, end] = fields.time;
-  if (start || end) parts.push(`时间:${start ?? "待定"}-${end ?? "待定"}`);
-  return parts.join(" | ");
-}
-
-export type CreatePRResult = {
-  id: number;
-  createdBy: UserId | null;
-};
+export type StructuredCreateSource = "FORM" | "EVENT_ASSISTED";
 
 export async function createPRFromStructured(
   fields: PartnerRequestFields,
   creatorIdentity: CreatorIdentityInput,
-): Promise<CreatePRResult> {
+  options: {
+    anchorEventId?: AnchorEventId;
+    createSource?: StructuredCreateSource;
+    joinGateConfig?: PRJoinGateConfig;
+  } = {},
+): Promise<CreatePRCommandResult> {
   assertManualPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
+  await assertPRTimeWindowAvailableAtLocation({
+    location: fields.location,
+    timeWindow: fields.time,
+  });
 
   const creator = await resolveDraftCreator(creatorIdentity);
   const createdBy = creator?.id ?? null;
+  const createSource = options.createSource ?? "FORM";
 
-  const rawText = buildStructuredFallbackRawText(fields);
   const request = await prRepo.create({
     title: fields.title,
     type: fields.type,
@@ -48,17 +50,13 @@ export async function createPRFromStructured(
     location: fields.location,
     minPartners: fields.minPartners,
     maxPartners: fields.maxPartners,
+    budget: fields.budget,
     preferences: fields.preferences,
     notes: fields.notes,
+    meetingPoint: fields.meetingPoint ?? null,
+    joinGateConfig: options.joinGateConfig ?? [],
     status: "DRAFT",
     createdBy,
-    prKind: "COMMUNITY",
-  });
-  await communityPRRepo.create({
-    prId: request.id,
-    rawText,
-    budget: fields.budget,
-    creationSource: "STRUCTURED",
   });
 
   await initializeSlotsForPR(
@@ -66,29 +64,33 @@ export async function createPRFromStructured(
     null,
   );
 
-  const event = await eventBus.publish(
-    "pr.created",
-    "partner_request",
-    String(request.id),
-    {
-      prId: request.id,
-      source: "structured",
-      status: "DRAFT",
-      creatorOpenId: creatorIdentity.oauthOpenId,
-    },
-  );
-  void writeToOutbox(event);
+  await materializeEventDefaultsForPR({
+    prId: request.id,
+    anchorEventId: options.anchorEventId,
+    type: request.type,
+    location: request.location,
+    timeWindow: request.time,
+    prNotes: request.notes,
+    prJoinGateConfig: options.joinGateConfig,
+  });
 
   operationLogService.log({
     actorId: createdBy,
-    action: "pr.create_structured",
+    action:
+      createSource === "EVENT_ASSISTED"
+        ? "pr.create_event_assisted"
+        : "pr.create_structured",
     aggregateType: "partner_request",
     aggregateId: String(request.id),
-    detail: { status: "DRAFT" },
+    detail: {
+      source: createSource,
+      status: "DRAFT",
+    },
   });
 
-  return {
+  return finalizeCreatedPR({
     id: request.id,
     createdBy,
-  };
+    creatorIdentity,
+  });
 }

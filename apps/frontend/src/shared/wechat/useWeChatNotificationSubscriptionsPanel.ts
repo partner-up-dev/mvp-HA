@@ -18,6 +18,9 @@ export type WeChatNotificationKind =
   | "ACTIVITY_START_REMINDER"
   | "BOOKING_RESULT"
   | "NEW_PARTNER"
+  | "MEETING_POINT_UPDATED"
+  | "WAITLIST_PROMOTED"
+  | "WAITLIST_ALTERNATIVE_AVAILABLE"
   | "PR_MESSAGE";
 
 type NotificationActionKind =
@@ -131,7 +134,11 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     }
 
     const payload = query.data.value;
-    if (!payload?.configured || !payload.authenticated || !payload.wechatBound) {
+    if (
+      !payload?.configured ||
+      !payload.authenticated ||
+      !payload.wechatBound
+    ) {
       return;
     }
 
@@ -277,7 +284,8 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (detail && typeof detail === "object") {
       const payload = detail as { errMsg?: unknown; errCode?: unknown };
       const errMsg = typeof payload.errMsg === "string" ? payload.errMsg : "";
-      const errCode = typeof payload.errCode === "string" ? payload.errCode : "";
+      const errCode =
+        typeof payload.errCode === "string" ? payload.errCode : "";
       if (errMsg || errCode) {
         openSubscribeError.value = [errCode, errMsg].filter(Boolean).join(": ");
       }
@@ -301,6 +309,21 @@ export const useWeChatNotificationSubscriptionsPanel = ({
     if (kind === "NEW_PARTNER") {
       return t("prPage.notificationSubscriptions.items.NEW_PARTNER.title");
     }
+    if (kind === "MEETING_POINT_UPDATED") {
+      return t(
+        "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.title",
+      );
+    }
+    if (kind === "WAITLIST_PROMOTED") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.title",
+      );
+    }
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.title",
+      );
+    }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.title");
   };
 
@@ -321,7 +344,24 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       );
     }
     if (kind === "NEW_PARTNER") {
-      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.enabledHint");
+      return t(
+        "prPage.notificationSubscriptions.items.NEW_PARTNER.enabledHint",
+      );
+    }
+    if (kind === "MEETING_POINT_UPDATED") {
+      return t(
+        "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.enabledHint",
+      );
+    }
+    if (kind === "WAITLIST_PROMOTED") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.enabledHint",
+      );
+    }
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.enabledHint",
+      );
     }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.enabledHint");
   };
@@ -343,7 +383,24 @@ export const useWeChatNotificationSubscriptionsPanel = ({
       );
     }
     if (kind === "NEW_PARTNER") {
-      return t("prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint");
+      return t(
+        "prPage.notificationSubscriptions.items.NEW_PARTNER.disabledHint",
+      );
+    }
+    if (kind === "MEETING_POINT_UPDATED") {
+      return t(
+        "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.disabledHint",
+      );
+    }
+    if (kind === "WAITLIST_PROMOTED") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.disabledHint",
+      );
+    }
+    if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+      return t(
+        "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.disabledHint",
+      );
     }
     return t("prPage.notificationSubscriptions.items.PR_MESSAGE.disabledHint");
   };
@@ -387,6 +444,18 @@ export const useWeChatNotificationSubscriptionsPanel = ({
           description = t(
             "prPage.notificationSubscriptions.items.NEW_PARTNER.unconfiguredHint",
           );
+        } else if (kind === "MEETING_POINT_UPDATED") {
+          description = t(
+            "prPage.notificationSubscriptions.items.MEETING_POINT_UPDATED.unconfiguredHint",
+          );
+        } else if (kind === "WAITLIST_PROMOTED") {
+          description = t(
+            "prPage.notificationSubscriptions.items.WAITLIST_PROMOTED.unconfiguredHint",
+          );
+        } else if (kind === "WAITLIST_ALTERNATIVE_AVAILABLE") {
+          description = t(
+            "prPage.notificationSubscriptions.items.WAITLIST_ALTERNATIVE_AVAILABLE.unconfiguredHint",
+          );
         } else if (kind === "PR_MESSAGE") {
           description = t(
             "prPage.notificationSubscriptions.items.PR_MESSAGE.unconfiguredHint",
@@ -427,7 +496,9 @@ export const useWeChatNotificationSubscriptionsPanel = ({
 
         if (requiresOpenSubscribe && !isWeChatAbilityMockingEnabled()) {
           actionKind = "OPEN_SUBSCRIBE";
-          openSubscribeTemplateId = openSubscribeReady.value ? templateId : null;
+          openSubscribeTemplateId = openSubscribeReady.value
+            ? templateId
+            : null;
           actionDisabled = pending || !templateId;
           if (!templateId) {
             description = t(

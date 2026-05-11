@@ -1,32 +1,40 @@
 import { ref, readonly } from "vue";
+import type { ImageUploadPurpose } from "@partner-up-dev/backend";
 import { API_URL, client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 
-/**
- * Composable for uploading files to cloud storage
- * Handles poster uploads and returns download URLs
- */
+export type UploadImageOptions = {
+  purpose: ImageUploadPurpose;
+};
+
 export const useCloudStorage = () => {
   const isUploading = ref(false);
   const uploadError = ref<string | null>(null);
 
-  /**
-   * Upload a file/blob to the server
-   * @param file - The file or blob to upload
-   * @param filename - Optional filename for the upload
-   * @returns Promise<string> - The download URL for the uploaded file
-   */
-  const uploadFile = async (
+  const toUploadFile = (file: File | Blob): File => {
+    if (file instanceof File) {
+      return file;
+    }
+
+    return new File([file], "image", {
+      type: file.type || "image/png",
+    });
+  };
+
+  const uploadImage = async (
     file: File | Blob,
-    filename = "file",
+    options: UploadImageOptions,
   ): Promise<string> => {
     isUploading.value = true;
     uploadError.value = null;
 
     try {
-      const res = await client.api.upload.poster.$post({
+      const res = await client.api.upload.images[":purpose"].$post({
+        param: {
+          purpose: options.purpose,
+        },
         form: {
-          poster: file,
+          image: toUploadFile(file),
         },
       });
 
@@ -38,10 +46,10 @@ export const useCloudStorage = () => {
         );
       }
 
-      const { key } = await res.json();
+      const { url } = await res.json();
 
       const base = API_URL || window.location.origin;
-      return new URL(`/api/upload/download/${key}`, base).toString();
+      return new URL(url, base).toString();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : i18n.global.t("errors.uploadFailed");
@@ -60,7 +68,7 @@ export const useCloudStorage = () => {
   };
 
   return {
-    uploadFile,
+    uploadImage,
     isUploading: readonly(isUploading),
     uploadError: readonly(uploadError),
     clearError,

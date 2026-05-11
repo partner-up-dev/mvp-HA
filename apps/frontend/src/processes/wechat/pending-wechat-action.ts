@@ -5,52 +5,88 @@ type PendingActionBase = {
   createdAt: number;
 };
 
-type PendingAnchorJoinAction = PendingActionBase & {
-  kind: "ANCHOR_PR_JOIN";
+type PendingAnchorCreateHandoff = "event_assisted_create";
+
+type PendingPRJoinAction = PendingActionBase & {
+  kind: "PR_JOIN";
   prId: number;
 };
 
-type PendingAnchorExitAction = PendingActionBase & {
-  kind: "ANCHOR_PR_EXIT";
+type PendingPRWaitlistAction = PendingActionBase & {
+  kind: "PR_WAITLIST";
   prId: number;
 };
 
-type PendingAnchorConfirmAction = PendingActionBase & {
-  kind: "ANCHOR_PR_CONFIRM";
+type PendingPRExitAction = PendingActionBase & {
+  kind: "PR_EXIT";
+  prId: number;
+};
+
+type PendingPRConfirmAction = PendingActionBase & {
+  kind: "PR_CONFIRM";
+  prId: number;
+};
+
+type PendingPRPublishAction = PendingActionBase & {
+  kind: "PR_PUBLISH";
   prId: number;
 };
 
 type PendingAnchorCreateAction = PendingActionBase & {
-  kind: "ANCHOR_EVENT_CREATE";
+  kind: "EVENT_ASSISTED_PR_CREATE";
   eventId: number;
-  batchId: number;
-  locationId: string;
+  handoff?: PendingAnchorCreateHandoff;
+  fields: {
+    type: string;
+    time: [string | null, string | null];
+    location: string;
+    minPartners: number | null;
+    maxPartners: number | null;
+    preferences: string[];
+  };
 };
 
 export type PendingWeChatAction =
-  | PendingAnchorJoinAction
-  | PendingAnchorExitAction
-  | PendingAnchorConfirmAction
+  | PendingPRJoinAction
+  | PendingPRWaitlistAction
+  | PendingPRExitAction
+  | PendingPRConfirmAction
+  | PendingPRPublishAction
   | PendingAnchorCreateAction;
 
 type NewPendingWeChatAction =
   | {
-      kind: "ANCHOR_PR_JOIN";
+      kind: "PR_JOIN";
       prId: number;
     }
   | {
-      kind: "ANCHOR_PR_EXIT";
+      kind: "PR_WAITLIST";
       prId: number;
     }
   | {
-      kind: "ANCHOR_PR_CONFIRM";
+      kind: "PR_EXIT";
       prId: number;
     }
   | {
-      kind: "ANCHOR_EVENT_CREATE";
+      kind: "PR_CONFIRM";
+      prId: number;
+    }
+  | {
+      kind: "PR_PUBLISH";
+      prId: number;
+    }
+  | {
+      kind: "EVENT_ASSISTED_PR_CREATE";
       eventId: number;
-      batchId: number;
-      locationId: string;
+      handoff?: PendingAnchorCreateHandoff;
+      fields: {
+        type: string;
+        time: [string | null, string | null];
+        location: string;
+        minPartners: number | null;
+        maxPartners: number | null;
+        preferences: string[];
+      };
     };
 
 const isPositiveInteger = (value: unknown): value is number =>
@@ -59,7 +95,9 @@ const isPositiveInteger = (value: unknown): value is number =>
 const isRecent = (createdAt: number): boolean =>
   Date.now() - createdAt <= PENDING_WECHAT_ACTION_TTL_MS;
 
-const isPendingWeChatAction = (value: unknown): value is PendingWeChatAction => {
+const isPendingWeChatAction = (
+  value: unknown,
+): value is PendingWeChatAction => {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<PendingWeChatAction>;
   if (
@@ -69,28 +107,51 @@ const isPendingWeChatAction = (value: unknown): value is PendingWeChatAction => 
     return false;
   }
 
-  if (candidate.kind === "ANCHOR_PR_JOIN") {
+  if (candidate.kind === "PR_JOIN") {
     return isPositiveInteger(candidate.prId);
   }
-  if (candidate.kind === "ANCHOR_PR_EXIT") {
+  if (candidate.kind === "PR_WAITLIST") {
     return isPositiveInteger(candidate.prId);
   }
-  if (candidate.kind === "ANCHOR_PR_CONFIRM") {
+  if (candidate.kind === "PR_EXIT") {
     return isPositiveInteger(candidate.prId);
   }
-  if (candidate.kind === "ANCHOR_EVENT_CREATE") {
+  if (candidate.kind === "PR_CONFIRM") {
+    return isPositiveInteger(candidate.prId);
+  }
+  if (candidate.kind === "PR_PUBLISH") {
+    return isPositiveInteger(candidate.prId);
+  }
+  if (candidate.kind === "EVENT_ASSISTED_PR_CREATE") {
+    const anchorCandidate = candidate as Partial<PendingAnchorCreateAction>;
+    const fields = anchorCandidate.fields;
     return (
-      isPositiveInteger(candidate.eventId) &&
-      isPositiveInteger(candidate.batchId) &&
-      typeof candidate.locationId === "string" &&
-      candidate.locationId.trim().length > 0
+      isPositiveInteger(anchorCandidate.eventId) &&
+      (anchorCandidate.handoff === undefined ||
+        anchorCandidate.handoff === "event_assisted_create") &&
+      typeof fields === "object" &&
+      fields !== null &&
+      typeof fields.type === "string" &&
+      fields.type.trim().length > 0 &&
+      Array.isArray(fields.time) &&
+      fields.time.length === 2 &&
+      (fields.time[0] === null || typeof fields.time[0] === "string") &&
+      (fields.time[1] === null || typeof fields.time[1] === "string") &&
+      typeof fields.location === "string" &&
+      fields.location.trim().length > 0 &&
+      Array.isArray(fields.preferences) &&
+      fields.preferences.every((entry) => typeof entry === "string") &&
+      (fields.minPartners === null || isPositiveInteger(fields.minPartners)) &&
+      (fields.maxPartners === null || isPositiveInteger(fields.maxPartners))
     );
   }
 
   return false;
 };
 
-export const setPendingWeChatAction = (action: NewPendingWeChatAction): void => {
+export const setPendingWeChatAction = (
+  action: NewPendingWeChatAction,
+): void => {
   if (typeof window === "undefined") return;
   try {
     const payload: PendingWeChatAction = {

@@ -72,18 +72,31 @@ const controlStyle = computed(() =>
 .textarea-input {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   width: 100%;
   min-width: 0;
 }
 
 .textarea-input__control {
   @include mx.pu-font(body-large);
-  @include mx.pu-form-control(plain);
-  padding: var(--sys-spacing-med);
-  border-radius: var(--sys-radius-xs);
+  width: 100%;
+  border: 1px solid var(--sys-color-outline);
+  color: var(--sys-color-on-surface);
+  background: transparent;
+  padding: var(--sys-spacing-medium);
+  border-radius: var(--sys-radius-xsmall);
   resize: vertical;
   min-height: var(--textarea-input-min-height, 7.5rem);
+
+  &::placeholder {
+    color: var(--sys-color-on-surface-variant);
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: 2px solid var(--sys-color-primary);
+    outline-offset: -1px;
+  }
 
   &:disabled {
     opacity: var(--sys-opacity-disabled);

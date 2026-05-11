@@ -121,18 +121,3 @@ export const issueUserAuth = (userId: UserId): RequestAuth =>
 export const issueAuthForUser = (
   user: Pick<User, "id" | "role">,
 ): RequestAuth => issueRoleAuth(user.id, mapUserRoleToAuthRole(user.role));
-
-export const readLocalCredentialHeaders = (
-  c: Context,
-): {
-  userId: string | null;
-  userPin: string | null;
-} => {
-  const userId = (c.req.header("x-user-id") ?? "").trim();
-  const userPin = (c.req.header("x-user-pin") ?? "").trim();
-
-  return {
-    userId: userId.length > 0 ? userId : null,
-    userPin: userPin.length > 0 ? userPin : null,
-  };
-};

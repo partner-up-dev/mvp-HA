@@ -1,7 +1,7 @@
 <template>
   <Modal
     :open="open"
-    :title="t('prCard.locationGallery.title')"
+    :title="title ?? t('prCard.locationGallery.title')"
     max-width="560px"
     @close="emit('close')"
   >
@@ -20,14 +20,15 @@
         />
 
         <div class="controls">
-          <button
-            class="nav-btn"
+          <Button
+            appearance="pill"
+            size="sm"
             type="button"
             :disabled="images.length <= 1"
             @click="goPrev"
           >
             {{ t("prCard.locationGallery.prev") }}
-          </button>
+          </Button>
 
           <span class="counter">
             {{
@@ -38,14 +39,15 @@
             }}
           </span>
 
-          <button
-            class="nav-btn"
+          <Button
+            appearance="pill"
+            size="sm"
             type="button"
             :disabled="images.length <= 1"
             @click="goNext"
           >
             {{ t("prCard.locationGallery.next") }}
-          </button>
+          </Button>
         </div>
       </template>
     </div>
@@ -56,10 +58,12 @@
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import Modal from "@/shared/ui/overlay/Modal.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 interface PRLocationGalleryModalProps {
   open: boolean;
   images: string[];
+  title?: string;
 }
 
 const props = defineProps<PRLocationGalleryModalProps>();
@@ -94,7 +98,7 @@ watch(
 .location-gallery-modal {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-med);
+  gap: var(--sys-spacing-medium);
 }
 
 .empty-text {
@@ -105,7 +109,7 @@ watch(
 
 .preview-image {
   width: 100%;
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
   background: var(--sys-color-surface-container);
   object-fit: cover;
   aspect-ratio: 4 / 3;
@@ -115,16 +119,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sys-spacing-sm);
-}
-
-.nav-btn {
-  @include mx.pu-font(label-large);
-  @include mx.pu-pill-action(solid-primary, small);
-
-  &:disabled {
-    opacity: 0.5;
-  }
+  gap: var(--sys-spacing-small);
 }
 
 .counter {

@@ -83,7 +83,7 @@ const qrCodeUrl = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sys-spacing-lg);
+  gap: var(--sys-spacing-large);
 }
 
 .description {
@@ -96,11 +96,11 @@ const qrCodeUrl = computed(() => {
   width: min(100%, 280px);
   aspect-ratio: 1 / 1;
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sys-spacing-sm);
+  padding: var(--sys-spacing-small);
 }
 
 .qr-image {

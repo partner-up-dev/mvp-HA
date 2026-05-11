@@ -6,19 +6,16 @@
         <p class="subscription-desc">{{ item.description }}</p>
       </div>
 
-      <button
+      <Button
         v-if="item.actionKind === 'OPEN_SUBSCRIBE' && item.pending"
-        :class="[
-          'action-btn',
-          props.outlineProfile === 'surface'
-            ? 'action-btn--surface'
-            : 'action-btn--secondary',
-        ]"
+        class="subscription-action"
+        :tone="actionButtonTone"
+        size="sm"
         type="button"
         disabled
       >
         {{ props.updatingLabel }}
-      </button>
+      </Button>
 
       <div
         v-else-if="
@@ -29,17 +26,14 @@
         "
         class="open-subscribe-proxy"
       >
-        <button
-          :class="[
-            'action-btn',
-            props.outlineProfile === 'surface'
-              ? 'action-btn--surface'
-              : 'action-btn--secondary',
-          ]"
+        <Button
+          class="subscription-action"
+          :tone="actionButtonTone"
+          size="sm"
           type="button"
         >
           {{ item.actionLabel }}
-        </button>
+        </Button>
 
         <wx-open-subscribe
           class="open-subscribe-overlay"
@@ -61,46 +55,38 @@
         </wx-open-subscribe>
       </div>
 
-      <button
+      <Button
         v-else-if="
           item.actionKind === 'SHOW_MINIPROGRAM_WEBVIEW_NOTICE' &&
           item.actionLabel
         "
-        :class="[
-          'action-btn',
-          props.outlineProfile === 'surface'
-            ? 'action-btn--surface'
-            : 'action-btn--secondary',
-        ]"
+        class="subscription-action"
+        :tone="actionButtonTone"
+        size="sm"
         type="button"
         :disabled="item.actionDisabled || item.pending"
         @click="showMiniProgramWebViewNotice = true"
       >
         {{ item.actionLabel }}
-      </button>
+      </Button>
 
-      <button
+      <Button
         v-else-if="item.actionLabel"
-        :class="[
-          'action-btn',
-          props.outlineProfile === 'surface'
-            ? 'action-btn--surface'
-            : 'action-btn--secondary',
-        ]"
+        class="subscription-action"
+        :tone="actionButtonTone"
+        size="sm"
         type="button"
         :disabled="item.actionDisabled || item.pending"
         @click="handleAction(item.key)"
       >
         {{ item.pending ? props.updatingLabel : item.actionLabel }}
-      </button>
+      </Button>
     </div>
   </article>
 
   <WeChatMiniProgramJssdkNoticeModal
     :open="showMiniProgramWebViewNotice"
-    :operation-label="
-      t('wechatMiniProgramWebView.operations.openSubscribe')
-    "
+    :operation-label="t('wechatMiniProgramWebView.operations.openSubscribe')"
     @close="showMiniProgramWebViewNotice = false"
   />
 </template>
@@ -112,11 +98,13 @@ import {
   useWeChatNotificationSubscriptionsPanel,
   type WeChatNotificationKind,
 } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
+import Button from "@/shared/ui/actions/Button.vue";
 import WeChatMiniProgramJssdkNoticeModal from "@/shared/wechat/WeChatMiniProgramJssdkNoticeModal.vue";
 
 const props = withDefaults(
   defineProps<{
     visibleKinds?: readonly WeChatNotificationKind[];
+    descriptionPrefixes?: Partial<Record<WeChatNotificationKind, string>>;
     updatingLabel: string;
     outlineProfile?: "primary" | "surface";
   }>(),
@@ -127,6 +115,9 @@ const props = withDefaults(
         "ACTIVITY_START_REMINDER",
         "BOOKING_RESULT",
         "NEW_PARTNER",
+        "MEETING_POINT_UPDATED",
+        "WAITLIST_PROMOTED",
+        "WAITLIST_ALTERNATIVE_AVAILABLE",
         "PR_MESSAGE",
       ] as const,
     outlineProfile: "primary",
@@ -143,7 +134,22 @@ const notificationSubscriptions = useWeChatNotificationSubscriptionsPanel({
 });
 const showMiniProgramWebViewNotice = ref(false);
 
-const items = computed(() => notificationSubscriptions.items.value);
+const items = computed(() =>
+  notificationSubscriptions.items.value.map((item) => {
+    const prefix = props.descriptionPrefixes?.[item.key]?.trim() ?? "";
+    if (prefix.length === 0) {
+      return item;
+    }
+
+    return {
+      ...item,
+      description: `${prefix} ${item.description}`,
+    };
+  }),
+);
+const actionButtonTone = computed(() =>
+  props.outlineProfile === "surface" ? "outline" : "primary-outline",
+);
 
 const panelError = computed(() => {
   if (notificationSubscriptions.mutation.error.value instanceof Error) {
@@ -219,7 +225,7 @@ const openSubscribeButtonTemplate = `
 .subscription-card {
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-2xs);
+  gap: var(--sys-spacing-xsmall);
   padding: 0;
   border: 0;
   background: transparent;
@@ -230,7 +236,7 @@ const openSubscribeButtonTemplate = `
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   width: 100%;
 }
 
@@ -238,7 +244,7 @@ const openSubscribeButtonTemplate = `
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   min-width: 0;
 }
 
@@ -253,40 +259,8 @@ const openSubscribeButtonTemplate = `
   color: var(--sys-color-on-surface-variant);
 }
 
-.action-btn {
-  @include mx.pu-font(label-medium);
-  min-height: 2rem;
-  padding: 0 var(--sys-spacing-sm);
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
+.subscription-action {
   flex-shrink: 0;
-}
-
-.action-btn:disabled {
-  cursor: not-allowed;
-  background: color-mix(in srgb, var(--sys-color-on-surface) 12%, transparent);
-  color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
-  box-shadow: none;
-}
-
-.action-btn--secondary {
-  @include mx.pu-rect-action(outline-primary, compact);
-}
-
-.action-btn--surface {
-  @include mx.pu-rect-action(outline, compact);
-}
-
-.action-btn--secondary:disabled,
-.action-btn--surface:disabled {
-  background: transparent;
-  border-color: color-mix(
-    in srgb,
-    var(--sys-color-on-surface) 12%,
-    transparent
-  );
-  color: color-mix(in srgb, var(--sys-color-on-surface) 38%, transparent);
 }
 
 .open-subscribe-proxy {
@@ -296,7 +270,7 @@ const openSubscribeButtonTemplate = `
   flex-shrink: 0;
 }
 
-.open-subscribe-proxy .action-btn {
+.open-subscribe-proxy .subscription-action {
   pointer-events: none;
 }
 
@@ -311,7 +285,7 @@ const openSubscribeButtonTemplate = `
 
 @media (max-width: 768px) {
   .subscription-head {
-    gap: var(--sys-spacing-2xs);
+    gap: var(--sys-spacing-xsmall);
   }
 }
 </style>

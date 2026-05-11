@@ -1,28 +1,17 @@
-# AGENTS.md of PartnerUp MVP
+# AGENTS.md of PartnerUp MVP Hypothesis-A
 
-PartnerUp helps users find a partner (da zi) effectively and safely.
-
-This repository is a pnpm workspace with two product units:
-
-- `apps/backend`
-- `apps/frontend`
+PartnerUp helps users find a partner (搭子) effectively and safely.
 
 ## Repository Layout
 
 ```text
 /
-|-- AGENTS.md
 |-- apps/
 |   |-- backend/
 |   `-- frontend/
-|-- docs/
-|   |-- 00-meta/
-|   |-- 10-prd/
-|   |-- 15-alignment/
-|   |-- 20-product-tdd/
-|   |-- 30-unit-tdd/
-|   `-- 40-deployment/
-|-- tasks/
+|-- docs/                 # Durable product and technical truth
+|-- tests/                # Cross-unit and root-owned verification
+|-- tasks/                # Volatile work, diagnosis, and temporary reasoning
 `-- scripts/
 ```
 
@@ -31,23 +20,10 @@ This repository is a pnpm workspace with two product units:
 - Monorepo: pnpm workspace
 - Backend: Hono + Drizzle ORM + Postgres-oriented schema / migration workflow
 - Frontend: Vue 3 + Vite + TanStack Vue Query + Hono RPC client
-- Durable product and technical truth live under `docs/`
-- Volatile work, diagnosis, and temporary reasoning live under `tasks/`
-
-## Minimal Cheat Sheet
-
-- Unit: a logical technical boundary; not the same thing as a folder.
-- PRD (`docs/10-prd/`): owns product intent, observable behavior, and business vocabulary.
-- Alignment Substrate (`docs/15-alignment/`): optional coordination grammar for risky or ambiguous mutation.
-- Product TDD (`docs/20-product-tdd/`): owns cross-unit technical contracts and topology.
-- Unit TDD (`docs/30-unit-tdd/`): owns hard local unit design only when code and Product TDD are not enough.
-- Local Context (`**/AGENTS.md`): owns tactical hazards and recurrence tripwires nearest to code.
-- Deployment (`docs/40-deployment/`): owns runtime, rollout, observability, and recovery truth.
-- Tasks (`tasks/`): owns exploration, diagnosis, plans, artifacts, and temporary reasoning.
 
 ## Documentation
 
-Read only what is needed for the current work and keep durable docs current.
+Read following documents for the current work when needed and keep them current.
 
 - `docs/00-meta/`: typed input routes, mode SOPs, and framework concepts.
 - `docs/00-meta/concepts.md`: load only when boundary language or owner terminology is unclear.
@@ -91,7 +67,7 @@ Mode guidance:
 - switch modes when evidence or clarity changes
 - mode selection never overrides durable ownership
 
-## Impact Handshake
+### Impact Handshake
 
 Before mutating durable truth after alignment expansion, or when blast radius is not obviously local, pause and restate:
 
@@ -103,7 +79,7 @@ Before mutating durable truth after alignment expansion, or when blast radius is
 
 If evidence is missing or the durable owner is still unclear, return to `Explore` or `Diagnose` instead of guessing.
 
-## Negotiation Triggers
+### Negotiation Triggers
 
 Pause and ask for human confirmation when:
 
@@ -115,8 +91,13 @@ Pause and ask for human confirmation when:
 ## Development Workflow
 
 - Use GitHub CLI (`gh`) for GitHub operations and issue workflows.
+- Before starting your own frontend dev server, check whether ports `4001` or `4002` already have the corresponding dev server running. Other sessions may already own a usable local server, so reuse it when appropriate.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
+- Run scenario suites from the repository root through the workspace runner: `pnpm test:scenario backend`, `pnpm test:scenario system`, or `pnpm test:scenario`. That runner loads `apps/frontend/.env` and `apps/backend/.env` before dispatching to package-level scenario scripts.
+- Cross-unit user journey scenario tests belong under `tests/scenario/` and should run through the real frontend, real backend HTTP, and an isolated database when the behavior crosses both app units.
+- Frontend route workflow changes that may be covered by scenario tests should expose stable `data-testid` semantic nodes for primary actions, modal actions, and result-state affordances.
 - Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.
+- Follow `./CONTRIBUTING.md` for commit message format and release policy.
 
 ## Coding Guidelines
 

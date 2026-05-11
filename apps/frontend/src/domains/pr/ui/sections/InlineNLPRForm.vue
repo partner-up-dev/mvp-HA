@@ -56,12 +56,9 @@
     </Field>
 
     <ErrorToast
-      v-if="createMutation.isError.value || publishMutation.isError.value"
+      v-if="createMutation.isError.value"
       :message="submitErrorMessage"
-      @close="
-        createMutation.reset();
-        publishMutation.reset();
-      "
+      @close="createMutation.reset()"
     />
   </form>
 </template>
@@ -73,13 +70,8 @@ import { Field, useForm } from "vee-validate";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
-import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { createNaturalLanguagePRValidationSchema } from "@/lib/validation";
-import {
-  useCreateCommunityPRFromNaturalLanguage,
-  usePublishCommunityPR,
-} from "@/domains/pr/queries/useCommunityPR";
-import { communityPRDetailPath } from "@/domains/pr/routing/routes";
+import { useCreatePRFromNaturalLanguage } from "@/domains/pr/queries/usePRCreate";
 import { useLandingTypewriterPlaceholder } from "@/domains/landing/use-cases/useLandingTypewriterPlaceholder";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useNaturalLanguageDraftStore } from "@/domains/pr/use-cases/useNaturalLanguageDraft";
@@ -93,9 +85,7 @@ const getLocalWeekdayLabel = (date: Date): string => {
 
 const router = useRouter();
 const { t } = useI18n();
-const userSessionStore = useUserSessionStore();
-const createMutation = useCreateCommunityPRFromNaturalLanguage();
-const publishMutation = usePublishCommunityPR();
+const createMutation = useCreatePRFromNaturalLanguage();
 const { activeExampleText, typedExampleText } =
   useLandingTypewriterPlaceholder();
 const draftStore = useNaturalLanguageDraftStore();
@@ -106,14 +96,9 @@ const placeholderText = computed(() =>
 const resolvedPlaceholderText = computed(() =>
   t("prInput.placeholder", { example: activeExampleText.value }),
 );
-const isSubmitting = computed(
-  () => createMutation.isPending.value || publishMutation.isPending.value,
-);
+const isSubmitting = computed(() => createMutation.isPending.value);
 const submitErrorMessage = computed(
-  () =>
-    createMutation.error.value?.message ||
-    publishMutation.error.value?.message ||
-    t("nlForm.createFailed"),
+  () => createMutation.error.value?.message || t("nlForm.createFailed"),
 );
 
 const mergeVoiceTranscript = (text: string): void => {
@@ -162,18 +147,17 @@ const submitHandler = handleSubmit(async (values) => {
   await ensureAuthSessionBootstrapped();
 
   const now = new Date();
-  const draft = await createMutation.mutateAsync({
+  const created = await createMutation.mutateAsync({
     rawText: values.rawText,
     nowIso: now.toISOString(),
     nowWeekday: getLocalWeekdayLabel(now),
   });
 
-  const publishResult = await publishMutation.mutateAsync({ id: draft.id });
-  if (publishResult.auth) {
-    userSessionStore.applyAuthSession(publishResult.auth);
+  if (created.status === "DRAFT") {
+    await router.push(created.canonicalPath);
+  } else {
+    await router.push(`${created.canonicalPath}?entry=create`);
   }
-
-  await router.push(`${communityPRDetailPath(draft.id)}?entry=create`);
   draftStore.clear();
   resetForm({
     values: { rawText: "" },
@@ -217,14 +201,14 @@ const handleVoiceToggle = async (): Promise<void> => {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: flex-start;
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .row--input {
@@ -237,10 +221,10 @@ const handleVoiceToggle = async (): Promise<void> => {
   width: 100%;
   height: var(--sys-size-large);
   border: 1px solid var(--sys-color-outline);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface-container);
   color: var(--sys-color-on-surface);
-  padding: 0 var(--sys-spacing-med);
+  padding: 0 var(--sys-spacing-medium);
   transition:
     border-color 180ms ease,
     background-color 180ms ease;
@@ -265,14 +249,14 @@ const handleVoiceToggle = async (): Promise<void> => {
   min-width: 4.8rem;
   height: var(--sys-size-large);
   border: 1px solid var(--sys-color-primary);
-  border-radius: var(--sys-radius-sm);
+  border-radius: var(--sys-radius-small);
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
-  padding: 0 var(--sys-spacing-sm);
+  gap: var(--sys-spacing-xsmall);
+  padding: 0 var(--sys-spacing-small);
   cursor: pointer;
   transition:
     opacity 180ms ease,
@@ -282,7 +266,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 
   &:hover:not(:disabled) {
     opacity: 0.92;
-    border-color: color-mix(in srgb, var(--sys-color-primary) 72%, transparent);
+    border-color: var(--sys-color-primary);
   }
 
   &:active:not(:disabled) {
@@ -318,12 +302,8 @@ const handleVoiceToggle = async (): Promise<void> => {
   min-width: var(--sys-size-large);
   height: var(--sys-size-large);
   border: 1px dashed var(--sys-color-primary);
-  border-radius: var(--sys-radius-sm);
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) 68%,
-    transparent
-  );
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
   display: inline-flex;
   align-items: center;
@@ -375,7 +355,7 @@ const handleVoiceToggle = async (): Promise<void> => {
 
 @media (max-width: 768px) {
   .inline-nl-pr-form {
-    gap: var(--sys-spacing-xs);
+    gap: var(--sys-spacing-xsmall);
   }
 
   .send-button {

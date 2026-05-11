@@ -12,6 +12,7 @@
       },
     ]"
     :type="props.type"
+    :form="props.form"
     :disabled="props.disabled || props.loading"
     @click="$emit('click', $event)"
   >
@@ -46,9 +47,12 @@ import { computed } from "vue";
 type ButtonAppearance = "rect" | "pill";
 type ButtonTone =
   | "primary"
+  | "primary-outline"
   | "secondary"
   | "outline"
   | "surface"
+  | "tertiary"
+  | "dashed"
   | "danger"
   | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
@@ -56,6 +60,7 @@ type ButtonSize = "sm" | "md" | "lg";
 const props = withDefaults(
   defineProps<{
     type?: "button" | "submit" | "reset";
+    form?: string;
     variant?: "primary" | "secondary";
     appearance?: ButtonAppearance;
     tone?: ButtonTone;
@@ -67,6 +72,7 @@ const props = withDefaults(
   }>(),
   {
     type: "button",
+    form: undefined,
     variant: undefined,
     appearance: "rect",
     tone: undefined,
@@ -131,36 +137,65 @@ defineEmits<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
-  border-radius: var(--sys-radius-sm);
+  gap: var(--sys-spacing-xsmall);
+  border-radius: var(--sys-radius-small);
 }
 
 .ui-button--appearance-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sys-spacing-xs);
+  gap: var(--sys-spacing-xsmall);
   border-radius: 999px;
 }
 
 .ui-button--appearance-rect.ui-button--tone-primary {
-  @include mx.pu-rect-action(primary, default);
+  border: none;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .ui-button--appearance-rect.ui-button--tone-secondary {
-  @include mx.pu-rect-action(outline-primary, default);
+  border-color: var(--sys-color-secondary);
+  background: transparent;
+  color: var(--sys-color-secondary);
+}
+
+.ui-button--appearance-rect.ui-button--tone-primary-outline {
+  border-color: var(--sys-color-primary);
+  background: transparent;
+  color: var(--sys-color-primary);
 }
 
 .ui-button--appearance-rect.ui-button--tone-outline {
-  @include mx.pu-rect-action(outline, default);
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-rect.ui-button--tone-surface {
-  @include mx.pu-rect-action(surface, default);
+  border-color: var(--sys-color-outline);
+  background: var(--sys-color-surface-container);
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-rect.ui-button--tone-danger {
-  @include mx.pu-rect-action(danger, default);
+  border-color: var(--sys-color-error);
+  background: transparent;
+  color: var(--sys-color-error);
+}
+
+.ui-button--appearance-rect.ui-button--tone-tertiary {
+  border: none;
+  background: var(--sys-color-tertiary);
+  color: var(--sys-color-on-tertiary);
+}
+
+.ui-button--appearance-rect.ui-button--tone-dashed {
+  border-style: dashed;
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-rect.ui-button--tone-ghost {
@@ -168,24 +203,30 @@ defineEmits<{
   color: var(--sys-color-on-surface);
 
   &:hover:not(:disabled) {
-    background: color-mix(
-      in srgb,
-      var(--sys-color-surface-container-high) 68%,
-      transparent
-    );
+    background: var(--sys-color-surface-container-high);
   }
 }
 
 .ui-button--appearance-pill.ui-button--tone-primary {
-  @include mx.pu-pill-action(solid-primary, default);
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .ui-button--appearance-pill.ui-button--tone-secondary {
-  @include mx.pu-pill-action(solid-secondary, default);
+  background: var(--sys-color-secondary);
+  color: var(--sys-color-on-secondary);
+}
+
+.ui-button--appearance-pill.ui-button--tone-primary-outline {
+  border-color: var(--sys-color-primary);
+  background: transparent;
+  color: var(--sys-color-primary);
 }
 
 .ui-button--appearance-pill.ui-button--tone-outline {
-  @include mx.pu-pill-action(outline-transparent, default);
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--appearance-pill.ui-button--tone-surface {
@@ -200,8 +241,21 @@ defineEmits<{
   color: var(--sys-color-error);
 }
 
+.ui-button--appearance-pill.ui-button--tone-tertiary {
+  background: var(--sys-color-tertiary);
+  color: var(--sys-color-on-tertiary);
+}
+
+.ui-button--appearance-pill.ui-button--tone-dashed {
+  border-style: dashed;
+  border-color: var(--sys-color-outline);
+  background: transparent;
+  color: var(--sys-color-on-surface);
+}
+
 .ui-button--appearance-pill.ui-button--tone-ghost {
-  @include mx.pu-pill-action(transparent, default);
+  background: transparent;
+  color: var(--sys-color-on-surface);
 }
 
 .ui-button--size-sm {
@@ -218,41 +272,47 @@ defineEmits<{
 
 .ui-button--appearance-rect.ui-button--size-sm {
   min-height: var(--sys-size-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .ui-button--appearance-rect.ui-button--size-md {
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .ui-button--appearance-rect.ui-button--size-lg {
-  min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-  padding: var(--sys-spacing-med) var(--sys-spacing-lg);
+  min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+  padding: var(--sys-spacing-medium) var(--sys-spacing-large);
 }
 
 .ui-button--appearance-pill.ui-button--size-sm {
   min-height: var(--sys-size-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
 }
 
 .ui-button--appearance-pill.ui-button--size-md {
   min-height: var(--sys-size-large);
-  padding: var(--sys-spacing-sm) var(--sys-spacing-med);
+  padding: var(--sys-spacing-small) var(--sys-spacing-medium);
 }
 
 .ui-button--appearance-pill.ui-button--size-lg {
-  min-height: calc(var(--sys-size-large) + var(--sys-spacing-sm));
-  padding: var(--sys-spacing-sm) var(--sys-spacing-lg);
+  min-height: calc(var(--sys-size-large) + var(--sys-spacing-small));
+  padding: var(--sys-spacing-small) var(--sys-spacing-large);
 }
 
 .ui-button--appearance-pill.ui-button--tone-surface:hover:not(:disabled),
 .ui-button--appearance-pill.ui-button--tone-danger:hover:not(:disabled),
+.ui-button--appearance-pill.ui-button--tone-tertiary:hover:not(:disabled),
+.ui-button--appearance-pill.ui-button--tone-dashed:hover:not(:disabled),
 .ui-button--appearance-pill.ui-button--tone-ghost:hover:not(:disabled),
+.ui-button--appearance-pill.ui-button--tone-primary-outline:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-primary:hover:not(:disabled),
+.ui-button--appearance-rect.ui-button--tone-primary-outline:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-secondary:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-outline:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-surface:hover:not(:disabled),
+.ui-button--appearance-rect.ui-button--tone-tertiary:hover:not(:disabled),
+.ui-button--appearance-rect.ui-button--tone-dashed:hover:not(:disabled),
 .ui-button--appearance-rect.ui-button--tone-danger:hover:not(:disabled) {
   filter: brightness(0.98);
 }
@@ -278,7 +338,7 @@ defineEmits<{
 .ui-button__leading :deep([class*=" i-"]),
 .ui-button__trailing :deep([class^="i-"]),
 .ui-button__trailing :deep([class*=" i-"]) {
-  @include mx.pu-icon(sm);
+  @include mx.pu-icon(small);
 }
 
 .ui-button__spinner {

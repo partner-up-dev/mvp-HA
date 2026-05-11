@@ -2,11 +2,11 @@ import { HTTPException } from "hono/http-exception";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
-import { AnchorPRSupportResourceRepository } from "../../../repositories/AnchorPRSupportResourceRepository";
+import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { readPartnerRequestById } from "../services/pr-read.service";
 
 const partnerRepo = new PartnerRepository();
-const prSupportRepo = new AnchorPRSupportResourceRepository();
+const prSupportRepo = new PRSupportResourceRepository();
 
 type ReimbursementReason =
   | "NO_POSTPAID_SUPPORT"
@@ -32,11 +32,6 @@ export async function getReimbursementStatus(
   });
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
-  }
-  if (request.prKind !== "ANCHOR") {
-    throw new HTTPException(400, {
-      message: "Reimbursement is only available for anchor PR",
-    });
   }
   const supportRows = await prSupportRepo.findByPrId(id);
   const supportsPostpaidSettlement = supportRows.some(

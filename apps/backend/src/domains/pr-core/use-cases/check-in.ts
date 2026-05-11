@@ -3,11 +3,11 @@ import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRe
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import type { PRId } from "../../../entities/partner-request";
-import { resolveUserByOpenId } from "../services/user-resolver.service";
+import { resolveUserByOpenId } from "../../user";
+import { hasAnchorParticipationPolicy } from "../services/anchor-participation-policy.service";
 import { hasEventStarted } from "../services/time-window.service";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
-import { eventBus, writeToOutbox } from "../../../infra/events";
 import { operationLogService } from "../../../infra/operation-log";
 
 const prRepo = new PartnerRequestRepository();
@@ -17,16 +17,15 @@ const userReliabilityRepo = new UserReliabilityRepository();
 export async function checkIn(
   id: PRId,
   openId: string,
-  payload: { wouldJoinAgain: boolean | null },
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
     throw new HTTPException(404, { message: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
-  if (refreshedRequest.prKind !== "ANCHOR") {
+  if (!hasAnchorParticipationPolicy(refreshedRequest)) {
     throw new HTTPException(400, {
-      message: "Check-in is only available for anchor PR",
+      message: "Check-in is not available for this partner request",
     });
   }
 
@@ -44,27 +43,13 @@ export async function checkIn(
     });
   }
 
-  const updatedSlot = await partnerRepo.reportCheckIn(slot.id, payload);
+  const updatedSlot = await partnerRepo.reportCheckIn(slot.id);
   if (!updatedSlot) {
     throw new HTTPException(500, { message: "Failed to submit check-in" });
   }
   if (slot.status !== "ATTENDED") {
     await userReliabilityRepo.applyDelta(user.id, { attended: 1 });
   }
-
-  // Emit domain event
-  const event = await eventBus.publish(
-    "partner.checked_in",
-    "partner_request",
-    String(id),
-    {
-      prId: id,
-      partnerId: slot.id,
-      userId: user.id,
-      didAttend: true,
-    },
-  );
-  void writeToOutbox(event);
 
   operationLogService.log({
     actorId: user.id,

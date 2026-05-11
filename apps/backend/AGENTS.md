@@ -18,9 +18,9 @@ The backend uses a domain-oriented layered architecture:
 ```text
 Controller  ──►  Domain Use Case  ──►  Domain Service  ──►  Repository  ──►  Entity
                            │
-                           ├──►  Event Bus  ──►  Outbox Writer  ──►  Outbox Worker
+                           ├──►  Job Runner
                            ├──►  Operation Log Service
-                           └──►  Analytics Ingestor
+                           └──►  Telemetry / Analytics
 ```
 
 Background tasks are managed by a DB-backed JobRunner (delayed jobs plus due-job claiming). In scale-to-0 serverless, execution is driven by internal tick endpoints and request-tail best-effort kicks instead of in-process intervals.
@@ -39,13 +39,18 @@ src/
 │       ├── services/pr-read.service.ts
 │       └── temporal-refresh.ts
 ├── infra/
-│   ├── events/           # Domain Event Bus + Outbox writer/worker
 │   ├── jobs/             # Unified JobRunner
-│   ├── analytics/        # Analytics event ingestion
+│   ├── telemetry/        # Raw telemetry event ingestion
+│   ├── analytics/        # Product analytics read/export queries
 │   └── operation-log/    # Operation log service
 ├── controllers/          # Hono routes + validation (no business logic)
 ├── lib/                  # DB engine + utilities
 └── index.ts              # Entrypoint, mounts routes, request-tail maintenance, exports AppType
+tests/
+├── _infra/               # Business-agnostic scenario test mechanics
+└── <domain>/
+    ├── _kit/             # Domain test language: builders, actions, probes, assertions
+    └── *.scenario.test.ts
 ```
 
 ## Documents
@@ -71,7 +76,9 @@ Read the smallest useful set and keep durable docs current:
 - Domain use-cases (`src/domains/*/use-cases`): new business actions should be added here directly rather than through `src/services` facades.
 - Domain services (`src/domains/*/services`): domain rules and reusable domain logic belong here.
 - Controller layer (`src/controllers`): protocol conversion only; see `src/controllers/AGENTS.md`.
-- Infra layer (`src/infra`): event bus, job runner, analytics ingest, and operation log.
+- Infra layer (`src/infra`): job runner, telemetry ingest, analytics read/export queries, notifications, and operation log.
+- Unit tests under `src/**/*.test.ts` cover local rules, pure domain services, schema/bounds logic, and isolated error mapping. Scenario tests under `tests/<domain>/**/*.scenario.test.ts` cover cross-module behavior through HTTP APIs with real Postgres migrations, especially persisted state transitions, route/controller/use-case/repository coordination, and user-visible business promises.
+- Backend scenario verification should be launched from the repository root with `pnpm test:scenario backend`. The root runner loads workspace `.env` files before invoking the backend package script.
 - Better not use intervals or in-process background jobs; the backend runs in scale-to-0 serverless.
 
 ## Database Workflow
@@ -94,7 +101,7 @@ Read the smallest useful set and keep durable docs current:
 2. No logic in controllers: controllers only do HTTP and protocol conversion; domain logic lives in domain use-cases and domain services.
 3. JSON response: always return via `c.json()` so RPC can infer types.
 4. Error handling: use global `app.onError` to unify error response shapes.
-5. Domain events: key business actions must emit domain events via `eventBus.publish()` plus `writeToOutbox()`.
+5. Side effects: durable async work should use explicit job scheduling or domain-specific services with persisted state.
 6. Operation logs: use `operationLogService.log()` (fire-and-forget) for audit trail on domain actions.
 7. Background jobs: persist delayed jobs through `jobRunner.scheduleOnce()` and drive execution via tick endpoints or request-tail kick; never use raw `setInterval`.
 

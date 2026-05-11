@@ -17,24 +17,69 @@ Current runtime facts:
 ## WeChat Notification Template Sources
 
 Subscription-message template ids for confirmation-reminder / activity-start-reminder /
-booking-result / new-partner / pr-message
-can be supplied from either:
+booking-result / new-partner / meeting-point-updated / waitlist-promoted / pr-message
+are supplied only through backend `config` rows:
 
-- backend `config` rows:
-  - `wechat.submsg_confirmation_reminder_template_id`
-  - `wechat.submsg_activity_start_reminder_template_id`
-  - `wechat.submsg_booking_result_template_id`
-  - `wechat.submsg_new_partner_template_id`
-  - `wechat.submsg_pr_message_template_id`
-- backend environment variables with the same semantic mapping:
-  - `WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID`
-  - `WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID`
-  - `WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID`
-  - `WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID`
-  - `WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID`
+- `wechat.submsg_confirmation_reminder_template_id`
+- `wechat.submsg_activity_start_reminder_template_id`
+- `wechat.submsg_booking_result_template_id`
+- `wechat.submsg_new_partner_template_id`
+- `wechat.submsg_meeting_point_updated_template_id`
+- `wechat.submsg_waitlist_promoted_template_id`
+- `wechat.submsg_pr_message_template_id`
 
-The `config` table remains the higher-priority source; env vars are operational
-fallbacks when the DB config row is absent.
+Backend runtime sends WeChat reminders through subscription messages only.
+Template ids are owned by the `config` table.
+
+## Backend Deploy Environment Contract
+
+Backend FC deployment validates required environment variables through
+`scripts/ci/fc/validate_backend_env.sh` before it touches migration or runtime
+deploy steps.
+
+Required GitHub Environment secrets:
+
+- `ALIBABA_CLOUD_ACCESS_KEY_ID`
+- `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
+- `ALIBABA_CLOUD_ACCOUNT_ID`
+- `DATABASE_URL`
+- `DATABASE_URL_FOR_MIGRATION`
+- `AUTH_JWT_SECRET`
+- `WECHAT_OFFICIAL_ACCOUNT_APP_ID`
+- `WECHAT_OFFICIAL_ACCOUNT_APP_SECRET`
+- `WECHAT_AUTH_SESSION_SECRET`
+- `JOB_RUNNER_INTERNAL_TOKEN`
+- optional by feature: `LLM_API_KEY` is required when `LLM_BASE_URL` is set
+
+Required GitHub Environment variables:
+
+- `ALIYUN_FC_REGION`
+- `ALIYUN_FC_DB_MIGRATION_FUNCTION_NAME`
+- `ALIYUN_FC_FUNCTION_NAME`
+- `ALIYUN_FC_ROLE_ARN`
+- `ALIYUN_FC_RESOURCE_GROUP_ID`
+- `ALIYUN_FC_NODE_MODULES_LAYER_NAME`
+- `ALIYUN_FC_LOG_PROJECT`
+- `ALIYUN_FC_LOG_STORE`
+- `ALIYUN_FC_VPC_ID`
+- `ALIYUN_FC_SECURITY_GROUP_ID`
+- `ALIYUN_FC_VSWITCH_ID_PRIMARY`
+- `ALIYUN_FC_VSWITCH_ID_SECONDARY`
+- `ALIYUN_FC_OSS_ENDPOINT`
+- `ALIYUN_FC_OSS_BUCKET`
+- `ALIYUN_FC_OSS_BUCKET_PATH`
+- `ALIYUN_FC_PATH`
+- `FRONTEND_URL`
+
+Optional GitHub Environment variables that are passed to backend runtime when
+configured:
+
+- `IMAGES_DIR`
+- `WECHAT_OAUTH_CALLBACK_URL`
+
+`AUTH_JWT_SECRET` must be at least 32 characters for staging and production
+deploys. Optional runtime env vars may be left empty; backend startup treats
+empty optional values as absent.
 
 ## Environment Split
 
@@ -49,6 +94,7 @@ fallbacks when the DB config row is absent.
 - deploy target: production environment in GitHub Actions
 - FC behavior: deploy to `LATEST`, then publish immutable function version, then update `production` alias
 - migrations run before deploy
+- backend GitHub Release is created only after production alias publication succeeds
 
 ## Database Environment Model
 
@@ -61,7 +107,8 @@ fallbacks when the DB config row is absent.
 There is a separate FC deployment for the external job-runner trigger function:
 
 - deployed from `apps/backend/fc-job-runner-trigger`
-- calls the backend internal maintenance tick endpoint on a cron schedule
+- calls the backend internal maintenance tick endpoint with cron expression
+  `CRON_TZ=Asia/Shanghai 0 0/30 8-23 ? * ?`
 - has its own GitHub Actions workflow and FC function name/URL variables
 
 ## Frontend Deployment Truth
@@ -73,6 +120,10 @@ Current durable facts we can state:
 - deployment target: Aliyun ESA
 - repo deployment descriptor: `apps/frontend/esa.jsonc`
 - frontend builds to `apps/frontend/dist`
-- backend runtime depends on `FRONTEND_URL` for OAuth/share link generation
+- backend runtime depends on `FRONTEND_URL` for share link generation
+- WeChat OAuth callback defaults to the backend `/api/wechat/oauth/callback` URL inferred from the OAuth start request and forwarded public host / protocol headers
 
 The repo does not currently document a full CI/CD workflow for frontend ESA rollout with the same level of detail as backend FC deploy.
+
+Frontend GitHub Releases are source releases only in the current pull-based ESA
+deployment model.

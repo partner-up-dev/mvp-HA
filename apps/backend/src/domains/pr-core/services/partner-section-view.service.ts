@@ -2,6 +2,7 @@ import type { PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import type {
   ActiveParticipantSummary,
+  PendingParticipantSummary,
   RosterParticipantSummary,
 } from "../../../repositories/PartnerRepository";
 import {
@@ -24,6 +25,7 @@ export type PartnerSectionActionBlockedReason =
   | "BOOKING_CONTACT_REQUIRED"
   | "OUTSIDE_CONFIRM_WINDOW"
   | "NOT_JOINED"
+  | "ALREADY_WAITLISTED"
   | "ALREADY_JOINED"
   | "ALREADY_CONFIRMED"
   | "CHECKIN_NOT_OPEN";
@@ -40,13 +42,13 @@ export type PartnerSectionRosterItem = {
 };
 
 export type PartnerSectionView = {
-  scenario: "COMMUNITY" | "ANCHOR";
   capacity: {
     current: number;
     min: number | null;
     max: number | null;
     remaining: number | null;
     neededToReady: number;
+    pending: number;
     readiness: "NEEDS_MORE" | "READY" | "FULL" | "ACTIVE" | "UNAVAILABLE";
   };
   roster: PartnerSectionRosterItem[];
@@ -54,18 +56,24 @@ export type PartnerSectionView = {
     isCreator: boolean;
     isParticipant: boolean;
     myPartnerId: number | null;
+    pendingPartnerId: number | null;
+    isWaitlisted: boolean;
+    waitlistRank: number | null;
     slotState:
       | "NOT_JOINED"
+      | "PENDING"
       | "JOINED"
       | "CONFIRMED"
       | "ATTENDED"
       | "EXITED"
       | "RELEASED";
     canJoin: boolean;
+    canWaitlist: boolean;
     canExit: boolean;
     canConfirm: boolean;
     canCheckIn: boolean;
     joinBlockedReason: PartnerSectionActionBlockedReason;
+    waitlistBlockedReason: PartnerSectionActionBlockedReason;
     exitBlockedReason: PartnerSectionActionBlockedReason;
     confirmBlockedReason: PartnerSectionActionBlockedReason;
     checkInBlockedReason: PartnerSectionActionBlockedReason;
@@ -91,7 +99,6 @@ export type PartnerSectionView = {
     confirmationEndAt: string | null;
     joinLockAt: string | null;
     bookingDeadlineAt: string | null;
-    bookingTriggeredAt: string | null;
   };
   bookingContact: {
     required: boolean;
@@ -166,12 +173,13 @@ const resolveRosterState = (
 const buildBaseSection = (
   publicPR: PublicPR,
   activeParticipants: ActiveParticipantSummary[],
+  pendingParticipants: PendingParticipantSummary[],
   rosterParticipants: RosterParticipantSummary[],
   viewerUserId: UserId | null,
   releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
 ): Omit<
   PartnerSectionView,
-  "scenario" | "reminder" | "timeline" | "bookingContact" | "fallbacks"
+  "reminder" | "timeline" | "bookingContact" | "fallbacks"
 > => {
   const current = activeParticipants.length;
   const min = publicPR.minPartners;
@@ -205,6 +213,18 @@ const buildBaseSection = (
         null;
   const isCreator = Boolean(viewerUserId && publicPR.createdBy === viewerUserId);
   const isParticipant = publicPR.myPartnerId !== null;
+  const selfPendingSlot =
+    publicPR.myPendingPartnerId === null
+      ? null
+      : pendingParticipants.find(
+          (item) => item.partnerId === publicPR.myPendingPartnerId,
+        ) ?? null;
+  const waitlistRank =
+    selfPendingSlot === null
+      ? null
+      : pendingParticipants.findIndex(
+            (item) => item.partnerId === selfPendingSlot.partnerId,
+          ) + 1;
   const releasedSlot = viewerUserId
     ? rosterParticipants
         .filter(
@@ -229,6 +249,7 @@ const buildBaseSection = (
 
   const slotState: PartnerSectionView["viewer"]["slotState"] =
     selfActiveSlot?.status ??
+    selfPendingSlot?.status ??
     releasedSlotState ??
     "NOT_JOINED";
 
@@ -239,6 +260,7 @@ const buildBaseSection = (
       max,
       remaining,
       neededToReady,
+      pending: pendingParticipants.length,
       readiness,
     },
     roster,
@@ -246,8 +268,12 @@ const buildBaseSection = (
       isCreator,
       isParticipant,
       myPartnerId: publicPR.myPartnerId,
+      pendingPartnerId: publicPR.myPendingPartnerId,
+      isWaitlisted: selfPendingSlot !== null,
+      waitlistRank,
       slotState,
       canJoin: false,
+      canWaitlist: false,
       canExit: false,
       canConfirm: false,
       canCheckIn: false,
@@ -255,6 +281,7 @@ const buildBaseSection = (
       exitBlockedReason: "NONE",
       confirmBlockedReason: "NONE",
       checkInBlockedReason: "NONE",
+      waitlistBlockedReason: "NONE",
       releasedSlot: releasedSlot
         ? {
             partnerId: releasedSlot.partnerId,
@@ -267,37 +294,103 @@ const buildBaseSection = (
   };
 };
 
-export function buildCommunityPartnerSection(
-  publicPR: PublicPR,
-  activeParticipants: ActiveParticipantSummary[],
-  viewerUserId: UserId | null,
-  options: {
-    rosterParticipants?: RosterParticipantSummary[];
-    releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
-  } = {},
-): PartnerSectionView {
-  const rosterParticipants = options.rosterParticipants ?? activeParticipants;
-  const releaseStateByPartnerId = options.releaseStateByPartnerId ?? new Map();
+type PartnerSectionBookingContact = PartnerSectionView["bookingContact"];
+
+const DEFAULT_BOOKING_CONTACT_STATE: PartnerSectionBookingContact = {
+  required: false,
+  state: "NOT_REQUIRED",
+  ownerPartnerId: null,
+  ownerIsCurrentViewer: false,
+  maskedPhone: null,
+  verifiedAt: null,
+  deadlineAt: null,
+};
+
+export function buildPRPartnerSection(params: {
+  publicPR: PublicPR;
+  activeParticipants: ActiveParticipantSummary[];
+  pendingParticipants?: PendingParticipantSummary[];
+  rosterParticipants: RosterParticipantSummary[];
+  viewerUserId: UserId | null;
+  policy?: ResolvedAnchorParticipationPolicy | null;
+  bookingDeadlineAt?: Date | null;
+  bookingContact?: PartnerSectionBookingContact;
+  sameBatchAlternatives?: Array<{
+    id: PRId;
+    location: string;
+    status: PRStatus;
+  }>;
+  alternativeBatches?: AlternativeBatchRecommendation[];
+  releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+}): PartnerSectionView {
+  const {
+    publicPR,
+    activeParticipants,
+    pendingParticipants = [],
+    rosterParticipants,
+    viewerUserId,
+    policy = null,
+    bookingDeadlineAt = null,
+    bookingContact = DEFAULT_BOOKING_CONTACT_STATE,
+    sameBatchAlternatives = [],
+    alternativeBatches = [],
+    releaseStateByPartnerId = new Map(),
+  } = params;
+
   const base = buildBaseSection(
     publicPR,
     activeParticipants,
+    pendingParticipants,
     rosterParticipants,
     viewerUserId,
     releaseStateByPartnerId,
   );
   const current = activeParticipants.length;
+  const hasParticipationPolicy = policy !== null;
+  const joinLocked =
+    hasParticipationPolicy && policy?.joinLockAt
+      ? Date.now() >= policy.joinLockAt.getTime()
+      : false;
+  const bookingLocked = isBookingDeadlineReached(bookingDeadlineAt);
+  const started = hasEventStarted(publicPR.time);
+  const withinConfirmationWindow =
+    hasParticipationPolicy &&
+    policy?.confirmationStartAt !== null &&
+    policy?.confirmationEndAt !== null &&
+    Date.now() >= policy.confirmationStartAt.getTime() &&
+    Date.now() < policy.confirmationEndAt.getTime();
 
   let canJoin = true;
   let joinBlockedReason: PartnerSectionActionBlockedReason = "NONE";
   if (base.viewer.isParticipant) {
     canJoin = false;
     joinBlockedReason = "ALREADY_JOINED";
+  } else if (publicPR.status === "FULL") {
+    canJoin = false;
+    joinBlockedReason = "FULL";
   } else if (!isJoinableStatus(publicPR.status)) {
     canJoin = false;
     joinBlockedReason = "NOT_JOINABLE_STATUS";
   } else if (publicPR.maxPartners !== null && current >= publicPR.maxPartners) {
     canJoin = false;
     joinBlockedReason = "FULL";
+  } else if (joinLocked) {
+    canJoin = false;
+    joinBlockedReason = "JOIN_LOCKED";
+  }
+
+  let canWaitlist = false;
+  let waitlistBlockedReason: PartnerSectionActionBlockedReason = "NONE";
+  if (base.viewer.isParticipant) {
+    waitlistBlockedReason = "ALREADY_JOINED";
+  } else if (base.viewer.isWaitlisted) {
+    waitlistBlockedReason = "ALREADY_WAITLISTED";
+  } else if (publicPR.status !== "FULL") {
+    waitlistBlockedReason = "NOT_JOINABLE_STATUS";
+  } else if (joinLocked) {
+    waitlistBlockedReason = "JOIN_LOCKED";
+  } else {
+    canWaitlist = true;
   }
 
   let canExit = true;
@@ -311,46 +404,120 @@ export function buildCommunityPartnerSection(
   } else if (!isExitAllowedStatus(publicPR.status)) {
     canExit = false;
     exitBlockedReason = "NOT_JOINABLE_STATUS";
+  } else if (hasParticipationPolicy && started) {
+    canExit = false;
+    exitBlockedReason = "EVENT_STARTED";
+  } else if (
+    hasParticipationPolicy &&
+    bookingLocked &&
+    (base.viewer.slotState === "CONFIRMED" ||
+      base.viewer.slotState === "ATTENDED")
+  ) {
+    canExit = false;
+    exitBlockedReason = "BOOKING_LOCKED";
+  }
+
+  let canConfirm = true;
+  let confirmBlockedReason: PartnerSectionActionBlockedReason = "NONE";
+  if (!hasParticipationPolicy) {
+    canConfirm = false;
+    confirmBlockedReason = "OUTSIDE_CONFIRM_WINDOW";
+  } else if (!base.viewer.isParticipant) {
+    canConfirm = false;
+    confirmBlockedReason = "NOT_JOINED";
+  } else if (
+    base.viewer.slotState === "CONFIRMED" ||
+    base.viewer.slotState === "ATTENDED"
+  ) {
+    canConfirm = false;
+    confirmBlockedReason = "ALREADY_CONFIRMED";
+  } else if (!withinConfirmationWindow) {
+    canConfirm = false;
+    confirmBlockedReason = "OUTSIDE_CONFIRM_WINDOW";
+  }
+
+  let canCheckIn = true;
+  let checkInBlockedReason: PartnerSectionActionBlockedReason = "NONE";
+  if (!hasParticipationPolicy) {
+    canCheckIn = false;
+    checkInBlockedReason = "CHECKIN_NOT_OPEN";
+  } else if (!base.viewer.isParticipant) {
+    canCheckIn = false;
+    checkInBlockedReason = "NOT_JOINED";
+  } else if (base.viewer.slotState === "ATTENDED") {
+    canCheckIn = false;
+    checkInBlockedReason = "ALREADY_CONFIRMED";
+  } else if (!started) {
+    canCheckIn = false;
+    checkInBlockedReason = "CHECKIN_NOT_OPEN";
   }
 
   return {
-    scenario: "COMMUNITY",
     ...base,
     viewer: {
       ...base.viewer,
       canJoin,
+      canWaitlist,
       canExit,
-      canConfirm: false,
-      canCheckIn: false,
+      canConfirm,
+      canCheckIn,
       joinBlockedReason,
+      waitlistBlockedReason,
       exitBlockedReason,
-      confirmBlockedReason: "NONE",
-      checkInBlockedReason: "CHECKIN_NOT_OPEN",
+      confirmBlockedReason,
+      checkInBlockedReason,
     },
-    reminder: {
-      supported: false,
-      visible: false,
-    },
-    timeline: null,
-    bookingContact: {
-      required: false,
-      state: "NOT_REQUIRED",
-      ownerPartnerId: null,
-      ownerIsCurrentViewer: false,
-      maskedPhone: null,
-      verifiedAt: null,
-      deadlineAt: null,
-    },
+    reminder: hasParticipationPolicy
+      ? {
+          supported: true,
+          visible: base.viewer.isParticipant,
+        }
+      : {
+          supported: false,
+          visible: false,
+        },
+    timeline: hasParticipationPolicy
+      ? {
+          eventStartAt: publicPR.time[0],
+          confirmationStartAt: toIsoString(policy?.confirmationStartAt),
+          confirmationEndAt: toIsoString(policy?.confirmationEndAt),
+          joinLockAt: toIsoString(policy?.joinLockAt),
+          bookingDeadlineAt: toIsoString(bookingDeadlineAt),
+        }
+      : null,
+    bookingContact,
     fallbacks: {
-      sameBatchAlternatives: [],
-      alternativeBatches: [],
+      sameBatchAlternatives,
+      alternativeBatches,
     },
   };
+}
+
+export function buildCommunityPartnerSection(
+  publicPR: PublicPR,
+  activeParticipants: ActiveParticipantSummary[],
+  viewerUserId: UserId | null,
+  options: {
+    rosterParticipants?: RosterParticipantSummary[];
+    releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+  } = {},
+): PartnerSectionView {
+  const rosterParticipants = options.rosterParticipants ?? activeParticipants;
+  const releaseStateByPartnerId = options.releaseStateByPartnerId ?? new Map();
+  return buildPRPartnerSection({
+    publicPR,
+    activeParticipants,
+    pendingParticipants: [],
+    rosterParticipants,
+    viewerUserId,
+    releaseStateByPartnerId,
+  });
 }
 
 export function buildAnchorPartnerSection(params: {
   publicPR: PublicPR;
   activeParticipants: ActiveParticipantSummary[];
+  pendingParticipants: PendingParticipantSummary[];
   rosterParticipants: RosterParticipantSummary[];
   viewerUserId: UserId | null;
   policy: ResolvedAnchorParticipationPolicy;
@@ -372,128 +539,17 @@ export function buildAnchorPartnerSection(params: {
   alternativeBatches: AlternativeBatchRecommendation[];
   releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
 }): PartnerSectionView {
-  const {
-    publicPR,
-    activeParticipants,
-    rosterParticipants,
-    viewerUserId,
-    policy,
-    bookingDeadlineAt,
-    bookingContact,
-    sameBatchAlternatives,
-    alternativeBatches,
-    releaseStateByPartnerId = new Map(),
-  } = params;
-  const base = buildBaseSection(
-    publicPR,
-    activeParticipants,
-    rosterParticipants,
-    viewerUserId,
-    releaseStateByPartnerId,
-  );
-  const current = activeParticipants.length;
-  const joinLocked = policy.joinLockAt
-    ? Date.now() >= policy.joinLockAt.getTime()
-    : false;
-  const bookingLocked = isBookingDeadlineReached(bookingDeadlineAt);
-  const started = hasEventStarted(publicPR.time);
-  const withinConfirmationWindow =
-    policy.confirmationStartAt !== null &&
-    policy.confirmationEndAt !== null &&
-    Date.now() >= policy.confirmationStartAt.getTime() &&
-    Date.now() < policy.confirmationEndAt.getTime();
-
-  let canJoin = true;
-  let joinBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (base.viewer.isParticipant) {
-    canJoin = false;
-    joinBlockedReason = "ALREADY_JOINED";
-  } else if (!isJoinableStatus(publicPR.status)) {
-    canJoin = false;
-    joinBlockedReason = "NOT_JOINABLE_STATUS";
-  } else if (publicPR.maxPartners !== null && current >= publicPR.maxPartners) {
-    canJoin = false;
-    joinBlockedReason = "FULL";
-  } else if (joinLocked) {
-    canJoin = false;
-    joinBlockedReason = "JOIN_LOCKED";
-  }
-
-  let canExit = true;
-  let exitBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (base.viewer.isCreator) {
-    canExit = false;
-    exitBlockedReason = "NOT_JOINABLE_STATUS";
-  } else if (!base.viewer.isParticipant) {
-    canExit = false;
-    exitBlockedReason = "NOT_JOINED";
-  } else if (!isExitAllowedStatus(publicPR.status)) {
-    canExit = false;
-    exitBlockedReason = "NOT_JOINABLE_STATUS";
-  } else if (started) {
-    canExit = false;
-    exitBlockedReason = "EVENT_STARTED";
-  } else if (
-    bookingLocked &&
-    (base.viewer.slotState === "CONFIRMED" || base.viewer.slotState === "ATTENDED")
-  ) {
-    canExit = false;
-    exitBlockedReason = "BOOKING_LOCKED";
-  }
-
-  let canConfirm = true;
-  let confirmBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!base.viewer.isParticipant) {
-    canConfirm = false;
-    confirmBlockedReason = "NOT_JOINED";
-  } else if (base.viewer.slotState === "CONFIRMED" || base.viewer.slotState === "ATTENDED") {
-    canConfirm = false;
-    confirmBlockedReason = "ALREADY_CONFIRMED";
-  } else if (!withinConfirmationWindow) {
-    canConfirm = false;
-    confirmBlockedReason = "OUTSIDE_CONFIRM_WINDOW";
-  }
-
-  let canCheckIn = true;
-  let checkInBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!base.viewer.isParticipant) {
-    canCheckIn = false;
-    checkInBlockedReason = "NOT_JOINED";
-  } else if (!started) {
-    canCheckIn = false;
-    checkInBlockedReason = "CHECKIN_NOT_OPEN";
-  }
-
-  return {
-    scenario: "ANCHOR",
-    ...base,
-    viewer: {
-      ...base.viewer,
-      canJoin,
-      canExit,
-      canConfirm,
-      canCheckIn,
-      joinBlockedReason,
-      exitBlockedReason,
-      confirmBlockedReason,
-      checkInBlockedReason,
-    },
-    reminder: {
-      supported: true,
-      visible: base.viewer.isParticipant,
-    },
-    timeline: {
-      eventStartAt: publicPR.time[0],
-      confirmationStartAt: toIsoString(policy.confirmationStartAt),
-      confirmationEndAt: toIsoString(policy.confirmationEndAt),
-      joinLockAt: toIsoString(policy.joinLockAt),
-      bookingDeadlineAt: toIsoString(bookingDeadlineAt),
-      bookingTriggeredAt: toIsoString(policy.bookingTriggeredAt),
-    },
-    bookingContact,
-    fallbacks: {
-      sameBatchAlternatives,
-      alternativeBatches,
-    },
-  };
+  return buildPRPartnerSection({
+    publicPR: params.publicPR,
+    activeParticipants: params.activeParticipants,
+    pendingParticipants: params.pendingParticipants,
+    rosterParticipants: params.rosterParticipants,
+    viewerUserId: params.viewerUserId,
+    policy: params.policy,
+    bookingDeadlineAt: params.bookingDeadlineAt,
+    bookingContact: params.bookingContact,
+    sameBatchAlternatives: params.sameBatchAlternatives,
+    alternativeBatches: params.alternativeBatches,
+    releaseStateByPartnerId: params.releaseStateByPartnerId,
+  });
 }

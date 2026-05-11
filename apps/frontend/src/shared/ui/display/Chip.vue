@@ -16,7 +16,7 @@ type ChipTone =
   | "outline"
   | "danger"
   | "warning";
-type ChipSize = "sm" | "md";
+type ChipSize = "sm" | "md" | "lg";
 
 withDefaults(
   defineProps<{
@@ -45,13 +45,19 @@ withDefaults(
 
 .ui-chip--size-sm {
   @include mx.pu-font(label-small);
-  padding: 0 calc(var(--sys-spacing-sm) - 2px);
+  padding: 0 calc(var(--sys-spacing-small) - 2px);
   min-height: var(--sys-size-small);
 }
 
 .ui-chip--size-md {
   @include mx.pu-font(label-medium);
-  padding: var(--sys-spacing-xs) var(--sys-spacing-sm);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-small);
+  min-height: var(--sys-size-medium);
+}
+
+.ui-chip--size-lg {
+  @include mx.pu-font(label-large);
+  padding: var(--sys-spacing-xsmall) var(--sys-spacing-medium);
   min-height: var(--sys-size-medium);
 }
 
@@ -83,12 +89,8 @@ withDefaults(
 }
 
 .ui-chip--tone-warning {
-  background: color-mix(
-    in srgb,
-    var(--sys-color-warning) 18%,
-    var(--sys-color-surface-container-lowest)
-  );
-  color: var(--sys-color-on-surface);
-  border-color: color-mix(in srgb, var(--sys-color-warning) 42%, transparent);
+  background: var(--sys-color-warning);
+  color: var(--sys-color-on-warning);
+  border-color: var(--sys-color-warning);
 }
 </style>

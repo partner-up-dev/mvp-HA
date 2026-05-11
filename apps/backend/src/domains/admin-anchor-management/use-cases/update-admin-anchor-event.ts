@@ -1,24 +1,49 @@
 import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
+import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
   AnchorEventStatus,
-  SystemLocationEntry,
-  UserLocationEntry,
+  AnchorEventTimePoolConfig,
+  LocationEntry,
+  MeetingPointConfig,
+  MeetingPointConfigMap,
+  PRJoinGateConfig,
+  FeedbackQuestionnaireTemplateId,
 } from "../../../entities";
-import { assertManualPartnerBoundsValid } from "../../pr-core/services/partner-bounds.service";
+import {
+  normalizeAnchorEventTimePoolConfig,
+  normalizeMeetingPointConfig,
+  normalizeMeetingPointConfigMap,
+} from "../../../entities";
+import {
+  assertManualPartnerBoundsValid,
+  captureEffectiveMeetingPointsForRequests,
+  listRequestsAffectedByAnchorEventMeetingPoint,
+  scheduleMeetingPointNotificationsForChangedRequests,
+  validateAnchorParticipationPolicyOffsets,
+} from "../../pr/services";
 
 const anchorEventRepo = new AnchorEventRepository();
+const feedbackRepo = new FeedbackQuestionnaireRepository();
 
 export interface UpdateAdminAnchorEventInput {
   title: string;
   type: string;
   description: string | null;
-  systemLocationPool: SystemLocationEntry[];
-  userLocationPool: UserLocationEntry[];
+  locationPool: LocationEntry[];
+  timePoolConfig: AnchorEventTimePoolConfig;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultPrNotes: string | null;
+  defaultConfirmationStartOffsetMinutes: number;
+  defaultConfirmationEndOffsetMinutes: number;
+  defaultJoinLockOffsetMinutes: number;
+  meetingPoint?: MeetingPointConfig | null;
+  locationMeetingPoints?: MeetingPointConfigMap;
+  joinGateConfig?: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   status: AnchorEventStatus;
@@ -33,15 +58,64 @@ export async function updateAdminAnchorEvent(
     input.defaultMaxPartners,
     0,
   );
+  validateAnchorParticipationPolicyOffsets({
+    confirmationStartOffsetMinutes:
+      input.defaultConfirmationStartOffsetMinutes,
+    confirmationEndOffsetMinutes: input.defaultConfirmationEndOffsetMinutes,
+    joinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
+  });
+
+  const current = await anchorEventRepo.findById(eventId);
+  if (!current) {
+    throw new HTTPException(404, { message: "Anchor event not found" });
+  }
+
+  const existingByType = await anchorEventRepo.findOneByType(input.type);
+  if (existingByType && existingByType.id !== eventId) {
+    throw new HTTPException(409, {
+      message: `Anchor event type already exists: ${input.type}`,
+    });
+  }
+  if (input.feedbackQuestionnaireTemplateId !== null && input.feedbackQuestionnaireTemplateId !== undefined) {
+    const template = await feedbackRepo.findTemplateById(
+      input.feedbackQuestionnaireTemplateId,
+    );
+    if (!template) {
+      throw new HTTPException(404, {
+        message: "Feedback questionnaire template not found",
+      });
+    }
+  }
+
+  const affectedRequests =
+    await listRequestsAffectedByAnchorEventMeetingPoint(
+      current.type,
+      input.type,
+    );
+  const previousMeetingPoints =
+    await captureEffectiveMeetingPointsForRequests(affectedRequests);
+  const updatedAt = new Date();
 
   const updated = await anchorEventRepo.update(eventId, {
     title: input.title,
     type: input.type,
     description: input.description,
-    systemLocationPool: input.systemLocationPool,
-    userLocationPool: input.userLocationPool,
+    locationPool: input.locationPool,
+    timePoolConfig: normalizeAnchorEventTimePoolConfig(input.timePoolConfig),
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
+    defaultPrNotes: input.defaultPrNotes,
+    defaultConfirmationStartOffsetMinutes:
+      input.defaultConfirmationStartOffsetMinutes,
+    defaultConfirmationEndOffsetMinutes:
+      input.defaultConfirmationEndOffsetMinutes,
+    defaultJoinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
+    meetingPoint: normalizeMeetingPointConfig(input.meetingPoint),
+    locationMeetingPoints: normalizeMeetingPointConfigMap(
+      input.locationMeetingPoints,
+    ),
+    joinGateConfig: input.joinGateConfig ?? [],
+    feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     status: input.status,
@@ -50,6 +124,16 @@ export async function updateAdminAnchorEvent(
   if (!updated) {
     throw new HTTPException(404, { message: "Anchor event not found" });
   }
+
+  const latestAffectedRequests = await listRequestsAffectedByAnchorEventMeetingPoint(
+    current.type,
+    input.type,
+  );
+  await scheduleMeetingPointNotificationsForChangedRequests({
+    previous: previousMeetingPoints,
+    requests: latestAffectedRequests,
+    updatedAt,
+  });
 
   return updated;
 }

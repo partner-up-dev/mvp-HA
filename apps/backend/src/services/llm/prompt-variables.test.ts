@@ -1,0 +1,73 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import type { PartnerRequestFields } from "../../entities/partner-request";
+import {
+  buildXhsPosterHtmlPromptVariablesJson,
+  buildXiaohongshuCaptionPromptVariablesJson,
+} from "./prompt-variables";
+
+type SharePromptVariables = {
+  caption?: string;
+  context: {
+    time: {
+      start: string | null;
+      end: string | null;
+      timeZone: string;
+    };
+  };
+};
+
+const buildPR = (
+  time: PartnerRequestFields["time"],
+): PartnerRequestFields => ({
+  title: "Badminton partner",
+  type: "badminton",
+  time,
+  location: "Jing'an Sports Center",
+  minPartners: 4,
+  maxPartners: 8,
+  partners: [1, 2],
+  budget: null,
+  preferences: [],
+  notes: null,
+});
+
+const parseVariables = (json: string): SharePromptVariables =>
+  JSON.parse(json) as SharePromptVariables;
+
+test("XHS prompt variables expose UTC instants as product local time", () => {
+  const variables = parseVariables(
+    buildXhsPosterHtmlPromptVariablesJson(
+      buildPR(["2026-05-04T06:00:00.000Z", "2026-05-04T08:30:00.000Z"]),
+      "14:00 badminton needs 2",
+    ),
+  );
+
+  assert.equal(variables.caption, "14:00 badminton needs 2");
+  assert.equal(variables.context.time.start, "2026-05-04 14:00");
+  assert.equal(variables.context.time.end, "2026-05-04 16:30");
+  assert.equal(variables.context.time.timeZone, "Asia/Shanghai");
+});
+
+test("XHS caption variables share the same product local time contract", () => {
+  const json = buildXiaohongshuCaptionPromptVariablesJson(
+    buildPR(["2026-05-04T06:00:00.000Z", "2026-05-04T08:30:00.000Z"]),
+  );
+  const variables = parseVariables(json);
+
+  assert.equal(variables.context.time.start, "2026-05-04 14:00");
+  assert.equal(variables.context.time.end, "2026-05-04 16:30");
+  assert.equal(json.includes("2026-05-04T06:00:00.000Z"), false);
+});
+
+test("XHS prompt variables preserve product-local date-time strings", () => {
+  const variables = parseVariables(
+    buildXhsPosterHtmlPromptVariablesJson(
+      buildPR(["2026-05-04T14:00", "2026-05-04T16:30"]),
+      "14:00 badminton needs 2",
+    ),
+  );
+
+  assert.equal(variables.context.time.start, "2026-05-04 14:00");
+  assert.equal(variables.context.time.end, "2026-05-04 16:30");
+});

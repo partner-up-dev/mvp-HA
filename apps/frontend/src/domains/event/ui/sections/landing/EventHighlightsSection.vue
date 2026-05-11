@@ -118,7 +118,7 @@ watchEffect(() => {
 .event-highlights {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--sys-spacing-lg) + var(--sys-spacing-med));
+  gap: calc(var(--sys-spacing-large) + var(--sys-spacing-medium));
   width: 100%;
   min-width: 0;
   min-height: 0;
@@ -130,7 +130,7 @@ watchEffect(() => {
   @include mx.pu-motion-enter(0.7rem);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   position: relative;
   z-index: 4;
 
@@ -179,10 +179,10 @@ watchEffect(() => {
 }
 
 .fallback-state {
-  padding: var(--sys-spacing-sm) 0;
+  padding: var(--sys-spacing-small) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
   align-items: flex-start;
 }
 

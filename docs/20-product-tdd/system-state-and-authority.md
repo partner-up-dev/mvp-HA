@@ -4,12 +4,14 @@
 
 Persisted in Postgres via backend entities and repositories:
 
-- PartnerRequest and scene-specific PR records
+- `PartnerRequest` as the single durable PR record, including PR-level meeting-point override configuration, PR-level join-gate configuration, and PR-level mounted feedback questionnaire instance pointer
 - partner slots and participation state
 - PR messages and per-user PR message inbox state
 - users, user notification options, and user reliability
-- anchor events, event-specific beta-group QR codes, batches, POIs, support resources, booking contacts, and booking execution records
-- config, operation logs, domain events, outbox events, jobs, and notification deliveries
+- `users.wechat_official_account_followed_at` as the positive marker that the backend has confirmed a user follows the WeChat official account
+- anchor events, event-specific beta-group QR codes, landing rollout config, event-owned preset preference tags and moderation state, event-owned default PR notes, event-owned join-gate templates, event-owned feedback questionnaire template pointers, unified event location pools, event-owned meeting-point defaults and location-specific meeting-point overrides, type-derived Anchor Event PR context, time-pool strategy state, POIs with submission status, meeting-point fallback configuration, per-time-window capacity and availability rules, support resources, booking-resource join-gate templates, booking contacts, join-notice acceptances, and booking execution records
+- feedback questionnaire templates, feedback questionnaire instances, and feedback questionnaire responses
+- config, operation logs, domain events, outbox events, jobs, notification opportunities, notification waves, and notification deliveries
 - analytics aggregate tables
 
 This is the source of truth for product behavior.
@@ -18,7 +20,7 @@ This is the source of truth for product behavior.
 
 - outbox backlog and event-processing progress
 - job leases, retries, due-job claims, and bucket-based scheduling semantics carried by `run_at`, `resolution_ms`, `early_tolerance_units`, and `late_tolerance_units`
-- notification send attempts and cleanup state
+- notification opportunity scheduling, wave state, send attempts, and cleanup state
 
 These shape runtime behavior but remain backend-owned.
 
@@ -27,19 +29,37 @@ These shape runtime behavior but remain backend-owned.
 - TanStack Query caches of backend data
 - route-local UI state
 - local message composer drafts and thread expansion/collapse state
-- local and session storage for session tokens, user id/pin, admin tokens, pending WeChat actions, bookmark nudges, analytics session id, and `spm`
+- local and session storage for session tokens, anonymous user id, admin tokens, pending WeChat actions, bookmark nudges, official-account follow prompt cooldown, anchor-event landing mode stability, analytics session id, and `spm`
 - active route-share session state, currently selected share descriptor, and replay bookkeeping for WeChat/browser share flows
 
 This state improves UX and continuity but does not define product truth.
 
 ## Authority Boundary Rules
 
+Canonical entity reads are the source for entity facts used across routes and
+surfaces. A frontend preview or list component that renders stable facts for an
+entity should receive the entity id and load those facts through the canonical
+read contract for that entity. Caller-provided data should represent caller
+context, such as placement, route override, cover media, time label, or action
+slots.
+
 The backend is authoritative for:
 
 - PartnerRequest and partner-slot state
+- PR feedback questionnaire instance pointers
+- feedback questionnaire templates, instances, and responses
+- PR detail meeting-point fallback resolution
 - PR message visibility, read-marker progression, and notification wave gating
 - identity binding, session verification, and role semantics
-- event, POI, booking-support, and admin-managed configuration state
+- confirmed WeChat official-account follow state derived from official-account follower-list sync
+- event, time-pool, POI, booking-support, and admin-managed configuration state
+- POI submission status, submitter linkage, reviewer linkage, and rejection reason
+- PR join-gate configuration, join-gate projection, booking-contact resolution, and join-notice acceptance resolution
+- PR feedback questionnaire projection, including mounted instance and current viewer response state
+- notification scheduling and dispatch for meeting-point update notifications
+- POI-owned availability rules that determine whether a PR location accepts a full PR time window
+- event-owned preference-tag pool, moderation state, default PR notes for future materialization, landing recommendation, and type-derived Anchor Event PR context
+- event-owned feedback questionnaire template pointer used for future PR materialization
 - event-specific beta-group QR codes; generic config must not be the owner for activity-specific beta-group entry
 - domain events, notifications, analytics persistence, and operation logs
 

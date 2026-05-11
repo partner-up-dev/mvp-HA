@@ -47,7 +47,7 @@ useBodyScrollLock(computed(() => props.open));
 .official-account-modal-body {
   display: grid;
   justify-items: center;
-  gap: var(--sys-spacing-sm);
+  gap: var(--sys-spacing-small);
 }
 
 .official-account-modal-description {
@@ -58,7 +58,7 @@ useBodyScrollLock(computed(() => props.open));
 
 .official-account-qr-image {
   width: min(100%, 260px);
-  border-radius: var(--sys-radius-md);
+  border-radius: var(--sys-radius-medium);
 }
 
 .official-account-qr-empty {

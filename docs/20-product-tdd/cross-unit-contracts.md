@@ -11,42 +11,69 @@ Contract implication:
 - route shape, payload shape, and many response shapes are shared by type rather than duplicated manually
 - some contract-breaking API changes are intentionally compile-time visible to the frontend workspace
 
+## 1.1 Image Upload Contract
+
+- The active image upload surface is `POST /api/upload/images/:purpose` with multipart field `image`.
+- Backend accepts the allowlisted image purposes: `poster`, `poi`, `anchor-event-cover`, `anchor-event-beta-group-qr`, and `feedback`.
+- Backend generates one UUID key per uploaded image. The key is independent from client filenames and is also the stored image filename.
+- Backend stores image bytes under the purpose-owned prefix: `posters/`, `pois/`, `anchor-event-covers/`, `anchor-event-beta-group-qrs/`, or `feedback/`.
+- Backend serves uploaded images through `GET /api/upload/images/:purpose/:key` and derives the response content type from the stored image bytes.
+- Frontend upload flows use the Hono RPC client and pass the purpose explicitly at the upload boundary.
+- Xiaohongshu and WeChat generated poster assets use purpose `poster`; POI application and Admin POI Gallery uploads use purpose `poi`; Admin Anchor Event cover and beta-group QR uploads use their Anchor Event media purposes; feedback questionnaire image answers use purpose `feedback`.
+
 ## 2. PR Lifecycle Contract
 
 - Backend owns `PartnerRequestStatus` and legal state transitions.
 - Frontend renders and branches on the shared visible status set: `DRAFT`, `OPEN`, `READY`, `FULL`, `LOCKED_TO_START`, `ACTIVE`, `CLOSED`, `EXPIRED`.
-- Backend owns the persisted partner-bounds invariant: manual PR writes must reject `minPartners < 2` or missing `minPartners`; system-generated create paths may default missing/invalid `minPartners` to `2` before persistence.
+- Backend owns the persisted partner-bounds invariant: manual PR writes must reject `minPartners < 1`, missing `minPartners`, and present `maxPartners < 2`; system-generated create paths may default missing or invalid `minPartners` to `2` before persistence, while still rejecting present `maxPartners < 2`.
 - Legacy invalid partner-bound data is repaired through forward-only data migrations before deploy; frontend and backend reads do not introduce separate normalization policy.
 - If the status set or lock/join semantics change, backend runtime, frontend UX, and the PRD lifecycle description must move together.
 
 ## 3. Session Contract
 
-- Frontend stores local user and admin access tokens in browser storage.
+- Frontend stores user and admin access tokens in browser storage.
+- Frontend stores the anonymous user UUID in localStorage and sends it to session bootstrap so the backend can restore anonymous visitor continuity.
+- Anonymous and authenticated user sessions both use `Authorization: Bearer <JWT>` transport.
+- Backend distinguishes anonymous, authenticated, and service sessions from JWT role claims plus current persisted user state.
 - Backend may rotate tokens through the `x-access-token` response header.
-- Frontend must preserve `credentials: "include"` on flows that rely on cookie-backed session state, especially WeChat OAuth and bind paths.
+- Frontend must preserve `credentials: "include"` on flows that rely on cookie-backed session state, especially WeChat OAuth, OAuth handoff, and bind paths.
 - Admin and user sessions are separate client contexts.
+- WeChat OAuth callback completion must not place the long-lived access token in route query parameters. Backend-owned OAuth callbacks hand the frontend session across with a short-lived signed cookie plus a non-secret handoff nonce.
 
-## 4. Error Contract
+## 4. WeChat Official Account Follow Contract
 
-- Backend global errors resolve to JSON with at least `{ error }` and optionally `{ code }`.
-- Frontend interprets status plus optional `code` to drive UX for auth-required flows, join failures, booking failures, and create-path fallbacks.
+- Backend persists official-account follow confirmation on `users.wechat_official_account_followed_at`.
+- `GET /api/wechat/official-account/follow-status` returns `{ status, followedAt }`, where `status` is `FOLLOWED` or `UNKNOWN`; `FOLLOWED` requires an active authenticated user whose `users.wechat_official_account_followed_at` is present.
+- A 6-hour backend JobRunner task reads the WeChat official-account follower list and positively marks local users whose `open_id` appears in the list.
+- The follower-list cursor is pagination state for one scan. It is not persisted as durable user state.
+- The sync task only writes positive confirmations. Missing users in a follower-list scan remain `UNKNOWN` until a later unsubscribe webhook or reconciliation contract exists.
+- Frontend official-account follow prompts combine backend status with a 6-hour local cooldown aligned to the follower-list sync period, so a user who recently saw the prompt or opened the follow QR is spared repeat presentation before the next expected backend confirmation opportunity.
+
+## 5. Error Contract
+
+- Backend command failures should converge on RFC 9457 `application/problem+json`.
+- HTTP status selection should follow RFC 9110 semantics, especially across auth failures, forbidden actions, state conflicts, and invalid content.
+- Backend owns stable machine-readable `code` values for domain guard failures and may also expose a stable `type` URI for the same problem family.
+- Backend owns localized `title` and `detail` text for problem responses and selects them from request locale. Responses should set `Content-Language`.
+- Frontend interprets HTTP status plus stable `code` to drive UX for auth-required flows, join failures, booking failures, and create-path fallbacks.
 - For shared partner-bounds validation failures, backend and frontend should converge on one user-facing Chinese message rather than surfacing route-specific copies.
+- Human-readable explanation remains backend-owned on command failures. Frontend owns placement and presentation.
+- Problem-details transport shape is a cross-unit reusable substrate. Domain modules own their `type` and `code` registries.
 
-## 5. Stable Route And Flow Contract
+## 6. Stable Route And Flow Contract
 
 Stable user-facing route families that materially affect coordination include:
 
 - `/`
-- `/cpr/new`
-- `/cpr/:id`
-- `/cpr/:id/partners/:partnerId`
-- `/apr/:id`
-- `/apr/:id/messages`
-- `/apr/:id/partners/:partnerId`
-- `/apr/:id/booking-support`
+- `/pr/new`
+- `/pr/:id`
+- `/pr/:id/messages`
+- `/pr/:id/partners/:partnerId`
+- `/pr/:id/booking-support`
 - `/events`
 - `/events/search`
 - `/events/:eventId`
+- `/e/:eventId`
 - `/pr/mine`
 - `/me`
 - `/contact-support`
@@ -54,90 +81,167 @@ Stable user-facing route families that materially affect coordination include:
 - `/about`
 - `/wechat/oauth/callback`
 - `/admin/login`
-- `/admin/anchor-pr`
-- `/admin/anchor-pr-messages`
+- `/admin/pr`
+- `/admin/pr-messages`
 - `/admin/booking-support`
 - `/admin/booking-execution`
 - `/admin/pois`
 
 Important coordination note:
 
-- user-managed Anchor PR creation is event-scoped: frontend starts it from `/events/:eventId`, backend realizes it through `POST /api/events/:eventId/batches/:batchId/anchor-prs`, and the system does not expose a generic standalone Anchor PR create route
-- `/apr/:id` remains the primary Anchor PR detail route for read/join/exit/confirm/check-in/share/booking-support handoff, keeps the persistent notification-subscriptions section mounted there, and links into adjacent Anchor PR sub-routes instead of absorbing all secondary actions inline
-- `/events/search` is an Anchor PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
-- `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative display policy, so frontend should treat it as opaque instead of hardcoded ranking truth; it does not own Anchor PR search results
+- canonical PR routes converge on `/pr/*`; rollout may keep legacy scene-specific route families as temporary redirect bridges while shared links and clients converge
+- canonical PR creation stays PR-owned and route-driven through `/pr/new`
+- create commands are split by input mode:
+  - `POST /api/pr/new/form`
+  - `POST /api/pr/new/nl`
+- create commands return the created PR id, resulting status, and canonical detail path so frontend can route without inferring publish outcome locally
+- backend resolves create result state from the caller's auth context:
+  - authenticated create persists and publishes in one command path
+  - anonymous create persists `DRAFT` and returns that draft id for later authenticated publish
+- `POST /api/pr/:id/publish` requires an authenticated user. Anonymous calls return stable code `AUTHENTICATED_REQUIRED`, and frontend should record the pending publish action before starting WeChat login.
+- `DRAFT` content edits are open to any current session. Published PR content and status mutations remain governed by creator session authorization.
+- Anchor Event assisted create prepares the same PR-owned structured payload and submits `POST /api/pr/new/form`
+- event-assisted create carries transient create source or event referral through command context, while persisted PR state remains the same PR-owned field set used by structured create
+- event-assisted create targets direct `OPEN` creation and therefore requires an authenticated account
+- the old public batch-specific event-create route is retired from the public contract surface
+- structured PR creation accepts arbitrary `type` input with event-type suggestions and accepts one resolved `time_window`; batch and free are UI modes rather than separate persisted PR models
+- PR creation resolves event-owned defaults by PR type when that type maps to an Anchor Event. The created PR receives materialized PR-owned state for event-owned default notes when the create payload has no notes, join gates, support resources, and feedback questionnaire instance pointer. This materialization rule applies to public structured create, event-assisted create, admin create, and system auto-expansion. Later Anchor Event default-note edits affect future PRs only.
+- `/pr/:id` remains the primary PR detail route for read, join, exit, confirm, check-in, share, and booking-support handoff; it keeps the persistent notification-subscriptions section mounted there when reminder registration is relevant for that PR and links into adjacent PR sub-routes instead of absorbing all secondary actions inline
+- `GET /api/pr/mine/created` and `GET /api/pr/mine/joined` return id-only PR list items. They express membership in the viewer's created and joined PR collections. Preview rendering of title, status, location, time, and participant count reads `GET /api/pr/:id`.
+- PR preview surfaces across `/pr/mine`, Anchor Event list mode, Form Mode candidate results, and event-scoped PR search should pass PR identity plus caller context into the PR-domain preview component. The PR-domain preview component owns its PR detail query, keeping canonical PR facts aligned with `GET /api/pr/:id`.
+- `GET /api/pr/:id` returns `core.meetingPoint`, the backend-resolved public meeting-point guidance. Fallback order is PR-specific configuration, Anchor Event location-specific configuration, Anchor Event default configuration, then POI configuration. Frontend renders this value under the primary location in the facts card.
+- `GET /api/pr/:id` returns a feedback projection when the PR has a mounted feedback questionnaire instance. The projection includes the instance id, the questionnaire definition snapshot needed for rendering, and the current viewer's response state so the frontend can offer submission or retry without deriving feedback truth locally.
+- `POST /api/feedback/:instanceId` is the feedback questionnaire submission contract. The route treats `instanceId` as a `FeedbackQuestionnaireInstance` id, validates answers against that instance's definition snapshot, and upserts one `FeedbackQuestionnaireResponse` for the current respondent identity. PR participation, attendance, and slot ownership gating live in PR integration surfaces rather than in this generic feedback command.
+- `GET /api/pr/:id/join-gates` is the PR join-gate projection contract. It returns the current viewer's configured join gates with per-gate resolved state. The projection reads PR-owned `joinGateConfig`; when that config is empty it returns an empty gate list; booking-contact gate resolution comes from `pr_booking_contacts`; join-notice gate resolution comes from the current viewer's notice acceptance record.
+- `POST /api/pr/:id/join-gates/:gateKey/resolve` resolves one configured join gate before join or waitlist. `JOIN_NOTICE` writes a viewer-scoped notice acceptance for the gate key and version. `BOOKING_CONTACT` validates and records the PR booking contact phone. Fallback confirmation is a frontend-injected confirmation view and has no backend projection item or durable resolve command.
+- `POST /api/pr/:id/join` rejects unresolved configured join gates with problem code `PR_JOIN_GATE_UNRESOLVED`. Frontend should refresh `GET /api/pr/:id/join-gates` and continue the join-gate modal when it sees this code.
+- `POST /api/pr/:id/waitlist` creates or reuses one `PENDING` partner slot for the current viewer when the PR is `FULL` and still before the join-lock boundary. It reuses the same join-gate and time-conflict guardrails as join, returns the refreshed public PR view plus auth payload, and does not make the viewer an active participant.
+- `POST /api/pr/:id/waitlist` accepts optional JSON field `alternativePrReminderOptIn`. When true, backend stores a waitlist-slot preference that allows exact same-type and same-location alternative PR availability reminders under notification kind `WAITLIST_ALTERNATIVE_AVAILABLE`.
+- The alternative reminder preference belongs to the source `PENDING` partner slot. Backend clears it when that slot is cancelled or converted out of pending state.
+- When the user grants `WAITLIST_ALTERNATIVE_AVAILABLE` quota after waitlist entry, backend rescans that user's opted-in pending source slots for existing alternatives.
+- When the same user successfully joins a matching alternative PR, backend cancels matching source pending slots, clears source join-gate resolutions, and records `partner.waitlist_cancel_alternative_joined`.
+- `POST /api/pr/:id/waitlist/cancel` converts the current viewer's pending waitlist slot to `CANCELLED`, clears that viewer's join-gate resolutions for the PR, and returns the refreshed public PR view. Cancelling a pending slot does not promote another waiter because no active capacity was released.
+- `GET /api/pr/:id` exposes waitlist state through `partnerSection.viewer.isWaitlisted`, `pendingPartnerId`, `waitlistRank`, `canWaitlist`, and `waitlistBlockedReason`. Frontend should render waitlist CTA and state from these fields.
+- The frontend PR join flow is owned by a reusable PR-domain flow component. PR detail, Form Mode matched handoff, Form Mode no-match candidate actions, and waitlist entry provide their own button controls through slots while sharing join-gate resolution, command execution, auth payload application, and post-command notification prompts.
+- The frontend waitlist flow owns only the opt-in checkbox presentation and submits the checkbox value through the typed waitlist command. Backend owns alternative candidate selection, dispatch-time eligibility, source-slot closure, and notification delivery persistence.
+- `DELETE /api/admin/prs/:id` is an admin-only hard-delete command for one PR. Backend deletes the `partner_requests` root row and relies on PR-owned cascade constraints to remove Partner rows, PR support resources, messages, booking support rows, and notification records. Frontend must show an explicit destructive confirmation before sending this command and refresh Admin PR workspace caches after success.
+- `PATCH /api/admin/prs/:id/feedback-questionnaire-instance` is the admin-only PR feedback override command. It replaces the PR's mounted feedback questionnaire instance pointer and leaves general PR content, Anchor Event template selection, and prior response records under their owning persistence rules.
+- `/events/search` is a PR discovery route scoped by one active `Anchor Event` plus one or more local dates; its route state should be recoverable through query parameters such as `eventId` and repeated date values
+- `/e/:eventId` is the ad-scan-first Anchor Event landing entry; it may render `FORM`, `CARD_RICH`, or `LIST` mode while `/events/:eventId` keeps the existing rich page responsibility
+- `/events/:eventId` and `/e/:eventId` may trigger the official-account follow nudge after 3 seconds when the follow-status contract returns `UNKNOWN` or is unavailable and the local cooldown admits another prompt.
+- `/e/:eventId` owns the Form Mode selection state, no-match candidate result state, and zero-candidate assisted-create handoff in one route-level state machine.
+- `GET /api/events` is the public active Anchor Event catalog contract and should return enough event object data for event-card selection surfaces; response ordering is backend-authoritative display policy, so frontend should treat it as opaque instead of hardcoded ranking truth; it does not own PR search results
 - `GET /api/events` and `GET /api/events/:eventId` expose each Anchor Event's beta-group QR code when configured; `/about` and `/events/:eventId` use that event-owned value for beta-group entry instead of reading a generic beta-group public config key
-- `GET /api/events/:eventId/demand-cards` is the backend-authored card-mode demand projection contract; it returns only joinable (`OPEN` / `READY`) demand-card groups for that event and must stay semantically aligned with `POST /api/events/:eventId/demand-cards/:cardKey/join`
-- `GET /api/apr/search` is the Anchor PR search read contract; it queries by active `Anchor Event` id plus repeated local-date values and returns matching visible actionable Anchor PR candidates
-- if Anchor PR search has exactly one result, frontend may replace-route to that `/apr/:id` while avoiding a browser-back auto-redirect loop
+- `GET /api/events/:eventId/landing-assignment` returns the backend-authored landing mode plus `assignmentRevision` for `/e/:eventId`
+- `GET /api/events/:eventId/form-mode` is the Form Mode bootstrap contract; it returns the event snapshot, location gallery projection, available start options with start-rule-derived descriptions, each location's POI-availability-filtered start keys, published preset preference tags, and an optional backend-authored default selection from the nearest joinable PR under that event's time boundary.
+- Form Mode location creation is a route entry into POI application, not an Anchor Event mutation. `POST /api/pois/applications` creates a `PENDING` POI from one name and one image URL. `GET /api/pois/applications/mine` returns the current user's submitted POI applications.
+- Public POI reads return only `PUBLISHED` POIs. Admin POI reads include all statuses and admin POI commands may publish or reject user-submitted POIs.
+- `POST /api/events/:eventId/form-mode/recommendation` accepts one selected location, one selected start time, and the current preference labels, then returns one matched recommendation plus an ordered candidate list. When both are empty, frontend submits `POST /api/pr/new/form` with the same selected conditions and routes to the created `/pr/:id` with `handoff=event_assisted_create` so PR detail can show the created-request notice.
+- `POST /api/events/:eventId/preference-tags/submissions` accepts visitor-authored label-only tags, records them as pending event-owned preference-tag moderation items, and does not automatically expose them to later visitors
+- `GET /api/events/:eventId/demand-cards` is the backend-authored card-mode demand projection contract; it returns only joinable (`OPEN` / `READY`) demand-card groups for that event.
+- the old public demand-card join route is retired from the public contract surface
+- `GET /api/events/:eventId` exposes public event discovery through `timeWindows`. Discoverable PRs inside those time-window groups come from root PR reads keyed by `event.type + time_window`; create location options come from `event.locationPool` plus POI-owned per-time-window capacity and POI-owned availability rules. Event-owned create time windows include start-rule-derived description copy when configured.
+- PR create, publish, and content-edit command boundaries validate that the full PR time window is accepted by the selected location's POI availability rules. Missing POI records and empty `availabilityRules` mean all-day availability.
+- `GET /api/events/:eventId/demand-cards` groups demand through compatibility card keys, while the underlying candidate PR set should already come from root PR reads keyed by `event.type + time_window`.
+- `GET /api/pr/search` is the PR search read contract; it queries by active `Anchor Event` id plus repeated local-date values and returns matching visible actionable PR candidates under that event's current activity type and time-pool rules
+- if PR search has exactly one result, frontend may replace-route to `/pr/:id` while avoiding a browser-back auto-redirect loop
 - `/events/:eventId` accepts optional query `mode=card|list` to bootstrap the initial frontend view mode; missing or invalid values fall back to `list`
+- `/e/:eventId` `LIST` landing mode renders the event-domain List Mode surface and follows the same date grouping, PR visibility, event-assisted create, beta-group, and other-event browsing semantics as `/events/:eventId` list view
 - that `mode` query is a frontend route-state hint for initial rendering only in the current version; switching modes in-page does not rewrite the URL, and `spm` remains attribution-only rather than a UI-mode switch
-- `/apr/:id` participant roster UI should use the existing `/apr/:id/partners/:partnerId` profile route for participant-badge navigation rather than introducing a second profile-route family
+- frontend stabilizes `/e/:eventId` landing mode through local storage keyed by `eventId + assignmentRevision`; timeout fallback enters `FORM`
+- `/pr/:id` participant roster UI should use the existing `/pr/:id/partners/:partnerId` profile route for participant-badge navigation rather than introducing a second profile-route family
+- `GET /api/pr/:id/actions/preflight` is the batch action-availability contract for PR detail UX. It evaluates one viewer against one PR and returns action entries such as `join`, `confirm`, `check_in`, and booking-contact actions through one stable minimal shape:
+  - `evaluatedAt`
+  - `actions[actionName].allowed`
+  - `actions[actionName].problem.type`
+  - `actions[actionName].problem.code`
+  - `actions[actionName].problem.title`
+  - `actions[actionName].problem.detail`
+  - `actions[actionName].nextRelevantAt`
+- preflight reads stay advisory. Backend command handlers remain authoritative and reuse the same decision logic plus the same stable `type` and `code` values when they reject a write.
+- `OPTIONS /api/pr/:id/actions` may expose generic method capabilities and `HEAD /api/pr/:id/actions/preflight` may support metadata-aware infrastructure behavior. PR action availability semantics live on the `GET` response body.
+- action-availability transport shape is a cross-unit reusable substrate. Each domain owns its action-name set, code registry, and fact loader.
 
-## 6. Admin Booking Execution Contract
+## 7. Admin Booking Execution Contract
 
 - Frontend admin workspace reads one workspace payload containing `pendingItems` and merged `auditItems`.
 - Backend provides that workspace through `GET /api/admin/booking-execution/workspace`.
-- `pendingItems` are derived from unresolved Anchor PRs that are in `READY` / `FULL` / `LOCKED_TO_START`, have reached minimum active participants, and still have platform-handled required booking resources; this contract does not depend on confirmed-participant count.
-- Frontend submits one execution result per Anchor PR.
-- Backend accepts that through `POST /api/admin/anchor-prs/:id/booking-execution`.
+- `pendingItems` are derived from unresolved PRs that are in `READY` / `FULL` / `LOCKED_TO_START`, have reached minimum active participants, and still have platform-handled required booking resources; this contract does not depend on confirmed-participant count.
+- Frontend submits one execution result per PR.
+- Backend accepts that through `POST /api/admin/prs/:id/booking-execution`.
 - The contract includes notification summary fields so admin UX can render fulfillment outcome without recomputing backend state.
 
-## 7. Configuration And Metadata Contract
+## 8. Configuration And Metadata Contract
 
 - Backend exposes public config values through `/api/config/public/:key`.
 - Backend exposes build metadata through `/api/meta/build`.
 - Frontend relies on those endpoints to avoid hardcoding operationally managed values.
-- Event-specific beta-group QR codes are not public config values; they are Anchor Event fields and flow through the Anchor Event read/admin contracts.
+- Event-specific beta-group QR codes are not public config values; they are Anchor Event fields and flow through the Anchor Event read and admin contracts.
+- Event-owned landing rollout config is persisted through the infra `config` table while Anchor Event owns the namespace, payload schema, parse / serialize rules, and admin contract. Product-side rollout control is expressed through per-mode landing ratio override plus assignment revision; modes with ratio `0` are excluded from weighted assignment, and an all-zero override resolves to `FORM`.
+- Admin edits event-owned landing rollout config through `GET /api/admin/events/:eventId/landing-config` and `PUT /api/admin/events/:eventId/landing-config`.
+- Event-owned preset preference tags and their moderation state are persisted through dedicated Anchor Event tables instead of config blobs; admin reads them through `GET /api/admin/events/:eventId/preference-tags`, replaces published tags through `PUT /api/admin/events/:eventId/preference-tags/published`, and moderates pending tags through `POST /api/admin/events/:eventId/preference-tags/:tagId/publish|reject`.
+- Admin edits Anchor Event time-window description copy through `timePoolConfig.startRules[].description`; the admin workspace preview returns the materialized description for each generated time window.
+- Admin selects the Anchor Event feedback questionnaire template pointer through Anchor Event management. That pointer affects future PR materialization for PRs whose type resolves to the Anchor Event. Existing PRs keep their mounted questionnaire instance until a PR-specific pointer override changes it.
 
-## 8. Share Descriptor Contract
+## 9. Share Descriptor Contract
 
-- Entity-backed public detail routes such as `/api/cpr/:id` and `/api/apr/:id` provide canonical share metadata inside the detail payload.
+- Entity-backed public detail routes such as `GET /api/pr/:id` provide canonical share metadata inside the detail payload.
 - Canonical share metadata includes stable route-owned fields required for base share correctness:
   - title
   - description
   - canonical path
   - default image path
   - revision token
+- Canonical PR share title fallback order is explicit title, primary location, type, then the generic `PR` label.
 - Frontend treats that metadata as the source for base share descriptors rather than recomputing a separate share truth in page-local code.
 - Rich descriptions, thumbnails, and posters remain optional enhancements; failure to produce them must not remove or invalidate the base share descriptor.
 - WeChat share coordination distinguishes:
   - the signature URL used to initialize JS-SDK for the current route
   - the target URL that will actually be shared outward
-- Frontend owns the route-scoped active share session and replay behavior, but it must do so using backend-provided canonical share metadata for entity truth.
+- Frontend owns the route-scoped active share session and replay behavior, and it uses backend-provided canonical share metadata for entity truth.
 
-## 9. PR Messaging Contract
+## 10. PR Messaging Contract
 
 - Backend owns persisted `PRMessage` items and one backend-authoritative `PRMessageInboxState` per `prId + userId`.
-- `PRMessage` is a PR-scoped plain-text message item inside one `PartnerRequest` thread. A message is either participant-authored or operator-authored system context, and backend owns that author/type classification.
+- `PRMessage` is a PR-scoped plain-text message item inside one `PartnerRequest` thread. A message is either participant-authored or operator-authored system context, and backend owns that author and type classification.
 - `PRMessageInboxState` is the cross-unit marker state used to answer two separate questions without frontend-owned inference:
   - the viewer's read marker for that PR thread
   - whether the current unread message wave has already consumed one `PR_MESSAGE` notification opportunity for that recipient
-- Frontend rollout is currently Anchor-only, but the contract is PR-generic. The system should not hardcode message entities, notification naming, or persistence semantics as Anchor-only truth.
-- In the current Anchor rollout, frontend page placement is route-based: `/apr/:id` is the handoff/detail page and `/apr/:id/messages` is the dedicated message page.
-- Route/API shape should follow the existing scene-specific route families instead of introducing a third generic user-facing family. The Anchor rollout therefore depends on:
-  - `GET /api/apr/:id/messages`
-  - `POST /api/apr/:id/messages`
-  - `POST /api/apr/:id/messages/read-marker`
-- If Community frontend rollout starts later, it should use the parallel `/api/cpr/:id/messages*` shape with the same payload and response semantics rather than inventing a separate message contract.
-- `GET /api/apr/:id/messages` returns the visible message list plus thread-level viewer state needed for UI assembly and explicit read-marker advancement. That response should be sufficient for frontend to render:
+- The frontend message rollout is PR-generic. The system should keep message entities, notification naming, and persistence semantics aligned with the single PR vocabulary.
+- Frontend page placement is route-based: `/pr/:id` is the handoff and detail page, and `/pr/:id/messages` is the dedicated message page.
+- Canonical route and API shape converge on the PR family:
+  - `GET /api/pr/:id/messages`
+  - `POST /api/pr/:id/messages`
+  - `POST /api/pr/:id/messages/read-marker`
+- `GET /api/pr/:id/messages` returns the visible message list plus thread-level viewer state needed for UI assembly and explicit read-marker advancement. That response should be sufficient for frontend to render:
   - ordered message items
   - whether each item is participant-authored or a system message
   - whether the current viewer can post
   - the latest visible message marker
   - the viewer's current read marker or an equivalent unread summary
-- `POST /api/apr/:id/messages` accepts one plain-text message payload, rejects non-participants, persists the new message, and returns the created item plus refreshed thread viewer state.
-- `POST /api/admin/anchor-prs/:id/messages` accepts one plain-text message payload from admin-authenticated tooling, persists one system message for that Anchor PR, and returns the created item plus refreshed thread state for downstream admin UX refresh.
-- `POST /api/apr/:id/messages/read-marker` advances the viewer's read marker idempotently after the thread is actually shown. Read-marker advancement should be explicit rather than piggybacked on list fetch, so prefetching or hidden loads do not silently clear an unread wave.
+- `POST /api/pr/:id/messages` accepts one plain-text message payload, rejects non-participants, persists the new message, and returns the created item plus refreshed thread viewer state.
+- `POST /api/admin/prs/:id/messages` accepts one plain-text message payload from admin-authenticated tooling, persists one system message for that PR, and returns the created item plus refreshed thread state for downstream admin UX refresh.
+- `POST /api/pr/:id/messages/read-marker` advances the viewer's read marker idempotently after the thread is actually shown. Read-marker advancement should be explicit rather than piggybacked on list fetch, so prefetching or hidden loads do not silently clear an unread wave.
 - Message visibility and read-marker advancement reuse the same backend-owned eligibility rule: only current active participants may see or act on the thread. Participant-authored message creation uses that same rule, while admin-authored system-message creation is a separate admin-only capability.
-- Backend notification fan-out evaluates all current active participants except the author. A `PR_MESSAGE` notification is eligible only when the recipient has available credits and no existing unread wave for the same PR. When a new unread wave opens, backend schedules one DB-backed delayed notification job for that wave rather than using an in-process timer.
-- The delayed `PR_MESSAGE` job recomputes latest unread sender, latest unread timestamp, and unread count from persisted messages at execution time so the send payload reflects the current unread wave summary instead of only the first triggering message.
-- Asynchronous notification execution must revalidate recipient participation and eligibility before delivery instead of assuming the API-time participant set is still valid.
-- Frontend owns only route/page placement, thread rendering, composer input, join-success subscription-modal prompting, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
+- PR message notification semantics are governed by `notification-contracts.md`, including unread-wave eligibility, delayed summary dispatch, durable opportunity and wave records, and dispatch-time revalidation.
+- Frontend owns only route and page placement, thread rendering, composer input, join-success subscription-modal prompting, follow-up official-account prompt cooldown, and cache refresh behavior. It must not infer membership, unread-wave reset, or notification gating from stale local cache.
 
-## 10. Coordination And Failure Assumptions
+## 11. Coordination And Failure Assumptions
 
-- The primary coordination path is browser route -> frontend process/UI -> typed backend API -> backend persistence and side effects -> frontend cache/UI refresh.
-- Rules that affect eligibility, status, timing, or identity must coordinate through backend-owned contracts; frontend may optimize UX but not invent new domain truth.
+- The primary coordination path is browser route -> frontend process and UI -> typed backend API -> backend persistence and side effects -> frontend cache and UI refresh.
+- Rules that affect eligibility, status, timing, or identity must coordinate through backend-owned contracts; frontend may optimize UX and does not invent new domain truth.
 - Best-effort outbox and job processing may complete after the initiating API response, so frontend must not assume all downstream side effects have already happened unless the API contract says so.
-- Unsupported browser capabilities and auth/config gaps surface through backend status/code plus frontend fallback UX rather than through separate frontend-owned policy logic.
+- Unsupported browser capabilities and auth or config gaps surface through backend status and code plus frontend fallback UX rather than through separate frontend-owned policy logic.
+
+## 12. System Scenario Verification Contract
+
+- Root-owned system scenario tests live under `tests/scenario/`.
+- System scenarios verify user journeys through a real browser page, real frontend dev server, real backend HTTP server, and isolated Postgres state.
+- Scenario `Given` setup may reuse backend scenario builders when they express the target business state without browser setup noise.
+- Scenario `When` and minimal user-visible `Then` assertions should operate through the browser page.
+- Backend probes are reserved for persistence or hidden side-effect proof that is not observable through the frontend workflow result.
+- Frontend routes that participate in system scenarios should expose stable `data-testid` semantic nodes for primary actions, modal actions, and result-state affordances.
+- `data-testid` names should follow route and workflow meaning, for example `pr-detail.join.open`, and action nodes should live on the real interactive element.
+- CI validation is separated by verification owner: backend gate for backend-local proof, frontend gate for frontend-local proof, and E2E gate for cross-unit browser-to-Postgres user journeys.
+- Backend and frontend gates protect ordinary PR integration into `develop` and `master`.
+- E2E gate protects PRs whose base branch is `master`, with manual dispatch available for release qualification or diagnosis.

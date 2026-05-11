@@ -1,4 +1,10 @@
-import { boolean, integer, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgTable,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users, type UserId } from "./user";
@@ -8,6 +14,9 @@ export const wechatNotificationKindSchema = z.enum([
   "ACTIVITY_START_REMINDER",
   "BOOKING_RESULT",
   "NEW_PARTNER",
+  "MEETING_POINT_UPDATED",
+  "WAITLIST_PROMOTED",
+  "WAITLIST_ALTERNATIVE_AVAILABLE",
   "PR_MESSAGE",
 ]);
 export type WeChatNotificationKind = z.infer<
@@ -53,6 +62,41 @@ export const userNotificationOpts = pgTable("user_notification_opts", {
     .default(false),
   wechatNewPartnerOptInAt: timestamp("wechat_new_partner_opt_in_at"),
   wechatNewPartnerRemainingCount: integer("wechat_new_partner_remaining_count")
+    .notNull()
+    .default(0),
+  wechatMeetingPointUpdatedOptIn: boolean("wechat_meeting_point_updated_opt_in")
+    .notNull()
+    .default(false),
+  wechatMeetingPointUpdatedOptInAt: timestamp(
+    "wechat_meeting_point_updated_opt_in_at",
+  ),
+  wechatMeetingPointUpdatedRemainingCount: integer(
+    "wechat_meeting_point_updated_remaining_count",
+  )
+    .notNull()
+    .default(0),
+  wechatWaitlistPromotedOptIn: boolean("wechat_waitlist_promoted_opt_in")
+    .notNull()
+    .default(false),
+  wechatWaitlistPromotedOptInAt: timestamp(
+    "wechat_waitlist_promoted_opt_in_at",
+  ),
+  wechatWaitlistPromotedRemainingCount: integer(
+    "wechat_waitlist_promoted_remaining_count",
+  )
+    .notNull()
+    .default(0),
+  wechatWaitlistAlternativeAvailableOptIn: boolean(
+    "wechat_waitlist_alternative_available_opt_in",
+  )
+    .notNull()
+    .default(false),
+  wechatWaitlistAlternativeAvailableOptInAt: timestamp(
+    "wechat_waitlist_alternative_available_opt_in_at",
+  ),
+  wechatWaitlistAlternativeAvailableRemainingCount: integer(
+    "wechat_waitlist_alternative_available_remaining_count",
+  )
     .notNull()
     .default(0),
   wechatPrMessageOptIn: boolean("wechat_pr_message_opt_in")

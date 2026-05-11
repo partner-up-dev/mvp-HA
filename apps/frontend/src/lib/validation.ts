@@ -7,12 +7,14 @@ const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const isoDateTimeSchema = z.string().datetime();
 const isoDateOrDateTimeSchema = z.union([isoDateTimeSchema, isoDateSchema]);
 
-export const pinSchema = z
-  .string()
-  .regex(/^\d{4}$/, i18n.global.t("validation.pinMustBeFourDigits"));
+const MIN_MANUAL_PARTNERS = 1;
+const MIN_PRESENT_MAX_PARTNERS = 2;
 
-export const getMinPartnersAtLeastTwoMessage = (): string =>
-  i18n.global.t("validation.minPartnersAtLeastTwo");
+export const getMinPartnersAtLeastOneMessage = (): string =>
+  i18n.global.t("validation.minPartnersAtLeastOne");
+
+export const getMaxPartnersAtLeastTwoMessage = (): string =>
+  i18n.global.t("validation.maxPartnersAtLeastTwo");
 
 export const getMaxPartnersAtLeastMinPartnersMessage = (): string =>
   i18n.global.t("validation.maxPartnersMustBeAtLeastMinPartners");
@@ -21,8 +23,11 @@ export const validateManualPartnerBounds = (
   minPartners: number | null,
   maxPartners: number | null,
 ): string | null => {
-  if (minPartners === null || minPartners < 2) {
-    return getMinPartnersAtLeastTwoMessage();
+  if (minPartners === null || minPartners < MIN_MANUAL_PARTNERS) {
+    return getMinPartnersAtLeastOneMessage();
+  }
+  if (maxPartners !== null && maxPartners < MIN_PRESENT_MAX_PARTNERS) {
+    return getMaxPartnersAtLeastTwoMessage();
   }
   if (maxPartners !== null && maxPartners < minPartners) {
     return getMaxPartnersAtLeastMinPartnersMessage();
@@ -56,18 +61,39 @@ const buildFieldsSchema = ({
       budget: z.string().nullable().optional(),
       preferences: z.array(z.string()),
       notes: z.string().nullable(),
+      meetingPoint: z
+        .object({
+          description: z.string().nullable(),
+          imageUrl: z.string().nullable(),
+        })
+        .nullable()
+        .optional(),
     })
     .superRefine((value, context) => {
-      if (value.minPartners === null || value.minPartners < 2) {
+      if (
+        value.minPartners === null ||
+        value.minPartners < MIN_MANUAL_PARTNERS
+      ) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["minPartners"],
-          message: getMinPartnersAtLeastTwoMessage(),
+          message: getMinPartnersAtLeastOneMessage(),
         });
       }
       if (
+        value.maxPartners !== null &&
+        value.maxPartners < MIN_PRESENT_MAX_PARTNERS
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["maxPartners"],
+          message: getMaxPartnersAtLeastTwoMessage(),
+        });
+        return;
+      }
+      if (
         value.minPartners !== null &&
-        value.minPartners >= 2 &&
+        value.minPartners >= MIN_MANUAL_PARTNERS &&
         value.maxPartners !== null &&
         value.maxPartners < value.minPartners
       ) {

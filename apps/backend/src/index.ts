@@ -2,23 +2,25 @@
  * 职责：聚合所有 Controller，导出 AppType。
  */
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
 import { partnerRequestRoute } from "./controllers/partner-request.controller";
-import { communityPRRoute } from "./controllers/community-pr.controller";
-import { anchorPRRoute } from "./controllers/anchor-pr.controller";
 import { authRoute } from "./controllers/auth.controller";
 import { userRoute } from "./controllers/user.controller";
 import { llmRoute } from "./controllers/llm.controller";
 import { uploadRoute } from "./controllers/upload.controller";
+import { feedbackQuestionnaireRoute } from "./controllers/feedback-questionnaire.controller";
 import { wechatRoute } from "./controllers/wechat.controller";
 import { shareRoute } from "./controllers/share.controller";
 import { wecomRoute } from "./controllers/wecom.controller";
 import { configRoute } from "./controllers/config.controller";
 import { analyticsRoute } from "./controllers/analytics.controller";
+import { telemetryRoute } from "./controllers/telemetry.controller";
 import { anchorEventRoute } from "./controllers/anchor-event.controller";
 import { internalMaintenanceRoute } from "./controllers/internal-maintenance.controller";
 import { poiRoute } from "./controllers/poi.controller";
@@ -29,37 +31,49 @@ import { adminBookingSupportRoute } from "./controllers/admin-booking-support.co
 import { adminPoiRoute } from "./controllers/admin-poi.controller";
 import { jobRunner } from "./infra/jobs";
 import {
-  bootstrapAnalyticsAggregationJobs,
-  registerAnalyticsAggregationJobs,
-} from "./infra/analytics";
+  bootstrapOfficialAccountFollowSyncJob,
+  registerOfficialAccountFollowSyncJobs,
+} from "./infra/marketing";
 import {
   registerWeChatActivityStartReminderJobs,
   registerWeChatBookingResultJobs,
+  registerWeChatMeetingPointUpdatedJobs,
   registerWeChatNewPartnerJobs,
   registerWeChatPRMessageJobs,
   registerWeChatReminderJobs,
+  registerWeChatWaitlistAlternativeAvailableJobs,
+  registerWeChatWaitlistPromotedJobs,
 } from "./infra/notifications";
-import { drainOutboxBatches } from "./infra/maintenance";
 import { env } from "./lib/env";
+import {
+  buildProblemDetailsPayload,
+  ProblemDetailsError,
+} from "./lib/problem-details";
 import { withTimeout } from "./lib/with-timeout";
 import {
   getWechatDomainVerificationContent,
-  WECHAT_DOMAIN_VERIFICATION_FILENAME,
+  MPWX_DOMAIN_VERIFICATION_FILENAME,
+  WXOA_DOMAIN_VERIFICATION_FILENAME,
 } from "./lib/wechat-domain-verification";
 
-const app = new Hono();
+export const app = new Hono();
 registerWeChatReminderJobs();
 registerWeChatActivityStartReminderJobs();
 registerWeChatNewPartnerJobs();
 registerWeChatBookingResultJobs();
 registerWeChatPRMessageJobs();
-registerAnalyticsAggregationJobs();
-void bootstrapAnalyticsAggregationJobs().catch((error) => {
-  console.error(
-    "[Analytics] failed to bootstrap daily aggregation jobs",
-    error,
-  );
-});
+registerWeChatMeetingPointUpdatedJobs();
+registerWeChatWaitlistPromotedJobs();
+registerWeChatWaitlistAlternativeAvailableJobs();
+registerOfficialAccountFollowSyncJobs();
+if (process.env.BACKEND_SCENARIO_DISABLE_BOOTSTRAP !== "true") {
+  void bootstrapOfficialAccountFollowSyncJob().catch((error) => {
+    console.error(
+      "[OfficialAccountFollowSync] failed to bootstrap sync job",
+      error,
+    );
+  });
+}
 
 // Middleware
 app.use("*", logger());
@@ -68,12 +82,7 @@ app.use(
   cors({
     origin: (origin) => origin ?? "*",
     credentials: true,
-    allowHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-User-Id",
-      "X-User-Pin",
-    ],
+    allowHeaders: ["Content-Type", "Authorization"],
     exposeHeaders: ["x-access-token"],
   }),
 );
@@ -84,18 +93,31 @@ app.use("*", async (c, next) => {
     if (
       c.req.method === "OPTIONS" ||
       c.req.path === "/health" ||
-      c.req.path === `/${WECHAT_DOMAIN_VERIFICATION_FILENAME}` ||
+      c.req.path === `/${MPWX_DOMAIN_VERIFICATION_FILENAME}` ||
       c.req.path.startsWith("/internal/")
     ) {
       return;
     }
 
-    kickRequestTailMaintenance();
+    if (process.env.BACKEND_SCENARIO_DISABLE_REQUEST_TAIL !== "true") {
+      kickRequestTailMaintenance();
+    }
   }
 });
 
 // Global error handler
 app.onError((err, c) => {
+  if (err instanceof ProblemDetailsError) {
+    const { payload, contentLanguage } = buildProblemDetailsPayload(
+      err,
+      c.req.header("accept-language"),
+    );
+    return c.body(JSON.stringify(payload), err.status, {
+      "Content-Type": "application/problem+json; charset=utf-8",
+      "Content-Language": contentLanguage,
+    });
+  }
+
   if (err instanceof HTTPException) {
     const codedError = err as HTTPException & { code?: string };
     const payload: { error: string; code?: string } = {
@@ -112,22 +134,21 @@ app.onError((err, c) => {
 });
 
 // Mount routes
-const routes = app
+export const routes = app
   .route("/api/auth", authRoute)
   .route("/api/users", userRoute)
   .route("/api/pr", partnerRequestRoute)
-  .route("/api/cpr", communityPRRoute)
-  .route("/api/apr", anchorPRRoute)
   .route("/api/events", anchorEventRoute)
   .route("/api/llm", llmRoute)
   .route("/api/share", shareRoute)
   .route("/api/upload", uploadRoute)
+  .route("/api/feedback", feedbackQuestionnaireRoute)
   .route("/api/wechat", wechatRoute)
   .route("/api/wecom", wecomRoute)
   .route("/api/config", configRoute)
   .route("/api/meta", metaRoute)
   .route("/api/analytics", analyticsRoute)
-  .route("/api/telemetry", analyticsRoute)
+  .route("/api/telemetry", telemetryRoute)
   .route("/api/pois", poiRoute)
   .route("/api/admin", adminAnchorManagementRoute)
   .route("/api/admin", adminBookingExecutionRoute)
@@ -136,10 +157,24 @@ const routes = app
   .route("/internal/maintenance", internalMaintenanceRoute);
 
 // Health check
-app.get(`/${WECHAT_DOMAIN_VERIFICATION_FILENAME}`, (c) => {
-  return c.body(getWechatDomainVerificationContent(), 200, {
-    "Content-Type": "text/plain; charset=utf-8",
-  });
+app.get(`/${MPWX_DOMAIN_VERIFICATION_FILENAME}`, (c) => {
+  return c.body(
+    getWechatDomainVerificationContent(MPWX_DOMAIN_VERIFICATION_FILENAME),
+    200,
+    {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  );
+});
+
+app.get(`/${WXOA_DOMAIN_VERIFICATION_FILENAME}`, (c) => {
+  return c.body(
+    getWechatDomainVerificationContent(WXOA_DOMAIN_VERIFICATION_FILENAME),
+    200,
+    {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  );
 });
 
 app.get("/health", (c) => c.json({ status: "ok", jobs: jobRunner.status() }));
@@ -165,15 +200,6 @@ const kickRequestTailMaintenance = (): void => {
 };
 
 const runRequestTailMaintenance = async (): Promise<void> => {
-  const outboxSummary = await drainOutboxBatches({
-    maxBatches: env.OUTBOX_REQUEST_DRAIN_MAX_BATCHES,
-    batchTimeoutMs: env.OUTBOX_REQUEST_DRAIN_TIMEOUT_MS,
-    timeoutMessage: "Request-tail outbox drain timed out",
-  });
-  if (outboxSummary.error) {
-    console.error("[RequestTail] outbox drain failed", outboxSummary.error);
-  }
-
   if (Date.now() < nextRequestTailJobTickAtMs) {
     return;
   }
@@ -205,7 +231,6 @@ export type {
   PRStatus,
   PRStatusManual,
   PRId,
-  PartnerRequestSummary,
   WeekdayLabel,
 } from "./entities/partner-request";
 export type {
@@ -222,16 +247,20 @@ export type {
   TimeWindowEntry,
 } from "./entities/anchor-event";
 export type {
-  AnchorEventBatchId,
-  AnchorEventBatchStatus,
-} from "./entities/anchor-event-batch";
-export type { PRKind, VisibilityStatus } from "./entities/partner-request";
+  PRBookingContactGateConfig,
+  PRJoinGateConfig,
+  PRJoinGateConfigItem,
+  PRJoinGateSource,
+  PRJoinNoticeGateConfig,
+} from "./entities/join-gate";
+export type { VisibilityStatus } from "./entities/partner-request";
 export type {
   AnchorEventSummary,
   AnchorEventDetail,
   AnchorEventDemandCard,
-  BatchDetail,
-  AnchorPRSummary,
+  BrowseTimeWindowDetail,
+  CreateTimeWindowDetail,
+  EventPRSummary,
 } from "./domains/anchor-event";
 export {
   partnerRequestFieldsSchema,
@@ -239,6 +268,13 @@ export {
   createNaturalLanguagePRSchema,
   createPRStructuredStatusSchema,
 } from "./entities/partner-request";
+export type { ImageUploadPurpose } from "./infra/storage/image-storage.service";
+export type {
+  FeedbackQuestionnaireAnswers,
+  FeedbackQuestionnaireDefinition,
+  FeedbackQuestionnaireInstanceId,
+  FeedbackQuestionnaireTemplateId,
+} from "./entities/feedback-questionnaire";
 export { PR_MESSAGE_BODY_MAX_LENGTH } from "./entities/pr-message";
 export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export {
@@ -248,10 +284,17 @@ export {
   userSexSchema,
 } from "./entities/user";
 
-// Start server
-serve({
-  fetch: app.fetch,
-  port: env.PORT,
-});
+const isMainModule = (moduleUrl: string): boolean => {
+  const entryPath = process.argv[1];
+  if (!entryPath) return false;
+  return path.resolve(fileURLToPath(moduleUrl)) === path.resolve(entryPath);
+};
 
-console.log(`Server running on http://localhost:${env.PORT}`);
+if (isMainModule(import.meta.url)) {
+  serve({
+    fetch: app.fetch,
+    port: env.PORT,
+  });
+
+  console.log(`Server running on http://localhost:${env.PORT}`);
+}

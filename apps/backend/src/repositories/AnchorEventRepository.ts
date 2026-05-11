@@ -39,6 +39,22 @@ export class AnchorEventRepository {
     return this.findByStatuses(["ACTIVE"]);
   }
 
+  async findByType(type: string): Promise<AnchorEvent[]> {
+    return await db
+      .select()
+      .from(anchorEvents)
+      .where(eq(anchorEvents.type, type))
+      .orderBy(desc(anchorEvents.createdAt));
+  }
+
+  async findOneByType(type: string): Promise<AnchorEvent | null> {
+    const result = await db
+      .select()
+      .from(anchorEvents)
+      .where(eq(anchorEvents.type, type));
+    return result[0] ?? null;
+  }
+
   async updateStatus(
     id: AnchorEventId,
     status: AnchorEventStatus,
@@ -59,11 +75,18 @@ export class AnchorEventRepository {
         | "title"
         | "type"
         | "description"
-        | "systemLocationPool"
-        | "userLocationPool"
-        | "timeWindowPool"
+        | "locationPool"
+        | "timePoolConfig"
         | "defaultMinPartners"
         | "defaultMaxPartners"
+        | "defaultPrNotes"
+        | "defaultConfirmationStartOffsetMinutes"
+        | "defaultConfirmationEndOffsetMinutes"
+        | "defaultJoinLockOffsetMinutes"
+        | "meetingPoint"
+        | "locationMeetingPoints"
+        | "joinGateConfig"
+        | "feedbackQuestionnaireTemplateId"
         | "coverImage"
         | "betaGroupQrCode"
         | "status"

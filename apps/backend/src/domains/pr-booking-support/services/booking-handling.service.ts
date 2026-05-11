@@ -1,5 +1,5 @@
 import type {
-  AnchorPRSupportResource,
+  PRSupportResource,
   BookingHandledBy,
 } from "../../../entities";
 import type { PRStatus } from "../../../entities/partner-request";
@@ -27,6 +27,6 @@ export const requiresBookingContactForHandledBy = (
 ): boolean => handledBy === "PLATFORM_PASSTHROUGH";
 
 export const isPlatformHandledBookingResource = (
-  resource: Pick<AnchorPRSupportResource, "bookingRequired" | "bookingHandledBy">,
+  resource: Pick<PRSupportResource, "bookingRequired" | "bookingHandledBy">,
 ): boolean =>
   resource.bookingRequired && isPlatformHandledBooking(resource.bookingHandledBy);

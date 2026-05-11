@@ -37,5 +37,7 @@ It sends `POST` requests to backend maintenance tick endpoints.
 ## Deployment
 
 - FC template: `apps/backend/fc-job-runner-trigger/s.yaml`.
+- Timer cron expression:
+  `CRON_TZ=Asia/Shanghai 0 0/30 8-23 ? * ?`.
 - CI workflow for this function:
   `.github/workflows/job-runner-trigger-fc-deploy.yml`
