@@ -39,9 +39,7 @@ import {
 } from "./job-schedule-policy";
 import {
   isWeChatSubscriptionNotificationConfigured,
-  isWeChatTemplateReminderConfigured,
   sendWeChatSubscriptionNotification,
-  sendWeChatTemplateNotification,
 } from "./channels";
 
 const WECHAT_REMINDER_JOB_TYPE = "wechat.reminder.confirmation";
@@ -79,38 +77,26 @@ async function handleReminderJob(
   const submsgConfigured = await isWeChatSubscriptionNotificationConfigured(
     REMINDER_CONFIRMATION_NOTIFICATION_KIND,
   );
-  const templateConfigured = await isWeChatTemplateReminderConfigured();
-  if (!submsgConfigured && !templateConfigured) {
+  if (!submsgConfigured) {
     await recordConfirmationReminderNotificationDelivery({
       jobId: context.jobId,
       payload,
       result: "FAILED",
       errorCode: "REMINDER_CHANNEL_NOT_CONFIGURED",
-      errorMessage:
-        "Neither subscription reminder channel nor template reminder channel is configured",
+      errorMessage: "Reminder subscription message channel is not configured",
     });
     return;
   }
 
-  const sendResult = submsgConfigured
-    ? await sendWeChatSubscriptionNotification({
-        kind: REMINDER_CONFIRMATION_NOTIFICATION_KIND,
-        openId: prepared.recipient.openId,
-        orderContent: prepared.subscriptionMessage.orderContent,
-        orderNo: prepared.subscriptionMessage.orderNo,
-        appointmentAt: prepared.subscriptionMessage.appointmentAt,
-        remark: prepared.subscriptionMessage.remark,
-        page: prepared.subscriptionMessage.page,
-      })
-    : await sendWeChatTemplateNotification({
-        kind: REMINDER_CONFIRMATION_NOTIFICATION_KIND,
-        openId: prepared.recipient.openId,
-        trigger: payload.trigger,
-        title: prepared.templateMessage.title,
-        startAtLabel: prepared.templateMessage.startAtLabel,
-        location: prepared.templateMessage.location,
-        prUrl: prepared.templateMessage.prUrl,
-      });
+  const sendResult = await sendWeChatSubscriptionNotification({
+    kind: REMINDER_CONFIRMATION_NOTIFICATION_KIND,
+    openId: prepared.recipient.openId,
+    orderContent: prepared.subscriptionMessage.orderContent,
+    orderNo: prepared.subscriptionMessage.orderNo,
+    appointmentAt: prepared.subscriptionMessage.appointmentAt,
+    remark: prepared.subscriptionMessage.remark,
+    page: prepared.subscriptionMessage.page,
+  });
 
   if (sendResult.status === "SENT") {
     await recordConfirmationReminderNotificationDelivery({

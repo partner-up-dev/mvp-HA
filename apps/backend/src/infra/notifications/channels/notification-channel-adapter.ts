@@ -1,4 +1,3 @@
-import type { ConfirmationReminderTrigger } from "../../../entities/notification-delivery";
 import type {
   NotificationDispatchFailureReason,
   NotificationDispatchSendResult,
@@ -81,16 +80,6 @@ export type WeChatSubscriptionChannelMessage =
       messageSummary: string;
       page: string | null;
     };
-
-export type WeChatTemplateChannelMessage = {
-  kind: "REMINDER_CONFIRMATION";
-  openId: string;
-  trigger: ConfirmationReminderTrigger;
-  title: string;
-  startAtLabel: string;
-  location: string | null;
-  prUrl: string | null;
-};
 
 export const toFailedDispatchResult = (
   error: NotificationChannelErrorLike,

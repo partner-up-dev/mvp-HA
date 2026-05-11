@@ -51,12 +51,6 @@ type ConfirmationReminderDispatchReady = {
     remark: string;
     page: string | null;
   };
-  templateMessage: {
-    title: string;
-    startAtLabel: string;
-    location: string | null;
-    prUrl: string | null;
-  };
 };
 
 type ConfirmationReminderDispatchBlocked = {
@@ -111,16 +105,6 @@ const resolvePrUrl = (request: PartnerRequest): string | null => {
     return null;
   }
 };
-
-const formatReminderTimeLabel = (startAt: Date): string =>
-  startAt.toLocaleString("zh-CN", {
-    timeZone: "Asia/Shanghai",
-    hour12: false,
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 const formatReminderDateField = (startAt: Date): string => {
   const parts = new Intl.DateTimeFormat("zh-CN", {
@@ -235,6 +219,8 @@ export const prepareConfirmationReminderNotificationDispatch = async (
     };
   }
 
+  const page = resolvePrUrl(request);
+
   return {
     status: "READY",
     recipient: {
@@ -246,13 +232,7 @@ export const prepareConfirmationReminderNotificationDispatch = async (
       orderNo: resolveReminderOrderNo(request, user.id),
       appointmentAt: formatReminderDateField(startAt),
       remark: resolveReminderRemark(payload.trigger),
-      page: resolvePrUrl(request),
-    },
-    templateMessage: {
-      title: resolveReminderTitle(request),
-      startAtLabel: formatReminderTimeLabel(startAt),
-      location: request.location,
-      prUrl: resolvePrUrl(request),
+      page,
     },
   };
 };

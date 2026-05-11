@@ -48,7 +48,6 @@ import {
   type WeChatNotificationKind,
 } from "../entities/user-notification-opt";
 import { WeChatSubscriptionMessageService } from "../services/WeChatSubscriptionMessageService";
-import { WeChatTemplateMessageService } from "../services/WeChatTemplateMessageService";
 
 const app = new Hono<AuthEnv>();
 const jssdkService = new WeChatJssdkService();
@@ -56,7 +55,6 @@ const oauthService = new WeChatOAuthService();
 const userRepo = new UserRepository();
 const userNotificationOptRepo = new UserNotificationOptRepository();
 const subscriptionMessageService = new WeChatSubscriptionMessageService();
-const templateMessageService = new WeChatTemplateMessageService();
 
 const OAUTH_STATE_COOKIE_NAME = "wechat_oauth_state";
 const OAUTH_STATE_TTL_SECONDS = 10 * 60;
@@ -220,9 +218,7 @@ const buildNotificationChannelState = async (): Promise<{
 
   return {
     reminder: {
-      configured:
-        reminderSubmsgConfigured ||
-        templateMessageService.isReminderConfigured(),
+      configured: reminderSubmsgConfigured,
       requiresOpenSubscribe:
         reminderSubmsgConfigured && Boolean(reminderTemplateId),
       templateId: reminderTemplateId,

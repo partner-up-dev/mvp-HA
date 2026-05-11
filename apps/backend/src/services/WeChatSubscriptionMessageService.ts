@@ -29,19 +29,19 @@ const subscribeSendResponseSchema = z.object({
   msgid: z.union([z.number().int(), z.string()]).optional(),
 });
 
-const CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID =
+const CONFIG_KEY_CONFIRMATION_REMINDER_TEMPLATE_ID =
   "wechat.submsg_confirmation_reminder_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID =
+const CONFIG_KEY_ACTIVITY_START_REMINDER_TEMPLATE_ID =
   "wechat.submsg_activity_start_reminder_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID =
+const CONFIG_KEY_BOOKING_RESULT_TEMPLATE_ID =
   "wechat.submsg_booking_result_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID =
+const CONFIG_KEY_NEW_PARTNER_TEMPLATE_ID =
   "wechat.submsg_new_partner_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID =
+const CONFIG_KEY_MEETING_POINT_UPDATED_TEMPLATE_ID =
   "wechat.submsg_meeting_point_updated_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_WAITLIST_PROMOTED_TEMPLATE_ID =
+const CONFIG_KEY_WAITLIST_PROMOTED_TEMPLATE_ID =
   "wechat.submsg_waitlist_promoted_template_id";
-const CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID =
+const CONFIG_KEY_PR_MESSAGE_TEMPLATE_ID =
   "wechat.submsg_pr_message_template_id";
 
 type SubscriptionTemplateKind =
@@ -55,40 +55,18 @@ type SubscriptionTemplateKind =
 
 const resolveTemplateConfigKey = (kind: SubscriptionTemplateKind): string =>
   kind === "REMINDER_CONFIRMATION"
-    ? CONFIG_KEY_WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
+    ? CONFIG_KEY_CONFIRMATION_REMINDER_TEMPLATE_ID
     : kind === "ACTIVITY_START_REMINDER"
-      ? CONFIG_KEY_WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
+      ? CONFIG_KEY_ACTIVITY_START_REMINDER_TEMPLATE_ID
       : kind === "BOOKING_RESULT"
-        ? CONFIG_KEY_WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
+        ? CONFIG_KEY_BOOKING_RESULT_TEMPLATE_ID
         : kind === "NEW_PARTNER"
-          ? CONFIG_KEY_WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
+          ? CONFIG_KEY_NEW_PARTNER_TEMPLATE_ID
           : kind === "MEETING_POINT_UPDATED"
-            ? CONFIG_KEY_WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID
+            ? CONFIG_KEY_MEETING_POINT_UPDATED_TEMPLATE_ID
             : kind === "WAITLIST_PROMOTED"
-              ? CONFIG_KEY_WECHAT_SUBMSG_WAITLIST_PROMOTED_TEMPLATE_ID
-              : CONFIG_KEY_WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
-
-const resolveTemplateEnvFallback = (
-  kind: SubscriptionTemplateKind,
-): string | null => {
-  const value =
-    kind === "REMINDER_CONFIRMATION"
-      ? env.WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID
-      : kind === "ACTIVITY_START_REMINDER"
-        ? env.WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID
-        : kind === "BOOKING_RESULT"
-          ? env.WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID
-          : kind === "NEW_PARTNER"
-            ? env.WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID
-            : kind === "MEETING_POINT_UPDATED"
-              ? env.WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID
-              : kind === "WAITLIST_PROMOTED"
-                ? env.WECHAT_SUBMSG_WAITLIST_PROMOTED_TEMPLATE_ID
-                : env.WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID;
-
-  const trimmed = value?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : null;
-};
+              ? CONFIG_KEY_WAITLIST_PROMOTED_TEMPLATE_ID
+              : CONFIG_KEY_PR_MESSAGE_TEMPLATE_ID;
 
 export class WeChatSubscriptionMessageError extends Error {
   constructor(
@@ -289,14 +267,7 @@ export class WeChatSubscriptionMessageService {
   private async resolveTemplateId(
     kind: SubscriptionTemplateKind,
   ): Promise<string | null> {
-    const configuredTemplateId = await this.configService.getValue(
-      resolveTemplateConfigKey(kind),
-    );
-    if (configuredTemplateId) {
-      return configuredTemplateId;
-    }
-
-    return resolveTemplateEnvFallback(kind);
+    return this.configService.getValue(resolveTemplateConfigKey(kind));
   }
 
   private async getOfficialAccountConfig(

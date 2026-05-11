@@ -45,14 +45,6 @@ const envSchema = z.object({
   // Unified WeChat ability mocking switch (OAuth + phone resolve) for non-production debugging.
   WECHAT_ABILITY_MOCKING_ENABLED: optionalBooleanStringFromEnv,
   WECHAT_ABILITY_MOCK_OPEN_ID: optionalStringFromEnv,
-  WECHAT_REMINDER_TEMPLATE_ID: optionalStringFromEnv,
-  WECHAT_SUBMSG_CONFIRMATION_REMINDER_TEMPLATE_ID: optionalStringFromEnv,
-  WECHAT_SUBMSG_ACTIVITY_START_REMINDER_TEMPLATE_ID: optionalStringFromEnv,
-  WECHAT_SUBMSG_BOOKING_RESULT_TEMPLATE_ID: optionalStringFromEnv,
-  WECHAT_SUBMSG_NEW_PARTNER_TEMPLATE_ID: optionalStringFromEnv,
-  WECHAT_SUBMSG_MEETING_POINT_UPDATED_TEMPLATE_ID: optionalStringFromEnv,
-  WECHAT_SUBMSG_WAITLIST_PROMOTED_TEMPLATE_ID: optionalStringFromEnv,
-  WECHAT_SUBMSG_PR_MESSAGE_TEMPLATE_ID: optionalStringFromEnv,
   FIXED_IP_HTTP_PROXY: optionalUrlFromEnv,
 
   // WeCom (Enterprise WeChat) self-built app
