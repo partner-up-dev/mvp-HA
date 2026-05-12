@@ -53,6 +53,13 @@ type AnalyticsContextPayload = {
   actorId?: string;
   spm?: string;
   sourceQr?: string;
+  correlationId?: string;
+  requestId?: string;
+  traceId?: string;
+  eventIdRef?: number;
+  prIdRef?: number;
+  cardKey?: string;
+  segmentKey?: string;
 };
 
 type PRContextPayload = AnalyticsContextPayload & {

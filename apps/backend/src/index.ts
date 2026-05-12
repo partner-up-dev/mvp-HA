@@ -82,7 +82,7 @@ app.use(
   cors({
     origin: (origin) => origin ?? "*",
     credentials: true,
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "x-correlation-id"],
     exposeHeaders: ["x-access-token"],
   }),
 );

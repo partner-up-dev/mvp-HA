@@ -114,6 +114,7 @@ import {
 import type { ApiError } from "@/shared/api/error";
 import { trackEvent } from "@/shared/telemetry/track";
 import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
+import { createCommandCorrelationId } from "@/shared/telemetry/correlation";
 
 type WaitlistPromptStep = "SUBSCRIPTIONS" | "OFFICIAL_ACCOUNT";
 type PRWaitlistEntrySurface =
@@ -251,6 +252,7 @@ const trackWaitlistResult = (payload: {
   actionResult: "success" | "failure" | "blocked";
   failureCode?: string;
   failureReason?: string;
+  correlationId?: string;
 }): void => {
   const prId = props.prId;
   if (prId === null) {
@@ -263,6 +265,7 @@ const trackWaitlistResult = (payload: {
     eventId: props.eventId ?? undefined,
     entrySurface: props.entrySurface ?? undefined,
     candidateRank: props.candidateRank ?? undefined,
+    correlationId: payload.correlationId,
     ...payload,
   });
 };
@@ -330,15 +333,17 @@ const finalizeWaitlistFlow = async (): Promise<void> => {
 
   waitlistFlowPending.value = true;
   waitlistFlowError.value = null;
+  const correlationId = createCommandCorrelationId();
   try {
     await ensureAuthSessionBootstrapped();
     const result = await waitlistMutation.mutateAsync({
       id: prId,
       alternativePrReminderOptIn: alternativePrReminderOptIn.value,
+      correlationId,
     });
     await applyAuthPayloadFromResult(result);
     joined.value = true;
-    trackWaitlistResult({ actionResult: "success" });
+    trackWaitlistResult({ actionResult: "success", correlationId });
     emit("joined", result);
     closeWaitlistFlowModal();
     openSuccessPrompt();
@@ -349,17 +354,19 @@ const finalizeWaitlistFlow = async (): Promise<void> => {
         actionResult: "blocked",
         failureCode: PR_JOIN_GATE_UNRESOLVED_CODE,
         failureReason: resolveErrorMessage(error),
+        correlationId,
       });
       showWaitlistFlowModal.value = true;
       return;
     }
-    trackWaitlistResult(
-      resolveTelemetryFailurePayload(
+    trackWaitlistResult({
+      ...resolveTelemetryFailurePayload(
         error,
         "PR_WAITLIST_FAILED",
         resolveErrorMessage(error),
       ),
-    );
+      correlationId,
+    });
     emitFlowError(resolveErrorMessage(error));
   } finally {
     waitlistFlowPending.value = false;

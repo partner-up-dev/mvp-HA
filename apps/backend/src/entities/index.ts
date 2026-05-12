@@ -14,6 +14,7 @@ export * from "./pr-message";
 export * from "./pr-message-inbox-state";
 export * from "./pr-join-notice-acceptance";
 export * from "./telemetry-event";
+export * from "./user-telemetry";
 export * from "./operation-log";
 export * from "./anchor-event";
 export * from "./job";

@@ -51,5 +51,7 @@ Hypothesis: a rebuilt user telemetry model plus a narrow analytics-read surface 
 - Slice 1 implemented: `users.role` changed to role arrays, auth/JWT now carries `roles`, seed admin gains analytics, analytics seed user added.
 - Slice 2 implemented: backend `requireRoles(...)` added, service-owned admin APIs keep service access, analytics API requires analytics, frontend route meta uses `requiredRoles`.
 - Slice 3 implemented: `/bi?code=...` logs in the hard-coded analytics seed user and redirects to `/admin/analytics`; failed login stays on `/bi` with a simple error and home action.
-- Verification passed: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm db:lint`.
+- Slice 4 implemented: `user_telemetry_journeys`, `user_telemetry_segments`, and `user_telemetry_events` added with ingest service and `/api/telemetry/user/events`.
+- Slice 5 implemented: frontend telemetry now builds app journeys, anonymous ids, typed subject refs, dot event names, and command correlation ids for recommendation/create/join/waitlist.
+- Verification passed: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm db:lint`, `pnpm --filter @partner-up-dev/backend test:unit`.
 - Verification blocked: `pnpm test:scenario backend` needs `TEST_DATABASE_URL` or `SCENARIO_DATABASE_ADMIN_URL` in this environment.

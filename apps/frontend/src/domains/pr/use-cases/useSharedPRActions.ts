@@ -4,6 +4,7 @@ import type { PRId } from "@partner-up-dev/backend";
 import type { PRDetailView } from "@/domains/pr/model/types";
 import { trackEvent } from "@/shared/telemetry/track";
 import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
+import { createCommandCorrelationId } from "@/shared/telemetry/correlation";
 import { useExitPR, useJoinPR } from "@/domains/pr/queries/usePRActions";
 import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import type { ApiError } from "@/shared/api/error";
@@ -100,15 +101,18 @@ export const useSharedPRActions = ({
   const handleJoin = async () => {
     if (id.value === null) return;
 
+    const correlationId = createCommandCorrelationId();
     try {
       await ensureAuthSessionBootstrapped();
       const result = await joinMutation.mutateAsync({
         id: id.value,
+        correlationId,
       });
       trackEvent("pr_join_result", {
         prId: id.value,
         ...analyticsPRContext.value,
         actionResult: "success",
+        correlationId,
       });
       onActionSuccess?.();
       return result;
@@ -121,6 +125,7 @@ export const useSharedPRActions = ({
           "PR_JOIN_FAILED",
           t("errors.joinRequestFailed"),
         ),
+        correlationId,
       });
       return null;
     }

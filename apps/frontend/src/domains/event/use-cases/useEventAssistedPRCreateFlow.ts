@@ -15,6 +15,7 @@ import {
 } from "@/processes/wechat/pending-wechat-action";
 import { trackEvent } from "@/shared/telemetry/track";
 import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
+import { createCommandCorrelationId } from "@/shared/telemetry/correlation";
 
 type EventAssistedPRCreateInput = {
   targetTimeWindow: TimeWindow | null;
@@ -158,6 +159,7 @@ export const useEventAssistedPRCreateFlow = (
       failureCode?: string;
       failureReason?: string;
       prId?: number;
+      correlationId?: string;
     },
   ): void => {
     trackEvent("event_assisted_create_result", {
@@ -172,6 +174,7 @@ export const useEventAssistedPRCreateFlow = (
       actionResult: payload.actionResult,
       failureCode: payload.failureCode,
       failureReason: payload.failureReason,
+      correlationId: payload.correlationId,
     });
   };
 
@@ -196,15 +199,18 @@ export const useEventAssistedPRCreateFlow = (
       startAt: fields.time[0] ?? "",
       preferenceCount: fields.preferences.length,
     };
+    const correlationId = createCommandCorrelationId();
 
     try {
       const created = await createEventAssistedPRMutation.mutateAsync({
         eventId: currentEvent.id,
         fields,
+        correlationId,
       });
       trackCreateResult(currentEvent, createTelemetrySource, {
         actionResult: "success",
         prId: created.id,
+        correlationId,
       });
       await router.push(
         buildEventAssistedCreateTarget(created.canonicalPath, currentEvent.id),
@@ -214,24 +220,30 @@ export const useEventAssistedPRCreateFlow = (
         trackCreateResult(
           currentEvent,
           createTelemetrySource,
-          resolveTelemetryFailurePayload(
-            error,
-            "EVENT_ASSISTED_CREATE_BLOCKED",
-            t("anchorEvent.createCard.errors.wechatAuthRequired"),
-          ),
+          {
+            ...resolveTelemetryFailurePayload(
+              error,
+              "EVENT_ASSISTED_CREATE_BLOCKED",
+              t("anchorEvent.createCard.errors.wechatAuthRequired"),
+            ),
+            correlationId,
+          },
         );
         return;
       }
       trackCreateResult(
         currentEvent,
         createTelemetrySource,
-        resolveTelemetryFailurePayload(
-          error,
-          "EVENT_ASSISTED_CREATE_FAILED",
-          error instanceof Error
-            ? error.message
-            : t("anchorEvent.createCard.errors.createFailed"),
-        ),
+        {
+          ...resolveTelemetryFailurePayload(
+            error,
+            "EVENT_ASSISTED_CREATE_FAILED",
+            error instanceof Error
+              ? error.message
+              : t("anchorEvent.createCard.errors.createFailed"),
+          ),
+          correlationId,
+        },
       );
       throw error;
     }
@@ -271,10 +283,12 @@ export const useEventAssistedPRCreateFlow = (
             preferenceCount: pending.fields.preferences.length,
           }
         : null;
+    const correlationId = createCommandCorrelationId();
     try {
       const created = await createEventAssistedPRMutation.mutateAsync({
         eventId: currentEvent.id,
         handoff: pending.handoff,
+        correlationId,
         fields: {
           title: undefined,
           type: pending.fields.type,
@@ -292,6 +306,7 @@ export const useEventAssistedPRCreateFlow = (
         trackCreateResult(currentEvent, pendingCreateTelemetrySource, {
           actionResult: "success",
           prId: created.id,
+          correlationId,
         });
       }
       await router.push(
@@ -306,11 +321,16 @@ export const useEventAssistedPRCreateFlow = (
         trackCreateResult(
           currentEvent,
           pendingCreateTelemetrySource,
-          resolveTelemetryFailurePayload(
-            error,
-            "EVENT_ASSISTED_CREATE_REPLAY_FAILED",
-            error instanceof Error ? error.message : t("common.operationFailed"),
-          ),
+          {
+            ...resolveTelemetryFailurePayload(
+              error,
+              "EVENT_ASSISTED_CREATE_REPLAY_FAILED",
+              error instanceof Error
+                ? error.message
+                : t("common.operationFailed"),
+            ),
+            correlationId,
+          },
         );
       }
       if (!isWeChatAuthBlockingError(error)) {

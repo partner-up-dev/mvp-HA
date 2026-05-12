@@ -106,6 +106,7 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import { trackEvent } from "@/shared/telemetry/track";
 import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
+import { createCommandCorrelationId } from "@/shared/telemetry/correlation";
 import { useAnchorEventFormModeData } from "@/domains/event/queries/useAnchorEventFormModeData";
 import { useAnchorEventFormModeRecommendation } from "@/domains/event/queries/useAnchorEventFormModeRecommendation";
 import {
@@ -609,6 +610,7 @@ const trackRecommendationResult = (
     outcome?: "matched" | "no_match";
     matchedPrId?: number | null;
     candidateCount?: number;
+    correlationId?: string;
   },
 ): void => {
   const locationId = selectedLocationId.value;
@@ -625,6 +627,7 @@ const trackRecommendationResult = (
     startAt,
     timeType: resolveFormModeTimeType(startAt),
     preferenceCount: selectedPreferences.value.length,
+    correlationId: payload.correlationId,
     ...payload,
   });
 };
@@ -635,6 +638,7 @@ const trackEventAssistedCreateResult = (
     failureCode?: string;
     failureReason?: string;
     prId?: number;
+    correlationId?: string;
   },
   source: {
     locationId: string;
@@ -654,6 +658,7 @@ const trackEventAssistedCreateResult = (
     actionResult: payload.actionResult,
     failureCode: payload.failureCode,
     failureReason: payload.failureReason,
+    correlationId: payload.correlationId,
   });
 };
 
@@ -696,6 +701,7 @@ const createEventAssistedPR = async (
     return false;
   }
 
+  const correlationId = createCommandCorrelationId();
   if (trigger === "manual_fallback") {
     trackEvent("anchor_event_form_create_fallback_click", {
       eventId: props.eventId,
@@ -703,6 +709,7 @@ const createEventAssistedPR = async (
       locationId,
       startAt,
       preferenceCount: selectedPreferences.value.length,
+      correlationId,
     });
   }
 
@@ -716,6 +723,7 @@ const createEventAssistedPR = async (
     const created = await createMutation.mutateAsync({
       eventId: props.eventId,
       fields,
+      correlationId,
       handoff:
         trigger === "auto_no_candidates" ? "event_assisted_create" : undefined,
     });
@@ -724,6 +732,7 @@ const createEventAssistedPR = async (
       {
         actionResult: "success",
         prId: created.id,
+        correlationId,
       },
       createTelemetrySource,
     );
@@ -734,23 +743,29 @@ const createEventAssistedPR = async (
   } catch (error) {
     if (isWeChatAuthBlockingError(error)) {
       trackEventAssistedCreateResult(
-        resolveTelemetryFailurePayload(
-          error,
-          "EVENT_ASSISTED_CREATE_BLOCKED",
-          t("anchorEvent.createCard.errors.wechatAuthRequired"),
-        ),
+        {
+          ...resolveTelemetryFailurePayload(
+            error,
+            "EVENT_ASSISTED_CREATE_BLOCKED",
+            t("anchorEvent.createCard.errors.wechatAuthRequired"),
+          ),
+          correlationId,
+        },
         createTelemetrySource,
       );
       return true;
     }
     trackEventAssistedCreateResult(
-      resolveTelemetryFailurePayload(
-        error,
-        "EVENT_ASSISTED_CREATE_FAILED",
-        error instanceof Error
-          ? error.message
-          : t("anchorEvent.createCard.errors.createFailed"),
-      ),
+      {
+        ...resolveTelemetryFailurePayload(
+          error,
+          "EVENT_ASSISTED_CREATE_FAILED",
+          error instanceof Error
+            ? error.message
+            : t("anchorEvent.createCard.errors.createFailed"),
+        ),
+        correlationId,
+      },
       createTelemetrySource,
     );
     if (trigger === "auto_no_candidates") {
@@ -773,6 +788,7 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
   trackFormStarted("primary_cta");
   returnToSelection();
   const splashFill = startJoinSplash(originRect);
+  const recommendationCorrelationId = createCommandCorrelationId();
 
   try {
     const result = await recommendationMutation.mutateAsync({
@@ -780,6 +796,7 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
       locationId,
       startAt,
       preferences: [...selectedPreferences.value],
+      correlationId: recommendationCorrelationId,
     });
     trackRecommendationExposure(result);
 
@@ -790,6 +807,7 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
       matchedPrId: matchedPRId,
       candidateCount:
         result.orderedCandidates.length + (matchedPRId === null ? 0 : 1),
+      correlationId: recommendationCorrelationId,
     });
 
     if (matchedPRId !== null) {
@@ -829,11 +847,14 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
         ? error.message
         : t("anchorEvent.formMode.recommendationFailed");
     trackRecommendationResult(
-      resolveTelemetryFailurePayload(
-        error,
-        "ANCHOR_EVENT_RECOMMENDATION_FAILED",
-        selectionErrorMessage.value,
-      ),
+      {
+        ...resolveTelemetryFailurePayload(
+          error,
+          "ANCHOR_EVENT_RECOMMENDATION_FAILED",
+          selectionErrorMessage.value,
+        ),
+        correlationId: recommendationCorrelationId,
+      },
     );
     await splashFill;
     await drainJoinSplash();
@@ -959,10 +980,12 @@ const attemptPendingCreateReplay = async () => {
           preferenceCount: pending.fields.preferences.length,
         }
       : null;
+  const correlationId = createCommandCorrelationId();
   try {
     const created = await createMutation.mutateAsync({
       eventId: props.eventId,
       handoff: pending.handoff,
+      correlationId,
       fields: {
         title: undefined,
         type: pending.fields.type,
@@ -981,6 +1004,7 @@ const attemptPendingCreateReplay = async () => {
         {
           actionResult: "success",
           prId: created.id,
+          correlationId,
         },
         pendingCreateTelemetrySource,
       );
@@ -996,13 +1020,16 @@ const attemptPendingCreateReplay = async () => {
   } catch (error) {
     if (pendingCreateTelemetrySource) {
       trackEventAssistedCreateResult(
-        resolveTelemetryFailurePayload(
-          error,
-          "EVENT_ASSISTED_CREATE_REPLAY_FAILED",
-          error instanceof Error
-            ? error.message
-            : t("anchorEvent.createCard.errors.createFailed"),
-        ),
+        {
+          ...resolveTelemetryFailurePayload(
+            error,
+            "EVENT_ASSISTED_CREATE_REPLAY_FAILED",
+            error instanceof Error
+              ? error.message
+              : t("anchorEvent.createCard.errors.createFailed"),
+          ),
+          correlationId,
+        },
         pendingCreateTelemetrySource,
       );
     }

@@ -26,6 +26,7 @@ const formModeRecommendationSchema = z.object({
   locationId: z.string().trim().min(1),
   startAt: z.string().datetime(),
   preferences: z.array(z.string().trim().min(1).max(80)).max(16),
+  correlationId: z.string().trim().min(1).max(128).optional(),
 });
 
 export const anchorEventRoute = app
