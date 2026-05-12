@@ -94,3 +94,8 @@ export {
   type ResolveJoinGatePayload,
 } from "../../pr-core/services/join-gates.service";
 export { materializeEventDefaultsForPR } from "../../pr-core/services/event-default-materialization.service";
+export {
+  ANCHOR_EVENT_USER_PR_CREATION_DISABLED_CODE,
+  assertUserPRCreationAllowedForAnchorEvent,
+  canUserCreatePRForAnchorEvent,
+} from "../../pr-core/services/event-pr-creation-policy.service";

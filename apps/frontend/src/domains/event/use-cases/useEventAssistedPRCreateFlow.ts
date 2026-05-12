@@ -53,6 +53,7 @@ export const useEventAssistedPRCreateFlow = (
   const isCreatePending = computed(
     () => createEventAssistedPRMutation.isPending.value,
   );
+  const canUserCreatePR = computed(() => event.value?.canUserCreatePR === true);
 
   const createActionErrorMessage = computed(() => {
     const createAnchorError = createEventAssistedPRMutation.error
@@ -67,6 +68,8 @@ export const useEventAssistedPRCreateFlow = (
           return t("anchorEvent.createCard.errors.locationCapReached");
         case "ANCHOR_EVENT_NOT_FOUND":
           return t("anchorEvent.createCard.errors.eventUnavailable");
+        case "ANCHOR_EVENT_USER_PR_CREATION_DISABLED":
+          return t("anchorEvent.createCard.errors.userCreationDisabled");
         default:
           return (
             createAnchorError.message ||
@@ -180,7 +183,7 @@ export const useEventAssistedPRCreateFlow = (
     replayErrorMessage.value = null;
 
     const currentEvent = event.value;
-    if (!currentEvent) {
+    if (!currentEvent || !canUserCreatePR.value) {
       return;
     }
 
@@ -249,6 +252,11 @@ export const useEventAssistedPRCreateFlow = (
       pending.kind !== "EVENT_ASSISTED_PR_CREATE" ||
       pending.eventId !== currentEvent.id
     ) {
+      return;
+    }
+
+    if (!canUserCreatePR.value) {
+      clearPendingWeChatAction();
       return;
     }
 

@@ -41,8 +41,10 @@
 
 - restore anonymous UUID continuity
 - log in and bind through WeChat
-- access `/me`
+- access `/me` as the personal center for profile, WeChat identity, notification management, anonymous user id continuity, and personal shortcuts
 - access `/pr/mine`
+- copy the current anonymous user id from the personal profile surface
+- enter the current user's submitted POI location applications from `/me`
 - view participant profile pages in read-only mode
 
 ## 5. Distribution And Attribution

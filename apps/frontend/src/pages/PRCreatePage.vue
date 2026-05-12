@@ -37,7 +37,7 @@
         </header>
 
         <PRForm
-          ref="formRef"
+          :form-id="createFormId"
           :initial-fields="initialFields"
           @submit="handleSubmit"
         />
@@ -53,6 +53,7 @@
           "
           :pending-status="pendingStatus"
           :allow-draft-save="allowDraftSave"
+          :form-id="createFormId"
           @submit-as="submitAs"
         />
       </div>
@@ -109,11 +110,11 @@ const hasTopicQuery = (value: unknown): boolean => {
 
 const { t } = useI18n();
 const route = useRoute();
+const createFormId = "pr-create-structured-form";
 const {
   createMutation,
   publishMutation,
   initialFields,
-  formRef,
   pendingStatus,
   allowDraftSave,
   submitAs,

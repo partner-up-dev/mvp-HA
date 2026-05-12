@@ -17,6 +17,7 @@ export async function materializeEventDefaultsForPR(input: {
   type: string;
   location: string | null;
   timeWindow: TimeWindow;
+  prNotes?: string | null;
   prJoinGateConfig?: PRJoinGateConfig;
 }): Promise<void> {
   const event = input.anchorEventId
@@ -27,6 +28,12 @@ export async function materializeEventDefaultsForPR(input: {
       await prRepo.updateJoinGateConfig(input.prId, input.prJoinGateConfig);
     }
     return;
+  }
+
+  const currentNotes = input.prNotes?.trim() ?? "";
+  const defaultNotes = event.defaultPrNotes?.trim() ?? "";
+  if (currentNotes.length === 0 && defaultNotes.length > 0) {
+    await prRepo.updateNotes(input.prId, defaultNotes);
   }
 
   const eventResources = await eventSupportRepo.findByAnchorEventId(event.id);

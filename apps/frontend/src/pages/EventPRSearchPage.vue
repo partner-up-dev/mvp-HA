@@ -106,10 +106,11 @@
           v-if="searchResults.length > 0"
           class="event-pr-search-page__result-list"
         >
-          <PRSearchResultCard
+          <PRPreviewCard
             v-for="result in searchResults"
             :key="result.pr.id"
-            :result="result"
+            :pr-id="result.pr.id as PRId"
+            :time-label="formatSearchResultTimeLabel(result)"
           />
         </div>
 
@@ -175,8 +176,9 @@ import EventPRSearchCriteriaForm from "@/domains/event/ui/composites/EventPRSear
 import type { AnchorEventListItem } from "@/domains/event/model/types";
 import type { PRSearchResult } from "@/domains/pr/model/types";
 import { useEventPRSearch } from "@/domains/pr/queries/useEventPRSearch";
-import PRSearchResultCard from "@/domains/pr/ui/primitives/PRSearchResultCard.vue";
+import PRPreviewCard from "@/domains/pr/ui/primitives/PRPreviewCard.vue";
 import { prDetailPath } from "@/domains/pr/routing/routes";
+import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 import {
   formatProductLocalShortDateLabel,
   getProductLocalWeekStartDateKey,
@@ -428,6 +430,12 @@ const canApplyDrawerCriteria = computed(
 const searchErrorMessage = computed(
   () => searchQuery.error.value?.message ?? t("eventPRSearch.loadFailedHint"),
 );
+
+const formatSearchResultTimeLabel = (result: PRSearchResult): string =>
+  formatLocalDateTimeValue(result.pr.time[0], {
+    includeDate: true,
+    includeTime: true,
+  }) ?? t("eventPRSearch.resultCard.unknownTime");
 
 const buildCriteriaKey = (criteria: SearchCriteria): string =>
   `${criteria.eventId}:${criteria.dates.join(",")}`;

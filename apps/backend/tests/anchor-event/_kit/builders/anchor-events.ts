@@ -4,7 +4,10 @@ import {
   DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
   DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
 } from "../../../../src/domains/pr/services";
-import type { AnchorEventId } from "../../../../src/entities";
+import type {
+  AnchorEventId,
+  AnchorEventPrCreationPolicy,
+} from "../../../../src/entities";
 import type { FeedbackQuestionnaireTemplateId } from "../../../../src/entities/feedback-questionnaire";
 import type {
   PartnerRequestFields,
@@ -59,6 +62,8 @@ export async function givenAnchorEvent(input: {
   timeWindows?: Array<[string, string]>;
   defaultMinPartners?: number | null;
   defaultMaxPartners?: number | null;
+  defaultPrNotes?: string | null;
+  prCreationPolicy?: AnchorEventPrCreationPolicy;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
 }): Promise<ScenarioAnchorEvent> {
   const sequence = scenarioAnchorEventSequence++;
@@ -86,6 +91,7 @@ export async function givenAnchorEvent(input: {
     },
     defaultMinPartners: input.defaultMinPartners ?? 2,
     defaultMaxPartners: input.defaultMaxPartners ?? null,
+    defaultPrNotes: input.defaultPrNotes ?? null,
     defaultConfirmationStartOffsetMinutes:
       DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
     defaultConfirmationEndOffsetMinutes: DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
@@ -97,6 +103,7 @@ export async function givenAnchorEvent(input: {
     locationMeetingPoints: {},
     coverImage: null,
     betaGroupQrCode: null,
+    prCreationPolicy: input.prCreationPolicy ?? "USER_AND_ADMIN",
     status: "ACTIVE",
   });
 

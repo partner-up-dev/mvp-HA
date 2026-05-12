@@ -4,27 +4,44 @@
       class="minium-common-footer__nav"
       :aria-label="t('aboutPage.footerNavLabel')"
     >
-      <RouterLink class="minium-common-footer__link" :to="{ name: 'me' }">
-        {{ t("home.landing.footerNavMine") }}
-      </RouterLink>
       <RouterLink
+        v-for="link in visibleFooterLinks"
+        :key="link.routeName"
         class="minium-common-footer__link"
-        :to="{ name: 'contact-support' }"
+        :to="{ name: link.routeName }"
       >
-        {{ t("contactAuthorPage.footerEntry") }}
-      </RouterLink>
-      <RouterLink class="minium-common-footer__link" :to="{ name: 'about' }">
-        {{ t("aboutPage.footerEntry") }}
+        {{ link.label }}
       </RouterLink>
     </nav>
   </footer>
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
+import { computed } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
+const route = useRoute();
+
+const footerLinks = computed(() => [
+  {
+    routeName: "me",
+    label: t("home.landing.footerNavMine"),
+  },
+  {
+    routeName: "contact-support",
+    label: t("contactAuthorPage.footerEntry"),
+  },
+  {
+    routeName: "about",
+    label: t("aboutPage.footerEntry"),
+  },
+]);
+
+const visibleFooterLinks = computed(() =>
+  footerLinks.value.filter((link) => route.name !== link.routeName),
+);
 </script>
 
 <style lang="scss" scoped>

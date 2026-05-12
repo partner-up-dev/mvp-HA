@@ -678,6 +678,8 @@ export interface MessageSchema {
       emptyRecommendationBody: string;
       candidateListEyebrow: string;
       candidateListTitle: string;
+      noCandidateTitle: string;
+      noCandidateBody: string;
       createFallbackAction: string;
       recommendationFailed: string;
       recommendationCardHeadline: string;
@@ -705,6 +707,7 @@ export interface MessageSchema {
         wechatOAuthNotConfigured: string;
         locationCapReached: string;
         eventUnavailable: string;
+        userCreationDisabled: string;
         createFailed: string;
       };
     };
@@ -743,6 +746,7 @@ export interface MessageSchema {
     profile: {
       title: string;
       description: string;
+      wechatIdentityLabel: string;
       wechatBound: string;
       wechatUnbound: string;
       avatarAlt: string;
@@ -954,6 +958,7 @@ export interface MessageSchema {
     time: string;
     location: string;
     meetingPoint: string;
+    meetingPointPrivate: string;
     viewLocationImages: string;
     viewMeetingPointImage: string;
     meetingPointImageTitle: string;
@@ -981,13 +986,30 @@ export interface MessageSchema {
   adminCommon: {
     title: string;
     subtitle: string;
+    navAnchorEventGroup: string;
+    navAnchorEventBasic: string;
+    navAnchorEventLocations: string;
+    navAnchorEventTime: string;
+    navAnchorEventTags: string;
+    navAnchorEventOther: string;
     navAnchorEvents: string;
+    navPRGroup: string;
+    navPRBasic: string;
     navPR: string;
     navPRMessages: string;
+    navAnalyticsGroup: string;
     navAnalytics: string;
+    navSupportResourcesGroup: string;
+    navSupportResourceConfig: string;
+    navSupportResourceExecution: string;
     navBookingSupport: string;
     navBookingExecution: string;
+    navPoisGroup: string;
+    navPoiBasic: string;
+    navPoiReview: string;
     navPois: string;
+    navFeedbackQuestionnairesGroup: string;
+    navFeedbackQuestionnaireTemplates: string;
     navFeedbackQuestionnaires: string;
     logoutAction: string;
   };
@@ -1148,6 +1170,9 @@ export interface MessageSchema {
     locationPoolsTitle: string;
     timePoolStrategyTitle: string;
     timeWindowsTitle: string;
+    previewTimeWindowsAction: string;
+    timeWindowsPreviewTitle: string;
+    emptyRecurringRulesPreview: string;
     participationDefaultsTitle: string;
     participationDefaultsDescription: string;
     landingRolloutTitle: string;
@@ -1161,6 +1186,11 @@ export interface MessageSchema {
     landingRatioValidation: string;
     assignmentRevisionValidation: string;
     saveLandingConfigAction: string;
+    defaultPrNotesTitle: string;
+    defaultPrNotesPlaceholder: string;
+    prCreationPolicyTitle: string;
+    prCreationPolicyAdminOnlyLabel: string;
+    prCreationPolicyHint: string;
     preferenceTagsTitle: string;
     preferenceTagsDescription: string;
     selectEventForPreferenceTagsHint: string;
@@ -1294,24 +1324,9 @@ export interface MessageSchema {
     subtitle: string;
     panelTitle: string;
     panelHint: string;
-    eventsTitle: string;
-    batchesTitle: string;
     prsTitle: string;
-    composerTitle: string;
-    composerHint: string;
-    emptyEvents: string;
-    emptyBatches: string;
     emptyMessages: string;
-    emptyPRs: string;
-    selectEventHint: string;
-    selectBatchHint: string;
     selectPRHint: string;
-    selectedCount: string;
-    partnerCountWithValue: string;
-    eventLabel: string;
-    batchLabel: string;
-    locationLabel: string;
-    statusLabel: string;
     messageLabel: string;
     messagePlaceholder: string;
     messageAction: string;
@@ -1401,6 +1416,7 @@ export interface MessageSchema {
     maxPartnersMustBeAtLeastMinPartners: string;
   };
   errors: {
+    anchorEventUserCreationDisabled: string;
     createRequestFailed: string;
     publishRequestFailed: string;
     updateStatusFailed: string;

@@ -11,10 +11,10 @@
       </h2>
 
       <div class="candidate-list__items">
-        <AnchorEventPRCard
+        <PRPreviewCard
           v-for="(candidate, index) in props.candidates"
           :key="candidate.pr.id"
-          :pr="candidate.pr"
+          :pr-id="candidate.pr.id"
           :time-label="buildCandidateTimeLabel(candidate.pr.time[0])"
           :cover-image="props.resolveCoverImage(candidate.pr.location)"
           data-testid="anchor-event-form-mode.candidate-card"
@@ -67,11 +67,20 @@
               </template>
             </PRJoinFlow>
           </template>
-        </AnchorEventPRCard>
+        </PRPreviewCard>
       </div>
     </section>
 
-    <div class="no-match-actions">
+    <section v-else class="no-match-hero">
+      <h2 class="no-match-hero__title">
+        {{ t("anchorEvent.formMode.noCandidateTitle") }}
+      </h2>
+      <p class="no-match-hero__body">
+        {{ t("anchorEvent.formMode.noCandidateBody") }}
+      </p>
+    </section>
+
+    <div v-if="props.showCreateFallback" class="no-match-actions">
       <Button
         appearance="rect"
         tone="tertiary"
@@ -104,7 +113,7 @@ import {
   isValidFormModeDateTime,
 } from "@/domains/event/model/form-mode";
 import Button from "@/shared/ui/actions/Button.vue";
-import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
+import PRPreviewCard from "@/domains/pr/ui/primitives/PRPreviewCard.vue";
 import PRJoinFlow from "@/domains/pr/ui/composites/PRJoinFlow.vue";
 
 type RecommendationCandidate =
@@ -115,6 +124,7 @@ const props = defineProps<{
   candidates: readonly RecommendationCandidate[];
   createPending: boolean;
   createDisabled: boolean;
+  showCreateFallback: boolean;
   createErrorMessage: string | null;
   resolveCoverImage: (location: string | null) => string | null;
 }>();

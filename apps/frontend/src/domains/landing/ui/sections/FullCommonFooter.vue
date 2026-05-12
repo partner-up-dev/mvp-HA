@@ -41,29 +41,32 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
+const route = useRoute();
 
-const footerNavLinks = computed(() => [
-  {
-    routeName: "pr-mine",
-    label: t("myPrsPage.title"),
-  },
-  {
-    routeName: "me",
-    label: t("home.landing.footerNavMine"),
-  },
-  {
-    routeName: "contact-support",
-    label: t("contactSupportPage.title"),
-  },
-  {
-    routeName: "about",
-    label: t("aboutPage.title"),
-  },
-]);
+const footerNavLinks = computed(() =>
+  [
+    {
+      routeName: "pr-mine",
+      label: t("myPrsPage.title"),
+    },
+    {
+      routeName: "me",
+      label: t("home.landing.footerNavMine"),
+    },
+    {
+      routeName: "contact-support",
+      label: t("contactSupportPage.title"),
+    },
+    {
+      routeName: "about",
+      label: t("aboutPage.title"),
+    },
+  ].filter((link) => route.name !== link.routeName),
+);
 </script>
 
 <style lang="scss" scoped>

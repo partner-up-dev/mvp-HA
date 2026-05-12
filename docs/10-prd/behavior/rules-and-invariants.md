@@ -8,7 +8,7 @@
 - `PR` may be entered from home and distribution paths or from Anchor Event context.
 - PR messaging currently uses a dedicated `/pr/:id/messages` page rather than an inline detail-page composer.
 - PR messaging may contain both participant-authored messages and operator-authored system messages; system messages are part of the same thread and remain visually identifiable as system-authored context.
-- PR meeting-point guidance is a public auxiliary fact that answers where participants should meet at or inside the primary location.
+- PR meeting-point guidance answers where participants should meet at or inside the primary location. Before a `PR` becomes `ACTIVE`, it may appear on the public PR detail surface. After the `PR` becomes `ACTIVE`, the guidance is visible only to current active participants.
 - When a `PR` has no explicit title, user-facing detail and share surfaces identify it by primary location first, then by type, then by a generic `PR` label.
 
 ## 2. Creation And Publish Rules
@@ -18,7 +18,7 @@
 - If the creator is anonymous, that create flow persists a `DRAFT` and waits for a later authenticated publish step.
 - Structured creation uses one PR-owned form contract. Its `type` field accepts arbitrary input and may offer suggestion options from known event types.
 - Structured creation uses one PR-owned `time_window` result. The UI may expose batch and free modes, while the persisted PR still owns one resolved time window.
-- PR creation resolves Anchor Event context by PR type when a matching Anchor Event exists. Event-owned PR defaults such as join gates, support resources, and feedback questionnaire template selection materialize into PR-owned runtime state at creation time.
+- PR creation resolves Anchor Event context by PR type when a matching Anchor Event exists. Event-owned PR defaults such as default notes, join gates, support resources, and feedback questionnaire template selection materialize into PR-owned runtime state at creation time. Existing PR notes remain PR-owned content when the event default later changes.
 - Event-context PR creation is one assisted mode inside the Anchor Event domain.
 - Event-assisted create resolves event-side choices into the same structured PR fields used by `/pr/new`. Any event referral or create-source marker is transient request context rather than durable PR identity.
 - PR existence does not depend on Anchor Event identity or time-pool selection.
@@ -69,7 +69,7 @@
 - Only current active participants may view the thread or act on read markers and participant posting, while operators may inject system messages through admin tooling without becoming participants themselves.
 - PR detail keeps notification-subscription management visible as a persistent section when reminder registration is relevant for that PR.
 - The participant roster is opened from the facts-card participant row, and each participant badge remains a read-only navigation entry into that participant's profile page.
-- PR detail resolves meeting-point guidance by fallback order: PR-specific configuration, Anchor Event location-specific configuration, Anchor Event default configuration, then POI configuration.
+- PR detail resolves meeting-point guidance by fallback order: PR-specific configuration, Anchor Event location-specific configuration, Anchor Event default configuration, then POI configuration. The resolved guidance is redacted from non-participant PR detail viewers after the PR becomes `ACTIVE`; the primary location remains visible.
 - Updating meeting-point guidance keeps PR status, participation, and confirmation state stable while notifying current active participants through the dedicated meeting-point update notification path.
 
 ### Status Semantics
@@ -144,6 +144,9 @@
 ## 7. Profile And Support Rules
 
 - Participant profile pages are read-only and do not own editing behavior.
+- `/me` owns the current user's personal-center IA. Its profile surface should keep avatar, nickname, WeChat identity state or bind action, and anonymous user id continuity together.
+- When the current user has no WeChat official-account `openid`, the `/me` profile surface should offer the WeChat bind action at the identity position. When the user is bound, it should show the bound state.
+- `/me` should present PR history and POI application history as equal shortcuts under the profile surface while keeping `/pr/mine` as the dedicated PR history route.
 - The "Need Help" path must keep support, author feedback, and about-page routing distinct.
 - Event-specific beta groups are support and activity-coordination entrypoints. They may help users request new sessions, get booking/subsidy support, or coordinate activity context, and backend-owned PR messaging keeps participant visibility and participant rules authoritative.
 - Build metadata shown in `/about` must be interpretable in the current runtime and must not depend on a local git checkout inside the browser environment.

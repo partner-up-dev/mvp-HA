@@ -30,10 +30,10 @@
         data-testid="anchor-event-list-mode.pr-list"
       >
         <div v-if="visiblePRItems.length > 0" class="pr-list">
-          <AnchorEventPRCard
+          <PRPreviewCard
             v-for="item in visiblePRItems"
             :key="`${item.timeWindowKey}:${item.pr.id}`"
-            :pr="item.pr"
+            :pr-id="item.pr.id"
             :time-label="item.timeLabel"
             :cover-image="resolveCoverImage(item.pr.location)"
           />
@@ -67,6 +67,7 @@
 
       <div class="batch-action-cards">
         <EventPRCreateCard
+          v-if="canUserCreatePR"
           :title="createCardTitle"
           :time-window-label="createCardSubtitleTimeLabel"
           :event-title="eventTitle"
@@ -102,7 +103,7 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import TabBar from "@/shared/ui/navigation/TabBar.vue";
-import AnchorEventPRCard from "@/domains/event/ui/primitives/AnchorEventPRCard.vue";
+import PRPreviewCard from "@/domains/pr/ui/primitives/PRPreviewCard.vue";
 import EventPRCreateCard from "@/domains/event/ui/primitives/EventPRCreateCard.vue";
 import AnchorEventBetaGroupCard from "@/domains/event/ui/primitives/AnchorEventBetaGroupCard.vue";
 import OtherAnchorEventsSection from "@/domains/event/ui/sections/OtherAnchorEventsSection.vue";
@@ -219,6 +220,7 @@ const hasBrowseTimeWindows = computed(
   () => (detail.value?.browseTimeWindows.length ?? 0) > 0,
 );
 const isListExhausted = computed(() => detail.value?.exhausted === true);
+const canUserCreatePR = computed(() => detail.value?.canUserCreatePR === true);
 
 const LIST_MODE_EXPIRED_DATE_LIMIT = 3;
 const LIST_MODE_EXPIRED_TAB_CLASS = "tab-bar__tab--expired";
@@ -602,7 +604,7 @@ const shouldAutoExpandCreateCard = computed(() => {
     return false;
   }
 
-  return !hasJoinablePRInSelectedDate.value;
+  return canUserCreatePR.value && !hasJoinablePRInSelectedDate.value;
 });
 
 const createCardAutoExpandContextKey = computed(
@@ -619,6 +621,10 @@ const handleDateTabChange = (value: string | number) => {
 };
 
 const handleCreateInList = async (locationId: string | null) => {
+  if (!canUserCreatePR.value) {
+    return;
+  }
+
   await createEventAssistedPR({
     targetTimeWindow: selectedTimeWindowEntry.value?.timeWindow ?? null,
     locationId,

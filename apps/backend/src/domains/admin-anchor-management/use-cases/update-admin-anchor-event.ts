@@ -4,6 +4,7 @@ import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQ
 import type {
   AnchorEvent,
   AnchorEventId,
+  AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
   LocationEntry,
@@ -36,6 +37,7 @@ export interface UpdateAdminAnchorEventInput {
   timePoolConfig: AnchorEventTimePoolConfig;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultPrNotes: string | null;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
@@ -45,6 +47,7 @@ export interface UpdateAdminAnchorEventInput {
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   coverImage: string | null;
   betaGroupQrCode: string | null;
+  prCreationPolicy: AnchorEventPrCreationPolicy;
   status: AnchorEventStatus;
 }
 
@@ -103,6 +106,7 @@ export async function updateAdminAnchorEvent(
     timePoolConfig: normalizeAnchorEventTimePoolConfig(input.timePoolConfig),
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
+    defaultPrNotes: input.defaultPrNotes,
     defaultConfirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     defaultConfirmationEndOffsetMinutes:
@@ -116,6 +120,7 @@ export async function updateAdminAnchorEvent(
     feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
+    prCreationPolicy: input.prCreationPolicy,
     status: input.status,
   });
 

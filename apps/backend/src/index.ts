@@ -231,7 +231,6 @@ export type {
   PRStatus,
   PRStatusManual,
   PRId,
-  PartnerRequestSummary,
   WeekdayLabel,
 } from "./entities/partner-request";
 export type {

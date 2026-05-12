@@ -18,6 +18,7 @@
         :candidates="noMatchRecommendationResult.orderedCandidates"
         :create-pending="createMutation.isPending.value"
         :create-disabled="!canCreateFallback"
+        :show-create-fallback="canUserCreatePR"
         :create-error-message="createActionErrorMessage"
         :resolve-cover-image="resolveCoverImage"
         @join-candidate="handleJoinCandidate"
@@ -247,6 +248,7 @@ const canSubmitRecommendation = computed(() =>
 
 const canCreateFallback = computed(() =>
   Boolean(
+    canUserCreatePR.value &&
     selectedLocationId.value &&
       selectedStartAt.value &&
       isValidFormModeDateTime(selectedStartAt.value) &&
@@ -395,12 +397,18 @@ const createActionErrorMessage = computed(() => {
   switch (error.code) {
     case "ANCHOR_EVENT_NOT_FOUND":
       return t("anchorEvent.createCard.errors.eventUnavailable");
+    case "ANCHOR_EVENT_USER_PR_CREATION_DISABLED":
+      return t("anchorEvent.createCard.errors.userCreationDisabled");
     case "WECHAT_AUTH_REQUIRED":
       return t("anchorEvent.createCard.errors.wechatAuthRequired");
     default:
       return error.message || t("anchorEvent.createCard.errors.createFailed");
   }
 });
+
+const canUserCreatePR = computed(
+  () => formModeData.value?.event.canUserCreatePR === true,
+);
 
 watch(
   formModeData,
@@ -668,6 +676,10 @@ const buildEventAssistedCreateTarget = (
 const createEventAssistedPR = async (
   trigger: EventAssistedCreateTrigger,
 ): Promise<boolean> => {
+  if (!canUserCreatePR.value) {
+    return false;
+  }
+
   const locationId = selectedLocationId.value;
   const startAt = selectedStartAt.value;
   if (!locationId || !isValidFormModeDateTime(startAt)) {
@@ -794,6 +806,12 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
 
     await splashFill;
     if (result.orderedCandidates.length === 0) {
+      if (!canUserCreatePR.value) {
+        noMatchRecommendationResult.value = result;
+        await drainJoinSplash();
+        return;
+      }
+
       const createStarted = await createEventAssistedPR("auto_no_candidates");
       if (createStarted) {
         resetJoinSplash();
@@ -870,6 +888,10 @@ const buildCreateFields = (): PartnerRequestFields | null => {
 };
 
 const handleCreateFallback = async () => {
+  if (!canUserCreatePR.value) {
+    return;
+  }
+
   await createEventAssistedPR("manual_fallback");
 };
 
@@ -918,6 +940,11 @@ const attemptPendingCreateReplay = async () => {
     pending.kind !== "EVENT_ASSISTED_PR_CREATE" ||
     pending.eventId !== props.eventId
   ) {
+    return;
+  }
+
+  if (!canUserCreatePR.value) {
+    clearPendingWeChatAction();
     return;
   }
 

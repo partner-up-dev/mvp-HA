@@ -97,20 +97,6 @@ export const createNaturalLanguagePRSchema = z.object({
   nowWeekday: weekdayLabelSchema.nullable().optional(),
 });
 
-export const partnerRequestSummarySchema = z.object({
-  id: z.number().int().positive(),
-  canonicalPath: z.string(),
-  status: prStatusSchema,
-  minPartners: z.number().int().nonnegative().nullable(),
-  maxPartners: z.number().int().nonnegative().nullable(),
-  partners: z.array(partnerSlotIdSchema),
-  createdAt: z.string(),
-  title: z.string().optional(),
-  type: z.string(),
-});
-
-export type PartnerRequestSummary = z.infer<typeof partnerRequestSummarySchema>;
-
 // Poster cache schemas
 export const xiaohongshuPosterSchema = z.object({
   caption: z.string(),

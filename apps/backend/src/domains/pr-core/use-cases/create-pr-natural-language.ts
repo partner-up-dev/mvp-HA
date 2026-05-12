@@ -18,6 +18,7 @@ import {
   type CreatePRCommandResult,
 } from "./create-pr.shared";
 import { materializeEventDefaultsForPR } from "../services/event-default-materialization.service";
+import { assertUserPRCreationAllowedForAnchorEvent } from "../services/event-pr-creation-policy.service";
 
 const prRepo = new PartnerRequestRepository();
 const aiService = new PartnerRequestAIService();
@@ -29,6 +30,9 @@ export async function createPRFromNaturalLanguage(
   creatorIdentity: CreatorIdentityInput,
 ): Promise<CreatePRCommandResult> {
   const fields = await aiService.parseRequest(rawText, nowIso, nowWeekday);
+  await assertUserPRCreationAllowedForAnchorEvent({
+    type: fields.type,
+  });
   const partnerBounds = normalizeAutomaticPartnerBounds(
     fields.minPartners,
     fields.maxPartners,
@@ -67,6 +71,7 @@ export async function createPRFromNaturalLanguage(
     type: request.type,
     location: request.location,
     timeWindow: request.time,
+    prNotes: request.notes,
   });
 
   operationLogService.log({

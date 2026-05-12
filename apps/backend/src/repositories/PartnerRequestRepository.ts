@@ -169,6 +169,20 @@ export class PartnerRequestRepository {
     return result[0] || null;
   }
 
+  async updateNotes(
+    id: PRId,
+    notes: string | null,
+  ): Promise<PartnerRequest | null> {
+    const result = await db
+      .update(partnerRequests)
+      .set({
+        notes,
+      })
+      .where(eq(partnerRequests.id, id))
+      .returning();
+    return result[0] || null;
+  }
+
   async updateFeedbackQuestionnaireInstanceId(
     id: PRId,
     feedbackQuestionnaireInstanceId: FeedbackQuestionnaireInstanceId | null,

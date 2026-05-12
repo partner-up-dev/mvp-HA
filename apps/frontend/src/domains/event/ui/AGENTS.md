@@ -24,7 +24,7 @@ This folder owns event-domain UI surfaces, controls, composites, and primitives.
         |-- orderedCandidates > 0
         |   `-- Inline Recommendation Result State
         |       |-- Candidate List
-        |       |   `-- AnchorEventPRCard with action slot
+        |       |   `-- PRPreviewCard with action slot
         |       `-- Create CTA: 都不合适，帮我找
         `-- orderedCandidates = 0
             `-- Assisted create -> /pr/:id?entry=create&handoff=event_assisted_create
@@ -62,11 +62,11 @@ Rules:
 
 ## Anchor Event PR Card Actions
 
-`primitives/AnchorEventPRCard.vue` is the event-domain PR card primitive for Anchor Event browsing and Form Mode candidate lists.
+`domains/pr/ui/primitives/PRPreviewCard.vue` is the PR-domain card primitive for Anchor Event browsing and Form Mode candidate lists.
 
 Rules:
 
-- Prefer enhancing `AnchorEventPRCard.vue` for PR rows that need event-domain card behavior.
+- Prefer enhancing `PRPreviewCard.vue` for PR rows that need reusable PR preview behavior.
 - The card may expose an `actions` slot at the bottom.
 - The `actions` slot layout should be a flex row with `gap: var(--sys-spacing-small)`.
 - List Mode can omit the `actions` slot and keep its existing browse-card behavior.

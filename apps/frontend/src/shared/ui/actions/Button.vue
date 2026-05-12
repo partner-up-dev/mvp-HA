@@ -12,6 +12,7 @@
       },
     ]"
     :type="props.type"
+    :form="props.form"
     :disabled="props.disabled || props.loading"
     @click="$emit('click', $event)"
   >
@@ -59,6 +60,7 @@ type ButtonSize = "sm" | "md" | "lg";
 const props = withDefaults(
   defineProps<{
     type?: "button" | "submit" | "reset";
+    form?: string;
     variant?: "primary" | "secondary";
     appearance?: ButtonAppearance;
     tone?: ButtonTone;
@@ -70,6 +72,7 @@ const props = withDefaults(
   }>(),
   {
     type: "button",
+    form: undefined,
     variant: undefined,
     appearance: "rect",
     tone: undefined,

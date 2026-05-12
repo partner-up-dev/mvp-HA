@@ -1,0 +1,43 @@
+import type { PRJoinGateConfig } from "@partner-up-dev/backend";
+
+export type EditableMeetingPointForm = {
+  description: string;
+  imageUrl: string;
+};
+
+export type AnchorEventEditorForm = {
+  title: string;
+  type: string;
+  description: string;
+  locationPoolText: string;
+  meetingPointDescription: string;
+  meetingPointImageUrl: string;
+  locationMeetingPoints: Record<string, EditableMeetingPointForm>;
+  joinGateConfig: PRJoinGateConfig;
+  feedbackQuestionnaireTemplateId: number | null;
+  defaultPrNotes: string;
+  durationMinutes: number | null;
+  earliestLeadMinutes: number | null;
+  absoluteRulesText: string;
+  recurringRulesText: string;
+  defaultMinPartners: number | null;
+  defaultMaxPartners: number | null;
+  defaultConfirmationStartOffsetMinutes: number;
+  defaultConfirmationEndOffsetMinutes: number;
+  defaultJoinLockOffsetMinutes: number;
+  coverImage: string;
+  betaGroupQrCode: string;
+  prCreationPolicy: "USER_AND_ADMIN" | "ADMIN_ONLY";
+  status: "ACTIVE" | "PAUSED" | "ARCHIVED";
+};
+
+export type AnchorEventTimeWindowPreview = {
+  key: string;
+  timeWindow: [string | null, string | null];
+  description?: string | null;
+};
+
+export type FeedbackQuestionnaireTemplateOption = {
+  id: number;
+  title: string;
+};

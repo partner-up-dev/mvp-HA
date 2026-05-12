@@ -8,6 +8,7 @@ import {
   givenDraftPR,
 } from "./_kit/builders/partner-requests";
 import { givenAnonymousUser, givenUser } from "./_kit/builders/users";
+import { givenAnchorEvent } from "../anchor-event/_kit/builders/anchor-events";
 import { getTestDb } from "../_infra/probes/sql-probe";
 import { partnerRequests, type PRId, type PRStatus } from "../../src/entities";
 
@@ -157,3 +158,38 @@ scenario("anonymous_user_can_edit_creatorless_draft_content", async (ctx) => {
   assert.equal(stored?.title, updatedFields.title);
   assert.equal(stored?.createdBy, null);
 });
+
+scenario(
+  "user_content_edit_cannot_retype_pr_to_admin_only_anchor_event",
+  async (ctx) => {
+    const draftAuthor = await givenAnonymousUser("admin-only-type-author");
+    const editor = await givenAnonymousUser("admin-only-type-editor");
+    const pr = await givenDraftPR({
+      creator: draftAuthor,
+      title: "Scenario admin-only type initial",
+    });
+    const event = await givenAnchorEvent({
+      label: "admin-only-type-edit",
+      prCreationPolicy: "ADMIN_ONLY",
+    });
+    const updatedFields = {
+      ...buildScenarioFields("Scenario admin-only type updated"),
+      type: event.type,
+      time: event.timeWindow,
+      location: event.locationId,
+    };
+    ctx.record("prId", pr.id);
+    ctx.record("eventId", event.id);
+
+    const response = await requestJson(`/api/pr/${pr.id}/content`, {
+      method: "PATCH",
+      token: editor.token,
+      body: {
+        fields: updatedFields,
+      },
+    });
+    const body = await expectJsonResponse<ProblemDetailsResponse>(response, 403);
+
+    assert.equal(body.code, "ANCHOR_EVENT_USER_PR_CREATION_DISABLED");
+  },
+);

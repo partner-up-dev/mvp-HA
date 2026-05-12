@@ -4,7 +4,6 @@ export { publishPR } from "./publish-pr";
 export { getPR } from "./get-pr";
 export { getPRDetail } from "./get-pr-detail";
 export { getPRPartnerProfile } from "./get-pr-partner-profile";
-export { getPRSummariesByIds } from "./get-pr-summaries";
 export { getMyCreatedPRs } from "./get-my-created-prs";
 export { getMyJoinedPRs } from "./get-my-joined-prs";
 export { listPRMessages } from "./list-pr-messages";

@@ -14,7 +14,6 @@ import {
   createPRFromStructured as createPRStructuredUseCase,
   publishPR as publishPRUseCase,
   getPR as getPRUseCase,
-  getPRSummariesByIds as getPRSummariesUseCase,
   getMyCreatedPRs as getMyCreatedPRsUseCase,
   getMyJoinedPRs as getMyJoinedPRsUseCase,
   updatePRStatus as updatePRStatusUseCase,
@@ -54,10 +53,6 @@ export class PartnerRequestService {
 
   async getPR(id: PRId, viewerOpenId?: string | null): Promise<PublicPR> {
     return getPRUseCase(id, viewerOpenId);
-  }
-
-  async getPRSummariesByIds(ids: PRId[]) {
-    return getPRSummariesUseCase(ids);
   }
 
   async getMyCreatedPRs(userId: UserId) {

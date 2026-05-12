@@ -6,7 +6,7 @@
 2. The user either expands the lightweight "start from one sentence" path or enters `/pr/new`.
 3. The system interprets the natural-language intent, may map it to an existing Anchor Event context, and may synthesize a new `PR.type` when no existing event context fits.
 4. The frontend submits the natural-language create command.
-5. If the user already has an authenticated account, the backend creates and publishes the PR inside the same creation flow.
+5. If the selected type maps to an Anchor Event whose PR creation policy allows user creation and the user already has an authenticated account, the backend creates and publishes the PR inside the same creation flow.
 6. If the user is anonymous, the backend creates a `DRAFT` and waits for a later authenticated publish step.
 7. The publish step assigns creator ownership and returns a shareable, revisitable `PR`.
 
@@ -16,7 +16,7 @@
 2. The `type` field accepts arbitrary input and may offer suggestion options from known event types.
 3. The `time_window` field uses batch or free UI mode. Batch mode offers suggested windows from known event-side availability. Free mode allows direct manual time entry.
 4. The UI resolves those inputs into one PR-owned create payload with one concrete `type` and one concrete `time_window`.
-5. The frontend submits the structured create command. If the selected `type` resolves to an Anchor Event, PR creation materializes that event's PR defaults such as join gates, support resources, and mounted feedback questionnaire instance onto the created PR.
+5. The frontend submits the structured create command. If the selected `type` resolves to an Anchor Event, that event's PR creation policy gates user creation, and PR creation materializes that event's PR defaults such as default notes when the create payload has no notes, join gates, support resources, and mounted feedback questionnaire instance onto the created PR.
 6. If the user already has an authenticated account, the backend creates and publishes the PR inside the same creation flow.
 7. If the user is anonymous, the backend creates a `DRAFT` and waits for a later authenticated publish step.
 8. The publish step assigns creator ownership and returns a shareable, revisitable `PR`.
@@ -24,7 +24,7 @@
 ## 3. Enter Through a Link and Join a PR
 
 1. The user opens `/pr/:id`.
-2. The user reads the request details, current count, visible status, participant list, and public meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
+2. The user reads the request details, current count, visible status, participant list, and status-appropriate meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location while it is visible; after the PR becomes `ACTIVE`, non-participant viewers see a private meeting-point placeholder while current active participants can still read the guidance. Notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
 3. Revisit continuity uses the restored anonymous UUID session; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, context-specific rules, and any PR-owned join gates.
 5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the frontend injects the relevant fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or booking-contact phone collection.
@@ -45,15 +45,15 @@
 8. Form Mode submission stays inside `/e/:eventId`; the route-level state machine keeps the selected location, start time, and preference labels through recommendation and result handling.
 8.1. If the desired location is absent, the Form Mode location control provides a location-application entry. The application creates a pending `POI` with the submitted name and image, independent of any one Anchor Event.
 9. Form Mode submission returns one backend-authored matched recommendation plus an ordered candidate list.
-10. If Form Mode has no matched recommendation and has ordered candidates, the page shows the inline no-match result with candidate actions and the create fallback action `都不合适，帮我找`; the same selected conditions feed that assisted-create path.
-11. If Form Mode has no matched recommendation and zero ordered candidates, the page directly creates an event-assisted `PR` from the selected conditions after the long-press completes, then opens the created `/pr/:id` with a handoff query and a success notice for the created request.
+10. If Form Mode has no matched recommendation and has ordered candidates, the page shows the inline no-match result with candidate actions. When the Anchor Event PR creation policy allows user creation, the same selected conditions can feed the create fallback action `都不合适，帮我找`.
+11. If Form Mode has no matched recommendation, zero ordered candidates, and a user-creation-enabled event policy, the page directly creates an event-assisted `PR` from the selected conditions after the long-press completes, then opens the created `/pr/:id` with a handoff query and a success notice for the created request. With an admin-only creation policy, the page stays in the no-match result state and keeps browsing exits available.
 12. Joining a recommended candidate from Form Mode uses the same PR join flow as canonical PR detail; successful joins continue into canonical `/pr/:id` while preserving event-context handoff continuity.
 13. In `/events/search`, the user chooses one active `Anchor Event` and one or more available local dates before seeing matching `PR` results.
 14. Search results follow the chosen Anchor Event's activity type and time-pool rules; result cards identify candidate PRs by time, location, visible status, and participant count rather than repeating event-side context.
 15. If the search has exactly one result, the system may route directly to `/pr/:id`; otherwise, the user chooses one result from the list.
 16. The user enters an existing `PR` from event card or search-result context. `/events/:eventId` may accept `mode=card|list` as the initial rendering hint, and `/e/:eventId` may enter the same list browsing experience through `LIST` landing mode. In card mode, the active demand card itself is also a detail-entry affordance, so tapping it should resolve to the same detail intent as the rightward action. In list mode, top-level tabs aggregate by local date while still preserving time-window grouping and location context inside the selected date panel; dates before the current product-local date are expired dates, the expired tab set keeps at most the latest three dates that contain `CLOSED` PRs, expired date panels show `CLOSED` rows, and current or future date panels hide `EXPIRED` rows. Card-mode drag feedback should reveal directional skip versus detail cues in exposed stage space and keep the card body unobscured by opaque action stamps.
 17. The Anchor Event page exposes that event's beta-group entry as an independent card. List mode defaults the card to a collapsed summary; card mode defaults it to an expanded state with the QR code. The group is for event-specific support such as requesting new sessions, getting booking/subsidy support, and coordinating activity context.
-18. If the current local date, time-pool rule, or location does not have a suitable PR and creation is still allowed, the user can create one through the controlled event-page flow. Card and list creation pickers include event-authored time-window description copy in each described time option.
+18. If the current local date, time-pool rule, or location does not have a suitable PR and the Anchor Event PR creation policy allows user creation, the user can create one through the controlled event-page flow. Card and list creation pickers include event-authored time-window description copy in each described time option.
 19. The event page resolves its assisted-create choices into the same structured PR create payload shape used by `/pr/new` and may carry transient event referral context for route continuity.
 20. The event page submits the same structured create command used by the form path. If the user already has an authenticated account, the backend creates and publishes the PR inside that same command.
 21. The current Anchor Event and downstream PR detail surfaces may also expose other active Anchor Events as a secondary browsing path, so the user can pivot without leaving the event-context collaboration journey entirely.
@@ -65,7 +65,7 @@
 1. The user enters the location-application page from the Form Mode location control.
 2. The user submits one location name and one image.
 3. The backend creates a `PENDING` `POI`; the location name is the POI id.
-4. The user can revisit submitted POI applications from the submit-success page and from `/me`.
+4. The user can revisit submitted POI applications from the submit-success page and from the `/me` personal-center shortcut.
 5. Operators review submitted POIs in the POI management surface.
 6. Publishing changes the POI status to `PUBLISHED`; rejected applications remain hidden from public location reads and may carry a rejection reason.
 7. Published POIs are available to the global POI library, but Form Mode still shows only locations referenced by the current Anchor Event location pool.
@@ -73,8 +73,10 @@
 ## 5. Revisit and History Entry
 
 1. When the user returns, the system restores existing session continuity when possible.
-2. The user can inspect profile, binding, notifications, and anonymous UUID continuity through `/me`.
-3. The user can revisit created and joined history through `/pr/mine`.
+2. The user can inspect and manage profile, WeChat identity, service notifications, and anonymous UUID continuity through `/me`.
+3. The `/me` personal profile card keeps identity facts together: avatar, nickname, WeChat binding state or bind action, and the anonymous user id copy affordance.
+4. The user can enter PR history and POI application history from two equal shortcuts under the personal profile card.
+5. The user can revisit created and joined PR history through `/pr/mine`.
 
 ## 6. Share and Distribution
 

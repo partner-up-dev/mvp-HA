@@ -59,6 +59,11 @@ const normalizeEnvValue = (value: string | undefined): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const parsePort = (value: string | undefined, fallback: number): number => {
+  const port = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(port) ? port : fallback;
+};
+
 const readGitValue = (command: string): string | null => {
   try {
     const output = execSync(command, {
@@ -149,6 +154,26 @@ const getManualChunkName = (id: string): string | undefined => {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
+  const isPortless = Boolean(process.env.PORTLESS_URL);
+  const serverHost = isPortless
+    ? (normalizeEnvValue(process.env.HOST) ?? "127.0.0.1")
+    : normalizeEnvValue(env.VITE_HOST);
+  const serverPort = isPortless
+    ? parsePort(process.env.PORT, 5173)
+    : parsePort(env.VITE_PORT, 5173);
+  const backendHost = normalizeEnvValue(env.VITE_BACKEND_HOST) ?? "localhost";
+  const backendPort = normalizeEnvValue(env.VITE_BACKEND_PORT) ?? "3000";
+  const portlessBackendHost = "api.partner-up.localhost";
+  const backendProxyTarget =
+    normalizeEnvValue(env.VITE_BACKEND_PROXY_TARGET) ??
+    (isPortless ? "https://127.0.0.1" : `http://${backendHost}:${backendPort}`);
+  const backendProxyUrl = new URL(backendProxyTarget);
+  const backendProxyHeaders = isPortless
+    ? { Host: portlessBackendHost }
+    : undefined;
+  const frontendApiUrl = isPortless
+    ? (normalizeEnvValue(process.env.PORTLESS_URL) ?? "")
+    : (normalizeEnvValue(env.VITE_API_URL) ?? "");
   const frontendCommitHash =
     normalizeEnvValue(env.VITE_FRONTEND_COMMIT_HASH) ??
     readGitValue("git rev-parse HEAD") ??
@@ -168,6 +193,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     define: {
+      "import.meta.env.VITE_API_URL": JSON.stringify(frontendApiUrl),
       "import.meta.env.VITE_FRONTEND_COMMIT_HASH": JSON.stringify(
         frontendCommitHash,
       ),
@@ -214,11 +240,16 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: parseInt(env.VITE_PORT) || 5173,
+      ...(serverHost ? { host: serverHost } : {}),
+      port: serverPort,
+      strictPort: isPortless,
       proxy: {
         "/api": {
-          target: `http://localhost:${env.VITE_BACKEND_PORT || 3000}`,
-          changeOrigin: true,
+          target: backendProxyTarget,
+          changeOrigin: !isPortless,
+          ...(backendProxyHeaders ? { headers: backendProxyHeaders } : {}),
+          secure:
+            !isPortless && !backendProxyUrl.hostname.endsWith(".localhost"),
         },
       },
     },

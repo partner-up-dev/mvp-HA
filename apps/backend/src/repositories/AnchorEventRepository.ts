@@ -79,6 +79,7 @@ export class AnchorEventRepository {
         | "timePoolConfig"
         | "defaultMinPartners"
         | "defaultMaxPartners"
+        | "defaultPrNotes"
         | "defaultConfirmationStartOffsetMinutes"
         | "defaultConfirmationEndOffsetMinutes"
         | "defaultJoinLockOffsetMinutes"
@@ -88,6 +89,7 @@ export class AnchorEventRepository {
         | "feedbackQuestionnaireTemplateId"
         | "coverImage"
         | "betaGroupQrCode"
+        | "prCreationPolicy"
         | "status"
       >
     >,

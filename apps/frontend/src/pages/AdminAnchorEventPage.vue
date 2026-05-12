@@ -1,41 +1,39 @@
 <template>
-  <DesktopPageScaffold class="page">
-    <template #aside>
-      <div class="sidebar">
-        <AdminNavigationCard show-logout @logout="logout" />
+  <AdminPageScaffold class="page">
+    <template #navigation>
+      <AdminNavigationPanel show-logout @logout="logout" />
+    </template>
 
-        <section class="panel">
-          <div class="stack">
-            <div class="section-header">
-              <h2 class="card-title">{{ t("adminAnchorEvents.eventsTitle") }}</h2>
-              <Button
-                appearance="pill"
-                tone="outline"
-                size="sm"
-                type="button"
-                @click="prepareNewEvent"
-              >
-                {{ t("adminAnchorEvents.newEventAction") }}
-              </Button>
-            </div>
-            <div v-if="events.length === 0" class="hint">
-              {{ t("adminAnchorEvents.emptyEvents") }}
-            </div>
-            <div v-else class="selection-list">
-              <ChoiceCard
-                v-for="event in events"
-                :key="event.id"
-                class="selection-btn"
-                :active="!isCreatingEvent && selectedEventId === event.id"
-                @click="selectEvent(event.id)"
-              >
-                <span>{{ event.title }}</span>
-                <small>{{ event.status }}</small>
-              </ChoiceCard>
-            </div>
-          </div>
-        </section>
-      </div>
+    <template #rail>
+      <AdminRailPanel :title="t('adminAnchorEvents.eventsTitle')">
+        <template #actions>
+          <Button
+            appearance="pill"
+            tone="outline"
+            size="sm"
+            type="button"
+            @click="prepareNewEvent"
+          >
+            {{ t("adminAnchorEvents.newEventAction") }}
+          </Button>
+        </template>
+
+        <div v-if="events.length === 0" class="hint">
+          {{ t("adminAnchorEvents.emptyEvents") }}
+        </div>
+        <div v-else class="selection-list">
+          <ChoiceCard
+            v-for="event in events"
+            :key="event.id"
+            class="selection-btn"
+            :active="!isCreatingEvent && selectedEventId === event.id"
+            @click="selectEvent(event.id)"
+          >
+            <span>{{ event.title }}</span>
+            <small>{{ event.status }}</small>
+          </ChoiceCard>
+        </div>
+      </AdminRailPanel>
     </template>
 
     <template #header>
@@ -45,713 +43,120 @@
       </header>
     </template>
 
-    <div class="stack">
-      <LoadingIndicator
-        v-if="workspaceQuery.isLoading.value"
-        :message="t('common.loading')"
-      />
-      <ErrorToast
-        v-else-if="workspaceQuery.error.value"
-        :message="workspaceQuery.error.value.message"
-        persistent
-      />
-
-      <template v-else>
-        <div class="grid-2">
-          <section class="panel">
-            <div class="stack">
-              <div class="section-header">
-                <h2 class="card-title">
-                  {{ t("adminAnchorEvents.activityInfoTitle") }}
-                </h2>
-              </div>
-
-              <label class="field">
-                <span class="field-label">{{ t("adminPR.eventNameLabel") }}</span>
-                <input v-model="eventForm.title" class="field-input" />
-              </label>
-
-              <label class="field">
-                <span class="field-label">{{ t("adminPR.eventTypeLabel") }}</span>
-                <input v-model="eventForm.type" class="field-input" />
-              </label>
-
-              <label class="field">
-                <span class="field-label">{{
-                  t("adminPR.eventDescriptionLabel")
-                }}</span>
-                <textarea
-                  v-model="eventForm.description"
-                  class="field-input field-textarea"
-                ></textarea>
-              </label>
-
-              <div class="field">
-                <span class="field-label">{{
-                  t("adminPR.eventCoverImageLabel")
-                }}</span>
-                <ImageUrlInput
-                  v-model="eventForm.coverImage"
-                  v-model:uploading="isUploadingEventCoverImage"
-                  input-id="admin-anchor-event-cover-image"
-                  purpose="anchor-event-cover"
-                  :placeholder="t('adminPR.eventImageUrlPlaceholder')"
-                  :upload-label="t('adminPR.uploadEventCoverImageAction')"
-                  :uploading-label="t('adminPR.uploadingEventImage')"
-                  :preview-alt="t('adminPR.eventCoverImagePreviewAlt')"
-                />
-              </div>
-
-              <div class="field">
-                <span class="field-label">{{
-                  t("adminPR.eventBetaGroupQrCodeLabel")
-                }}</span>
-                <ImageUrlInput
-                  v-model="eventForm.betaGroupQrCode"
-                  v-model:uploading="isUploadingEventBetaGroupQrCode"
-                  input-id="admin-anchor-event-beta-group-qr"
-                  purpose="anchor-event-beta-group-qr"
-                  :placeholder="t('adminPR.eventImageUrlPlaceholder')"
-                  :upload-label="t('adminPR.uploadEventBetaGroupQrCodeAction')"
-                  :uploading-label="t('adminPR.uploadingEventImage')"
-                  :preview-alt="t('adminPR.eventBetaGroupQrCodePreviewAlt')"
-                />
-              </div>
-
-              <label class="field">
-                <span class="field-label">{{ t("adminPR.eventStatusLabel") }}</span>
-                <select v-model="eventForm.status" class="field-input">
-                  <option value="ACTIVE">{{ t("adminPR.statusActive") }}</option>
-                  <option value="PAUSED">{{ t("adminPR.statusPaused") }}</option>
-                  <option value="ARCHIVED">
-                    {{ t("adminPR.statusArchived") }}
-                  </option>
-                </select>
-              </label>
-
-              <div class="grid-2">
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminPR.eventDefaultMinPartnersLabel")
-                  }}</span>
-                  <input
-                    v-model.number="eventForm.defaultMinPartners"
-                    class="field-input"
-                    type="number"
-                    min="1"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminPR.eventDefaultMaxPartnersLabel")
-                  }}</span>
-                  <input
-                    v-model.number="eventForm.defaultMaxPartners"
-                    class="field-input"
-                    type="number"
-                    min="2"
-                  />
-                </label>
-              </div>
-
-              <p v-if="eventBoundsValidationMessage" class="error-message">
-                {{ eventBoundsValidationMessage }}
-              </p>
-
-              <TimelinePolicyPicker
-                v-model="eventPolicyValue"
-                :title="t('adminAnchorEvents.participationDefaultsTitle')"
-                :description="t('adminAnchorEvents.participationDefaultsDescription')"
-                :event-start-at="previewStartAt"
-                :validation-message="policyValidationMessage"
-              />
-
-              <PRJoinGateConfigEditor
-                v-model="eventForm.joinGateConfig"
-                source="ANCHOR_EVENT"
-                :allow-booking-contact="false"
-              />
-
-              <label class="field">
-                <span class="field-label">{{
-                  t("adminPR.eventFeedbackQuestionnaireTemplateLabel")
-                }}</span>
-                <select
-                  class="field-input"
-                  :value="eventForm.feedbackQuestionnaireTemplateId ?? ''"
-                  data-testid="admin-anchor-event.feedback-template"
-                  @change="
-                    eventForm.feedbackQuestionnaireTemplateId =
-                      parseNullableId($event)
-                  "
-                >
-                  <option value="">{{ t("adminPR.noFeedbackQuestionnaire") }}</option>
-                  <option
-                    v-for="template in feedbackQuestionnaireTemplates"
-                    :key="template.id"
-                    :value="template.id"
-                  >
-                    {{ template.title }}
-                  </option>
-                </select>
-              </label>
-
-              <Button
-                appearance="pill"
-                size="sm"
-                type="button"
-                :disabled="
-                  createEventMutation.isPending.value ||
-                  updateEventMutation.isPending.value ||
-                  Boolean(eventBoundsValidationMessage) ||
-                  Boolean(timePoolValidationMessage) ||
-                  Boolean(policyValidationMessage) ||
-                  isUploadingEventCoverImage ||
-                  isUploadingEventBetaGroupQrCode
-                "
-                @click="handleSaveEvent"
-              >
-                {{
-                  createEventMutation.isPending.value ||
-                  updateEventMutation.isPending.value
-                    ? t("adminPR.saving")
-                    : isCreatingEvent
-                      ? t("adminPR.createEventAction")
-                      : t("adminPR.saveEventAction")
-                }}
-              </Button>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="stack">
-              <h2 class="card-title">
-                {{ t("adminAnchorEvents.locationPoolsTitle") }}
-              </h2>
-
-              <label class="field">
-                <span class="field-label">{{
-                  t("adminPR.eventLocationPoolLabel")
-                }}</span>
-                <textarea
-                  v-model="eventForm.locationPoolText"
-                  class="field-input field-textarea"
-                ></textarea>
-              </label>
-
-              <p class="hint">{{ t("adminPR.eventPoiHint") }}</p>
-
-              <div class="stack stack--tight">
-                <h3 class="subsection-title">
-                  {{ t("adminPR.eventDefaultMeetingPointTitle") }}
-                </h3>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminPR.eventMeetingPointDescriptionLabel")
-                  }}</span>
-                  <textarea
-                    v-model="eventForm.meetingPointDescription"
-                    class="field-input field-textarea"
-                  ></textarea>
-                </label>
-
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminPR.eventMeetingPointImageUrlLabel")
-                  }}</span>
-                  <input
-                    v-model="eventForm.meetingPointImageUrl"
-                    class="field-input"
-                  />
-                </label>
-              </div>
-
-              <div class="stack stack--tight">
-                <h3 class="subsection-title">
-                  {{ t("adminPR.eventLocationMeetingPointsTitle") }}
-                </h3>
-                <p class="hint">
-                  {{ t("adminPR.eventLocationMeetingPointsHint") }}
-                </p>
-
-                <p
-                  v-if="locationMeetingPointLocations.length === 0"
-                  class="hint"
-                >
-                  {{ t("adminPR.eventLocationMeetingPointsEmpty") }}
-                </p>
-
-                <article
-                  v-for="location in locationMeetingPointLocations"
-                  :key="location"
-                  class="location-meeting-point-row"
-                >
-                  <strong class="location-meeting-point-title">
-                    {{ location }}
-                  </strong>
-                  <div class="grid-2">
-                    <label class="field">
-                      <span class="field-label">{{
-                        t("adminPR.eventLocationMeetingPointDescriptionLabel")
-                      }}</span>
-                      <textarea
-                        class="field-input field-textarea"
-                        :value="getLocationMeetingPointDescription(location)"
-                        @input="
-                          updateLocationMeetingPointDescription(
-                            location,
-                            $event,
-                          )
-                        "
-                      ></textarea>
-                    </label>
-
-                    <label class="field">
-                      <span class="field-label">{{
-                        t("adminPR.eventLocationMeetingPointImageUrlLabel")
-                      }}</span>
-                      <input
-                        class="field-input"
-                        :value="getLocationMeetingPointImageUrl(location)"
-                        @input="
-                          updateLocationMeetingPointImageUrl(location, $event)
-                        "
-                      />
-                    </label>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div class="grid-2">
-          <section class="panel">
-            <div class="stack">
-              <h2 class="card-title">
-                {{ t("adminAnchorEvents.timePoolStrategyTitle") }}
-              </h2>
-
-              <div class="grid-2">
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminPR.timePoolDurationLabel")
-                  }}</span>
-                  <input
-                    v-model.number="eventForm.durationMinutes"
-                    class="field-input"
-                    type="number"
-                    min="1"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminPR.timePoolEarliestLeadLabel")
-                  }}</span>
-                  <input
-                    v-model.number="eventForm.earliestLeadMinutes"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-              </div>
-
-              <label class="field">
-                <span class="field-label">{{ t("adminPR.absoluteRulesLabel") }}</span>
-                <textarea
-                  v-model="eventForm.absoluteRulesText"
-                  class="field-input field-textarea"
-                ></textarea>
-              </label>
-              <p class="hint">{{ t("adminPR.absoluteRulesHint") }}</p>
-
-              <label class="field">
-                <span class="field-label">{{ t("adminPR.recurringRulesLabel") }}</span>
-                <textarea
-                  v-model="eventForm.recurringRulesText"
-                  class="field-input field-textarea"
-                ></textarea>
-              </label>
-              <p class="hint">{{ t("adminPR.recurringRulesHint") }}</p>
-
-              <p v-if="timePoolValidationMessage" class="error-message">
-                {{ timePoolValidationMessage }}
-              </p>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="stack">
-              <h2 class="card-title">
-                {{ t("adminAnchorEvents.timeWindowsTitle") }}
-              </h2>
-              <div v-if="selectedEvent === null" class="hint">
-                {{ t("adminPR.selectEventForTimeWindowHint") }}
-              </div>
-              <div
-                v-else-if="selectedEvent.timeWindows.length === 0"
-                class="hint"
-              >
-                {{ t("adminPR.emptyTimeWindows") }}
-              </div>
-              <div v-else class="selection-list">
-                <ChoiceCard
-                  v-for="timeWindow in selectedEvent.timeWindows"
-                  :key="timeWindow.key"
-                  class="selection-btn"
-                >
-                  <span>{{ formatWindow(timeWindow.timeWindow) }}</span>
-                  <small v-if="timeWindow.description">{{
-                    timeWindow.description
-                  }}</small>
-                </ChoiceCard>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <section class="panel">
-          <div class="stack">
-            <div class="section-header">
-              <h2 class="card-title">
-                {{ t("adminAnchorEvents.landingRolloutTitle") }}
-              </h2>
-            </div>
-
-            <p class="hint">
-              {{ t("adminAnchorEvents.landingRolloutDescription") }}
-            </p>
-
-            <div v-if="isCreatingEvent || selectedEventId === null" class="hint">
-              {{ t("adminAnchorEvents.selectEventForLandingConfigHint") }}
-            </div>
-
-            <LoadingIndicator
-              v-else-if="landingConfigQuery.isLoading.value"
-              :message="t('common.loading')"
-            />
-
-            <p v-else-if="landingConfigQuery.error.value" class="error-message">
-              {{ landingConfigQuery.error.value.message }}
-            </p>
-
-            <template v-else>
-              <div class="grid-2">
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminAnchorEvents.formRatioLabel")
-                  }}</span>
-                  <input
-                    v-model.number="landingConfigForm.formRatio"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminAnchorEvents.cardRichRatioLabel")
-                  }}</span>
-                  <input
-                    v-model.number="landingConfigForm.cardRichRatio"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-                <label class="field">
-                  <span class="field-label">{{
-                    t("adminAnchorEvents.listRatioLabel")
-                  }}</span>
-                  <input
-                    v-model.number="landingConfigForm.listRatio"
-                    class="field-input"
-                    type="number"
-                    min="0"
-                  />
-                </label>
-              </div>
-
-              <label class="field">
-                <span class="field-label">{{
-                  t("adminAnchorEvents.assignmentRevisionLabel")
-                }}</span>
-                <input
-                  v-model.number="landingConfigForm.assignmentRevision"
-                  class="field-input"
-                  type="number"
-                  min="1"
-                />
-              </label>
-
-              <p class="hint">
-                {{ t("adminAnchorEvents.landingFallbackHint") }}
-              </p>
-
-              <p v-if="landingConfigValidationMessage" class="error-message">
-                {{ landingConfigValidationMessage }}
-              </p>
-
-              <Button
-                appearance="pill"
-                size="sm"
-                type="button"
-                :disabled="
-                  replaceLandingConfigMutation.isPending.value ||
-                  Boolean(landingConfigValidationMessage)
-                "
-                @click="handleSaveLandingConfig"
-              >
-                {{
-                  replaceLandingConfigMutation.isPending.value
-                    ? t("adminPR.saving")
-                    : t("adminAnchorEvents.saveLandingConfigAction")
-                }}
-              </Button>
-            </template>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="stack">
-            <div class="section-header">
-              <h2 class="card-title">
-                {{ t("adminAnchorEvents.preferenceTagsTitle") }}
-              </h2>
-              <Button
-                appearance="pill"
-                tone="outline"
-                size="sm"
-                type="button"
-                @click="handleAddPreferenceTagRow"
-              >
-                {{ t("adminAnchorEvents.addPreferenceTagAction") }}
-              </Button>
-            </div>
-
-            <p class="hint">
-              {{ t("adminAnchorEvents.preferenceTagsDescription") }}
-            </p>
-
-            <div v-if="isCreatingEvent || selectedEventId === null" class="hint">
-              {{ t("adminAnchorEvents.selectEventForPreferenceTagsHint") }}
-            </div>
-
-            <LoadingIndicator
-              v-else-if="preferenceTagsQuery.isLoading.value"
-              :message="t('common.loading')"
-            />
-
-            <p v-else-if="preferenceTagsQuery.error.value" class="error-message">
-              {{ preferenceTagsQuery.error.value.message }}
-            </p>
-
-            <template v-else>
-              <div
-                v-if="publishedPreferenceTagRows.length === 0"
-                class="selection-list"
-              >
-                <p class="hint">
-                  {{ t("adminAnchorEvents.emptyPublishedPreferenceTags") }}
-                </p>
-              </div>
-
-              <div v-else class="selection-list">
-                <div
-                  v-for="row in publishedPreferenceTagRows"
-                  :key="row.id"
-                  class="panel"
-                >
-                  <div class="stack">
-                    <label class="field">
-                      <span class="field-label">{{
-                        t("adminAnchorEvents.preferenceTagLabel")
-                      }}</span>
-                      <input v-model="row.label" class="field-input" />
-                    </label>
-
-                    <label class="field">
-                      <span class="field-label">{{
-                        t("adminAnchorEvents.preferenceTagDescription")
-                      }}</span>
-                      <input v-model="row.description" class="field-input" />
-                    </label>
-
-                    <Button
-                      appearance="pill"
-                      tone="outline"
-                      size="sm"
-                      type="button"
-                      @click="handleRemovePreferenceTagRow(row.id)"
-                    >
-                      {{ t("adminAnchorEvents.removePreferenceTagAction") }}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                appearance="pill"
-                size="sm"
-                type="button"
-                :disabled="replacePreferenceTagsMutation.isPending.value"
-                @click="handleSavePreferenceTags"
-              >
-                {{
-                  replacePreferenceTagsMutation.isPending.value
-                    ? t("adminPR.saving")
-                    : t("adminAnchorEvents.savePreferenceTagsAction")
-                }}
-              </Button>
-
-              <div class="stack">
-                <h3 class="card-title">
-                  {{ t("adminAnchorEvents.pendingPreferenceTagsTitle") }}
-                </h3>
-
-                <div
-                  v-if="
-                    (preferenceTagsQuery.data.value?.pendingTags.length ?? 0) === 0
-                  "
-                  class="hint"
-                >
-                  {{ t("adminAnchorEvents.emptyPendingPreferenceTags") }}
-                </div>
-
-                <div v-else class="selection-list">
-                  <div
-                    v-for="tag in preferenceTagsQuery.data.value?.pendingTags ?? []"
-                    :key="tag.id"
-                    class="panel"
-                  >
-                    <div class="stack">
-                      <p class="card-title">{{ tag.label }}</p>
-                      <p class="hint">
-                        {{
-                          tag.description ||
-                          t("adminAnchorEvents.preferenceTagDescriptionEmpty")
-                        }}
-                      </p>
-
-                      <div class="section-header">
-                        <Button
-                          appearance="pill"
-                          size="sm"
-                          type="button"
-                          :disabled="publishPreferenceTagMutation.isPending.value"
-                          @click="handlePublishPreferenceTag(tag.id)"
-                        >
-                          {{ t("adminAnchorEvents.publishPreferenceTagAction") }}
-                        </Button>
-                        <Button
-                          appearance="pill"
-                          tone="outline"
-                          size="sm"
-                          type="button"
-                          :disabled="rejectPreferenceTagMutation.isPending.value"
-                          @click="handleRejectPreferenceTag(tag.id)"
-                        >
-                          {{ t("adminAnchorEvents.rejectPreferenceTagAction") }}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </div>
-        </section>
-
-        <ErrorToast
-          v-if="mutationErrorMessage"
-          :message="mutationErrorMessage"
-          @close="resetMutationErrors"
+    <template #main>
+      <div class="stack">
+        <LoadingIndicator
+          v-if="workspaceQuery.isLoading.value"
+          :message="t('common.loading')"
         />
-      </template>
-    </div>
-  </DesktopPageScaffold>
+        <ErrorToast
+          v-else-if="workspaceQuery.error.value"
+          :message="workspaceQuery.error.value.message"
+          persistent
+        />
+
+        <template v-else>
+          <AnchorEventBasicSection
+            v-if="activeAdminSection === 'anchor-event-basic'"
+            v-model="eventForm"
+            v-model:cover-uploading="isUploadingEventCoverImage"
+            v-model:beta-group-qr-uploading="isUploadingEventBetaGroupQrCode"
+            :save-label="eventSaveLabel"
+            :save-disabled="isBasicSaveDisabled"
+            :bounds-validation-message="eventBoundsValidationMessage"
+            @save="handleSaveAnchorEventBasic"
+          />
+
+          <AnchorEventLocationsSection
+            v-if="activeAdminSection === 'anchor-event-locations'"
+            v-model="eventForm"
+            :save-label="eventSaveLabel"
+            :save-disabled="isLocationsSaveDisabled"
+            @save="handleSaveAnchorEventLocations"
+          />
+
+          <AnchorEventTimeSection
+            v-if="activeAdminSection === 'anchor-event-time'"
+            v-model="eventForm"
+            :save-label="eventSaveLabel"
+            :save-disabled="isTimePolicySaveDisabled"
+            :time-pool-validation-message="timePoolValidationMessage"
+            :policy-validation-message="policyValidationMessage"
+            :preview-start-at="previewStartAt"
+            @save="handleSaveEventTimePolicy"
+          />
+
+          <AnchorEventOtherSection
+            v-if="activeAdminSection === 'anchor-event-other'"
+            v-model="eventForm"
+            :event-id="selectedEventId"
+            :disabled="isCreatingEvent"
+            :save-label="eventSaveLabel"
+            :save-disabled="isOtherSettingsSaveDisabled"
+            :feedback-questionnaire-templates="feedbackQuestionnaireTemplates"
+            @save="handleSaveAnchorEventOtherSettings"
+          />
+
+          <AnchorEventTagsSection
+            v-if="activeAdminSection === 'anchor-event-tags'"
+            :event-id="selectedEventId"
+            :disabled="isCreatingEvent"
+          />
+
+          <ErrorToast
+            v-if="mutationErrorMessage"
+            :message="mutationErrorMessage"
+            @close="resetMutationErrors"
+          />
+        </template>
+      </div>
+    </template>
+  </AdminPageScaffold>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCard.vue";
+import AdminPageScaffold from "@/domains/admin/ui/layout/AdminPageScaffold.vue";
+import AdminRailPanel from "@/domains/admin/ui/layout/AdminRailPanel.vue";
+import AdminNavigationPanel from "@/domains/admin/ui/navigation/AdminNavigationPanel.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
-import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
-import TimelinePolicyPicker from "@/shared/ui/forms/TimelinePolicyPicker.vue";
-import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
-import PRJoinGateConfigEditor from "@/domains/pr/ui/forms/PRJoinGateConfigEditor.vue";
+import AnchorEventBasicSection from "@/domains/admin/ui/anchor-event/sections/AnchorEventBasicSection.vue";
+import AnchorEventLocationsSection from "@/domains/admin/ui/anchor-event/sections/AnchorEventLocationsSection.vue";
+import AnchorEventOtherSection from "@/domains/admin/ui/anchor-event/sections/AnchorEventOtherSection.vue";
+import AnchorEventTagsSection from "@/domains/admin/ui/anchor-event/sections/AnchorEventTagsSection.vue";
+import AnchorEventTimeSection from "@/domains/admin/ui/anchor-event/sections/AnchorEventTimeSection.vue";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
+import { useAdminNavigationSection } from "@/domains/admin/use-cases/useAdminNavigationSection";
 import {
-  type AdminAnchorEventInput,
   type AdminAnchorEventWorkspaceResponse,
-  type AdminAnchorTimePoolConfigInput,
   useAdminAnchorEventWorkspace,
-  useCreateAdminAnchorEvent,
-  useUpdateAdminAnchorEvent,
 } from "@/domains/admin/queries/useAdminAnchorEvents";
+import { useCreateAnchorEvent } from "@/domains/admin/use-cases/anchor-event/useCreateAnchorEvent";
 import {
-  useAdminAnchorEventLandingConfig,
-  useReplaceAdminAnchorEventLandingConfig,
-} from "@/domains/admin/queries/useAdminAnchorEventLandingConfig";
+  buildAnchorEventTimePoolConfig,
+  normalizeLines,
+  normalizeNullableNonNegativeInteger,
+} from "@/domains/admin/use-cases/anchor-event/anchorEventMutationInput";
+import { useUpdateAnchorEventBasic } from "@/domains/admin/use-cases/anchor-event/useUpdateAnchorEventBasic";
+import { useUpdateAnchorEventLocations } from "@/domains/admin/use-cases/anchor-event/useUpdateAnchorEventLocations";
+import { useUpdateAnchorEventOtherSettings } from "@/domains/admin/use-cases/anchor-event/useUpdateAnchorEventOtherSettings";
 import {
-  useAdminAnchorEventPreferenceTags,
-  usePublishAdminAnchorEventPreferenceTag,
-  useRejectAdminAnchorEventPreferenceTag,
-  useReplaceAdminAnchorEventPreferenceTags,
-} from "@/domains/admin/queries/useAdminAnchorEventPreferenceTags";
-import { formatLocalDateTimeWindowLabel } from "@/shared/datetime/formatLocalDateTime";
+  useUpdateAnchorEventTimePolicy,
+} from "@/domains/admin/use-cases/anchor-event/useUpdateAnchorEventTimePolicy";
+import type {
+  AnchorEventEditorForm,
+  EditableMeetingPointForm,
+} from "@/domains/admin/ui/anchor-event/anchorEventEditorTypes";
 import { validateManualPartnerBounds } from "@/lib/validation";
-import type { PRJoinGateConfig } from "@partner-up-dev/backend";
 
 type Workspace = NonNullable<AdminAnchorEventWorkspaceResponse>;
 type EventRecord = Workspace["events"][number];
 
-type EventForm = {
-  title: string;
-  type: string;
-  description: string;
-  locationPoolText: string;
-  meetingPointDescription: string;
-  meetingPointImageUrl: string;
-  locationMeetingPoints: Record<string, EditableMeetingPointForm>;
-  joinGateConfig: PRJoinGateConfig;
-  feedbackQuestionnaireTemplateId: number | null;
-  durationMinutes: number | null;
-  earliestLeadMinutes: number | null;
-  absoluteRulesText: string;
-  recurringRulesText: string;
-  defaultMinPartners: number | null;
-  defaultMaxPartners: number | null;
-  defaultConfirmationStartOffsetMinutes: number;
-  defaultConfirmationEndOffsetMinutes: number;
-  defaultJoinLockOffsetMinutes: number;
-  coverImage: string;
-  betaGroupQrCode: string;
-  status: "ACTIVE" | "PAUSED" | "ARCHIVED";
-};
-
-type LandingConfigForm = {
-  formRatio: number;
-  cardRichRatio: number;
-  listRatio: number;
-  assignmentRevision: number;
-};
-
-type PreferenceTagFormRow = {
-  id: number | string;
-  label: string;
-  description: string;
-};
-
-type EditableMeetingPointForm = {
-  description: string;
-  imageUrl: string;
-};
+type EventForm = AnchorEventEditorForm;
 
 const DEFAULT_CONFIRMATION_START_OFFSET_MINUTES = 120;
 const DEFAULT_CONFIRMATION_END_OFFSET_MINUTES = 30;
@@ -767,6 +172,7 @@ const emptyEventForm = (): EventForm => ({
   locationMeetingPoints: {},
   joinGateConfig: [],
   feedbackQuestionnaireTemplateId: null,
+  defaultPrNotes: "",
   durationMinutes: null,
   earliestLeadMinutes: null,
   absoluteRulesText: "",
@@ -779,14 +185,8 @@ const emptyEventForm = (): EventForm => ({
   defaultJoinLockOffsetMinutes: DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
   coverImage: "",
   betaGroupQrCode: "",
+  prCreationPolicy: "USER_AND_ADMIN",
   status: "ACTIVE",
-});
-
-const emptyLandingConfigForm = (): LandingConfigForm => ({
-  formRatio: 50,
-  cardRichRatio: 50,
-  listRatio: 0,
-  assignmentRevision: 1,
 });
 
 const formatRuleDescriptionSuffix = (
@@ -808,6 +208,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
   ),
   joinGateConfig: event.joinGateConfig,
   feedbackQuestionnaireTemplateId: event.feedbackQuestionnaireTemplateId ?? null,
+  defaultPrNotes: event.defaultPrNotes ?? "",
   durationMinutes: event.timePoolConfig.durationMinutes ?? null,
   earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes ?? null,
   absoluteRulesText: event.timePoolConfig.startRules
@@ -838,23 +239,31 @@ const toEventForm = (event: EventRecord): EventForm => ({
     event.defaultJoinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
   coverImage: event.coverImage ?? "",
   betaGroupQrCode: event.betaGroupQrCode ?? "",
+  prCreationPolicy: event.prCreationPolicy,
   status: event.status as EventForm["status"],
 });
 
 const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
+const activeAdminSection = useAdminNavigationSection("anchor-event-basic", [
+  "anchor-event-basic",
+  "anchor-event-locations",
+  "anchor-event-time",
+  "anchor-event-tags",
+  "anchor-event-other",
+] as const);
 const workspaceQuery = useAdminAnchorEventWorkspace(isAdmin);
-const createEventMutation = useCreateAdminAnchorEvent();
-const updateEventMutation = useUpdateAdminAnchorEvent();
-const replaceLandingConfigMutation = useReplaceAdminAnchorEventLandingConfig();
+const createAnchorEventUseCase = useCreateAnchorEvent();
+const updateBasicUseCase = useUpdateAnchorEventBasic();
+const updateLocationsUseCase = useUpdateAnchorEventLocations();
+const updateOtherSettingsUseCase = useUpdateAnchorEventOtherSettings();
+const updateTimePolicyUseCase = useUpdateAnchorEventTimePolicy();
 
 const selectedEventIdRaw = ref("");
 const isCreatingEvent = ref(false);
 const eventForm = ref<EventForm>(emptyEventForm());
 const isUploadingEventCoverImage = ref(false);
 const isUploadingEventBetaGroupQrCode = ref(false);
-const landingConfigForm = ref<LandingConfigForm>(emptyLandingConfigForm());
-const publishedPreferenceTagRows = ref<PreferenceTagFormRow[]>([]);
 
 const workspace = computed<Workspace | null>(
   () => workspaceQuery.data.value ?? null,
@@ -874,53 +283,9 @@ const selectedEvent = computed<EventRecord | null>(
     events.value.find((event) => event.id === selectedEventId.value) ?? null,
 );
 
-const landingConfigQuery = useAdminAnchorEventLandingConfig(selectedEventId, isAdmin);
-const preferenceTagsQuery = useAdminAnchorEventPreferenceTags(
-  selectedEventId,
-  isAdmin,
-);
-const replacePreferenceTagsMutation = useReplaceAdminAnchorEventPreferenceTags();
-const publishPreferenceTagMutation = usePublishAdminAnchorEventPreferenceTag();
-const rejectPreferenceTagMutation = useRejectAdminAnchorEventPreferenceTag();
-
 const previewStartAt = computed(
   () => selectedEvent.value?.timeWindows[0]?.timeWindow[0] ?? null,
 );
-
-const toLandingConfigForm = (
-  config: NonNullable<typeof landingConfigQuery.data.value>["config"],
-): LandingConfigForm => ({
-  formRatio: config.variantRatioOverride?.FORM ?? 50,
-  cardRichRatio: config.variantRatioOverride?.CARD_RICH ?? 50,
-  listRatio: config.variantRatioOverride?.LIST ?? 0,
-  assignmentRevision: config.assignmentRevision,
-});
-
-const normalizeLines = (value: string): string[] =>
-  value
-    .split("\n")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-
-const locationMeetingPointLocations = computed(() =>
-  normalizeLines(eventForm.value.locationPoolText),
-);
-
-const buildMeetingPointInput = (
-  description: string,
-  imageUrl: string,
-): { description: string | null; imageUrl: string | null } | null => {
-  const normalizedDescription = description.trim();
-  const normalizedImageUrl = imageUrl.trim();
-  if (!normalizedDescription && !normalizedImageUrl) {
-    return null;
-  }
-
-  return {
-    description: normalizedDescription || null,
-    imageUrl: normalizedImageUrl || null,
-  };
-};
 
 const toEditableLocationMeetingPoints = (
   map: Record<
@@ -942,184 +307,6 @@ const toEditableLocationMeetingPoints = (
   return result;
 };
 
-const buildLocationMeetingPointsInput = (
-  locations: string[],
-  map: Record<string, EditableMeetingPointForm>,
-): Record<string, { description: string | null; imageUrl: string | null }> => {
-  const result: Record<
-    string,
-    { description: string | null; imageUrl: string | null }
-  > = {};
-
-  for (const location of locations) {
-    const meetingPoint = map[location];
-    if (!meetingPoint) {
-      continue;
-    }
-    const input = buildMeetingPointInput(
-      meetingPoint.description,
-      meetingPoint.imageUrl,
-    );
-    if (input) {
-      result[location] = input;
-    }
-  }
-
-  return result;
-};
-
-const getLocationMeetingPointDescription = (location: string): string =>
-  eventForm.value.locationMeetingPoints[location]?.description ?? "";
-
-const getLocationMeetingPointImageUrl = (location: string): string =>
-  eventForm.value.locationMeetingPoints[location]?.imageUrl ?? "";
-
-const readInputEventValue = (event: Event): string => {
-  const target = event.target as HTMLInputElement | HTMLTextAreaElement | null;
-  return target?.value ?? "";
-};
-
-const parseNullableId = (event: Event): number | null => {
-  const target = event.target as HTMLSelectElement | null;
-  const parsed = Number(target?.value ?? "");
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-};
-
-const updateLocationMeetingPoint = (
-  location: string,
-  patch: Partial<EditableMeetingPointForm>,
-): void => {
-  const current = eventForm.value.locationMeetingPoints[location] ?? {
-    description: "",
-    imageUrl: "",
-  };
-  const next = {
-    ...current,
-    ...patch,
-  };
-  const nextMap = { ...eventForm.value.locationMeetingPoints };
-  if (!next.description.trim() && !next.imageUrl.trim()) {
-    delete nextMap[location];
-  } else {
-    nextMap[location] = next;
-  }
-
-  eventForm.value = {
-    ...eventForm.value,
-    locationMeetingPoints: nextMap,
-  };
-};
-
-const updateLocationMeetingPointDescription = (
-  location: string,
-  event: Event,
-): void => {
-  updateLocationMeetingPoint(location, {
-    description: readInputEventValue(event),
-  });
-};
-
-const updateLocationMeetingPointImageUrl = (
-  location: string,
-  event: Event,
-): void => {
-  updateLocationMeetingPoint(location, {
-    imageUrl: readInputEventValue(event),
-  });
-};
-
-const normalizeNullableNonNegativeInteger = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
-    return value;
-  }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed.length === 0) {
-      return null;
-    }
-    const parsed = Number(trimmed);
-    if (Number.isInteger(parsed) && parsed >= 0) {
-      return parsed;
-    }
-  }
-  return null;
-};
-
-const splitRuleDescription = (
-  value: string,
-): { ruleText: string; description: string | null } => {
-  const separatorIndex = value.indexOf("|");
-  if (separatorIndex < 0) {
-    return {
-      ruleText: value.trim(),
-      description: null,
-    };
-  }
-
-  const ruleText = value.slice(0, separatorIndex).trim();
-  const description = value.slice(separatorIndex + 1).trim();
-  return {
-    ruleText,
-    description: description || null,
-  };
-};
-
-const buildTimePoolConfig = (
-  form: EventForm,
-): AdminAnchorTimePoolConfigInput => {
-  const absoluteRules = normalizeLines(form.absoluteRulesText).map(
-    (line, index) => {
-      const { ruleText, description } = splitRuleDescription(line);
-      return {
-        id: `absolute-${index + 1}`,
-        kind: "ABSOLUTE" as const,
-        startAt: ruleText,
-        description,
-      };
-    },
-  );
-
-  const recurringRules = normalizeLines(form.recurringRulesText)
-    .map((line, index) => {
-      const { ruleText, description } = splitRuleDescription(line);
-      const [weekdaysRaw = "", timeOfDayRaw = ""] = ruleText.split(/\s+/, 2);
-      const weekdays = weekdaysRaw
-        .split(",")
-        .map((value) => Number(value.trim()))
-        .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
-      const timeOfDay = timeOfDayRaw.trim();
-      if (weekdays.length === 0 || !/^\d{2}:\d{2}$/.test(timeOfDay)) {
-        return null;
-      }
-      return {
-        id: `recurring-${index + 1}`,
-        kind: "RECURRING" as const,
-        weekdays,
-        timeOfDay,
-        description,
-      };
-    })
-    .filter(
-      (
-        value,
-      ): value is Extract<
-        AdminAnchorTimePoolConfigInput["startRules"][number],
-        { kind: "RECURRING" }
-      > => value !== null,
-    );
-
-  return {
-    durationMinutes: normalizeNullableNonNegativeInteger(form.durationMinutes),
-    earliestLeadMinutes: normalizeNullableNonNegativeInteger(
-      form.earliestLeadMinutes,
-    ),
-    startRules: [...absoluteRules, ...recurringRules],
-  };
-};
-
-const formatWindow = (windowValue: [string | null, string | null]) =>
-  formatLocalDateTimeWindowLabel(windowValue, {}, "?");
-
 const eventBoundsValidationMessage = computed(() =>
   validateManualPartnerBounds(
     normalizeNullableNonNegativeInteger(eventForm.value.defaultMinPartners),
@@ -1128,7 +315,7 @@ const eventBoundsValidationMessage = computed(() =>
 );
 
 const timePoolValidationMessage = computed(() => {
-  const config = buildTimePoolConfig(eventForm.value);
+  const config = buildAnchorEventTimePoolConfig(eventForm.value);
   if (config.startRules.length > 0 && config.durationMinutes === null) {
     return t("adminPR.timePoolDurationRequired");
   }
@@ -1148,25 +335,6 @@ const timePoolValidationMessage = computed(() => {
   return null;
 });
 
-const eventPolicyValue = computed({
-  get: () => ({
-    confirmationStartOffsetMinutes:
-      eventForm.value.defaultConfirmationStartOffsetMinutes,
-    confirmationEndOffsetMinutes:
-      eventForm.value.defaultConfirmationEndOffsetMinutes,
-    joinLockOffsetMinutes: eventForm.value.defaultJoinLockOffsetMinutes,
-  }),
-  set: (value) => {
-    eventForm.value = {
-      ...eventForm.value,
-      defaultConfirmationStartOffsetMinutes:
-        value.confirmationStartOffsetMinutes,
-      defaultConfirmationEndOffsetMinutes: value.confirmationEndOffsetMinutes,
-      defaultJoinLockOffsetMinutes: value.joinLockOffsetMinutes,
-    };
-  },
-});
-
 const policyValidationMessage = computed(() => {
   if (
     eventForm.value.defaultConfirmationStartOffsetMinutes <=
@@ -1183,53 +351,69 @@ const policyValidationMessage = computed(() => {
   return null;
 });
 
-const landingConfigValidationMessage = computed(() => {
-  const formRatio = normalizeNullableNonNegativeInteger(
-    landingConfigForm.value.formRatio,
-  );
-  const cardRichRatio = normalizeNullableNonNegativeInteger(
-    landingConfigForm.value.cardRichRatio,
-  );
-  const listRatio = normalizeNullableNonNegativeInteger(
-    landingConfigForm.value.listRatio,
-  );
-  const assignmentRevision = normalizeNullableNonNegativeInteger(
-    landingConfigForm.value.assignmentRevision,
-  );
+const isSavingAnchorEvent = computed(
+  () =>
+    createAnchorEventUseCase.isPending.value ||
+    updateBasicUseCase.isPending.value ||
+    updateLocationsUseCase.isPending.value ||
+    updateOtherSettingsUseCase.isPending.value ||
+    updateTimePolicyUseCase.isPending.value,
+);
 
-  if (assignmentRevision === null || assignmentRevision <= 0) {
-    return t("adminAnchorEvents.assignmentRevisionValidation");
-  }
+const isCreateAnchorEventDisabled = computed(
+  () =>
+    isSavingAnchorEvent.value ||
+    Boolean(eventBoundsValidationMessage.value) ||
+    Boolean(timePoolValidationMessage.value) ||
+    Boolean(policyValidationMessage.value) ||
+    isUploadingEventCoverImage.value ||
+    isUploadingEventBetaGroupQrCode.value,
+);
 
-  if (formRatio === null || cardRichRatio === null || listRatio === null) {
-    return t("adminAnchorEvents.landingRatioValidation");
-  }
+const isBasicSaveDisabled = computed(() =>
+  isCreatingEvent.value
+    ? isCreateAnchorEventDisabled.value
+    : isSavingAnchorEvent.value ||
+      Boolean(eventBoundsValidationMessage.value) ||
+      isUploadingEventCoverImage.value ||
+      isUploadingEventBetaGroupQrCode.value,
+);
 
-  if (formRatio + cardRichRatio + listRatio !== 100) {
-    return t("adminAnchorEvents.landingRatioValidation");
-  }
+const isLocationsSaveDisabled = computed(() =>
+  isCreatingEvent.value
+    ? isCreateAnchorEventDisabled.value
+    : isSavingAnchorEvent.value,
+);
 
-  return null;
-});
+const isTimePolicySaveDisabled = computed(() =>
+  isCreatingEvent.value
+    ? isCreateAnchorEventDisabled.value
+    : isSavingAnchorEvent.value ||
+      Boolean(timePoolValidationMessage.value) ||
+      Boolean(policyValidationMessage.value),
+);
 
-const normalizePreferenceTagRows = (
-  rows: PreferenceTagFormRow[],
-): Array<{ label: string; description: string | null }> =>
-  rows
-    .map((row) => ({
-      label: row.label.trim(),
-      description: row.description.trim() || null,
-    }))
-    .filter((row) => row.label.length > 0);
+const isOtherSettingsSaveDisabled = computed(() =>
+  isCreatingEvent.value
+    ? isCreateAnchorEventDisabled.value
+    : isSavingAnchorEvent.value,
+);
+
+const eventSaveLabel = computed(() =>
+  isSavingAnchorEvent.value
+    ? t("adminPR.saving")
+    : isCreatingEvent.value
+      ? t("adminPR.createEventAction")
+      : t("adminPR.saveEventAction"),
+);
 
 const mutationErrorMessage = computed(
   () =>
-    createEventMutation.error.value?.message ||
-    updateEventMutation.error.value?.message ||
-    replaceLandingConfigMutation.error.value?.message ||
-    replacePreferenceTagsMutation.error.value?.message ||
-    publishPreferenceTagMutation.error.value?.message ||
-    rejectPreferenceTagMutation.error.value?.message ||
+    createAnchorEventUseCase.error.value?.message ||
+    updateBasicUseCase.error.value?.message ||
+    updateLocationsUseCase.error.value?.message ||
+    updateOtherSettingsUseCase.error.value?.message ||
+    updateTimePolicyUseCase.error.value?.message ||
     null,
 );
 
@@ -1263,36 +447,6 @@ watch(
   { immediate: true },
 );
 
-watch(
-  [() => landingConfigQuery.data.value, isCreatingEvent],
-  ([landingConfig, creating]) => {
-    if (creating || !landingConfig) {
-      landingConfigForm.value = emptyLandingConfigForm();
-      return;
-    }
-
-    landingConfigForm.value = toLandingConfigForm(landingConfig.config);
-  },
-  { immediate: true },
-);
-
-watch(
-  [() => preferenceTagsQuery.data.value, isCreatingEvent],
-  ([preferenceTags, creating]) => {
-    if (creating || !preferenceTags) {
-      publishedPreferenceTagRows.value = [];
-      return;
-    }
-
-    publishedPreferenceTagRows.value = preferenceTags.publishedTags.map((tag) => ({
-      id: tag.id,
-      label: tag.label,
-      description: tag.description,
-    }));
-  },
-  { immediate: true },
-);
-
 const prepareNewEvent = () => {
   isCreatingEvent.value = true;
   selectedEventIdRaw.value = "";
@@ -1305,64 +459,28 @@ const selectEvent = (eventId: number) => {
 };
 
 const resetMutationErrors = () => {
-  createEventMutation.reset();
-  updateEventMutation.reset();
-  replaceLandingConfigMutation.reset();
-  replacePreferenceTagsMutation.reset();
-  publishPreferenceTagMutation.reset();
-  rejectPreferenceTagMutation.reset();
+  createAnchorEventUseCase.reset();
+  updateBasicUseCase.reset();
+  updateLocationsUseCase.reset();
+  updateOtherSettingsUseCase.reset();
+  updateTimePolicyUseCase.reset();
 };
 
-const handleSaveEvent = async () => {
+const handleCreateAnchorEvent = async () => {
   if (
     eventBoundsValidationMessage.value ||
     timePoolValidationMessage.value ||
-    policyValidationMessage.value
+    policyValidationMessage.value ||
+    isUploadingEventCoverImage.value ||
+    isUploadingEventBetaGroupQrCode.value
   ) {
     return;
   }
 
-  const input: AdminAnchorEventInput = {
-    title: eventForm.value.title.trim(),
-    type: eventForm.value.type.trim(),
-    description: eventForm.value.description.trim() || null,
-    locationPool: normalizeLines(eventForm.value.locationPoolText),
-    timePoolConfig: buildTimePoolConfig(eventForm.value),
-    defaultMinPartners: normalizeNullableNonNegativeInteger(
-      eventForm.value.defaultMinPartners,
-    ),
-    defaultMaxPartners: normalizeNullableNonNegativeInteger(
-      eventForm.value.defaultMaxPartners,
-    ),
-    defaultConfirmationStartOffsetMinutes:
-      eventForm.value.defaultConfirmationStartOffsetMinutes,
-    defaultConfirmationEndOffsetMinutes:
-      eventForm.value.defaultConfirmationEndOffsetMinutes,
-    defaultJoinLockOffsetMinutes: eventForm.value.defaultJoinLockOffsetMinutes,
-    meetingPoint: buildMeetingPointInput(
-      eventForm.value.meetingPointDescription,
-      eventForm.value.meetingPointImageUrl,
-    ),
-    locationMeetingPoints: buildLocationMeetingPointsInput(
-      normalizeLines(eventForm.value.locationPoolText),
-      eventForm.value.locationMeetingPoints,
-    ),
-    joinGateConfig: eventForm.value.joinGateConfig,
-    feedbackQuestionnaireTemplateId:
-      eventForm.value.feedbackQuestionnaireTemplateId,
-    coverImage: eventForm.value.coverImage.trim() || null,
-    betaGroupQrCode: eventForm.value.betaGroupQrCode.trim() || null,
-    status: eventForm.value.status,
-  };
-
   try {
-    const result =
-      isCreatingEvent.value || selectedEventId.value === null
-        ? await createEventMutation.mutateAsync(input)
-        : await updateEventMutation.mutateAsync({
-            eventId: selectedEventId.value,
-            input,
-          });
+    const result = await createAnchorEventUseCase.createAnchorEvent(
+      eventForm.value,
+    );
     isCreatingEvent.value = false;
     selectedEventIdRaw.value = String(result.id);
   } catch {
@@ -1370,109 +488,89 @@ const handleSaveEvent = async () => {
   }
 };
 
-const handleSaveLandingConfig = async () => {
+const handleSaveAnchorEventBasic = async () => {
+  if (isCreatingEvent.value || selectedEvent.value === null) {
+    await handleCreateAnchorEvent();
+    return;
+  }
   if (
-    landingConfigValidationMessage.value ||
-    selectedEventId.value === null ||
-    isCreatingEvent.value
+    eventBoundsValidationMessage.value ||
+    isUploadingEventCoverImage.value ||
+    isUploadingEventBetaGroupQrCode.value
   ) {
     return;
   }
 
-  const formRatio =
-    normalizeNullableNonNegativeInteger(landingConfigForm.value.formRatio) ?? 100;
-  const cardRichRatio =
-    normalizeNullableNonNegativeInteger(landingConfigForm.value.cardRichRatio) ?? 0;
-  const listRatio =
-    normalizeNullableNonNegativeInteger(landingConfigForm.value.listRatio) ?? 0;
-  const assignmentRevision =
-    normalizeNullableNonNegativeInteger(
-      landingConfigForm.value.assignmentRevision,
-    ) ?? 1;
-
   try {
-    await replaceLandingConfigMutation.mutateAsync({
-      eventId: selectedEventId.value,
-      input: {
-        variantRatioOverride: {
-          FORM: formRatio,
-          CARD_RICH: cardRichRatio,
-          LIST: listRatio,
-        },
-        assignmentRevision,
-      },
+    const result = await updateBasicUseCase.updateBasic({
+      event: selectedEvent.value,
+      draft: eventForm.value,
     });
+    selectedEventIdRaw.value = String(result.id);
   } catch {
     // Mutation state already drives page-level feedback.
   }
 };
 
-const handleAddPreferenceTagRow = () => {
-  publishedPreferenceTagRows.value = [
-    ...publishedPreferenceTagRows.value,
-    {
-      id: `draft-${Date.now()}`,
-      label: "",
-      description: "",
-    },
-  ];
-};
-
-const handleRemovePreferenceTagRow = (rowId: number | string) => {
-  publishedPreferenceTagRows.value = publishedPreferenceTagRows.value.filter(
-    (row) => row.id !== rowId,
-  );
-};
-
-const handleSavePreferenceTags = async () => {
-  if (selectedEventId.value === null || isCreatingEvent.value) {
+const handleSaveAnchorEventLocations = async () => {
+  if (isCreatingEvent.value || selectedEvent.value === null) {
+    await handleCreateAnchorEvent();
     return;
   }
 
   try {
-    await replacePreferenceTagsMutation.mutateAsync({
-      eventId: selectedEventId.value,
-      tags: normalizePreferenceTagRows(publishedPreferenceTagRows.value),
+    const result = await updateLocationsUseCase.updateLocations({
+      event: selectedEvent.value,
+      draft: eventForm.value,
     });
+    selectedEventIdRaw.value = String(result.id);
   } catch {
     // Mutation state already drives page-level feedback.
   }
 };
 
-const handlePublishPreferenceTag = async (tagId: number) => {
-  if (selectedEventId.value === null) {
+const handleSaveEventTimePolicy = async () => {
+  if (timePoolValidationMessage.value || policyValidationMessage.value) {
+    return;
+  }
+
+  const event = selectedEvent.value;
+  if (isCreatingEvent.value || event === null) {
+    await handleCreateAnchorEvent();
     return;
   }
 
   try {
-    await publishPreferenceTagMutation.mutateAsync({
-      eventId: selectedEventId.value,
-      tagId,
+    const result = await updateTimePolicyUseCase.updateTimePolicy({
+      event,
+      draft: eventForm.value,
     });
+    selectedEventIdRaw.value = String(result.id);
   } catch {
     // Mutation state already drives page-level feedback.
   }
 };
 
-const handleRejectPreferenceTag = async (tagId: number) => {
-  if (selectedEventId.value === null) {
+const handleSaveAnchorEventOtherSettings = async () => {
+  if (isCreatingEvent.value || selectedEvent.value === null) {
+    await handleCreateAnchorEvent();
     return;
   }
 
   try {
-    await rejectPreferenceTagMutation.mutateAsync({
-      eventId: selectedEventId.value,
-      tagId,
+    const result = await updateOtherSettingsUseCase.updateOtherSettings({
+      event: selectedEvent.value,
+      draft: eventForm.value,
     });
+    selectedEventIdRaw.value = String(result.id);
   } catch {
     // Mutation state already drives page-level feedback.
   }
 };
+
 </script>
 
 <style lang="scss" scoped>
-.page,
-.sidebar,
 .stack,
 .header,
 .selection-list {
@@ -1480,7 +578,6 @@ const handleRejectPreferenceTag = async (tagId: number) => {
   flex-direction: column;
 }
 
-.sidebar,
 .stack,
 .header,
 .selection-list {
@@ -1502,92 +599,9 @@ const handleRejectPreferenceTag = async (tagId: number) => {
   color: var(--sys-color-on-surface-variant);
 }
 
-.panel {
-  padding: var(--sys-spacing-large);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-large);
-  background: var(--sys-color-surface-container);
-}
-
-.card-title {
-  margin: 0;
-  @include mx.pu-font(title-medium);
-}
-
-.subsection-title {
-  margin: 0;
-  @include mx.pu-font(title-small);
-}
-
-.stack--tight {
-  gap: var(--sys-spacing-small);
-}
-
 .hint {
   margin: 0;
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
-}
-
-.error-message {
-  margin: 0;
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-error);
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-spacing-small);
-  flex-wrap: wrap;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xsmall);
-}
-
-.field-label {
-  @include mx.pu-font(label-medium);
-  color: var(--sys-color-on-surface-variant);
-}
-
-.field-input {
-  width: 100%;
-  padding: var(--sys-spacing-small);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-small);
-  background: var(--sys-color-surface);
-  color: var(--sys-color-on-surface);
-}
-
-.field-textarea {
-  min-height: 96px;
-  resize: vertical;
-}
-
-.location-meeting-point-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-small);
-  padding-block: var(--sys-spacing-small);
-  border-top: 1px solid var(--sys-color-outline-variant);
-}
-
-.location-meeting-point-title {
-  @include mx.pu-font(label-large);
-}
-
-.grid-2 {
-  display: grid;
-  gap: var(--sys-spacing-medium);
-}
-
-@media (min-width: 880px) {
-  .grid-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 </style>

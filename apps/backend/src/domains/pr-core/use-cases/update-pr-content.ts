@@ -22,11 +22,13 @@ import { toPublicPR, type PublicPR } from "../services/pr-view.service";
 import { refreshTemporalStatus } from "../temporal-refresh";
 import { operationLogService } from "../../../infra/operation-log";
 import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../services/waitlist-alternative-reminder.service";
+import { assertUserPRCreationAllowedForAnchorEvent } from "../services/event-pr-creation-policy.service";
 
 const prRepo = new PartnerRequestRepository();
 
 export interface UpdatePRContentOptions {
   bypassEditableStatusGuard?: boolean;
+  bypassUserCreationPolicyGuard?: boolean;
   preserveStatus?: boolean;
 }
 
@@ -59,6 +61,12 @@ export async function updatePRContent(
   const timeChanged =
     refreshedRequest.time[0] !== fields.time[0] ||
     refreshedRequest.time[1] !== fields.time[1];
+  const typeChanged = refreshedRequest.type.trim() !== fields.type.trim();
+  if (typeChanged && !options.bypassUserCreationPolicyGuard) {
+    await assertUserPRCreationAllowedForAnchorEvent({
+      type: fields.type,
+    });
+  }
   const currentParticipants = await countActivePartnersForPR(id);
   assertManualPartnerBoundsValid(
     fields.minPartners,

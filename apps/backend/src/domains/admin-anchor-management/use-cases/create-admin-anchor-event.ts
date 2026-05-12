@@ -2,6 +2,7 @@ import { AnchorEventRepository } from "../../../repositories/AnchorEventReposito
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
   AnchorEvent,
+  AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
   LocationEntry,
@@ -32,6 +33,7 @@ export interface CreateAdminAnchorEventInput {
   timePoolConfig: AnchorEventTimePoolConfig;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultPrNotes: string | null;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
@@ -41,6 +43,7 @@ export interface CreateAdminAnchorEventInput {
   locationMeetingPoints?: MeetingPointConfigMap;
   coverImage: string | null;
   betaGroupQrCode: string | null;
+  prCreationPolicy: AnchorEventPrCreationPolicy;
   status: AnchorEventStatus;
 }
 
@@ -84,6 +87,7 @@ export async function createAdminAnchorEvent(
     timePoolConfig: normalizeAnchorEventTimePoolConfig(input.timePoolConfig),
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
+    defaultPrNotes: input.defaultPrNotes,
     defaultConfirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     defaultConfirmationEndOffsetMinutes:
@@ -97,6 +101,7 @@ export async function createAdminAnchorEvent(
     ),
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
+    prCreationPolicy: input.prCreationPolicy,
     status: input.status,
   });
 }

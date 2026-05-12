@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import {
+  type MeetingPointConfig,
   partnerRequests,
+  type PRStatus,
   users,
   type PRJoinGateConfig,
   type PRId,
@@ -17,6 +19,26 @@ export async function configureJoinGate(input: {
   await getTestDb()
     .update(partnerRequests)
     .set({ joinGateConfig: input.config })
+    .where(eq(partnerRequests.id, input.pr.id));
+}
+
+export async function configurePRStatus(input: {
+  pr: ScenarioPartnerRequest;
+  status: PRStatus;
+}): Promise<void> {
+  await getTestDb()
+    .update(partnerRequests)
+    .set({ status: input.status })
+    .where(eq(partnerRequests.id, input.pr.id));
+}
+
+export async function configurePRMeetingPoint(input: {
+  pr: ScenarioPartnerRequest;
+  meetingPoint: MeetingPointConfig | null;
+}): Promise<void> {
+  await getTestDb()
+    .update(partnerRequests)
+    .set({ meetingPoint: input.meetingPoint })
     .where(eq(partnerRequests.id, input.pr.id));
 }
 
