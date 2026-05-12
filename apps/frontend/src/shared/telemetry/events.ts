@@ -3,9 +3,27 @@ import type { PRStatus } from "@partner-up-dev/backend";
 export type PRKind = "ANCHOR" | "COMMUNITY";
 
 export type TelemetryActionResult = "success" | "failure" | "blocked";
+export type AnchorEventTelemetryMode = "FORM" | "CARD_RICH" | "LIST";
+export type PRCommitmentType = "create" | "join" | "waitlist";
 
 export type TelemetryEventName =
   | "page_view"
+  | "anchor_event_landing_viewed"
+  | "anchor_event_recommendation_requested"
+  | "anchor_event_recommendation_returned"
+  | "anchor_event_candidate_engaged"
+  | "anchor_event_assisted_create_started"
+  | "anchor_event_card_stack_loaded"
+  | "anchor_event_card_seen"
+  | "anchor_event_card_action_taken"
+  | "anchor_event_card_empty_create_started"
+  | "anchor_event_list_loaded"
+  | "anchor_event_list_date_selected"
+  | "anchor_event_list_pr_row_seen"
+  | "anchor_event_list_pr_row_action_taken"
+  | "anchor_event_list_create_started"
+  | "pr_entry_reached"
+  | "pr_commitment_result"
   | "pr_create_result"
   | "pr_join_result"
   | "pr_waitlist_result"
@@ -62,6 +80,14 @@ type AnalyticsContextPayload = {
   segmentKey?: string;
 };
 
+type AnchorEventFunnelContextPayload = AnalyticsContextPayload & {
+  eventId: number;
+  assignedMode?: AnchorEventTelemetryMode;
+  renderedMode?: AnchorEventTelemetryMode;
+  assignmentRevision?: string;
+  isTimeoutFallback?: boolean;
+};
+
 type PRContextPayload = AnalyticsContextPayload & {
   prId?: number;
   prKind?: PRKind;
@@ -85,11 +111,116 @@ type ResultTelemetryPayload = {
   failureReason?: string;
 };
 
+type PRCommitmentTelemetryPayload = AnchorEventFunnelContextPayload &
+  ResultTelemetryPayload & {
+    commitmentType: PRCommitmentType;
+    prId?: number;
+    entrySurface?:
+      | "form_mode"
+      | "form_mode_matched"
+      | "form_mode_candidate"
+      | "card_rich"
+      | "list_mode"
+      | "pr_detail";
+    candidateRank?: number | null;
+  };
+
 export type TelemetryPayloadMap = {
   page_view: PRContextPayload & {
     page: string;
     routeName?: string;
   };
+  anchor_event_landing_viewed: AnchorEventFunnelContextPayload;
+  anchor_event_recommendation_requested: AnchorEventFunnelContextPayload & {
+    locationId: string;
+    locationType: "preset" | "user_submitted";
+    startAt: string;
+    timeType: "preset" | "user_submitted";
+    preferenceCount: number;
+  };
+  anchor_event_recommendation_returned: AnchorEventFunnelContextPayload & {
+    outcome: "matched" | "no_match";
+    matchedPrId?: number | null;
+    candidateCount: number;
+    locationId: string;
+    locationType: "preset" | "user_submitted";
+    startAt: string;
+    timeType: "preset" | "user_submitted";
+    preferenceCount: number;
+  };
+  anchor_event_candidate_engaged: AnchorEventFunnelContextPayload & {
+    action: "detail" | "join" | "waitlist";
+    targetPrId: number;
+    candidateRank?: number | null;
+    entrySurface: "form_mode_matched" | "form_mode_candidate";
+  };
+  anchor_event_assisted_create_started: AnchorEventFunnelContextPayload & {
+    trigger: "manual_fallback" | "auto_no_candidates";
+    locationId: string;
+    locationType: "preset" | "user_submitted";
+    startAt: string;
+    timeType: "preset" | "user_submitted";
+    preferenceCount: number;
+  };
+  anchor_event_card_stack_loaded: AnchorEventFunnelContextPayload & {
+    cardCount: number;
+  };
+  anchor_event_card_seen: AnchorEventFunnelContextPayload & {
+    cardKey: string;
+    targetPrId?: number | null;
+    rank: number;
+    cardCount: number;
+  };
+  anchor_event_card_action_taken: AnchorEventFunnelContextPayload & {
+    action: "skip" | "detail";
+    cardKey: string;
+    targetPrId?: number | null;
+    rank: number;
+  };
+  anchor_event_card_empty_create_started: AnchorEventFunnelContextPayload & {
+    locationId: string;
+    timeWindowStart?: string | null;
+  };
+  anchor_event_list_loaded: AnchorEventFunnelContextPayload & {
+    dateCount: number;
+    visiblePrCount: number;
+    currentFuturePrCount: number;
+    expiredPrCount: number;
+  };
+  anchor_event_list_date_selected: AnchorEventFunnelContextPayload & {
+    dateKey: string;
+    isExpiredDate: boolean;
+    visiblePrCount: number;
+  };
+  anchor_event_list_pr_row_seen: AnchorEventFunnelContextPayload & {
+    prId: number;
+    timeWindowStart?: string | null;
+    locationId?: string | null;
+    rowRank: number;
+    dateKey: string;
+  };
+  anchor_event_list_pr_row_action_taken: AnchorEventFunnelContextPayload & {
+    prId: number;
+    rowRank: number;
+    dateKey: string;
+  };
+  anchor_event_list_create_started: AnchorEventFunnelContextPayload & {
+    dateKey?: string | null;
+    locationId?: string | null;
+    timeWindowStart?: string | null;
+  };
+  pr_entry_reached: AnchorEventFunnelContextPayload & {
+    prId: number;
+    entrySurface:
+      | "form_mode"
+      | "form_mode_matched"
+      | "form_mode_candidate"
+      | "card_rich"
+      | "list_mode";
+    entryType: "detail" | "join" | "waitlist" | "create_handoff";
+    candidateRank?: number | null;
+  };
+  pr_commitment_result: PRCommitmentTelemetryPayload;
   pr_create_result: PRContextPayload &
     ResultTelemetryPayload & {
     prId: number;

@@ -151,6 +151,15 @@ import BottomDrawer from "@/shared/ui/overlay/BottomDrawer.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import AnchorEventRadioCardCarousel from "@/domains/event/ui/composites/AnchorEventRadioCardCarousel.vue";
 import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
+import { trackEvent } from "@/shared/telemetry/track";
+import { createCommandCorrelationId } from "@/shared/telemetry/correlation";
+import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
+import { claimUserTelemetrySegmentDedupeKey } from "@/shared/telemetry/journey";
+import {
+  buildAnchorEventFunnelPayload,
+  ensureAnchorEventLandingSegment,
+  type AnchorEventFunnelContext,
+} from "@/domains/event/telemetry/anchor-event-funnel";
 
 type TimeWindow = [string | null, string | null];
 type LocationOption =
@@ -207,6 +216,41 @@ const otherEventCandidates = computed(() =>
 );
 
 const isCardRichMode = computed(() => resolvedMode.value === "CARD_RICH");
+const funnelContext = computed<AnchorEventFunnelContext | null>(() => {
+  const id = eventId.value;
+  const mode = resolvedMode.value;
+  if (id === null || mode === null) {
+    return null;
+  }
+
+  const assignment = assignmentQuery.data.value;
+  return {
+    eventId: id,
+    assignedMode: assignment?.mode ?? mode,
+    renderedMode: mode,
+    assignmentRevision:
+      assignment?.assignmentRevision === undefined
+        ? undefined
+        : String(assignment.assignmentRevision),
+    isTimeoutFallback: isTimeoutFallback.value,
+    activityType: detail.value?.type,
+  };
+});
+
+const buildCurrentFunnelPayload = () => {
+  const context = funnelContext.value;
+  if (context) {
+    return buildAnchorEventFunnelPayload(context);
+  }
+
+  const event = detail.value;
+  return event
+    ? {
+        eventId: event.id,
+        activityType: event.type,
+      }
+    : null;
+};
 
 const {
   data: demandCards,
@@ -291,6 +335,28 @@ const handleLandingBack = async () => {
 watch([eventId, resolvedMode], () => {
   formModeResultState.value = "selection";
 });
+
+watch(
+  funnelContext,
+  (context) => {
+    if (!context) return;
+
+    const segment = ensureAnchorEventLandingSegment(context);
+    if (
+      !claimUserTelemetrySegmentDedupeKey(
+        "anchor_event.landing.viewed",
+        segment.id,
+      )
+    ) {
+      return;
+    }
+
+    trackEvent("anchor_event_landing_viewed", {
+      ...buildAnchorEventFunnelPayload(context),
+    });
+  },
+  { immediate: true },
+);
 
 watch(
   otherEventCandidates,
@@ -545,6 +611,61 @@ watch(activeDemandCard, () => {
   cardActionError.value = null;
 });
 
+const resolveDemandCardRank = (cardKey: string): number => {
+  const index = allDemandCards.value.findIndex(
+    (card) => card.cardKey === cardKey,
+  );
+  return index >= 0 ? index + 1 : 1;
+};
+
+watch(
+  [funnelContext, allDemandCards],
+  ([context, cards]) => {
+    if (
+      !context ||
+      context.renderedMode !== "CARD_RICH" ||
+      isDemandCardsLoading.value ||
+      demandCards.value === undefined
+    ) {
+      return;
+    }
+    if (
+      !claimUserTelemetrySegmentDedupeKey("anchor_event.card_stack.loaded")
+    ) {
+      return;
+    }
+
+    trackEvent("anchor_event_card_stack_loaded", {
+      ...buildAnchorEventFunnelPayload(context),
+      cardCount: cards.length,
+    });
+  },
+  { immediate: true },
+);
+
+watch(
+  [funnelContext, activeDemandCard],
+  ([context, card]) => {
+    if (!context || context.renderedMode !== "CARD_RICH" || !card) return;
+    if (
+      !claimUserTelemetrySegmentDedupeKey(
+        `anchor_event.card.seen:${card.cardKey}`,
+      )
+    ) {
+      return;
+    }
+
+    trackEvent("anchor_event_card_seen", {
+      ...buildAnchorEventFunnelPayload(context),
+      cardKey: card.cardKey,
+      targetPrId: card.detailPrId,
+      rank: resolveDemandCardRank(card.cardKey),
+      cardCount: allDemandCards.value.length,
+    });
+  },
+  { immediate: true },
+);
+
 const markCardProcessed = (cardKey: string) => {
   if (processedCardKeySet.value.has(cardKey)) {
     return;
@@ -559,6 +680,17 @@ const handleSkipActiveCard = () => {
     return;
   }
 
+  const funnelPayload = buildCurrentFunnelPayload();
+  if (funnelPayload) {
+    trackEvent("anchor_event_card_action_taken", {
+      ...funnelPayload,
+      action: "skip",
+      cardKey: card.cardKey,
+      targetPrId: card.detailPrId,
+      rank: resolveDemandCardRank(card.cardKey),
+    });
+  }
+
   markCardProcessed(card.cardKey);
   cardActionError.value = null;
 };
@@ -569,10 +701,29 @@ const handleViewActiveCardDetail = async () => {
     return;
   }
 
+  const funnelPayload = buildCurrentFunnelPayload();
+  if (funnelPayload) {
+    trackEvent("anchor_event_card_action_taken", {
+      ...funnelPayload,
+      action: "detail",
+      cardKey: card.cardKey,
+      targetPrId: card.detailPrId,
+      rank: resolveDemandCardRank(card.cardKey),
+    });
+  }
+
   cardActionError.value = null;
   isCardRouting.value = true;
   try {
     await router.push(prDetailPath(card.detailPrId));
+    if (funnelPayload) {
+      trackEvent("pr_entry_reached", {
+        ...funnelPayload,
+        prId: card.detailPrId,
+        entrySurface: "card_rich",
+        entryType: "detail",
+      });
+    }
   } catch (error) {
     cardActionError.value =
       error instanceof Error ? error.message : t("common.operationFailed");
@@ -668,17 +819,63 @@ const createEventAssistedPR = async ({
     targetTimeWindow,
     locationId,
   });
+  const correlationId = createCommandCorrelationId();
+  const funnelPayload =
+    buildCurrentFunnelPayload() ?? {
+      eventId: event.id,
+      activityType: event.type,
+    };
 
   try {
     const created = await createEventAssistedPRMutation.mutateAsync({
       eventId: event.id,
       fields,
+      correlationId,
+    });
+    trackEvent("pr_commitment_result", {
+      ...funnelPayload,
+      commitmentType: "create",
+      actionResult: "success",
+      prId: created.id,
+      entrySurface: "card_rich",
+      correlationId,
+    });
+    trackEvent("pr_entry_reached", {
+      ...funnelPayload,
+      prId: created.id,
+      entrySurface: "card_rich",
+      entryType: "create_handoff",
+      correlationId,
     });
     await router.push(buildEventAssistedCreateTarget(created.canonicalPath, event.id));
   } catch (error) {
     if (isWeChatAuthBlockingError(error)) {
+      trackEvent("pr_commitment_result", {
+        ...funnelPayload,
+        ...resolveTelemetryFailurePayload(
+          error,
+          "EVENT_ASSISTED_CREATE_BLOCKED",
+          t("anchorEvent.createCard.errors.wechatAuthRequired"),
+        ),
+        commitmentType: "create",
+        entrySurface: "card_rich",
+        correlationId,
+      });
       return;
     }
+    trackEvent("pr_commitment_result", {
+      ...funnelPayload,
+      ...resolveTelemetryFailurePayload(
+        error,
+        "EVENT_ASSISTED_CREATE_FAILED",
+        error instanceof Error
+          ? error.message
+          : t("anchorEvent.createCard.errors.createFailed"),
+      ),
+      commitmentType: "create",
+      entrySurface: "card_rich",
+      correlationId,
+    });
     throw error;
   }
 };
@@ -755,8 +952,18 @@ const handleCreateFromCardEmpty = async () => {
     return;
   }
 
+  const selectedTimeWindow = selectedCardCreateTimeWindow.value;
+  const funnelPayload = buildCurrentFunnelPayload();
+  if (funnelPayload) {
+    trackEvent("anchor_event_card_empty_create_started", {
+      ...funnelPayload,
+      locationId: cardCreateLocationId.value,
+      timeWindowStart: selectedTimeWindow?.timeWindow[0] ?? null,
+    });
+  }
+
   await createEventAssistedPR({
-    targetTimeWindow: selectedCardCreateTimeWindow.value?.timeWindow ?? null,
+    targetTimeWindow: selectedTimeWindow?.timeWindow ?? null,
     locationId: cardCreateLocationId.value || null,
   });
 };

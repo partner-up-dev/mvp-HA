@@ -21,6 +21,7 @@
         :show-create-fallback="canUserCreatePR"
         :create-error-message="createActionErrorMessage"
         :resolve-cover-image="resolveCoverImage"
+        @candidate-detail="handleCandidateDetail"
         @join-candidate="handleJoinCandidate"
         @join-candidate-success-closed="handleJoinCandidateSuccessClosed"
         @create-fallback="handleCreateFallback"
@@ -518,6 +519,28 @@ const isAdvancedStartValue = (startAt: string): boolean => {
 const resolveFormModeActivityType = (): string | undefined =>
   formModeData.value?.event.type ?? undefined;
 
+const buildFormFunnelPayload = () => ({
+  eventId: props.eventId,
+  activityType: resolveFormModeActivityType(),
+});
+
+const buildSelectedConditionPayload = () => {
+  const locationId = selectedLocationId.value;
+  const startAt = selectedStartAt.value;
+  if (!locationId || !isValidFormModeDateTime(startAt)) {
+    return null;
+  }
+
+  return {
+    ...buildFormFunnelPayload(),
+    locationId,
+    locationType: resolveFormModeLocationType(locationId),
+    startAt,
+    timeType: resolveFormModeTimeType(startAt),
+    preferenceCount: selectedPreferences.value.length,
+  };
+};
+
 const resolveFormModeLocationType = (
   locationId: string | null,
 ): "preset" | "user_submitted" => {
@@ -600,6 +623,22 @@ const trackFormModeJoinAction = (
     prId,
     candidateRank,
   });
+  trackEvent("anchor_event_candidate_engaged", {
+    ...buildFormFunnelPayload(),
+    action: "join",
+    targetPrId: prId,
+    candidateRank,
+    entrySurface:
+      action === "MATCHED_JOIN" ? "form_mode_matched" : "form_mode_candidate",
+  });
+  trackEvent("pr_entry_reached", {
+    ...buildFormFunnelPayload(),
+    prId,
+    entrySurface:
+      action === "MATCHED_JOIN" ? "form_mode_matched" : "form_mode_candidate",
+    entryType: "join",
+    candidateRank,
+  });
 };
 
 const trackRecommendationResult = (
@@ -630,6 +669,25 @@ const trackRecommendationResult = (
     correlationId: payload.correlationId,
     ...payload,
   });
+
+  if (
+    payload.actionResult === "success" &&
+    payload.outcome &&
+    typeof payload.candidateCount === "number"
+  ) {
+    trackEvent("anchor_event_recommendation_returned", {
+      ...buildFormFunnelPayload(),
+      locationId,
+      locationType: resolveFormModeLocationType(locationId),
+      startAt,
+      timeType: resolveFormModeTimeType(startAt),
+      preferenceCount: selectedPreferences.value.length,
+      outcome: payload.outcome,
+      matchedPrId: payload.matchedPrId,
+      candidateCount: payload.candidateCount,
+      correlationId: payload.correlationId,
+    });
+  }
 };
 
 const trackEventAssistedCreateResult = (
@@ -655,6 +713,16 @@ const trackEventAssistedCreateResult = (
     startAt: source.startAt,
     timeType: resolveFormModeTimeType(source.startAt),
     preferenceCount: source.preferenceCount,
+    actionResult: payload.actionResult,
+    failureCode: payload.failureCode,
+    failureReason: payload.failureReason,
+    correlationId: payload.correlationId,
+  });
+  trackEvent("pr_commitment_result", {
+    ...buildFormFunnelPayload(),
+    commitmentType: "create",
+    prId: payload.prId,
+    entrySurface: "form_mode",
     actionResult: payload.actionResult,
     failureCode: payload.failureCode,
     failureReason: payload.failureReason,
@@ -718,6 +786,14 @@ const createEventAssistedPR = async (
     startAt,
     preferenceCount: selectedPreferences.value.length,
   };
+  const selectedConditionPayload = buildSelectedConditionPayload();
+  if (selectedConditionPayload) {
+    trackEvent("anchor_event_assisted_create_started", {
+      ...selectedConditionPayload,
+      trigger,
+      correlationId,
+    });
+  }
 
   try {
     const created = await createMutation.mutateAsync({
@@ -736,6 +812,13 @@ const createEventAssistedPR = async (
       },
       createTelemetrySource,
     );
+    trackEvent("pr_entry_reached", {
+      ...buildFormFunnelPayload(),
+      prId: created.id,
+      entrySurface: "form_mode",
+      entryType: "create_handoff",
+      correlationId,
+    });
     await router.push(
       buildEventAssistedCreateTarget(created.canonicalPath, trigger),
     );
@@ -789,6 +872,13 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
   returnToSelection();
   const splashFill = startJoinSplash(originRect);
   const recommendationCorrelationId = createCommandCorrelationId();
+  const selectedConditionPayload = buildSelectedConditionPayload();
+  if (selectedConditionPayload) {
+    trackEvent("anchor_event_recommendation_requested", {
+      ...selectedConditionPayload,
+      correlationId: recommendationCorrelationId,
+    });
+  }
 
   try {
     const result = await recommendationMutation.mutateAsync({
@@ -811,6 +901,22 @@ const handleSubmitRecommendation = async (originRect: LongPressOriginRect) => {
     });
 
     if (matchedPRId !== null) {
+      trackEvent("anchor_event_candidate_engaged", {
+        ...buildFormFunnelPayload(),
+        action: "detail",
+        targetPrId: matchedPRId,
+        candidateRank: 1,
+        entrySurface: "form_mode_matched",
+        correlationId: recommendationCorrelationId,
+      });
+      trackEvent("pr_entry_reached", {
+        ...buildFormFunnelPayload(),
+        prId: matchedPRId,
+        entrySurface: "form_mode_matched",
+        entryType: "detail",
+        candidateRank: 1,
+        correlationId: recommendationCorrelationId,
+      });
       await splashFill;
       await waitForJoinSplashFallback(140);
       matchedPRHandoff.begin({
@@ -914,6 +1020,23 @@ const handleCreateFallback = async () => {
   }
 
   await createEventAssistedPR("manual_fallback");
+};
+
+const handleCandidateDetail = (prId: number, rank: number): void => {
+  trackEvent("anchor_event_candidate_engaged", {
+    ...buildFormFunnelPayload(),
+    action: "detail",
+    targetPrId: prId,
+    candidateRank: rank,
+    entrySurface: "form_mode_candidate",
+  });
+  trackEvent("pr_entry_reached", {
+    ...buildFormFunnelPayload(),
+    prId,
+    entrySurface: "form_mode_candidate",
+    entryType: "detail",
+    candidateRank: rank,
+  });
 };
 
 const handleJoinCandidate = (prId: number, rank: number): void => {

@@ -36,6 +36,7 @@
             :pr-id="item.pr.id"
             :time-label="item.timeLabel"
             :cover-image="resolveCoverImage(item.pr.location)"
+            @open-detail="trackListPrRowAction(item)"
           />
         </div>
         <article
@@ -130,6 +131,8 @@ import {
   isProductLocalDateKey,
   type ProductLocalDateKey,
 } from "@/shared/datetime/productLocalDate";
+import { trackEvent } from "@/shared/telemetry/track";
+import { claimUserTelemetrySegmentDedupeKey } from "@/shared/telemetry/journey";
 
 type DateTabItem = {
   key: string;
@@ -157,8 +160,11 @@ type DateGroup = {
 
 type VisiblePRItem = {
   timeWindowKey: string;
+  dateKey: string;
   pr: AnchorEventTimeWindowPR;
   timeLabel: string;
+  timeWindowStart: string | null;
+  rowRank: number;
 };
 
 type CreateTimeWindowChoice = {
@@ -221,6 +227,11 @@ const hasBrowseTimeWindows = computed(
 );
 const isListExhausted = computed(() => detail.value?.exhausted === true);
 const canUserCreatePR = computed(() => detail.value?.canUserCreatePR === true);
+
+const buildListFunnelPayload = () => ({
+  eventId: props.eventId,
+  activityType: detail.value?.type,
+});
 
 const LIST_MODE_EXPIRED_DATE_LIMIT = 3;
 const LIST_MODE_EXPIRED_TAB_CLASS = "tab-bar__tab--expired";
@@ -441,12 +452,8 @@ const isVisibleListModePR = (
 ): boolean =>
   group.isExpiredDate ? pr.status === "CLOSED" : pr.status !== "EXPIRED";
 
-const visiblePRItems = computed<VisiblePRItem[]>(() => {
+const resolveVisiblePRItemsForGroup = (group: DateGroup): VisiblePRItem[] => {
   const items: VisiblePRItem[] = [];
-  const group = selectedDateGroup.value;
-  if (!group) {
-    return items;
-  }
 
   for (const timeWindowItem of group.timeWindows) {
     for (const pr of timeWindowItem.entry.prs.filter((entry) =>
@@ -454,14 +461,86 @@ const visiblePRItems = computed<VisiblePRItem[]>(() => {
     )) {
       items.push({
         timeWindowKey: timeWindowItem.entry.key,
+        dateKey: group.key,
         pr,
         timeLabel: timeWindowItem.timeLabel,
+        timeWindowStart: timeWindowItem.entry.timeWindow[0] ?? null,
+        rowRank: items.length + 1,
       });
     }
   }
 
   return items;
+};
+
+const visiblePRItems = computed<VisiblePRItem[]>(() => {
+  const group = selectedDateGroup.value;
+  return group ? resolveVisiblePRItemsForGroup(group) : [];
 });
+
+const listLoadedCounts = computed(() => {
+  let visiblePrCount = 0;
+  let currentFuturePrCount = 0;
+  let expiredPrCount = 0;
+
+  for (const group of dateGroups.value) {
+    const groupItems = resolveVisiblePRItemsForGroup(group);
+    visiblePrCount += groupItems.length;
+    if (group.isExpiredDate) {
+      expiredPrCount += groupItems.length;
+    } else {
+      currentFuturePrCount += groupItems.length;
+    }
+  }
+
+  return {
+    dateCount: dateGroups.value.length,
+    visiblePrCount,
+    currentFuturePrCount,
+    expiredPrCount,
+  };
+});
+
+watch(
+  [detail, dateGroups],
+  ([event]) => {
+    if (!event) return;
+    if (!claimUserTelemetrySegmentDedupeKey("anchor_event.list.loaded")) {
+      return;
+    }
+
+    trackEvent("anchor_event_list_loaded", {
+      ...buildListFunnelPayload(),
+      ...listLoadedCounts.value,
+    });
+  },
+  { immediate: true },
+);
+
+watch(
+  visiblePRItems,
+  (items) => {
+    for (const item of items) {
+      if (
+        !claimUserTelemetrySegmentDedupeKey(
+          `anchor_event.pr_row.seen:${item.pr.id}`,
+        )
+      ) {
+        continue;
+      }
+
+      trackEvent("anchor_event_list_pr_row_seen", {
+        ...buildListFunnelPayload(),
+        prId: item.pr.id,
+        timeWindowStart: item.timeWindowStart,
+        locationId: item.pr.location,
+        rowRank: item.rowRank,
+        dateKey: item.dateKey,
+      });
+    }
+  },
+  { immediate: true },
+);
 
 const isJoinablePR = (pr: AnchorEventTimeWindowPR): boolean =>
   pr.status === "OPEN" || pr.status === "READY";
@@ -617,7 +696,32 @@ const handleSelectedTimeWindowChange = (key: string | null) => {
 };
 
 const handleDateTabChange = (value: string | number) => {
-  selectedDateKey.value = String(value);
+  const dateKey = String(value);
+  selectedDateKey.value = dateKey;
+  const group = dateGroups.value.find((item) => item.key === dateKey) ?? null;
+  if (!group) return;
+
+  trackEvent("anchor_event_list_date_selected", {
+    ...buildListFunnelPayload(),
+    dateKey,
+    isExpiredDate: group.isExpiredDate,
+    visiblePrCount: resolveVisiblePRItemsForGroup(group).length,
+  });
+};
+
+const trackListPrRowAction = (item: VisiblePRItem): void => {
+  trackEvent("anchor_event_list_pr_row_action_taken", {
+    ...buildListFunnelPayload(),
+    prId: item.pr.id,
+    rowRank: item.rowRank,
+    dateKey: item.dateKey,
+  });
+  trackEvent("pr_entry_reached", {
+    ...buildListFunnelPayload(),
+    prId: item.pr.id,
+    entrySurface: "list_mode",
+    entryType: "detail",
+  });
 };
 
 const handleCreateInList = async (locationId: string | null) => {
@@ -625,9 +729,16 @@ const handleCreateInList = async (locationId: string | null) => {
     return;
   }
 
+  trackEvent("anchor_event_list_create_started", {
+    ...buildListFunnelPayload(),
+    dateKey: selectedDateKey.value,
+    locationId,
+    timeWindowStart: selectedTimeWindowEntry.value?.timeWindow[0] ?? null,
+  });
   await createEventAssistedPR({
     targetTimeWindow: selectedTimeWindowEntry.value?.timeWindow ?? null,
     locationId,
+    entrySurface: "list_mode",
   });
 };
 </script>

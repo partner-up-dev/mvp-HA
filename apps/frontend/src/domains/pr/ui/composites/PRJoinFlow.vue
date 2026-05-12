@@ -275,6 +275,20 @@ const trackJoinResult = (payload: {
     correlationId: payload.correlationId,
     ...payload,
   });
+  if (props.eventId !== null) {
+    trackEvent("pr_commitment_result", {
+      eventId: props.eventId,
+      activityType: props.scenarioType ?? undefined,
+      prId,
+      commitmentType: "join",
+      entrySurface: props.entrySurface ?? "pr_detail",
+      candidateRank: props.candidateRank ?? undefined,
+      actionResult: payload.actionResult,
+      failureCode: payload.failureCode,
+      failureReason: payload.failureReason,
+      correlationId: payload.correlationId,
+    });
+  }
 };
 
 const closeJoinFlowModal = (): void => {

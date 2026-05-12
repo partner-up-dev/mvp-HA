@@ -3,7 +3,9 @@ import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRouteP
 const ANONYMOUS_ID_STORAGE_KEY = "__partner_up_telemetry_anonymous_id__";
 const APP_JOURNEY_STORAGE_KEY = "__partner_up_telemetry_app_journey__";
 const ACTIVE_SEGMENT_STORAGE_KEY = "__partner_up_telemetry_active_segment__";
+const SEGMENT_DEDUPE_STORAGE_KEY = "__partner_up_telemetry_segment_dedupe__";
 const APP_JOURNEY_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1_000;
+const MAX_DEDUPE_KEYS_PER_SEGMENT = 500;
 
 export type UserTelemetryJourney = {
   id: string;
@@ -318,6 +320,31 @@ export const startUserTelemetrySegment = (
   return segment;
 };
 
+const isSameSegmentIdentity = (
+  segment: UserTelemetrySegment,
+  input: StartUserTelemetrySegmentInput,
+): boolean => {
+  return (
+    segment.segmentKind === input.segmentKind &&
+    segment.eventId === input.eventId &&
+    segment.prId === input.prId &&
+    segment.assignedMode === input.assignedMode &&
+    segment.renderedMode === input.renderedMode &&
+    segment.assignmentRevision === input.assignmentRevision
+  );
+};
+
+export const ensureUserTelemetrySegment = (
+  input: StartUserTelemetrySegmentInput,
+): UserTelemetrySegment => {
+  const active = getActiveUserTelemetrySegment();
+  if (active && isSameSegmentIdentity(active, input)) {
+    return active;
+  }
+
+  return startUserTelemetrySegment(input);
+};
+
 export const endActiveUserTelemetrySegment = (
   endedAt = new Date().toISOString(),
 ): UserTelemetrySegment | null => {
@@ -348,4 +375,54 @@ export const clearActiveUserTelemetrySegment = (): void => {
   } catch {
     // Ignore sessionStorage write errors.
   }
+};
+
+const readSegmentDedupeStore = (): Record<string, string[]> => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const record = readJsonRecord(
+      window.sessionStorage,
+      SEGMENT_DEDUPE_STORAGE_KEY,
+    );
+    if (!record) return {};
+
+    const store: Record<string, string[]> = {};
+    for (const [segmentId, keys] of Object.entries(record)) {
+      if (!Array.isArray(keys)) continue;
+      store[segmentId] = keys.filter(
+        (key): key is string => typeof key === "string",
+      );
+    }
+    return store;
+  } catch {
+    return {};
+  }
+};
+
+const writeSegmentDedupeStore = (store: Record<string, string[]>): void => {
+  if (typeof window === "undefined") return;
+
+  try {
+    writeJson(window.sessionStorage, SEGMENT_DEDUPE_STORAGE_KEY, store);
+  } catch {
+    // Ignore sessionStorage write errors.
+  }
+};
+
+export const claimUserTelemetrySegmentDedupeKey = (
+  key: string,
+  segmentId = getActiveUserTelemetrySegment()?.id ?? null,
+): boolean => {
+  if (!segmentId) return true;
+
+  const store = readSegmentDedupeStore();
+  const keys = store[segmentId] ?? [];
+  if (keys.includes(key)) {
+    return false;
+  }
+
+  store[segmentId] = [...keys, key].slice(-MAX_DEDUPE_KEYS_PER_SEGMENT);
+  writeSegmentDedupeStore(store);
+  return true;
 };

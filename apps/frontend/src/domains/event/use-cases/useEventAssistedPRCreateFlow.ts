@@ -20,6 +20,7 @@ import { createCommandCorrelationId } from "@/shared/telemetry/correlation";
 type EventAssistedPRCreateInput = {
   targetTimeWindow: TimeWindow | null;
   locationId: string | null;
+  entrySurface?: "form_mode" | "card_rich" | "list_mode";
 };
 
 const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
@@ -160,6 +161,7 @@ export const useEventAssistedPRCreateFlow = (
       failureReason?: string;
       prId?: number;
       correlationId?: string;
+      entrySurface?: "form_mode" | "card_rich" | "list_mode";
     },
   ): void => {
     trackEvent("event_assisted_create_result", {
@@ -176,11 +178,23 @@ export const useEventAssistedPRCreateFlow = (
       failureReason: payload.failureReason,
       correlationId: payload.correlationId,
     });
+    trackEvent("pr_commitment_result", {
+      eventId: eventValue.id,
+      activityType: eventValue.type,
+      commitmentType: "create",
+      prId: payload.prId,
+      entrySurface: payload.entrySurface,
+      actionResult: payload.actionResult,
+      failureCode: payload.failureCode,
+      failureReason: payload.failureReason,
+      correlationId: payload.correlationId,
+    });
   };
 
   const createEventAssistedPR = async ({
     targetTimeWindow,
     locationId,
+    entrySurface,
   }: EventAssistedPRCreateInput) => {
     createEventAssistedPRMutation.reset();
     replayErrorMessage.value = null;
@@ -211,7 +225,18 @@ export const useEventAssistedPRCreateFlow = (
         actionResult: "success",
         prId: created.id,
         correlationId,
+        entrySurface,
       });
+      if (entrySurface) {
+        trackEvent("pr_entry_reached", {
+          eventId: currentEvent.id,
+          activityType: currentEvent.type,
+          prId: created.id,
+          entrySurface,
+          entryType: "create_handoff",
+          correlationId,
+        });
+      }
       await router.push(
         buildEventAssistedCreateTarget(created.canonicalPath, currentEvent.id),
       );
@@ -227,6 +252,7 @@ export const useEventAssistedPRCreateFlow = (
               t("anchorEvent.createCard.errors.wechatAuthRequired"),
             ),
             correlationId,
+            entrySurface,
           },
         );
         return;
@@ -243,6 +269,7 @@ export const useEventAssistedPRCreateFlow = (
               : t("anchorEvent.createCard.errors.createFailed"),
           ),
           correlationId,
+          entrySurface,
         },
       );
       throw error;

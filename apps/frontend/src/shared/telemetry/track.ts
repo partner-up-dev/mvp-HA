@@ -70,6 +70,25 @@ const MAX_QUEUE_SIZE = 1_000;
 
 const CANONICAL_EVENT_NAMES: Partial<Record<TelemetryEventName, string>> = {
   page_view: "page.viewed",
+  anchor_event_landing_viewed: "anchor_event.landing.viewed",
+  anchor_event_recommendation_requested:
+    "anchor_event.recommendation.requested",
+  anchor_event_recommendation_returned: "anchor_event.recommendation.returned",
+  anchor_event_candidate_engaged: "anchor_event.candidate.engaged",
+  anchor_event_assisted_create_started:
+    "anchor_event.assisted_create.started",
+  anchor_event_card_stack_loaded: "anchor_event.card_stack.loaded",
+  anchor_event_card_seen: "anchor_event.card.seen",
+  anchor_event_card_action_taken: "anchor_event.card.action_taken",
+  anchor_event_card_empty_create_started:
+    "anchor_event.card_empty_create.started",
+  anchor_event_list_loaded: "anchor_event.list.loaded",
+  anchor_event_list_date_selected: "anchor_event.date.selected",
+  anchor_event_list_pr_row_seen: "anchor_event.pr_row.seen",
+  anchor_event_list_pr_row_action_taken: "anchor_event.pr_row.action_taken",
+  anchor_event_list_create_started: "anchor_event.list_create.started",
+  pr_entry_reached: "pr.entry.reached",
+  pr_commitment_result: "pr.commitment.result",
   pr_create_result: "pr.create.result",
   pr_join_result: "pr.join.result",
   pr_waitlist_result: "pr.waitlist.result",
