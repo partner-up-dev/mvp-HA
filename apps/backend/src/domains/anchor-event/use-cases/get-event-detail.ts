@@ -10,6 +10,7 @@ import { PoiRepository } from "../../../repositories/PoiRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
+  AnchorEventPrCreationPolicy,
   TimeWindowEntry,
 } from "../../../entities/anchor-event";
 import type { PRStatus, PartnerRequest } from "../../../entities/partner-request";
@@ -18,6 +19,7 @@ import {
   isTimeWindowAvailableByPoiRules,
   readVisiblePartnerRequestsByType,
   readVisiblePartnerRequestsByTypeAndTime,
+  canUserCreatePRForAnchorEvent,
 } from "../../pr/services";
 import {
   listAnchorEventTimeWindowDetails,
@@ -76,6 +78,8 @@ export interface AnchorEventDetail {
   timeWindowPool: TimeWindowEntry[];
   coverImage: string | null;
   betaGroupQrCode: string | null;
+  prCreationPolicy: AnchorEventPrCreationPolicy;
+  canUserCreatePR: boolean;
   status: string;
   browseTimeWindows: BrowseTimeWindowDetail[];
   createTimeWindows: CreateTimeWindowDetail[];
@@ -266,6 +270,8 @@ export async function getAnchorEventDetail(
     timeWindowPool,
     coverImage: event.coverImage,
     betaGroupQrCode: event.betaGroupQrCode,
+    prCreationPolicy: event.prCreationPolicy,
+    canUserCreatePR: canUserCreatePRForAnchorEvent(event),
     status: event.status,
     browseTimeWindows,
     createTimeWindows,

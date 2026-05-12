@@ -31,6 +31,9 @@ const readErrorMessage = async (
   fallback: string,
 ): Promise<string> => {
   const payload = await readApiErrorPayload(response);
+  if (payload?.code === "ANCHOR_EVENT_USER_PR_CREATION_DISABLED") {
+    return i18n.global.t("errors.anchorEventUserCreationDisabled");
+  }
   return resolveApiErrorMessage(payload, fallback);
 };
 

@@ -31,6 +31,13 @@ import {
 
 export const anchorEventStatusSchema = z.enum(["ACTIVE", "PAUSED", "ARCHIVED"]);
 export type AnchorEventStatus = z.infer<typeof anchorEventStatusSchema>;
+export const anchorEventPrCreationPolicySchema = z.enum([
+  "USER_AND_ADMIN",
+  "ADMIN_ONLY",
+]);
+export type AnchorEventPrCreationPolicy = z.infer<
+  typeof anchorEventPrCreationPolicySchema
+>;
 
 /** A location entry: POI.id or a free-form location label. */
 export const locationEntrySchema = z.string().trim().min(1);
@@ -373,6 +380,10 @@ export const anchorEvents = pgTable("anchor_events", {
     .default(sql`'{}'::jsonb`),
   coverImage: text("cover_image"),
   betaGroupQrCode: text("beta_group_qr_code"),
+  prCreationPolicy: text("pr_creation_policy")
+    .$type<AnchorEventPrCreationPolicy>()
+    .notNull()
+    .default("USER_AND_ADMIN"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

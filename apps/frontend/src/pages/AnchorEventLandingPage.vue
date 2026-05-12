@@ -65,6 +65,7 @@
         :card-create-location-options="cardCreateLocationOptionViewModels"
         :create-action-error-message="createActionErrorMessage"
         :is-create-pending="isCreatePending"
+        :can-user-create-p-r="detail.canUserCreatePR"
         :event-id="detail.id"
         :event-title="detail.title"
         :event-beta-group-qr-code="detail.betaGroupQrCode"
@@ -326,6 +327,8 @@ const createActionErrorMessage = computed(() => {
         return t("anchorEvent.createCard.errors.locationCapReached");
       case "ANCHOR_EVENT_NOT_FOUND":
         return t("anchorEvent.createCard.errors.eventUnavailable");
+      case "ANCHOR_EVENT_USER_PR_CREATION_DISABLED":
+        return t("anchorEvent.createCard.errors.userCreationDisabled");
       default:
         return (
           createAnchorError.message ||
@@ -369,6 +372,7 @@ const upcomingSortedCreateTimeWindows = computed(() =>
     (entry) => !hasTimeWindowStarted(entry.timeWindow),
   ),
 );
+const canUserCreatePR = computed(() => detail.value?.canUserCreatePR === true);
 
 const cardCreateTimeWindowKey = ref<string | null>(null);
 const cardCreateLocationId = ref("");
@@ -649,6 +653,10 @@ const createEventAssistedPR = async ({
   targetTimeWindow: TimeWindow | null;
   locationId: string | null;
 }) => {
+  if (!canUserCreatePR.value) {
+    return;
+  }
+
   createEventAssistedPRMutation.reset();
 
   const event = detail.value;
@@ -743,6 +751,10 @@ onMounted(() => {
 });
 
 const handleCreateFromCardEmpty = async () => {
+  if (!canUserCreatePR.value) {
+    return;
+  }
+
   await createEventAssistedPR({
     targetTimeWindow: selectedCardCreateTimeWindow.value?.timeWindow ?? null,
     locationId: cardCreateLocationId.value || null,

@@ -76,6 +76,7 @@ export type AdminAnchorEventInput = {
   defaultJoinLockOffsetMinutes: number;
   coverImage: string | null;
   betaGroupQrCode: string | null;
+  prCreationPolicy: "USER_AND_ADMIN" | "ADMIN_ONLY";
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 

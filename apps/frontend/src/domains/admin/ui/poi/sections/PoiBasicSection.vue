@@ -1,0 +1,506 @@
+<template>
+  <BentoLayout>
+    <BentoItem
+      id="poi-basic"
+      :title="t('adminCommon.navPoiBasic')"
+      span="full"
+      data-testid="admin-pois.section.basic"
+    >
+      <div class="grid">
+        <label class="field field--full">
+          <span class="field-label">{{ t("adminPois.newPoiLabel") }}</span>
+          <div class="action-row">
+            <input
+              v-model="newPoiId"
+              class="field-input"
+              :placeholder="t('adminPois.newPoiPlaceholder')"
+            />
+            <Button
+              appearance="pill"
+              tone="outline"
+              size="sm"
+              type="button"
+              :disabled="isCreatingPoi || !canCreatePoi"
+              @click="emit('create-poi')"
+            >
+              {{
+                isCreatingPoi
+                  ? t("adminPois.creatingPoi")
+                  : t("adminPois.createPoiAction")
+              }}
+            </Button>
+          </div>
+        </label>
+
+        <label class="field">
+          <span class="field-label">{{ t("adminPois.perTimeWindowCapLabel") }}</span>
+          <input
+            v-model="selectedPoiCapText"
+            class="field-input"
+            type="number"
+            min="1"
+            :disabled="selectedPoiId === null"
+            :placeholder="t('adminPois.perTimeWindowCapPlaceholder')"
+          />
+        </label>
+
+        <label class="field field--full">
+          <span class="field-label">{{
+            t("adminPois.meetingPointDescriptionLabel")
+          }}</span>
+          <textarea
+            v-model="selectedPoiMeetingPointDescription"
+            class="field-input field-textarea"
+            :disabled="selectedPoiId === null"
+          ></textarea>
+        </label>
+
+        <label class="field">
+          <span class="field-label">{{
+            t("adminPois.meetingPointImageUrlLabel")
+          }}</span>
+          <input
+            v-model="selectedPoiMeetingPointImageUrl"
+            class="field-input"
+            :disabled="selectedPoiId === null"
+          />
+        </label>
+      </div>
+
+      <div class="actions">
+        <Button
+          appearance="pill"
+          size="sm"
+          type="button"
+          :disabled="selectedPoiId === null || isSavingPoi"
+          @click="emit('save-poi')"
+        >
+          {{
+            isSavingPoi
+              ? t("adminPois.savingPoi")
+              : t("adminPois.savePoiAction")
+          }}
+        </Button>
+      </div>
+    </BentoItem>
+
+    <BentoItem
+      :title="`${t('adminPois.galleryTitle')} · ${selectedPoiId ?? '-'}`"
+      span="full"
+    >
+      <p class="hint">
+        {{ t("adminPois.galleryCount", { count: selectedPoiGallery.length }) }}
+      </p>
+
+      <div class="field">
+        <span class="field-label">{{ t("adminPois.galleryHint") }}</span>
+        <div class="manual-url-row">
+          <ImageUrlInput
+            v-model="manualGalleryUrl"
+            v-model:uploading="isUploadingGalleryImage"
+            input-id="admin-poi-gallery-image-url"
+            purpose="poi"
+            :placeholder="t('adminPois.manualUrlPlaceholder')"
+            :upload-label="t('adminPois.uploadImageAction')"
+            :uploading-label="t('adminPois.uploadingImage')"
+            :preview-alt="
+              t('adminPois.imageAlt', {
+                index: selectedPoiGallery.length + 1,
+                poiId: selectedPoiId ?? '',
+              })
+            "
+            :disabled="selectedPoiId === null"
+            @uploaded="emit('gallery-uploaded', $event)"
+          />
+          <Button
+            appearance="pill"
+            tone="outline"
+            size="sm"
+            type="button"
+            :disabled="selectedPoiId === null"
+            @click="emit('add-manual-url')"
+          >
+            {{ t("adminPois.addUrlAction") }}
+          </Button>
+        </div>
+      </div>
+
+      <p v-if="selectedPoiGallery.length === 0" class="hint">
+        {{ t("adminPois.emptyGallery") }}
+      </p>
+      <div v-else class="gallery-grid">
+        <article
+          v-for="(imageUrl, index) in selectedPoiGallery"
+          :key="`${selectedPoiId ?? 'poi'}-gallery-${index}`"
+          class="gallery-item"
+        >
+          <img
+            :src="imageUrl"
+            :alt="t('adminPois.imageAlt', { index: index + 1, poiId: selectedPoiId ?? '' })"
+            class="gallery-image"
+          />
+          <p class="gallery-url">{{ imageUrl }}</p>
+          <Button
+            tone="danger"
+            size="sm"
+            type="button"
+            @click="emit('remove-gallery-image', index)"
+          >
+            {{ t("adminPois.removeImageAction") }}
+          </Button>
+        </article>
+      </div>
+    </BentoItem>
+
+    <BentoItem
+      :title="`${t('adminPois.availabilityRulesTitle')} · ${selectedPoiId ?? '-'}`"
+      span="full"
+    >
+      <div class="section-header">
+        <Button
+          appearance="pill"
+          tone="outline"
+          size="sm"
+          type="button"
+          :disabled="selectedPoiId === null"
+          @click="emit('add-availability-rule')"
+        >
+          {{ t("adminPois.addAvailabilityRuleAction") }}
+        </Button>
+      </div>
+
+      <p v-if="selectedPoiAvailabilityRules.length === 0" class="hint">
+        {{ t("adminPois.emptyAvailabilityRules") }}
+      </p>
+
+      <article
+        v-for="(rule, index) in selectedPoiAvailabilityRules"
+        :key="rule.id"
+        class="availability-rule"
+      >
+        <div class="action-row">
+          <strong>
+            {{ t("adminPois.availabilityRuleTitle", { index: index + 1 }) }}
+          </strong>
+          <Button
+            tone="danger"
+            size="sm"
+            type="button"
+            @click="emit('remove-availability-rule', index)"
+          >
+            {{ t("adminPois.removeRuleAction") }}
+          </Button>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span class="field-label">{{ t("adminPois.ruleModeLabel") }}</span>
+            <select
+              v-model="rule.mode"
+              class="field-input"
+              @change="emit('mark-dirty')"
+            >
+              <option value="INCLUDE">{{ t("adminPois.ruleModeInclude") }}</option>
+              <option value="EXCLUDE">{{ t("adminPois.ruleModeExclude") }}</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">{{ t("adminPois.ruleKindLabel") }}</span>
+            <select
+              v-model="rule.kind"
+              class="field-input"
+              @change="emit('mark-dirty')"
+            >
+              <option value="ABSOLUTE">{{ t("adminPois.ruleKindAbsolute") }}</option>
+              <option value="RECURRING">{{ t("adminPois.ruleKindRecurring") }}</option>
+            </select>
+          </label>
+
+          <template v-if="rule.kind === 'ABSOLUTE'">
+            <label class="field">
+              <span class="field-label">{{ t("adminPois.ruleStartAtLabel") }}</span>
+              <input
+                v-model="rule.startAtLocal"
+                class="field-input"
+                type="datetime-local"
+                @input="emit('mark-dirty')"
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label">{{ t("adminPois.ruleEndAtLabel") }}</span>
+              <input
+                v-model="rule.endAtLocal"
+                class="field-input"
+                type="datetime-local"
+                @input="emit('mark-dirty')"
+              />
+            </label>
+          </template>
+
+          <template v-else>
+            <label class="field">
+              <span class="field-label">{{ t("adminPois.ruleFrequencyLabel") }}</span>
+              <select
+                v-model="rule.frequency"
+                class="field-input"
+                @change="emit('mark-dirty')"
+              >
+                <option value="DAILY">{{ t("adminPois.frequencyDaily") }}</option>
+                <option value="WEEKLY">{{ t("adminPois.frequencyWeekly") }}</option>
+                <option value="MONTHLY">{{ t("adminPois.frequencyMonthly") }}</option>
+                <option value="YEARLY">{{ t("adminPois.frequencyYearly") }}</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">{{ t("adminPois.ruleStartTimeLabel") }}</span>
+              <input
+                v-model="rule.startTime"
+                class="field-input"
+                type="time"
+                @input="emit('mark-dirty')"
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label">{{ t("adminPois.ruleEndTimeLabel") }}</span>
+              <input
+                v-model="rule.endTime"
+                class="field-input"
+                type="time"
+                @input="emit('mark-dirty')"
+              />
+            </label>
+
+            <label v-if="rule.frequency === 'WEEKLY'" class="field field--full">
+              <span class="field-label">{{ t("adminPois.ruleWeekdaysLabel") }}</span>
+              <div class="weekday-grid">
+                <label
+                  v-for="weekday in weekdayOptions"
+                  :key="weekday.value"
+                  class="checkbox-field"
+                >
+                  <input
+                    v-model="rule.weekdays"
+                    type="checkbox"
+                    :value="weekday.value"
+                    @change="emit('mark-dirty')"
+                  />
+                  <span>{{ weekday.label }}</span>
+                </label>
+              </div>
+            </label>
+
+            <label
+              v-if="rule.frequency === 'MONTHLY' || rule.frequency === 'YEARLY'"
+              class="field"
+            >
+              <span class="field-label">{{ t("adminPois.ruleMonthDaysLabel") }}</span>
+              <input
+                v-model="rule.monthDaysText"
+                class="field-input"
+                :placeholder="t('adminPois.ruleNumberListPlaceholder')"
+                @input="emit('mark-dirty')"
+              />
+            </label>
+
+            <label v-if="rule.frequency === 'YEARLY'" class="field">
+              <span class="field-label">{{ t("adminPois.ruleMonthsLabel") }}</span>
+              <input
+                v-model="rule.monthsText"
+                class="field-input"
+                :placeholder="t('adminPois.ruleNumberListPlaceholder')"
+                @input="emit('mark-dirty')"
+              />
+            </label>
+          </template>
+        </div>
+      </article>
+    </BentoItem>
+  </BentoLayout>
+</template>
+
+<script setup lang="ts">
+import { useI18n } from "vue-i18n";
+import type { EditableAvailabilityRule } from "@/domains/admin/use-cases/poi/useAdminPoiEditor";
+import BentoItem from "@/domains/admin/ui/layout/BentoItem.vue";
+import BentoLayout from "@/domains/admin/ui/layout/BentoLayout.vue";
+import Button from "@/shared/ui/actions/Button.vue";
+import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
+
+defineProps<{
+  selectedPoiId: string | null;
+  canCreatePoi: boolean;
+  isCreatingPoi: boolean;
+  isSavingPoi: boolean;
+  selectedPoiGallery: string[];
+  selectedPoiAvailabilityRules: EditableAvailabilityRule[];
+  weekdayOptions: readonly {
+    readonly value: number;
+    readonly label: string;
+  }[];
+}>();
+
+const emit = defineEmits<{
+  "create-poi": [];
+  "save-poi": [];
+  "add-manual-url": [];
+  "gallery-uploaded": [url: string];
+  "remove-gallery-image": [index: number];
+  "add-availability-rule": [];
+  "remove-availability-rule": [index: number];
+  "mark-dirty": [];
+}>();
+
+const newPoiId = defineModel<string>("newPoiId", { required: true });
+const manualGalleryUrl = defineModel<string>("manualGalleryUrl", {
+  required: true,
+});
+const isUploadingGalleryImage = defineModel<boolean>("isUploadingGalleryImage", {
+  required: true,
+});
+const selectedPoiCapText = defineModel<string>("selectedPoiCapText", {
+  required: true,
+});
+const selectedPoiMeetingPointDescription = defineModel<string>(
+  "selectedPoiMeetingPointDescription",
+  { required: true },
+);
+const selectedPoiMeetingPointImageUrl = defineModel<string>(
+  "selectedPoiMeetingPointImageUrl",
+  { required: true },
+);
+
+const { t } = useI18n();
+</script>
+
+<style lang="scss" scoped>
+.hint {
+  @include mx.pu-font(body-medium);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.section-header,
+.action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-spacing-small);
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-xsmall);
+}
+
+.field--full {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  @include mx.pu-font(label-medium);
+  color: var(--sys-color-on-surface-variant);
+}
+
+.field-input {
+  width: 100%;
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface);
+  color: var(--sys-color-on-surface);
+}
+
+.field-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.availability-rule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-small);
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-medium);
+  background: var(--sys-color-surface);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sys-spacing-small);
+}
+
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  gap: var(--sys-spacing-xsmall);
+}
+
+.checkbox-field {
+  @include mx.pu-font(body-small);
+  display: flex;
+  align-items: center;
+  gap: var(--sys-spacing-xsmall);
+  min-height: 2.25rem;
+  padding: 0 var(--sys-spacing-xsmall);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+  background: var(--sys-color-surface-container);
+}
+
+.manual-url-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--sys-spacing-small);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sys-spacing-small);
+}
+
+.gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-xsmall);
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-large);
+  background: var(--sys-color-surface);
+}
+
+.gallery-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--sys-shape-corner-medium);
+  background: var(--sys-color-surface-container);
+}
+
+.gallery-url {
+  @include mx.pu-font(body-small);
+  margin: 0;
+  color: var(--sys-color-on-surface-variant);
+  word-break: break-all;
+}
+
+@media (max-width: 720px) {
+  .grid,
+  .manual-url-row {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

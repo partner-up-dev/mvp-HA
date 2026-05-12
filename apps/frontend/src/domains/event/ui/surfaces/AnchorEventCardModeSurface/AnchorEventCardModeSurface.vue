@@ -152,7 +152,11 @@
         {{ cardEmptySubtitle }}
       </p>
 
-      <div class="card-empty__create" data-region="create-pr">
+      <div
+        v-if="resolvedCanUserCreatePR"
+        class="card-empty__create"
+        data-region="create-pr"
+      >
         <label
           v-if="resolvedCardCreateTimeWindowOptions.length > 0"
           class="card-empty__field"
@@ -457,6 +461,9 @@ const resolvedCreateActionErrorMessage = computed(() =>
 );
 const resolvedIsCreatePending = computed(() =>
   isControlled.value ? props.isCreatePending : internalIsCreatePending.value,
+);
+const resolvedCanUserCreatePR = computed(() =>
+  isControlled.value ? props.canUserCreatePR : detail.value?.canUserCreatePR === true,
 );
 const isCardExhausted = computed(
   () => !isControlled.value && detail.value?.exhausted === true,
@@ -879,6 +886,10 @@ const handleViewActionClick = () => {
 };
 
 const emitCreateFromCardEmpty = () => {
+  if (!resolvedCanUserCreatePR.value) {
+    return;
+  }
+
   if (isControlled.value) {
     emit("create-from-card-empty");
     return;

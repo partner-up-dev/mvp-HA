@@ -6,9 +6,16 @@ import {
   AnchorEventPRContextRepository,
   type AnchorEventPRContextRecord,
 } from "../../../repositories/AnchorEventPRContextRepository";
-import { type AnchorEvent, type AnchorEventId } from "../../../entities";
+import {
+  type AnchorEvent,
+  type AnchorEventId,
+  type AnchorEventPrCreationPolicy,
+} from "../../../entities";
 import { isJoinableStatus } from "../../pr-core/services/status-rules";
-import { isTimeWindowAvailableByPoiRules } from "../../pr/services";
+import {
+  canUserCreatePRForAnchorEvent,
+  isTimeWindowAvailableByPoiRules,
+} from "../../pr/services";
 import { isAnchorEventFormModeStartSelectable } from "../services/form-mode";
 import { resolvePublicEventLocationPool } from "../services/event-scope";
 import { listAnchorEventTimeWindowDetails } from "../services/time-window-pool";
@@ -102,6 +109,8 @@ export interface AnchorEventFormModeData {
     earliestLeadMinutes: number | null;
     defaultMinPartners: number | null;
     defaultMaxPartners: number | null;
+    prCreationPolicy: AnchorEventPrCreationPolicy;
+    canUserCreatePR: boolean;
   };
   locations: Array<{
     id: string;
@@ -177,6 +186,8 @@ export async function getAnchorEventFormModeData(
       earliestLeadMinutes: event.timePoolConfig.earliestLeadMinutes,
       defaultMinPartners: event.defaultMinPartners,
       defaultMaxPartners: event.defaultMaxPartners,
+      prCreationPolicy: event.prCreationPolicy,
+      canUserCreatePR: canUserCreatePRForAnchorEvent(event),
     },
     locations: locationIds.map((id) => ({
       id,

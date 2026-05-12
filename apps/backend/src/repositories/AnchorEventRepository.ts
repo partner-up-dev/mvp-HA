@@ -89,6 +89,7 @@ export class AnchorEventRepository {
         | "feedbackQuestionnaireTemplateId"
         | "coverImage"
         | "betaGroupQrCode"
+        | "prCreationPolicy"
         | "status"
       >
     >,

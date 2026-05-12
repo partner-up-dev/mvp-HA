@@ -1,59 +1,7 @@
 <template>
-  <DesktopPageScaffold class="page">
-    <template #aside>
-      <div class="sidebar">
-        <AdminNavigationCard show-logout @logout="logout" />
-
-        <section class="panel">
-          <div class="stack">
-            <div class="section-header">
-              <h2 class="card-title">
-                {{ t("adminFeedbackQuestionnaires.templatesTitle") }}
-              </h2>
-              <Button
-                appearance="pill"
-                tone="outline"
-                size="sm"
-                type="button"
-                data-testid="admin-feedback-questionnaires.create"
-                @click="handleNewTemplate"
-              >
-                {{ t("adminFeedbackQuestionnaires.newTemplateAction") }}
-              </Button>
-            </div>
-
-            <p class="hint">
-              {{
-                t("adminFeedbackQuestionnaires.templateCount", {
-                  count: templates.length,
-                })
-              }}
-            </p>
-
-            <label class="field">
-              <span class="field-label">{{
-                t("adminFeedbackQuestionnaires.templateLabel")
-              }}</span>
-              <select
-                v-model="selectedTemplateIdRaw"
-                class="field-input"
-                data-testid="admin-feedback-questionnaires.template-list"
-              >
-                <option value="__new">
-                  {{ t("adminFeedbackQuestionnaires.newTemplateOption") }}
-                </option>
-                <option
-                  v-for="template in templates"
-                  :key="template.id"
-                  :value="String(template.id)"
-                >
-                  {{ template.key }}@{{ template.version }}
-                </option>
-              </select>
-            </label>
-          </div>
-        </section>
-      </div>
+  <AdminPageScaffold class="page">
+    <template #navigation>
+      <AdminNavigationPanel show-logout @logout="logout" />
     </template>
 
     <template #header>
@@ -63,86 +11,135 @@
       </header>
     </template>
 
-    <div class="stack">
+    <template #main>
       <LoadingIndicator
         v-if="templatesQuery.isLoading.value"
         :message="t('common.loading')"
       />
       <ErrorToast v-else-if="pageError" :message="pageError.message" persistent />
 
-      <section v-else class="panel form-panel">
-        <div class="section-header">
-          <div>
-            <h2 class="card-title">{{ formTitle }}</h2>
-            <p class="hint">{{ t("adminFeedbackQuestionnaires.formHint") }}</p>
+      <BentoLayout v-else>
+        <BentoItem
+          :title="formTitle"
+          :description="t('adminFeedbackQuestionnaires.formHint')"
+          span="full"
+        >
+          <template #actions>
+            <Button
+              appearance="pill"
+              size="sm"
+              type="button"
+              data-testid="admin-feedback-questionnaires.save"
+              :disabled="!canSave"
+              :loading="isSaving"
+              @click="handleSave"
+            >
+              {{ saveButtonLabel }}
+            </Button>
+          </template>
+
+          <div class="grid">
+            <label class="field">
+              <span class="field-label">{{
+                t("adminFeedbackQuestionnaires.keyLabel")
+              }}</span>
+              <input
+                v-model="draftKey"
+                class="field-input"
+                :placeholder="t('adminFeedbackQuestionnaires.keyPlaceholder')"
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label">{{
+                t("adminFeedbackQuestionnaires.versionLabel")
+              }}</span>
+              <input
+                v-model="draftVersion"
+                class="field-input"
+                :placeholder="t('adminFeedbackQuestionnaires.versionPlaceholder')"
+              />
+            </label>
+
+            <label class="field field--full">
+              <span class="field-label">{{
+                t("adminFeedbackQuestionnaires.titleLabel")
+              }}</span>
+              <input
+                v-model="draftTitle"
+                class="field-input"
+                :placeholder="t('adminFeedbackQuestionnaires.titlePlaceholder')"
+              />
+            </label>
+
+            <label class="field field--full">
+              <span class="field-label">{{
+                t("adminFeedbackQuestionnaires.definitionLabel")
+              }}</span>
+              <textarea
+                v-model="draftDefinitionText"
+                class="field-input definition-textarea"
+                spellcheck="false"
+                data-testid="admin-feedback-questionnaires.definition"
+              ></textarea>
+            </label>
           </div>
+
+          <p v-if="definitionError" class="error-text">{{ definitionError }}</p>
+          <p v-else-if="saveSuccessMessage" class="success-text">
+            {{ saveSuccessMessage }}
+          </p>
+        </BentoItem>
+      </BentoLayout>
+    </template>
+
+    <template #rail>
+      <AdminRailPanel :title="t('adminFeedbackQuestionnaires.templatesTitle')">
+        <template #actions>
           <Button
             appearance="pill"
+            tone="outline"
             size="sm"
             type="button"
-            data-testid="admin-feedback-questionnaires.save"
-            :disabled="!canSave"
-            :loading="isSaving"
-            @click="handleSave"
+            data-testid="admin-feedback-questionnaires.create"
+            @click="handleNewTemplate"
           >
-            {{ saveButtonLabel }}
+            {{ t("adminFeedbackQuestionnaires.newTemplateAction") }}
           </Button>
-        </div>
+        </template>
 
-        <div class="grid">
-          <label class="field">
-            <span class="field-label">{{
-              t("adminFeedbackQuestionnaires.keyLabel")
-            }}</span>
-            <input
-              v-model="draftKey"
-              class="field-input"
-              :placeholder="t('adminFeedbackQuestionnaires.keyPlaceholder')"
-            />
-          </label>
-
-          <label class="field">
-            <span class="field-label">{{
-              t("adminFeedbackQuestionnaires.versionLabel")
-            }}</span>
-            <input
-              v-model="draftVersion"
-              class="field-input"
-              :placeholder="t('adminFeedbackQuestionnaires.versionPlaceholder')"
-            />
-          </label>
-
-          <label class="field field--full">
-            <span class="field-label">{{
-              t("adminFeedbackQuestionnaires.titleLabel")
-            }}</span>
-            <input
-              v-model="draftTitle"
-              class="field-input"
-              :placeholder="t('adminFeedbackQuestionnaires.titlePlaceholder')"
-            />
-          </label>
-
-          <label class="field field--full">
-            <span class="field-label">{{
-              t("adminFeedbackQuestionnaires.definitionLabel")
-            }}</span>
-            <textarea
-              v-model="draftDefinitionText"
-              class="field-input definition-textarea"
-              spellcheck="false"
-              data-testid="admin-feedback-questionnaires.definition"
-            ></textarea>
-          </label>
-        </div>
-
-        <p v-if="definitionError" class="error-text">{{ definitionError }}</p>
-        <p v-else-if="saveSuccessMessage" class="success-text">
-          {{ saveSuccessMessage }}
+        <p class="hint">
+          {{
+            t("adminFeedbackQuestionnaires.templateCount", {
+              count: templates.length,
+            })
+          }}
         </p>
-      </section>
-    </div>
-  </DesktopPageScaffold>
+
+        <label class="field">
+          <span class="field-label">{{
+            t("adminFeedbackQuestionnaires.templateLabel")
+          }}</span>
+          <select
+            v-model="selectedTemplateIdRaw"
+            class="field-input"
+            data-testid="admin-feedback-questionnaires.template-list"
+          >
+            <option value="__new">
+              {{ t("adminFeedbackQuestionnaires.newTemplateOption") }}
+            </option>
+            <option
+              v-for="template in templates"
+              :key="template.id"
+              :value="String(template.id)"
+            >
+              {{ template.key }}@{{ template.version }}
+            </option>
+          </select>
+        </label>
+      </AdminRailPanel>
+    </template>
+  </AdminPageScaffold>
 </template>
 
 <script setup lang="ts">
@@ -157,8 +154,11 @@ import {
   type AdminFeedbackQuestionnaireTemplatesResponse,
 } from "@/domains/admin/queries/useAdminFeedbackQuestionnaires";
 import { useAdminAccess } from "@/domains/admin/use-cases/useAdminAccess";
-import AdminNavigationCard from "@/domains/admin/ui/composites/AdminNavigationCard.vue";
-import DesktopPageScaffold from "@/shared/ui/layout/DesktopPageScaffold.vue";
+import AdminNavigationPanel from "@/domains/admin/ui/navigation/AdminNavigationPanel.vue";
+import AdminPageScaffold from "@/domains/admin/ui/layout/AdminPageScaffold.vue";
+import AdminRailPanel from "@/domains/admin/ui/layout/AdminRailPanel.vue";
+import BentoItem from "@/domains/admin/ui/layout/BentoItem.vue";
+import BentoLayout from "@/domains/admin/ui/layout/BentoLayout.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import Button from "@/shared/ui/actions/Button.vue";
@@ -369,29 +369,19 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.page,
-.sidebar,
-.stack,
 .header,
-.form-panel {
+.field {
   display: flex;
   flex-direction: column;
 }
 
-.sidebar,
-.stack,
 .header,
-.form-panel {
-  gap: var(--sys-spacing-medium);
-}
-
-.header {
+.field {
   gap: var(--sys-spacing-xsmall);
 }
 
 .title,
 .subtitle,
-.card-title,
 .hint,
 .error-text,
 .success-text {
@@ -408,35 +398,10 @@ watch(
   color: var(--sys-color-on-surface-variant);
 }
 
-.panel {
-  padding: var(--sys-spacing-large);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-radius-large);
-  background: var(--sys-color-surface-container);
-}
-
-.card-title {
-  @include mx.pu-font(title-medium);
-}
-
-.section-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sys-spacing-small);
-  flex-wrap: wrap;
-}
-
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-spacing-small);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xsmall);
 }
 
 .field--full {

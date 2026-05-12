@@ -2,13 +2,11 @@
   "apps": {
     "apps/frontend": {
       "name": "partner-up",
-      "script": "dev",
-      "appPort": 4001
+      "script": "dev"
     },
     "apps/backend": {
       "name": "api.partner-up",
-      "script": "dev",
-      "appPort": 4002
+      "script": "dev"
     }
   }
 }

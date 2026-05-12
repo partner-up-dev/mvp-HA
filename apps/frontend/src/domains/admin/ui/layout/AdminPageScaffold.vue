@@ -1,0 +1,98 @@
+<template>
+  <PageScaffold class="admin-page-scaffold">
+    <div class="admin-page-scaffold__layout">
+      <aside
+        v-if="$slots.navigation || $slots.rail"
+        class="admin-page-scaffold__left"
+      >
+        <slot name="navigation" />
+
+        <div v-if="$slots.rail" class="admin-page-scaffold__context">
+          <slot name="rail" />
+        </div>
+      </aside>
+
+      <div class="admin-page-scaffold__workspace">
+        <header v-if="$slots.header" class="admin-page-scaffold__header">
+          <slot name="header" />
+        </header>
+
+        <main class="admin-page-scaffold__main">
+          <slot name="main">
+            <slot />
+          </slot>
+        </main>
+      </div>
+    </div>
+  </PageScaffold>
+</template>
+
+<script setup lang="ts">
+import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
+</script>
+
+<style lang="scss" scoped>
+.admin-page-scaffold {
+  --pu-page-max-width: 1540px;
+}
+
+.admin-page-scaffold__layout,
+.admin-page-scaffold__workspace,
+.admin-page-scaffold__left,
+.admin-page-scaffold__context,
+.admin-page-scaffold__main {
+  min-width: 0;
+}
+
+.admin-page-scaffold__layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: var(--sys-spacing-xlarge);
+  align-items: start;
+}
+
+.admin-page-scaffold__left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-medium);
+  max-height: calc(
+    var(--pu-vh) - var(--pu-safe-top) - var(--pu-safe-bottom) -
+      (var(--sys-spacing-medium) * 2)
+  );
+  overflow-y: auto;
+}
+
+.admin-page-scaffold__context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-medium);
+}
+
+.admin-page-scaffold__workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-spacing-large);
+}
+
+.admin-page-scaffold__header {
+  min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .admin-page-scaffold__left {
+    position: sticky;
+    top: calc(var(--sys-spacing-medium) + var(--pu-safe-top));
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-page-scaffold__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-page-scaffold__left {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+</style>

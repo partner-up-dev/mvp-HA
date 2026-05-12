@@ -19,6 +19,7 @@ import {
   type CreatePRCommandResult,
 } from "./create-pr.shared";
 import { materializeEventDefaultsForPR } from "../services/event-default-materialization.service";
+import { assertUserPRCreationAllowedForAnchorEvent } from "../services/event-pr-creation-policy.service";
 
 const prRepo = new PartnerRequestRepository();
 
@@ -34,6 +35,10 @@ export async function createPRFromStructured(
   } = {},
 ): Promise<CreatePRCommandResult> {
   assertManualPartnerBoundsValid(fields.minPartners, fields.maxPartners, 0);
+  await assertUserPRCreationAllowedForAnchorEvent({
+    anchorEventId: options.anchorEventId,
+    type: fields.type,
+  });
   await assertPRTimeWindowAvailableAtLocation({
     location: fields.location,
     timeWindow: fields.time,

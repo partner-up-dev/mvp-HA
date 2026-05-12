@@ -378,7 +378,7 @@ export const useCreateAdminPRMessage = () => {
         json: input,
       });
       if (!res.ok) {
-        throw new Error(await readErrorMessage(res, "發送系統留言失敗"));
+        throw new Error(await readErrorMessage(res, "发送 PR 留言失败"));
       }
       return await res.json();
     },

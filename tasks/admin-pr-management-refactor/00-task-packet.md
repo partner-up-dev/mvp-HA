@@ -93,20 +93,20 @@
     - PR content editing
     - PR status updates
     - PR visibility updates
-    - sending system messages for the currently selected PR
+    - publishing PR messages for the currently selected PR
   - admin content editing bypasses the normal PR status editability guard and preserves the current PR status
   - `type` input is `input + datalist`
   - matching `AnchorEvent.type` suggestions prefill:
     - default min/max partners
     - default participation policy values
-- `PR 系统留言`
-  - merged into the `PR 管理` page as a dedicated `留言` card under PR create/edit
+- `PR 留言`
+  - exposed under the `PR 管理` page as a dedicated view
   - `/admin/pr-messages` remains only as a redirect alias to `/admin/pr`
-  - the card now owns:
+  - the view owns:
     - PR message listing
     - admin message editing
     - admin message deletion
-    - sending system messages
+    - PR message publishing
 
 ## Backend Reality
 

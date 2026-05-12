@@ -4,11 +4,13 @@
 
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import {
+  type AnchorEventPrCreationPolicy,
   type AnchorEvent,
   normalizeLocationPool,
 } from "../../../entities/anchor-event";
 import { isPublishedPoi } from "../../../entities/poi";
 import { PoiRepository } from "../../../repositories/PoiRepository";
+import { canUserCreatePRForAnchorEvent } from "../../pr/services";
 
 const repo = new AnchorEventRepository();
 const poiRepo = new PoiRepository();
@@ -27,6 +29,8 @@ export interface AnchorEventSummary {
     gallery: string[];
   }>;
   fallbackGallery: string[];
+  prCreationPolicy: AnchorEventPrCreationPolicy;
+  canUserCreatePR: boolean;
   status: string;
   createdAt: string;
 }
@@ -67,6 +71,8 @@ function toSummary(
     locationPool,
     pois,
     fallbackGallery,
+    prCreationPolicy: e.prCreationPolicy,
+    canUserCreatePR: canUserCreatePRForAnchorEvent(e),
     status: e.status,
     createdAt: e.createdAt.toISOString(),
   };

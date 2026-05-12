@@ -7,9 +7,9 @@
   },
   "scripts": {
     "dev": "pnpm --filter @partner-up-dev/frontend dev & pnpm --filter @partner-up-dev/backend dev",
-    "dev:portless": "portless",
-    "dev:portless:frontend": "portless --name partner-up --app-port 4001 pnpm --filter @partner-up-dev/frontend dev",
-    "dev:portless:backend": "portless --name api.partner-up --app-port 4002 pnpm --filter @partner-up-dev/backend dev",
+    "dev:portless": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/portless.ps1",
+    "dev:portless:frontend": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/portless.ps1 --name partner-up -- pnpm --filter @partner-up-dev/frontend dev",
+    "dev:portless:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/portless.ps1 --name api.partner-up -- pnpm --filter @partner-up-dev/backend dev",
     "dev:frontend": "pnpm --filter @partner-up-dev/frontend dev",
     "dev:backend": "pnpm --filter @partner-up-dev/backend dev",
     "build:frontend": "pnpm --filter @partner-up-dev/frontend build",

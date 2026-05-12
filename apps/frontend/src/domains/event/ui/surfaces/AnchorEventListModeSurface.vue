@@ -67,6 +67,7 @@
 
       <div class="batch-action-cards">
         <EventPRCreateCard
+          v-if="canUserCreatePR"
           :title="createCardTitle"
           :time-window-label="createCardSubtitleTimeLabel"
           :event-title="eventTitle"
@@ -219,6 +220,7 @@ const hasBrowseTimeWindows = computed(
   () => (detail.value?.browseTimeWindows.length ?? 0) > 0,
 );
 const isListExhausted = computed(() => detail.value?.exhausted === true);
+const canUserCreatePR = computed(() => detail.value?.canUserCreatePR === true);
 
 const LIST_MODE_EXPIRED_DATE_LIMIT = 3;
 const LIST_MODE_EXPIRED_TAB_CLASS = "tab-bar__tab--expired";
@@ -602,7 +604,7 @@ const shouldAutoExpandCreateCard = computed(() => {
     return false;
   }
 
-  return !hasJoinablePRInSelectedDate.value;
+  return canUserCreatePR.value && !hasJoinablePRInSelectedDate.value;
 });
 
 const createCardAutoExpandContextKey = computed(
@@ -619,6 +621,10 @@ const handleDateTabChange = (value: string | number) => {
 };
 
 const handleCreateInList = async (locationId: string | null) => {
+  if (!canUserCreatePR.value) {
+    return;
+  }
+
   await createEventAssistedPR({
     targetTimeWindow: selectedTimeWindowEntry.value?.timeWindow ?? null,
     locationId,

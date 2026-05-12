@@ -43,11 +43,17 @@
       </section>
 
       <section
-        v-if="meetingPointDescription || meetingPointImageUrl"
+        v-if="meetingPointSectionVisible"
         class="facts-entry"
+        data-testid="pr-detail.meeting-point"
+        :data-visibility="meetingPointVisibility"
       >
+        <InfoRow v-if="isMeetingPointPrivate" :label="t('prCard.meetingPoint')">
+          {{ t("prCard.meetingPointPrivate") }}
+        </InfoRow>
+
         <Button
-          v-if="interactive && meetingPointImageUrl"
+          v-else-if="interactive && meetingPointImageUrl"
           class="facts-entry-button"
           tone="ghost"
           block
@@ -245,6 +251,18 @@ const meetingPointImageUrl = computed(() => {
   const imageUrl = prDetail.value?.core.meetingPoint?.imageUrl?.trim() ?? "";
   return imageUrl.length > 0 ? imageUrl : null;
 });
+const meetingPointVisibility = computed(
+  () => prDetail.value?.core.meetingPointVisibility ?? "VISIBLE",
+);
+const isMeetingPointPrivate = computed(
+  () => meetingPointVisibility.value === "ACTIVE_PARTICIPANTS_ONLY",
+);
+const meetingPointSectionVisible = computed(
+  () =>
+    isMeetingPointPrivate.value ||
+    meetingPointDescription.value !== null ||
+    meetingPointImageUrl.value !== null,
+);
 
 const normalizedNotes = computed(() => {
   const trimmed = prDetail.value?.core.notes?.trim() ?? "";
