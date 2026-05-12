@@ -3,14 +3,17 @@ import type {
   MeetingPointConfig,
   MeetingPointConfigMap,
   PRJoinGateConfig,
+  AnchorEventPrCreationPolicy,
   FeedbackQuestionnaireTemplate,
   FeedbackQuestionnaireTemplateId,
 } from "../../../entities";
 import type { AnchorEventPRContextRecord } from "../../../repositories/AnchorEventPRContextRepository";
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
-import { countActivePartnersForPR } from "../../pr/services";
+import {
+  countActivePartnersForPR,
+  readAnchorEventPRContextRecordsByEventTimeWindow,
+} from "../../pr/services";
 import { getEffectiveBookingDeadline } from "../../pr-booking-support";
-import { readAnchorEventPRContextRecordsByEventTimeWindow } from "../../pr/services";
 import { listAnchorEventTimeWindowDetails } from "../../anchor-event/services/time-window-pool";
 
 const anchorEventRepo = new AnchorEventRepository();
@@ -84,6 +87,7 @@ export type AdminAnchorEventSummary = {
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   betaGroupQrCode: string | null;
+  prCreationPolicy: AnchorEventPrCreationPolicy;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -182,6 +186,7 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,
+        prCreationPolicy: event.prCreationPolicy,
         status: event.status,
         createdAt: event.createdAt.toISOString(),
         updatedAt: event.updatedAt.toISOString(),

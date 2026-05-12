@@ -1,4 +1,8 @@
-import type { PartnerRequest, PRJoinGateConfig } from "../../../entities";
+import type {
+  AnchorEventPrCreationPolicy,
+  PartnerRequest,
+  PRJoinGateConfig,
+} from "../../../entities";
 import type { MeetingPointConfig } from "../../../entities";
 import type {
   FeedbackQuestionnaireInstance,
@@ -55,6 +59,7 @@ export type AdminPRTypeOption = {
   defaultJoinLockOffsetMinutes: number;
   joinGateConfig: PRJoinGateConfig;
   feedbackQuestionnaireTemplateId: FeedbackQuestionnaireTemplate["id"] | null;
+  prCreationPolicy: AnchorEventPrCreationPolicy;
 };
 
 export interface AdminPRWorkspace {
@@ -137,6 +142,7 @@ export async function getAdminPRWorkspace(): Promise<AdminPRWorkspace> {
       joinGateConfig: event.joinGateConfig,
       feedbackQuestionnaireTemplateId:
         event.feedbackQuestionnaireTemplateId ?? null,
+      prCreationPolicy: event.prCreationPolicy,
     });
   }
 

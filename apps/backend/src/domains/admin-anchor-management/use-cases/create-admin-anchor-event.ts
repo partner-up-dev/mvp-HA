@@ -2,6 +2,7 @@ import { AnchorEventRepository } from "../../../repositories/AnchorEventReposito
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
   AnchorEvent,
+  AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
   LocationEntry,
@@ -42,6 +43,7 @@ export interface CreateAdminAnchorEventInput {
   locationMeetingPoints?: MeetingPointConfigMap;
   coverImage: string | null;
   betaGroupQrCode: string | null;
+  prCreationPolicy: AnchorEventPrCreationPolicy;
   status: AnchorEventStatus;
 }
 
@@ -99,6 +101,7 @@ export async function createAdminAnchorEvent(
     ),
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
+    prCreationPolicy: input.prCreationPolicy,
     status: input.status,
   });
 }
