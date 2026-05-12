@@ -17,6 +17,9 @@ type CreatePRResponse = {
   status: PRStatus;
   canonicalPath: string;
 };
+type ProblemDetailsResponse = {
+  code?: string;
+};
 
 const createStructuredPR = async (
   token: string,
@@ -39,6 +42,14 @@ const probePRNotes = async (prId: PRId): Promise<string | null> => {
     .from(partnerRequests)
     .where(eq(partnerRequests.id, prId));
   return rows[0]?.notes ?? null;
+};
+
+const countPRsByType = async (type: string): Promise<number> => {
+  const rows = await getTestDb()
+    .select({ id: partnerRequests.id })
+    .from(partnerRequests)
+    .where(eq(partnerRequests.type, type));
+  return rows.length;
 };
 
 scenario(
@@ -83,5 +94,42 @@ scenario(
       await probePRNotes(explicit.id),
       "I will bring a spare racket and want doubles rotation practice.",
     );
+  },
+);
+
+scenario(
+  "anchor_event_admin_only_policy_blocks_public_structured_create",
+  async (ctx) => {
+    const creator = await givenUser("admin-only-public-create");
+    const event = await givenAnchorEvent({
+      label: "admin-only-public-create",
+      prCreationPolicy: "ADMIN_ONLY",
+    });
+    const fields: PartnerRequestFields = {
+      title: "Scenario admin-only blocked PR",
+      type: event.type,
+      time: event.timeWindow,
+      location: event.locationId,
+      minPartners: 2,
+      maxPartners: null,
+      partners: [],
+      budget: null,
+      preferences: [],
+      notes: null,
+    };
+    ctx.record("eventId", event.id);
+
+    const response = await requestJson("/api/pr/new/form", {
+      method: "POST",
+      token: creator.token,
+      body: {
+        fields,
+        createSource: "FORM",
+      },
+    });
+    const body = await expectJsonResponse<ProblemDetailsResponse>(response, 403);
+
+    assert.equal(body.code, "ANCHOR_EVENT_USER_PR_CREATION_DISABLED");
+    assert.equal(await countPRsByType(event.type), 0);
   },
 );

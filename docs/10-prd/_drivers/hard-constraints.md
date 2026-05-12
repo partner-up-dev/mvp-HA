@@ -4,7 +4,7 @@
 
 - The product is not an app, a community, or a content platform. It is a collaboration trigger embedded into existing conversation and sharing behavior.
 - The core external collaboration object is `PartnerRequest`, surfaced product-side as `PR`.
-- The current version keeps event-context PR creation inside Anchor Event and time-pool context. User-created PRs from event context stay inside the controlled event-page flow.
+- The current version keeps event-context PR creation inside Anchor Event and time-pool context when the Anchor Event policy allows user creation. Admin-only Anchor Events source same-type PRs through operator tooling.
 
 ## Interaction And Identity Constraints
 

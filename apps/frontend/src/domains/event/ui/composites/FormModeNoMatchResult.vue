@@ -71,7 +71,16 @@
       </div>
     </section>
 
-    <div class="no-match-actions">
+    <section v-else class="no-match-hero">
+      <h2 class="no-match-hero__title">
+        {{ t("anchorEvent.formMode.noCandidateTitle") }}
+      </h2>
+      <p class="no-match-hero__body">
+        {{ t("anchorEvent.formMode.noCandidateBody") }}
+      </p>
+    </section>
+
+    <div v-if="props.showCreateFallback" class="no-match-actions">
       <Button
         appearance="rect"
         tone="tertiary"
@@ -115,6 +124,7 @@ const props = defineProps<{
   candidates: readonly RecommendationCandidate[];
   createPending: boolean;
   createDisabled: boolean;
+  showCreateFallback: boolean;
   createErrorMessage: string | null;
   resolveCoverImage: (location: string | null) => string | null;
 }>();

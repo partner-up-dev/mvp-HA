@@ -1328,6 +1328,7 @@
     "maxPartnersMustBeAtLeastMinPartners": "最多必须大于等于最少"
   },
   "errors": {
+    "anchorEventUserCreationDisabled": "该活动类型由运营创建 PR，请选择已有场次。",
     "createRequestFailed": "创建请求失败",
     "publishRequestFailed": "发布请求失败",
     "updateStatusFailed": "更新状态失败",
@@ -1512,6 +1513,8 @@
       "emptyRecommendationBody": "这些场次与条件接近；如果都不合适，我们会按你的条件发起新的搭子请求。",
       "candidateListEyebrow": "候选列表",
       "candidateListTitle": "我们没有找到符合条件的场次，下面是候选场次",
+      "noCandidateTitle": "暂时没有符合条件的场次",
+      "noCandidateBody": "可以调整条件继续查找，或看看其它活动。",
       "createFallbackAction": "都不合适，帮我找",
       "recommendationFailed": "获取推荐失败，请稍后重试。",
       "recommendationCardHeadline": "{time} · {location}",
@@ -1539,6 +1542,7 @@
         "wechatOAuthNotConfigured": "当前环境暂未配置微信登录，暂时无法创建活动搭子请求。",
         "locationCapReached": "该地点当前时段名额已满，请选择其他地点。",
         "eventUnavailable": "当前活动场次不可用，请刷新后重试。",
+        "userCreationDisabled": "当前活动由运营创建 PR，请选择已有场次。",
         "createFailed": "创建活动搭子请求失败，请稍后重试。"
       }
     }

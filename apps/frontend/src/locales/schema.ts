@@ -678,6 +678,8 @@ export interface MessageSchema {
       emptyRecommendationBody: string;
       candidateListEyebrow: string;
       candidateListTitle: string;
+      noCandidateTitle: string;
+      noCandidateBody: string;
       createFallbackAction: string;
       recommendationFailed: string;
       recommendationCardHeadline: string;
@@ -705,6 +707,7 @@ export interface MessageSchema {
         wechatOAuthNotConfigured: string;
         locationCapReached: string;
         eventUnavailable: string;
+        userCreationDisabled: string;
         createFailed: string;
       };
     };
@@ -1404,6 +1407,7 @@ export interface MessageSchema {
     maxPartnersMustBeAtLeastMinPartners: string;
   };
   errors: {
+    anchorEventUserCreationDisabled: string;
     createRequestFailed: string;
     publishRequestFailed: string;
     updateStatusFailed: string;

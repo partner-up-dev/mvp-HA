@@ -4,8 +4,10 @@ import { scenario } from "../_infra/scenario/scenario";
 import { expectJsonResponse, requestJson } from "../_infra/http/backend-app";
 import { givenPublishedPartnerRequest } from "./_kit/builders/partner-requests";
 import { givenAdminUser, givenUser } from "./_kit/builders/users";
+import { givenAnchorEvent } from "../anchor-event/_kit/builders/anchor-events";
 import { getTestDb } from "../_infra/probes/sql-probe";
 import { partnerRequests, partners, prSupportResources } from "../../src/entities";
+import type { PRId } from "../../src/entities";
 
 scenario(
   "admin_delete_pr_removes_root_partners_and_support_resources",
@@ -73,3 +75,78 @@ scenario(
     assert.equal(supportResourceCountRows[0]?.count ?? 0, 0);
   },
 );
+
+scenario("admin_pr_create_and_edit_allow_admin_only_event_type", async (ctx) => {
+  const admin = await givenAdminUser("admin-only-pr-operator");
+  const creator = await givenUser("admin-only-edit-source");
+  const event = await givenAnchorEvent({
+    label: "admin-only-admin-pr",
+    prCreationPolicy: "ADMIN_ONLY",
+  });
+  ctx.record("eventId", event.id);
+
+  const createResponse = await requestJson("/api/admin/prs", {
+    method: "POST",
+    token: admin.token,
+    body: {
+      timeWindow: event.timeWindow,
+      title: "Scenario admin created admin-only PR",
+      type: event.type,
+      location: event.locationId,
+      minPartners: 2,
+      maxPartners: null,
+      preferences: [],
+      notes: null,
+      meetingPoint: null,
+      joinGateConfig: [],
+      confirmationStartOffsetMinutes: 120,
+      confirmationEndOffsetMinutes: 30,
+      joinLockOffsetMinutes: 30,
+    },
+  });
+  const created = await expectJsonResponse<{ root: { id: PRId } }>(
+    createResponse,
+    200,
+  );
+
+  const editable = await givenPublishedPartnerRequest({
+    creator,
+    minPartners: 1,
+    maxPartners: 2,
+    expectedCreatedStatus: "READY",
+    title: "Scenario admin editable source",
+  });
+  const editResponse = await requestJson(`/api/admin/prs/${editable.id}/content`, {
+    method: "PATCH",
+    token: admin.token,
+    body: {
+      timeWindow: event.timeWindow,
+      title: "Scenario admin edited admin-only PR",
+      type: event.type,
+      location: event.locationId,
+      minPartners: 2,
+      maxPartners: null,
+      preferences: [],
+      notes: null,
+      meetingPoint: null,
+      joinGateConfig: [],
+      confirmationStartOffsetMinutes: 120,
+      confirmationEndOffsetMinutes: 30,
+      joinLockOffsetMinutes: 30,
+    },
+  });
+  await expectJsonResponse(editResponse, 200);
+
+  const [createdRoot, editedRoot] = await Promise.all([
+    getTestDb()
+      .select({ type: partnerRequests.type })
+      .from(partnerRequests)
+      .where(eq(partnerRequests.id, created.root.id)),
+    getTestDb()
+      .select({ type: partnerRequests.type })
+      .from(partnerRequests)
+      .where(eq(partnerRequests.id, editable.id)),
+  ]);
+  assert.equal(createdRoot[0]?.type, event.type);
+  assert.equal(editedRoot[0]?.type, event.type);
+});

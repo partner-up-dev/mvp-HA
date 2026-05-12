@@ -44,6 +44,7 @@ export type AnchorEventCardModeSurfaceProps = {
   cardCreateLocationOptions?: CardCreateLocationOption[];
   createActionErrorMessage?: string | null;
   isCreatePending?: boolean;
+  canUserCreatePR?: boolean;
   eventId: number;
   eventTitle?: string;
   eventBetaGroupQrCode?: string | null;
@@ -60,6 +61,7 @@ type AnchorEventCardModeSurfaceDefaults = {
   cardCreateLocationOptions: () => CardCreateLocationOption[];
   createActionErrorMessage: null;
   isCreatePending: boolean;
+  canUserCreatePR: boolean;
   eventTitle: string;
   eventBetaGroupQrCode: null;
 };
@@ -75,6 +77,7 @@ export const anchorEventCardModeSurfaceDefaults: AnchorEventCardModeSurfaceDefau
   cardCreateLocationOptions: () => [],
   createActionErrorMessage: null,
   isCreatePending: false,
+  canUserCreatePR: true,
   eventTitle: "",
   eventBetaGroupQrCode: null,
 };
