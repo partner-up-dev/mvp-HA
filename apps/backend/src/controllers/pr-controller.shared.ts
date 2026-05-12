@@ -8,7 +8,7 @@ import {
   prStatusManualSchema,
 } from "../entities/partner-request";
 import { prMessageBodySchema } from "../entities/pr-message";
-import type { UserId } from "../entities/user";
+import { hasUserRole, type UserId, type UserRole } from "../entities/user";
 import { WeChatOAuthService } from "../services/WeChatOAuthService";
 import { issueAnonymousAuth, issueAuthForUser } from "../auth/middleware";
 import type { AuthEnv } from "../auth/middleware";
@@ -259,7 +259,8 @@ export const issueAuthPayload = async (
   c: Context<AuthEnv>,
   userId: UserId,
 ): Promise<{
-  role: "anonymous" | "authenticated" | "service";
+  role: UserRole;
+  roles: UserRole[];
   userId: UserId;
   accessToken: string;
 }> => {
@@ -268,14 +269,14 @@ export const issueAuthPayload = async (
     throw new HTTPException(401, { message: "Invalid session user" });
   }
 
-  const auth =
-    user.role === "anonymous"
-      ? issueAnonymousAuth(user.id)
-      : issueAuthForUser(user);
+  const auth = hasUserRole(user.role, "anonymous")
+    ? issueAnonymousAuth(user.id)
+    : issueAuthForUser(user);
   c.set("auth", auth);
 
   return {
     role: auth.role,
+    roles: auth.roles,
     userId: user.id,
     accessToken: auth.token,
   };

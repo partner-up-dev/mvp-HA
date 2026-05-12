@@ -5,6 +5,7 @@ import type { UserId } from "../../../entities/user";
 
 export type AnonymousRegistrationResult = {
   role: "anonymous";
+  roles: ["anonymous"];
   userId: string;
   accessToken: string;
 };
@@ -18,7 +19,7 @@ export async function registerAnonymousUser(): Promise<AnonymousRegistrationResu
     id: generateUserId(),
     openId: null,
     pinHash: null,
-    role: "anonymous",
+    role: ["anonymous"],
     status: "ACTIVE",
   });
 
@@ -30,6 +31,7 @@ export async function registerAnonymousUser(): Promise<AnonymousRegistrationResu
 
   return {
     role: "anonymous",
+    roles: ["anonymous"],
     userId: created.id,
     accessToken: auth.token,
   };

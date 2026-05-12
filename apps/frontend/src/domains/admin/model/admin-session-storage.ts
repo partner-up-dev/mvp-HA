@@ -1,12 +1,14 @@
-export type AdminSessionRole = "anonymous" | "service";
+export type AdminSessionRole = "anonymous" | "service" | "analytics";
 
 const STORAGE_ADMIN_USER_ID_KEY = "partner_up_admin_user_id";
 const STORAGE_ADMIN_ACCESS_TOKEN_KEY = "partner_up_admin_access_token";
 const STORAGE_ADMIN_SESSION_ROLE_KEY = "partner_up_admin_session_role";
+const STORAGE_ADMIN_SESSION_ROLES_KEY = "partner_up_admin_session_roles";
 
 let memoryAdminUserId: string | null = null;
 let memoryAdminAccessToken: string | null = null;
 let memoryAdminRole: AdminSessionRole = "anonymous";
+let memoryAdminRoles: AdminSessionRole[] = ["anonymous"];
 
 const readStorage = (key: string): string | null => {
   if (typeof window === "undefined") {
@@ -38,7 +40,48 @@ const writeStorage = (key: string, value: string | null): void => {
 };
 
 const isAdminSessionRole = (value: string | null): value is AdminSessionRole =>
-  value === "anonymous" || value === "service";
+  value === "anonymous" || value === "service" || value === "analytics";
+
+const normalizeAdminSessionRoles = (
+  roles: readonly string[] | null | undefined,
+): AdminSessionRole[] => {
+  const normalized = [...new Set(roles ?? [])].filter((role) =>
+    isAdminSessionRole(role),
+  );
+
+  if (normalized.includes("service") || normalized.includes("analytics")) {
+    return normalized.filter((role) => role !== "anonymous");
+  }
+
+  return ["anonymous"];
+};
+
+export const resolvePrimaryAdminSessionRole = (
+  roles: readonly AdminSessionRole[],
+): AdminSessionRole => {
+  if (roles.includes("service")) return "service";
+  if (roles.includes("analytics")) return "analytics";
+  return "anonymous";
+};
+
+const readStoredAdminSessionRoles = (): AdminSessionRole[] => {
+  const rawRoles = readStorage(STORAGE_ADMIN_SESSION_ROLES_KEY);
+  if (rawRoles) {
+    try {
+      const parsed = JSON.parse(rawRoles) as unknown;
+      if (Array.isArray(parsed)) {
+        return normalizeAdminSessionRoles(
+          parsed.filter((role) => typeof role === "string"),
+        );
+      }
+    } catch {
+      return ["anonymous"];
+    }
+  }
+
+  const rawRole = readStorage(STORAGE_ADMIN_SESSION_ROLE_KEY);
+  return normalizeAdminSessionRoles(rawRole ? [rawRole] : null);
+};
 
 export const getStoredAdminUserId = (): string | null => {
   if (typeof window === "undefined") {
@@ -71,26 +114,51 @@ export const getStoredAdminSessionRole = (): AdminSessionRole => {
     return memoryAdminRole;
   }
 
-  const raw = readStorage(STORAGE_ADMIN_SESSION_ROLE_KEY);
-  return isAdminSessionRole(raw) ? raw : "anonymous";
+  return resolvePrimaryAdminSessionRole(readStoredAdminSessionRoles());
 };
 
 export const setStoredAdminSessionRole = (role: AdminSessionRole): void => {
-  memoryAdminRole = role;
-  writeStorage(STORAGE_ADMIN_SESSION_ROLE_KEY, role);
+  setStoredAdminSessionRoles([role]);
+};
+
+export const getStoredAdminSessionRoles = (): AdminSessionRole[] => {
+  if (typeof window === "undefined") {
+    return memoryAdminRoles;
+  }
+
+  return readStoredAdminSessionRoles();
+};
+
+export const setStoredAdminSessionRoles = (
+  roles: readonly AdminSessionRole[],
+): void => {
+  const nextRoles = normalizeAdminSessionRoles(roles);
+  const primaryRole = resolvePrimaryAdminSessionRole(nextRoles);
+
+  memoryAdminRoles = nextRoles;
+  memoryAdminRole = primaryRole;
+  writeStorage(STORAGE_ADMIN_SESSION_ROLE_KEY, primaryRole);
+  writeStorage(STORAGE_ADMIN_SESSION_ROLES_KEY, JSON.stringify(nextRoles));
 };
 
 export const clearStoredAdminSession = (): void => {
   memoryAdminUserId = null;
   memoryAdminAccessToken = null;
   memoryAdminRole = "anonymous";
+  memoryAdminRoles = ["anonymous"];
 
   writeStorage(STORAGE_ADMIN_USER_ID_KEY, null);
   writeStorage(STORAGE_ADMIN_ACCESS_TOKEN_KEY, null);
   writeStorage(STORAGE_ADMIN_SESSION_ROLE_KEY, null);
+  writeStorage(STORAGE_ADMIN_SESSION_ROLES_KEY, null);
 };
 
-export const getStoredAdminHasAccess = (): boolean =>
-  getStoredAdminSessionRole() === "service" &&
+export const getStoredAdminHasAnyRole = (
+  requiredRoles: readonly AdminSessionRole[],
+): boolean =>
   Boolean(getStoredAdminUserId()) &&
-  Boolean(getStoredAdminAccessToken());
+  Boolean(getStoredAdminAccessToken()) &&
+  getStoredAdminSessionRoles().some((role) => requiredRoles.includes(role));
+
+export const getStoredAdminHasAccess = (): boolean =>
+  getStoredAdminHasAnyRole(["service"]);

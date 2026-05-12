@@ -984,6 +984,7 @@ export interface MessageSchema {
     navAnchorEvents: string;
     navPR: string;
     navPRMessages: string;
+    navAnalytics: string;
     navBookingSupport: string;
     navBookingExecution: string;
     navPois: string;

@@ -281,6 +281,7 @@ export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export {
   userIdSchema,
   userRoleSchema,
+  userRolesSchema,
   userStatusSchema,
   userSexSchema,
 } from "./entities/user";

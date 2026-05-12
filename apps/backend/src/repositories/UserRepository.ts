@@ -128,7 +128,7 @@ export class UserRepository {
         nickname: input.nickname,
         sex: input.sex,
         avatar: input.avatar,
-        role: "authenticated",
+        role: ["authenticated"],
         updatedAt: new Date(),
       })
       .where(eq(users.id, input.userId))

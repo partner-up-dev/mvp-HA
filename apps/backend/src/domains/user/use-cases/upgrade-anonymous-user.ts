@@ -1,6 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { UserRepository } from "../../../repositories/UserRepository";
-import type { UserId } from "../../../entities/user";
+import { hasUserRole, type UserId } from "../../../entities/user";
 import type { WeChatOAuthUserProfile } from "../../../services/WeChatOAuthService";
 
 const userRepo = new UserRepository();
@@ -19,7 +19,7 @@ export async function upgradeAnonymousUserWithWeChat(
     return null;
   }
 
-  if (user.role !== "anonymous") {
+  if (!hasUserRole(user.role, "anonymous")) {
     return null;
   }
 

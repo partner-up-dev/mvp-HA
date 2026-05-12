@@ -7,6 +7,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 
 export const userIdSchema = z.string().uuid();
 
@@ -19,8 +20,29 @@ export const userRoleSchema = z.enum([
   "anonymous",
   "authenticated",
   "service",
+  "analytics",
 ]);
 export type UserRole = z.infer<typeof userRoleSchema>;
+export const userRolesSchema = z.array(userRoleSchema);
+
+export const hasUserRole = (
+  roles: readonly UserRole[],
+  role: UserRole,
+): boolean => roles.includes(role);
+
+export const hasAnyUserRole = (
+  roles: readonly UserRole[],
+  allowedRoles: readonly UserRole[],
+): boolean => allowedRoles.some((role) => hasUserRole(roles, role));
+
+export const resolvePrimaryUserRole = (
+  roles: readonly UserRole[],
+): UserRole => {
+  if (roles.includes("service")) return "service";
+  if (roles.includes("analytics")) return "analytics";
+  if (roles.includes("authenticated")) return "authenticated";
+  return "anonymous";
+};
 
 export const userSexSchema = z.union([z.literal(0), z.literal(1), z.literal(2)]);
 export type UserSex = z.infer<typeof userSexSchema>;
@@ -32,7 +54,11 @@ export const users = pgTable("users", {
     "wechat_official_account_followed_at",
   ),
   pinHash: text("pin_hash"),
-  role: text("role").$type<UserRole>().notNull().default("authenticated"),
+  role: text("role")
+    .array()
+    .$type<UserRole[]>()
+    .notNull()
+    .default(sql`ARRAY['authenticated']::text[]`),
   nickname: text("nickname"),
   sex: integer("sex").$type<UserSex>(),
   avatar: text("avatar"),

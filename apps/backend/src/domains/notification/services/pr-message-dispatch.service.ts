@@ -1,5 +1,9 @@
 import type { PartnerRequest } from "../../../entities/partner-request";
-import type { User, UserRole } from "../../../entities/user";
+import {
+  resolvePrimaryUserRole,
+  type User,
+  type UserRole,
+} from "../../../entities/user";
 import { env } from "../../../lib/env";
 import { NotificationDeliveryRepository } from "../../../repositories/NotificationDeliveryRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -193,7 +197,9 @@ export const preparePRMessageNotificationDispatch = async (
       )
     : resolveAuthorName(
         fallbackAuthor?.nickname ?? null,
-        fallbackAuthor?.role ?? null,
+        fallbackAuthor?.role
+          ? resolvePrimaryUserRole(fallbackAuthor.role)
+          : null,
       );
 
   return {

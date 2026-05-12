@@ -9,36 +9,49 @@
 
     <nav class="admin-navigation-card__nav">
       <ChoiceCard
+        v-if="hasServiceAccess"
         :to="{ name: 'admin-anchor-events' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navAnchorEvents") }}
       </ChoiceCard>
       <ChoiceCard
+        v-if="hasServiceAccess"
         :to="{ name: 'admin-pr' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navPR") }}
       </ChoiceCard>
       <ChoiceCard
+        v-if="hasAnalyticsAccess"
+        :to="{ name: 'admin-analytics' }"
+        class="admin-navigation-card__link"
+      >
+        {{ t("adminCommon.navAnalytics") }}
+      </ChoiceCard>
+      <ChoiceCard
+        v-if="hasServiceAccess"
         :to="{ name: 'admin-booking-support' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navBookingSupport") }}
       </ChoiceCard>
       <ChoiceCard
+        v-if="hasServiceAccess"
         :to="{ name: 'admin-booking-execution' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navBookingExecution") }}
       </ChoiceCard>
       <ChoiceCard
+        v-if="hasServiceAccess"
         :to="{ name: 'admin-pois' }"
         class="admin-navigation-card__link"
       >
         {{ t("adminCommon.navPois") }}
       </ChoiceCard>
       <ChoiceCard
+        v-if="hasServiceAccess"
         :to="{ name: 'admin-feedback-questionnaires' }"
         class="admin-navigation-card__link"
       >
@@ -60,9 +73,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
 import Button from "@/shared/ui/actions/Button.vue";
 import ChoiceCard from "@/shared/ui/containers/ChoiceCard.vue";
+import { useAdminSessionStore } from "@/domains/admin/use-cases/useAdminSessionStore";
 
 defineProps<{
   showLogout?: boolean;
@@ -73,6 +89,11 @@ defineEmits<{
 }>();
 
 const { t } = useI18n();
+const adminSessionStore = useAdminSessionStore();
+const { roles } = storeToRefs(adminSessionStore);
+
+const hasServiceAccess = computed(() => roles.value.includes("service"));
+const hasAnalyticsAccess = computed(() => roles.value.includes("analytics"));
 </script>
 
 <style lang="scss" scoped>

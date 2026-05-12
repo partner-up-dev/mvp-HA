@@ -17,7 +17,7 @@ export async function resolveUserByOpenId(openId: string): Promise<User> {
   const createdUser = await userRepo.createIfNotExists({
     id: generateUserId(),
     openId: trimmedOpenId,
-    role: "authenticated",
+    role: ["authenticated"],
     status: "ACTIVE",
   });
   if (createdUser) return createdUser;

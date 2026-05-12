@@ -658,10 +658,11 @@
   },
   "adminCommon": {
     "title": "Admin",
-    "subtitle": "管理活动、PR、POIs 与资助配置",
+    "subtitle": "管理活动、PR、POIs、资助配置与 BI 看板",
     "navAnchorEvents": "活动管理",
     "navPR": "PR 管理",
     "navPRMessages": "系统留言",
+    "navAnalytics": "BI 看板",
     "navBookingSupport": "预订与资助配置",
     "navBookingExecution": "预订执行控制台",
     "navPois": "POIs 配置",
