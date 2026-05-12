@@ -1294,6 +1294,7 @@
     "time": "时间",
     "location": "地点",
     "meetingPoint": "碰头地点",
+    "meetingPointPrivate": "仅搭子可见",
     "viewLocationImages": "查看图片",
     "viewMeetingPointImage": "查看碰头图片",
     "meetingPointImageTitle": "碰头地点图片",

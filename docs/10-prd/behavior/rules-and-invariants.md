@@ -8,7 +8,7 @@
 - `PR` may be entered from home and distribution paths or from Anchor Event context.
 - PR messaging currently uses a dedicated `/pr/:id/messages` page rather than an inline detail-page composer.
 - PR messaging may contain both participant-authored messages and operator-authored system messages; system messages are part of the same thread and remain visually identifiable as system-authored context.
-- PR meeting-point guidance is a public auxiliary fact that answers where participants should meet at or inside the primary location.
+- PR meeting-point guidance answers where participants should meet at or inside the primary location. Before a `PR` becomes `ACTIVE`, it may appear on the public PR detail surface. After the `PR` becomes `ACTIVE`, the guidance is visible only to current active participants.
 - When a `PR` has no explicit title, user-facing detail and share surfaces identify it by primary location first, then by type, then by a generic `PR` label.
 
 ## 2. Creation And Publish Rules
@@ -69,7 +69,7 @@
 - Only current active participants may view the thread or act on read markers and participant posting, while operators may inject system messages through admin tooling without becoming participants themselves.
 - PR detail keeps notification-subscription management visible as a persistent section when reminder registration is relevant for that PR.
 - The participant roster is opened from the facts-card participant row, and each participant badge remains a read-only navigation entry into that participant's profile page.
-- PR detail resolves meeting-point guidance by fallback order: PR-specific configuration, Anchor Event location-specific configuration, Anchor Event default configuration, then POI configuration.
+- PR detail resolves meeting-point guidance by fallback order: PR-specific configuration, Anchor Event location-specific configuration, Anchor Event default configuration, then POI configuration. The resolved guidance is redacted from non-participant PR detail viewers after the PR becomes `ACTIVE`; the primary location remains visible.
 - Updating meeting-point guidance keeps PR status, participation, and confirmation state stable while notifying current active participants through the dedicated meeting-point update notification path.
 
 ### Status Semantics

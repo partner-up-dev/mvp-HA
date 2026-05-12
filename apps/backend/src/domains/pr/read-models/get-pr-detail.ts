@@ -19,6 +19,7 @@ import {
   hasAnchorParticipationPolicy,
   resolveEffectiveMeetingPoint,
   resolveAnchorParticipationPolicy,
+  type EffectiveMeetingPoint,
 } from "../../pr/services";
 import { readPartnerRequestById } from "../../pr/services";
 import {
@@ -30,6 +31,10 @@ import { toPublicPR } from "./public-pr-view.service";
 const prSupportRepo = new PRSupportResourceRepository();
 const partnerRepo = new PartnerRepository();
 const feedbackRepo = new FeedbackQuestionnaireRepository();
+
+export type PRMeetingPointVisibility =
+  | "VISIBLE"
+  | "ACTIVE_PARTICIPANTS_ONLY";
 
 export type PRDetail = {
   id: number;
@@ -48,7 +53,8 @@ export type PRDetail = {
     budget: string | null;
     preferences: string[];
     notes: string | null;
-    meetingPoint: Awaited<ReturnType<typeof resolveEffectiveMeetingPoint>>;
+    meetingPoint: EffectiveMeetingPoint | null;
+    meetingPointVisibility: PRMeetingPointVisibility;
   };
   share: {
     canonical: PRCanonicalShareMetadata;
@@ -90,6 +96,30 @@ export type PRDetail = {
   partnerSection: PartnerSectionView;
 };
 
+const resolveMeetingPointProjection = (
+  publicPR: Awaited<ReturnType<typeof toPublicPR>>,
+  meetingPoint: EffectiveMeetingPoint | null,
+): {
+  meetingPoint: EffectiveMeetingPoint | null;
+  meetingPointVisibility: PRMeetingPointVisibility;
+} => {
+  if (
+    publicPR.status === "ACTIVE" &&
+    publicPR.myPartnerId === null &&
+    meetingPoint !== null
+  ) {
+    return {
+      meetingPoint: null,
+      meetingPointVisibility: "ACTIVE_PARTICIPANTS_ONLY",
+    };
+  }
+
+  return {
+    meetingPoint,
+    meetingPointVisibility: "VISIBLE",
+  };
+};
+
 export async function getPRDetailView(
   id: number,
   viewerIdentity?: {
@@ -111,7 +141,11 @@ export async function getPRDetailView(
       : viewerIdentity?.userId ?? null;
 
   const publicPR = await toPublicPR(request, viewerUserId);
-  const meetingPoint = await resolveEffectiveMeetingPoint(publicPR);
+  const effectiveMeetingPoint = await resolveEffectiveMeetingPoint(publicPR);
+  const meetingPointProjection = resolveMeetingPointProjection(
+    publicPR,
+    effectiveMeetingPoint,
+  );
   const canonicalShare = buildPRCanonicalShareMetadata(publicPR);
   const supportResources = await prSupportRepo.findByPrId(id);
   const bookingSupportPreview = buildBookingSupportPreview(supportResources);
@@ -162,7 +196,8 @@ export async function getPRDetailView(
       budget: publicPR.budget,
       preferences: publicPR.preferences,
       notes: publicPR.notes,
-      meetingPoint,
+      meetingPoint: meetingPointProjection.meetingPoint,
+      meetingPointVisibility: meetingPointProjection.meetingPointVisibility,
     },
     share: {
       canonical: canonicalShare,

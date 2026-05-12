@@ -955,6 +955,7 @@ export interface MessageSchema {
     time: string;
     location: string;
     meetingPoint: string;
+    meetingPointPrivate: string;
     viewLocationImages: string;
     viewMeetingPointImage: string;
     meetingPointImageTitle: string;

@@ -24,7 +24,7 @@
 ## 3. Enter Through a Link and Join a PR
 
 1. The user opens `/pr/:id`.
-2. The user reads the request details, current count, visible status, participant list, and public meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location, notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
+2. The user reads the request details, current count, visible status, participant list, and status-appropriate meeting-point guidance. In the current event-context detail layout, meeting-point guidance appears in the facts card directly under the primary location while it is visible; after the PR becomes `ACTIVE`, non-participant viewers see a private meeting-point placeholder while current active participants can still read the guidance. Notification subscriptions remain as a persistent section, the participant roster opens from the facts-card participant row, and venue images use the same clickable label-row entry pattern.
 3. Revisit continuity uses the restored anonymous UUID session; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, context-specific rules, and any PR-owned join gates.
 5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the frontend injects the relevant fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or booking-contact phone collection.
