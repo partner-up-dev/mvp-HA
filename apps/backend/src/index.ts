@@ -262,6 +262,10 @@ export type {
   CreateTimeWindowDetail,
   EventPRSummary,
 } from "./domains/anchor-event";
+export type {
+  AnchorEventAnalyticsRenderedMode,
+  AnchorEventFunnelResponse,
+} from "./infra/analytics";
 export {
   partnerRequestFieldsSchema,
   createStructuredPRSchema,

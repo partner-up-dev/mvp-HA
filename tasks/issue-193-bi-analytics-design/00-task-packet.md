@@ -54,5 +54,11 @@ Hypothesis: a rebuilt user telemetry model plus a narrow analytics-read surface 
 - Slice 4 implemented: `user_telemetry_journeys`, `user_telemetry_segments`, and `user_telemetry_events` added with ingest service and `/api/telemetry/user/events`.
 - Slice 5 implemented: frontend telemetry now builds app journeys, anonymous ids, typed subject refs, dot event names, and command correlation ids for recommendation/create/join/waitlist.
 - Slice 6 implemented: Anchor Event landing now starts a reusable `anchor_event_landing` business segment; FORM, CARD_RICH, and LIST modes emit mode-specific funnel events; downstream PR detail, create, join, and waitlist actions carry funnel attribution through journey/segment context and command correlation ids.
-- Verification passed: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm db:lint`, `pnpm --filter @partner-up-dev/backend test:unit`.
-- Verification blocked: `pnpm test:scenario backend` needs `TEST_DATABASE_URL` or `SCENARIO_DATABASE_ADMIN_URL` in this environment.
+- Verification passed through Slice 6: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm db:lint`, `pnpm --filter @partner-up-dev/backend test:unit`.
+- Verification blocked through Slice 6: `pnpm test:scenario backend` needs `TEST_DATABASE_URL` or `SCENARIO_DATABASE_ADMIN_URL` in this environment.
+
+2026-05-13:
+
+- Slice 7 implemented: `/api/analytics/anchor-event-funnel` added as an analytics-protected aggregate endpoint over `user_telemetry_segments` and `user_telemetry_events`; response includes filters, summary, mode comparison, per-mode funnel steps, outcome breakdown, start-SPM source breakdown, and failure breakdown.
+- Slice 7 verification passed: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/backend test:unit`, `pnpm --filter @partner-up-dev/backend build`, `git diff --check`.
+- Slice 7 scenario verification still needs `TEST_DATABASE_URL` or `SCENARIO_DATABASE_ADMIN_URL` in this environment.
