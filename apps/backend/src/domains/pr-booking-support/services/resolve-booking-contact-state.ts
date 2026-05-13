@@ -1,15 +1,14 @@
 import type { PRId, UserId, PRSupportResource } from "../../../entities";
 import { normalizePRJoinGateConfig } from "../../../entities";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
+import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
+import { maskMainlandChinaMobilePhone } from "../../../lib/phone-number";
 import { getEffectiveBookingDeadline } from "./get-effective-booking-deadline";
-import {
-  resolveBookingContactOwner,
-  resolveBookingContactOwnerByPartner,
-} from "./resolve-booking-contact-owner";
 
-const bookingContactRepo = new PRBookingContactRepository();
 const prRepo = new PartnerRequestRepository();
+const partnerRepo = new PartnerRepository();
+const userRepo = new UserRepository();
 
 const toIsoString = (value: Date | null | undefined): string | null =>
   value ? value.toISOString() : null;
@@ -18,7 +17,10 @@ export type BookingContactState = {
   required: boolean;
   state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
   ownerPartnerId: number | null;
+  ownerUserId: UserId | null;
+  ownerNickname: string | null;
   ownerIsCurrentViewer: boolean;
+  fullPhone: string | null;
   maskedPhone: string | null;
   verifiedAt: string | null;
   deadlineAt: string | null;
@@ -34,47 +36,36 @@ export const resolveBookingContactState = async (params: {
   const required = normalizePRJoinGateConfig(request?.joinGateConfig).some(
     (gate) => gate.kind === "BOOKING_CONTACT",
   );
-  let contact = await bookingContactRepo.findByPrId(params.prId);
-
-  if (!required && contact) {
-    await bookingContactRepo.deleteByPrId(params.prId);
-    contact = null;
-  }
 
   if (!required) {
     return {
       required: false,
       state: "NOT_REQUIRED",
       ownerPartnerId: null,
+      ownerUserId: null,
+      ownerNickname: null,
       ownerIsCurrentViewer: false,
+      fullPhone: null,
       maskedPhone: null,
       verifiedAt: null,
       deadlineAt: null,
     };
   }
 
-  const owner = await resolveBookingContactOwner(params.prId);
-
-  if (contact && contact.ownerPartnerId !== null) {
-    const contactOwner = await resolveBookingContactOwnerByPartner({
-      prId: params.prId,
-      partnerId: contact.ownerPartnerId,
-    });
-    if (!contactOwner || contact.ownerUserId !== contactOwner.userId) {
-      await bookingContactRepo.deleteByPrId(params.prId);
-      contact = null;
-    }
-  }
-
-  if (
-    contact &&
-    contact.ownerPartnerId === null &&
-    owner &&
-    contact.ownerUserId !== owner.userId
-  ) {
-    await bookingContactRepo.deleteByPrId(params.prId);
-    contact = null;
-  }
+  const activeParticipants =
+    await partnerRepo.listActiveParticipantSummariesByPrId(params.prId);
+  const contactOwner =
+    activeParticipants.find((participant) => participant.phoneNumber) ?? null;
+  const viewerActiveParticipant =
+    params.viewerUserId === null
+      ? null
+      : activeParticipants.find(
+          (participant) => participant.userId === params.viewerUserId,
+        ) ?? null;
+  const viewer = params.viewerUserId
+    ? await userRepo.findById(params.viewerUserId)
+    : null;
+  const viewerHasPhone = Boolean(viewer?.phoneNumber);
 
   const effectiveBookingDeadlineAt =
     params.effectiveBookingDeadlineAt ??
@@ -82,15 +73,18 @@ export const resolveBookingContactState = async (params: {
 
   return {
     required,
-    state: !required ? "NOT_REQUIRED" : contact ? "VERIFIED" : "MISSING",
-    ownerPartnerId: contact?.ownerPartnerId ?? owner?.partnerId ?? null,
+    state: contactOwner ? "VERIFIED" : "MISSING",
+    ownerPartnerId: contactOwner?.partnerId ?? null,
+    ownerUserId: contactOwner?.userId ?? null,
+    ownerNickname: contactOwner?.nickname ?? null,
     ownerIsCurrentViewer: Boolean(
-      contact
-        ? params.viewerUserId === contact.ownerUserId
-        : owner && params.viewerUserId === owner.userId,
+      contactOwner
+        ? params.viewerUserId === contactOwner.userId
+        : viewerActiveParticipant || viewerHasPhone,
     ),
-    maskedPhone: contact?.phoneMasked ?? null,
-    verifiedAt: toIsoString(contact?.verifiedAt),
+    fullPhone: contactOwner?.phoneNumber ?? null,
+    maskedPhone: maskMainlandChinaMobilePhone(contactOwner?.phoneNumber),
+    verifiedAt: null,
     deadlineAt: toIsoString(effectiveBookingDeadlineAt),
   };
 };

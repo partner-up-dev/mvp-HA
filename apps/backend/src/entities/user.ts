@@ -34,6 +34,7 @@ export const users = pgTable("users", {
   pinHash: text("pin_hash"),
   role: text("role").$type<UserRole>().notNull().default("authenticated"),
   nickname: text("nickname"),
+  phoneNumber: text("phone_number"),
   sex: integer("sex").$type<UserSex>(),
   avatar: text("avatar"),
   status: text("status").$type<UserStatus>().notNull().default("ACTIVE"),

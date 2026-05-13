@@ -14,11 +14,15 @@ export type ScenarioUser = {
   user: User;
 };
 
-export async function givenUser(label: string): Promise<ScenarioUser> {
+export async function givenUser(
+  label: string,
+  options: { phoneNumber?: string | null } = {},
+): Promise<ScenarioUser> {
   const user = await userRepo.create({
     id: randomUUID(),
     role: "authenticated",
     nickname: `scenario-${label}`,
+    phoneNumber: options.phoneNumber ?? null,
     status: "ACTIVE",
   });
 

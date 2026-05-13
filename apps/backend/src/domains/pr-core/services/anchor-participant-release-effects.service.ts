@@ -1,12 +1,11 @@
 import type { PRId, UserId } from "../../../entities";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { resolveBookingContactState } from "../../pr-booking-support";
+import { UserRepository } from "../../../repositories/UserRepository";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
-const bookingContactRepo = new PRBookingContactRepository();
+const userRepo = new UserRepository();
 
 export type AnchorParticipantReleaseEffects = {
   creatorTransferredToUserId: UserId | null;
@@ -17,6 +16,7 @@ export type AnchorParticipantReleaseEffects = {
 export const applyAnchorParticipantReleaseEffects = async (input: {
   prId: PRId;
   releasedUserIds: UserId[];
+  bookingContactOwnerUserIdToClear?: UserId | null;
 }): Promise<AnchorParticipantReleaseEffects> => {
   const request = await prRepo.findById(input.prId);
   if (!request) {
@@ -38,17 +38,23 @@ export const applyAnchorParticipantReleaseEffects = async (input: {
     creatorTransferApplied = true;
   }
 
-  const existingBookingContact = await bookingContactRepo.findByPrId(input.prId);
-  await resolveBookingContactState({
-    prId: input.prId,
-    viewerUserId: null,
-  });
-  const latestBookingContact = await bookingContactRepo.findByPrId(input.prId);
+  let bookingContactCleared = false;
+  const bookingContactOwnerUserIdToClear =
+    input.bookingContactOwnerUserIdToClear ?? null;
+  if (
+    bookingContactOwnerUserIdToClear &&
+    input.releasedUserIds.includes(bookingContactOwnerUserIdToClear)
+  ) {
+    const owner = await userRepo.findById(bookingContactOwnerUserIdToClear);
+    if (owner?.phoneNumber) {
+      await userRepo.updatePhoneNumber(bookingContactOwnerUserIdToClear, null);
+      bookingContactCleared = true;
+    }
+  }
 
   return {
     creatorTransferredToUserId,
     creatorTransferApplied,
-    bookingContactCleared:
-      existingBookingContact !== null && latestBookingContact === null,
+    bookingContactCleared,
   };
 };

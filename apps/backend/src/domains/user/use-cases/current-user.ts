@@ -5,6 +5,10 @@ import { HTTPException } from "hono/http-exception";
 import type { User, UserId } from "../../../entities/user";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { env } from "../../../lib/env";
+import {
+  maskMainlandChinaMobilePhone,
+  normalizeMainlandChinaMobilePhone,
+} from "../../../lib/phone-number";
 
 const userRepo = new UserRepository();
 
@@ -25,6 +29,8 @@ export type CurrentUserProfileSnapshot = {
   userId: UserId;
   nickname: string | null;
   avatar: string | null;
+  phoneMasked: string | null;
+  hasPhoneNumber: boolean;
   wechatBound: boolean;
 };
 
@@ -42,11 +48,13 @@ const requireUser = async (userId: UserId): Promise<User> => {
 };
 
 export const toCurrentUserProfileSnapshot = (
-  user: Pick<User, "id" | "nickname" | "avatar" | "openId">,
+  user: Pick<User, "id" | "nickname" | "avatar" | "openId" | "phoneNumber">,
 ): CurrentUserProfileSnapshot => ({
   userId: user.id,
   nickname: user.nickname,
   avatar: user.avatar,
+  phoneMasked: maskMainlandChinaMobilePhone(user.phoneNumber),
+  hasPhoneNumber: Boolean(user.phoneNumber),
   wechatBound: Boolean(user.openId),
 });
 
@@ -103,6 +111,32 @@ export async function updateCurrentUserAvatar(
   const updated = await userRepo.updateAvatar(userId, `/api/users/avatar/${filename}`);
   if (!updated) {
     throw new HTTPException(500, { message: "Failed to update avatar" });
+  }
+
+  return toCurrentUserProfileSnapshot(updated);
+}
+
+export async function updateCurrentUserPhoneNumber(
+  userId: UserId,
+  phoneNumber: string | null,
+): Promise<CurrentUserProfileSnapshot> {
+  await requireUser(userId);
+
+  const trimmed = phoneNumber?.trim() ?? "";
+  const normalizedPhone =
+    trimmed.length > 0 ? normalizeMainlandChinaMobilePhone(trimmed) : null;
+  if (trimmed.length > 0 && !normalizedPhone) {
+    throw new HTTPException(400, {
+      message: "Phone must match mainland China mobile format",
+    });
+  }
+
+  const updated = await userRepo.updatePhoneNumber(
+    userId,
+    normalizedPhone?.phoneE164 ?? null,
+  );
+  if (!updated) {
+    throw new HTTPException(500, { message: "Failed to update phone number" });
   }
 
   return toCurrentUserProfileSnapshot(updated);

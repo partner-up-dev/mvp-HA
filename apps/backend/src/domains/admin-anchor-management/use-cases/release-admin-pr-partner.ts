@@ -1,7 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import type { PartnerId, PRId, UserId } from "../../../entities";
 import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
 import {
@@ -17,9 +16,9 @@ import {
 import { operationLogService } from "../../../infra/operation-log";
 import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../../pr-core/services/waitlist-alternative-reminder.service";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
+import { resolveBookingContactState } from "../../pr-booking-support";
 
 const eventContextRepo = new AnchorEventPRContextRepository();
-const bookingContactRepo = new PRBookingContactRepository();
 const partnerRepo = new PartnerRepository();
 const prRepo = new PartnerRequestRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
@@ -60,6 +59,14 @@ export async function releaseAdminPRPartner(input: {
     });
   }
 
+  const bookingContactBeforeRelease = await resolveBookingContactState({
+    prId: input.prId,
+    viewerUserId: null,
+  });
+  const bookingContactPhone = bookingContactBeforeRelease.fullPhone;
+  const bookingContactOwnerUserIdToClear =
+    bookingContactBeforeRelease.ownerUserId === slot.userId ? slot.userId : null;
+
   const releasedSlot = await partnerRepo.markReleased(slot.id, {
     releaseReason: reason,
   });
@@ -75,12 +82,12 @@ export async function releaseAdminPRPartner(input: {
     input.prId,
     slot.userId,
   );
-  const bookingContact = await bookingContactRepo.findByPrId(input.prId);
 
   const { bookingContactCleared, creatorTransferredToUserId } =
     await applyAnchorParticipantReleaseEffects({
       prId: input.prId,
       releasedUserIds: [slot.userId],
+      bookingContactOwnerUserIdToClear,
     });
 
   await recalculatePRStatus(input.prId);
@@ -99,11 +106,25 @@ export async function releaseAdminPRPartner(input: {
       trigger: "admin_manual",
       manual: true,
       reason,
-      bookingContactPhone: bookingContact?.phoneE164 ?? null,
+      bookingContactPhone,
       bookingContactCleared,
       creatorTransferredToUserId,
     },
   });
+  if (bookingContactCleared && bookingContactOwnerUserIdToClear) {
+    operationLogService.log({
+      actorId: input.actorUserId,
+      action: "user.phone_number_cleared",
+      aggregateType: "user",
+      aggregateId: bookingContactOwnerUserIdToClear,
+      detail: {
+        prId: input.prId,
+        partnerId: releasedSlot.id,
+        trigger: "admin_manual_release",
+        reason,
+      },
+    });
+  }
 
   await promoteWaitlistedPartners(input.prId);
   const latest = await prRepo.findById(input.prId);

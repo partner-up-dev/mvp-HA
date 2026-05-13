@@ -1,18 +1,19 @@
 import { HTTPException } from "hono/http-exception";
 import type { PRId, UserId } from "../../../entities";
 import { operationLogService } from "../../../infra/operation-log";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PRBookingExecutionRepository } from "../../../repositories/PRBookingExecutionRepository";
 import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
 import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
-import { isPlatformHandledBookingResource } from "../../pr-booking-support";
+import {
+  isPlatformHandledBookingResource,
+  resolveBookingContactState,
+} from "../../pr-booking-support";
 import {
   type BookingResultNotificationSummary,
   sendBookingResultNotifications,
 } from "../services/send-booking-result-notifications";
 
 const eventContextRepo = new AnchorEventPRContextRepository();
-const bookingContactRepo = new PRBookingContactRepository();
 const prSupportRepo = new PRSupportResourceRepository();
 const bookingExecutionRepo = new PRBookingExecutionRepository();
 
@@ -66,13 +67,17 @@ export async function submitAdminPRBookingExecution(input: {
     });
   }
 
-  const bookingContact = await bookingContactRepo.findByPrId(input.prId);
+  const bookingContact = await resolveBookingContactState({
+    prId: input.prId,
+    viewerUserId: null,
+    supportResources: resources,
+  });
 
   const createdExecution = await bookingExecutionRepo.create({
     prId: input.prId,
     targetResourceId: targetResource.id,
     targetResourceTitle: targetResource.title,
-    bookingContactPhone: bookingContact?.phoneE164 ?? null,
+    bookingContactPhone: bookingContact.fullPhone,
     actorUserId: input.actorUserId,
     result: input.result,
     reason: normalizedReason,
@@ -119,7 +124,7 @@ export async function submitAdminPRBookingExecution(input: {
     detail: {
       targetResourceId: targetResource.id,
       targetResourceTitle: targetResource.title,
-      bookingContactPhone: bookingContact?.phoneE164 ?? null,
+      bookingContactPhone: bookingContact.fullPhone,
       result: input.result,
       reason: normalizedReason,
       notificationTargetCount: notificationSummary.targetCount,

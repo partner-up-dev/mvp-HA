@@ -35,7 +35,7 @@ export type ResolvePRJoinGateInput = {
     | {
         kind: "BOOKING_CONTACT";
         version: string;
-        phone: string;
+        phone?: string;
       };
 };
 

@@ -60,7 +60,7 @@
 - `PR` may carry join gates that must be completed before joining. Join gate definitions are PR-owned runtime configuration, while their resolved state comes from the owning fact for each gate kind.
 - When a PR has no configured custom join gate, the frontend flow injects the relevant fallback confirmation view. When any custom join gate exists, the fallback confirmation is absent.
 - Join notice gates are viewer-scoped agreements; each viewer must accept the current gate key and version before joining.
-- Booking contact gates collect the phone contact required for the PR; their presence is explicit join-gate configuration rather than an implicit result of booking-required or platform-handled booking flags.
+- Booking contact gates require a usable user phone number for platform passthrough booking. Their presence is explicit join-gate configuration rather than an implicit result of booking-required or platform-handled booking flags.
 - `Partner` submodule may carry explicit confirmation and join-lock settings. Attendance follow-up may appear when the relevant collaboration module is active.
 - Post-event feedback questionnaires are a capability parallel to PR. Anchor Event selects a reusable feedback questionnaire template, PR stores one mounted questionnaire instance pointer, and each submitted answer set is stored as a feedback questionnaire response.
 - A questionnaire instance represents the mounted question definition snapshot for a consumer such as PR. Participant answers belong to response records keyed by the mounted instance and respondent identity.
@@ -129,11 +129,12 @@
 - Availability of join, confirm, booking-contact handoff, and similar operations is enforced on backend write paths; frontend may use preflight reads to surface the same guardrails before the user acts.
 - The join command remains authoritative for unresolved join gates and must reject joining when any configured custom gate is unresolved for the current viewer or PR.
 - Notification cards and prompts are contributed by their owning modules, so confirmation, booking, and other features can add notification items without one central interpreter inside the card container.
-- Only `PLATFORM_PASSTHROUGH` booking requires the first booking-contact owner to provide a phone number. Standard `PLATFORM` booking must keep that requirement absent.
+- Only `PLATFORM_PASSTHROUGH` booking requires at least one active participant or the joining viewer to have `users.phone_number`. Standard `PLATFORM` booking must keep that requirement absent.
+- When multiple active participants have phone numbers, booking support uses the earliest active participant with `users.phone_number` as the booking contact.
 - The platform-handled booking pending workspace admits PRs that are in `READY`, `FULL`, or `LOCKED_TO_START` and still meet minimum active-participant count. It does not require participants to be `CONFIRMED`.
 - When the booking deadline is reached, invalidation may depend on whether active participants still meet minimum viable count. Lack of confirmation alone must not auto-release the group or mark it unformed.
 - Once a PR enters the platform booking fulfillment stage, operator results must be auditable and notification results must target current active participants rather than only the booking-contact owner.
-- Manual operator release of an invalid booking contact must be recorded in the same audit semantics as the ownership effect of that release.
+- Manual operator release of an invalid booking contact clears that user's `users.phone_number` and records the user-level clearing together with the PR release audit semantics.
 
 ## 6. Distribution And Revisit Rules
 

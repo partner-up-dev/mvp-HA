@@ -1,10 +1,9 @@
 import { and, desc, eq } from "drizzle-orm";
 import {
   partners,
-  prBookingContacts,
   type PartnerId,
   type PartnerStatus,
-  type UserId,
+  users,
 } from "../../../../src/entities";
 import { getTestDb } from "../../../_infra/probes/sql-probe";
 import type { ScenarioPartnerRequest } from "../builders/partner-requests";
@@ -16,10 +15,9 @@ export type PartnerSlotProbe = {
   didAttend: boolean | null;
 };
 
-export type BookingContactProbe = {
-  ownerUserId: UserId;
-  ownerPartnerId: PartnerId | null;
-  phoneMasked: string;
+export type UserPhoneProbe = {
+  userId: string;
+  phoneNumber: string | null;
 };
 
 export async function probeLatestPartnerSlot(input: {
@@ -44,17 +42,16 @@ export async function probeLatestPartnerSlot(input: {
   return slot ?? null;
 }
 
-export async function probeBookingContact(
-  pr: ScenarioPartnerRequest,
-): Promise<BookingContactProbe | null> {
-  const [contact] = await getTestDb()
+export async function probeUserPhone(
+  user: ScenarioUser,
+): Promise<UserPhoneProbe | null> {
+  const [record] = await getTestDb()
     .select({
-      ownerUserId: prBookingContacts.ownerUserId,
-      ownerPartnerId: prBookingContacts.ownerPartnerId,
-      phoneMasked: prBookingContacts.phoneMasked,
+      userId: users.id,
+      phoneNumber: users.phoneNumber,
     })
-    .from(prBookingContacts)
-    .where(eq(prBookingContacts.prId, pr.id));
+    .from(users)
+    .where(eq(users.id, user.user.id));
 
-  return contact ?? null;
+  return record ?? null;
 }

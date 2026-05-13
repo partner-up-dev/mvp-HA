@@ -1,10 +1,10 @@
 import { HTTPException } from "hono/http-exception";
 import type { PRId, UserId } from "../../../entities";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
 import { normalizeMainlandChinaMobilePhone } from "../services/phone-input";
 import { resolveBookingContactState } from "../services/resolve-booking-contact-state";
 
-const bookingContactRepo = new PRBookingContactRepository();
+const userRepo = new UserRepository();
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
@@ -62,7 +62,7 @@ export async function updatePRBookingContactPhone(input: {
     });
   }
 
-  if (!state.ownerIsCurrentViewer || !state.ownerPartnerId) {
+  if (!state.ownerIsCurrentViewer) {
     throw new HTTPException(403, {
       message: "Only the booking contact owner can update phone",
     });
@@ -70,14 +70,7 @@ export async function updatePRBookingContactPhone(input: {
 
   const normalizedPhone = resolvePhoneInput(input.phone);
 
-  await bookingContactRepo.upsertByPrId({
-    prId: input.prId,
-    ownerPartnerId: state.ownerPartnerId,
-    ownerUserId: input.userId,
-    phoneE164: normalizedPhone.phoneE164,
-    phoneMasked: normalizedPhone.phoneMasked,
-    verifiedSource: "PHONE_INPUT_FORM",
-  });
+  await userRepo.updatePhoneNumber(input.userId, normalizedPhone.phoneE164);
 
   const latest = await resolveBookingContactState({
     prId: input.prId,

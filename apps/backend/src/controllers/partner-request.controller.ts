@@ -112,7 +112,7 @@ const resolveJoinGateSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("BOOKING_CONTACT"),
     version: z.string().trim().min(1),
-    phone: z.string().trim().min(1),
+    phone: z.string().trim().min(1).optional(),
   }),
 ]);
 const updateBookingContactPhoneSchema = z.object({

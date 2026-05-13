@@ -67,6 +67,7 @@ const buildActiveParticipant = (
   userId: viewerUserId,
   nickname: null,
   avatar: null,
+  phoneNumber: null,
 });
 
 describe("buildPRPartnerSection", () => {

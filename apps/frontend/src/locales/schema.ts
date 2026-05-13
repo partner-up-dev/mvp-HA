@@ -753,7 +753,13 @@ export interface MessageSchema {
       avatarFallback: string;
       nicknameLabel: string;
       nicknamePlaceholder: string;
+      phoneLabel: string;
+      phonePlaceholder: string;
+      phoneHint: string;
+      phoneCurrent: string;
+      phoneInvalid: string;
       saveNickname: string;
+      savePhone: string;
       savingNickname: string;
       changeAvatar: string;
       uploadingAvatar: string;
@@ -936,6 +942,7 @@ export interface MessageSchema {
     titlePlaceholder: string;
     type: string;
     typePlaceholder: string;
+    typeImmutableHint: string;
     location: string;
     locationPlaceholder: string;
     minPartners: string;
