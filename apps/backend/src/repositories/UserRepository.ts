@@ -114,6 +114,18 @@ export class UserRepository {
     return result[0] ?? null;
   }
 
+  async updatePhoneNumber(userId: UserId, phoneNumber: string | null) {
+    const result = await db
+      .update(users)
+      .set({
+        phoneNumber,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0] ?? null;
+  }
+
   async upgradeAnonymousUserWithWeChat(input: {
     userId: UserId;
     openId: string;

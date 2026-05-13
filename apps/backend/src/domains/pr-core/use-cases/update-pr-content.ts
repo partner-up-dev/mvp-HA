@@ -28,9 +28,22 @@ const prRepo = new PartnerRequestRepository();
 
 export interface UpdatePRContentOptions {
   bypassEditableStatusGuard?: boolean;
+  bypassTypeImmutableGuard?: boolean;
   bypassUserCreationPolicyGuard?: boolean;
   preserveStatus?: boolean;
 }
+
+export type UserUpdatePRContentFields = Omit<PartnerRequestFields, "type">;
+export const PR_TYPE_IMMUTABLE_CODE = "PR_TYPE_IMMUTABLE";
+
+const throwTypeImmutable = (): never => {
+  const error = new HTTPException(400, {
+    message: "PR type cannot be changed after creation",
+  });
+  (error as HTTPException & { code?: typeof PR_TYPE_IMMUTABLE_CODE }).code =
+    PR_TYPE_IMMUTABLE_CODE;
+  throw error;
+};
 
 export async function updatePRContent(
   id: PRId,
@@ -62,6 +75,9 @@ export async function updatePRContent(
     refreshedRequest.time[0] !== fields.time[0] ||
     refreshedRequest.time[1] !== fields.time[1];
   const typeChanged = refreshedRequest.type.trim() !== fields.type.trim();
+  if (typeChanged && !options.bypassTypeImmutableGuard) {
+    throwTypeImmutable();
+  }
   if (typeChanged && !options.bypassUserCreationPolicyGuard) {
     await assertUserPRCreationAllowedForAnchorEvent({
       type: fields.type,
@@ -136,4 +152,24 @@ export async function updatePRContent(
   await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
 
   return toPublicPR(latest, null);
+}
+
+export async function updateUserPRContent(
+  id: PRId,
+  fields: UserUpdatePRContentFields,
+  actorUserId: UserId | null,
+): Promise<PublicPR> {
+  const request = await prRepo.findById(id);
+  if (!request) {
+    throw new HTTPException(404, { message: "Partner request not found" });
+  }
+
+  return updatePRContent(
+    id,
+    {
+      ...fields,
+      type: request.type,
+    },
+    actorUserId,
+  );
 }

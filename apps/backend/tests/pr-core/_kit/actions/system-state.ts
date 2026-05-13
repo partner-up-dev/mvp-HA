@@ -104,3 +104,13 @@ export async function bindScenarioWeChatOpenId(input: {
     .set({ openId: input.openId })
     .where(eq(users.id, input.user.user.id));
 }
+
+export async function configureScenarioUserPhone(input: {
+  user: ScenarioUser;
+  phoneNumber: string | null;
+}): Promise<void> {
+  await getTestDb()
+    .update(users)
+    .set({ phoneNumber: input.phoneNumber })
+    .where(eq(users.id, input.user.user.id));
+}

@@ -9,6 +9,7 @@ import {
   getCurrentUserProfile,
   updateCurrentUserAvatar,
   updateCurrentUserNickname,
+  updateCurrentUserPhoneNumber,
 } from "../domains/user/use-cases/current-user";
 import type { UserId } from "../entities/user";
 import { env } from "../lib/env";
@@ -23,6 +24,10 @@ const avatarsDir = env.AVATARS_DIR ?? defaultAvatarsDir;
 
 const updateCurrentUserSchema = z.object({
   nickname: z.string().trim().min(1).max(40),
+});
+
+const updateCurrentUserPhoneNumberSchema = z.object({
+  phoneNumber: z.string().trim().max(32).nullable(),
 });
 
 const avatarParamsSchema = z.object({
@@ -109,4 +114,18 @@ export const userRoute = app
       ...profile,
       avatar: resolveAvatarUrl(c.req.url, profile.avatar),
     });
-  });
+  })
+  .put(
+    "/me/phone-number",
+    zValidator("json", updateCurrentUserPhoneNumberSchema),
+    async (c) => {
+      const userId = requireAuthenticatedUserId(c);
+      const { phoneNumber } = c.req.valid("json");
+      const profile = await updateCurrentUserPhoneNumber(userId, phoneNumber);
+
+      return c.json({
+        ...profile,
+        avatar: resolveAvatarUrl(c.req.url, profile.avatar),
+      });
+    },
+  );

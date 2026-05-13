@@ -28,14 +28,13 @@ import {
   scheduleWeChatReminderJobsForParticipant,
 } from "../../../infra/notifications";
 import { syncAnchorBookingTriggeredState } from "../services/anchor-booking-trigger.service";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
 import {
   isBookingContactRequiredForPR,
   normalizeMainlandChinaMobilePhone,
 } from "../../pr-booking-support";
 import {
   assertPRJoinGatesResolvedForUser,
-  hasBookingContactJoinGate,
   BOOKING_CONTACT_PHONE_INVALID_CODE,
 } from "../services/join-gates.service";
 import { closeAlternativeWaitlistSourcesAfterJoin } from "../services/waitlist-alternative-reminder.service";
@@ -43,7 +42,7 @@ import { closeAlternativeWaitlistSourcesAfterJoin } from "../services/waitlist-a
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
-const bookingContactRepo = new PRBookingContactRepository();
+const userRepo = new UserRepository();
 
 type CodedHttpException = HTTPException & {
   code?: string;
@@ -141,21 +140,7 @@ export async function joinPRAsUser(
         );
       }
 
-      const existingContact = await bookingContactRepo.findByPrId(id);
-      if (
-        !existingContact ||
-        existingContact.ownerPartnerId === null ||
-        existingContact.ownerUserId === user.id
-      ) {
-        await bookingContactRepo.upsertByPrId({
-          prId: id,
-          ownerPartnerId: existingContact?.ownerPartnerId ?? null,
-          ownerUserId: user.id,
-          phoneE164: normalizedPhone.phoneE164,
-          phoneMasked: normalizedPhone.phoneMasked,
-          verifiedSource: "PHONE_INPUT_FORM",
-        });
-      }
+      await userRepo.updatePhoneNumber(user.id, normalizedPhone.phoneE164);
     }
   }
 
@@ -189,20 +174,6 @@ export async function joinPRAsUser(
     });
   }
   const assignedPartnerId = joinedSlot.id;
-
-  if (hasBookingContactJoinGate(refreshedRequest.joinGateConfig)) {
-    const contact = await bookingContactRepo.findByPrId(id);
-    if (
-      contact &&
-      contact.ownerPartnerId === null &&
-      contact.ownerUserId === user.id
-    ) {
-      await bookingContactRepo.updateOwnerPartner({
-        prId: id,
-        ownerPartnerId: assignedPartnerId,
-      });
-    }
-  }
 
   await userReliabilityRepo.applyDelta(user.id, {
     joined: 1,

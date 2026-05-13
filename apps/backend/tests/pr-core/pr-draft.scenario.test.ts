@@ -8,9 +8,10 @@ import {
   givenDraftPR,
 } from "./_kit/builders/partner-requests";
 import { givenAnonymousUser, givenUser } from "./_kit/builders/users";
-import { givenAnchorEvent } from "../anchor-event/_kit/builders/anchor-events";
 import { getTestDb } from "../_infra/probes/sql-probe";
 import { partnerRequests, type PRId, type PRStatus } from "../../src/entities";
+
+type ScenarioFields = ReturnType<typeof buildScenarioFields>;
 
 type AuthSessionResponse = {
   role: "anonymous" | "authenticated" | "service";
@@ -38,6 +39,8 @@ type DraftContentUpdateResponse = {
 type ProblemDetailsResponse = {
   code?: string;
 };
+
+const toUserEditableFields = ({ type: _type, ...fields }: ScenarioFields) => fields;
 
 scenario("anonymous_uuid_restores_session", async (ctx) => {
   const anonymous = await givenAnonymousUser("session-restore");
@@ -125,6 +128,7 @@ scenario("anonymous_user_can_edit_creatorless_draft_content", async (ctx) => {
     title: "Scenario draft content initial",
   });
   const updatedFields = buildScenarioFields("Scenario draft content updated");
+    const editableFields = toUserEditableFields(updatedFields);
   ctx.record("draftAuthorUserId", draftAuthor.user.id);
   ctx.record("editorUserId", editor.user.id);
   ctx.record("prId", pr.id);
@@ -134,7 +138,7 @@ scenario("anonymous_user_can_edit_creatorless_draft_content", async (ctx) => {
       method: "PATCH",
       token: editor.token,
       body: {
-        fields: updatedFields,
+        fields: editableFields,
       },
     }),
     200,
@@ -157,26 +161,19 @@ scenario("anonymous_user_can_edit_creatorless_draft_content", async (ctx) => {
 });
 
 scenario(
-  "user_content_edit_cannot_retype_pr_to_admin_only_anchor_event",
+  "user_content_edit_rejects_type_field",
   async (ctx) => {
-    const draftAuthor = await givenAnonymousUser("admin-only-type-author");
-    const editor = await givenAnonymousUser("admin-only-type-editor");
+    const draftAuthor = await givenAnonymousUser("type-field-author");
+    const editor = await givenAnonymousUser("type-field-editor");
     const pr = await givenDraftPR({
       creator: draftAuthor,
-      title: "Scenario admin-only type initial",
-    });
-    const event = await givenAnchorEvent({
-      label: "admin-only-type-edit",
-      prCreationPolicy: "ADMIN_ONLY",
+      title: "Scenario type field initial",
     });
     const updatedFields = {
-      ...buildScenarioFields("Scenario admin-only type updated"),
-      type: event.type,
-      time: event.timeWindow,
-      location: event.locationId,
+      ...buildScenarioFields("Scenario type field updated"),
+      type: "changed-type",
     };
     ctx.record("prId", pr.id);
-    ctx.record("eventId", event.id);
 
     const response = await requestJson(`/api/pr/${pr.id}/content`, {
       method: "PATCH",
@@ -185,8 +182,15 @@ scenario(
         fields: updatedFields,
       },
     });
-    const body = await expectJsonResponse<ProblemDetailsResponse>(response, 403);
+    await expectJsonResponse<ProblemDetailsResponse>(response, 400);
 
-    assert.equal(body.code, "ANCHOR_EVENT_USER_PR_CREATION_DISABLED");
+    const db = getTestDb();
+    const [stored] = await db
+      .select({
+        type: partnerRequests.type,
+      })
+      .from(partnerRequests)
+      .where(eq(partnerRequests.id, pr.id));
+    assert.equal(stored?.type, "badminton");
   },
 );

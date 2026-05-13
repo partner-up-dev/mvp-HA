@@ -16,6 +16,7 @@ export type ActiveParticipantSummary = {
   userId: UserId;
   nickname: string | null;
   avatar: string | null;
+  phoneNumber: string | null;
 };
 
 export type PendingParticipantSummary = {
@@ -128,6 +129,7 @@ export class PartnerRepository {
         userId: partners.userId,
         nickname: users.nickname,
         avatar: users.avatar,
+        phoneNumber: users.phoneNumber,
       })
       .from(partners)
       .leftJoin(users, eq(users.id, partners.userId))
@@ -148,6 +150,7 @@ export class PartnerRepository {
       userId: row.userId,
       nickname: row.nickname,
       avatar: row.avatar,
+      phoneNumber: row.phoneNumber,
     }));
   }
 
@@ -230,6 +233,7 @@ export class PartnerRepository {
         userId: partners.userId,
         nickname: users.nickname,
         avatar: users.avatar,
+        phoneNumber: users.phoneNumber,
       })
       .from(partners)
       .leftJoin(users, eq(users.id, partners.userId))
@@ -255,6 +259,7 @@ export class PartnerRepository {
       userId: row.userId,
       nickname: row.nickname,
       avatar: row.avatar,
+      phoneNumber: row.phoneNumber,
     };
   }
 

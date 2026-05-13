@@ -24,13 +24,14 @@ export interface PRBookingSupportDetail {
       highlights: string[];
       effectiveBookingDeadlineAt: string | null;
     };
-    bookingContact: {
-      required: boolean;
-      state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
-      ownerPartnerId: number | null;
-      ownerIsCurrentViewer: boolean;
-      maskedPhone: string | null;
-      verifiedAt: string | null;
+      bookingContact: {
+        required: boolean;
+        state: "NOT_REQUIRED" | "MISSING" | "VERIFIED";
+        ownerPartnerId: number | null;
+        ownerUserId: string | null;
+        ownerIsCurrentViewer: boolean;
+        maskedPhone: string | null;
+        verifiedAt: string | null;
       deadlineAt: string | null;
     };
     resources: Array<{
@@ -90,7 +91,16 @@ export async function getPRBookingSupport(
         highlights: overview.highlights,
         effectiveBookingDeadlineAt: overview.effectiveBookingDeadlineAt,
       },
-      bookingContact,
+      bookingContact: {
+        required: bookingContact.required,
+        state: bookingContact.state,
+        ownerPartnerId: bookingContact.ownerPartnerId,
+        ownerUserId: bookingContact.ownerUserId,
+        ownerIsCurrentViewer: bookingContact.ownerIsCurrentViewer,
+        maskedPhone: bookingContact.maskedPhone,
+        verifiedAt: bookingContact.verifiedAt,
+        deadlineAt: bookingContact.deadlineAt,
+      },
       resources: resources.map((resource) => ({
         id: resource.id,
         title: resource.title,

@@ -53,7 +53,7 @@ export async function resolveBookingContactGate(input: {
   user: ScenarioUser;
   gateKey: string;
   version: string;
-  phone: string;
+  phone?: string;
 }): Promise<JoinGateProjectionResponse> {
   return expectJsonResponse<JoinGateProjectionResponse>(
     await requestJson(`/api/pr/${input.pr.id}/join-gates/${input.gateKey}/resolve`, {

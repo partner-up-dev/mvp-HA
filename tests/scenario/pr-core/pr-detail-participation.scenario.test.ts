@@ -15,8 +15,8 @@ import {
   bindScenarioWeChatOpenId,
 } from "../../../apps/backend/tests/pr-core/_kit/actions/system-state";
 import {
-  probeBookingContact,
   probeLatestPartnerSlot,
+  probeUserPhone,
 } from "../../../apps/backend/tests/pr-core/_kit/probes/system-state";
 import { givenPublishedPartnerRequest } from "../../../apps/backend/tests/pr-core/_kit/builders/partner-requests";
 import { givenUser } from "../../../apps/backend/tests/pr-core/_kit/builders/users";
@@ -110,9 +110,8 @@ scenario(
     const slot = await probeLatestPartnerSlot({ pr, user: joiner });
     assert.equal(slot?.status, "JOINED");
 
-    const contact = await probeBookingContact(pr);
-    assert.equal(contact?.ownerUserId, joiner.user.id);
-    assert.equal(contact?.ownerPartnerId, slot?.id);
+    const phone = await probeUserPhone(joiner);
+    assert.equal(phone?.phoneNumber, "+8613800138000");
   },
 );
 

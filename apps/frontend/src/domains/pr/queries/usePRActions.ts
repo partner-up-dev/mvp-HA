@@ -4,7 +4,7 @@ import type { PRId, PRStatusManual } from "@partner-up-dev/backend";
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 import { queryKeys } from "@/shared/api/query-keys";
-import type { PRFormFields } from "@/domains/pr/model/types";
+import type { PRUserUpdateContentFields } from "@/domains/pr/model/types";
 import {
   buildApiError,
   type ApiErrorPayload,
@@ -34,7 +34,7 @@ type PRCheckInInput = PRActionInput;
 
 type PRUpdateContentInput = {
   id: PRId;
-  fields: PRFormFields;
+  fields: PRUserUpdateContentFields;
 };
 
 type PRUpdateStatusInput = {
@@ -45,6 +45,7 @@ type PRUpdateStatusInput = {
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
+const PR_TYPE_IMMUTABLE_CODE = "PR_TYPE_IMMUTABLE";
 
 const resolveErrorMessage = (
   response: Response,
@@ -66,6 +67,20 @@ const resolveErrorMessage = (
   }
 
   return resolveApiErrorMessage(payload, fallback);
+};
+
+const resolveUpdateContentErrorMessage = (
+  response: Response,
+  payload: ApiErrorPayload | null,
+): string => {
+  if (payload?.code === PR_TYPE_IMMUTABLE_CODE) {
+    return i18n.global.t("errors.prTypeImmutable");
+  }
+  return resolveErrorMessage(
+    response,
+    payload,
+    i18n.global.t("errors.updateContentFailed"),
+  );
 };
 
 const isBookingContactPhoneRequiredError = (
@@ -399,12 +414,9 @@ export const useUpdatePRContent = () => {
 
       if (!res.ok) {
         const payload = await readApiErrorPayload(res);
-        throw new Error(
-          resolveErrorMessage(
-            res,
-            payload,
-            i18n.global.t("errors.updateContentFailed"),
-          ),
+        throw buildApiError(
+          resolveUpdateContentErrorMessage(res, payload),
+          payload,
         );
       }
 

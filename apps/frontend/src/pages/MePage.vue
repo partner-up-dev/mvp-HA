@@ -57,6 +57,27 @@
               />
             </FormField>
 
+            <FormField
+              :label="t('mePage.profile.phoneLabel')"
+              for-id="me-profile-phone"
+            >
+              <input
+                id="me-profile-phone"
+                v-model="phoneDraft"
+                class="text-input"
+                type="tel"
+                data-testid="me.profile.phone.input"
+                inputmode="numeric"
+                maxlength="11"
+                :placeholder="t('mePage.profile.phonePlaceholder')"
+                :disabled="!canEditProfile"
+                @keydown.enter.prevent="handleSavePhoneNumber"
+              />
+            </FormField>
+            <p v-if="phoneHintText" class="profile-field-hint">
+              {{ phoneHintText }}
+            </p>
+
             <div class="profile-actions">
               <Button
                 appearance="pill"
@@ -67,6 +88,18 @@
                 @click="handleSaveNickname"
               >
                 {{ t("mePage.profile.saveNickname") }}
+              </Button>
+
+              <Button
+                appearance="pill"
+                size="sm"
+                type="button"
+                data-testid="me.profile.phone.save"
+                :disabled="!canSavePhoneNumber"
+                :loading="updatePhoneNumberMutation.isPending.value"
+                @click="handleSavePhoneNumber"
+              >
+                {{ t("mePage.profile.savePhone") }}
               </Button>
 
               <Button
@@ -226,6 +259,7 @@ import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { useCurrentUserProfile } from "@/domains/user/queries/useCurrentUserProfile";
 import { useUpdateCurrentUserProfile } from "@/domains/user/queries/useUpdateCurrentUserProfile";
 import { useUpdateCurrentUserAvatar } from "@/domains/user/queries/useUpdateCurrentUserAvatar";
+import { useUpdateCurrentUserPhoneNumber } from "@/domains/user/queries/useUpdateCurrentUserPhoneNumber";
 import { useStartWeChatBind } from "@/domains/user/queries/useStartWeChatBind";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -238,10 +272,12 @@ const userSessionStore = useUserSessionStore();
 const currentUserQuery = useCurrentUserProfile();
 const updateProfileMutation = useUpdateCurrentUserProfile();
 const updateAvatarMutation = useUpdateCurrentUserAvatar();
+const updatePhoneNumberMutation = useUpdateCurrentUserPhoneNumber();
 const startWeChatBindMutation = useStartWeChatBind();
 
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const nicknameDraft = ref("");
+const phoneDraft = ref("");
 const copiedField = ref<"userId" | null>(null);
 const copyErrorMessage = ref<string | null>(null);
 const notificationSubscriptionsPanelError = ref<Error | null>(null);
@@ -293,6 +329,35 @@ const canSaveNickname = computed(() => {
     !updateProfileMutation.isPending.value
   );
 });
+const normalizedPhoneDraft = computed(() => phoneDraft.value.trim());
+const currentPhoneLabel = computed(() => currentUser.value?.phoneMasked ?? "");
+const phoneDraftError = computed(() => {
+  const value = normalizedPhoneDraft.value;
+  if (!value) return null;
+  return /^1\d{10}$/.test(value)
+    ? null
+    : t("mePage.profile.phoneInvalid");
+});
+const canSavePhoneNumber = computed(() => {
+  const value = normalizedPhoneDraft.value;
+  const hasPhone = currentUser.value?.hasPhoneNumber ?? false;
+  return (
+    canEditProfile.value &&
+    !phoneDraftError.value &&
+    (value.length > 0 || hasPhone) &&
+    value !== currentPhoneLabel.value &&
+    !updatePhoneNumberMutation.isPending.value
+  );
+});
+const phoneHintText = computed(() => {
+  if (phoneDraftError.value) return phoneDraftError.value;
+  if (currentUser.value?.phoneMasked) {
+    return t("mePage.profile.phoneCurrent", {
+      phone: currentUser.value.phoneMasked,
+    });
+  }
+  return t("mePage.profile.phoneHint");
+});
 const wechatIdentityActionPending = computed(() =>
   userSessionStore.isAuthenticated
     ? startWeChatBindMutation.isPending.value
@@ -328,6 +393,7 @@ const errorMessage = computed(() => {
     currentUserQuery.error.value,
     updateProfileMutation.error.value,
     updateAvatarMutation.error.value,
+    updatePhoneNumberMutation.error.value,
     startWeChatBindMutation.error.value,
     notificationSubscriptionsPanelError.value,
   ];
@@ -353,6 +419,14 @@ const handleSaveNickname = async () => {
   await updateProfileMutation.mutateAsync({
     nickname: nicknameDraft.value.trim(),
   });
+};
+
+const handleSavePhoneNumber = async () => {
+  if (!canSavePhoneNumber.value) return;
+  await updatePhoneNumberMutation.mutateAsync({
+    phoneNumber: normalizedPhoneDraft.value || null,
+  });
+  phoneDraft.value = "";
 };
 
 const handlePickAvatar = () => {
@@ -476,6 +550,12 @@ const handleCopyCredential = async (value: string | null) => {
   border-radius: var(--sys-radius-small);
   background: var(--sys-color-surface);
   color: var(--sys-color-on-surface);
+}
+
+.profile-field-hint {
+  margin: calc(var(--sys-spacing-xsmall) * -1) 0 0;
+  @include mx.pu-font(body-small);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .profile-actions {

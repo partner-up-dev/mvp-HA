@@ -15,15 +15,17 @@ import {
   prJoinNoticeGateConfigSchema,
 } from "../../../entities";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PRJoinNoticeAcceptanceRepository } from "../../../repositories/PRJoinNoticeAcceptanceRepository";
+import { PartnerRepository } from "../../../repositories/PartnerRepository";
+import { UserRepository } from "../../../repositories/UserRepository";
 import { ProblemDetailsError } from "../../../lib/problem-details";
 import { normalizeMainlandChinaMobilePhone } from "../../pr-booking-support";
 import type { TimeWindow } from "./time-window.service";
 
 const prRepo = new PartnerRequestRepository();
-const bookingContactRepo = new PRBookingContactRepository();
 const noticeAcceptanceRepo = new PRJoinNoticeAcceptanceRepository();
+const partnerRepo = new PartnerRepository();
+const userRepo = new UserRepository();
 
 export const PR_JOIN_GATE_UNRESOLVED_CODE = "PR_JOIN_GATE_UNRESOLVED";
 export const BOOKING_CONTACT_PHONE_REQUIRED_CODE =
@@ -67,7 +69,7 @@ export type ResolveJoinGatePayload =
   | {
       kind: "BOOKING_CONTACT";
       version: string;
-      phone: string;
+      phone?: string;
     };
 
 const withSource = (
@@ -158,10 +160,16 @@ const isBookingContactGateResolved = async (
   prId: PRId,
   viewerUserId: UserId | null,
 ): Promise<boolean> => {
-  const contact = await bookingContactRepo.findByPrId(prId);
-  if (!contact) return false;
-  if (contact.ownerPartnerId !== null) return true;
-  return Boolean(viewerUserId && contact.ownerUserId === viewerUserId);
+  const activeParticipants =
+    await partnerRepo.listActiveParticipantSummariesByPrId(prId);
+  if (activeParticipants.some((participant) => participant.phoneNumber)) {
+    return true;
+  }
+  if (!viewerUserId) {
+    return false;
+  }
+  const viewer = await userRepo.findById(viewerUserId);
+  return Boolean(viewer?.phoneNumber);
 };
 
 const isJoinNoticeGateResolved = async (input: {
@@ -267,11 +275,6 @@ export const resetPRJoinGateResolutionsForUser = async (input: {
     prId: input.prId,
     userId: input.userId,
   });
-  await bookingContactRepo.deleteByPrIdAndOwner({
-    prId: input.prId,
-    ownerUserId: input.userId,
-    ownerPartnerId: input.partnerId,
-  });
 };
 
 const throwCodedHttpException = (
@@ -345,44 +348,47 @@ export const resolvePRJoinGate = async (input: {
       );
     }
 
-    const phone = input.payload.phone.trim();
-    if (!phone) {
+    const activeParticipants =
+      await partnerRepo.listActiveParticipantSummariesByPrId(input.prId);
+    if (activeParticipants.some((participant) => participant.phoneNumber)) {
+      return await getPRJoinGateProjection({
+        prId: input.prId,
+        viewerUserId: input.viewerUserId,
+      });
+    }
+
+    const existingViewer = await userRepo.findById(input.viewerUserId);
+    if (!existingViewer) {
       return throwCodedHttpException(
-        400,
-        "Booking contact phone is required",
+        403,
+        "Viewer user is not active",
         BOOKING_CONTACT_PHONE_REQUIRED_CODE,
       );
     }
-    const normalizedPhone = normalizeMainlandChinaMobilePhone(phone);
-    if (!normalizedPhone) {
-      return throwCodedHttpException(
-        400,
-        "Phone must match mainland China mobile format (11 digits, starts with 1)",
-        BOOKING_CONTACT_PHONE_INVALID_CODE,
+
+    const phone = input.payload.phone?.trim() ?? "";
+    if (!existingViewer.phoneNumber) {
+      if (!phone) {
+        return throwCodedHttpException(
+          400,
+          "Booking contact phone is required",
+          BOOKING_CONTACT_PHONE_REQUIRED_CODE,
+        );
+      }
+      const normalizedPhone = normalizeMainlandChinaMobilePhone(phone);
+      if (!normalizedPhone) {
+        return throwCodedHttpException(
+          400,
+          "Phone must match mainland China mobile format (11 digits, starts with 1)",
+          BOOKING_CONTACT_PHONE_INVALID_CODE,
+        );
+      }
+
+      await userRepo.updatePhoneNumber(
+        input.viewerUserId,
+        normalizedPhone.phoneE164,
       );
     }
-
-    const existing = await bookingContactRepo.findByPrId(input.prId);
-    if (
-      existing &&
-      existing.ownerPartnerId !== null &&
-      existing.ownerUserId !== input.viewerUserId
-    ) {
-      return throwCodedHttpException(
-        409,
-        "Booking contact is already resolved",
-        BOOKING_CONTACT_ALREADY_RESOLVED_CODE,
-      );
-    }
-
-    await bookingContactRepo.upsertByPrId({
-      prId: input.prId,
-      ownerPartnerId: existing?.ownerPartnerId ?? null,
-      ownerUserId: input.viewerUserId,
-      phoneE164: normalizedPhone.phoneE164,
-      phoneMasked: normalizedPhone.phoneMasked,
-      verifiedSource: "PHONE_INPUT_FORM",
-    });
   }
 
   return await getPRJoinGateProjection({

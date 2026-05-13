@@ -3,7 +3,6 @@ export * from "./join-gate";
 export * from "./meeting-point";
 export * from "./anchor-event-support-resource";
 export * from "./pr-support-resource";
-export * from "./pr-booking-contact";
 export * from "./pr-booking-execution";
 export * from "./config";
 export * from "./partner";

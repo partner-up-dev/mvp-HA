@@ -4,7 +4,6 @@ export * from "./services/get-effective-booking-deadline";
 export * from "./services/is-booking-contact-required";
 export * from "./services/materialize-pr-support-resources";
 export * from "./services/phone-input";
-export * from "./services/resolve-booking-contact-owner";
 export * from "./services/resolve-booking-contact-state";
 export * from "./services/resolve-support-resource-templates";
 export * from "./use-cases/get-admin-booking-support-config";

@@ -1,5 +1,31 @@
 # Environments
 
+## Local Portless Development
+
+The default local development entry is portless-managed:
+
+- full stack: `pnpm dev:portless`
+- frontend only: `pnpm dev:portless:frontend`
+- backend only: `pnpm dev:portless:backend`
+
+Local app identity is stored in `portless.json`:
+
+- `apps/frontend`: `partner-up`
+- `apps/backend`: `api.partner-up`
+
+Portless injects runtime origin and listener values through `PORTLESS_URL`,
+`HOST`, and `PORT`. The frontend Vite config detects `PORTLESS_URL`, exposes
+that value as `import.meta.env.VITE_API_URL`, and proxies `/api` to the backend
+portless app with `Host: api.partner-up.localhost`.
+
+Fixed local ports remain available for compatibility workflows through package
+env files and helper scripts. They are local fallback inputs, while portless is
+the default developer workflow.
+
+System scenario tests are a separate local runtime. The root scenario runner
+allocates isolated frontend and backend HTTP ports for the test process,
+independent of the developer portless server.
+
 ## Backend Runtime
 
 The backend is deployed to Aliyun Function Compute using Serverless Devs.
@@ -7,7 +33,8 @@ The backend is deployed to Aliyun Function Compute using Serverless Devs.
 Current runtime facts:
 
 - runtime: `custom.debian12`
-- HTTP server listens on port `3000`
+- production FC HTTP server listens on port `3000`; backend local and test
+  processes may override the listener through `PORT`
 - backend code package is built into `apps/backend/.fc-package`
 - production `node_modules` are delivered through a separate FC layer
 - `BACKEND_COMMIT_HASH` is injected by deploy/runtime config so build metadata remains available without `.git`

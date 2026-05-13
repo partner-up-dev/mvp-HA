@@ -7,7 +7,6 @@ import type {
 } from "../../../entities";
 import { operationLogService } from "../../../infra/operation-log";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { PRBookingContactRepository } from "../../../repositories/PRBookingContactRepository";
 import { PRBookingExecutionRepository } from "../../../repositories/PRBookingExecutionRepository";
 import {
   AnchorEventPRContextRepository,
@@ -30,7 +29,6 @@ const MANUAL_RELEASE_ACTION = "partner.admin_manual_release";
 const eventContextRepo = new AnchorEventPRContextRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const prSupportRepo = new PRSupportResourceRepository();
-const bookingContactRepo = new PRBookingContactRepository();
 const bookingExecutionRepo = new PRBookingExecutionRepository();
 const partnerRepo = new PartnerRepository();
 const userRepo = new UserRepository();
@@ -256,14 +254,6 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
         supportResources: resources,
         effectiveBookingDeadlineAt,
       });
-      const bookingContact = await bookingContactRepo.findByPrId(record.root.id);
-      const ownerParticipant =
-        bookingContactState.ownerPartnerId === null
-          ? null
-          : activeParticipants.find(
-              (participant) =>
-                participant.partnerId === bookingContactState.ownerPartnerId,
-            ) ?? null;
       const event = await anchorEventRepo.findById(record.anchor.anchorEventId);
 
       return {
@@ -289,10 +279,10 @@ export async function getAdminBookingExecutionWorkspace(): Promise<AdminBookingE
           required: bookingContactState.required,
           state: bookingContactState.state,
           ownerPartnerId: bookingContactState.ownerPartnerId,
-          ownerUserId: ownerParticipant?.userId ?? null,
-          ownerNickname: ownerParticipant?.nickname ?? null,
-          fullPhone: bookingContact?.phoneE164 ?? null,
-          maskedPhone: bookingContact?.phoneMasked ?? null,
+          ownerUserId: bookingContactState.ownerUserId,
+          ownerNickname: bookingContactState.ownerNickname,
+          fullPhone: bookingContactState.fullPhone,
+          maskedPhone: bookingContactState.maskedPhone,
           verifiedAt: bookingContactState.verifiedAt,
           deadlineAt: bookingContactState.deadlineAt,
         },

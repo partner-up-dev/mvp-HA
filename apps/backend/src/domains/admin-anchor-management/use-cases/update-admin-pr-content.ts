@@ -76,6 +76,7 @@ export async function updateAdminPRContent(
     null,
     {
       bypassEditableStatusGuard: true,
+      bypassTypeImmutableGuard: true,
       bypassUserCreationPolicyGuard: true,
       preserveStatus: true,
     },
