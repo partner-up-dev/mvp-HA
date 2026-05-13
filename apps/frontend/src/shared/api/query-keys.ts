@@ -69,6 +69,15 @@ export const queryKeys = {
     prWorkspace: () => ["admin", "pr-workspace"] as const,
     prMessages: (id: PRId | null) =>
       ["admin", "pr", "messages", id] as const,
+    anchorEventFunnelAnalytics: (filters: {
+      startAt?: string;
+      endAt?: string;
+      eventId?: number | null;
+      spm?: string | null;
+      sourceQr?: string | null;
+      assignmentRevision?: string | null;
+      renderedMode?: string | null;
+    }) => ["admin", "analytics", "anchor-event-funnel", filters] as const,
   },
   wechat: {
     notificationSubscriptions: () =>

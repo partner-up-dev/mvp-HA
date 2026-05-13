@@ -3,8 +3,8 @@
 ## Execution Status
 
 - 2026-05-12: Slices 1, 2, 3, 4, 5, and 6 implemented.
-- 2026-05-13: Slice 7 implemented.
-- Passed verification: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/backend test:unit`, `pnpm --filter @partner-up-dev/backend build`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm db:lint`, `git diff --check`.
+- 2026-05-13: Slices 7 and 8 implemented.
+- Passed verification: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/backend test:unit`, `pnpm --filter @partner-up-dev/backend build`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm --filter @partner-up-dev/frontend lint:tokens`, `pnpm db:lint`, `git diff --check`, browser smoke for `/bi?code=analytics123` -> `/admin/analytics`.
 - Blocked verification: `pnpm test:scenario backend` requires `TEST_DATABASE_URL` or `SCENARIO_DATABASE_ADMIN_URL`.
 
 ## Slice 1: Auth Role Array Migration
