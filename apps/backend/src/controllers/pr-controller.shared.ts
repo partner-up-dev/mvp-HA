@@ -61,18 +61,31 @@ export const updateStatusSchema = z.object({
   status: prStatusManualSchema,
 });
 
-export const updateContentSchema = z.object({
-  fields: partnerRequestFieldsSchema,
-});
+export const userUpdateContentFieldsSchema = partnerRequestFieldsSchema
+  .omit({
+    type: true,
+  })
+  .strict();
 
-export const anchorUpdateContentFieldsSchema = partnerRequestFieldsSchema.omit({
-  time: true,
-  budget: true,
-});
+export const updateContentSchema = z
+  .object({
+    fields: userUpdateContentFieldsSchema,
+  })
+  .strict();
 
-export const anchorUpdateContentSchema = z.object({
-  fields: anchorUpdateContentFieldsSchema,
-});
+export const anchorUpdateContentFieldsSchema = partnerRequestFieldsSchema
+  .omit({
+    type: true,
+    time: true,
+    budget: true,
+  })
+  .strict();
+
+export const anchorUpdateContentSchema = z
+  .object({
+    fields: anchorUpdateContentFieldsSchema,
+  })
+  .strict();
 
 export const prIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),

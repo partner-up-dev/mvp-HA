@@ -10,7 +10,7 @@ export { listPRMessages } from "./list-pr-messages";
 export { createPRMessage } from "./create-pr-message";
 export { advancePRMessageReadMarker } from "./advance-pr-message-read-marker";
 export { updatePRStatus } from "./update-pr-status";
-export { updatePRContent } from "./update-pr-content";
+export { updatePRContent, updateUserPRContent } from "./update-pr-content";
 export { joinPR, joinPRAsUser } from "./join-pr";
 export { waitlistPRAsUser } from "./waitlist-pr";
 export { cancelWaitlistPRByUserId } from "./cancel-waitlist-pr";

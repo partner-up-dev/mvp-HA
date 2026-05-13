@@ -20,6 +20,7 @@ export type PRSearchResult = PRSearchView["results"][number];
 export type PRFormFields = Omit<PartnerRequestFields, "budget"> & {
   budget?: PartnerRequestFields["budget"];
 };
+export type PRUserUpdateContentFields = Omit<PartnerRequestFields, "type">;
 
 const cloneTimeWindow = (
   time: PartnerRequestFields["time"],
@@ -30,6 +31,21 @@ export const toPartnerRequestFields = (
 ): PartnerRequestFields => ({
   title: fields.title,
   type: fields.type,
+  time: cloneTimeWindow(fields.time),
+  location: fields.location,
+  minPartners: fields.minPartners,
+  maxPartners: fields.maxPartners,
+  partners: [...fields.partners],
+  budget: fields.budget ?? null,
+  preferences: [...fields.preferences],
+  notes: fields.notes,
+  meetingPoint: fields.meetingPoint ?? null,
+});
+
+export const toUserUpdatePRContentFields = (
+  fields: PRFormFields,
+): PRUserUpdateContentFields => ({
+  title: fields.title,
   time: cloneTimeWindow(fields.time),
   location: fields.location,
   minPartners: fields.minPartners,

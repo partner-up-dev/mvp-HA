@@ -31,6 +31,12 @@
       outline: 2px solid var(--sys-color-primary);
       outline-offset: -1px;
     }
+
+    &[readonly] {
+      color: var(--sys-color-on-surface-variant);
+      background: var(--sys-color-surface-container-low);
+      cursor: default;
+    }
   }
 
   textarea {
@@ -107,6 +113,13 @@
   margin-top: var(--sys-spacing-xsmall);
   color: var(--sys-color-error);
   @include mx.pu-font(label-medium);
+}
+
+.field-hint {
+  display: block;
+  margin-top: var(--sys-spacing-xsmall);
+  color: var(--sys-color-on-surface-variant);
+  @include mx.pu-font(label-small);
 }
 
 .advanced-fields-enter-active,

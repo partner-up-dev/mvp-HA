@@ -150,3 +150,45 @@ scenario("admin_pr_create_and_edit_allow_admin_only_event_type", async (ctx) => 
   assert.equal(createdRoot[0]?.type, event.type);
   assert.equal(editedRoot[0]?.type, event.type);
 });
+
+scenario("admin_pr_content_edit_can_reclassify_type", async (ctx) => {
+  const admin = await givenAdminUser("type-reclassify-operator");
+  const creator = await givenUser("type-reclassify-source");
+  const pr = await givenPublishedPartnerRequest({
+    creator,
+    minPartners: 1,
+    maxPartners: 2,
+    expectedCreatedStatus: "READY",
+    title: "Scenario admin type reclassify source",
+  });
+  const nextType = "scenario-admin-reclassified-type";
+  ctx.record("prId", pr.id);
+
+  const editResponse = await requestJson(`/api/admin/prs/${pr.id}/content`, {
+    method: "PATCH",
+    token: admin.token,
+    body: {
+      timeWindow: ["2031-02-01T10:00:00.000Z", "2031-02-01T12:00:00.000Z"],
+      title: "Scenario admin type reclassified",
+      type: nextType,
+      location: "Scenario Admin Reclassified Location",
+      minPartners: 2,
+      maxPartners: null,
+      preferences: [],
+      notes: null,
+      meetingPoint: null,
+      joinGateConfig: [],
+      confirmationStartOffsetMinutes: 120,
+      confirmationEndOffsetMinutes: 30,
+      joinLockOffsetMinutes: 30,
+    },
+  });
+  await expectJsonResponse(editResponse, 200);
+
+  const [storedRoot] = await getTestDb()
+    .select({ type: partnerRequests.type })
+    .from(partnerRequests)
+    .where(eq(partnerRequests.id, pr.id));
+
+  assert.equal(storedRoot?.type, nextType);
+});

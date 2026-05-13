@@ -25,7 +25,7 @@ import {
   resolvePRJoinGate,
   resolvePRParticipantUser,
   searchPRs,
-  updatePRContent,
+  updateUserPRContent,
   updatePRStatus,
   waitlistPRByIdentity,
 } from "../domains/pr";
@@ -376,7 +376,7 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       await getPROr404(id);
-      const payload = updateContentSchema.parse(c.req.valid("json"));
+      const payload = c.req.valid("json");
       const auth = c.get("auth");
 
       const creatorAuth = await authorizeCreatorMutation(
@@ -385,9 +385,18 @@ export const partnerRequestRoute = app
         "content",
       );
 
-      const result = await updatePRContent(
+      const fields =
+        "time" in payload.fields
+          ? payload.fields
+          : {
+              ...payload.fields,
+              time: creatorAuth.request.time,
+              budget: creatorAuth.request.budget,
+            };
+
+      const result = await updateUserPRContent(
         id,
-        payload.fields,
+        fields,
         creatorAuth.actorUserId,
       );
       return c.json({

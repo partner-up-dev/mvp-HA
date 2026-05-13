@@ -5,4 +5,7 @@ export { getPR } from "../../../pr-core/use-cases/get-pr";
 export { getMyCreatedPRs } from "../../../pr-core/use-cases/get-my-created-prs";
 export { getMyJoinedPRs } from "../../../pr-core/use-cases/get-my-joined-prs";
 export { updatePRStatus } from "../../../pr-core/use-cases/update-pr-status";
-export { updatePRContent } from "../../../pr-core/use-cases/update-pr-content";
+export {
+  updatePRContent,
+  updateUserPRContent,
+} from "../../../pr-core/use-cases/update-pr-content";

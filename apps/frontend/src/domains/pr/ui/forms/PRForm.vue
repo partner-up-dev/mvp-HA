@@ -27,7 +27,12 @@
         type="text"
         data-testid="pr-create.form.type"
         :placeholder="t('partnerRequestForm.typePlaceholder')"
+        :readonly="!typeEditable"
+        :aria-readonly="!typeEditable"
       />
+      <span v-if="!typeEditable" class="field-hint">
+        {{ t("partnerRequestForm.typeImmutableHint") }}
+      </span>
       <span v-if="errors['fields.type']" class="error-message">
         {{ errors["fields.type"] }}
       </span>
@@ -163,10 +168,12 @@ const props = withDefaults(
     initialFields: PRFormFields;
     showBudgetField?: boolean;
     showTimeField?: boolean;
+    typeEditable?: boolean;
   }>(),
   {
     showBudgetField: true,
     showTimeField: true,
+    typeEditable: true,
   },
 );
 const { t } = useI18n();

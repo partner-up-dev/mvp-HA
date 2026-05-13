@@ -10,6 +10,7 @@
       :initial-fields="initialFields"
       :show-budget-field="showBudgetField"
       :show-time-field="showTimeField"
+      :type-editable="false"
       @submit="handleSubmit"
     />
 
@@ -48,7 +49,7 @@ import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import PRForm from "@/domains/pr/ui/forms/PRForm.vue";
 import Button from "@/shared/ui/actions/Button.vue";
 import {
-  toPartnerRequestFields,
+  toUserUpdatePRContentFields,
   type PRFormFields,
 } from "@/domains/pr/model/types";
 
@@ -80,7 +81,7 @@ const isFormValid = computed(() => {
 const handleSubmit = async ({ fields }: PartnerRequestFormInput) => {
   await updateMutation.mutateAsync({
     id: props.prId,
-    fields: toPartnerRequestFields(fields),
+    fields: toUserUpdatePRContentFields(fields),
   });
 
   emit("success");

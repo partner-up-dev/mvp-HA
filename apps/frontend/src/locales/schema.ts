@@ -1419,6 +1419,7 @@ export interface MessageSchema {
     publishRequestFailed: string;
     updateStatusFailed: string;
     updateContentFailed: string;
+    prTypeImmutable: string;
     missingPartnerRequestId: string;
     fetchRequestFailed: string;
     fetchCreatedRequestsFailed: string;
