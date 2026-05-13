@@ -4,13 +4,6 @@
       <AdminNavigationPanel show-logout @logout="logout" />
     </template>
 
-    <template #header>
-      <header class="header">
-        <h1 class="title">{{ t("adminBookingSupport.title") }}</h1>
-        <p class="subtitle">{{ t("adminBookingSupport.subtitle") }}</p>
-      </header>
-    </template>
-
     <template #rail>
       <SupportResourceEventRail
         v-model="selectedEventIdRaw"
@@ -101,25 +94,3 @@ watch(
   { immediate: true },
 );
 </script>
-
-<style lang="scss" scoped>
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xsmall);
-}
-
-.title,
-.subtitle {
-  margin: 0;
-}
-
-.title {
-  @include mx.pu-font(headline-small);
-}
-
-.subtitle {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
-}
-</style>

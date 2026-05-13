@@ -10,6 +10,7 @@ export type AdminNavigationGroup = {
 export type AdminNavigationItem = {
   id: string;
   labelKey: string;
+  subtitleKey: string;
   routeName: string;
   requiredRoles?: AdminSessionRole[];
   sectionId?: string;
@@ -27,6 +28,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "anchor-event-basic",
         labelKey: "adminCommon.navAnchorEventBasic",
+        subtitleKey: "adminCommon.navAnchorEventBasicSubtitle",
         routeName: "admin-anchor-events",
         sectionId: "anchor-event-basic",
         hash: sectionHash("anchor-event-basic"),
@@ -34,6 +36,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "anchor-event-locations",
         labelKey: "adminCommon.navAnchorEventLocations",
+        subtitleKey: "adminCommon.navAnchorEventLocationsSubtitle",
         routeName: "admin-anchor-events",
         sectionId: "anchor-event-locations",
         hash: sectionHash("anchor-event-locations"),
@@ -41,6 +44,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "anchor-event-time",
         labelKey: "adminCommon.navAnchorEventTime",
+        subtitleKey: "adminCommon.navAnchorEventTimeSubtitle",
         routeName: "admin-anchor-events",
         sectionId: "anchor-event-time",
         hash: sectionHash("anchor-event-time"),
@@ -48,6 +52,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "anchor-event-tags",
         labelKey: "adminCommon.navAnchorEventTags",
+        subtitleKey: "adminCommon.navAnchorEventTagsSubtitle",
         routeName: "admin-anchor-events",
         sectionId: "anchor-event-tags",
         hash: sectionHash("anchor-event-tags"),
@@ -55,6 +60,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "anchor-event-other",
         labelKey: "adminCommon.navAnchorEventOther",
+        subtitleKey: "adminCommon.navAnchorEventOtherSubtitle",
         routeName: "admin-anchor-events",
         sectionId: "anchor-event-other",
         hash: sectionHash("anchor-event-other"),
@@ -69,6 +75,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "pr-basic",
         labelKey: "adminCommon.navPRBasic",
+        subtitleKey: "adminCommon.navPRBasicSubtitle",
         routeName: "admin-pr",
         sectionId: "pr-basic",
         hash: sectionHash("pr-basic"),
@@ -76,6 +83,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "pr-messages",
         labelKey: "adminCommon.navPRMessages",
+        subtitleKey: "adminCommon.navPRMessagesSubtitle",
         routeName: "admin-pr",
         sectionId: "pr-messages",
         hash: sectionHash("pr-messages"),
@@ -90,6 +98,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "analytics-dashboard",
         labelKey: "adminCommon.navAnalytics",
+        subtitleKey: "adminCommon.navAnalyticsSubtitle",
         routeName: "admin-analytics",
       },
     ],
@@ -102,11 +111,13 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "support-resource-config",
         labelKey: "adminCommon.navSupportResourceConfig",
+        subtitleKey: "adminCommon.navSupportResourceConfigSubtitle",
         routeName: "admin-booking-support",
       },
       {
         id: "support-resource-execution",
         labelKey: "adminCommon.navSupportResourceExecution",
+        subtitleKey: "adminCommon.navSupportResourceExecutionSubtitle",
         routeName: "admin-booking-execution",
       },
     ],
@@ -119,6 +130,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "poi-basic",
         labelKey: "adminCommon.navPoiBasic",
+        subtitleKey: "adminCommon.navPoiBasicSubtitle",
         routeName: "admin-pois",
         sectionId: "poi-basic",
         hash: sectionHash("poi-basic"),
@@ -126,6 +138,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "poi-review",
         labelKey: "adminCommon.navPoiReview",
+        subtitleKey: "adminCommon.navPoiReviewSubtitle",
         routeName: "admin-pois",
         sectionId: "poi-review",
         hash: sectionHash("poi-review"),
@@ -140,6 +153,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         id: "feedback-questionnaire-templates",
         labelKey: "adminCommon.navFeedbackQuestionnaireTemplates",
+        subtitleKey: "adminCommon.navFeedbackQuestionnaireTemplatesSubtitle",
         routeName: "admin-feedback-questionnaires",
       },
     ],

@@ -4,11 +4,35 @@
       <AdminNavigationPanel show-logout @logout="logout" />
     </template>
 
-    <template #header>
-      <header class="header">
-        <h1 class="title">{{ t("adminPois.title") }}</h1>
-        <p class="subtitle">{{ t("adminPois.subtitle") }}</p>
-      </header>
+    <template #actions>
+      <template v-if="activeAdminSection === 'poi-basic'">
+        <Button
+          appearance="pill"
+          tone="outline"
+          size="sm"
+          type="button"
+          :disabled="isCreatingPoi || !canCreatePoi"
+          @click="handleCreatePoi"
+        >
+          {{
+            isCreatingPoi
+              ? t("adminPois.creatingPoi")
+              : t("adminPois.createPoiAction")
+          }}
+        </Button>
+
+        <Button
+          appearance="pill"
+          size="sm"
+          type="button"
+          :disabled="selectedPoiId === null || isSavingPoi"
+          @click="handleSavePoi"
+        >
+          {{
+            isSavingPoi ? t("adminPois.savingPoi") : t("adminPois.savePoiAction")
+          }}
+        </Button>
+      </template>
     </template>
 
     <template #rail>
@@ -37,14 +61,9 @@
             v-model:selected-poi-meeting-point-description="selectedPoiMeetingPointDescription"
             v-model:selected-poi-meeting-point-image-url="selectedPoiMeetingPointImageUrl"
             :selected-poi-id="selectedPoiId"
-            :can-create-poi="canCreatePoi"
-            :is-creating-poi="isCreatingPoi"
-            :is-saving-poi="isSavingPoi"
             :selected-poi-gallery="selectedPoiGallery"
             :selected-poi-availability-rules="selectedPoiAvailabilityRules"
             :weekday-options="weekdayOptions"
-            @create-poi="handleCreatePoi"
-            @save-poi="handleSavePoi"
             @add-manual-url="handleAddManualUrl"
             @gallery-uploaded="handleGalleryUploaded"
             @remove-gallery-image="handleRemoveGalleryImage"
@@ -84,6 +103,7 @@ import { useAdminNavigationSection } from "@/domains/admin/use-cases/useAdminNav
 import { useAdminPoiManagementWorkspace } from "@/domains/admin/use-cases/poi/useAdminPoiManagementWorkspace";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
+import Button from "@/shared/ui/actions/Button.vue";
 
 const { t } = useI18n();
 const { isAdmin, logout } = useAdminAccess();
@@ -130,8 +150,7 @@ const {
 </script>
 
 <style lang="scss" scoped>
-.stack,
-.header {
+.stack {
   display: flex;
   flex-direction: column;
 }
@@ -140,20 +159,6 @@ const {
   gap: var(--sys-spacing-medium);
 }
 
-.header {
-  gap: var(--sys-spacing-xsmall);
-}
-
-.title,
-.subtitle {
-  margin: 0;
-}
-
-.title {
-  @include mx.pu-font(headline-small);
-}
-
-.subtitle,
 .empty-panel {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);

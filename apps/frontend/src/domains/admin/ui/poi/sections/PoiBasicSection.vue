@@ -9,85 +9,16 @@
       <div class="grid">
         <label class="field field--full">
           <span class="field-label">{{ t("adminPois.newPoiLabel") }}</span>
-          <div class="action-row">
-            <input
-              v-model="newPoiId"
-              class="field-input"
-              :placeholder="t('adminPois.newPoiPlaceholder')"
-            />
-            <Button
-              appearance="pill"
-              tone="outline"
-              size="sm"
-              type="button"
-              :disabled="isCreatingPoi || !canCreatePoi"
-              @click="emit('create-poi')"
-            >
-              {{
-                isCreatingPoi
-                  ? t("adminPois.creatingPoi")
-                  : t("adminPois.createPoiAction")
-              }}
-            </Button>
-          </div>
-        </label>
-
-        <label class="field">
-          <span class="field-label">{{ t("adminPois.perTimeWindowCapLabel") }}</span>
           <input
-            v-model="selectedPoiCapText"
+            v-model="newPoiId"
             class="field-input"
-            type="number"
-            min="1"
-            :disabled="selectedPoiId === null"
-            :placeholder="t('adminPois.perTimeWindowCapPlaceholder')"
+            :placeholder="t('adminPois.newPoiPlaceholder')"
           />
         </label>
-
-        <label class="field field--full">
-          <span class="field-label">{{
-            t("adminPois.meetingPointDescriptionLabel")
-          }}</span>
-          <textarea
-            v-model="selectedPoiMeetingPointDescription"
-            class="field-input field-textarea"
-            :disabled="selectedPoiId === null"
-          ></textarea>
-        </label>
-
-        <label class="field">
-          <span class="field-label">{{
-            t("adminPois.meetingPointImageUrlLabel")
-          }}</span>
-          <input
-            v-model="selectedPoiMeetingPointImageUrl"
-            class="field-input"
-            :disabled="selectedPoiId === null"
-          />
-        </label>
-      </div>
-
-      <div class="actions">
-        <Button
-          appearance="pill"
-          size="sm"
-          type="button"
-          :disabled="selectedPoiId === null || isSavingPoi"
-          @click="emit('save-poi')"
-        >
-          {{
-            isSavingPoi
-              ? t("adminPois.savingPoi")
-              : t("adminPois.savePoiAction")
-          }}
-        </Button>
       </div>
     </BentoItem>
 
-    <BentoItem
-      :title="`${t('adminPois.galleryTitle')} · ${selectedPoiId ?? '-'}`"
-      span="full"
-    >
+    <BentoItem :title="t('adminPois.galleryTitle')" span="full">
       <p class="hint">
         {{ t("adminPois.galleryCount", { count: selectedPoiGallery.length }) }}
       </p>
@@ -152,10 +83,21 @@
       </div>
     </BentoItem>
 
-    <BentoItem
-      :title="`${t('adminPois.availabilityRulesTitle')} · ${selectedPoiId ?? '-'}`"
-      span="full"
-    >
+    <BentoItem :title="t('adminPois.availabilityAndCapacityTitle')" span="full">
+      <div class="grid">
+        <label class="field">
+          <span class="field-label">{{ t("adminPois.perTimeWindowCapLabel") }}</span>
+          <input
+            v-model="selectedPoiCapText"
+            class="field-input"
+            type="number"
+            min="1"
+            :disabled="selectedPoiId === null"
+            :placeholder="t('adminPois.perTimeWindowCapPlaceholder')"
+          />
+        </label>
+      </div>
+
       <div class="section-header">
         <Button
           appearance="pill"
@@ -319,6 +261,32 @@
         </div>
       </article>
     </BentoItem>
+
+    <BentoItem :title="t('adminPois.meetingPointTitle')" span="full">
+      <div class="grid">
+        <label class="field field--full">
+          <span class="field-label">{{
+            t("adminPois.meetingPointDescriptionLabel")
+          }}</span>
+          <textarea
+            v-model="selectedPoiMeetingPointDescription"
+            class="field-input field-textarea"
+            :disabled="selectedPoiId === null"
+          ></textarea>
+        </label>
+
+        <label class="field">
+          <span class="field-label">{{
+            t("adminPois.meetingPointImageUrlLabel")
+          }}</span>
+          <input
+            v-model="selectedPoiMeetingPointImageUrl"
+            class="field-input"
+            :disabled="selectedPoiId === null"
+          />
+        </label>
+      </div>
+    </BentoItem>
   </BentoLayout>
 </template>
 
@@ -332,9 +300,6 @@ import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
 
 defineProps<{
   selectedPoiId: string | null;
-  canCreatePoi: boolean;
-  isCreatingPoi: boolean;
-  isSavingPoi: boolean;
   selectedPoiGallery: string[];
   selectedPoiAvailabilityRules: EditableAvailabilityRule[];
   weekdayOptions: readonly {
@@ -344,8 +309,6 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "create-poi": [];
-  "save-poi": [];
   "add-manual-url": [];
   "gallery-uploaded": [url: string];
   "remove-gallery-image": [index: number];
@@ -390,11 +353,6 @@ const { t } = useI18n();
   justify-content: space-between;
   gap: var(--sys-spacing-small);
   flex-wrap: wrap;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .field {

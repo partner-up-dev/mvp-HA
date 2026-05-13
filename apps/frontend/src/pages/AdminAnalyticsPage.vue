@@ -126,29 +126,21 @@
       </aside>
     </template>
 
-    <template #header>
-      <header class="analytics-header">
-        <div class="analytics-header__copy">
-          <h1 class="analytics-header__title">{{ t("adminAnalytics.title") }}</h1>
-          <p class="analytics-header__subtitle">
-            {{ t("adminAnalytics.subtitle") }}
-          </p>
-        </div>
-        <Button
-          appearance="pill"
-          tone="surface"
-          size="sm"
-          type="button"
-          :loading="isDashboardRefreshing"
-          data-testid="admin-analytics.refresh"
-          @click="refreshDashboard"
-        >
-          <template #leading>
-            <span class="i-mdi-sync" aria-hidden="true"></span>
-          </template>
-          {{ t("adminAnalytics.refreshAction") }}
-        </Button>
-      </header>
+    <template #actions>
+      <Button
+        appearance="pill"
+        tone="surface"
+        size="sm"
+        type="button"
+        :loading="isDashboardRefreshing"
+        data-testid="admin-analytics.refresh"
+        @click="refreshDashboard"
+      >
+        <template #leading>
+          <span class="i-mdi-sync" aria-hidden="true"></span>
+        </template>
+        {{ t("adminAnalytics.refreshAction") }}
+      </Button>
     </template>
 
     <template #main>
@@ -677,8 +669,6 @@ const formatFailureKey = (row: FailureBreakdownRow): string =>
 
 .analytics-filter-rail,
 .analytics-dashboard,
-.analytics-header,
-.analytics-header__copy,
 .analytics-filter-rail__header,
 .analytics-filter-rail__actions,
 .analytics-panel,
@@ -694,7 +684,6 @@ const formatFailureKey = (row: FailureBreakdownRow): string =>
 
 .analytics-filter-rail,
 .analytics-dashboard,
-.analytics-header__copy,
 .analytics-filter-rail__header,
 .analytics-filter-rail__actions,
 .analytics-panel,
@@ -721,8 +710,6 @@ const formatFailureKey = (row: FailureBreakdownRow): string =>
 
 .analytics-filter-rail__eyebrow,
 .analytics-filter-rail__summary,
-.analytics-header__title,
-.analytics-header__subtitle,
 .analytics-panel h2,
 .analytics-panel p,
 .funnel-panel h2,
@@ -766,24 +753,6 @@ const formatFailureKey = (row: FailureBreakdownRow): string =>
   gap: var(--sys-spacing-small);
 }
 
-.analytics-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sys-spacing-medium);
-}
-
-.analytics-header__copy {
-  gap: var(--sys-spacing-small);
-}
-
-.analytics-header__title {
-  font-size: var(--dcs-typography-page-hero-size);
-  font-weight: 700;
-  line-height: 1.05;
-}
-
-.analytics-header__subtitle,
 .analytics-panel p,
 .funnel-panel__header span,
 .funnel-step p,
@@ -1007,10 +976,6 @@ const formatFailureKey = (row: FailureBreakdownRow): string =>
 }
 
 @media (max-width: 760px) {
-  .analytics-header {
-    flex-direction: column;
-  }
-
   .kpi-strip,
   .funnel-grid,
   .analytics-lower-grid {

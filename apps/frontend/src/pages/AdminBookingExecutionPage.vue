@@ -4,13 +4,6 @@
       <AdminNavigationPanel show-logout @logout="logout" />
     </template>
 
-    <template #header>
-      <header class="header">
-        <h1 class="title">{{ t("adminBookingExecution.title") }}</h1>
-        <p class="subtitle">{{ t("adminBookingExecution.subtitle") }}</p>
-      </header>
-    </template>
-
     <template #rail>
       <SupportResourceExecutionRail
         v-model="searchText"
@@ -64,25 +57,3 @@ const handleStatsChange = (stats: ExecutionStats) => {
   executionStats.filteredAuditCount = stats.filteredAuditCount;
 };
 </script>
-
-<style lang="scss" scoped>
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-spacing-xsmall);
-}
-
-.title,
-.subtitle {
-  margin: 0;
-}
-
-.title {
-  @include mx.pu-font(headline-small);
-}
-
-.subtitle {
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
-}
-</style>
