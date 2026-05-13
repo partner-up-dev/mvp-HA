@@ -36,9 +36,9 @@ import { PartnerRequestRepository } from "../repositories/PartnerRequestReposito
 import {
   anchorUpdateContentSchema,
   buildCreatorIdentity,
+  createNaturalLanguagePRSchema,
   getSessionUserId,
   issueAuthPayload,
-  nlWordCountSchema,
   prMessageCreateSchema,
   prMessageReadMarkerSchema,
   prIdParamSchema,
@@ -59,6 +59,7 @@ import { z } from "zod";
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
 const isoDateSearchParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const correlationIdSchema = z.string().trim().min(1).max(128).optional();
 const eventPRSearchQuerySchema = z.object({
   eventId: z.coerce.number().int().positive(),
   date: z.preprocess((value) => {
@@ -76,12 +77,22 @@ const createStructuredPRCommandSchema = z.union([
     fields: partnerRequestFieldsSchema,
     createSource: z.literal("EVENT_ASSISTED"),
     anchorEventId: z.coerce.number().int().positive(),
+    correlationId: correlationIdSchema,
   }),
   z.object({
     fields: partnerRequestFieldsSchema,
     createSource: z.literal("FORM").optional(),
+    correlationId: correlationIdSchema,
   }),
 ]);
+const nlWordCountCommandSchema = createNaturalLanguagePRSchema
+  .extend({
+    correlationId: correlationIdSchema,
+  })
+  .refine(
+    ({ rawText }) => rawText.trim().split(/\s+/).filter(Boolean).length <= 50,
+    { message: "Natural language input must be 50 words or fewer" },
+  );
 const canonicalUpdateContentSchema = z.union([
   updateContentSchema,
   anchorUpdateContentSchema,
@@ -89,11 +100,13 @@ const canonicalUpdateContentSchema = z.union([
 const anchorJoinSchema = z
   .object({
     bookingContactPhone: z.string().trim().min(1).optional(),
+    correlationId: correlationIdSchema,
   })
   .default({});
 const waitlistCommandSchema = z
   .object({
     alternativePrReminderOptIn: z.boolean().optional(),
+    correlationId: correlationIdSchema,
   })
   .default({});
 const slotCheckInSchema = z.object({
@@ -170,7 +183,7 @@ export const partnerRequestRoute = app
       return c.json(result, 201);
     },
   )
-  .post("/new/nl", zValidator("json", nlWordCountSchema), async (c) => {
+  .post("/new/nl", zValidator("json", nlWordCountCommandSchema), async (c) => {
     const { rawText, nowIso, nowWeekday } = c.req.valid("json");
     const creatorIdentity = await buildCreatorIdentity(c);
     const result = await createPRFromNaturalLanguage(

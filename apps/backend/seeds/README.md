@@ -14,3 +14,5 @@ Current local bootstrap account:
 
 - Admin UUID: `00000000-0000-0000-0000-000000000001`
 - Admin password: `admin123`
+- Analytics UUID: `00000000-0000-0000-0000-000000000002`
+- Analytics code: `2026zcb`

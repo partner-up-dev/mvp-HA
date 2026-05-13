@@ -36,13 +36,6 @@
       </AdminRailPanel>
     </template>
 
-    <template #header>
-      <header class="header">
-        <h1 class="title">{{ t("adminAnchorEvents.title") }}</h1>
-        <p class="subtitle">{{ t("adminAnchorEvents.subtitle") }}</p>
-      </header>
-    </template>
-
     <template #main>
       <div class="stack">
         <LoadingIndicator
@@ -572,31 +565,14 @@ const handleSaveAnchorEventOtherSettings = async () => {
 
 <style lang="scss" scoped>
 .stack,
-.header,
 .selection-list {
   display: flex;
   flex-direction: column;
 }
 
 .stack,
-.header,
 .selection-list {
   gap: var(--sys-spacing-medium);
-}
-
-.header {
-  gap: var(--sys-spacing-xsmall);
-}
-
-.title {
-  margin: 0;
-  @include mx.pu-font(headline-small);
-}
-
-.subtitle {
-  margin: 0;
-  @include mx.pu-font(body-medium);
-  color: var(--sys-color-on-surface-variant);
 }
 
 .hint {
@@ -604,4 +580,5 @@ const handleSaveAnchorEventOtherSettings = async () => {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);
 }
+
 </style>

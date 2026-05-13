@@ -5,7 +5,7 @@ import { useAdminSessionStore } from "@/domains/admin/use-cases/useAdminSessionS
 export const useAdminAccess = () => {
   const router = useRouter();
   const adminSessionStore = useAdminSessionStore();
-  const { hasAdminAccess } = storeToRefs(adminSessionStore);
+  const { hasAdminAccess, hasAnalyticsAccess } = storeToRefs(adminSessionStore);
 
   const logout = async () => {
     adminSessionStore.clearSession();
@@ -14,6 +14,7 @@ export const useAdminAccess = () => {
 
   return {
     isAdmin: hasAdminAccess,
+    isAnalytics: hasAnalyticsAccess,
     logout,
   };
 };

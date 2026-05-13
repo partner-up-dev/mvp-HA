@@ -8,7 +8,7 @@ import {
   issueAuthForUser,
 } from "../auth/middleware";
 import type { AuthEnv } from "../auth/middleware";
-import type { UserId } from "../entities/user";
+import { hasAnyUserRole, hasUserRole, type UserId } from "../entities/user";
 import { UserRepository } from "../repositories/UserRepository";
 import {
   registerAnonymousUser,
@@ -37,7 +37,7 @@ export const authRoute = app
     const user = await userRepo.findById(userId);
     if (
       !user ||
-      user.role !== "service" ||
+      !hasAnyUserRole(user.role, ["service", "analytics"]) ||
       !(await verifyUserCredential(user, password))
     ) {
       throw new HTTPException(401, { message: "Invalid admin credentials" });
@@ -47,6 +47,7 @@ export const authRoute = app
     c.set("auth", authenticated);
     return c.json({
       role: authenticated.role,
+      roles: authenticated.roles,
       userId: user.id,
       accessToken: authenticated.token,
     });
@@ -57,6 +58,7 @@ export const authRoute = app
       await setAnonymousSessionCookie(c, auth.userId);
       return c.json({
         role: "anonymous",
+        roles: auth.roles,
         userId: auth.userId,
         accessToken: auth.token,
       });
@@ -72,6 +74,7 @@ export const authRoute = app
     if (auth.role !== "anonymous" && auth.userId) {
       return c.json({
         role: auth.role,
+        roles: auth.roles,
         userId: auth.userId,
         accessToken: auth.token,
       });
@@ -85,7 +88,7 @@ export const authRoute = app
       if (
         !candidateUser ||
         candidateUser.status !== "ACTIVE" ||
-        candidateUser.role !== "anonymous"
+        !hasUserRole(candidateUser.role, "anonymous")
       ) {
         throw new HTTPException(401, {
           message: "Invalid anonymous user session",
@@ -97,6 +100,7 @@ export const authRoute = app
       await setAnonymousSessionCookie(c, candidateUser.id);
       return c.json({
         role: "anonymous" as const,
+        roles: anonymous.roles,
         userId: candidateUser.id,
         accessToken: anonymous.token,
       });
@@ -105,6 +109,7 @@ export const authRoute = app
     if (auth.role === "anonymous" && auth.userId) {
       return c.json({
         role: auth.role,
+        roles: auth.roles,
         userId: auth.userId,
         accessToken: auth.token,
       });
@@ -113,6 +118,7 @@ export const authRoute = app
     const anonymous = issueAnonymousAuth(null);
     return c.json({
       role: "anonymous" as const,
+      roles: anonymous.roles,
       userId: null,
       accessToken: anonymous.token,
     });

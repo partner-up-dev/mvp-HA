@@ -20,7 +20,7 @@ export async function givenUser(
 ): Promise<ScenarioUser> {
   const user = await userRepo.create({
     id: randomUUID(),
-    role: "authenticated",
+    role: ["authenticated"],
     nickname: `scenario-${label}`,
     phoneNumber: options.phoneNumber ?? null,
     status: "ACTIVE",
@@ -41,7 +41,7 @@ export async function givenAnonymousUser(
 ): Promise<ScenarioUser> {
   const user = await userRepo.create({
     id: randomUUID(),
-    role: "anonymous",
+    role: ["anonymous"],
     nickname: `scenario-anonymous-${label}`,
     status: "ACTIVE",
   });
@@ -59,7 +59,7 @@ export async function givenAnonymousUser(
 export async function givenAdminUser(label: string): Promise<ScenarioUser> {
   const user = await userRepo.create({
     id: randomUUID(),
-    role: "service",
+    role: ["service", "analytics"],
     nickname: `scenario-admin-${label}`,
     status: "ACTIVE",
   });

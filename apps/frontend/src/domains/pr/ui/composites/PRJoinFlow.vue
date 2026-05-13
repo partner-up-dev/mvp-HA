@@ -108,6 +108,7 @@ import {
 import type { ApiError } from "@/shared/api/error";
 import { trackEvent } from "@/shared/telemetry/track";
 import { resolveTelemetryFailurePayload } from "@/shared/telemetry/result";
+import { createCommandCorrelationId } from "@/shared/telemetry/correlation";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type JoinSuccessPromptStep = "SUBSCRIPTIONS" | "OFFICIAL_ACCOUNT";
@@ -258,6 +259,7 @@ const trackJoinResult = (payload: {
   actionResult: "success" | "failure" | "blocked";
   failureCode?: string;
   failureReason?: string;
+  correlationId?: string;
 }): void => {
   const prId = props.prId;
   if (prId === null) {
@@ -270,8 +272,23 @@ const trackJoinResult = (payload: {
     eventId: props.eventId ?? undefined,
     entrySurface: props.entrySurface ?? undefined,
     candidateRank: props.candidateRank ?? undefined,
+    correlationId: payload.correlationId,
     ...payload,
   });
+  if (props.eventId !== null) {
+    trackEvent("pr_commitment_result", {
+      eventId: props.eventId,
+      activityType: props.scenarioType ?? undefined,
+      prId,
+      commitmentType: "join",
+      entrySurface: props.entrySurface ?? "pr_detail",
+      candidateRank: props.candidateRank ?? undefined,
+      actionResult: payload.actionResult,
+      failureCode: payload.failureCode,
+      failureReason: payload.failureReason,
+      correlationId: payload.correlationId,
+    });
+  }
 };
 
 const closeJoinFlowModal = (): void => {
@@ -333,12 +350,13 @@ const finalizeJoinFlow = async (): Promise<void> => {
 
   joinFlowPending.value = true;
   joinFlowError.value = null;
+  const correlationId = createCommandCorrelationId();
   try {
     await ensureAuthSessionBootstrapped();
-    const result = await joinMutation.mutateAsync({ id: prId });
+    const result = await joinMutation.mutateAsync({ id: prId, correlationId });
     await applyAuthPayloadFromResult(result);
     joined.value = true;
-    trackJoinResult({ actionResult: "success" });
+    trackJoinResult({ actionResult: "success", correlationId });
     emit("joined", result);
     closeJoinFlowModal();
     openSuccessPrompt();
@@ -349,17 +367,19 @@ const finalizeJoinFlow = async (): Promise<void> => {
         actionResult: "blocked",
         failureCode: PR_JOIN_GATE_UNRESOLVED_CODE,
         failureReason: resolveErrorMessage(error),
+        correlationId,
       });
       showJoinFlowModal.value = true;
       return;
     }
-    trackJoinResult(
-      resolveTelemetryFailurePayload(
+    trackJoinResult({
+      ...resolveTelemetryFailurePayload(
         error,
         "PR_JOIN_FAILED",
         resolveErrorMessage(error),
       ),
-    );
+      correlationId,
+    });
     emitFlowError(resolveErrorMessage(error));
   } finally {
     joinFlowPending.value = false;

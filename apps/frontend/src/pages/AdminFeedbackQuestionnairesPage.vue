@@ -4,13 +4,6 @@
       <AdminNavigationPanel show-logout @logout="logout" />
     </template>
 
-    <template #header>
-      <header class="header">
-        <h1 class="title">{{ t("adminFeedbackQuestionnaires.title") }}</h1>
-        <p class="subtitle">{{ t("adminFeedbackQuestionnaires.subtitle") }}</p>
-      </header>
-    </template>
-
     <template #main>
       <LoadingIndicator
         v-if="templatesQuery.isLoading.value"
@@ -369,30 +362,21 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.header,
 .field {
   display: flex;
   flex-direction: column;
 }
 
-.header,
 .field {
   gap: var(--sys-spacing-xsmall);
 }
 
-.title,
-.subtitle,
 .hint,
 .error-text,
 .success-text {
   margin: 0;
 }
 
-.title {
-  @include mx.pu-font(headline-small);
-}
-
-.subtitle,
 .hint {
   @include mx.pu-font(body-medium);
   color: var(--sys-color-on-surface-variant);

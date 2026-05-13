@@ -19,6 +19,7 @@
           :cover-image="props.resolveCoverImage(candidate.pr.location)"
           data-testid="anchor-event-form-mode.candidate-card"
           :data-pr-id="candidate.pr.id"
+          @open-detail="emit('candidate-detail', candidate.pr.id, index + 1)"
         >
           <template #actions>
             <PRJoinFlow
@@ -130,6 +131,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
+  "candidate-detail": [prId: number, rank: number];
   "join-candidate": [prId: number, rank: number];
   "join-candidate-joined": [prId: number, rank: number];
   "join-candidate-success-closed": [prId: number, rank: number];

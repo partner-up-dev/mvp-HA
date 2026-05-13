@@ -899,6 +899,7 @@ const emitCreateFromCardEmpty = () => {
     targetTimeWindow:
       selectedInternalCardCreateTimeWindow.value?.timeWindow ?? null,
     locationId: internalCardCreateLocationId.value || null,
+    entrySurface: "card_rich",
   });
 };
 

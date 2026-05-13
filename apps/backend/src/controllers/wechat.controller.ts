@@ -42,7 +42,7 @@ import {
   rebuildWeChatActivityStartReminderJobsForUser,
   rebuildWeChatReminderJobsForUser,
 } from "../infra/notifications";
-import type { User, UserId } from "../entities/user";
+import { hasUserRole, type User, type UserId } from "../entities/user";
 import {
   wechatNotificationKindSchema,
   type WeChatNotificationKind,
@@ -97,7 +97,8 @@ const oauthStateCookiePayloadSchema = z.object({
 });
 
 const oauthCallbackAuthPayloadSchema = z.object({
-  role: z.enum(["authenticated", "service"]),
+  role: z.enum(["authenticated", "service", "analytics"]),
+  roles: z.array(z.enum(["anonymous", "authenticated", "service", "analytics"])),
   userId: z.string().uuid(),
   accessToken: z.string().min(1),
 });
@@ -924,10 +925,14 @@ const issueOAuthCallbackAuth = async (
   user: User,
 ): Promise<OAuthCallbackAuthPayload> => {
   const authenticated = issueAuthForUser(user);
+  if (authenticated.role === "anonymous") {
+    throw new Error("OAuth callback user must have an authenticated role");
+  }
   c.set("auth", authenticated);
 
   return {
-    role: authenticated.role === "service" ? "service" : "authenticated",
+    role: authenticated.role,
+    roles: authenticated.roles,
     userId: user.id,
     accessToken: authenticated.token,
   };
@@ -1506,7 +1511,7 @@ export const wechatRoute = app
           );
           let boundUser: User;
 
-          if (bindTargetUser.role === "anonymous") {
+          if (hasUserRole(bindTargetUser.role, "anonymous")) {
             const upgraded = await upgradeAnonymousUserWithWeChat({
               userId: bindTargetUser.id,
               openId: bindOpenId,
@@ -1574,7 +1579,7 @@ export const wechatRoute = app
             !bindCandidateUser.openId
           ) {
             let boundCandidate: User | null = null;
-            if (bindCandidateUser.role === "anonymous") {
+            if (hasUserRole(bindCandidateUser.role, "anonymous")) {
               const upgraded = await upgradeAnonymousUserWithWeChat({
                 userId: bindCandidateUser.id,
                 openId: loginOpenId,
@@ -1603,7 +1608,7 @@ export const wechatRoute = app
         const createdUser = await userRepo.createIfNotExists({
           id: randomUUID() as UserId,
           openId: loginOpenId,
-          role: "authenticated",
+          role: ["authenticated"],
           status: "ACTIVE",
           nickname: profile?.nickname ?? null,
           sex: profile?.sex ?? null,

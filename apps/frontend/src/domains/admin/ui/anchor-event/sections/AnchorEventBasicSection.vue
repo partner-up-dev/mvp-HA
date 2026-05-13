@@ -21,7 +21,7 @@
         <AnchorEventCoreInfoEditor v-model="form" />
       </BentoItem>
 
-      <BentoItem :title="t('adminPR.eventCoverImageLabel')">
+      <BentoItem :title="t('adminPR.eventCoverImageLabel')" span="full">
         <AnchorEventMediaEditor
           v-model="form"
           v-model:cover-uploading="coverUploading"
@@ -29,7 +29,10 @@
         />
       </BentoItem>
 
-      <BentoItem :title="t('adminAnchorEvents.participationDefaultsTitle')">
+      <BentoItem
+        :title="t('adminAnchorEvents.participationDefaultsTitle')"
+        span="full"
+      >
         <AnchorEventCapacityDefaultsEditor
           v-model="form"
           :validation-message="boundsValidationMessage"

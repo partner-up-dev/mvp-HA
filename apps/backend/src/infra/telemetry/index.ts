@@ -7,3 +7,8 @@ export {
   type TelemetryEvent,
   type TelemetryIngestResult,
 } from "./ingest.service";
+export {
+  ingestUserTelemetryEvents,
+  type UserTelemetryEventInput,
+  type UserTelemetryIngestResult,
+} from "./user-ingest.service";

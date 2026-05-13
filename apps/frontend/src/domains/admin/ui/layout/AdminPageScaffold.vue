@@ -17,6 +17,10 @@
           <slot name="header" />
         </header>
 
+        <div v-if="$slots.actions" class="admin-page-scaffold__actions">
+          <slot name="actions" />
+        </div>
+
         <main class="admin-page-scaffold__main">
           <slot name="main">
             <slot />
@@ -76,6 +80,15 @@ import PageScaffold from "@/shared/ui/layout/PageScaffold.vue";
 
 .admin-page-scaffold__header {
   min-width: 0;
+}
+
+.admin-page-scaffold__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sys-spacing-small);
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 @media (min-width: 901px) {
