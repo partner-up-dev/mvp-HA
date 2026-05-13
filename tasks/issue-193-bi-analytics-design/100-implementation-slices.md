@@ -4,7 +4,7 @@
 
 - 2026-05-12: Slices 1, 2, 3, 4, 5, and 6 implemented.
 - 2026-05-13: Slices 7, 8, and 9 implemented.
-- Passed verification: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/backend test:unit`, `pnpm --filter @partner-up-dev/backend build`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm --filter @partner-up-dev/frontend lint:tokens`, `pnpm db:lint`, `pnpm test:scenario system`, `git diff --check`, browser smoke for `/bi?code=analytics123` -> `/admin/analytics`, focused system scenarios for analytics access and LIST-mode funnel aggregation.
+- Passed verification: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/backend test:unit`, `pnpm --filter @partner-up-dev/backend build`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm --filter @partner-up-dev/frontend lint:tokens`, `pnpm db:lint`, `pnpm test:scenario system`, `git diff --check`, browser smoke for `/bi?code=2026zcb` -> `/admin/analytics`, focused system scenarios for analytics access and LIST-mode funnel aggregation.
 
 ## Slice 1: Auth Role Array Migration
 

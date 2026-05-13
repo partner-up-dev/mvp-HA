@@ -57,7 +57,7 @@ insert into users (
 values (
   '00000000-0000-0000-0000-000000000002'::uuid,
   null,
-  '$2a$10$Gx68ndfjxSXN7LThgF4W3uLdfSXXI16qiSdvdyOFoueLWQyNRaRMi',
+  '$2b$10$auNSGAK22Rb99icLScxQHu6qb9P3uHV1kuyImx3QuOQg5MpgYfRL2',
   ARRAY['analytics']::text[],
   'Seed Analytics',
   null,

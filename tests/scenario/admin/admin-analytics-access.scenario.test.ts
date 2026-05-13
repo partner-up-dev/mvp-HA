@@ -5,7 +5,7 @@ import { UserRepository } from "../../../apps/backend/src/repositories/UserRepos
 
 const ANALYTICS_SEED_USER_ID = "00000000-0000-0000-0000-000000000002";
 const ANALYTICS_SEED_PIN_HASH =
-  "$2a$10$Gx68ndfjxSXN7LThgF4W3uLdfSXXI16qiSdvdyOFoueLWQyNRaRMi";
+  "$2b$10$auNSGAK22Rb99icLScxQHu6qb9P3uHV1kuyImx3QuOQg5MpgYfRL2";
 
 const userRepo = new UserRepository();
 
@@ -31,7 +31,7 @@ scenario("admin_analytics_entry_allows_analytics_role_only", async (ctx) => {
   ctx.record("analyticsUserId", ANALYTICS_SEED_USER_ID);
 
   await withScenarioPage(async (page) => {
-    await page.goto("/bi?code=analytics123");
+    await page.goto("/bi?code=2026zcb");
     await page.waitForURL("**/admin/analytics", { timeout: 20_000 });
     await page.getByTestId("admin-analytics.dashboard").waitFor({
       state: "visible",
