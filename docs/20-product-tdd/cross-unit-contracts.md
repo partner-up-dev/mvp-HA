@@ -11,7 +11,16 @@ Contract implication:
 - route shape, payload shape, and many response shapes are shared by type rather than duplicated manually
 - some contract-breaking API changes are intentionally compile-time visible to the frontend workspace
 
-## 1.1 Image Upload Contract
+## 1.1 Local Development Origin Contract
+
+- The default developer full-stack entry is `pnpm dev:portless` from the repository root.
+- `portless.json` maps `apps/frontend` to the public app name `partner-up` and `apps/backend` to the public app name `api.partner-up`.
+- During portless development, Vite reads `PORTLESS_URL`, `HOST`, and `PORT` from the portless runtime, publishes `import.meta.env.VITE_API_URL` as the frontend origin, and keeps browser API calls same-origin through the frontend `/api` proxy.
+- The frontend `/api` proxy targets the backend portless app by sending `Host: api.partner-up.localhost`, which keeps local browser flows aligned with the typed backend HTTP contract while application code stays free of fixed numeric ports.
+- Fixed-port frontend env values (`VITE_PORT`, `VITE_API_URL`, `VITE_BACKEND_HOST`, `VITE_BACKEND_PORT`, `VITE_BACKEND_PROXY_TARGET`) remain a compatibility contract for explicit fixed-port local work.
+- Root-owned system scenario tests own their own frontend and backend ports through the scenario runner. That isolated test runtime is separate from the developer portless workflow.
+
+## 1.2 Image Upload Contract
 
 - The active image upload surface is `POST /api/upload/images/:purpose` with multipart field `image`.
 - Backend accepts the allowlisted image purposes: `poster`, `poi`, `anchor-event-cover`, `anchor-event-beta-group-qr`, and `feedback`.
