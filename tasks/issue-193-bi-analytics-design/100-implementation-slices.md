@@ -4,8 +4,7 @@
 
 - 2026-05-12: Slices 1, 2, 3, 4, 5, and 6 implemented.
 - 2026-05-13: Slices 7, 8, and 9 implemented.
-- Passed verification: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/backend test:unit`, `pnpm --filter @partner-up-dev/backend build`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm --filter @partner-up-dev/frontend lint:tokens`, `pnpm db:lint`, `git diff --check`, browser smoke for `/bi?code=analytics123` -> `/admin/analytics`, focused system scenarios for analytics access and LIST-mode funnel aggregation.
-- Degraded verification: full `pnpm test:scenario system` runs in the main worktree environment, but current FORM recommendation and PR create form paths return HTTP 400 outside Slice 9 scope.
+- Passed verification: `pnpm --filter @partner-up-dev/backend typecheck`, `pnpm --filter @partner-up-dev/backend test:unit`, `pnpm --filter @partner-up-dev/backend build`, `pnpm --filter @partner-up-dev/frontend build`, `pnpm --filter @partner-up-dev/frontend lint:tokens`, `pnpm db:lint`, `pnpm test:scenario system`, `git diff --check`, browser smoke for `/bi?code=analytics123` -> `/admin/analytics`, focused system scenarios for analytics access and LIST-mode funnel aggregation.
 
 ## Slice 1: Auth Role Array Migration
 
@@ -207,7 +206,7 @@ Verification:
 
 - Focused scenario runner passed for analytics-only access and LIST-mode join conversion:
   - `node --test-name-pattern "admin_analytics_entry_allows_analytics_role_only|anchor_event_list_mode_join_appears_in_analytics_funnel" --import tsx tests/scenario/run-scenario-tests.mts`
-- Full system scenario suite remains degraded by unrelated FORM recommendation and PR create form 400 responses in the current main worktree environment.
+- Full system scenario suite passed after preserving JSON `content-type` on correlated command requests.
 
 ## Slice 10: Documentation Promotion
 

@@ -9,6 +9,7 @@ export const buildCorrelationHeaders = (
 ): Record<string, string> => {
   if (!correlationId) return {};
   return {
+    "content-type": "application/json",
     [CORRELATION_ID_HEADER]: correlationId,
   };
 };
