@@ -34,6 +34,7 @@
             v-for="item in visiblePRItems"
             :key="`${item.timeWindowKey}:${item.pr.id}`"
             :pr-id="item.pr.id"
+            :to="buildPrDetailRoute(item.pr.id)"
             :time-label="item.timeLabel"
             :cover-image="resolveCoverImage(item.pr.location)"
             @open-detail="trackListPrRowAction(item)"
@@ -232,6 +233,9 @@ const buildListFunnelPayload = () => ({
   eventId: props.eventId,
   activityType: detail.value?.type,
 });
+
+const buildPrDetailRoute = (prId: number): string =>
+  `/pr/${prId}?fromEvent=${props.eventId}`;
 
 const LIST_MODE_EXPIRED_DATE_LIMIT = 3;
 const LIST_MODE_EXPIRED_TAB_CLASS = "tab-bar__tab--expired";
