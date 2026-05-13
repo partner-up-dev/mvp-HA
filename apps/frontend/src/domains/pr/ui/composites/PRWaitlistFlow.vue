@@ -101,7 +101,6 @@ import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSu
 import WeChatNotificationSubscriptionsCard from "@/shared/ui/sections/WeChatNotificationSubscriptionsCard.vue";
 import type { WeChatNotificationKind } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFollowPanel.vue";
-import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
 import { useWaitlistPR } from "@/domains/pr/queries/usePRActions";
@@ -349,7 +348,6 @@ const finalizeWaitlistFlow = async (): Promise<void> => {
   waitlistFlowError.value = null;
   const correlationId = createCommandCorrelationId();
   try {
-    await ensureAuthSessionBootstrapped();
     const result = await waitlistMutation.mutateAsync({
       id: prId,
       alternativePrReminderOptIn: alternativePrReminderOptIn.value,

@@ -46,8 +46,10 @@ Contract implication:
 - Backend distinguishes anonymous, authenticated, service, and analytics sessions from JWT `roles` claims plus current persisted user state.
 - `users.role` is a text-array role set. Valid role values are `anonymous`, `authenticated`, `service`, and `analytics`.
 - JWTs carry both `roles` and a primary `role` projection for existing session consumers. Authorization decisions that govern privileged surfaces read the full role set.
+- The `authenticated` role is the product's strong user identity marker. Current public user flows obtain it through WeChat OAuth login or anonymous-user WeChat upgrade.
 - Backend may rotate tokens through the `x-access-token` response header.
 - Frontend must preserve `credentials: "include"` on flows that rely on cookie-backed session state, especially WeChat OAuth, OAuth handoff, and bind paths.
+- Frontend app bootstrap owns best-effort session restoration and anonymous continuity. Command requests rely on backend auth failures plus the RPC auth policy for required identity escalation.
 - Admin and user sessions are separate client contexts. Admin session storage can carry `service`, `analytics`, or both.
 - WeChat OAuth callback completion must not place the long-lived access token in route query parameters. Backend-owned OAuth callbacks hand the frontend session across with a short-lived signed cookie plus a non-secret handoff nonce.
 
@@ -62,11 +64,12 @@ Contract implication:
 
 ## 5. Error Contract
 
-- Backend command failures should converge on RFC 9457 `application/problem+json`.
+- Backend API exceptions serialize as RFC 9457 `application/problem+json`.
 - HTTP status selection should follow RFC 9110 semantics, especially across auth failures, forbidden actions, state conflicts, and invalid content.
 - Backend owns stable machine-readable `code` values for domain guard failures and may also expose a stable `type` URI for the same problem family.
 - Backend owns localized `title` and `detail` text for problem responses and selects them from request locale. Responses should set `Content-Language`.
 - Frontend interprets HTTP status plus stable `code` to drive UX for auth-required flows, join failures, booking failures, and create-path fallbacks.
+- User-facing commands that require the `authenticated` role return `401` with code `AUTHENTICATED_REQUIRED`. The frontend Hono RPC fetch policy handles this code globally by starting the WeChat OAuth login entry for the current browser URL.
 - For shared partner-bounds validation failures, backend and frontend should converge on one user-facing Chinese message rather than surfacing route-specific copies.
 - Human-readable explanation remains backend-owned on command failures. Frontend owns placement and presentation.
 - Problem-details transport shape is a cross-unit reusable substrate. Domain modules own their `type` and `code` registries.
@@ -111,7 +114,7 @@ Important coordination note:
 - backend resolves create result state from the caller's auth context:
   - authenticated create persists and publishes in one command path
   - anonymous create persists `DRAFT` and returns that draft id for later authenticated publish
-- `POST /api/pr/:id/publish` requires an authenticated user. Anonymous calls return stable code `AUTHENTICATED_REQUIRED`, and frontend should record the pending publish action before starting WeChat login.
+- `POST /api/pr/:id/publish` requires an authenticated user. Anonymous calls return stable code `AUTHENTICATED_REQUIRED`; the frontend RPC auth policy starts WeChat login, while the command owner records any pending action needed for replay.
 - `DRAFT` content edits are open to any current session. Published PR content and status mutations remain governed by creator session authorization.
 - Anchor Event assisted create prepares the same PR-owned structured payload and submits `POST /api/pr/new/form`
 - event-assisted create carries transient create source or event referral through command context, while persisted PR state remains the same PR-owned field set used by structured create
@@ -128,9 +131,9 @@ Important coordination note:
 - `GET /api/pr/:id` returns a feedback projection when the PR has a mounted feedback questionnaire instance. The projection includes the instance id, the questionnaire definition snapshot needed for rendering, and the current viewer's response state so the frontend can offer submission or retry without deriving feedback truth locally.
 - `POST /api/feedback/:instanceId` is the feedback questionnaire submission contract. The route treats `instanceId` as a `FeedbackQuestionnaireInstance` id, validates answers against that instance's definition snapshot, and upserts one `FeedbackQuestionnaireResponse` for the current respondent identity. PR participation, attendance, and slot ownership gating live in PR integration surfaces rather than in this generic feedback command.
 - `GET /api/pr/:id/join-gates` is the PR join-gate projection contract. It returns the current viewer's configured join gates with per-gate resolved state. The projection reads PR-owned `joinGateConfig`; when that config is empty it returns an empty gate list; booking-contact gate resolution comes from active participant `users.phone_number`, or from the current viewer's `users.phone_number` before that viewer joins; join-notice gate resolution comes from the current viewer's notice acceptance record.
-- `POST /api/pr/:id/join-gates/:gateKey/resolve` resolves one configured join gate before join or waitlist. `JOIN_NOTICE` writes a viewer-scoped notice acceptance for the gate key and version. `BOOKING_CONTACT` validates and writes the viewer's `users.phone_number` when the PR still has no active participant phone and the viewer has no saved phone. Fallback confirmation is a frontend-injected confirmation view and has no backend projection item or durable resolve command.
-- `POST /api/pr/:id/join` rejects unresolved configured join gates with problem code `PR_JOIN_GATE_UNRESOLVED`. Frontend should refresh `GET /api/pr/:id/join-gates` and continue the join-gate modal when it sees this code.
-- `POST /api/pr/:id/waitlist` creates or reuses one `PENDING` partner slot for the current viewer when the PR is `FULL` and still before the join-lock boundary. It reuses the same join-gate and time-conflict guardrails as join, returns the refreshed public PR view plus auth payload, and does not make the viewer an active participant.
+- `POST /api/pr/:id/join-gates/:gateKey/resolve` resolves one configured join gate before join or waitlist. `JOIN_NOTICE` writes a viewer-scoped notice acceptance for the gate key and version. `BOOKING_CONTACT` validates and writes the viewer's `users.phone_number` when the PR still has no active participant phone and the viewer has no saved phone. When the request lacks an acceptable user identity, it returns `AUTHENTICATED_REQUIRED` through the shared Problem Details error contract. Fallback confirmation is a frontend-injected confirmation view and has no backend projection item or durable resolve command.
+- `POST /api/pr/:id/join` rejects unresolved configured join gates with problem code `PR_JOIN_GATE_UNRESOLVED`. Frontend should refresh `GET /api/pr/:id/join-gates` and continue the join-gate modal when it sees this code. Authentication-required failures use `AUTHENTICATED_REQUIRED` and are handled by the shared RPC auth policy.
+- `POST /api/pr/:id/waitlist` creates or reuses one `PENDING` partner slot for the current viewer when the PR is `FULL` and still before the join-lock boundary. It reuses the same identity, join-gate, and time-conflict guardrails as join, returns the refreshed public PR view plus auth payload, and does not make the viewer an active participant.
 - `POST /api/pr/:id/waitlist` accepts optional JSON field `alternativePrReminderOptIn`. When true, backend stores a waitlist-slot preference that allows exact same-type and same-location alternative PR availability reminders under notification kind `WAITLIST_ALTERNATIVE_AVAILABLE`.
 - The alternative reminder preference belongs to the source `PENDING` partner slot. Backend clears it when that slot is cancelled or converted out of pending state.
 - When the user grants `WAITLIST_ALTERNATIVE_AVAILABLE` quota after waitlist entry, backend rescans that user's opted-in pending source slots for existing alternatives.

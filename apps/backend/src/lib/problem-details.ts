@@ -1,4 +1,4 @@
-type ProblemStatus = 400 | 401 | 403 | 404 | 409 | 422 | 500;
+type ProblemStatus = number;
 
 type LocalizedProblemText = {
   zhCN: {
@@ -114,5 +114,38 @@ export const buildProblemDetailsPayload = (
       detail: text.detail,
       ...(error.code ? { code: error.code } : {}),
     },
+  };
+};
+
+const titleByStatus = (status: number): string => {
+  if (status === 400) return "Bad Request";
+  if (status === 401) return "Unauthorized";
+  if (status === 403) return "Forbidden";
+  if (status === 404) return "Not Found";
+  if (status === 409) return "Conflict";
+  if (status === 422) return "Unprocessable Content";
+  if (status === 503) return "Service Unavailable";
+  if (status >= 500) return "Internal Server Error";
+  return "Request Failed";
+};
+
+export const buildGenericProblemDetailsPayload = (input: {
+  status: number;
+  detail: string;
+  code?: string;
+  type?: string;
+}): ProblemDetailsPayload => {
+  const status =
+    Number.isInteger(input.status) && input.status >= 400 && input.status <= 599
+      ? input.status
+      : 500;
+  const title = titleByStatus(status);
+
+  return {
+    type: input.type ?? `https://partner-up.app/problems/http.${status}`,
+    title,
+    status,
+    detail: input.detail,
+    ...(input.code ? { code: input.code } : {}),
   };
 };

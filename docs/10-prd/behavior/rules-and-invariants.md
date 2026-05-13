@@ -100,7 +100,7 @@
 
 - Browsing does not require upfront login.
 - Anonymous UUID continuity supports revisit without an upfront login gate.
-- Actions that require stronger identity guarantees use an authenticated session plus a bound WeChat `openid`.
+- Actions that require stronger identity guarantees use an authenticated session. In the current product, public users obtain that authenticated session through WeChat OAuth, which also binds the account to a WeChat `openid`.
 - Identity should support collaboration instead of becoming the initial gate for every path.
 
 ### User Relationship Progression

@@ -95,7 +95,6 @@ import { useBodyScrollLock } from "@/shared/ui/overlay/useBodyScrollLock";
 import APRNotificationSubscriptions from "@/shared/ui/sections/APRNotificationSubscriptions.vue";
 import type { WeChatNotificationKind } from "@/shared/wechat/useWeChatNotificationSubscriptionsPanel";
 import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFollowPanel.vue";
-import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
 import { useJoinPR } from "@/domains/pr/queries/usePRActions";
@@ -352,7 +351,6 @@ const finalizeJoinFlow = async (): Promise<void> => {
   joinFlowError.value = null;
   const correlationId = createCommandCorrelationId();
   try {
-    await ensureAuthSessionBootstrapped();
     const result = await joinMutation.mutateAsync({ id: prId, correlationId });
     await applyAuthPayloadFromResult(result);
     joined.value = true;
