@@ -43,10 +43,12 @@ Contract implication:
 - Frontend stores user and admin access tokens in browser storage.
 - Frontend stores the anonymous user UUID in localStorage and sends it to session bootstrap so the backend can restore anonymous visitor continuity.
 - Anonymous and authenticated user sessions both use `Authorization: Bearer <JWT>` transport.
-- Backend distinguishes anonymous, authenticated, and service sessions from JWT role claims plus current persisted user state.
+- Backend distinguishes anonymous, authenticated, service, and analytics sessions from JWT `roles` claims plus current persisted user state.
+- `users.role` is a text-array role set. Valid role values are `anonymous`, `authenticated`, `service`, and `analytics`.
+- JWTs carry both `roles` and a primary `role` projection for existing session consumers. Authorization decisions that govern privileged surfaces read the full role set.
 - Backend may rotate tokens through the `x-access-token` response header.
 - Frontend must preserve `credentials: "include"` on flows that rely on cookie-backed session state, especially WeChat OAuth, OAuth handoff, and bind paths.
-- Admin and user sessions are separate client contexts.
+- Admin and user sessions are separate client contexts. Admin session storage can carry `service`, `analytics`, or both.
 - WeChat OAuth callback completion must not place the long-lived access token in route query parameters. Backend-owned OAuth callbacks hand the frontend session across with a short-lived signed cookie plus a non-secret handoff nonce.
 
 ## 4. WeChat Official Account Follow Contract
@@ -95,6 +97,8 @@ Stable user-facing route families that materially affect coordination include:
 - `/admin/booking-support`
 - `/admin/booking-execution`
 - `/admin/pois`
+- `/admin/analytics`
+- `/bi`
 
 Important coordination note:
 
@@ -160,6 +164,8 @@ Important coordination note:
 - `/e/:eventId` `LIST` landing mode renders the event-domain List Mode surface and follows the same date grouping, PR visibility, event-assisted create, beta-group, and other-event browsing semantics as `/events/:eventId` list view
 - that `mode` query is a frontend route-state hint for initial rendering only in the current version; switching modes in-page does not rewrite the URL, and `spm` remains attribution-only rather than a UI-mode switch
 - frontend stabilizes `/e/:eventId` landing mode through local storage keyed by `eventId + assignmentRevision`; timeout fallback enters `FORM`
+- Anchor Event landing, recommendation, PR detail entry, PR create, PR join, and PR waitlist flows emit user telemetry for the Anchor Event -> PR funnel through one app journey and one `anchor_event_landing` business segment when the user path originates from `/e/:eventId`.
+- Funnel attribution uses `app_journey_id`, `segment_id`, typed subject fields such as `event_id_ref`, `pr_id_ref`, `card_key`, and command `correlation_id`. Correlated JSON commands must send `content-type: application/json` together with `x-correlation-id`.
 - `/pr/:id` participant roster UI should use the existing `/pr/:id/partners/:partnerId` profile route for participant-badge navigation rather than introducing a second profile-route family
 - `GET /api/pr/:id/actions/preflight` is the batch action-availability contract for PR detail UX. It evaluates one viewer against one PR and returns action entries such as `join`, `confirm`, `check_in`, and booking-contact actions through one stable minimal shape:
   - `evaluatedAt`
@@ -261,3 +267,27 @@ Important coordination note:
 - CI validation is separated by verification owner: backend gate for backend-local proof, frontend gate for frontend-local proof, and E2E gate for cross-unit browser-to-Postgres user journeys.
 - Backend and frontend gates protect ordinary PR integration into `develop` and `master`.
 - E2E gate protects PRs whose base branch is `master`, with manual dispatch available for release qualification or diagnosis.
+
+## 13. Analytics And User Telemetry Contract
+
+- User-behavior telemetry is stored in `user_telemetry_journeys`, `user_telemetry_segments`, and `user_telemetry_events`.
+- `POST /api/telemetry/user/events` ingests batched user telemetry. It accepts dot-separated event names, one required `appJourneyId`, optional segment context, typed subject references, source fields, and correlation fields.
+- `app_journey_id` represents one continuous user visit. The frontend keeps the journey active across route changes and starts a new journey after the configured inactivity expiry.
+- A business segment groups related actions inside a journey. Anchor Event landing uses segment kind `anchor_event_landing` and stores event id, assigned mode, rendered mode, assignment revision, segment start route, segment start SPM, and segment start source QR.
+- Journey source fields keep immutable entry attribution through `start_spm` and mutable current attribution through `current_spm`. Dashboard source breakdown v1 groups by journey `start_spm`.
+- User telemetry event names use dot-separated hierarchy, including Anchor Event funnel events such as `anchor_event.landing.viewed`, `anchor_event.recommendation.requested`, `anchor_event.pr_row.action_taken`, `pr.entry.reached`, and `pr.commitment.result`.
+- Program-internal behavior collection belongs to a future observability track. Future internal collection should keep OTLP-compatible correlation through `correlation_id`, `request_id`, and `trace_id`.
+- Product analytics reads user telemetry and business state as a derived interpretation layer. `GET /api/analytics/anchor-event-funnel` is the v1 aggregate endpoint for the Anchor Event -> PR conversion funnel.
+- `GET /api/analytics/anchor-event-funnel` requires the `analytics` role and accepts optional `startAt`, `endAt`, `eventId`, `spm`, `sourceQr`, `assignmentRevision`, and `renderedMode` filters.
+- The aggregate response includes normalized filters, summary KPIs, mode comparison rows, per-mode funnel steps, commitment outcome breakdown, start-SPM source breakdown, and failure breakdown.
+- Supported dashboard modes are `FORM`, `CARD_RICH`, and `LIST`. Each mode keeps its own funnel step sequence because the user behavior path differs by rendered landing mode.
+- PR commitment means a successful create, join, or waitlist result. The response keeps those commitment types as breakdown dimensions.
+
+## 14. BI Entry And Analytics Authorization Contract
+
+- `/admin/analytics` is the BI dashboard route and requires the `analytics` role.
+- `/bi?code=...` is a lightweight BI entry route. The page uses the query `code` as the analytics seed user's pin and a page-local hard-coded analytics seed user id, calls the admin login endpoint, then redirects to `/admin/analytics` on success.
+- `/bi` scrubs the code by replacing the route after a successful login. Failed login stays on `/bi`, renders a simple error message, and offers a home action.
+- The analytics seed user is seeded with role `analytics`. The seed admin user is seeded with roles that include both `service` and `analytics`.
+- Admin navigation filters entries by route-required roles. An analytics-only session can see `/admin/analytics`; a service-plus-analytics session can see analytics plus service-owned admin routes.
+- Backend privileged route guards use `requireRoles(...)`. Service-owned admin APIs require `service`; analytics APIs require `analytics`.

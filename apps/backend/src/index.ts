@@ -82,7 +82,7 @@ app.use(
   cors({
     origin: (origin) => origin ?? "*",
     credentials: true,
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "x-correlation-id"],
     exposeHeaders: ["x-access-token"],
   }),
 );
@@ -262,6 +262,10 @@ export type {
   CreateTimeWindowDetail,
   EventPRSummary,
 } from "./domains/anchor-event";
+export type {
+  AnchorEventAnalyticsRenderedMode,
+  AnchorEventFunnelResponse,
+} from "./infra/analytics";
 export {
   partnerRequestFieldsSchema,
   createStructuredPRSchema,
@@ -280,6 +284,7 @@ export { partnerIdSchema, partnerStatusSchema } from "./entities/partner";
 export {
   userIdSchema,
   userRoleSchema,
+  userRolesSchema,
   userStatusSchema,
   userSexSchema,
 } from "./entities/user";

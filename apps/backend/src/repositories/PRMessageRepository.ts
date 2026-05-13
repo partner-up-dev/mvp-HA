@@ -7,7 +7,11 @@ import {
   type PRMessageId,
 } from "../entities/pr-message";
 import type { PRId } from "../entities/partner-request";
-import type { UserId, UserRole } from "../entities/user";
+import {
+  resolvePrimaryUserRole,
+  type UserId,
+  type UserRole,
+} from "../entities/user";
 import { users } from "../entities/user";
 
 export type PRMessageWithAuthor = {
@@ -68,7 +72,7 @@ export class PRMessageRepository {
       body: row.body,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      authorRole: row.authorRole,
+      authorRole: row.authorRole ? resolvePrimaryUserRole(row.authorRole) : null,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
     };
@@ -99,7 +103,7 @@ export class PRMessageRepository {
       body: row.body,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      authorRole: row.authorRole,
+      authorRole: row.authorRole ? resolvePrimaryUserRole(row.authorRole) : null,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
     }));
@@ -144,7 +148,7 @@ export class PRMessageRepository {
       body: row.body,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      authorRole: row.authorRole,
+      authorRole: row.authorRole ? resolvePrimaryUserRole(row.authorRole) : null,
       authorNickname: row.authorNickname,
       authorAvatar: row.authorAvatar,
     };

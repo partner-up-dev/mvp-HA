@@ -1,6 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import type { PRId } from "../../../../entities/partner-request";
-import type { User, UserId } from "../../../../entities/user";
+import { hasUserRole, type User, type UserId } from "../../../../entities/user";
 import { UserRepository } from "../../../../repositories/UserRepository";
 import { resolveUserByOpenId } from "../../../user";
 import { joinPRAsUser } from "../../../pr-core/use-cases/join-pr";
@@ -54,7 +54,7 @@ export const resolvePRParticipantUser = async (
   if (
     !anonymous ||
     anonymous.status !== "ACTIVE" ||
-    anonymous.role !== "anonymous"
+    !hasUserRole(anonymous.role, "anonymous")
   ) {
     throw new HTTPException(401, { message: "Invalid anonymous user session" });
   }

@@ -7,6 +7,14 @@ const STORAGE_SESSION_ROLE_KEY = "partner_up_session_role";
 const OFFICIAL_ACCOUNT_FOLLOW_PROMPT_KEY =
   "__partner_up_official_account_follow_prompt_v1__";
 
+const resolvePrimaryScenarioRole = (
+  roles: ScenarioUser["user"]["role"],
+): "anonymous" | "authenticated" | "service" => {
+  if (roles.includes("service")) return "service";
+  if (roles.includes("authenticated")) return "authenticated";
+  return "anonymous";
+};
+
 export async function installScenarioUserSession(
   page: Page,
   user: ScenarioUser,
@@ -29,7 +37,7 @@ export async function installScenarioUserSession(
     {
       accessTokenKey: STORAGE_ACCESS_TOKEN_KEY,
       officialAccountFollowPromptKey: OFFICIAL_ACCOUNT_FOLLOW_PROMPT_KEY,
-      role: user.user.role,
+      role: resolvePrimaryScenarioRole(user.user.role),
       roleKey: STORAGE_SESSION_ROLE_KEY,
       token: user.token,
       userId: user.user.id,

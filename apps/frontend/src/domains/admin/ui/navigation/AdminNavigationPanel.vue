@@ -9,7 +9,7 @@
 
     <nav class="admin-navigation-panel__nav" :aria-label="t('adminCommon.title')">
       <section
-        v-for="group in adminNavigationGroups"
+        v-for="group in visibleNavigationGroups"
         :key="group.id"
         class="admin-navigation-panel__group"
         :class="{ 'is-active': activeGroupId === group.id }"
@@ -61,6 +61,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
 import { useRoute, type RouteLocationRaw } from "vue-router";
 import Button from "@/shared/ui/actions/Button.vue";
@@ -69,6 +70,10 @@ import {
   adminNavigationGroups,
   type AdminNavigationItem,
 } from "@/domains/admin/ui/navigation/adminNavigationModel";
+import {
+  useAdminSessionStore,
+} from "@/domains/admin/use-cases/useAdminSessionStore";
+import type { AdminSessionRole } from "@/domains/admin/model/admin-session-storage";
 
 defineProps<{
   showLogout?: boolean;
@@ -80,12 +85,31 @@ defineEmits<{
 
 const { t } = useI18n();
 const route = useRoute();
+const adminSessionStore = useAdminSessionStore();
+const { roles } = storeToRefs(adminSessionStore);
 const expandedGroupIds = ref<Set<string>>(new Set());
+const hasRequiredRole = (
+  requiredRoles: readonly AdminSessionRole[] | undefined,
+): boolean =>
+  !requiredRoles?.length ||
+  roles.value.some((role) => requiredRoles.includes(role));
+
+const visibleNavigationGroups = computed(() =>
+  adminNavigationGroups
+    .filter((group) => hasRequiredRole(group.requiredRoles))
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+        hasRequiredRole(item.requiredRoles ?? group.requiredRoles),
+      ),
+    }))
+    .filter((group) => group.items.length > 0),
+);
 
 const activeGroupId = computed(() => {
   const currentRouteName = typeof route.name === "string" ? route.name : "";
   return (
-    adminNavigationGroups.find((group) =>
+    visibleNavigationGroups.value.find((group) =>
       group.items.some((item) => item.routeName === currentRouteName),
     )?.id ?? null
   );
@@ -93,7 +117,7 @@ const activeGroupId = computed(() => {
 
 const defaultSectionByRouteName = computed(() => {
   const defaults = new Map<string, string>();
-  for (const group of adminNavigationGroups) {
+  for (const group of visibleNavigationGroups.value) {
     for (const item of group.items) {
       if (!item.hash || defaults.has(item.routeName)) continue;
       defaults.set(item.routeName, item.hash);

@@ -1,6 +1,10 @@
 <template>
   <article v-bind="$attrs" class="pr-preview-card">
-    <RouterLink :to="resolvedTo" class="pr-preview-card__link">
+    <RouterLink
+      :to="resolvedTo"
+      class="pr-preview-card__link"
+      @click="emit('open-detail')"
+    >
       <div
         v-if="coverImage"
         class="pr-preview-card__cover"
@@ -65,6 +69,10 @@ const props = withDefaults(
     to: null,
   },
 );
+
+const emit = defineEmits<{
+  "open-detail": [];
+}>();
 
 const slots = useSlots();
 const prId = computed(() => props.prId);

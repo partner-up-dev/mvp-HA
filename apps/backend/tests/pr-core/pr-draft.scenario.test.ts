@@ -14,7 +14,8 @@ import { partnerRequests, type PRId, type PRStatus } from "../../src/entities";
 type ScenarioFields = ReturnType<typeof buildScenarioFields>;
 
 type AuthSessionResponse = {
-  role: "anonymous" | "authenticated" | "service";
+  role: "anonymous" | "authenticated" | "service" | "analytics";
+  roles: Array<"anonymous" | "authenticated" | "service" | "analytics">;
   userId: string | null;
   accessToken: string;
 };
@@ -57,6 +58,7 @@ scenario("anonymous_uuid_restores_session", async (ctx) => {
   );
 
   assert.equal(session.role, "anonymous");
+  assert.deepEqual(session.roles, ["anonymous"]);
   assert.equal(session.userId, anonymous.user.id);
   assert.ok(session.accessToken.length > 0);
 });
@@ -105,6 +107,7 @@ scenario("authenticated_user_publish_claims_creatorless_draft", async (ctx) => {
   assert.equal(result.pr.createdBy, publisher.user.id);
   assert.equal(result.pr.status, "OPEN");
   assert.equal(result.auth.role, "authenticated");
+  assert.deepEqual(result.auth.roles, ["authenticated"]);
   assert.equal(result.auth.userId, publisher.user.id);
   await expectActiveParticipantsInclude(pr, [publisher.user.id]);
 

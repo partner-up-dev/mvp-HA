@@ -1,6 +1,9 @@
+import type { AdminSessionRole } from "@/domains/admin/model/admin-session-storage";
+
 export type AdminNavigationGroup = {
   id: string;
   labelKey: string;
+  requiredRoles?: AdminSessionRole[];
   items: AdminNavigationItem[];
 };
 
@@ -8,6 +11,7 @@ export type AdminNavigationItem = {
   id: string;
   labelKey: string;
   routeName: string;
+  requiredRoles?: AdminSessionRole[];
   sectionId?: string;
   hash?: string;
 };
@@ -18,6 +22,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     id: "anchor-event",
     labelKey: "adminCommon.navAnchorEventGroup",
+    requiredRoles: ["service"],
     items: [
       {
         id: "anchor-event-basic",
@@ -59,6 +64,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     id: "pr",
     labelKey: "adminCommon.navPRGroup",
+    requiredRoles: ["service"],
     items: [
       {
         id: "pr-basic",
@@ -77,8 +83,21 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
     ],
   },
   {
+    id: "analytics",
+    labelKey: "adminCommon.navAnalyticsGroup",
+    requiredRoles: ["analytics"],
+    items: [
+      {
+        id: "analytics-dashboard",
+        labelKey: "adminCommon.navAnalytics",
+        routeName: "admin-analytics",
+      },
+    ],
+  },
+  {
     id: "support-resources",
     labelKey: "adminCommon.navSupportResourcesGroup",
+    requiredRoles: ["service"],
     items: [
       {
         id: "support-resource-config",
@@ -95,6 +114,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     id: "pois",
     labelKey: "adminCommon.navPoisGroup",
+    requiredRoles: ["service"],
     items: [
       {
         id: "poi-basic",
@@ -115,6 +135,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     id: "feedback-questionnaires",
     labelKey: "adminCommon.navFeedbackQuestionnairesGroup",
+    requiredRoles: ["service"],
     items: [
       {
         id: "feedback-questionnaire-templates",

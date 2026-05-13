@@ -5,7 +5,7 @@ import {
 } from "vue-router";
 import { trackEvent } from "@/shared/telemetry/track";
 import { captureSpmAttributionFromUrl } from "@/shared/telemetry/spm-attribution";
-import { getStoredAdminHasAccess } from "@/domains/admin/model/admin-session-storage";
+import { getStoredAdminHasAnyRole } from "@/domains/admin/model/admin-session-storage";
 import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
 
 const HomePage = () => import("@/pages/HomePage.vue");
@@ -20,6 +20,8 @@ const UserProfilePage = () => import("@/pages/UserProfilePage.vue");
 const PRBookingSupportPage = () =>
   import("@/pages/PRBookingSupportPage.vue");
 const AdminLoginPage = () => import("@/pages/AdminLoginPage.vue");
+const AdminAnalyticsPage = () => import("@/pages/AdminAnalyticsPage.vue");
+const BIEntryPage = () => import("@/pages/BIEntryPage.vue");
 const AdminAnchorEventPage = () =>
   import("@/pages/AdminAnchorEventPage.vue");
 const AdminPRPage = () => import("@/pages/AdminPRPage.vue");
@@ -126,12 +128,30 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/bi",
+    name: "bi-entry",
+    component: BIEntryPage,
+    meta: {
+      wechatSharePolicy: "skip",
+      wechatAutoLoginPolicy: "skip",
+    },
+  },
+  {
+    path: "/admin/analytics",
+    name: "admin-analytics",
+    component: AdminAnalyticsPage,
+    meta: {
+      wechatSharePolicy: "route",
+      requiredRoles: ["analytics"],
+    },
+  },
+  {
     path: "/admin/anchor-events",
     name: "admin-anchor-events",
     component: AdminAnchorEventPage,
     meta: {
       wechatSharePolicy: "route",
-      requiresAdminAuth: true,
+      requiredRoles: ["service"],
     },
   },
   {
@@ -140,7 +160,7 @@ const routes: RouteRecordRaw[] = [
     component: AdminPRPage,
     meta: {
       wechatSharePolicy: "route",
-      requiresAdminAuth: true,
+      requiredRoles: ["service"],
     },
   },
   {
@@ -154,7 +174,7 @@ const routes: RouteRecordRaw[] = [
     component: AdminBookingSupportPage,
     meta: {
       wechatSharePolicy: "route",
-      requiresAdminAuth: true,
+      requiredRoles: ["service"],
     },
   },
   {
@@ -163,7 +183,7 @@ const routes: RouteRecordRaw[] = [
     component: AdminBookingExecutionPage,
     meta: {
       wechatSharePolicy: "route",
-      requiresAdminAuth: true,
+      requiredRoles: ["service"],
     },
   },
   {
@@ -172,7 +192,7 @@ const routes: RouteRecordRaw[] = [
     component: AdminPoisPage,
     meta: {
       wechatSharePolicy: "route",
-      requiresAdminAuth: true,
+      requiredRoles: ["service"],
     },
   },
   {
@@ -181,7 +201,7 @@ const routes: RouteRecordRaw[] = [
     component: AdminFeedbackQuestionnairesPage,
     meta: {
       wechatSharePolicy: "route",
-      requiresAdminAuth: true,
+      requiredRoles: ["service"],
     },
   },
   {
@@ -275,11 +295,12 @@ export const router = createRouter({
 });
 
 router.beforeEach((to) => {
-  if (!to.meta.requiresAdminAuth) {
+  const requiredRoles = to.meta.requiredRoles;
+  if (!requiredRoles?.length) {
     return true;
   }
 
-  if (getStoredAdminHasAccess()) {
+  if (getStoredAdminHasAnyRole(requiredRoles)) {
     return true;
   }
 

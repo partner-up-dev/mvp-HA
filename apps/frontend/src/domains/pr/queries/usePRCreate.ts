@@ -8,6 +8,7 @@ import type {
 import { client } from "@/lib/rpc";
 import { i18n } from "@/locales/i18n";
 import { readApiErrorPayload, resolveApiErrorMessage } from "@/shared/api/error";
+import { buildCorrelationHeaders } from "@/shared/telemetry/correlation";
 
 export type CreatePRResult = {
   id: PRId;
@@ -19,11 +20,13 @@ type CreatePRFromNaturalLanguageInput = {
   rawText: string;
   nowIso: string;
   nowWeekday: WeekdayLabel;
+  correlationId?: string;
 };
 
 type CreatePRFromStructuredInput = {
   fields: PartnerRequestFields;
   createSource?: "FORM";
+  correlationId?: string;
 };
 
 const readErrorMessage = async (
@@ -44,9 +47,16 @@ export const useCreatePRFromNaturalLanguage = () => {
     CreatePRFromNaturalLanguageInput
   >({
     mutationFn: async (input) => {
-      const res = await client.api.pr.new.nl.$post({
-        json: input,
-      });
+      const res = await client.api.pr.new.nl.$post(
+        {
+          json: input,
+        },
+        {
+          init: {
+            headers: buildCorrelationHeaders(input.correlationId),
+          },
+        },
+      );
 
       if (!res.ok) {
         throw new Error(
@@ -65,12 +75,20 @@ export const useCreatePRFromNaturalLanguage = () => {
 export const useCreatePRFromStructured = () => {
   return useMutation<CreatePRResult, Error, CreatePRFromStructuredInput>({
     mutationFn: async (input) => {
-      const res = await client.api.pr.new.form.$post({
-        json: {
-          fields: input.fields,
-          createSource: input.createSource,
+      const res = await client.api.pr.new.form.$post(
+        {
+          json: {
+            fields: input.fields,
+            createSource: input.createSource,
+            correlationId: input.correlationId,
+          },
         },
-      });
+        {
+          init: {
+            headers: buildCorrelationHeaders(input.correlationId),
+          },
+        },
+      );
 
       if (!res.ok) {
         throw new Error(

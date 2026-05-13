@@ -94,6 +94,7 @@ const handleSubmit = async () => {
 
   adminSessionStore.applyAuthSession({
     role: payload.role,
+    roles: payload.roles,
     userId: payload.userId,
     accessToken: payload.accessToken,
   });

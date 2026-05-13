@@ -2,7 +2,7 @@ import type { Context, MiddlewareHandler } from "hono";
 import type { User, UserId, UserRole } from "../entities/user";
 import {
   isAuthenticatedAuthRole,
-  type AuthenticatedAuthRole,
+  type AuthRole,
   type RequestAuth,
 } from "./types";
 import {
@@ -28,17 +28,23 @@ const readBearerToken = (c: Context): string | null => {
   return token.length > 0 ? token : null;
 };
 
-const mapUserRoleToAuthRole = (role: UserRole): AuthenticatedAuthRole =>
-  role === "service" ? "service" : "authenticated";
+const mapUserRolesToAuthRoles = (roles: readonly UserRole[]): AuthRole[] => {
+  const nonAnonymousRoles = roles.filter((role) => role !== "anonymous");
+  return nonAnonymousRoles.length > 0
+    ? Array.from(new Set(nonAnonymousRoles))
+    : ["anonymous"];
+};
 
 const buildAnonymousAuth = (userId: UserId | null = null): RequestAuth => {
-  const token = issueAccessToken("anonymous", userId);
+  const roles: AuthRole[] = ["anonymous"];
+  const token = issueAccessToken(roles, userId);
   const claims = verifyAccessToken(token);
   if (!claims) {
     throw new Error("Failed to issue anonymous access token");
   }
   return {
     role: "anonymous",
+    roles,
     userId,
     token,
     claims,
@@ -47,15 +53,16 @@ const buildAnonymousAuth = (userId: UserId | null = null): RequestAuth => {
 
 const issueRoleAuth = (
   userId: UserId,
-  role: AuthenticatedAuthRole,
+  roles: AuthRole[],
 ): RequestAuth => {
-  const token = issueAccessToken(role, userId);
+  const token = issueAccessToken(roles, userId);
   const claims = verifyAccessToken(token);
   if (!claims) {
-    throw new Error(`Failed to issue ${role} access token`);
+    throw new Error(`Failed to issue ${roles.join(",")} access token`);
   }
   return {
-    role,
+    role: claims.role,
+    roles: claims.roles,
     userId,
     token,
     claims,
@@ -75,11 +82,12 @@ export const resolveRequestAuth = (c: Context): RequestAuth => {
 
   if (isAuthenticatedAuthRole(claims.role) && claims.sub) {
     if (shouldRenewAccessToken(claims)) {
-      return issueRoleAuth(claims.sub as UserId, claims.role);
+      return issueRoleAuth(claims.sub as UserId, claims.roles);
     }
 
     return {
       role: claims.role,
+      roles: claims.roles,
       userId: claims.sub as UserId,
       token: bearer,
       claims,
@@ -92,6 +100,7 @@ export const resolveRequestAuth = (c: Context): RequestAuth => {
 
   return {
     role: "anonymous",
+    roles: ["anonymous"],
     userId: claims.sub as UserId | null,
     token: bearer,
     claims,
@@ -116,8 +125,8 @@ export const issueAnonymousAuth = (userId: UserId | null = null): RequestAuth =>
   buildAnonymousAuth(userId);
 
 export const issueUserAuth = (userId: UserId): RequestAuth =>
-  issueRoleAuth(userId, "authenticated");
+  issueRoleAuth(userId, ["authenticated"]);
 
 export const issueAuthForUser = (
   user: Pick<User, "id" | "role">,
-): RequestAuth => issueRoleAuth(user.id, mapUserRoleToAuthRole(user.role));
+): RequestAuth => issueRoleAuth(user.id, mapUserRolesToAuthRoles(user.role));

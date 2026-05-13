@@ -16,9 +16,11 @@ import {
   isWeChatAuthRequiredError,
 } from "@/processes/wechat/auth-error";
 import { setPendingWeChatAction } from "@/processes/wechat/pending-wechat-action";
+import { buildCorrelationHeaders } from "@/shared/telemetry/correlation";
 
 type PRActionInput = {
   id: PRId;
+  correlationId?: string;
 };
 
 type PRJoinInput = PRActionInput;
@@ -99,16 +101,19 @@ export const useJoinPR = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id }: PRJoinInput) => {
+    mutationFn: async ({ id, correlationId }: PRJoinInput) => {
       const requestJoin = async () =>
         client.api.pr[":id"].join.$post(
           {
             param: { id: id.toString() },
-            json: {},
+            json: {
+              correlationId,
+            },
           },
           {
             init: {
               credentials: "include",
+              headers: buildCorrelationHeaders(correlationId),
             },
           },
         );
@@ -162,17 +167,20 @@ export const useWaitlistPR = () => {
     mutationFn: async ({
       id,
       alternativePrReminderOptIn,
+      correlationId,
     }: PRWaitlistMutationInput) => {
       const res = await client.api.pr[":id"].waitlist.$post(
         {
           param: { id: id.toString() },
           json: {
             alternativePrReminderOptIn: alternativePrReminderOptIn === true,
+            correlationId,
           },
         },
         {
           init: {
             credentials: "include",
+            headers: buildCorrelationHeaders(correlationId),
           },
         },
       );

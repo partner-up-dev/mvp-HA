@@ -1,4 +1,4 @@
-export type SessionRole = "anonymous" | "authenticated" | "service";
+export type SessionRole = "anonymous" | "authenticated" | "service" | "analytics";
 
 const STORAGE_USER_ID_KEY = "partner_up_user_id";
 const STORAGE_ACCESS_TOKEN_KEY = "partner_up_access_token";
@@ -66,7 +66,8 @@ export const setStoredAccessToken = (accessToken: string | null): void => {
 const isSessionRole = (value: string | null): value is SessionRole =>
   value === "anonymous" ||
   value === "authenticated" ||
-  value === "service";
+  value === "service" ||
+  value === "analytics";
 
 export const isAuthenticatedSessionRole = (
   role: SessionRole,

@@ -3,6 +3,12 @@ export {
   type ColdStartAnalyticsEventType,
 } from "./metrics";
 export {
+  ANCHOR_EVENT_ANALYTICS_RENDERED_MODES,
+  getAnchorEventFunnelAnalytics,
+  type AnchorEventAnalyticsRenderedMode,
+  type AnchorEventFunnelResponse,
+} from "./anchor-event-funnel";
+export {
   getColdStartAnalyticsSummary,
   type ColdStartAnalyticsSummary,
   type ColdStartAnalyticsEventCount,
