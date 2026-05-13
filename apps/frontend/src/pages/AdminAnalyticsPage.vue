@@ -139,7 +139,7 @@
           tone="surface"
           size="sm"
           type="button"
-          :loading="analyticsQuery.isFetching.value"
+          :loading="isDashboardRefreshing"
           data-testid="admin-analytics.refresh"
           @click="refreshDashboard"
         >
@@ -468,6 +468,7 @@ const draftAssignmentRevision = ref("");
 const draftRenderedMode = ref<AnchorEventAnalyticsRenderedMode | "">("");
 const filterError = ref<string | null>(null);
 const focusedMode = ref<AnchorEventAnalyticsRenderedMode | null>(null);
+const refreshPending = ref(false);
 
 const appliedQuery = ref<AdminAnalyticsFunnelQuery>({
   startAt: parseLocalInputValue(defaultRange.startAt)?.toISOString(),
@@ -476,6 +477,9 @@ const appliedQuery = ref<AdminAnalyticsFunnelQuery>({
 
 const analyticsQuery = useAdminAnchorEventFunnelAnalytics(appliedQuery);
 const dashboard = computed(() => analyticsQuery.data.value ?? null);
+const isDashboardRefreshing = computed(
+  () => refreshPending.value || analyticsQuery.isFetching.value,
+);
 
 const numberFormatter = new Intl.NumberFormat("zh-CN");
 const percentFormatter = new Intl.NumberFormat("zh-CN", {
@@ -640,8 +644,13 @@ const resetFilters = (): void => {
   };
 };
 
-const refreshDashboard = (): void => {
-  void analyticsQuery.refetch();
+const refreshDashboard = async (): Promise<void> => {
+  refreshPending.value = true;
+  try {
+    await analyticsQuery.refetch();
+  } finally {
+    refreshPending.value = false;
+  }
 };
 
 const focusMode = (mode: AnchorEventAnalyticsRenderedMode): void => {
