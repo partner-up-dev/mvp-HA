@@ -1,4 +1,7 @@
-import type { PRJoinGateConfig } from "@partner-up-dev/backend";
+import type {
+  AnchorEventParticipationFrequencyLimit,
+  PRJoinGateConfig,
+} from "@partner-up-dev/backend";
 
 export type EditableMeetingPointForm = {
   description: string;
@@ -14,6 +17,7 @@ export type AnchorEventEditorForm = {
   meetingPointImageUrl: string;
   locationMeetingPoints: Record<string, EditableMeetingPointForm>;
   joinGateConfig: PRJoinGateConfig;
+  participationFrequencyLimit: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId: number | null;
   defaultPrNotes: string;
   durationMinutes: number | null;

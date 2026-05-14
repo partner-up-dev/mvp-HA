@@ -5,6 +5,7 @@ import type {
   AnchorEvent,
   AnchorEventId,
   AnchorEventFullPrExpansionPolicy,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
@@ -45,6 +46,7 @@ export interface UpdateAdminAnchorEventInput {
   meetingPoint?: MeetingPointConfig | null;
   locationMeetingPoints?: MeetingPointConfigMap;
   joinGateConfig?: PRJoinGateConfig;
+  participationFrequencyLimit?: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   coverImage: string | null;
   betaGroupQrCode: string | null;
@@ -115,6 +117,7 @@ export async function updateAdminAnchorEvent(
       input.locationMeetingPoints,
     ),
     joinGateConfig: input.joinGateConfig ?? [],
+    participationFrequencyLimit: input.participationFrequencyLimit ?? null,
     feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,

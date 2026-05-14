@@ -47,6 +47,7 @@ export type AnchorEventTimePolicyDraft = {
 
 export type AnchorEventOtherSettingsDraft = {
   joinGateConfig: AdminAnchorEventInput["joinGateConfig"];
+  participationFrequencyLimit: AdminAnchorEventInput["participationFrequencyLimit"];
   feedbackQuestionnaireTemplateId: number | null;
   defaultPrNotes: string;
   prCreationPolicy: AdminAnchorEventInput["prCreationPolicy"];
@@ -203,6 +204,7 @@ export const toAnchorEventMutationInput = (
   meetingPoint: event.meetingPoint ?? null,
   locationMeetingPoints: event.locationMeetingPoints,
   joinGateConfig: event.joinGateConfig,
+  participationFrequencyLimit: event.participationFrequencyLimit,
   feedbackQuestionnaireTemplateId:
     event.feedbackQuestionnaireTemplateId ?? null,
   defaultPrNotes: event.defaultPrNotes ?? null,
@@ -243,6 +245,7 @@ export const buildAnchorEventMutationInputFromEditorDraft = (
       draft.locationMeetingPoints,
     ),
     joinGateConfig: draft.joinGateConfig,
+    participationFrequencyLimit: draft.participationFrequencyLimit,
     feedbackQuestionnaireTemplateId: draft.feedbackQuestionnaireTemplateId,
     defaultPrNotes: draft.defaultPrNotes.trim() || null,
     timePoolConfig: buildAnchorEventTimePoolConfig(draft),

@@ -746,6 +746,8 @@ function blockedReasonText(reason: BlockedReason): string {
       return t("prPage.partnerSection.blockedNotJoined");
     case "NOT_JOINABLE_STATUS":
       return t("prPage.partnerSection.blockedStatus");
+    case "PARTICIPATION_FREQUENCY_LIMITED":
+      return t("prPage.partnerSection.blockedParticipationFrequencyLimited");
     case "CHECKIN_NOT_OPEN":
       return t("prPage.partnerSection.blockedCheckIn");
     default:

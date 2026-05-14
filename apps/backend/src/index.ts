@@ -277,6 +277,7 @@ export type {
 export type { UserId, UserRole, UserStatus, UserSex } from "./entities/user";
 export type {
   AnchorEventId,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventStatus,
   LocationEntry,
   TimeWindowEntry,

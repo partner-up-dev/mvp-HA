@@ -4,6 +4,7 @@ import type {
   MeetingPointConfigMap,
   PRJoinGateConfig,
   AnchorEventFullPrExpansionPolicy,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventPrCreationPolicy,
   FeedbackQuestionnaireTemplate,
   FeedbackQuestionnaireTemplateId,
@@ -84,6 +85,7 @@ export type AdminAnchorEventSummary = {
   meetingPoint: MeetingPointConfig | null;
   locationMeetingPoints: MeetingPointConfigMap;
   joinGateConfig: PRJoinGateConfig;
+  participationFrequencyLimit: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId: FeedbackQuestionnaireTemplateId | null;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
@@ -183,6 +185,7 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         meetingPoint: event.meetingPoint,
         locationMeetingPoints: event.locationMeetingPoints,
         joinGateConfig: event.joinGateConfig,
+        participationFrequencyLimit: event.participationFrequencyLimit,
         feedbackQuestionnaireTemplateId:
           event.feedbackQuestionnaireTemplateId ?? null,
         timeWindowPool,

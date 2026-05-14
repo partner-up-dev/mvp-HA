@@ -23,6 +23,7 @@ export type PartnerSectionActionBlockedReason =
   | "EVENT_STARTED"
   | "BOOKING_LOCKED"
   | "BOOKING_CONTACT_REQUIRED"
+  | "PARTICIPATION_FREQUENCY_LIMITED"
   | "OUTSIDE_CONFIRM_WINDOW"
   | "NOT_JOINED"
   | "ALREADY_WAITLISTED"
@@ -322,6 +323,7 @@ export function buildPRPartnerSection(params: {
   }>;
   alternativeBatches?: AlternativeBatchRecommendation[];
   releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+  participationFrequencyLimited?: boolean;
 }): PartnerSectionView {
   const {
     publicPR,
@@ -335,6 +337,7 @@ export function buildPRPartnerSection(params: {
     sameBatchAlternatives = [],
     alternativeBatches = [],
     releaseStateByPartnerId = new Map(),
+    participationFrequencyLimited = false,
   } = params;
 
   const base = buildBaseSection(
@@ -377,6 +380,9 @@ export function buildPRPartnerSection(params: {
   } else if (joinLocked) {
     canJoin = false;
     joinBlockedReason = "JOIN_LOCKED";
+  } else if (participationFrequencyLimited) {
+    canJoin = false;
+    joinBlockedReason = "PARTICIPATION_FREQUENCY_LIMITED";
   }
 
   let canWaitlist = false;
@@ -389,6 +395,8 @@ export function buildPRPartnerSection(params: {
     waitlistBlockedReason = "NOT_JOINABLE_STATUS";
   } else if (joinLocked) {
     waitlistBlockedReason = "JOIN_LOCKED";
+  } else if (participationFrequencyLimited) {
+    waitlistBlockedReason = "PARTICIPATION_FREQUENCY_LIMITED";
   } else {
     canWaitlist = true;
   }
@@ -538,6 +546,7 @@ export function buildAnchorPartnerSection(params: {
   }>;
   alternativeBatches: AlternativeBatchRecommendation[];
   releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+  participationFrequencyLimited?: boolean;
 }): PartnerSectionView {
   return buildPRPartnerSection({
     publicPR: params.publicPR,
@@ -551,5 +560,6 @@ export function buildAnchorPartnerSection(params: {
     sameBatchAlternatives: params.sameBatchAlternatives,
     alternativeBatches: params.alternativeBatches,
     releaseStateByPartnerId: params.releaseStateByPartnerId,
+    participationFrequencyLimited: params.participationFrequencyLimited,
   });
 }

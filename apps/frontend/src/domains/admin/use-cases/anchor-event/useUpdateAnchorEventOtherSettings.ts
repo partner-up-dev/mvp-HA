@@ -19,6 +19,7 @@ export const useUpdateAnchorEventOtherSettings = () => {
       eventId: event.id,
       input: toAnchorEventMutationInput(event, {
         joinGateConfig: draft.joinGateConfig,
+        participationFrequencyLimit: draft.participationFrequencyLimit,
         feedbackQuestionnaireTemplateId: draft.feedbackQuestionnaireTemplateId,
         defaultPrNotes: draft.defaultPrNotes.trim() || null,
         prCreationPolicy: draft.prCreationPolicy,

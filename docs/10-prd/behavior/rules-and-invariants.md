@@ -42,6 +42,7 @@
 - The Anchor Event page shows discoverable PRs under the same activity type and time-pool rules.
 - Event-page discovery reads root PR facts by activity type, resolved time window, and event-owned location rules rather than by durable PR-side event linkage.
 - Anchor Event owns whether a full PR can trigger automatic same-time-window PR expansion. The default policy is `DISABLED`; events with `ENABLED` may create a visible sibling PR after an event-context PR reaches `FULL`.
+- Anchor Event may own a participation frequency limit. When configured as `X`, a user with a current active participation in that event must wait through the next `X` complete PRs in event time-window order before joining or waitlisting another PR in the same event; the following PR is eligible. Only current `JOINED`, `CONFIRMED`, and `ATTENDED` slots count as limiting history. `PENDING`, `EXITED`, `RELEASED`, and `CANCELLED` slots do not count as limiting history.
 
 ## 3. Lifecycle And Participation Rules
 
@@ -55,6 +56,7 @@
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
 - `PR` supports `join` and `exit`.
 - A `FULL` PR may accept waitlist entries while it remains before the join-lock boundary. `LOCKED_TO_START` keeps the admission surface closed.
+- Waitlist submission is subject to Anchor Event participation frequency limits when the target PR belongs to an event with that policy.
 - Waitlist entries are stored as `Partner.status = PENDING`. Cancelled waitlist entries are stored as `Partner.status = CANCELLED` and no longer hold queue position.
 - Pending users are not current active participants, cannot see PR messages, and do not count toward active capacity.
 - When an active slot is released or exited, the system promotes waitlisted users by earliest `waitlistedAt` first, subject to current eligibility checks. Promotion converts the existing pending slot into an active partner slot.

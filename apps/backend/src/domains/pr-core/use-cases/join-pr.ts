@@ -38,6 +38,7 @@ import {
   BOOKING_CONTACT_PHONE_INVALID_CODE,
 } from "../services/join-gates.service";
 import { closeAlternativeWaitlistSourcesAfterJoin } from "../services/waitlist-alternative-reminder.service";
+import { assertAnchorEventParticipationFrequencyLimitAllows } from "../services/anchor-participation-frequency-limit.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -110,6 +111,10 @@ export async function joinPRAsUser(
     userId: user.id,
     targetTimeWindow: refreshedRequest.time,
     excludePrId: id,
+  });
+  await assertAnchorEventParticipationFrequencyLimitAllows({
+    request: refreshedRequest,
+    userId: user.id,
   });
 
   const activeCount = await countActivePartnersForPR(id);

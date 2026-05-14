@@ -11,6 +11,7 @@ import { operationLogService } from "../../../infra/operation-log";
 import { assertPRJoinGatesResolvedForUser } from "../services/join-gates.service";
 import { isWaitlistOpenForRequest } from "../services/waitlist.service";
 import { scheduleAlternativeWaitlistNotificationsForSource } from "../services/waitlist-alternative-reminder.service";
+import { assertAnchorEventParticipationFrequencyLimitAllows } from "../services/anchor-participation-frequency-limit.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
@@ -58,6 +59,10 @@ export async function waitlistPRAsUser(
     userId: user.id,
     targetTimeWindow: refreshedRequest.time,
     excludePrId: id,
+  });
+  await assertAnchorEventParticipationFrequencyLimitAllows({
+    request: refreshedRequest,
+    userId: user.id,
   });
   await assertPRJoinGatesResolvedForUser({
     prId: id,

@@ -37,6 +37,24 @@
         />
       </BentoItem>
 
+      <BentoItem :title="t('adminAnchorEvents.participationFrequencyLimitTitle')">
+        <div class="policy-setting">
+          <TextInput
+            v-model="participationFrequencyLimitText"
+            type="number"
+            inputmode="numeric"
+            :disabled="props.disabled"
+            :placeholder="
+              t('adminAnchorEvents.participationFrequencyLimitPlaceholder')
+            "
+            data-testid="admin-anchor-event.participation-frequency-limit"
+          />
+          <p class="policy-setting__hint">
+            {{ t("adminAnchorEvents.participationFrequencyLimitHint") }}
+          </p>
+        </div>
+      </BentoItem>
+
       <BentoItem :title="t('adminAnchorEvents.prCreationPolicyTitle')">
         <div class="policy-setting">
           <ToggleSwitch
@@ -93,6 +111,7 @@ import { useI18n } from "vue-i18n";
 import Button from "@/shared/ui/actions/Button.vue";
 import BentoItem from "@/domains/admin/ui/layout/BentoItem.vue";
 import BentoLayout from "@/domains/admin/ui/layout/BentoLayout.vue";
+import TextInput from "@/shared/ui/forms/TextInput.vue";
 import TextareaInput from "@/shared/ui/forms/TextareaInput.vue";
 import ToggleSwitch from "@/shared/ui/forms/ToggleSwitch.vue";
 import AnchorEventFeedbackQuestionnairePicker from "@/domains/admin/ui/anchor-event/components/AnchorEventFeedbackQuestionnairePicker.vue";
@@ -143,6 +162,23 @@ const fullPrExpansionEnabled = computed({
   get: () => form.value.fullPrExpansionPolicy === "ENABLED",
   set: (value: boolean) => {
     form.value.fullPrExpansionPolicy = value ? "ENABLED" : "DISABLED";
+  },
+});
+const participationFrequencyLimitText = computed({
+  get: () =>
+    form.value.participationFrequencyLimit?.intervalPrCount.toString() ?? "",
+  set: (value: string) => {
+    const normalized = value.trim();
+    if (!normalized) {
+      form.value.participationFrequencyLimit = null;
+      return;
+    }
+
+    const parsed = Number(normalized);
+    form.value.participationFrequencyLimit =
+      Number.isInteger(parsed) && parsed > 0
+        ? { intervalPrCount: parsed }
+        : null;
   },
 });
 const landingSaveLabel = computed(() =>

@@ -4,6 +4,7 @@ import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQ
 import type {
   AnchorEvent,
   AnchorEventFullPrExpansionPolicy,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
@@ -40,6 +41,7 @@ export interface CreateAdminAnchorEventInput {
   defaultJoinLockOffsetMinutes: number;
   meetingPoint?: MeetingPointConfig | null;
   joinGateConfig?: PRJoinGateConfig;
+  participationFrequencyLimit?: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   locationMeetingPoints?: MeetingPointConfigMap;
   coverImage: string | null;
@@ -93,6 +95,7 @@ export async function createAdminAnchorEvent(
     defaultJoinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
     meetingPoint: normalizeMeetingPointConfig(input.meetingPoint),
     joinGateConfig: input.joinGateConfig ?? [],
+    participationFrequencyLimit: input.participationFrequencyLimit ?? null,
     feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     locationMeetingPoints: normalizeMeetingPointConfigMap(
       input.locationMeetingPoints,

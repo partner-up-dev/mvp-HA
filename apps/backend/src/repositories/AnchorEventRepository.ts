@@ -86,6 +86,7 @@ export class AnchorEventRepository {
         | "meetingPoint"
         | "locationMeetingPoints"
         | "joinGateConfig"
+        | "participationFrequencyLimit"
         | "feedbackQuestionnaireTemplateId"
         | "coverImage"
         | "betaGroupQrCode"

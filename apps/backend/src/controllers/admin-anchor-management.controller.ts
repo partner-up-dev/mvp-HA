@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   anchorEventStatusSchema,
   anchorEventFullPrExpansionPolicySchema,
+  anchorEventParticipationFrequencyLimitSchema,
   anchorEventPrCreationPolicySchema,
   anchorEventTimePoolConfigSchema,
   meetingPointConfigMapSchema,
@@ -94,6 +95,8 @@ const adminAnchorEventInputSchema = z.object({
   defaultJoinLockOffsetMinutes: z.number().int().nonnegative(),
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
   joinGateConfig: prJoinGateConfigSchema.optional(),
+  participationFrequencyLimit:
+    anchorEventParticipationFrequencyLimitSchema.optional(),
   feedbackQuestionnaireTemplateId: z.number().int().positive().nullable().optional(),
   locationMeetingPoints: meetingPointConfigMapSchema.optional(),
   coverImage: z.string().trim().nullable(),

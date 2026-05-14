@@ -527,6 +527,7 @@ export interface MessageSchema {
       blockedAlreadyConfirmed: string;
       blockedNotJoined: string;
       blockedStatus: string;
+      blockedParticipationFrequencyLimited: string;
       blockedCheckIn: string;
       rosterBoardTitle: string;
       rosterTitle: string;
@@ -1301,6 +1302,9 @@ export interface MessageSchema {
     saveLandingConfigAction: string;
     defaultPrNotesTitle: string;
     defaultPrNotesPlaceholder: string;
+    participationFrequencyLimitTitle: string;
+    participationFrequencyLimitPlaceholder: string;
+    participationFrequencyLimitHint: string;
     prCreationPolicyTitle: string;
     prCreationPolicyAdminOnlyLabel: string;
     prCreationPolicyHint: string;

@@ -99,3 +99,9 @@ export {
   assertUserPRCreationAllowedForAnchorEvent,
   canUserCreatePRForAnchorEvent,
 } from "../../pr-core/services/event-pr-creation-policy.service";
+export {
+  ANCHOR_EVENT_PARTICIPATION_FREQUENCY_LIMITED_CODE,
+  assertAnchorEventParticipationFrequencyLimitAllows,
+  evaluateAnchorEventParticipationFrequencyLimit,
+  type AnchorEventParticipationFrequencyLimitEvaluation,
+} from "../../pr-core/services/anchor-participation-frequency-limit.service";

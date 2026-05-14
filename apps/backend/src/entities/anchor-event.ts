@@ -38,6 +38,14 @@ export const anchorEventPrCreationPolicySchema = z.enum([
 export type AnchorEventPrCreationPolicy = z.infer<
   typeof anchorEventPrCreationPolicySchema
 >;
+export const anchorEventParticipationFrequencyLimitSchema = z
+  .object({
+    intervalPrCount: z.number().int().positive(),
+  })
+  .nullable();
+export type AnchorEventParticipationFrequencyLimit = z.infer<
+  typeof anchorEventParticipationFrequencyLimitSchema
+>;
 export const anchorEventFullPrExpansionPolicySchema = z.enum([
   "ENABLED",
   "DISABLED",
@@ -373,6 +381,9 @@ export const anchorEvents = pgTable("anchor_events", {
     .$type<PRJoinGateConfig>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  participationFrequencyLimit: jsonb("participation_frequency_limit")
+    .$type<AnchorEventParticipationFrequencyLimit>()
+    .default(null),
   feedbackQuestionnaireTemplateId: bigint(
     "feedback_questionnaire_template_id",
     { mode: "number" },
@@ -408,12 +419,15 @@ export const insertAnchorEventSchema = createInsertSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
   joinGateConfig: prJoinGateConfigSchema.optional(),
+  participationFrequencyLimit:
+    anchorEventParticipationFrequencyLimitSchema.optional(),
   locationMeetingPoints: meetingPointConfigMapSchema.optional(),
 });
 export const selectAnchorEventSchema = createSelectSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
   meetingPoint: meetingPointConfigSchema.nullable(),
   joinGateConfig: prJoinGateConfigSchema,
+  participationFrequencyLimit: anchorEventParticipationFrequencyLimitSchema,
   locationMeetingPoints: meetingPointConfigMapSchema,
 });
 
