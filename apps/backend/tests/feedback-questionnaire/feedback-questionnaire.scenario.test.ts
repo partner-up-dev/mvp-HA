@@ -40,6 +40,10 @@ type AdminFeedbackQuestionnaireTemplateResponse = {
   definition: FeedbackQuestionnaireDefinition;
 };
 
+type ProblemDetailsResponse = {
+  detail: string;
+};
+
 const findTemplateInList = (
   templates: AdminFeedbackQuestionnaireTemplateResponse[],
   templateId: FeedbackQuestionnaireTemplateId,
@@ -245,7 +249,8 @@ scenario(
         body: firstBody,
       },
     );
-    const duplicateCreateBody = await expectJsonResponse<{ error: string }>(
+    const duplicateCreateBody =
+      await expectJsonResponse<ProblemDetailsResponse>(
       duplicateCreateResponse,
       409,
     );
@@ -277,7 +282,7 @@ scenario(
     ctx.record("conflictingKey", first.key);
     ctx.record("conflictingVersion", first.version);
 
-    assert.match(duplicateCreateBody.error, /key\/version/i);
+    assert.match(duplicateCreateBody.detail, /key\/version/i);
 
     const duplicateUpdateResponse = await requestJson(
       `/api/admin/feedback-questionnaires/templates/${second.id}`,
@@ -292,12 +297,13 @@ scenario(
         },
       },
     );
-    const duplicateUpdateBody = await expectJsonResponse<{ error: string }>(
+    const duplicateUpdateBody =
+      await expectJsonResponse<ProblemDetailsResponse>(
       duplicateUpdateResponse,
       409,
     );
 
-    assert.match(duplicateUpdateBody.error, /key\/version/i);
+    assert.match(duplicateUpdateBody.detail, /key\/version/i);
   },
 );
 
@@ -414,9 +420,12 @@ scenario(
         },
       },
     );
-    const body = await expectJsonResponse<{ error: string }>(response, 404);
+    const body = await expectJsonResponse<ProblemDetailsResponse>(
+      response,
+      404,
+    );
 
-    assert.match(body.error, /template not found/i);
+    assert.match(body.detail, /template not found/i);
 
     const afterPR = await probePartnerRequest(pr.id);
     assert.equal(afterPR.feedbackQuestionnaireInstanceId, null);
@@ -445,9 +454,12 @@ scenario(
         },
       },
     );
-    const body = await expectJsonResponse<{ error: string }>(response, 404);
+    const body = await expectJsonResponse<ProblemDetailsResponse>(
+      response,
+      404,
+    );
 
-    assert.match(body.error, /pr not found/i);
+    assert.match(body.detail, /pr not found/i);
   },
 );
 

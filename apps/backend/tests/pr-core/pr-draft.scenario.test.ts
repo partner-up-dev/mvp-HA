@@ -80,7 +80,7 @@ scenario("anonymous_publish_draft_requires_authenticated_user", async (ctx) => {
     response.headers.get("content-type") ?? "",
     /^application\/problem\+json/,
   );
-  const body = await expectJsonResponse<ProblemDetailsResponse>(response, 403);
+  const body = await expectJsonResponse<ProblemDetailsResponse>(response, 401);
   assert.equal(body.code, "AUTHENTICATED_REQUIRED");
 });
 
