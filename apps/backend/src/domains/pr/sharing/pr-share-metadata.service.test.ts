@@ -8,7 +8,10 @@ const loadMetadataBuilder = async () => {
     .buildPRCanonicalShareMetadata;
 };
 
-const buildPublicPR = (overrides: Partial<PublicPR> = {}): PublicPR => ({
+const buildPublicPR = ({
+  confirmationEnabled = true,
+  ...overrides
+}: Partial<PublicPR> = {}): PublicPR => ({
   id: 182,
   type: "羽毛球",
   time: [null, null],
@@ -36,6 +39,7 @@ const buildPublicPR = (overrides: Partial<PublicPR> = {}): PublicPR => ({
   isViewerWaitlisted: false,
   isViewerReleased: false,
   ...overrides,
+  confirmationEnabled,
 });
 
 test("buildPRCanonicalShareMetadata uses explicit title first", async () => {
