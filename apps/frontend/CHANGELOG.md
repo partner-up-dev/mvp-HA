@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.0.0](https://github.com/partner-up-dev/mvp-HA/compare/frontend-v1.0.0...frontend-v2.0.0) (2026-05-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **poi:** POI.id is now an integer identity; location matching uses POI.name.
+* **admin:** users.role now stores role arrays and auth tokens require roles claims.
+
+### Features
+
+* **admin:** add analytics role entry ([3c1e88a](https://github.com/partner-up-dev/mvp-HA/commit/3c1e88a7516c9f409bc9d514a482184324158e6b))
+* **admin:** build analytics dashboard ([d7e22ad](https://github.com/partner-up-dev/mvp-HA/commit/d7e22adbd3be6ce07e6f5838a917d8e83de3f7f3))
+* **admin:** refine navigation and section layouts ([0bef3bf](https://github.com/partner-up-dev/mvp-HA/commit/0bef3bf4f9360774b206c519b50d397d7ade44db))
+* **event:** add full PR expansion policy ([4a40f29](https://github.com/partner-up-dev/mvp-HA/commit/4a40f296328eea4cc7015dfa0f7472722cd4c6ab))
+* **event:** add participation frequency limit ([ca0c3e0](https://github.com/partner-up-dev/mvp-HA/commit/ca0c3e0b39d0acb842905680b6cc05da7bb88e4c))
+* **frontend:** add me page logout ([9435de6](https://github.com/partner-up-dev/mvp-HA/commit/9435de6e40e02a657730b0095a92c8eaafea9f9a))
+* **frontend:** replace QR nudges with bookmark prompt ([ce0a682](https://github.com/partner-up-dev/mvp-HA/commit/ce0a68235e00927334abcc02f8bcaee47f39a107))
+* **frontend:** show WeChat OAuth login loading modal ([c76af8b](https://github.com/partner-up-dev/mvp-HA/commit/c76af8bda71f6e0d9e2c59b5ea72d84694e4940d))
+* **poi:** upgrade POI identity and location matching ([bb6e3cf](https://github.com/partner-up-dev/mvp-HA/commit/bb6e3cfaeba83c871f6ac263cd17f17302e92f4a))
+* **pr:** make confirmation optional ([ca4b83a](https://github.com/partner-up-dev/mvp-HA/commit/ca4b83ad522d9f0e2a43f344e8a7ef0d92fd7d98))
+* **pr:** use user phone for booking contact ([2bfedfe](https://github.com/partner-up-dev/mvp-HA/commit/2bfedfe7a646a6eda1cfb7b7f1bb9622d5483362))
+* **telemetry:** add user journey ingestion ([fc7b863](https://github.com/partner-up-dev/mvp-HA/commit/fc7b863380f7292aeb667b5fb521abe8e187cc15))
+* **telemetry:** instrument anchor event funnels ([e756b63](https://github.com/partner-up-dev/mvp-HA/commit/e756b6385ffddff6e6faac894ef4faaa8fa2313f))
+
+
+### Bug Fixes
+
+* **analytics:** show refresh pending state ([a8da66f](https://github.com/partner-up-dev/mvp-HA/commit/a8da66fd7ca4556eff26c988f17fbb762c41f5b3))
+* **auth:** unify authenticated-required handling ([a545644](https://github.com/partner-up-dev/mvp-HA/commit/a545644eccc5d755de4d1661cdc255c646d697c5))
+* **frontend:** single-flight wechat oauth redirects ([f2e15be](https://github.com/partner-up-dev/mvp-HA/commit/f2e15bebe4886f4ce11f5cb827c2fd116be5414b))
+* **frontend:** stop automatic WeChat login on PR pages ([549af01](https://github.com/partner-up-dev/mvp-HA/commit/549af01851d06a51449af6adca192782b0918293))
+* **pr:** hide confirm cta when confirmation is disabled ([ff43d2d](https://github.com/partner-up-dev/mvp-HA/commit/ff43d2d440e44403e7473620b6d5da1001b57117))
+* **pr:** make PR type immutable for user edits ([9579520](https://github.com/partner-up-dev/mvp-HA/commit/95795205eb25b243504a237ed864344a1d2ab975))
+* **telemetry:** preserve json content type for correlated commands ([f4698dc](https://github.com/partner-up-dev/mvp-HA/commit/f4698dca5a9963aff7c3930611ba41918995be39))
+
 ## [1.0.0](https://github.com/partner-up-dev/mvp-HA/compare/frontend-v0.3.0...frontend-v1.0.0) (2026-05-12)
 
 
