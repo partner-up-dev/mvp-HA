@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
@@ -69,23 +69,19 @@ export async function updateAdminAnchorEvent(
 
   const current = await anchorEventRepo.findById(eventId);
   if (!current) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const existingByType = await anchorEventRepo.findOneByType(input.type);
   if (existingByType && existingByType.id !== eventId) {
-    throw new HTTPException(409, {
-      message: `Anchor event type already exists: ${input.type}`,
-    });
+    return throwHttpProblem({ status: 409, detail: `Anchor event type already exists: ${input.type}` });
   }
   if (input.feedbackQuestionnaireTemplateId !== null && input.feedbackQuestionnaireTemplateId !== undefined) {
     const template = await feedbackRepo.findTemplateById(
       input.feedbackQuestionnaireTemplateId,
     );
     if (!template) {
-      throw new HTTPException(404, {
-        message: "Feedback questionnaire template not found",
-      });
+      return throwHttpProblem({ status: 404, detail: "Feedback questionnaire template not found" });
     }
   }
 
@@ -125,7 +121,7 @@ export async function updateAdminAnchorEvent(
   });
 
   if (!updated) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const latestAffectedRequests = await listRequestsAffectedByAnchorEventMeetingPoint(

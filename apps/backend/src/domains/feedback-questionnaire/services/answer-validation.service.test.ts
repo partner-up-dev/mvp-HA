@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { HTTPException } from "hono/http-exception";
+import { ProblemDetailsError } from "../../../lib/problem-details";
 import type {
   FeedbackQuestionnaireAnswers,
   FeedbackQuestionnaireDefinition,
@@ -46,7 +46,11 @@ const definition = {
 const assertValidationFails = (answers: FeedbackQuestionnaireAnswers): void => {
   assert.throws(
     () => assertFeedbackAnswersMatchDefinition(definition, answers),
-    HTTPException,
+    (error: unknown) => {
+      assert.ok(error instanceof ProblemDetailsError);
+      assert.equal(error.status, 400);
+      return true;
+    },
   );
 };
 

@@ -1,5 +1,5 @@
+import { throwHttpProblem } from "../lib/problem-details";
 import { z } from "zod";
-import { HTTPException } from "hono/http-exception";
 import type { Context } from "hono";
 import {
   createNaturalLanguagePRSchema,
@@ -26,10 +26,6 @@ const oauthService = new WeChatOAuthService();
 const userRepo = new UserRepository();
 const WECHAT_OAUTH_NOT_CONFIGURED_CODE = "WECHAT_OAUTH_NOT_CONFIGURED";
 
-type CodedHttpException = HTTPException & {
-  code?: string;
-};
-
 const readBoundOpenId = async (c: Context<AuthEnv>): Promise<string | null> => {
   const userId = getAuthenticatedUserId(c);
   if (!userId) {
@@ -49,9 +45,7 @@ const throwCodedHttpException = (
   message: string,
   code: string,
 ): never => {
-  const error = new HTTPException(status, { message }) as CodedHttpException;
-  error.code = code;
-  throw error;
+  return throwHttpProblem({ status, detail: message, code });
 };
 
 export const nlWordCountSchema = createNaturalLanguagePRSchema.refine(
@@ -241,7 +235,7 @@ export const getSessionUserId = (c: Context<AuthEnv>): UserId | null => {
 export const requireSessionUserId = (c: Context<AuthEnv>): UserId => {
   const auth = c.get("auth");
   if (!auth.userId) {
-    throw new HTTPException(401, { message: "Authentication required" });
+    return throwHttpProblem({ status: 401, detail: "Authentication required" });
   }
   return auth.userId as UserId;
 };
@@ -249,7 +243,7 @@ export const requireSessionUserId = (c: Context<AuthEnv>): UserId => {
 export const requireAuthenticatedUserId = (c: Context<AuthEnv>): UserId => {
   const auth = c.get("auth");
   if (!auth.roles.includes("authenticated")) {
-    throw new HTTPException(401, { message: "Authentication required" });
+    return throwHttpProblem({ status: 401, detail: "Authentication required" });
   }
   return requireSessionUserId(c);
 };
@@ -277,7 +271,7 @@ export const issueAuthPayload = async (
 }> => {
   const user = await userRepo.findById(userId);
   if (!user || user.status !== "ACTIVE") {
-    throw new HTTPException(401, { message: "Invalid session user" });
+    return throwHttpProblem({ status: 401, detail: "Invalid session user" });
   }
 
   const auth = hasUserRole(user.role, "anonymous")

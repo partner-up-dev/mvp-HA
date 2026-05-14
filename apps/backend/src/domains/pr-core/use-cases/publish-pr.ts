@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserRepository } from "../../../repositories/UserRepository";
@@ -29,7 +29,7 @@ export type PublishPRResult = {
 const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
   const request = await prRepo.findById(prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const existing = await partnerRepo.findActiveByPrIdAndUserId(prId, creatorUserId);
@@ -44,9 +44,7 @@ const ensureCreatorSlotJoined = async (prId: PRId, creatorUserId: UserId) => {
     status: targetStatus,
   });
   if (!created) {
-    throw new HTTPException(500, {
-      message: "Failed to create creator partner slot",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to create creator partner slot" });
   }
 
   await recalculatePRStatus(prId);
@@ -58,13 +56,11 @@ export async function publishPR(
 ): Promise<PublishPRResult> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   if (request.status !== "DRAFT") {
-    throw new HTTPException(400, {
-      message: "Only DRAFT partner requests can be published",
-    });
+    return throwHttpProblem({ status: 400, detail: "Only DRAFT partner requests can be published" });
   }
 
   let creatorUserId: UserId;
@@ -72,21 +68,17 @@ export async function publishPR(
   if (request.createdBy) {
     if (creatorIdentity.authenticatedUserId) {
       if (creatorIdentity.authenticatedUserId !== request.createdBy) {
-        throw new HTTPException(403, {
-          message: "Only the draft creator can publish this partner request",
-        });
+        return throwHttpProblem({ status: 403, detail: "Only the draft creator can publish this partner request" });
       }
       const user = await userRepo.findById(request.createdBy);
       if (!user) {
-        throw new HTTPException(404, { message: "Draft creator user not found" });
+        return throwHttpProblem({ status: 404, detail: "Draft creator user not found" });
       }
       creatorUserId = user.id;
     } else if (creatorIdentity.oauthOpenId) {
       const oauthUser = await resolveUserByOpenId(creatorIdentity.oauthOpenId);
       if (oauthUser.id !== request.createdBy) {
-        throw new HTTPException(403, {
-          message: "Only the draft creator can publish this partner request",
-        });
+        return throwHttpProblem({ status: 403, detail: "Only the draft creator can publish this partner request" });
       }
       creatorUserId = oauthUser.id;
     } else {
@@ -110,14 +102,14 @@ export async function publishPR(
 
   const updated = await prRepo.updateStatus(id, "OPEN");
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to publish partner request" });
+    return throwHttpProblem({ status: 500, detail: "Failed to publish partner request" });
   }
 
   await ensureCreatorSlotJoined(id, creatorUserId);
 
   const latest = await prRepo.findById(id);
   if (!latest) {
-    throw new HTTPException(500, { message: "Failed to reload partner request" });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
   }
 
   operationLogService.log({

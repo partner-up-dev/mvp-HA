@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities";
 import { prMessageBodySchema, type PRMessageId } from "../../../entities/pr-message";
 import type { UserId } from "../../../entities/user";
@@ -16,20 +16,18 @@ export async function updateAdminPRMessage(input: {
 }) {
   const message = await messageRepo.findByPrIdAndId(input.prId, input.messageId);
   if (!message) {
-    throw new HTTPException(404, { message: "PR message not found" });
+    return throwHttpProblem({ status: 404, detail: "PR message not found" });
   }
 
   const body = prMessageBodySchema.parse(input.body);
   const updatedMessage = await messageRepo.updateBody(input.messageId, body);
   if (!updatedMessage) {
-    throw new HTTPException(500, { message: "Failed to update PR message" });
+    return throwHttpProblem({ status: 500, detail: "Failed to update PR message" });
   }
 
   const updatedWithAuthor = await messageRepo.findWithAuthorById(updatedMessage.id);
   if (!updatedWithAuthor) {
-    throw new HTTPException(500, {
-      message: "Failed to reload updated PR message",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload updated PR message" });
   }
 
   operationLogService.log({

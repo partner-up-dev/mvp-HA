@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId, PRStatusManual } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -17,7 +17,7 @@ export async function updatePRStatus(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
@@ -27,15 +27,12 @@ export async function updatePRStatus(
     currentStatus !== "ACTIVE" &&
     !isActivatableStatus(currentStatus)
   ) {
-    throw new HTTPException(400, {
-      message:
-        "Cannot set ACTIVE - only READY, FULL, or LOCKED_TO_START can become ACTIVE",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot set ACTIVE - only READY, FULL, or LOCKED_TO_START can become ACTIVE" });
   }
 
   const updated = await prRepo.updateStatus(id, status);
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to update status" });
+    return throwHttpProblem({ status: 500, detail: "Failed to update status" });
   }
 
   operationLogService.log({

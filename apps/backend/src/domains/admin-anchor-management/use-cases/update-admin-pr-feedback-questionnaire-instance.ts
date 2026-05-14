@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type {
   FeedbackQuestionnaireInstanceId,
 } from "../../../entities/feedback-questionnaire";
@@ -15,7 +15,7 @@ export async function updateAdminPRFeedbackQuestionnaireInstance(
 ) {
   const existing = await prRepo.findById(prId);
   if (!existing) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   if (feedbackQuestionnaireInstanceId !== null) {
@@ -23,9 +23,7 @@ export async function updateAdminPRFeedbackQuestionnaireInstance(
       feedbackQuestionnaireInstanceId,
     );
     if (!instance) {
-      throw new HTTPException(404, {
-        message: "Feedback questionnaire instance not found",
-      });
+      return throwHttpProblem({ status: 404, detail: "Feedback questionnaire instance not found" });
     }
   }
 

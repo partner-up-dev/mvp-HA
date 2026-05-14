@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
@@ -46,7 +46,7 @@ const findNextAvailableLocation = (
 export async function expandFullPR(prId: PRId): Promise<void> {
   const request = await prRepo.findById(prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   if (!hasAnchorParticipationPolicy(request) || request.status !== "FULL") {
     return;
@@ -54,9 +54,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
 
   const fullPR = await eventContextRepo.findRecordByPrId(prId);
   if (!fullPR) {
-    throw new HTTPException(500, {
-      message: "PR event context missing",
-    });
+    return throwHttpProblem({ status: 500, detail: "PR event context missing" });
   }
 
   const event = await anchorEventRepo.findById(fullPR.anchor.anchorEventId);

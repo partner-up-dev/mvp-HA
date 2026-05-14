@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId, UserId } from "../../../entities";
 import { operationLogService } from "../../../infra/operation-log";
 import { PRBookingExecutionRepository } from "../../../repositories/PRBookingExecutionRepository";
@@ -41,30 +41,24 @@ export async function submitAdminPRBookingExecution(input: {
 }> {
   const record = await eventContextRepo.findRecordByPrId(input.prId);
   if (!record) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   const existingExecution = await bookingExecutionRepo.findByPrId(input.prId);
   if (existingExecution) {
-    throw new HTTPException(409, {
-      message: "Booking execution already recorded for this PR",
-    });
+    return throwHttpProblem({ status: 409, detail: "Booking execution already recorded for this PR" });
   }
 
   const normalizedReason = normalizeOptionalReason(input.reason);
   if (input.result === "FAILED" && !normalizedReason) {
-    throw new HTTPException(400, {
-      message: "Failure reason is required",
-    });
+    return throwHttpProblem({ status: 400, detail: "Failure reason is required" });
   }
 
   const resources = await prSupportRepo.findByPrId(input.prId);
   const targetResource =
     resources.find((resource) => resource.id === input.targetResourceId) ?? null;
   if (!targetResource || !isPlatformHandledBookingResource(targetResource)) {
-    throw new HTTPException(400, {
-      message: "Target resource is not a platform-handled booking resource",
-    });
+    return throwHttpProblem({ status: 400, detail: "Target resource is not a platform-handled booking resource" });
   }
 
   const bookingContact = await resolveBookingContactState({
@@ -88,9 +82,7 @@ export async function submitAdminPRBookingExecution(input: {
   });
 
   if (!createdExecution) {
-    throw new HTTPException(500, {
-      message: "Failed to record booking execution",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to record booking execution" });
   }
 
   let notificationSummary: BookingResultNotificationSummary;

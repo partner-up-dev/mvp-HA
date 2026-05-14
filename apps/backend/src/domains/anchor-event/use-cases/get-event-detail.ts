@@ -1,9 +1,9 @@
+import { throwHttpProblem } from "../../../lib/problem-details";
 /**
  * Use-case: Get a single Anchor Event with event-owned create assistance and
  * same-type PR browsing data.
  */
 
-import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PoiRepository } from "../../../repositories/PoiRepository";
@@ -169,7 +169,7 @@ export async function getAnchorEventDetail(
 ): Promise<AnchorEventDetail> {
   const event = await eventRepo.findById(eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const locationPool = await resolvePublicEventLocationPool(event);

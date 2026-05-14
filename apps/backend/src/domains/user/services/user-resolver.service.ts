@@ -1,5 +1,5 @@
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { randomUUID } from "crypto";
-import { HTTPException } from "hono/http-exception";
 import { UserRepository } from "../../../repositories/UserRepository";
 import type { UserId, User } from "../../../entities/user";
 
@@ -8,7 +8,7 @@ const userRepo = new UserRepository();
 export async function resolveUserByOpenId(openId: string): Promise<User> {
   const trimmedOpenId = openId.trim();
   if (!trimmedOpenId) {
-    throw new HTTPException(401, { message: "Invalid WeChat session" });
+    return throwHttpProblem({ status: 401, detail: "Invalid WeChat session" });
   }
 
   const existingUser = await userRepo.findByOpenId(trimmedOpenId);
@@ -24,9 +24,7 @@ export async function resolveUserByOpenId(openId: string): Promise<User> {
 
   const racedUser = await userRepo.findByOpenId(trimmedOpenId);
   if (!racedUser) {
-    throw new HTTPException(500, {
-      message: "Failed to create user for WeChat session",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to create user for WeChat session" });
   }
   return racedUser;
 }

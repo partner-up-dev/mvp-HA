@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { HTTPException } from "hono/http-exception";
 import {
   imageUploadPurposes,
   ImageStorageError,
   readStoredImage,
   saveImageFile,
 } from "../infra/storage/image-storage.service";
+import { createHttpProblem } from "../lib/problem-details";
 
 const app = new Hono();
 
@@ -23,8 +23,8 @@ const imageUploadFormSchema = z.object({
   image: z.instanceof(File),
 });
 
-const toHttpException = (error: ImageStorageError): HTTPException =>
-  new HTTPException(error.status, { message: error.message });
+const toImageStorageProblem = (error: ImageStorageError): Error =>
+  createHttpProblem({ status: error.status, detail: error.message });
 
 export const uploadRoute = app
   .post(
@@ -43,7 +43,7 @@ export const uploadRoute = app
         });
       } catch (error) {
         if (error instanceof ImageStorageError) {
-          throw toHttpException(error);
+          throw toImageStorageProblem(error);
         }
         throw error;
       }
@@ -66,7 +66,7 @@ export const uploadRoute = app
         });
       } catch (error) {
         if (error instanceof ImageStorageError) {
-          throw toHttpException(error);
+          throw toImageStorageProblem(error);
         }
         throw error;
       }

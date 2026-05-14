@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
@@ -36,28 +36,22 @@ export async function exitPRByUserId(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
   const hasParticipationPolicy = hasAnchorParticipationPolicy(refreshedRequest);
 
   if (refreshedRequest.createdBy === userId) {
-    throw new HTTPException(400, {
-      message: "Cannot exit - creator cannot exit own partner request",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot exit - creator cannot exit own partner request" });
   }
 
   if (!isExitAllowedStatus(refreshedRequest.status as string)) {
-    throw new HTTPException(400, {
-      message: "Cannot exit - partner request is not open",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot exit - partner request is not open" });
   }
 
   const activeSlot = await partnerRepo.findActiveByPrIdAndUserId(id, userId);
   if (!activeSlot) {
-    throw new HTTPException(400, {
-      message: "Cannot exit - partner is not joined",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot exit - partner is not joined" });
   }
 
   if (
@@ -66,16 +60,12 @@ export async function exitPRByUserId(
   ) {
     const effectiveBookingDeadlineAt = await getEffectiveBookingDeadline(id);
     if (isBookingDeadlineReached(effectiveBookingDeadlineAt)) {
-      throw new HTTPException(400, {
-        message: "Cannot exit - slot is locked after booking deadline",
-      });
+      return throwHttpProblem({ status: 400, detail: "Cannot exit - slot is locked after booking deadline" });
     }
   }
 
   if (hasParticipationPolicy && hasEventStarted(refreshedRequest.time)) {
-    throw new HTTPException(400, {
-      message: "Cannot exit - event has already started",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot exit - event has already started" });
   }
 
   await partnerRepo.updateStatus(activeSlot.id, "EXITED");
@@ -108,9 +98,7 @@ export async function exitPRByUserId(
 
   const latest = await prRepo.findById(id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to reload partner request",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
   }
   await scheduleAlternativeWaitlistNotificationsForCandidate(latest);
   return toPublicPR(latest, userId);

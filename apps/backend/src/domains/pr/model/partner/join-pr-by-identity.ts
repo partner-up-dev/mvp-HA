@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../../lib/problem-details";
 import type { PRId } from "../../../../entities/partner-request";
 import { hasUserRole, type User, type UserId } from "../../../../entities/user";
 import { UserRepository } from "../../../../repositories/UserRepository";
@@ -32,7 +32,7 @@ export const resolvePRParticipantUser = async (
   if (input.authenticatedUserId) {
     const user = await userRepo.findById(input.authenticatedUserId);
     if (!user || user.status !== "ACTIVE") {
-      throw new HTTPException(401, { message: "Invalid authenticated user" });
+      return throwHttpProblem({ status: 401, detail: "Invalid authenticated user" });
     }
 
     return {
@@ -57,7 +57,7 @@ export const resolvePRParticipantUser = async (
     anonymous.status !== "ACTIVE" ||
     !hasUserRole(anonymous.role, "anonymous")
   ) {
-    throw new HTTPException(401, { message: "Invalid anonymous user session" });
+    return throwHttpProblem({ status: 401, detail: "Invalid anonymous user session" });
   }
 
   return {

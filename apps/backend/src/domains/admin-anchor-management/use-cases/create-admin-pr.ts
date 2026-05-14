@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { initializeSlotsForPR } from "../../pr/services";
 import { type TimeWindowEntry } from "../../../entities/anchor-event";
@@ -44,9 +44,7 @@ const assertTimeWindowValid = (timeWindow: TimeWindowEntry) => {
     Number.isNaN(endAt.getTime()) ||
     startAt.getTime() > endAt.getTime()
   ) {
-    throw new HTTPException(400, {
-      message: "PR time window is invalid",
-    });
+    return throwHttpProblem({ status: 400, detail: "PR time window is invalid" });
   }
 };
 

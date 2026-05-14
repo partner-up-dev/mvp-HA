@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventPreferenceTagRepository } from "../../../repositories/AnchorEventPreferenceTagRepository";
 import { PoiRepository } from "../../../repositories/PoiRepository";
@@ -140,7 +140,7 @@ export async function getAnchorEventFormModeData(
 ): Promise<AnchorEventFormModeData> {
   const event = await anchorEventRepo.findById(eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const locationIds = await resolveLocationIds(event);

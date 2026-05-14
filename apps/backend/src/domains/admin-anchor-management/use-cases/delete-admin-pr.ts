@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId, UserId } from "../../../entities";
 import { operationLogService } from "../../../infra/operation-log";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -15,7 +15,7 @@ export async function deleteAdminPR(input: {
 }) {
   const existing = await prRepo.findById(input.prId);
   if (!existing) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   const [partnerCount, supportResourceCount] = await Promise.all([
@@ -25,7 +25,7 @@ export async function deleteAdminPR(input: {
 
   const deleted = await prRepo.deleteById(input.prId);
   if (!deleted) {
-    throw new HTTPException(500, { message: "Failed to delete PR" });
+    return throwHttpProblem({ status: 500, detail: "Failed to delete PR" });
   }
 
   operationLogService.log({

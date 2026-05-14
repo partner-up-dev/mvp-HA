@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
@@ -21,30 +21,24 @@ const userReliabilityRepo = new UserReliabilityRepository();
 export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
   if (!hasAnchorParticipationPolicy(refreshedRequest)) {
-    throw new HTTPException(400, {
-      message: "Slot confirmation is not available for this partner request",
-    });
+    return throwHttpProblem({ status: 400, detail: "Slot confirmation is not available for this partner request" });
   }
   const policy = resolveAnchorParticipationPolicy(
     refreshedRequest,
     refreshedRequest.time,
   );
   if (!isWithinConfirmationWindow(policy)) {
-    throw new HTTPException(400, {
-      message: "Cannot confirm - outside confirmation window",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot confirm - outside confirmation window" });
   }
 
   const user = await resolveUserByOpenId(openId);
   const slot = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
   if (!slot) {
-    throw new HTTPException(400, {
-      message: "Cannot confirm - partner is not joined",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot confirm - partner is not joined" });
   }
 
   if (slot.status === "JOINED") {
@@ -63,9 +57,7 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
 
   const latest = await prRepo.findById(refreshedRequest.id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to refresh partner request after confirm",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to refresh partner request after confirm" });
   }
   return toPublicPR(latest, user.id);
 }

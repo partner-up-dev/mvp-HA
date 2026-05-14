@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
@@ -20,7 +20,7 @@ export async function authorizeCreatorMutation(
 ): Promise<CreatorMutationAuthResult> {
   const request = await prRepo.findById(prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   if (mode === "content" && request.status === "DRAFT") {
@@ -31,15 +31,11 @@ export async function authorizeCreatorMutation(
   }
 
   if (!request.createdBy) {
-    throw new HTTPException(403, {
-      message: "Partner request has no claimed creator",
-    });
+    return throwHttpProblem({ status: 403, detail: "Partner request has no claimed creator" });
   }
 
   if (auth.role === "anonymous" || auth.userId !== request.createdBy) {
-    throw new HTTPException(403, {
-      message: "Only the creator can modify this partner request",
-    });
+    return throwHttpProblem({ status: 403, detail: "Only the creator can modify this partner request" });
   }
 
   return {

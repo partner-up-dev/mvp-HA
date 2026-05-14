@@ -1,7 +1,7 @@
+import { throwHttpProblem } from "../lib/problem-details";
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { HTTPException } from "hono/http-exception";
 import { env } from "../lib/env";
 import { runExternalMaintenanceTickOrSkip } from "../infra/maintenance";
 
@@ -16,14 +16,12 @@ export const internalMaintenanceRoute = app.post(
   zValidator("header", tickHeaderSchema),
   async (c) => {
     if (!env.JOB_RUNNER_INTERNAL_TOKEN) {
-      throw new HTTPException(503, {
-        message: "Internal maintenance tick endpoint is not configured",
-      });
+      return throwHttpProblem({ status: 503, detail: "Internal maintenance tick endpoint is not configured" });
     }
 
     const header = c.req.valid("header");
     if (header["x-internal-token"] !== env.JOB_RUNNER_INTERNAL_TOKEN) {
-      throw new HTTPException(401, { message: "Unauthorized" });
+      return throwHttpProblem({ status: 401, detail: "Unauthorized" });
     }
 
     const summary = await runExternalMaintenanceTickOrSkip();

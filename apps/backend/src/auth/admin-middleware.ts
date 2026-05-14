@@ -1,5 +1,5 @@
+import { throwHttpProblem } from "../lib/problem-details";
 import type { MiddlewareHandler } from "hono";
-import { HTTPException } from "hono/http-exception";
 import {
   attachAuthTokenHeader,
   resolveRequestAuth,
@@ -14,7 +14,7 @@ export const requireRoles =
   async (c, next) => {
     const auth = resolveRequestAuth(c);
     if (!auth.userId || !hasAnyAuthRole(auth.roles, requiredRoles)) {
-      throw new HTTPException(401, { message: "Authorization required" });
+      return throwHttpProblem({ status: 401, detail: "Authorization required" });
     }
 
     c.set("auth", auth);

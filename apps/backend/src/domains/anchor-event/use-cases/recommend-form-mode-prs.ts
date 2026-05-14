@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
@@ -65,14 +65,12 @@ export async function recommendAnchorEventFormModePRs(input: {
 }): Promise<AnchorEventFormModeRecommendationResponse> {
   const event = await anchorEventRepo.findById(input.eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const locationId = input.locationId.trim();
   if (!(await isPublicEventScopedLocation(event, locationId))) {
-    throw new HTTPException(400, {
-      message: "Selected location is outside the anchor event scope",
-    });
+    return throwHttpProblem({ status: 400, detail: "Selected location is outside the anchor event scope" });
   }
 
   const selectionTimeWindow = buildAnchorEventFormModeTimeWindow(

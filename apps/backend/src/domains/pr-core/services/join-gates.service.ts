@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type {
   AnchorEvent,
   AnchorEventSupportResource,
@@ -194,7 +194,7 @@ export const getPRJoinGateProjection = async (input: {
 }): Promise<PRJoinGateProjection> => {
   const request = await prRepo.findById(input.prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const config = normalizePRJoinGateConfig(request.joinGateConfig);
@@ -282,11 +282,7 @@ const throwCodedHttpException = (
   message: string,
   code: string,
 ): never => {
-  const error = new HTTPException(status, { message }) as HTTPException & {
-    code?: string;
-  };
-  error.code = code;
-  throw error;
+  return throwHttpProblem({ status, detail: message, code });
 };
 
 export const resolvePRJoinGate = async (input: {
@@ -297,7 +293,7 @@ export const resolvePRJoinGate = async (input: {
 }): Promise<PRJoinGateProjection> => {
   const request = await prRepo.findById(input.prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const config = normalizePRJoinGateConfig(request.joinGateConfig);

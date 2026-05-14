@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { AnchorEventId, AnchorEventPreferenceTagId } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventPreferenceTagRepository } from "../../../repositories/AnchorEventPreferenceTagRepository";
@@ -13,12 +13,12 @@ export async function publishAdminAnchorEventPreferenceTag(input: {
 }): Promise<AdminAnchorEventPreferenceTagsResponse> {
   const event = await anchorEventRepo.findById(input.eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const tag = await preferenceTagRepo.findById(input.tagId);
   if (!tag || tag.anchorEventId !== event.id) {
-    throw new HTTPException(404, { message: "Preference tag not found" });
+    return throwHttpProblem({ status: 404, detail: "Preference tag not found" });
   }
 
   await preferenceTagRepo.update(tag.id, { status: "PUBLISHED" });

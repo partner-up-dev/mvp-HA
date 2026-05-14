@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { UserId } from "../../../entities/user";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 import { operationLogService } from "../../../infra/operation-log";
@@ -18,7 +18,7 @@ export async function publishAdminPoiApplication(input: {
     reviewedByUserId: input.reviewedByUserId,
   });
   if (!updated) {
-    throw new HTTPException(404, { message: "POI not found" });
+    return throwHttpProblem({ status: 404, detail: "POI not found" });
   }
 
   operationLogService.log({
@@ -45,7 +45,7 @@ export async function rejectAdminPoiApplication(input: {
     rejectReason: normalizePoiRejectReason(input.rejectReason),
   });
   if (!updated) {
-    throw new HTTPException(404, { message: "POI not found" });
+    return throwHttpProblem({ status: 404, detail: "POI not found" });
   }
 
   operationLogService.log({

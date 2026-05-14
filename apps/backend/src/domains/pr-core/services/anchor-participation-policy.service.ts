@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PartnerRequest } from "../../../entities/partner-request";
 import { getTimeWindowStart } from "./time-window.service";
 
@@ -34,23 +34,15 @@ export function validateAnchorParticipationPolicyOffsets(
     joinLockOffsetMinutes,
   ];
   if (values.some((value) => !Number.isInteger(value) || value < 0)) {
-    throw new HTTPException(400, {
-      message: "Anchor participation policy offsets must be non-negative integers",
-    });
+    return throwHttpProblem({ status: 400, detail: "Anchor participation policy offsets must be non-negative integers" });
   }
 
   if (confirmationStartOffsetMinutes <= confirmationEndOffsetMinutes) {
-    throw new HTTPException(400, {
-      message:
-        "Confirmation start must be earlier than confirmation end for anchor participation policy",
-    });
+    return throwHttpProblem({ status: 400, detail: "Confirmation start must be earlier than confirmation end for anchor participation policy" });
   }
 
   if (joinLockOffsetMinutes < confirmationEndOffsetMinutes) {
-    throw new HTTPException(400, {
-      message:
-        "Join lock must not be later than confirmation end for anchor participation policy",
-    });
+    return throwHttpProblem({ status: 400, detail: "Join lock must not be later than confirmation end for anchor participation policy" });
   }
 }
 

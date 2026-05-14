@@ -43,6 +43,44 @@ export class ProblemDetailsError extends Error {
   }
 }
 
+export const createHttpProblem = (input: {
+  status: ProblemStatus;
+  detail: string;
+  code?: string;
+  type?: string;
+}): ProblemDetailsError => {
+  const status =
+    Number.isInteger(input.status) && input.status >= 400 && input.status <= 599
+      ? input.status
+      : 500;
+  const title = titleByStatus(status);
+
+  return new ProblemDetailsError({
+    status,
+    type: input.type ?? `https://partner-up.app/problems/http.${status}`,
+    ...(input.code ? { code: input.code } : {}),
+    localizedText: {
+      zhCN: {
+        title,
+        detail: input.detail,
+      },
+      enUS: {
+        title,
+        detail: input.detail,
+      },
+    },
+  });
+};
+
+export const throwHttpProblem = (input: {
+  status: ProblemStatus;
+  detail: string;
+  code?: string;
+  type?: string;
+}): never => {
+  throw createHttpProblem(input);
+};
+
 const resolveProblemLocale = (
   acceptLanguageHeader: string | undefined,
 ): "zh-CN" | "en-US" => {

@@ -15,6 +15,8 @@
     "build:frontend": "pnpm --filter @partner-up-dev/frontend build",
     "build:backend": "pnpm --filter @partner-up-dev/backend build",
     "build": "pnpm --filter @partner-up-dev/backend build && pnpm --filter @partner-up-dev/frontend build",
+    "lint": "pnpm lint:backend",
+    "lint:backend": "pnpm --filter @partner-up-dev/backend lint",
     "test:backend:unit": "pnpm --filter @partner-up-dev/backend test:unit",
     "test:scenario": "node scripts/run-scenario-tests.mjs",
     "test:scenario:system": "tsx tests/scenario/run-scenario-tests.mts",

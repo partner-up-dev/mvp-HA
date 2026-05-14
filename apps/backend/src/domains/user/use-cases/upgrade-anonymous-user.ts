@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { hasUserRole, type UserId } from "../../../entities/user";
 import type { WeChatOAuthUserProfile } from "../../../services/WeChatOAuthService";
@@ -29,9 +29,7 @@ export async function upgradeAnonymousUserWithWeChat(
 
   const occupied = await userRepo.findByOpenId(input.openId);
   if (occupied) {
-    throw new HTTPException(409, {
-      message: "WeChat account is already bound to another user",
-    });
+    return throwHttpProblem({ status: 409, detail: "WeChat account is already bound to another user" });
   }
 
   const updated = await userRepo.upgradeAnonymousUserWithWeChat({
@@ -43,9 +41,7 @@ export async function upgradeAnonymousUserWithWeChat(
   });
 
   if (!updated) {
-    throw new HTTPException(500, {
-      message: "Failed to upgrade anonymous user",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to upgrade anonymous user" });
   }
 
   return { userId: updated.id };

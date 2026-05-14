@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { updatePRContent } from "../../pr";
 import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
@@ -36,9 +36,7 @@ const assertTimeWindowValid = (timeWindow: TimeWindowEntry) => {
     Number.isNaN(endAt.getTime()) ||
     startAt.getTime() > endAt.getTime()
   ) {
-    throw new HTTPException(400, {
-      message: "PR time window is invalid",
-    });
+    return throwHttpProblem({ status: 400, detail: "PR time window is invalid" });
   }
 };
 
@@ -48,7 +46,7 @@ export async function updateAdminPRContent(
 ) {
   const existing = await prRepo.findById(prId);
   if (!existing) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   assertTimeWindowValid(input.timeWindow);

@@ -73,6 +73,7 @@ Contract implication:
 - For shared partner-bounds validation failures, backend and frontend should converge on one user-facing Chinese message rather than surfacing route-specific copies.
 - Human-readable explanation remains backend-owned on command failures. Frontend owns placement and presentation.
 - Problem-details transport shape is a cross-unit reusable substrate. Domain modules own their `type` and `code` registries.
+- Backend production code must express expected API failures through Problem Details helpers or typed domain helpers. The backend Problem Details lint allows `HTTPException` only in the global error adapter, where third-party or compatibility exceptions are normalized into the same response contract.
 
 ## 6. Stable Route And Flow Contract
 

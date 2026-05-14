@@ -1,9 +1,9 @@
+import { throwHttpProblem } from "../lib/problem-details";
 import { promises as fs } from "fs";
 import path from "path";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { HTTPException } from "hono/http-exception";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import {
   getCurrentUserProfile,
@@ -43,7 +43,7 @@ const mimeTypeByExtension: Record<string, string> = {
 const requireAuthenticatedUserId = (c: Context<AuthEnv>): UserId => {
   const auth = c.get("auth");
   if (auth.role === "anonymous" || !auth.userId) {
-    throw new HTTPException(401, { message: "Authentication required" });
+    return throwHttpProblem({ status: 401, detail: "Authentication required" });
   }
 
   return auth.userId as UserId;

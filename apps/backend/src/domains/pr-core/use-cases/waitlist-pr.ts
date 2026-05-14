@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type { PRId } from "../../../entities/partner-request";
@@ -22,12 +22,12 @@ export async function waitlistPRAsUser(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
   if (user.status !== "ACTIVE") {
-    throw new HTTPException(403, { message: "Current user is not active" });
+    return throwHttpProblem({ status: 403, detail: "Current user is not active" });
   }
 
   const existingActive = await partnerRepo.findActiveByPrIdAndUserId(
@@ -37,9 +37,7 @@ export async function waitlistPRAsUser(
   if (existingActive) {
     const latest = await prRepo.findById(id);
     if (!latest) {
-      throw new HTTPException(500, {
-        message: "Failed to reload partner request",
-      });
+      return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
     }
     return toPublicPR(latest, user.id);
   }
@@ -51,9 +49,7 @@ export async function waitlistPRAsUser(
   if (existingPending) {
     const latest = await prRepo.findById(id);
     if (!latest) {
-      throw new HTTPException(500, {
-        message: "Failed to reload partner request",
-      });
+      return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
     }
     return toPublicPR(latest, user.id);
   }
@@ -75,9 +71,7 @@ export async function waitlistPRAsUser(
       activeCount,
     })
   ) {
-    throw new HTTPException(400, {
-      message: "Cannot waitlist - partner request is not full",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot waitlist - partner request is not full" });
   }
 
   const latestHistoricalSlot =
@@ -93,9 +87,7 @@ export async function waitlistPRAsUser(
         alternativePrReminderOptIn: options.alternativePrReminderOptIn,
       });
   if (!pendingSlot) {
-    throw new HTTPException(500, {
-      message: "Failed to persist waitlist participation record",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to persist waitlist participation record" });
   }
 
   operationLogService.log({
@@ -120,9 +112,7 @@ export async function waitlistPRAsUser(
 
   const latest = await prRepo.findById(id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to reload partner request",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
   }
   return toPublicPR(latest, user.id);
 }

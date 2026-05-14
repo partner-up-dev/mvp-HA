@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventSupportResourceRepository } from "../../../repositories/AnchorEventSupportResourceRepository";
 import type { AnchorEventId, AnchorEventSupportResource } from "../../../entities";
@@ -19,7 +19,7 @@ export async function getAdminBookingSupportConfig(
 ): Promise<AdminBookingSupportConfig> {
   const event = await eventRepo.findById(eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const resources = await eventSupportRepo.findByAnchorEventId(eventId);

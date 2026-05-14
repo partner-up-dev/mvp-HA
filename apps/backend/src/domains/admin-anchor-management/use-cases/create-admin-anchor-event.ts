@@ -1,3 +1,4 @@
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
@@ -16,7 +17,6 @@ import {
   normalizeMeetingPointConfig,
   normalizeMeetingPointConfigMap,
 } from "../../../entities";
-import { HTTPException } from "hono/http-exception";
 import {
   assertManualPartnerBoundsValid,
   validateAnchorParticipationPolicyOffsets,
@@ -64,18 +64,14 @@ export async function createAdminAnchorEvent(
 
   const existing = await anchorEventRepo.findOneByType(input.type);
   if (existing) {
-    throw new HTTPException(409, {
-      message: `Anchor event type already exists: ${input.type}`,
-    });
+    return throwHttpProblem({ status: 409, detail: `Anchor event type already exists: ${input.type}` });
   }
   if (input.feedbackQuestionnaireTemplateId !== null && input.feedbackQuestionnaireTemplateId !== undefined) {
     const template = await feedbackRepo.findTemplateById(
       input.feedbackQuestionnaireTemplateId,
     );
     if (!template) {
-      throw new HTTPException(404, {
-        message: "Feedback questionnaire template not found",
-      });
+      return throwHttpProblem({ status: 404, detail: "Feedback questionnaire template not found" });
     }
   }
 

@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { HTTPException } from "hono/http-exception";
+import { ProblemDetailsError } from "../../../lib/problem-details";
 import {
   PARTNER_BOUNDS_ERROR_MESSAGES,
   assertManualPartnerBoundsValid,
   normalizeAutomaticPartnerBounds,
 } from "./partner-bounds.service";
 
-const assertThrowsHttpException = (
+const assertThrowsProblemDetails = (
   fn: () => void,
   expectedMessage: string,
 ): void => {
   assert.throws(fn, (error: unknown) => {
-    assert.ok(error instanceof HTTPException);
+    assert.ok(error instanceof ProblemDetailsError);
     assert.equal(error.status, 400);
     assert.equal(error.message, expectedMessage);
     return true;
@@ -20,11 +20,11 @@ const assertThrowsHttpException = (
 };
 
 test("assertManualPartnerBoundsValid rejects null and sub-minimum minPartners", () => {
-  assertThrowsHttpException(
+  assertThrowsProblemDetails(
     () => assertManualPartnerBoundsValid(null, null, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.minPartnersInvalid,
   );
-  assertThrowsHttpException(
+  assertThrowsProblemDetails(
     () => assertManualPartnerBoundsValid(0, null, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.minPartnersInvalid,
   );
@@ -35,14 +35,14 @@ test("assertManualPartnerBoundsValid accepts minPartners of 1 without maxPartner
 });
 
 test("assertManualPartnerBoundsValid rejects maxPartners of 1", () => {
-  assertThrowsHttpException(
+  assertThrowsProblemDetails(
     () => assertManualPartnerBoundsValid(1, 1, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersInvalid,
   );
 });
 
 test("assertManualPartnerBoundsValid rejects maxPartners below minPartners", () => {
-  assertThrowsHttpException(
+  assertThrowsProblemDetails(
     () => assertManualPartnerBoundsValid(3, 2, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersBelowMin,
   );
@@ -67,14 +67,14 @@ test("normalizeAutomaticPartnerBounds accepts minPartners of 1", () => {
 });
 
 test("normalizeAutomaticPartnerBounds rejects maxPartners of 1", () => {
-  assertThrowsHttpException(
+  assertThrowsProblemDetails(
     () => normalizeAutomaticPartnerBounds(1, 1, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersInvalid,
   );
 });
 
 test("normalizeAutomaticPartnerBounds validates maxPartners against normalized minimum", () => {
-  assertThrowsHttpException(
+  assertThrowsProblemDetails(
     () => normalizeAutomaticPartnerBounds(3, 2, 0),
     PARTNER_BOUNDS_ERROR_MESSAGES.maxPartnersBelowMin,
   );

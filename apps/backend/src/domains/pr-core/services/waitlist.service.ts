@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PartnerId, PartnerStatus } from "../../../entities/partner";
 import type { PartnerRequest, PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -100,9 +100,7 @@ const applyPromotedPartnerSideEffects = async (input: {
 
   const latest = await prRepo.findById(input.request.id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to reload partner request",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
   }
 
   await scheduleWeChatWaitlistPromotedNotificationForParticipant({

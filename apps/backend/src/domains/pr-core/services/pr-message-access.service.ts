@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { Partner } from "../../../entities/partner";
 import type { PartnerRequest, PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -19,14 +19,12 @@ export async function requirePRMessageParticipantAccess(
 ): Promise<PRMessageParticipantAccess> {
   const request = await prRepo.findById(prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const participant = await partnerRepo.findActiveByPrIdAndUserId(prId, userId);
   if (!participant) {
-    throw new HTTPException(403, {
-      message: "Only current active participants can access PR messages",
-    });
+    return throwHttpProblem({ status: 403, detail: "Only current active participants can access PR messages" });
   }
 
   return {

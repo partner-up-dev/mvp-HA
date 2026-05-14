@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities";
 import type { FeedbackQuestionnaireTemplateId } from "../../../entities/feedback-questionnaire";
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
@@ -13,16 +13,14 @@ export async function materializeAdminPRFeedbackQuestionnaireInstance(input: {
 }) {
   const existing = await prRepo.findById(input.prId);
   if (!existing) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   const instance = await feedbackRepo.createInstanceFromTemplate(
     input.feedbackQuestionnaireTemplateId,
   );
   if (!instance) {
-    throw new HTTPException(404, {
-      message: "Feedback questionnaire template not found",
-    });
+    return throwHttpProblem({ status: 404, detail: "Feedback questionnaire template not found" });
   }
 
   return await prRepo.updateFeedbackQuestionnaireInstanceId(
