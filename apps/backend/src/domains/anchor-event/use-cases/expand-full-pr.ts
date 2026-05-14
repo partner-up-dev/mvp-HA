@@ -7,7 +7,6 @@ import { initializeSlotsForPR } from "../../pr/services";
 import type { PRId } from "../../../entities/partner-request";
 import { operationLogService } from "../../../infra/operation-log";
 import { resolvePublicEventLocationPool } from "../services/event-scope";
-import { hasAnchorParticipationPolicy } from "../../pr/services";
 import {
   isActiveVisiblePRStatus,
   readVisibleAnchorEventPRContextRecordsByEventTimeWindow,
@@ -17,6 +16,7 @@ import { normalizeAutomaticPartnerBounds } from "../../pr/services";
 import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../../pr-core/services/waitlist-alternative-reminder.service";
 import { materializeEventDefaultsForPR } from "../../pr/services";
 import { findPoisByNames } from "../../poi";
+import { eventOwnsTimeWindow } from "../services/time-window-pool";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
@@ -47,17 +47,23 @@ export async function expandFullPR(prId: PRId): Promise<void> {
   if (!request) {
     return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
-  if (!hasAnchorParticipationPolicy(request) || request.status !== "FULL") {
+  if (request.status !== "FULL") {
     return;
   }
 
   const fullPR = await eventContextRepo.findRecordByPrId(prId);
   if (!fullPR) {
-    return throwHttpProblem({ status: 500, detail: "PR event context missing" });
+    return;
   }
 
   const event = await anchorEventRepo.findById(fullPR.anchor.anchorEventId);
   if (!event || event.status !== "ACTIVE") {
+    return;
+  }
+  if (!eventOwnsTimeWindow(event, fullPR.anchor.timeWindow)) {
+    return;
+  }
+  if (event.fullPrExpansionPolicy !== "ENABLED") {
     return;
   }
 

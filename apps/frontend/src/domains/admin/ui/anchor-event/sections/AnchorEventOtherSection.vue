@@ -50,6 +50,19 @@
         </div>
       </BentoItem>
 
+      <BentoItem :title="t('adminAnchorEvents.fullPrExpansionPolicyTitle')">
+        <div class="policy-setting">
+          <ToggleSwitch
+            v-model="fullPrExpansionEnabled"
+            :label="t('adminAnchorEvents.fullPrExpansionPolicyEnabledLabel')"
+            :disabled="props.disabled"
+          />
+          <p class="policy-setting__hint">
+            {{ t("adminAnchorEvents.fullPrExpansionPolicyHint") }}
+          </p>
+        </div>
+      </BentoItem>
+
       <BentoItem :title="t('adminAnchorEvents.landingRolloutTitle')">
         <template #actions>
           <Button
@@ -124,6 +137,12 @@ const adminOnlyCreation = computed({
   get: () => form.value.prCreationPolicy === "ADMIN_ONLY",
   set: (value: boolean) => {
     form.value.prCreationPolicy = value ? "ADMIN_ONLY" : "USER_AND_ADMIN";
+  },
+});
+const fullPrExpansionEnabled = computed({
+  get: () => form.value.fullPrExpansionPolicy === "ENABLED",
+  set: (value: boolean) => {
+    form.value.fullPrExpansionPolicy = value ? "ENABLED" : "DISABLED";
   },
 });
 const landingSaveLabel = computed(() =>

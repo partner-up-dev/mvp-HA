@@ -77,6 +77,7 @@ export type AdminAnchorEventInput = {
   coverImage: string | null;
   betaGroupQrCode: string | null;
   prCreationPolicy: "USER_AND_ADMIN" | "ADMIN_ONLY";
+  fullPrExpansionPolicy: "ENABLED" | "DISABLED";
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 

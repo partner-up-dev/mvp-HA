@@ -22,6 +22,7 @@ export const useUpdateAnchorEventOtherSettings = () => {
         feedbackQuestionnaireTemplateId: draft.feedbackQuestionnaireTemplateId,
         defaultPrNotes: draft.defaultPrNotes.trim() || null,
         prCreationPolicy: draft.prCreationPolicy,
+        fullPrExpansionPolicy: draft.fullPrExpansionPolicy,
       }),
     });
 

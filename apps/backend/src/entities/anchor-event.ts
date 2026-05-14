@@ -38,6 +38,13 @@ export const anchorEventPrCreationPolicySchema = z.enum([
 export type AnchorEventPrCreationPolicy = z.infer<
   typeof anchorEventPrCreationPolicySchema
 >;
+export const anchorEventFullPrExpansionPolicySchema = z.enum([
+  "ENABLED",
+  "DISABLED",
+]);
+export type AnchorEventFullPrExpansionPolicy = z.infer<
+  typeof anchorEventFullPrExpansionPolicySchema
+>;
 
 /** A location entry: POI.name or a free-form location label. */
 export const locationEntrySchema = z.string().trim().min(1);
@@ -384,6 +391,10 @@ export const anchorEvents = pgTable("anchor_events", {
     .$type<AnchorEventPrCreationPolicy>()
     .notNull()
     .default("USER_AND_ADMIN"),
+  fullPrExpansionPolicy: text("full_pr_expansion_policy")
+    .$type<AnchorEventFullPrExpansionPolicy>()
+    .notNull()
+    .default("DISABLED"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

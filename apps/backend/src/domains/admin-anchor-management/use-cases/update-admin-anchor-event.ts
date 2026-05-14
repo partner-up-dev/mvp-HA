@@ -4,6 +4,7 @@ import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQ
 import type {
   AnchorEvent,
   AnchorEventId,
+  AnchorEventFullPrExpansionPolicy,
   AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
@@ -48,6 +49,7 @@ export interface UpdateAdminAnchorEventInput {
   coverImage: string | null;
   betaGroupQrCode: string | null;
   prCreationPolicy: AnchorEventPrCreationPolicy;
+  fullPrExpansionPolicy: AnchorEventFullPrExpansionPolicy;
   status: AnchorEventStatus;
 }
 
@@ -117,6 +119,7 @@ export async function updateAdminAnchorEvent(
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     prCreationPolicy: input.prCreationPolicy,
+    fullPrExpansionPolicy: input.fullPrExpansionPolicy,
     status: input.status,
   });
 

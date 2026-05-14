@@ -28,6 +28,7 @@ export type AnchorEventEditorForm = {
   coverImage: string;
   betaGroupQrCode: string;
   prCreationPolicy: "USER_AND_ADMIN" | "ADMIN_ONLY";
+  fullPrExpansionPolicy: "ENABLED" | "DISABLED";
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 

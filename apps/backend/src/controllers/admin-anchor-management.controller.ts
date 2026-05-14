@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   anchorEventStatusSchema,
+  anchorEventFullPrExpansionPolicySchema,
   anchorEventPrCreationPolicySchema,
   anchorEventTimePoolConfigSchema,
   meetingPointConfigMapSchema,
@@ -98,6 +99,7 @@ const adminAnchorEventInputSchema = z.object({
   coverImage: z.string().trim().nullable(),
   betaGroupQrCode: z.string().trim().nullable(),
   prCreationPolicy: anchorEventPrCreationPolicySchema,
+  fullPrExpansionPolicy: anchorEventFullPrExpansionPolicySchema,
   status: anchorEventStatusSchema,
 });
 

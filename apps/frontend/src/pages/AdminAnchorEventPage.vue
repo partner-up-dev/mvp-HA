@@ -179,6 +179,7 @@ const emptyEventForm = (): EventForm => ({
   coverImage: "",
   betaGroupQrCode: "",
   prCreationPolicy: "USER_AND_ADMIN",
+  fullPrExpansionPolicy: "DISABLED",
   status: "ACTIVE",
 });
 
@@ -233,6 +234,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
   coverImage: event.coverImage ?? "",
   betaGroupQrCode: event.betaGroupQrCode ?? "",
   prCreationPolicy: event.prCreationPolicy,
+  fullPrExpansionPolicy: event.fullPrExpansionPolicy,
   status: event.status as EventForm["status"],
 });
 

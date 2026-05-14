@@ -168,7 +168,6 @@ export async function joinPRAsUser(
   const afterRecalculate = await prRepo.findById(id);
   if (
     afterRecalculate &&
-    hasAnchorParticipationPolicy(afterRecalculate) &&
     afterRecalculate.status === "FULL"
   ) {
     await expandFullPR(id);

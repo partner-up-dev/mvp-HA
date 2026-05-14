@@ -6,6 +6,7 @@ import {
 } from "../../../../src/domains/pr/services";
 import type {
   AnchorEventId,
+  AnchorEventFullPrExpansionPolicy,
   AnchorEventPrCreationPolicy,
 } from "../../../../src/entities";
 import type { FeedbackQuestionnaireTemplateId } from "../../../../src/entities/feedback-questionnaire";
@@ -64,6 +65,7 @@ export async function givenAnchorEvent(input: {
   defaultMaxPartners?: number | null;
   defaultPrNotes?: string | null;
   prCreationPolicy?: AnchorEventPrCreationPolicy;
+  fullPrExpansionPolicy?: AnchorEventFullPrExpansionPolicy;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
 }): Promise<ScenarioAnchorEvent> {
   const sequence = scenarioAnchorEventSequence++;
@@ -104,6 +106,7 @@ export async function givenAnchorEvent(input: {
     coverImage: null,
     betaGroupQrCode: null,
     prCreationPolicy: input.prCreationPolicy ?? "USER_AND_ADMIN",
+    fullPrExpansionPolicy: input.fullPrExpansionPolicy ?? "DISABLED",
     status: "ACTIVE",
   });
 

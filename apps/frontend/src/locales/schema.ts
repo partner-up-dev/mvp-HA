@@ -1304,6 +1304,9 @@ export interface MessageSchema {
     prCreationPolicyTitle: string;
     prCreationPolicyAdminOnlyLabel: string;
     prCreationPolicyHint: string;
+    fullPrExpansionPolicyTitle: string;
+    fullPrExpansionPolicyEnabledLabel: string;
+    fullPrExpansionPolicyHint: string;
     preferenceTagsTitle: string;
     preferenceTagsDescription: string;
     selectEventForPreferenceTagsHint: string;

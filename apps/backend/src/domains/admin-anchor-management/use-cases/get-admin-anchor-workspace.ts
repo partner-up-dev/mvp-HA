@@ -3,6 +3,7 @@ import type {
   MeetingPointConfig,
   MeetingPointConfigMap,
   PRJoinGateConfig,
+  AnchorEventFullPrExpansionPolicy,
   AnchorEventPrCreationPolicy,
   FeedbackQuestionnaireTemplate,
   FeedbackQuestionnaireTemplateId,
@@ -88,6 +89,7 @@ export type AdminAnchorEventSummary = {
   coverImage: string | null;
   betaGroupQrCode: string | null;
   prCreationPolicy: AnchorEventPrCreationPolicy;
+  fullPrExpansionPolicy: AnchorEventFullPrExpansionPolicy;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -187,6 +189,7 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,
         prCreationPolicy: event.prCreationPolicy,
+        fullPrExpansionPolicy: event.fullPrExpansionPolicy,
         status: event.status,
         createdAt: event.createdAt.toISOString(),
         updatedAt: event.updatedAt.toISOString(),

@@ -41,6 +41,7 @@
 - A published POI does not appear in an Anchor Event Form Mode unless that Anchor Event's location pool references the POI name.
 - The Anchor Event page shows discoverable PRs under the same activity type and time-pool rules.
 - Event-page discovery reads root PR facts by activity type, resolved time window, and event-owned location rules rather than by durable PR-side event linkage.
+- Anchor Event owns whether a full PR can trigger automatic same-time-window PR expansion. The default policy is `DISABLED`; events with `ENABLED` may create a visible sibling PR after an event-context PR reaches `FULL`.
 
 ## 3. Lifecycle And Participation Rules
 

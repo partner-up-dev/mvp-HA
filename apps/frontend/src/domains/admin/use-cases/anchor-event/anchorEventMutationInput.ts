@@ -50,6 +50,7 @@ export type AnchorEventOtherSettingsDraft = {
   feedbackQuestionnaireTemplateId: number | null;
   defaultPrNotes: string;
   prCreationPolicy: AdminAnchorEventInput["prCreationPolicy"];
+  fullPrExpansionPolicy: AdminAnchorEventInput["fullPrExpansionPolicy"];
 };
 
 export const normalizeLines = (value: string): string[] =>
@@ -219,6 +220,7 @@ export const toAnchorEventMutationInput = (
   coverImage: event.coverImage ?? null,
   betaGroupQrCode: event.betaGroupQrCode ?? null,
   prCreationPolicy: event.prCreationPolicy,
+  fullPrExpansionPolicy: event.fullPrExpansionPolicy,
   status: event.status as AdminAnchorEventInput["status"],
   ...patch,
 });
@@ -258,6 +260,7 @@ export const buildAnchorEventMutationInputFromEditorDraft = (
     coverImage: draft.coverImage.trim() || null,
     betaGroupQrCode: draft.betaGroupQrCode.trim() || null,
     prCreationPolicy: draft.prCreationPolicy,
+    fullPrExpansionPolicy: draft.fullPrExpansionPolicy,
     status: draft.status,
   };
 };

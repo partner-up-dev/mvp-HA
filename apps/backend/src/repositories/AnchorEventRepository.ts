@@ -90,6 +90,7 @@ export class AnchorEventRepository {
         | "coverImage"
         | "betaGroupQrCode"
         | "prCreationPolicy"
+        | "fullPrExpansionPolicy"
         | "status"
       >
     >,
