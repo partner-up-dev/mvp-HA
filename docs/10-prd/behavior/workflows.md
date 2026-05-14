@@ -75,8 +75,9 @@
 1. When the user returns, the system restores existing session continuity when possible.
 2. The user can inspect and manage profile, WeChat identity, service notifications, and anonymous UUID continuity through `/me`.
 3. The `/me` personal profile card keeps identity facts together: avatar, nickname, WeChat binding state or bind action, and the anonymous user id copy affordance.
-4. The user can enter PR history and POI application history from two equal shortcuts under the personal profile card.
-5. The user can revisit created and joined PR history through `/pr/mine`.
+4. The user can log out from `/me`; the browser clears the current user session and immediately receives a fresh anonymous UUID session for continued browsing.
+5. The user can enter PR history and POI application history from two equal shortcuts under the personal profile card.
+6. The user can revisit created and joined PR history through `/pr/mine`.
 
 ## 6. Share and Distribution
 

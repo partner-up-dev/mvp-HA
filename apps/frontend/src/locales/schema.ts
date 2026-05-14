@@ -790,6 +790,11 @@ export interface MessageSchema {
       wechatOnlyAction: string;
       unavailableAction: string;
     };
+    logout: {
+      action: string;
+      pending: string;
+      failed: string;
+    };
     credentials: {
       title: string;
       description: string;

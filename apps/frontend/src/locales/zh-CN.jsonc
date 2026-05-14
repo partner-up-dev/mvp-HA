@@ -1209,6 +1209,11 @@
       "wechatOnlyAction": "仅支持微信内开启",
       "unavailableAction": "当前不可用"
     },
+    "logout": {
+      "action": "退出登录",
+      "pending": "退出中...",
+      "failed": "退出登录失败，请稍后重试。"
+    },
     "credentials": {
       "title": "匿名身份",
       "description": "当前设备浏览器会保存这个 ID，用于下次回来时恢复你的匿名身份。",

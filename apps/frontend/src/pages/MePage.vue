@@ -29,6 +29,25 @@
             <h2>{{ t("mePage.profile.title") }}</h2>
             <p>{{ t("mePage.profile.description") }}</p>
           </div>
+          <Button
+            class="profile-session-action"
+            appearance="pill"
+            tone="danger"
+            size="sm"
+            type="button"
+            data-testid="me.session.logout"
+            :loading="logoutPending"
+            @click="handleLogout"
+          >
+            <template #leading>
+              <span class="i-mdi:logout" aria-hidden="true"></span>
+            </template>
+            {{
+              logoutPending
+                ? t("mePage.logout.pending")
+                : t("mePage.logout.action")
+            }}
+          </Button>
         </div>
 
         <div class="profile-panel">
@@ -242,6 +261,7 @@
 import { computed, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { useQueryClient } from "@tanstack/vue-query";
 import LoadingIndicator from "@/shared/ui/feedback/LoadingIndicator.vue";
 import ErrorToast from "@/shared/ui/feedback/ErrorToast.vue";
 import InlineNotice from "@/shared/ui/feedback/InlineNotice.vue";
@@ -264,10 +284,13 @@ import { useStartWeChatBind } from "@/domains/user/queries/useStartWeChatBind";
 import { isWeChatBrowser } from "@/shared/browser/isWeChatBrowser";
 import { copyToClipboard } from "@/lib/clipboard";
 import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+import { resetAuthSessionToFreshAnonymous } from "@/processes/auth/useAuthSessionBootstrap";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const route = useRoute();
 const { t } = useI18n();
 const userSessionStore = useUserSessionStore();
+const queryClient = useQueryClient();
 
 const currentUserQuery = useCurrentUserProfile();
 const updateProfileMutation = useUpdateCurrentUserProfile();
@@ -280,6 +303,8 @@ const nicknameDraft = ref("");
 const phoneDraft = ref("");
 const copiedField = ref<"userId" | null>(null);
 const copyErrorMessage = ref<string | null>(null);
+const logoutErrorMessage = ref<string | null>(null);
+const logoutPending = ref(false);
 const notificationSubscriptionsPanelError = ref<Error | null>(null);
 const wechatLoginPending = ref(false);
 
@@ -403,7 +428,7 @@ const errorMessage = computed(() => {
     return firstError.message;
   }
 
-  return copyErrorMessage.value;
+  return logoutErrorMessage.value ?? copyErrorMessage.value;
 });
 
 watch(
@@ -473,6 +498,25 @@ const handleStartWeChatIdentity = async () => {
   await handleStartWeChatBind();
 };
 
+const handleLogout = async () => {
+  if (logoutPending.value) return;
+
+  logoutPending.value = true;
+  logoutErrorMessage.value = null;
+
+  try {
+    await resetAuthSessionToFreshAnonymous();
+    queryClient.removeQueries({ queryKey: queryKeys.user.me() });
+    nicknameDraft.value = "";
+    phoneDraft.value = "";
+  } catch (error) {
+    logoutErrorMessage.value =
+      error instanceof Error ? error.message : t("mePage.logout.failed");
+  } finally {
+    logoutPending.value = false;
+  }
+};
+
 const handleNotificationSubscriptionErrorChange = (error: Error | null) => {
   notificationSubscriptionsPanelError.value = error;
 };
@@ -527,6 +571,10 @@ const handleCopyCredential = async (value: string | null) => {
 }
 
 .status-pill {
+  flex-shrink: 0;
+}
+
+.profile-session-action {
   flex-shrink: 0;
 }
 
@@ -703,6 +751,14 @@ const handleCopyCredential = async (value: string | null) => {
 }
 
 @media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+  }
+
+  .profile-session-action {
+    align-self: flex-start;
+  }
+
   .profile-panel {
     grid-template-columns: 1fr;
   }

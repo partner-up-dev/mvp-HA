@@ -147,6 +147,7 @@
 - Participant profile pages are read-only and do not own editing behavior.
 - `/me` owns the current user's personal-center IA. Its profile surface should keep avatar, nickname, WeChat identity state or bind action, and anonymous user id continuity together.
 - When the current user has no WeChat official-account `openid`, the `/me` profile surface should offer the WeChat bind action at the identity position. When the user is bound, it should show the bound state.
+- `/me` logout clears the browser's current user session and starts a fresh anonymous UUID session for continued anonymous browsing.
 - `/me` should present PR history and POI application history as equal shortcuts under the profile surface while keeping `/pr/mine` as the dedicated PR history route.
 - The "Need Help" path must keep support, author feedback, and about-page routing distinct.
 - Event-specific beta groups are support and activity-coordination entrypoints. They may help users request new sessions, get booking/subsidy support, or coordinate activity context, and backend-owned PR messaging keeps participant visibility and participant rules authoritative.
