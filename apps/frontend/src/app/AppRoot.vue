@@ -3,12 +3,14 @@
     <RouterView />
     <MatchedPRHandoffOverlay />
   </WeChatOAuthHandoffGate>
+  <WeChatOAuthLoginModal />
 </template>
 
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import { useAuthSessionBootstrap } from "@/processes/auth/useAuthSessionBootstrap";
 import WeChatOAuthHandoffGate from "@/processes/wechat/WeChatOAuthHandoffGate.vue";
+import WeChatOAuthLoginModal from "@/processes/wechat/WeChatOAuthLoginModal.vue";
 import MatchedPRHandoffOverlay from "@/processes/route-handoff/MatchedPRHandoffOverlay.vue";
 import { useRouteShareOrchestrator } from "@/domains/share/use-cases/useRouteShareOrchestrator";
 

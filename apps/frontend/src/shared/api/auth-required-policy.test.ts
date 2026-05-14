@@ -13,6 +13,10 @@ const installWindow = (replace: (url: string) => void): void => {
       location: {
         replace,
       },
+      setTimeout: (callback: () => void) => {
+        callback();
+        return 0;
+      },
     },
   });
 };

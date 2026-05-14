@@ -42,6 +42,7 @@ import {
   hasPendingWeChatOAuthHandoff,
   WECHAT_OAUTH_HANDOFF_QUERY_PARAM,
 } from "@/processes/wechat/oauth-handoff";
+import { clearWeChatOAuthLoginPending } from "@/processes/wechat/oauth-login-pending";
 
 const HANDOFF_SLOW_THRESHOLD_MS = 8_000;
 
@@ -146,6 +147,7 @@ const runHandoff = async (): Promise<void> => {
       return;
     }
 
+    clearWeChatOAuthLoginPending();
     state.value = "failed";
   } catch (error) {
     if (attemptId !== currentAttemptId) return;
@@ -157,6 +159,7 @@ const runHandoff = async (): Promise<void> => {
       return;
     }
 
+    clearWeChatOAuthLoginPending();
     state.value = "failed";
   }
 };
@@ -168,6 +171,7 @@ const retry = (): void => {
 const continueAsGuest = async (): Promise<void> => {
   attemptId += 1;
   stopPendingRequest();
+  clearWeChatOAuthLoginPending();
   await clearHandoffRoute();
   completeHandoff();
 };

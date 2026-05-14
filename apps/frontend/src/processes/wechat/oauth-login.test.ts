@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
+import { isWeChatOAuthLoginPending } from "./oauth-login-pending";
 import {
   requestWeChatOAuthLogin,
   resetWeChatOAuthLoginRedirectStateForTest,
@@ -11,6 +12,10 @@ const installWindow = (replace: (url: string) => void): void => {
     value: {
       location: {
         replace,
+      },
+      setTimeout: (callback: () => void) => {
+        callback();
+        return 0;
       },
     },
   });
@@ -27,6 +32,7 @@ test("requestWeChatOAuthLogin single-flights redirect attempts", () => {
 
   try {
     assert.equal(requestWeChatOAuthLogin("https://partner-up.test/pr/1"), true);
+    assert.equal(isWeChatOAuthLoginPending(), true);
     assert.equal(requestWeChatOAuthLogin("https://partner-up.test/pr/2"), true);
 
     assert.deepEqual(redirects, [
@@ -34,6 +40,7 @@ test("requestWeChatOAuthLogin single-flights redirect attempts", () => {
     ]);
   } finally {
     resetWeChatOAuthLoginRedirectStateForTest();
+    assert.equal(isWeChatOAuthLoginPending(), false);
     uninstallWindow();
   }
 });
