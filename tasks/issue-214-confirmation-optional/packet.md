@@ -27,3 +27,6 @@ Success means confirmation-enabled PRs keep existing behavior, while confirmatio
 - Add focused backend unit coverage for disabled confirmation behavior.
 - Run backend unit tests for touched PR services.
 - Run frontend type/build-oriented verification for touched Vue changes where practical.
+- Reality follow-up: PR Page contextual CTA must use the PR confirmation
+  configuration for visibility. Closing confirmation hides the confirm CTA for
+  `JOINED` viewers, while check-in remains available once the event has started.

@@ -395,7 +395,10 @@ const dockActions = computed<DockActionItem[]>(() => {
     ];
   }
 
-  if (viewer.slotState === "JOINED") {
+  if (
+    viewer.slotState === "JOINED" &&
+    props.pr.partnerSection.confirmation.enabled
+  ) {
     return [
       {
         key: "CONFIRM",
@@ -409,7 +412,12 @@ const dockActions = computed<DockActionItem[]>(() => {
     ];
   }
 
-  if (viewer.slotState === "CONFIRMED") {
+  if (
+    viewer.slotState === "CONFIRMED" ||
+    (viewer.slotState === "JOINED" &&
+      !props.pr.partnerSection.confirmation.enabled &&
+      viewer.canCheckIn)
+  ) {
     const checkInTip = viewer.canCheckIn ? null : resolveCheckInTip();
     return [
       {
