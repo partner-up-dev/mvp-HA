@@ -21,6 +21,7 @@ function readDatabaseUrlFromEnv(): string {
 export async function runMigrations(connectionString: string): Promise<void> {
   await lintMigrationFiles();
 
+  const shouldLog = process.env.DB_MIGRATE_LOG_LEVEL !== "silent";
   const sql = createSqlClient(connectionString);
   try {
     await ensureMigrationLedger(sql);
@@ -34,18 +35,24 @@ export async function runMigrations(connectionString: string): Promise<void> {
       const result = await applyMigrationFile(sql, migration);
       if (result.skipped) {
         skippedCount += 1;
-        console.info(`[db:migrate] skip ${migration.relativePath}`);
+        if (shouldLog) {
+          console.info(`[db:migrate] skip ${migration.relativePath}`);
+        }
       } else {
         appliedCount += 1;
-        console.info(
-          `[db:migrate] apply ${migration.relativePath} (${result.durationMs}ms)`,
-        );
+        if (shouldLog) {
+          console.info(
+            `[db:migrate] apply ${migration.relativePath} (${result.durationMs}ms)`,
+          );
+        }
       }
     }
 
-    console.info(
-      `[db:migrate] complete. applied=${appliedCount} skipped=${skippedCount}`,
-    );
+    if (shouldLog) {
+      console.info(
+        `[db:migrate] complete. applied=${appliedCount} skipped=${skippedCount}`,
+      );
+    }
   } finally {
     try {
       await releaseMigrationLock(sql);

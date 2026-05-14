@@ -79,7 +79,9 @@ if (process.env.BACKEND_SCENARIO_DISABLE_BOOTSTRAP !== "true") {
 }
 
 // Middleware
-app.use("*", logger());
+if (process.env.BACKEND_SCENARIO_DISABLE_REQUEST_LOGGER !== "true") {
+  app.use("*", logger());
+}
 app.use(
   "*",
   cors({

@@ -22,7 +22,7 @@ Fixed local ports remain available for compatibility workflows through package
 env files and helper scripts. They are local fallback inputs, while portless is
 the default developer workflow.
 
-System scenario tests are a separate local runtime. The root scenario runner
+System scenario tests are a separate local runtime. The `system-scenario` Vitest project
 allocates isolated frontend and backend HTTP ports for the test process,
 independent of the developer portless server.
 

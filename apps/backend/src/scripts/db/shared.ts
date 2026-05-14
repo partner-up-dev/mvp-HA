@@ -51,10 +51,12 @@ const migrationFilePattern = /^(\d+)_([A-Za-z0-9_]+)\.sql$/;
 const noTransactionHeader = "-- migration: no-transaction";
 
 export function createSqlClient(connectionString: string): Sql {
+  const quietNotices = process.env.DB_MIGRATE_LOG_LEVEL === "silent";
   return postgres(connectionString, {
     max: 1,
     idle_timeout: 5,
     connect_timeout: 30,
+    onnotice: quietNotices ? () => undefined : undefined,
   });
 }
 

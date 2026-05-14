@@ -1,6 +1,6 @@
 # Backend Scenario Tests
 
-This folder extends the existing backend `node:test` setup with scenario integration tests.
+This folder contains backend scenario integration tests scheduled by the root Vitest `backend-scenario` project.
 
 ## Layout
 
@@ -30,27 +30,29 @@ docker compose up -d postgres
 Canonical backend-suite command, from the repository root:
 
 ```bash
-pnpm test:scenario backend
+pnpm test:scenario:backend
 ```
 
-The workspace script loads `apps/frontend/.env` and `apps/backend/.env`, then invokes the requested scenario suite. Shell and CI environment variables have the highest priority; for backend scenario runs, `apps/backend/.env` has priority over `apps/frontend/.env` when both files define the same key.
+The Vitest project setup loads `apps/frontend/.env` and `apps/backend/.env`, then creates the requested scenario runtime. Shell and CI environment variables have the highest priority; for backend scenario runs, `apps/backend/.env` has priority over `apps/frontend/.env` when both files define the same key.
 
 Run all scenario suites:
 
 ```bash
-pnpm test:scenario
+pnpm test:scenario:all
 ```
 
-If your local Docker compose uses a custom `POSTGRES_PORT`, put the matching `SCENARIO_DATABASE_ADMIN_URL` or `TEST_DATABASE_URL` in `apps/backend/.env`, or pass it in the shell environment before `pnpm test:scenario backend`.
+If your local Docker compose uses a custom `POSTGRES_PORT`, put the matching `SCENARIO_DATABASE_ADMIN_URL` or `TEST_DATABASE_URL` in `apps/backend/.env`, or pass it in the shell environment before `pnpm test:scenario:backend`.
 
-Internal package script: `@partner-up-dev/backend` exposes `test:scenario` as the target invoked by the root runner. It reads only environment variables already present in the process, so local verification should use `pnpm test:scenario backend` from the repository root to get workspace `.env` loading.
+Internal package script: `@partner-up-dev/backend` exposes `test:scenario` as a package-local alias to the root Vitest `backend-scenario` project.
 
-The backend runner creates a unique temporary database from `SCENARIO_DATABASE_ADMIN_URL`, maps it to `DATABASE_URL`, runs migrations, imports `*.scenario.test.ts`, closes backend DB clients after the test run, then drops the temporary database.
+The backend scenario project creates a unique temporary database from `SCENARIO_DATABASE_ADMIN_URL`, maps it to `DATABASE_URL`, runs migrations, imports `*.scenario.test.ts`, closes backend DB clients after the test run, then drops the temporary database.
+
+Full scenario records are written under `apps/backend/.result/scenario-records/` on failure. Terminal output stays compact and includes the artifact path.
 
 Persistent debug database mode:
 
 ```bash
-TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partnerup_scenario pnpm test:scenario backend
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partnerup_scenario pnpm test:scenario:backend
 ```
 
 `TEST_DATABASE_URL` and `SCENARIO_DATABASE_ADMIN_URL` are alternatives. `TEST_DATABASE_URL` has priority when both are set. In that mode the runner resets the schema inside the named database and leaves the database itself in place.

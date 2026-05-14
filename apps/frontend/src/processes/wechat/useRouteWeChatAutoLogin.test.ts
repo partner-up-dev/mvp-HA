@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { runRouteWeChatAutoLoginAttempt } from "./useRouteWeChatAutoLogin";
 
 test("route auto-login waits for auth bootstrap before redirecting", async () => {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import type { PartnerRequest } from "../../entities/partner-request";
 
 process.env.DATABASE_URL ??= "postgresql://localhost:5432/partnerup_test";

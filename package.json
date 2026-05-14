@@ -17,9 +17,13 @@
     "build": "pnpm --filter @partner-up-dev/backend build && pnpm --filter @partner-up-dev/frontend build",
     "lint": "pnpm lint:backend",
     "lint:backend": "pnpm --filter @partner-up-dev/backend lint",
-    "test:backend:unit": "pnpm --filter @partner-up-dev/backend test:unit",
-    "test:scenario": "node scripts/run-scenario-tests.mjs",
-    "test:scenario:system": "tsx tests/scenario/run-scenario-tests.mts",
+    "test": "pnpm test:unit && pnpm test:scenario:all",
+    "test:unit": "vitest run --project backend-unit --project frontend-unit",
+    "test:unit:backend": "vitest run --project backend-unit",
+    "test:unit:frontend": "vitest run --project frontend-unit",
+    "test:scenario:backend": "vitest run --project backend-scenario",
+    "test:scenario:system": "vitest run --project system-scenario",
+    "test:scenario:all": "pnpm test:scenario:backend && pnpm test:scenario:system",
     "db:generate": "pnpm --filter @partner-up-dev/backend db:generate",
     "db:lint": "pnpm --filter @partner-up-dev/backend db:lint",
     "db:migrate": "pnpm --filter @partner-up-dev/backend db:migrate",
@@ -33,6 +37,7 @@
     "playwright": "^1.59.1",
     "tsx": "^4.21.0",
     "typescript": "~6.0.3",
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "vitest": "^4.1.6"
   }
 }

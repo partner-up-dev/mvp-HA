@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { ProblemDetailsError } from "../../../lib/problem-details";
 import {
   PARTNER_BOUNDS_ERROR_MESSAGES,

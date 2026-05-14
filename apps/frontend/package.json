@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "test:unit": "tsx --test \"src/**/*.test.ts\"",
+    "test:unit": "pnpm --dir ../.. exec vitest run --project frontend-unit",
     "lint:tokens": "node ./scripts/check-token-governance.mjs",
     "lint:tokens:strict": "node ./scripts/check-token-governance.mjs --strict"
   },

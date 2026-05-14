@@ -95,7 +95,7 @@ Pause and ask for human confirmation when:
 - Use `pnpm dev:portless:frontend` or `pnpm dev:portless:backend` when only one side is needed. Fixed-port local helpers and `4001` / `4002` env examples are compatibility paths for explicit fixed-port work.
 - Keep tests and guardrails aligned with behavior changes; do not ship by build-only confidence.
 - Use `pnpm lint:backend` to run backend source guardrails, including the Problem Details lint that prevents production API code from throwing raw Hono HTTP exceptions.
-- Run scenario suites from the repository root through the workspace runner: `pnpm test:scenario backend`, `pnpm test:scenario system`, or `pnpm test:scenario`. That runner loads `apps/frontend/.env` and `apps/backend/.env` before dispatching to package-level scenario scripts.
+- Run test suites from the repository root through Vitest projects: `pnpm test:unit:backend`, `pnpm test:unit:frontend`, `pnpm test:scenario:backend`, `pnpm test:scenario:system`, or `pnpm test:scenario:all`. Scenario Vitest project setup loads `apps/frontend/.env` and `apps/backend/.env`, then owns temporary database and server lifecycle.
 - Cross-unit user journey scenario tests belong under `tests/scenario/` and should run through the real frontend, real backend HTTP, and an isolated database when the behavior crosses both app units.
 - Frontend route workflow changes that may be covered by scenario tests should expose stable `data-testid` semantic nodes for primary actions, modal actions, and result-state affordances.
 - Prefer the smallest reviewable mutation that moves the repo toward the declared owner model.

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import type { PoiAvailabilityRule } from "../../../entities/poi";
 import { isTimeWindowAvailableByPoiRules } from "./poi-availability.service";
 

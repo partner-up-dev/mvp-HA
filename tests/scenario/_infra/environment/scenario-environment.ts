@@ -1,3 +1,5 @@
+import { inject } from "vitest";
+
 export type SystemScenarioEnvironment = {
   backendBaseUrl: string;
   frontendBaseUrl: string;
@@ -13,7 +15,13 @@ export function installScenarioEnvironment(
 
 export function getScenarioEnvironment(): SystemScenarioEnvironment {
   if (!currentEnvironment) {
-    throw new Error("System scenario environment has not been installed");
+    return inject("systemScenarioEnvironment");
   }
   return currentEnvironment;
+}
+
+declare module "vitest" {
+  export interface ProvidedContext {
+    systemScenarioEnvironment: SystemScenarioEnvironment;
+  }
 }

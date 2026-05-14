@@ -18,7 +18,7 @@ Contract implication:
 - During portless development, Vite reads `PORTLESS_URL`, `HOST`, and `PORT` from the portless runtime, publishes `import.meta.env.VITE_API_URL` as the frontend origin, and keeps browser API calls same-origin through the frontend `/api` proxy.
 - The frontend `/api` proxy targets the backend portless app by sending `Host: api.partner-up.localhost`, which keeps local browser flows aligned with the typed backend HTTP contract while application code stays free of fixed numeric ports.
 - Fixed-port frontend env values (`VITE_PORT`, `VITE_API_URL`, `VITE_BACKEND_HOST`, `VITE_BACKEND_PORT`, `VITE_BACKEND_PROXY_TARGET`) remain a compatibility contract for explicit fixed-port local work.
-- Root-owned system scenario tests own their own frontend and backend ports through the scenario runner. That isolated test runtime is separate from the developer portless workflow.
+- Root-owned system scenario tests own their own frontend and backend ports through the `system-scenario` Vitest project. That isolated test runtime is separate from the developer portless workflow.
 
 ## 1.2 Image Upload Contract
 
@@ -263,6 +263,7 @@ Important coordination note:
 
 - Root-owned system scenario tests live under `tests/scenario/`.
 - System scenarios verify user journeys through a real browser page, real frontend dev server, real backend HTTP server, and isolated Postgres state.
+- Test runner, reporter, artifact, and scenario lifecycle ownership rules are governed by `test-platform.md`.
 - Scenario `Given` setup may reuse backend scenario builders when they express the target business state without browser setup noise.
 - Scenario `When` and minimal user-visible `Then` assertions should operate through the browser page.
 - Backend probes are reserved for persistence or hidden side-effect proof that is not observable through the frontend workflow result.
