@@ -8,6 +8,12 @@ import {
   givenAnchorEvent,
   givenAnchorEventVisiblePR,
 } from "../anchor-event/_kit/builders/anchor-events";
+import {
+  DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
+  DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
+  DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
+} from "../../src/domains/pr/services";
+import { AnchorEventRepository } from "../../src/repositories/AnchorEventRepository";
 import { exitPR } from "./_kit/actions/exit";
 import { joinPartnerRequest } from "./_kit/actions/join";
 import { waitlistPR } from "./_kit/actions/waitlist";
@@ -29,6 +35,7 @@ type PRActionDetail = {
 
 const FREQUENCY_LIMIT_CODE =
   "ANCHOR_EVENT_PARTICIPATION_FREQUENCY_LIMITED";
+const anchorEventRepo = new AnchorEventRepository();
 
 const buildTimeWindows = (): Array<[string, string]> =>
   Array.from({ length: 5 }, (_, index) => {
@@ -201,5 +208,78 @@ scenario(
 
     const joined = await joinPartnerRequest({ pr: secondPr, user });
     assert.equal(joined.myPartnerId !== null, true);
+  },
+);
+
+scenario(
+  "anchor_event_frequency_limit_counts_prior_type_prs_after_policy_is_enabled",
+  async (ctx) => {
+    const creator = await givenUser("frequency-retrofit-creator");
+    const user = await givenUser("frequency-retrofit-candidate");
+    const [firstWindow, secondWindow] = buildTimeWindows();
+    if (!firstWindow || !secondWindow) {
+      throw new Error("Expected retrofit time windows");
+    }
+    const event = await givenAnchorEvent({
+      label: "frequency-retrofit",
+      timeWindows: [firstWindow, secondWindow],
+    });
+    const firstPr = await givenAnchorEventVisiblePR({
+      creator,
+      event,
+      title: "frequency retrofit PR 1",
+      timeWindow: firstWindow,
+      minPartners: 1,
+      maxPartners: null,
+      expectedStatus: "READY",
+    });
+    const secondPr = await givenAnchorEventVisiblePR({
+      creator,
+      event,
+      title: "frequency retrofit PR 2",
+      timeWindow: secondWindow,
+      minPartners: 1,
+      maxPartners: null,
+      expectedStatus: "READY",
+    });
+
+    ctx.record("eventId", event.id);
+    ctx.record("firstPrId", firstPr.id);
+    ctx.record("secondPrId", secondPr.id);
+    ctx.record("userId", user.user.id);
+
+    await joinPartnerRequest({ pr: firstPr, user });
+
+    const updated = await anchorEventRepo.update(event.id, {
+      timePoolConfig: {
+        durationMinutes: 60,
+        earliestLeadMinutes: null,
+        startRules: [
+          {
+            id: "retrofit-current-window",
+            kind: "ABSOLUTE",
+            startAt: secondWindow[0],
+            description: null,
+          },
+        ],
+      },
+      defaultConfirmationStartOffsetMinutes:
+        DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
+      defaultConfirmationEndOffsetMinutes:
+        DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
+      defaultJoinLockOffsetMinutes: DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
+      participationFrequencyLimit: {
+        intervalPrCount: 2,
+      },
+    });
+    assert.notEqual(updated, null);
+
+    await expectFrequencyLimited(
+      await requestJson(`/api/pr/${secondPr.id}/join`, {
+        method: "POST",
+        token: user.token,
+        body: {},
+      }),
+    );
   },
 );

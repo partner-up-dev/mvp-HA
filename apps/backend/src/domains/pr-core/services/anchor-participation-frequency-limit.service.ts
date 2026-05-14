@@ -9,7 +9,6 @@ import { ProblemDetailsError } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
-import { eventOwnsTimeWindow } from "../../anchor-event/services/time-window-pool";
 import { getTimeWindowClose, getTimeWindowStart } from "./time-window.service";
 
 const anchorEventRepo = new AnchorEventRepository();
@@ -60,12 +59,9 @@ const resolveEventPRSequence = async (
 ): Promise<PartnerRequest[]> => {
   const roots = await prRepo.findByType(event.type);
   return roots
-    .filter((root) => {
-      if (!eventOwnsTimeWindow(event, root.time)) {
-        return false;
-      }
-      return root.visibilityStatus === "VISIBLE" || root.id === targetPrId;
-    })
+    .filter(
+      (root) => root.visibilityStatus === "VISIBLE" || root.id === targetPrId,
+    )
     .sort(comparePRByEventTimeWindow);
 };
 
@@ -80,10 +76,6 @@ export const evaluateAnchorEventParticipationFrequencyLimit = async (input: {
 
   const limit = event.participationFrequencyLimit;
   if (!isLimitEnabled(limit) || input.userId === null) {
-    return { allowed: true, event, limit };
-  }
-
-  if (!eventOwnsTimeWindow(event, input.request.time)) {
     return { allowed: true, event, limit };
   }
 
