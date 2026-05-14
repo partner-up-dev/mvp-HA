@@ -123,9 +123,9 @@ scenario("authenticated_user_publish_claims_creatorless_draft", async (ctx) => {
   assert.equal(stored?.status, "OPEN");
 });
 
-scenario("anonymous_user_can_edit_creatorless_draft_content", async (ctx) => {
+scenario("authenticated_user_can_edit_creatorless_draft_content", async (ctx) => {
   const draftAuthor = await givenAnonymousUser("draft-content-author");
-  const editor = await givenAnonymousUser("draft-content-editor");
+  const editor = await givenUser("draft-content-editor");
   const pr = await givenDraftPR({
     creator: draftAuthor,
     title: "Scenario draft content initial",
@@ -167,7 +167,7 @@ scenario(
   "user_content_edit_rejects_type_field",
   async (ctx) => {
     const draftAuthor = await givenAnonymousUser("type-field-author");
-    const editor = await givenAnonymousUser("type-field-editor");
+    const editor = await givenUser("type-field-editor");
     const pr = await givenDraftPR({
       creator: draftAuthor,
       title: "Scenario type field initial",

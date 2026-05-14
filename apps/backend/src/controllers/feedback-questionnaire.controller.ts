@@ -4,7 +4,7 @@ import { z } from "zod";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import { feedbackQuestionnaireAnswersSchema } from "../entities/feedback-questionnaire";
 import { submitFeedbackQuestionnaire } from "../domains/feedback-questionnaire";
-import { requireSessionUserId } from "./pr-controller.shared";
+import { requireAuthenticatedUserId } from "./pr-controller.shared";
 
 const app = new Hono<AuthEnv>();
 
@@ -25,7 +25,7 @@ export const feedbackQuestionnaireRoute = app
     async (c) => {
       const { instanceId } = c.req.valid("param");
       const { answers } = c.req.valid("json");
-      const respondentUserId = requireSessionUserId(c);
+      const respondentUserId = requireAuthenticatedUserId(c);
 
       const result = await submitFeedbackQuestionnaire({
         instanceId,

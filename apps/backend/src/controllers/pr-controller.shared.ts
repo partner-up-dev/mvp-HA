@@ -19,6 +19,7 @@ import {
 } from "../lib/wechat-ability-mocking";
 import {
   AUTHENTICATED_REQUIRED_CODE,
+  type CreatorIdentityInput,
   throwAuthenticatedRequired,
 } from "../domains/pr-core/services/creator-identity.service";
 
@@ -242,10 +243,10 @@ export const requireSessionUserId = (c: Context<AuthEnv>): UserId => {
 
 export const requireAuthenticatedUserId = (c: Context<AuthEnv>): UserId => {
   const auth = c.get("auth");
-  if (!auth.roles.includes("authenticated")) {
-    return throwHttpProblem({ status: 401, detail: "Authentication required" });
+  if (!auth.roles.includes("authenticated") || !auth.userId) {
+    return throwAuthenticatedRequired();
   }
-  return requireSessionUserId(c);
+  return auth.userId as UserId;
 };
 
 export const buildCreatorIdentity = async (c: Context<AuthEnv>) => {
@@ -256,6 +257,19 @@ export const buildCreatorIdentity = async (c: Context<AuthEnv>) => {
   return {
     authenticatedUserId,
     anonymousUserId: authenticatedUserId === null ? sessionUserId : null,
+    oauthOpenId: openId,
+  };
+};
+
+export const requireAuthenticatedCreatorIdentity = async (
+  c: Context<AuthEnv>,
+): Promise<CreatorIdentityInput> => {
+  const authenticatedUserId = requireAuthenticatedUserId(c);
+  const openId = await tryReadAuthenticatedOpenId(c);
+
+  return {
+    authenticatedUserId,
+    anonymousUserId: null,
     oauthOpenId: openId,
   };
 };
