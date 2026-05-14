@@ -11,7 +11,7 @@
       >
         <option value="">{{ t("adminPois.poiPlaceholder") }}</option>
         <option v-for="poi in pois" :key="poi.id" :value="poi.id">
-          {{ poi.id }} · {{ statusLabel(poi.status) }}
+          #{{ poi.id }} · {{ poi.name }} · {{ statusLabel(poi.status) }}
         </option>
       </select>
     </label>

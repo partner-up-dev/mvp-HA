@@ -38,7 +38,7 @@
 - In Form Mode, derived preference categories come from the substring before the first `:` in the tag label; the same derived category is mutually exclusive while uncategorized labels may coexist.
 - Form Mode may route users to submit a new POI location application. That application is POI-owned and not tied to one Anchor Event.
 - User-submitted POIs start as `PENDING`; public location reads and Form Mode location gallery resolution use only `PUBLISHED` POIs.
-- A published POI does not appear in an Anchor Event Form Mode unless that Anchor Event's location pool references the POI id.
+- A published POI does not appear in an Anchor Event Form Mode unless that Anchor Event's location pool references the POI name.
 - The Anchor Event page shows discoverable PRs under the same activity type and time-pool rules.
 - Event-page discovery reads root PR facts by activity type, resolved time window, and event-owned location rules rather than by durable PR-side event linkage.
 

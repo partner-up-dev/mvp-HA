@@ -18,7 +18,7 @@ export const useAdminPoiManagementWorkspace = (
   const poiActions = useAdminPoiActions();
 
   const selectedPoiIdRaw = ref("");
-  const newPoiId = ref("");
+  const newPoiName = ref("");
   const rejectReasonDraft = ref("");
   const poiMutationAction = ref<
     "create" | "save-poi" | "publish-poi" | "reject-poi" | null
@@ -26,12 +26,12 @@ export const useAdminPoiManagementWorkspace = (
 
   const pois = computed<PoiRecord[]>(() => poisQuery.data.value ?? []);
   const poiIdSet = computed<Set<string>>(
-    () => new Set(pois.value.map((poi) => poi.id)),
+    () => new Set(pois.value.map((poi) => String(poi.id))),
   );
-  const selectedPoiId = computed<string | null>(() => {
+  const selectedPoiId = computed<number | null>(() => {
     const rawId = selectedPoiIdRaw.value.trim();
     if (!rawId) return null;
-    return poiIdSet.value.has(rawId) ? rawId : null;
+    return poiIdSet.value.has(rawId) ? Number(rawId) : null;
   });
   const selectedPoi = computed<PoiRecord | null>(() => {
     const poiId = selectedPoiId.value;
@@ -46,13 +46,13 @@ export const useAdminPoiManagementWorkspace = (
   });
 
   const canCreatePoi = computed(() => {
-    const poiId = newPoiId.value.trim();
-    if (!poiId) return false;
-    return !poiIdSet.value.has(poiId);
+    const poiName = newPoiName.value.trim();
+    if (!poiName) return false;
+    return !pois.value.some((poi) => poi.name === poiName);
   });
   const isCreatingPoi = computed(
     () =>
-      poiActions.isPending.upsert.value && poiMutationAction.value === "create",
+      poiActions.isPending.create.value && poiMutationAction.value === "create",
   );
   const isSavingPoi = computed(
     () =>
@@ -98,6 +98,7 @@ export const useAdminPoiManagementWorkspace = (
     () =>
       poisQuery.error.value ??
       poiActions.errors.upsert.value ??
+      poiActions.errors.create.value ??
       poiActions.errors.publish.value ??
       poiActions.errors.reject.value ??
       null,
@@ -110,8 +111,8 @@ export const useAdminPoiManagementWorkspace = (
         selectedPoiIdRaw.value = "";
         return;
       }
-      if (!nextPois.some((poi) => poi.id === selectedPoiIdRaw.value)) {
-        selectedPoiIdRaw.value = nextPois[0].id;
+      if (!nextPois.some((poi) => String(poi.id) === selectedPoiIdRaw.value)) {
+        selectedPoiIdRaw.value = String(nextPois[0].id);
       }
     },
     { immediate: true },
@@ -126,20 +127,24 @@ export const useAdminPoiManagementWorkspace = (
   );
 
   const handleCreatePoi = async () => {
-    const poiId = newPoiId.value.trim();
-    if (!poiId || poiIdSet.value.has(poiId)) return;
+    const poiName = newPoiName.value.trim();
+    if (!poiName || pois.value.some((poi) => poi.name === poiName)) return;
 
     poiMutationAction.value = "create";
     try {
-      const result = await poiActions.upsertPoi({
-        poiId,
+      const result = await poiActions.createPoi({
+        name: poiName,
+        fullAddress: null,
         gallery: [],
+        gcj02: null,
+        wgs84: null,
+        bd09: null,
         perTimeWindowCap: null,
         availabilityRules: [],
         meetingPoint: null,
       });
-      selectedPoiIdRaw.value = result.id;
-      newPoiId.value = "";
+      selectedPoiIdRaw.value = String(result.id);
+      newPoiName.value = "";
     } finally {
       poiMutationAction.value = null;
     }
@@ -147,12 +152,14 @@ export const useAdminPoiManagementWorkspace = (
 
   const handleSavePoi = async () => {
     const poiId = selectedPoiId.value;
-    if (!poiId) return;
+    const poi = selectedPoi.value;
+    if (!poiId || !poi) return;
 
     poiMutationAction.value = "save-poi";
     try {
       const result = await poiActions.upsertPoi({
         poiId,
+        name: poi.name,
         ...poiEditor.buildSelectedPoiInput(),
       });
       poiEditor.applySavedPoi(poiId, result);
@@ -191,7 +198,7 @@ export const useAdminPoiManagementWorkspace = (
   return {
     poisQuery,
     selectedPoiIdRaw,
-    newPoiId,
+    newPoiName,
     rejectReasonDraft,
     pois,
     selectedPoiId,
@@ -199,6 +206,7 @@ export const useAdminPoiManagementWorkspace = (
     manualGalleryUrl: poiEditor.manualGalleryUrl,
     isUploadingGalleryImage: poiEditor.isUploadingGalleryImage,
     selectedPoiGallery: poiEditor.selectedPoiGallery,
+    selectedPoiFullAddress: poiEditor.selectedPoiFullAddress,
     selectedPoiCapText: poiEditor.selectedPoiCapText,
     selectedPoiMeetingPointDescription:
       poiEditor.selectedPoiMeetingPointDescription,

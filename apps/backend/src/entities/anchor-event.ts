@@ -39,7 +39,7 @@ export type AnchorEventPrCreationPolicy = z.infer<
   typeof anchorEventPrCreationPolicySchema
 >;
 
-/** A location entry: POI.id or a free-form location label. */
+/** A location entry: POI.name or a free-form location label. */
 export const locationEntrySchema = z.string().trim().min(1);
 export type LocationEntry = z.infer<typeof locationEntrySchema>;
 

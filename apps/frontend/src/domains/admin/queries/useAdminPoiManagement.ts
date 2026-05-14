@@ -15,6 +15,9 @@ const readErrorMessage = async (
 export type AdminPoisByIdsResponse = InferResponseType<
   (typeof adminClient.api.admin.pois)["by-ids"]["$get"]
 >;
+export type AdminPoisByNamesResponse = InferResponseType<
+  (typeof adminClient.api.admin.pois)["by-names"]["$get"]
+>;
 
 export type AdminPoisResponse = InferResponseType<
   (typeof adminClient.api.admin.pois)["$get"]
@@ -22,6 +25,9 @@ export type AdminPoisResponse = InferResponseType<
 
 export type UpsertAdminPoiResponse = InferResponseType<
   (typeof adminClient.api.admin.pois)[":poiId"]["$put"]
+>;
+export type CreateAdminPoiResponse = InferResponseType<
+  (typeof adminClient.api.admin.pois)["$post"]
 >;
 export type ReviewAdminPoiResponse = InferResponseType<
   (typeof adminClient.api.admin.pois)[":poiId"]["publish"]["$post"]
@@ -83,30 +89,104 @@ export const useAdminPoisByIds = (
   });
 };
 
+export const useAdminPoisByNames = (
+  namesCsv: MaybeRef<string>,
+  enabled: MaybeRef<boolean> = true,
+) => {
+  const normalizedNamesCsv = computed(() => normalizeIdsCsv(unref(namesCsv)));
+  const queryKey = computed(() =>
+    queryKeys.admin.poisByNames(normalizedNamesCsv.value),
+  );
+
+  return useQuery<AdminPoisByNamesResponse>({
+    queryKey,
+    queryFn: async () => {
+      const names = normalizedNamesCsv.value;
+      if (!names) {
+        return [];
+      }
+
+      const res = await adminClient.api.admin.pois["by-names"].$get({
+        query: { names },
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "获取 POIs 失败"));
+      }
+
+      return await res.json();
+    },
+    enabled: computed(() => unref(enabled) && normalizedNamesCsv.value.length > 0),
+  });
+};
+
+type PoiCoordinateInput = [number, number] | null;
+
+type AdminPoiMutationInput = {
+  name: string;
+  fullAddress: string | null;
+  gallery: string[];
+  gcj02: PoiCoordinateInput;
+  wgs84: PoiCoordinateInput;
+  bd09: PoiCoordinateInput;
+  perTimeWindowCap: number | null;
+  availabilityRules: AdminPoiAvailabilityRulesInput;
+  meetingPoint?: MeetingPointInput | null;
+};
+
+export const useCreateAdminPoi = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<CreateAdminPoiResponse, Error, AdminPoiMutationInput>({
+    mutationFn: async (input) => {
+      const res = await adminClient.api.admin.pois.$post({
+        json: input,
+      });
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, "创建 POI 失败"));
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.pois(),
+      });
+    },
+  });
+};
+
 export const useUpsertAdminPoi = () => {
   const queryClient = useQueryClient();
 
   return useMutation<
     UpsertAdminPoiResponse,
     Error,
-    {
-      poiId: string;
-      gallery: string[];
-      perTimeWindowCap: number | null;
-      availabilityRules: AdminPoiAvailabilityRulesInput;
-      meetingPoint?: MeetingPointInput | null;
-    }
+    AdminPoiMutationInput & { poiId: number }
   >({
     mutationFn: async ({
       poiId,
+      name,
+      fullAddress,
       gallery,
+      gcj02,
+      wgs84,
+      bd09,
       perTimeWindowCap,
       availabilityRules,
       meetingPoint,
     }) => {
       const res = await adminClient.api.admin.pois[":poiId"].$put({
-        param: { poiId },
-        json: { gallery, perTimeWindowCap, availabilityRules, meetingPoint },
+        param: { poiId: String(poiId) },
+        json: {
+          name,
+          fullAddress,
+          gallery,
+          gcj02,
+          wgs84,
+          bd09,
+          perTimeWindowCap,
+          availabilityRules,
+          meetingPoint,
+        },
       });
       if (!res.ok) {
         throw new Error(await readErrorMessage(res, "保存 POI 失败"));
@@ -127,16 +207,16 @@ const buildPoiReviewMutation = (action: "publish" | "reject") => {
   return useMutation<
     ReviewAdminPoiResponse,
     Error,
-    { poiId: string; rejectReason?: string | null }
+    { poiId: number; rejectReason?: string | null }
   >({
     mutationFn: async ({ poiId, rejectReason }) => {
       const res =
         action === "publish"
           ? await adminClient.api.admin.pois[":poiId"].publish.$post({
-              param: { poiId },
+              param: { poiId: String(poiId) },
             })
           : await adminClient.api.admin.pois[":poiId"].reject.$post({
-              param: { poiId },
+              param: { poiId: String(poiId) },
               json: { rejectReason: rejectReason ?? null },
             });
       if (!res.ok) {

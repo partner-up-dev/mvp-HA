@@ -15,7 +15,7 @@ test("resolveEffectiveMeetingPoint follows PR, event location, event, then POI f
 
   const originalFindOneByType =
     AnchorEventRepositoryClass.prototype.findOneByType;
-  const originalFindByIds = PoiRepositoryClass.prototype.findByIds;
+  const originalFindByName = PoiRepositoryClass.prototype.findByName;
 
   AnchorEventRepositoryClass.prototype.findOneByType = async () =>
     ({
@@ -32,15 +32,13 @@ test("resolveEffectiveMeetingPoint follows PR, event location, event, then POI f
     }) as unknown as Awaited<
       ReturnType<AnchorEventRepository["findOneByType"]>
     >;
-  PoiRepositoryClass.prototype.findByIds = async () =>
-    [
-      {
-        meetingPoint: {
-          description: "POI 兜底入口",
-          imageUrl: null,
-        },
+  PoiRepositoryClass.prototype.findByName = async () =>
+    ({
+      meetingPoint: {
+        description: "POI 兜底入口",
+        imageUrl: null,
       },
-    ] as unknown as Awaited<ReturnType<PoiRepository["findByIds"]>>;
+    }) as unknown as Awaited<ReturnType<PoiRepository["findByName"]>>;
 
   try {
     const { resolveEffectiveMeetingPoint } = await import(
@@ -105,6 +103,6 @@ test("resolveEffectiveMeetingPoint follows PR, event location, event, then POI f
     );
   } finally {
     AnchorEventRepositoryClass.prototype.findOneByType = originalFindOneByType;
-    PoiRepositoryClass.prototype.findByIds = originalFindByIds;
+    PoiRepositoryClass.prototype.findByName = originalFindByName;
   }
 });

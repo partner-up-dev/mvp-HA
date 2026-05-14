@@ -64,7 +64,7 @@
 
 1. The user enters the location-application page from the Form Mode location control.
 2. The user submits one location name and one image.
-3. The backend creates a `PENDING` `POI`; the location name is the POI id.
+3. The backend creates a `PENDING` `POI`; the submitted location name becomes the POI name used for PR location matching.
 4. The user can revisit submitted POI applications from the submit-success page and from the `/me` personal-center shortcut.
 5. Operators review submitted POIs in the POI management surface.
 6. Publishing changes the POI status to `PUBLISHED`; rejected applications remain hidden from public location reads and may carry a rejection reason.

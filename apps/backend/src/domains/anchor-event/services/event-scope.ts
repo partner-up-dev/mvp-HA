@@ -3,9 +3,7 @@ import {
   type AnchorEvent,
 } from "../../../entities/anchor-event";
 import { isPublishedPoi } from "../../../entities/poi";
-import { PoiRepository } from "../../../repositories/PoiRepository";
-
-const poiRepo = new PoiRepository();
+import { findPoisByNames } from "../../poi";
 
 export const isEventScopedLocation = (
   event: AnchorEvent,
@@ -23,13 +21,13 @@ export const resolvePublicEventLocationPool = async (
   event: AnchorEvent,
 ): Promise<string[]> => {
   const locationPool = normalizeLocationPool(event.locationPool);
-  const pois = await poiRepo.findByIds(locationPool, {
+  const pois = await findPoisByNames(locationPool, {
     includeUnpublished: true,
   });
-  const poiById = new Map(pois.map((poi) => [poi.id, poi]));
+  const poiByName = new Map(pois.map((poi) => [poi.name, poi]));
 
   return locationPool.filter((location) => {
-    const poi = poiById.get(location);
+    const poi = poiByName.get(location);
     return !poi || isPublishedPoi(poi);
   });
 };

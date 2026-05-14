@@ -11,6 +11,7 @@ import {
 import { isPublishedPoi } from "../../../entities/poi";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 import { canUserCreatePRForAnchorEvent } from "../../pr/services";
+import { findPoisByNames } from "../../poi";
 
 const repo = new AnchorEventRepository();
 const poiRepo = new PoiRepository();
@@ -25,7 +26,8 @@ export interface AnchorEventSummary {
   locationCount: number;
   locationPool: string[];
   pois: Array<{
-    id: string;
+    id: number;
+    name: string;
     gallery: string[];
   }>;
   fallbackGallery: string[];
@@ -55,7 +57,8 @@ function toSummary(
   e: AnchorEvent,
   locationPool: string[],
   pois: Array<{
-    id: string;
+    id: number;
+    name: string;
     gallery: string[];
   }>,
   fallbackGallery: string[],
@@ -89,15 +92,19 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   }
 
   const locationLabels = Array.from(uniqueLocationLabels);
-  const exactPois = await poiRepo.findByIds(locationLabels, {
+  const exactPois = await findPoisByNames(locationLabels, {
     includeUnpublished: true,
   });
-  const exactPoiById = new Map(exactPois.map((poi) => [poi.id, poi]));
+  const exactPoiByName = new Map(exactPois.map((poi) => [poi.name, poi]));
   const pois = exactPois.filter(isPublishedPoi);
-  const poiById = new Map<string, { id: string; gallery: string[] }>();
+  const poiByName = new Map<
+    string,
+    { id: number; name: string; gallery: string[] }
+  >();
   for (const poi of pois) {
-    poiById.set(poi.id, {
+    poiByName.set(poi.name, {
       id: poi.id,
+      name: poi.name,
       gallery: poi.gallery,
     });
   }
@@ -105,7 +112,7 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
   const needNormalizedFallback = pois.length < locationLabels.length;
   const poisByNormalizedId = new Map<
     string,
-    Array<{ id: string; gallery: string[] }>
+    Array<{ id: number; name: string; gallery: string[] }>
   >();
   if (needNormalizedFallback) {
     const allPois = await poiRepo.listAll();
@@ -113,33 +120,34 @@ export async function listAnchorEvents(): Promise<AnchorEventSummary[]> {
       if (!isPublishedPoi(poi)) {
         continue;
       }
-      const normalizedPoiId = normalizeLocationLookupKey(poi.id);
-      if (!normalizedPoiId) {
+      const normalizedPoiName = normalizeLocationLookupKey(poi.name);
+      if (!normalizedPoiName) {
         continue;
       }
 
-      const existingPois = poisByNormalizedId.get(normalizedPoiId) ?? [];
+      const existingPois = poisByNormalizedId.get(normalizedPoiName) ?? [];
       existingPois.push({
         id: poi.id,
+        name: poi.name,
         gallery: poi.gallery,
       });
-      poisByNormalizedId.set(normalizedPoiId, existingPois);
+      poisByNormalizedId.set(normalizedPoiName, existingPois);
     }
   }
 
   return events.map((event) => {
     const locationPool = getLocationLabels(event).filter((label) => {
-      const poi = exactPoiById.get(label);
+      const poi = exactPoiByName.get(label);
       return !poi || isPublishedPoi(poi);
     });
     const matchedPoisById = new Map<
-      string,
-      { id: string; gallery: string[] }
+      number,
+      { id: number; name: string; gallery: string[] }
     >();
     const fallbackGallerySet = new Set<string>();
 
     for (const label of locationPool) {
-      const exactPoi = poiById.get(label);
+      const exactPoi = poiByName.get(label);
       if (exactPoi) {
         matchedPoisById.set(exactPoi.id, exactPoi);
         for (const imageUrl of exactPoi.gallery) {

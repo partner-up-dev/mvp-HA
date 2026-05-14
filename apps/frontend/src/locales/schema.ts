@@ -1187,6 +1187,8 @@ export interface MessageSchema {
     poiPlaceholder: string;
     newPoiLabel: string;
     newPoiPlaceholder: string;
+    fullAddressLabel: string;
+    fullAddressPlaceholder: string;
     createPoiAction: string;
     creatingPoi: string;
     galleryHint: string;

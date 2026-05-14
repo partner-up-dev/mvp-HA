@@ -44,7 +44,7 @@ export const useAdminPRWorkspaceSelection = ({
   const typeOptions = computed(() => workspace.value?.typeOptions ?? []);
   const poiOptions = computed<string[]>(() =>
     [...(poisQuery.data.value ?? [])]
-      .map((poi) => poi.id)
+      .map((poi) => poi.name)
       .sort((left, right) => left.localeCompare(right, "zh-CN")),
   );
   const filterLocationOptions = computed(() => poiOptions.value);

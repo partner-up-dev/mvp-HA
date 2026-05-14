@@ -230,9 +230,8 @@ export const assertPRTimeWindowAvailableAtLocation = async (input: {
     return;
   }
 
-  const { PoiRepository } = await import("../../../repositories/PoiRepository");
-  const poiRepo = new PoiRepository();
-  const [poi] = await poiRepo.findByIds([location]);
+  const { resolvePublishedPoiByLocation } = await import("../../poi");
+  const poi = await resolvePublishedPoiByLocation(location);
   if (!poi || poi.availabilityRules.length === 0) {
     return;
   }

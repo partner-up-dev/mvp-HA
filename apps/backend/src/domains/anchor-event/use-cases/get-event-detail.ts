@@ -6,7 +6,6 @@ import { throwHttpProblem } from "../../../lib/problem-details";
 
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { PoiRepository } from "../../../repositories/PoiRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
@@ -26,10 +25,10 @@ import {
   resolveAnchorEventTimeWindowDescription,
 } from "../services/time-window-pool";
 import { resolvePublicEventLocationPool } from "../services/event-scope";
+import { findPoisByNames } from "../../poi";
 
 const eventRepo = new AnchorEventRepository();
 const partnerRepo = new PartnerRepository();
-const poiRepo = new PoiRepository();
 
 export interface EventPRSummary {
   id: number;
@@ -175,8 +174,8 @@ export async function getAnchorEventDetail(
   const locationPool = await resolvePublicEventLocationPool(event);
   const timeWindowDetails = listAnchorEventTimeWindowDetails(event);
   const timeWindowPool = timeWindowDetails.map((detail) => detail.timeWindow);
-  const pois = await poiRepo.findByIds(locationPool);
-  const poiByLocation = new Map(pois.map((poi) => [poi.id, poi]));
+  const pois = await findPoisByNames(locationPool);
+  const poiByLocation = new Map(pois.map((poi) => [poi.name, poi]));
 
   const browsePRs = await readVisiblePartnerRequestsByType(event.type);
   const browseTimeWindows = buildBrowseTimeWindowDetails(browsePRs, event);

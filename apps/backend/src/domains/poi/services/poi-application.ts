@@ -15,7 +15,7 @@ export const normalizePoiRejectReason = (
 
 export const toPoiApplicationView = (poi: Poi) => ({
   id: poi.id,
-  title: poi.id,
+  title: poi.name,
   status: poi.status,
   gallery: [...poi.gallery],
   imageUrl: poi.gallery[0] ?? null,

@@ -18,7 +18,7 @@ export async function submitPoiApplication(input: {
   const title = normalizePoiApplicationTitle(input.title);
   const imageUrl = normalizePoiApplicationImageUrl(input.imageUrl);
 
-  const existing = await poiRepo.findByIds([title], {
+  const existing = await poiRepo.findByNames([title], {
     includeUnpublished: true,
   });
   if (existing.length > 0) {
@@ -26,7 +26,7 @@ export async function submitPoiApplication(input: {
   }
 
   const created = await poiRepo.createApplication({
-    id: title,
+    name: title,
     imageUrl,
     submittedByUserId: input.submittedByUserId,
   });
@@ -38,7 +38,7 @@ export async function submitPoiApplication(input: {
     actorId: input.submittedByUserId,
     action: "poi.application.submit",
     aggregateType: "poi",
-    aggregateId: created.id,
+    aggregateId: String(created.id),
     detail: {
       status: created.status,
     },

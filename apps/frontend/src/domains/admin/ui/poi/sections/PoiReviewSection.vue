@@ -2,7 +2,7 @@
   <BentoLayout>
     <BentoItem
       id="poi-review"
-      :title="`${t('adminCommon.navPoiReview')} · ${selectedPoiId ?? '-'}`"
+      :title="`${t('adminCommon.navPoiReview')} · ${selectedPoi?.name ?? selectedPoiId ?? '-'}`"
       span="full"
       data-testid="admin-pois.section.review"
     >
@@ -88,7 +88,7 @@ type PoiRecord = NonNullable<AdminPoisResponse>[number];
 type PoiStatus = PoiRecord["status"];
 
 defineProps<{
-  selectedPoiId: string | null;
+  selectedPoiId: number | null;
   selectedPoi: PoiRecord | null;
   selectedReviewedAt: string;
   canPublishPoi: boolean;

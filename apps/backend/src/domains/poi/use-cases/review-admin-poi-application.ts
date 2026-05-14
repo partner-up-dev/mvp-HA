@@ -10,7 +10,7 @@ import {
 const poiRepo = new PoiRepository();
 
 export async function publishAdminPoiApplication(input: {
-  poiId: string;
+  poiId: number;
   reviewedByUserId: UserId | null;
 }) {
   const updated = await poiRepo.updateReviewState(input.poiId, {
@@ -25,7 +25,7 @@ export async function publishAdminPoiApplication(input: {
     actorId: input.reviewedByUserId,
     action: "poi.application.publish",
     aggregateType: "poi",
-    aggregateId: updated.id,
+    aggregateId: String(updated.id),
     detail: {
       status: updated.status,
     },
@@ -35,7 +35,7 @@ export async function publishAdminPoiApplication(input: {
 }
 
 export async function rejectAdminPoiApplication(input: {
-  poiId: string;
+  poiId: number;
   reviewedByUserId: UserId | null;
   rejectReason: string | null;
 }) {
@@ -52,7 +52,7 @@ export async function rejectAdminPoiApplication(input: {
     actorId: input.reviewedByUserId,
     action: "poi.application.reject",
     aggregateType: "poi",
-    aggregateId: updated.id,
+    aggregateId: String(updated.id),
     detail: {
       status: updated.status,
       rejectReason: updated.rejectReason,

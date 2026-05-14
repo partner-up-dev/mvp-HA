@@ -6,16 +6,20 @@ import { zValidator } from "@hono/zod-validator";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import type { UserId } from "../entities/user";
 import {
+  findPoisByIds,
+  findPoisByNames,
   listMyPoiApplications,
   submitPoiApplication,
 } from "../domains/poi";
-import { PoiRepository } from "../repositories/PoiRepository";
 
 const app = new Hono<AuthEnv>();
-const poiRepo = new PoiRepository();
 
 const byIdsQuerySchema = z.object({
   ids: z.string().min(1),
+});
+
+const byNamesQuerySchema = z.object({
+  names: z.string().min(1),
 });
 
 const poiApplicationSchema = z.object({
@@ -41,22 +45,41 @@ const normalizeCsvIds = (csv: string): string[] => {
   return Array.from(set);
 };
 
+const normalizeCsvNumericIds = (csv: string): number[] =>
+  normalizeCsvIds(csv)
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+const toPublicPoiResponse = (
+  poi: Awaited<ReturnType<typeof findPoisByNames>>[number],
+) => ({
+  id: poi.id,
+  name: poi.name,
+  fullAddress: poi.fullAddress,
+  gallery: poi.gallery,
+  gcj02: poi.gcj02,
+  wgs84: poi.wgs84,
+  bd09: poi.bd09,
+  perTimeWindowCap: poi.perTimeWindowCap,
+  availabilityRules: poi.availabilityRules,
+  meetingPoint: poi.meetingPoint,
+});
+
 export const poiRoute = app
   .use("*", authMiddleware)
   .get("/by-ids", zValidator("query", byIdsQuerySchema), async (c) => {
     const { ids } = c.req.valid("query");
-    const normalizedIds = normalizeCsvIds(ids);
-    const pois = await poiRepo.findByIds(normalizedIds);
+    const normalizedIds = normalizeCsvNumericIds(ids);
+    const pois = await findPoisByIds(normalizedIds);
 
-    return c.json(
-      pois.map((poi) => ({
-        id: poi.id,
-        gallery: poi.gallery,
-        perTimeWindowCap: poi.perTimeWindowCap,
-        availabilityRules: poi.availabilityRules,
-        meetingPoint: poi.meetingPoint,
-      })),
-    );
+    return c.json(pois.map(toPublicPoiResponse));
+  })
+  .get("/by-names", zValidator("query", byNamesQuerySchema), async (c) => {
+    const { names } = c.req.valid("query");
+    const normalizedNames = normalizeCsvIds(names);
+    const pois = await findPoisByNames(normalizedNames);
+
+    return c.json(pois.map(toPublicPoiResponse));
   })
   .post("/applications", zValidator("json", poiApplicationSchema), async (c) => {
     const userId = requireSessionUserId(c);

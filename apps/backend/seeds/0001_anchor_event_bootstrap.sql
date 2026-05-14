@@ -332,7 +332,7 @@ select setval(
 );
 
 insert into pois (
-  id,
+  name,
   gallery,
   per_time_window_cap,
   availability_rules,
@@ -389,7 +389,7 @@ values
     cast('2026-04-15 16:58:34.812297' as timestamp),
     cast('2026-04-15 08:58:45.892' as timestamp)
   )
-on conflict (id) do update
+on conflict (name) do update
 set
   gallery = excluded.gallery,
   per_time_window_cap = excluded.per_time_window_cap,

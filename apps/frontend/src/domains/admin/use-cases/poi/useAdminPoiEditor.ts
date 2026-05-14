@@ -6,6 +6,9 @@ import type {
 
 type PoiRecord = NonNullable<AdminPoisResponse>[number];
 type PoiGalleryMap = Record<string, string[]>;
+type PoiFullAddressMap = Record<string, string | null>;
+type PoiCoordinateInput = [number, number] | null;
+type PoiCoordinateMap = Record<string, PoiCoordinateInput>;
 type PoiCapMap = Record<string, number | null>;
 type PoiMeetingPointInput = {
   description: string | null;
@@ -185,15 +188,19 @@ export const useAdminPoiEditor = ({
   selectedPoiId,
 }: {
   pois: ComputedRef<PoiRecord[]>;
-  selectedPoiId: ComputedRef<string | null>;
+  selectedPoiId: ComputedRef<number | null>;
 }) => {
   const manualGalleryUrl = ref("");
   const isUploadingGalleryImage = ref(false);
   const poiGalleryById = ref<PoiGalleryMap>({});
+  const poiFullAddressById = ref<PoiFullAddressMap>({});
+  const poiGcj02ById = ref<PoiCoordinateMap>({});
+  const poiWgs84ById = ref<PoiCoordinateMap>({});
+  const poiBd09ById = ref<PoiCoordinateMap>({});
   const poiCapById = ref<PoiCapMap>({});
   const poiMeetingPointById = ref<PoiMeetingPointMap>({});
   const poiAvailabilityRulesById = ref<PoiAvailabilityRulesMap>({});
-  const dirtyPoiIds = ref<Set<string>>(new Set());
+  const dirtyPoiIds = ref<Set<number>>(new Set());
 
   const selectedPoiGallery = computed<string[]>(() => {
     const poiId = selectedPoiId.value;
@@ -205,6 +212,23 @@ export const useAdminPoiEditor = ({
     const poiId = selectedPoiId.value;
     if (!poiId) return null;
     return poiCapById.value[poiId] ?? null;
+  });
+
+  const selectedPoiFullAddress = computed<string>({
+    get: () => {
+      const poiId = selectedPoiId.value;
+      if (!poiId) return "";
+      return poiFullAddressById.value[poiId] ?? "";
+    },
+    set: (value) => {
+      const poiId = selectedPoiId.value;
+      if (!poiId) return;
+      poiFullAddressById.value = {
+        ...poiFullAddressById.value,
+        [poiId]: value.trim() || null,
+      };
+      markSelectedPoiDirty();
+    },
   });
 
   const selectedPoiCapText = computed<string>({
@@ -330,19 +354,31 @@ export const useAdminPoiEditor = ({
     pois,
     (nextPois) => {
       const nextMap: PoiGalleryMap = {};
+      const nextFullAddressMap: PoiFullAddressMap = {};
+      const nextGcj02Map: PoiCoordinateMap = {};
+      const nextWgs84Map: PoiCoordinateMap = {};
+      const nextBd09Map: PoiCoordinateMap = {};
       const nextCapMap: PoiCapMap = {};
       const nextMeetingPointMap: PoiMeetingPointMap = {};
       const nextAvailabilityRulesMap: PoiAvailabilityRulesMap = {};
-      const nextDirtyPoiIds = new Set<string>();
+      const nextDirtyPoiIds = new Set<number>();
 
       for (const poi of nextPois) {
         const isDirty = dirtyPoiIds.value.has(poi.id);
         const localGallery = poiGalleryById.value[poi.id];
+        const localFullAddress = poiFullAddressById.value[poi.id];
+        const localGcj02 = poiGcj02ById.value[poi.id];
+        const localWgs84 = poiWgs84ById.value[poi.id];
+        const localBd09 = poiBd09ById.value[poi.id];
         const localCap = poiCapById.value[poi.id];
         const localMeetingPoint = poiMeetingPointById.value[poi.id];
         const localAvailabilityRules = poiAvailabilityRulesById.value[poi.id];
         if (isDirty && localGallery !== undefined) {
           nextMap[poi.id] = normalizeGallery(localGallery);
+          nextFullAddressMap[poi.id] = localFullAddress ?? null;
+          nextGcj02Map[poi.id] = localGcj02 ?? null;
+          nextWgs84Map[poi.id] = localWgs84 ?? null;
+          nextBd09Map[poi.id] = localBd09 ?? null;
           nextCapMap[poi.id] = localCap ?? null;
           nextMeetingPointMap[poi.id] = localMeetingPoint ?? null;
           nextAvailabilityRulesMap[poi.id] = localAvailabilityRules ?? [];
@@ -350,6 +386,10 @@ export const useAdminPoiEditor = ({
           continue;
         }
         nextMap[poi.id] = normalizeGallery(poi.gallery);
+        nextFullAddressMap[poi.id] = poi.fullAddress ?? null;
+        nextGcj02Map[poi.id] = poi.gcj02 ?? null;
+        nextWgs84Map[poi.id] = poi.wgs84 ?? null;
+        nextBd09Map[poi.id] = poi.bd09 ?? null;
         nextCapMap[poi.id] = poi.perTimeWindowCap ?? null;
         nextMeetingPointMap[poi.id] = poi.meetingPoint ?? null;
         nextAvailabilityRulesMap[poi.id] =
@@ -357,6 +397,10 @@ export const useAdminPoiEditor = ({
       }
 
       poiGalleryById.value = nextMap;
+      poiFullAddressById.value = nextFullAddressMap;
+      poiGcj02ById.value = nextGcj02Map;
+      poiWgs84ById.value = nextWgs84Map;
+      poiBd09ById.value = nextBd09Map;
       poiCapById.value = nextCapMap;
       poiMeetingPointById.value = nextMeetingPointMap;
       poiAvailabilityRulesById.value = nextAvailabilityRulesMap;
@@ -412,7 +456,19 @@ export const useAdminPoiEditor = ({
   };
 
   const buildSelectedPoiInput = () => ({
+    fullAddress: selectedPoiId.value
+      ? (poiFullAddressById.value[selectedPoiId.value] ?? null)
+      : null,
     gallery: normalizeGallery(selectedPoiGallery.value),
+    gcj02: selectedPoiId.value
+      ? (poiGcj02ById.value[selectedPoiId.value] ?? null)
+      : null,
+    wgs84: selectedPoiId.value
+      ? (poiWgs84ById.value[selectedPoiId.value] ?? null)
+      : null,
+    bd09: selectedPoiId.value
+      ? (poiBd09ById.value[selectedPoiId.value] ?? null)
+      : null,
     perTimeWindowCap: selectedPoiCap.value,
     availabilityRules: buildAvailabilityRulesInput(
       selectedPoiAvailabilityRules.value,
@@ -420,8 +476,24 @@ export const useAdminPoiEditor = ({
     meetingPoint: selectedPoiMeetingPoint.value,
   });
 
-  const applySavedPoi = (poiId: string, poi: PoiRecord) => {
+  const applySavedPoi = (poiId: number, poi: PoiRecord) => {
     setSelectedPoiGallery(poi.gallery, { markDirty: false });
+    poiFullAddressById.value = {
+      ...poiFullAddressById.value,
+      [poiId]: poi.fullAddress ?? null,
+    };
+    poiGcj02ById.value = {
+      ...poiGcj02ById.value,
+      [poiId]: poi.gcj02 ?? null,
+    };
+    poiWgs84ById.value = {
+      ...poiWgs84ById.value,
+      [poiId]: poi.wgs84 ?? null,
+    };
+    poiBd09ById.value = {
+      ...poiBd09ById.value,
+      [poiId]: poi.bd09 ?? null,
+    };
     setSelectedPoiCap(poi.perTimeWindowCap ?? null, { markDirty: false });
     setSelectedPoiMeetingPoint(poi.meetingPoint ?? null, {
       markDirty: false,
@@ -439,6 +511,7 @@ export const useAdminPoiEditor = ({
     manualGalleryUrl,
     isUploadingGalleryImage,
     selectedPoiGallery,
+    selectedPoiFullAddress,
     selectedPoiCapText,
     selectedPoiMeetingPoint,
     selectedPoiMeetingPointDescription,

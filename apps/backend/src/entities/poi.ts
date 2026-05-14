@@ -1,4 +1,14 @@
-import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigserial,
+  doublePrecision,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -13,6 +23,9 @@ const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/);
 
 export const poiStatusSchema = z.enum(["PENDING", "PUBLISHED", "REJECTED"]);
 export type PoiStatus = z.infer<typeof poiStatusSchema>;
+
+export const poiCoordinateSchema = z.tuple([z.number(), z.number()]);
+export type PoiCoordinate = z.infer<typeof poiCoordinateSchema>;
 
 export const poiAvailabilityRuleModeSchema = z.enum(["INCLUDE", "EXCLUDE"]);
 export type PoiAvailabilityRuleMode = z.infer<
@@ -114,37 +127,52 @@ export const normalizePoiAvailabilityRules = (
   return parsed.success ? parsed.data : [];
 };
 
-export const pois = pgTable("pois", {
-  id: text("id").primaryKey(),
-  status: text("status").$type<PoiStatus>().notNull().default("PUBLISHED"),
-  gallery: text("gallery").array().notNull().default([]),
-  perTimeWindowCap: integer("per_time_window_cap"),
-  availabilityRules: jsonb("availability_rules")
-    .$type<PoiAvailabilityRule[]>()
-    .notNull()
-    .default(sql`'[]'::jsonb`),
-  meetingPoint: jsonb("meeting_point")
-    .$type<MeetingPointConfig | null>()
-    .default(null),
-  submittedByUserId: uuid("submitted_by_user_id")
-    .$type<UserId | null>()
-    .references(() => users.id, { onDelete: "set null" }),
-  reviewedByUserId: uuid("reviewed_by_user_id")
-    .$type<UserId | null>()
-    .references(() => users.id, { onDelete: "set null" }),
-  reviewedAt: timestamp("reviewed_at"),
-  rejectReason: text("reject_reason"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const pois = pgTable(
+  "pois",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    name: text("name").notNull(),
+    fullAddress: text("full_address"),
+    status: text("status").$type<PoiStatus>().notNull().default("PUBLISHED"),
+    gallery: text("gallery").array().notNull().default([]),
+    gcj02: doublePrecision("gcj02").array().$type<PoiCoordinate | null>(),
+    wgs84: doublePrecision("wgs84").array().$type<PoiCoordinate | null>(),
+    bd09: doublePrecision("bd09").array().$type<PoiCoordinate | null>(),
+    perTimeWindowCap: integer("per_time_window_cap"),
+    availabilityRules: jsonb("availability_rules")
+      .$type<PoiAvailabilityRule[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    meetingPoint: jsonb("meeting_point")
+      .$type<MeetingPointConfig | null>()
+      .default(null),
+    submittedByUserId: uuid("submitted_by_user_id")
+      .$type<UserId | null>()
+      .references(() => users.id, { onDelete: "set null" }),
+    reviewedByUserId: uuid("reviewed_by_user_id")
+      .$type<UserId | null>()
+      .references(() => users.id, { onDelete: "set null" }),
+    reviewedAt: timestamp("reviewed_at"),
+    rejectReason: text("reject_reason"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [unique("pois_name_unique").on(table.name)],
+);
 
 export const insertPoiSchema = createInsertSchema(pois, {
   status: poiStatusSchema.optional(),
+  gcj02: poiCoordinateSchema.nullable().optional(),
+  wgs84: poiCoordinateSchema.nullable().optional(),
+  bd09: poiCoordinateSchema.nullable().optional(),
   availabilityRules: poiAvailabilityRulesSchema,
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
 });
 export const selectPoiSchema = createSelectSchema(pois, {
   status: poiStatusSchema,
+  gcj02: poiCoordinateSchema.nullable(),
+  wgs84: poiCoordinateSchema.nullable(),
+  bd09: poiCoordinateSchema.nullable(),
   availabilityRules: poiAvailabilityRulesSchema,
   meetingPoint: meetingPointConfigSchema.nullable(),
 });
