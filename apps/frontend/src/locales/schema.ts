@@ -263,6 +263,11 @@ export interface MessageSchema {
       support: string;
     };
   };
+  bookmarkPageNudge: {
+    title: string;
+    description: string;
+    acknowledgeAction: string;
+  };
   officialAccountFollow: {
     nudgeTitle: string;
     nudgeDescription: string;
