@@ -82,7 +82,6 @@ const routes: RouteRecordRaw[] = [
     component: PRPage,
     meta: {
       wechatSharePolicy: "route",
-      wechatAutoLoginPolicy: "route",
     },
   },
   {

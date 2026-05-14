@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities";
 import type { PRMessageId } from "../../../entities/pr-message";
 import type { UserId } from "../../../entities/user";
@@ -14,12 +14,12 @@ export async function deleteAdminPRMessage(input: {
 }) {
   const message = await messageRepo.findByPrIdAndId(input.prId, input.messageId);
   if (!message) {
-    throw new HTTPException(404, { message: "PR message not found" });
+    return throwHttpProblem({ status: 404, detail: "PR message not found" });
   }
 
   const deletedMessage = await messageRepo.deleteById(input.messageId);
   if (!deletedMessage) {
-    throw new HTTPException(500, { message: "Failed to delete PR message" });
+    return throwHttpProblem({ status: 500, detail: "Failed to delete PR message" });
   }
 
   operationLogService.log({

@@ -1,7 +1,6 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventPreferenceTagRepository } from "../../../repositories/AnchorEventPreferenceTagRepository";
-import { PoiRepository } from "../../../repositories/PoiRepository";
 import {
   AnchorEventPRContextRepository,
   type AnchorEventPRContextRecord,
@@ -19,9 +18,9 @@ import {
 import { isAnchorEventFormModeStartSelectable } from "../services/form-mode";
 import { resolvePublicEventLocationPool } from "../services/event-scope";
 import { listAnchorEventTimeWindowDetails } from "../services/time-window-pool";
+import { findPoisByNames } from "../../poi";
 
 const anchorEventRepo = new AnchorEventRepository();
-const poiRepo = new PoiRepository();
 const preferenceTagRepo = new AnchorEventPreferenceTagRepository();
 const eventContextRepo = new AnchorEventPRContextRepository();
 
@@ -140,19 +139,19 @@ export async function getAnchorEventFormModeData(
 ): Promise<AnchorEventFormModeData> {
   const event = await anchorEventRepo.findById(eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const locationIds = await resolveLocationIds(event);
   const [pois, tags, visiblePrRecords] = await Promise.all([
-    poiRepo.findByIds(locationIds),
+    findPoisByNames(locationIds),
     preferenceTagRepo.findByAnchorEventIdAndStatuses(eventId, ["PUBLISHED"]),
     eventContextRepo.findVisibleByAnchorEventId(eventId),
   ]);
 
   const now = new Date();
-  const poiById = new Map(pois.map((poi) => [poi.id, poi.gallery]));
-  const poiRecordById = new Map(pois.map((poi) => [poi.id, poi]));
+  const poiById = new Map(pois.map((poi) => [poi.name, poi.gallery]));
+  const poiRecordById = new Map(pois.map((poi) => [poi.name, poi]));
   const startOptions = listAnchorEventTimeWindowDetails(event)
     .filter((detail) => !hasTimeWindowStarted(detail.timeWindow, now))
     .flatMap((detail) => {

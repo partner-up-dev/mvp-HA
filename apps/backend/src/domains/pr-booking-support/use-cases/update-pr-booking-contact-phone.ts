@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId, UserId } from "../../../entities";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { normalizeMainlandChinaMobilePhone } from "../services/phone-input";
@@ -8,18 +8,12 @@ const userRepo = new UserRepository();
 const BOOKING_CONTACT_PHONE_REQUIRED_CODE = "BOOKING_CONTACT_PHONE_REQUIRED";
 const BOOKING_CONTACT_PHONE_INVALID_CODE = "BOOKING_CONTACT_PHONE_INVALID";
 
-type CodedHttpException = HTTPException & {
-  code?: string;
-};
-
 const throwCodedHttpException = (
   status: 400 | 401 | 403 | 404 | 409 | 500,
   message: string,
   code: string,
 ): never => {
-  const error = new HTTPException(status, { message }) as CodedHttpException;
-  error.code = code;
-  throw error;
+  return throwHttpProblem({ status, detail: message, code });
 };
 
 const resolvePhoneInput = (value: string) => {
@@ -57,15 +51,11 @@ export async function updatePRBookingContactPhone(input: {
   });
 
   if (!state.required) {
-    throw new HTTPException(400, {
-      message: "Booking contact is not required for this anchor PR",
-    });
+    return throwHttpProblem({ status: 400, detail: "Booking contact is not required for this anchor PR" });
   }
 
   if (!state.ownerIsCurrentViewer) {
-    throw new HTTPException(403, {
-      message: "Only the booking contact owner can update phone",
-    });
+    return throwHttpProblem({ status: 403, detail: "Only the booking contact owner can update phone" });
   }
 
   const normalizedPhone = resolvePhoneInput(input.phone);

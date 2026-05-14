@@ -164,6 +164,7 @@ const emptyEventForm = (): EventForm => ({
   meetingPointImageUrl: "",
   locationMeetingPoints: {},
   joinGateConfig: [],
+  participationFrequencyLimit: null,
   feedbackQuestionnaireTemplateId: null,
   defaultPrNotes: "",
   durationMinutes: null,
@@ -172,6 +173,7 @@ const emptyEventForm = (): EventForm => ({
   recurringRulesText: "",
   defaultMinPartners: null,
   defaultMaxPartners: null,
+  defaultConfirmationEnabled: true,
   defaultConfirmationStartOffsetMinutes:
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
   defaultConfirmationEndOffsetMinutes: DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
@@ -179,6 +181,7 @@ const emptyEventForm = (): EventForm => ({
   coverImage: "",
   betaGroupQrCode: "",
   prCreationPolicy: "USER_AND_ADMIN",
+  fullPrExpansionPolicy: "DISABLED",
   status: "ACTIVE",
 });
 
@@ -200,6 +203,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
     event.locationMeetingPoints,
   ),
   joinGateConfig: event.joinGateConfig,
+  participationFrequencyLimit: event.participationFrequencyLimit,
   feedbackQuestionnaireTemplateId: event.feedbackQuestionnaireTemplateId ?? null,
   defaultPrNotes: event.defaultPrNotes ?? "",
   durationMinutes: event.timePoolConfig.durationMinutes ?? null,
@@ -222,6 +226,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
     .join("\n"),
   defaultMinPartners: event.defaultMinPartners,
   defaultMaxPartners: event.defaultMaxPartners,
+  defaultConfirmationEnabled: event.defaultConfirmationEnabled,
   defaultConfirmationStartOffsetMinutes:
     event.defaultConfirmationStartOffsetMinutes ??
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
@@ -233,6 +238,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
   coverImage: event.coverImage ?? "",
   betaGroupQrCode: event.betaGroupQrCode ?? "",
   prCreationPolicy: event.prCreationPolicy,
+  fullPrExpansionPolicy: event.fullPrExpansionPolicy,
   status: event.status as EventForm["status"],
 });
 
@@ -329,6 +335,9 @@ const timePoolValidationMessage = computed(() => {
 });
 
 const policyValidationMessage = computed(() => {
+  if (!eventForm.value.defaultConfirmationEnabled) {
+    return null;
+  }
   if (
     eventForm.value.defaultConfirmationStartOffsetMinutes <=
     eventForm.value.defaultConfirmationEndOffsetMinutes

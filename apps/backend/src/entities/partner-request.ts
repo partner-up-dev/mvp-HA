@@ -7,6 +7,7 @@ import {
   integer,
   uuid,
   bigint,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -130,6 +131,7 @@ export const partnerRequests = pgTable("partner_requests", {
     .$type<VisibilityStatus>()
     .notNull()
     .default("VISIBLE"),
+  confirmationEnabled: boolean("confirmation_enabled").notNull().default(true),
   confirmationStartOffsetMinutes: integer("confirmation_start_offset_minutes"),
   confirmationEndOffsetMinutes: integer("confirmation_end_offset_minutes"),
   joinLockOffsetMinutes: integer("join_lock_offset_minutes"),

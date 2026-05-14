@@ -50,7 +50,11 @@
 
     <FullCommonFooter data-region="footer" />
 
-    <LandingBookmarkNudge data-region="bookmark-nudge" />
+    <BookmarkPageNudge
+      data-region="bookmark-nudge"
+      :open="bookmarkPageNudgePrompt.isVisible.value"
+      @acknowledge="bookmarkPageNudgePrompt.acknowledgePrompt"
+    />
   </div>
 </template>
 
@@ -62,16 +66,19 @@ import LandingHeroSection from "@/domains/landing/ui/sections/LandingHeroSection
 import LandingValuePropsSection from "@/domains/landing/ui/sections/LandingValuePropsSection.vue";
 import EventHighlightsSection from "@/domains/event/ui/sections/landing/EventHighlightsSection.vue";
 import EventPlazaEntry from "@/domains/event/ui/sections/landing/EventPlazaEntry.vue";
-import LandingBookmarkNudge from "@/domains/landing/ui/sections/LandingBookmarkNudge.vue";
+import BookmarkPageNudge from "@/domains/marketing/ui/BookmarkPageNudge.vue";
 import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue";
 import LandingWeChatAccessSection from "@/domains/landing/ui/sections/LandingWeChatAccessSection.vue";
+import { useBookmarkPageNudgePrompt } from "@/domains/marketing/use-cases/useBookmarkPageNudgePrompt";
 import { trackEvent } from "@/shared/telemetry/track";
 
 const HOME_SCROLL_SNAP_CLASS = "home-scroll-snap";
+const BOOKMARK_PAGE_NUDGE_DELAY_MS = 14_000;
 
 const { t } = useI18n();
 
 const shouldRevealHeroValues = ref(false);
+const bookmarkPageNudgePrompt = useBookmarkPageNudgePrompt("home");
 
 const handleHeroValuesReveal = () => {
   shouldRevealHeroValues.value = true;
@@ -88,6 +95,7 @@ onMounted(() => {
   if (typeof window === "undefined") return;
   document.documentElement.classList.add(HOME_SCROLL_SNAP_CLASS);
   document.body.classList.add(HOME_SCROLL_SNAP_CLASS);
+  bookmarkPageNudgePrompt.requestPromptAfterDelay(BOOKMARK_PAGE_NUDGE_DELAY_MS);
 });
 
 onUnmounted(() => {

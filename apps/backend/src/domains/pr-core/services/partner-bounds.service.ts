@@ -1,4 +1,5 @@
-import { HTTPException } from "hono/http-exception";
+
+import { throwHttpProblem } from "../../../lib/problem-details";
 
 export const PARTNER_BOUNDS_ERROR_MESSAGES = {
   minPartnersInvalid: "最少人数必须为大于等于 1 的整数",
@@ -14,7 +15,7 @@ export const DEFAULT_AUTOMATIC_MIN_PARTNERS = 2;
 const throwPartnerBoundsError = (
   message: (typeof PARTNER_BOUNDS_ERROR_MESSAGES)[keyof typeof PARTNER_BOUNDS_ERROR_MESSAGES],
 ): never => {
-  throw new HTTPException(400, { message });
+  return throwHttpProblem({ status: 400, detail: message });
 };
 
 const assertMaxPartnersValid = (

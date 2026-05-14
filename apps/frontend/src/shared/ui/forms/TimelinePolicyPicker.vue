@@ -27,6 +27,24 @@
     </div> -->
 
     <div class="timeline-policy-picker__controls">
+      <label class="timeline-policy-picker__toggle">
+        <input
+          class="timeline-policy-picker__toggle-control"
+          type="checkbox"
+          :disabled="disabled"
+          :checked="props.modelValue.confirmationEnabled"
+          @change="handleConfirmationEnabledChange"
+        />
+        <span class="timeline-policy-picker__toggle-copy">
+          <span class="timeline-policy-picker__control-label">
+            {{ t("timelinePolicyPicker.confirmationEnabled") }}
+          </span>
+          <span class="timeline-policy-picker__control-value">
+            {{ t("timelinePolicyPicker.confirmationEnabledHint") }}
+          </span>
+        </span>
+      </label>
+
       <label
         v-for="control in editableControls"
         :key="control.key"
@@ -45,7 +63,7 @@
           type="number"
           min="0"
           :step="stepMinutes"
-          :disabled="disabled"
+          :disabled="disabled || control.confirmationOnlyDisabled"
           :value="control.value"
           @input="handleOffsetInput(control.key, $event)"
         />
@@ -64,6 +82,7 @@ import { useI18n } from "vue-i18n";
 import { formatLocalDateTimeValue } from "@/shared/datetime/formatLocalDateTime";
 
 type TimelinePolicyValue = {
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -108,18 +127,21 @@ const editableControls = computed(() => [
     label: t("timelinePolicyPicker.confirmationStart"),
     value: props.modelValue.confirmationStartOffsetMinutes,
     summary: summarizeOffset(props.modelValue.confirmationStartOffsetMinutes),
+    confirmationOnlyDisabled: !props.modelValue.confirmationEnabled,
   },
   {
     key: "confirmationEndOffsetMinutes" as const,
     label: t("timelinePolicyPicker.confirmationEnd"),
     value: props.modelValue.confirmationEndOffsetMinutes,
     summary: summarizeOffset(props.modelValue.confirmationEndOffsetMinutes),
+    confirmationOnlyDisabled: !props.modelValue.confirmationEnabled,
   },
   {
     key: "joinLockOffsetMinutes" as const,
     label: t("timelinePolicyPicker.joinLock"),
     value: props.modelValue.joinLockOffsetMinutes,
     summary: summarizeOffset(props.modelValue.joinLockOffsetMinutes),
+    confirmationOnlyDisabled: false,
   },
 ]);
 
@@ -219,6 +241,14 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
     [key]: normalized,
   });
 }
+
+function handleConfirmationEnabledChange(event: Event): void {
+  const target = event.target as HTMLInputElement;
+  emit("update:modelValue", {
+    ...props.modelValue,
+    confirmationEnabled: target.checked,
+  });
+}
 </script>
 
 <style lang="scss" scoped>
@@ -310,6 +340,24 @@ function handleOffsetInput(key: keyof TimelinePolicyValue, event: Event): void {
 .timeline-policy-picker__control {
   display: grid;
   gap: var(--sys-spacing-xsmall);
+}
+
+.timeline-policy-picker__toggle {
+  display: flex;
+  gap: var(--sys-spacing-small);
+  align-items: flex-start;
+  padding: var(--sys-spacing-small);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-radius-small);
+}
+
+.timeline-policy-picker__toggle-control {
+  margin-top: 2px;
+}
+
+.timeline-policy-picker__toggle-copy {
+  display: grid;
+  gap: calc(var(--sys-spacing-xsmall) / 2);
 }
 
 .timeline-policy-picker__control-header {

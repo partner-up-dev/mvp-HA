@@ -1,7 +1,7 @@
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { promises as fs } from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { HTTPException } from "hono/http-exception";
 import type { User, UserId } from "../../../entities/user";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { env } from "../../../lib/env";
@@ -37,11 +37,11 @@ export type CurrentUserProfileSnapshot = {
 const requireUser = async (userId: UserId): Promise<User> => {
   const user = await userRepo.findById(userId);
   if (!user) {
-    throw new HTTPException(401, { message: "Invalid authenticated user" });
+    return throwHttpProblem({ status: 401, detail: "Invalid authenticated user" });
   }
 
   if (user.status !== "ACTIVE") {
-    throw new HTTPException(403, { message: "User is disabled" });
+    return throwHttpProblem({ status: 403, detail: "User is disabled" });
   }
 
   return user;
@@ -73,12 +73,12 @@ export async function updateCurrentUserNickname(
 
   const normalizedNickname = nickname.trim();
   if (normalizedNickname.length === 0) {
-    throw new HTTPException(400, { message: "Nickname is required" });
+    return throwHttpProblem({ status: 400, detail: "Nickname is required" });
   }
 
   const updated = await userRepo.updateNickname(userId, normalizedNickname);
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to update nickname" });
+    return throwHttpProblem({ status: 500, detail: "Failed to update nickname" });
   }
 
   return toCurrentUserProfileSnapshot(updated);
@@ -92,13 +92,11 @@ export async function updateCurrentUserAvatar(
 
   const extension = avatarExtensionByMimeType[file.type];
   if (!extension) {
-    throw new HTTPException(400, { message: "Unsupported avatar file type" });
+    return throwHttpProblem({ status: 400, detail: "Unsupported avatar file type" });
   }
 
   if (file.size > AVATAR_MAX_BYTES) {
-    throw new HTTPException(400, {
-      message: "Avatar file must not exceed 2 MB",
-    });
+    return throwHttpProblem({ status: 400, detail: "Avatar file must not exceed 2 MB" });
   }
 
   await fs.mkdir(avatarsDir, { recursive: true });
@@ -110,7 +108,7 @@ export async function updateCurrentUserAvatar(
 
   const updated = await userRepo.updateAvatar(userId, `/api/users/avatar/${filename}`);
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to update avatar" });
+    return throwHttpProblem({ status: 500, detail: "Failed to update avatar" });
   }
 
   return toCurrentUserProfileSnapshot(updated);
@@ -126,9 +124,7 @@ export async function updateCurrentUserPhoneNumber(
   const normalizedPhone =
     trimmed.length > 0 ? normalizeMainlandChinaMobilePhone(trimmed) : null;
   if (trimmed.length > 0 && !normalizedPhone) {
-    throw new HTTPException(400, {
-      message: "Phone must match mainland China mobile format",
-    });
+    return throwHttpProblem({ status: 400, detail: "Phone must match mainland China mobile format" });
   }
 
   const updated = await userRepo.updatePhoneNumber(
@@ -136,7 +132,7 @@ export async function updateCurrentUserPhoneNumber(
     normalizedPhone?.phoneE164 ?? null,
   );
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to update phone number" });
+    return throwHttpProblem({ status: 500, detail: "Failed to update phone number" });
   }
 
   return toCurrentUserProfileSnapshot(updated);
@@ -149,18 +145,16 @@ export async function bindWeChatToCurrentUser(
   const currentUser = await requireUser(userId);
   const normalizedOpenId = openId.trim();
   if (!normalizedOpenId) {
-    throw new HTTPException(400, { message: "Invalid WeChat openid" });
+    return throwHttpProblem({ status: 400, detail: "Invalid WeChat openid" });
   }
 
   if (currentUser.openId && currentUser.openId !== normalizedOpenId) {
-    throw new HTTPException(409, { message: "Current user is already bound" });
+    return throwHttpProblem({ status: 409, detail: "Current user is already bound" });
   }
 
   const existingByOpenId = await userRepo.findByOpenId(normalizedOpenId);
   if (existingByOpenId && existingByOpenId.id !== currentUser.id) {
-    throw new HTTPException(409, {
-      message: "WeChat account is already bound to another user",
-    });
+    return throwHttpProblem({ status: 409, detail: "WeChat account is already bound to another user" });
   }
 
   if (currentUser.openId === normalizedOpenId) {
@@ -169,7 +163,7 @@ export async function bindWeChatToCurrentUser(
 
   const updated = await userRepo.bindOpenId(currentUser.id, normalizedOpenId);
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to bind WeChat account" });
+    return throwHttpProblem({ status: 500, detail: "Failed to bind WeChat account" });
   }
 
   return toCurrentUserProfileSnapshot(updated);

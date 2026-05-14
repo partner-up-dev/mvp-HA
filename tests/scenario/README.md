@@ -18,8 +18,7 @@ They are root-owned because they coordinate both technical units:
 ```text
 tests/scenario/
 ├── _infra/                 # cross-unit test mechanics
-├── pr-core/                # PR lifecycle system scenarios
-└── run-scenario-tests.mts  # local runner
+└── pr-core/                # PR lifecycle system scenarios
 ```
 
 Dependency direction:
@@ -41,27 +40,27 @@ docker compose up -d postgres
 Run only system scenarios from the repository root:
 
 ```bash
-pnpm test:scenario system
+pnpm test:scenario:system
 ```
 
 Run all scenario suites:
 
 ```bash
-pnpm test:scenario
+pnpm test:scenario:all
 ```
 
-The root runner `scripts/run-scenario-tests.mjs` loads `apps/frontend/.env` and `apps/backend/.env`. Shell and CI
+The root Vitest `system-scenario` project loads `apps/frontend/.env` and `apps/backend/.env`. Shell and CI
 environment variables have the highest priority. Backend `.env` values override
 frontend `.env` values when both files define the same key.
 
 Database modes match backend scenario tests:
 
 ```bash
-SCENARIO_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres pnpm test:scenario system
+SCENARIO_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres pnpm test:scenario:system
 ```
 
 ```bash
-TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partnerup_scenario pnpm test:scenario system
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/partnerup_scenario pnpm test:scenario:system
 ```
 
 `SCENARIO_DATABASE_ADMIN_URL` creates and drops a unique temporary database.
@@ -71,7 +70,7 @@ database in place.
 Use headed browser mode for local diagnosis:
 
 ```bash
-HEADED=true pnpm test:scenario system
+HEADED=true pnpm test:scenario:system
 ```
 
 ## Authoring Rule

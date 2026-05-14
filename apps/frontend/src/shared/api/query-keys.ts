@@ -50,6 +50,7 @@ export const queryKeys = {
   },
   poi: {
     byIds: (idsCsv: string) => ["poi", "by-ids", idsCsv] as const,
+    byNames: (namesCsv: string) => ["poi", "by-names", namesCsv] as const,
     applicationsMine: () => ["poi", "applications", "mine"] as const,
   },
   admin: {
@@ -60,6 +61,8 @@ export const queryKeys = {
       ["admin", "anchor-events", "preference-tags", eventId] as const,
     pois: () => ["admin", "pois"] as const,
     poisByIds: (idsCsv: string) => ["admin", "pois", "by-ids", idsCsv] as const,
+    poisByNames: (namesCsv: string) =>
+      ["admin", "pois", "by-names", namesCsv] as const,
     feedbackQuestionnaireTemplates: () =>
       ["admin", "feedback-questionnaires", "templates"] as const,
     bookingSupport: (eventId: number | null) =>

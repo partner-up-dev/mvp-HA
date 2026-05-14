@@ -3,6 +3,8 @@ import type {
   MeetingPointConfig,
   MeetingPointConfigMap,
   PRJoinGateConfig,
+  AnchorEventFullPrExpansionPolicy,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventPrCreationPolicy,
   FeedbackQuestionnaireTemplate,
   FeedbackQuestionnaireTemplateId,
@@ -34,6 +36,7 @@ type AdminPRSummary = {
   meetingPoint: MeetingPointConfig | null;
   joinGateConfig: PRJoinGateConfig;
   partnerCount: number;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -77,17 +80,20 @@ export type AdminAnchorEventSummary = {
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   defaultPrNotes: string | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number | null;
   defaultConfirmationEndOffsetMinutes: number | null;
   defaultJoinLockOffsetMinutes: number | null;
   meetingPoint: MeetingPointConfig | null;
   locationMeetingPoints: MeetingPointConfigMap;
   joinGateConfig: PRJoinGateConfig;
+  participationFrequencyLimit: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId: FeedbackQuestionnaireTemplateId | null;
   timeWindowPool: [string | null, string | null][];
   coverImage: string | null;
   betaGroupQrCode: string | null;
   prCreationPolicy: AnchorEventPrCreationPolicy;
+  fullPrExpansionPolicy: AnchorEventFullPrExpansionPolicy;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -121,6 +127,7 @@ const toAdminPRSummary = async (
   meetingPoint: record.root.meetingPoint,
   joinGateConfig: record.root.joinGateConfig,
   partnerCount: await countActivePartnersForPR(record.root.id),
+  confirmationEnabled: record.anchor.confirmationEnabled,
   confirmationStartOffsetMinutes: record.anchor.confirmationStartOffsetMinutes,
   confirmationEndOffsetMinutes: record.anchor.confirmationEndOffsetMinutes,
   joinLockOffsetMinutes: record.anchor.joinLockOffsetMinutes,
@@ -173,6 +180,7 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         defaultMinPartners: event.defaultMinPartners ?? null,
         defaultMaxPartners: event.defaultMaxPartners ?? null,
         defaultPrNotes: event.defaultPrNotes ?? null,
+        defaultConfirmationEnabled: event.defaultConfirmationEnabled,
         defaultConfirmationStartOffsetMinutes:
           event.defaultConfirmationStartOffsetMinutes ?? null,
         defaultConfirmationEndOffsetMinutes:
@@ -181,12 +189,14 @@ export async function getAdminAnchorEventWorkspace(): Promise<AdminAnchorEventWo
         meetingPoint: event.meetingPoint,
         locationMeetingPoints: event.locationMeetingPoints,
         joinGateConfig: event.joinGateConfig,
+        participationFrequencyLimit: event.participationFrequencyLimit,
         feedbackQuestionnaireTemplateId:
           event.feedbackQuestionnaireTemplateId ?? null,
         timeWindowPool,
         coverImage: event.coverImage,
         betaGroupQrCode: event.betaGroupQrCode,
         prCreationPolicy: event.prCreationPolicy,
+        fullPrExpansionPolicy: event.fullPrExpansionPolicy,
         status: event.status,
         createdAt: event.createdAt.toISOString(),
         updatedAt: event.updatedAt.toISOString(),

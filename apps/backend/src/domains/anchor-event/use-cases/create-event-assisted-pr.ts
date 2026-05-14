@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { AnchorEventId, PartnerRequestFields } from "../../../entities";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { createPRFromStructured } from "../../pr-core/use-cases/create-pr-structured";
@@ -20,33 +20,29 @@ export async function createEventAssistedPR(
 ) {
   const event = await anchorEventRepo.findById(input.anchorEventId);
   if (!event) {
-    const error = new HTTPException(404, { message: "Anchor event not found" });
-    (error as HTTPException & { code?: string }).code = "ANCHOR_EVENT_NOT_FOUND";
-    throw error;
+    return throwHttpProblem({
+      status: 404,
+      detail: "Anchor event not found",
+      code: "ANCHOR_EVENT_NOT_FOUND",
+    });
   }
 
   if (input.fields.type.trim() !== event.type) {
-    throw new HTTPException(400, {
-      message: "Selected type does not match the anchor event type",
-    });
+    return throwHttpProblem({ status: 400, detail: "Selected type does not match the anchor event type" });
   }
 
   if (!(await isPublicEventScopedLocation(event, input.fields.location))) {
-    throw new HTTPException(400, {
-      message: "Selected location is outside the anchor event scope",
-    });
+    return throwHttpProblem({ status: 400, detail: "Selected location is outside the anchor event scope" });
   }
 
   const [startAt] = input.fields.time;
   if (!startAt) {
-    throw new HTTPException(400, { message: "Missing start time" });
+    return throwHttpProblem({ status: 400, detail: "Missing start time" });
   }
 
   const validatedTimeWindow = buildAnchorEventFormModeTimeWindow(event, startAt);
   if (!eventOwnsTimeWindow(event, validatedTimeWindow)) {
-    throw new HTTPException(400, {
-      message: "Selected time window is outside the anchor event time pool",
-    });
+    return throwHttpProblem({ status: 400, detail: "Selected time window is outside the anchor event time pool" });
   }
 
   const result = await createPRFromStructured(

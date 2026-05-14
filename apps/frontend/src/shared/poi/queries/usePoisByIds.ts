@@ -4,13 +4,13 @@ import type { InferResponseType } from "hono";
 import { client } from "@/lib/rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
-export type PoisByIdsResponse = InferResponseType<
-  (typeof client.api.pois)["by-ids"]["$get"]
+export type PoisByNamesResponse = InferResponseType<
+  (typeof client.api.pois)["by-names"]["$get"]
 >;
 
-export const usePoisByIds = (idsCsv: Ref<string | null>) => {
-  const normalizedIdsCsv = computed(() => {
-    const rawValue = idsCsv.value;
+export const usePoisByNames = (namesCsv: Ref<string | null>) => {
+  const normalizedNamesCsv = computed(() => {
+    const rawValue = namesCsv.value;
     if (!rawValue) return "";
     return rawValue
       .split(",")
@@ -19,18 +19,18 @@ export const usePoisByIds = (idsCsv: Ref<string | null>) => {
       .join(",");
   });
 
-  const queryKey = computed(() => queryKeys.poi.byIds(normalizedIdsCsv.value));
+  const queryKey = computed(() => queryKeys.poi.byNames(normalizedNamesCsv.value));
 
-  return useQuery<PoisByIdsResponse>({
+  return useQuery<PoisByNamesResponse>({
     queryKey,
     queryFn: async () => {
-      const ids = normalizedIdsCsv.value;
-      if (!ids) {
+      const names = normalizedNamesCsv.value;
+      if (!names) {
         return [];
       }
 
-      const res = await client.api.pois["by-ids"].$get({
-        query: { ids },
+      const res = await client.api.pois["by-names"].$get({
+        query: { names },
       });
 
       if (!res.ok) {
@@ -39,6 +39,8 @@ export const usePoisByIds = (idsCsv: Ref<string | null>) => {
 
       return await res.json();
     },
-    enabled: () => normalizedIdsCsv.value.length > 0,
+    enabled: () => normalizedNamesCsv.value.length > 0,
   });
 };
+
+export const usePoisByIds = usePoisByNames;

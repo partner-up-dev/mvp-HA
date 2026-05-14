@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRStatus } from "../../../entities";
 import { PRSupportResourceRepository } from "../../../repositories/PRSupportResourceRepository";
 import { buildBookingSupportPreview } from "../services/build-booking-support-preview";
@@ -65,14 +65,12 @@ export async function getPRBookingSupport(
     consistency: "strong",
   });
   if (!root) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const resources = await prSupportRepo.findByPrId(id);
   if (resources.length === 0) {
-    throw new HTTPException(404, {
-      message: "Booking support is not configured for this partner request",
-    });
+    return throwHttpProblem({ status: 404, detail: "Booking support is not configured for this partner request" });
   }
   const overview = buildBookingSupportPreview(resources);
   const bookingContact = await resolveBookingContactState({

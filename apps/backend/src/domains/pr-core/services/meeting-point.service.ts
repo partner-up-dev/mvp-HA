@@ -5,10 +5,9 @@ import {
   normalizeMeetingPointConfigMap,
 } from "../../../entities/meeting-point";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
-import { PoiRepository } from "../../../repositories/PoiRepository";
+import { resolvePublishedPoiByLocation } from "../../poi";
 
 const anchorEventRepo = new AnchorEventRepository();
-const poiRepo = new PoiRepository();
 
 export type MeetingPointSource =
   | "PR"
@@ -78,7 +77,7 @@ export const resolveEffectiveMeetingPoint = async (
     return null;
   }
 
-  const [poi] = await poiRepo.findByIds([location]);
+  const poi = await resolvePublishedPoiByLocation(location);
   return withSource("POI", normalizeMeetingPointConfig(poi?.meetingPoint));
 };
 

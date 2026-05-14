@@ -1,5 +1,5 @@
+import { throwHttpProblem } from "../lib/problem-details";
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
@@ -38,7 +38,7 @@ export const adminBookingExecutionRoute = app
       const payload = c.req.valid("json");
       const auth = c.get("auth");
       if (!auth.userId) {
-        throw new HTTPException(401, { message: "Unauthorized" });
+        return throwHttpProblem({ status: 401, detail: "Unauthorized" });
       }
       const result = await submitAdminPRBookingExecution({
         prId: id,

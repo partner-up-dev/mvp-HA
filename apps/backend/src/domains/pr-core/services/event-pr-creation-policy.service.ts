@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type {
   AnchorEvent,
   AnchorEventId,
@@ -12,15 +12,11 @@ export const ANCHOR_EVENT_USER_PR_CREATION_DISABLED_CODE =
   "ANCHOR_EVENT_USER_PR_CREATION_DISABLED";
 
 const throwUserCreationDisabled = (): never => {
-  const error = new HTTPException(403, {
-    message: "User PR creation is disabled for this anchor event type",
+  return throwHttpProblem({
+    status: 403,
+    detail: "User PR creation is disabled for this anchor event type",
+    code: ANCHOR_EVENT_USER_PR_CREATION_DISABLED_CODE,
   });
-  (
-    error as HTTPException & {
-      code?: typeof ANCHOR_EVENT_USER_PR_CREATION_DISABLED_CODE;
-    }
-  ).code = ANCHOR_EVENT_USER_PR_CREATION_DISABLED_CODE;
-  throw error;
 };
 
 const isUserCreationDisabled = (

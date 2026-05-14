@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRStatus } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import type { FeedbackQuestionnaireDefinition } from "../../../entities/feedback-questionnaire";
@@ -15,6 +15,9 @@ import {
   buildPRPartnerSection,
   type PartnerSectionView,
 } from "../../pr-core/services/partner-section-view.service";
+import {
+  evaluateAnchorEventParticipationFrequencyLimit,
+} from "../../pr-core/services/anchor-participation-frequency-limit.service";
 import {
   hasAnchorParticipationPolicy,
   resolveEffectiveMeetingPoint,
@@ -131,7 +134,7 @@ export async function getPRDetailView(
     consistency: "strong",
   });
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const viewerOpenId = viewerIdentity?.openId?.trim() ?? null;
@@ -178,6 +181,11 @@ export async function getPRDetailView(
           respondentUserId: viewerUserId,
         })
       : null;
+  const participationFrequencyEvaluation =
+    await evaluateAnchorEventParticipationFrequencyLimit({
+      request,
+      userId: viewerUserId,
+    });
 
   return {
     id: publicPR.id,
@@ -249,6 +257,8 @@ export async function getPRDetailView(
       policy,
       bookingDeadlineAt,
       bookingContact,
+      participationFrequencyLimited:
+        participationFrequencyEvaluation.allowed === false,
     }),
   };
 }

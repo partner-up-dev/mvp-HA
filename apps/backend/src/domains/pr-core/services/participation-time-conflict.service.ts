@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -11,10 +11,6 @@ const prRepo = new PartnerRequestRepository();
 export const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
 const JOIN_TIME_WINDOW_CONFLICT_MESSAGE =
   "Cannot continue - time window conflicts with another joined partner request";
-
-type CodedHttpException = HTTPException & {
-  code?: string;
-};
 
 const isTimeConflictRelevantStatus = (status: string): boolean =>
   status === "OPEN" ||
@@ -44,9 +40,9 @@ export async function assertNoUserTimeWindowConflict(params: {
   });
   if (!conflicted) return;
 
-  const error = new HTTPException(409, {
-    message: JOIN_TIME_WINDOW_CONFLICT_MESSAGE,
-  }) as CodedHttpException;
-  error.code = JOIN_TIME_WINDOW_CONFLICT_CODE;
-  throw error;
+  return throwHttpProblem({
+    status: 409,
+    detail: JOIN_TIME_WINDOW_CONFLICT_MESSAGE,
+    code: JOIN_TIME_WINDOW_CONFLICT_CODE,
+  });
 }

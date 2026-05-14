@@ -20,6 +20,7 @@ defineProps<{
 }>();
 
 type TimelinePolicyValue = {
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -30,6 +31,7 @@ const { t } = useI18n();
 
 const policyValue = computed<TimelinePolicyValue>({
   get: () => ({
+    confirmationEnabled: form.value.defaultConfirmationEnabled,
     confirmationStartOffsetMinutes:
       form.value.defaultConfirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: form.value.defaultConfirmationEndOffsetMinutes,
@@ -38,6 +40,7 @@ const policyValue = computed<TimelinePolicyValue>({
   set: (value) => {
     form.value = {
       ...form.value,
+      defaultConfirmationEnabled: value.confirmationEnabled,
       defaultConfirmationStartOffsetMinutes:
         value.confirmationStartOffsetMinutes,
       defaultConfirmationEndOffsetMinutes: value.confirmationEndOffsetMinutes,

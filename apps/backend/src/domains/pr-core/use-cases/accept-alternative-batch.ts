@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities/partner-request";
 
 export interface AcceptAlternativeBatchResult {
@@ -12,7 +12,5 @@ export async function acceptAlternativeBatch(
   sourcePrId: PRId,
   _targetTimeWindow: [string | null, string | null],
 ): Promise<AcceptAlternativeBatchResult> {
-  throw new HTTPException(410, {
-    message: "Alternative batch recovery has retired from the live PR flow",
-  });
+  return throwHttpProblem({ status: 410, detail: "Alternative batch recovery has retired from the live PR flow" });
 }

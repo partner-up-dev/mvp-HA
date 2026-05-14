@@ -23,6 +23,7 @@ export type PartnerSectionActionBlockedReason =
   | "EVENT_STARTED"
   | "BOOKING_LOCKED"
   | "BOOKING_CONTACT_REQUIRED"
+  | "PARTICIPATION_FREQUENCY_LIMITED"
   | "OUTSIDE_CONFIRM_WINDOW"
   | "NOT_JOINED"
   | "ALREADY_WAITLISTED"
@@ -93,6 +94,9 @@ export type PartnerSectionView = {
         supported: true;
         visible: boolean;
       };
+  confirmation: {
+    enabled: boolean;
+  };
   timeline: null | {
     eventStartAt: string | null;
     confirmationStartAt: string | null;
@@ -179,7 +183,7 @@ const buildBaseSection = (
   releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
 ): Omit<
   PartnerSectionView,
-  "reminder" | "timeline" | "bookingContact" | "fallbacks"
+  "reminder" | "confirmation" | "timeline" | "bookingContact" | "fallbacks"
 > => {
   const current = activeParticipants.length;
   const min = publicPR.minPartners;
@@ -322,6 +326,7 @@ export function buildPRPartnerSection(params: {
   }>;
   alternativeBatches?: AlternativeBatchRecommendation[];
   releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+  participationFrequencyLimited?: boolean;
 }): PartnerSectionView {
   const {
     publicPR,
@@ -335,6 +340,7 @@ export function buildPRPartnerSection(params: {
     sameBatchAlternatives = [],
     alternativeBatches = [],
     releaseStateByPartnerId = new Map(),
+    participationFrequencyLimited = false,
   } = params;
 
   const base = buildBaseSection(
@@ -347,6 +353,8 @@ export function buildPRPartnerSection(params: {
   );
   const current = activeParticipants.length;
   const hasParticipationPolicy = policy !== null;
+  const confirmationEnabled =
+    hasParticipationPolicy && policy.confirmationEnabled;
   const joinLocked =
     hasParticipationPolicy && policy?.joinLockAt
       ? Date.now() >= policy.joinLockAt.getTime()
@@ -354,7 +362,7 @@ export function buildPRPartnerSection(params: {
   const bookingLocked = isBookingDeadlineReached(bookingDeadlineAt);
   const started = hasEventStarted(publicPR.time);
   const withinConfirmationWindow =
-    hasParticipationPolicy &&
+    confirmationEnabled &&
     policy?.confirmationStartAt !== null &&
     policy?.confirmationEndAt !== null &&
     Date.now() >= policy.confirmationStartAt.getTime() &&
@@ -377,6 +385,9 @@ export function buildPRPartnerSection(params: {
   } else if (joinLocked) {
     canJoin = false;
     joinBlockedReason = "JOIN_LOCKED";
+  } else if (participationFrequencyLimited) {
+    canJoin = false;
+    joinBlockedReason = "PARTICIPATION_FREQUENCY_LIMITED";
   }
 
   let canWaitlist = false;
@@ -389,6 +400,8 @@ export function buildPRPartnerSection(params: {
     waitlistBlockedReason = "NOT_JOINABLE_STATUS";
   } else if (joinLocked) {
     waitlistBlockedReason = "JOIN_LOCKED";
+  } else if (participationFrequencyLimited) {
+    waitlistBlockedReason = "PARTICIPATION_FREQUENCY_LIMITED";
   } else {
     canWaitlist = true;
   }
@@ -419,7 +432,7 @@ export function buildPRPartnerSection(params: {
 
   let canConfirm = true;
   let confirmBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!hasParticipationPolicy) {
+  if (!confirmationEnabled) {
     canConfirm = false;
     confirmBlockedReason = "OUTSIDE_CONFIRM_WINDOW";
   } else if (!base.viewer.isParticipant) {
@@ -476,6 +489,9 @@ export function buildPRPartnerSection(params: {
           supported: false,
           visible: false,
         },
+    confirmation: {
+      enabled: confirmationEnabled,
+    },
     timeline: hasParticipationPolicy
       ? {
           eventStartAt: publicPR.time[0],
@@ -538,6 +554,7 @@ export function buildAnchorPartnerSection(params: {
   }>;
   alternativeBatches: AlternativeBatchRecommendation[];
   releaseStateByPartnerId?: Map<number, PartnerSectionReleaseState>;
+  participationFrequencyLimited?: boolean;
 }): PartnerSectionView {
   return buildPRPartnerSection({
     publicPR: params.publicPR,
@@ -551,5 +568,6 @@ export function buildAnchorPartnerSection(params: {
     sameBatchAlternatives: params.sameBatchAlternatives,
     alternativeBatches: params.alternativeBatches,
     releaseStateByPartnerId: params.releaseStateByPartnerId,
+    participationFrequencyLimited: params.participationFrequencyLimited,
   });
 }

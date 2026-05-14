@@ -447,6 +447,7 @@ type PRForm = {
   meetingPointDescription: string;
   meetingPointImageUrl: string;
   joinGateConfig: PRJoinGateConfig;
+  confirmationEnabled: boolean;
   feedbackQuestionnaireInstanceId: number | null;
   status: "OPEN" | "READY" | "ACTIVE" | "CLOSED";
   visibilityStatus: "VISIBLE" | "HIDDEN";
@@ -472,6 +473,7 @@ const emptyPRForm = (): PRForm => ({
   meetingPointDescription: "",
   meetingPointImageUrl: "",
   joinGateConfig: [],
+  confirmationEnabled: true,
   feedbackQuestionnaireInstanceId: null,
   status: "OPEN",
   visibilityStatus: "VISIBLE",
@@ -507,6 +509,7 @@ const toPRForm = (pr: AdminPRRecord): PRForm => ({
   meetingPointDescription: pr.meetingPoint?.description ?? "",
   meetingPointImageUrl: pr.meetingPoint?.imageUrl ?? "",
   joinGateConfig: pr.joinGateConfig,
+  confirmationEnabled: pr.confirmationEnabled,
   feedbackQuestionnaireInstanceId: pr.feedbackQuestionnaireInstanceId ?? null,
   status: pr.status as PRForm["status"],
   visibilityStatus: pr.visibilityStatus as PRForm["visibilityStatus"],
@@ -602,6 +605,7 @@ const timeValidationMessage = computed(() => {
 
 const prPolicyValue = computed({
   get: () => ({
+    confirmationEnabled: prForm.value.confirmationEnabled,
     confirmationStartOffsetMinutes:
       prForm.value.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: prForm.value.confirmationEndOffsetMinutes,
@@ -610,6 +614,7 @@ const prPolicyValue = computed({
   set: (value) => {
     prForm.value = {
       ...prForm.value,
+      confirmationEnabled: value.confirmationEnabled,
       confirmationStartOffsetMinutes: value.confirmationStartOffsetMinutes,
       confirmationEndOffsetMinutes: value.confirmationEndOffsetMinutes,
       joinLockOffsetMinutes: value.joinLockOffsetMinutes,
@@ -618,6 +623,9 @@ const prPolicyValue = computed({
 });
 
 const policyValidationMessage = computed(() => {
+  if (!prForm.value.confirmationEnabled) {
+    return null;
+  }
   if (
     prForm.value.confirmationStartOffsetMinutes <=
     prForm.value.confirmationEndOffsetMinutes
@@ -692,6 +700,7 @@ watch(
       maxPartners: matched.defaultMaxPartners,
       confirmationStartOffsetMinutes:
         matched.defaultConfirmationStartOffsetMinutes,
+      confirmationEnabled: matched.defaultConfirmationEnabled,
       confirmationEndOffsetMinutes: matched.defaultConfirmationEndOffsetMinutes,
       joinLockOffsetMinutes: matched.defaultJoinLockOffsetMinutes,
       joinGateConfig: matched.joinGateConfig,

@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
@@ -8,6 +8,7 @@ import type { User } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../user";
 import {
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   isJoinLockedByPolicy,
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,
@@ -38,26 +39,19 @@ import {
   BOOKING_CONTACT_PHONE_INVALID_CODE,
 } from "../services/join-gates.service";
 import { closeAlternativeWaitlistSourcesAfterJoin } from "../services/waitlist-alternative-reminder.service";
+import { assertAnchorEventParticipationFrequencyLimitAllows } from "../services/anchor-participation-frequency-limit.service";
 
 const prRepo = new PartnerRequestRepository();
 const partnerRepo = new PartnerRepository();
 const userReliabilityRepo = new UserReliabilityRepository();
 const userRepo = new UserRepository();
 
-type CodedHttpException = HTTPException & {
-  code?: string;
-};
-
 const throwCodedHttpException = (
   status: 400 | 401 | 403 | 404 | 409 | 500,
   message: string,
   code: string,
 ): never => {
-  const error = new HTTPException(status, {
-    message,
-  }) as CodedHttpException;
-  error.code = code;
-  throw error;
+  return throwHttpProblem({ status, detail: message, code });
 };
 
 type JoinPRAsUserOptions = {
@@ -71,10 +65,11 @@ export async function joinPRAsUser(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
   const hasParticipationPolicy = hasAnchorParticipationPolicy(refreshedRequest);
+  const hasConfirmationPolicy = hasEnabledConfirmationPolicy(refreshedRequest);
 
   let targetStatus: Extract<PartnerStatus, "JOINED" | "CONFIRMED"> = "JOINED";
   const bookingContactRequired = await isBookingContactRequiredForPR(id);
@@ -85,33 +80,27 @@ export async function joinPRAsUser(
       refreshedRequest.time,
     );
     if (isJoinLockedByPolicy(policy)) {
-      throw new HTTPException(400, {
-        message: "Cannot join - event is locked after join lock",
-      });
+      return throwHttpProblem({ status: 400, detail: "Cannot join - event is locked after join lock" });
     }
 
-    if (isWithinConfirmationWindow(policy)) {
+    if (hasConfirmationPolicy && isWithinConfirmationWindow(policy)) {
       targetStatus = "CONFIRMED";
     }
   }
 
   if (!isJoinableStatus(refreshedRequest.status as string)) {
-    throw new HTTPException(400, {
-      message: "Cannot join - partner request is not open",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot join - partner request is not open" });
   }
 
   if (user.status !== "ACTIVE") {
-    throw new HTTPException(403, { message: "Current user is not active" });
+    return throwHttpProblem({ status: 403, detail: "Current user is not active" });
   }
 
   const existing = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
   if (existing) {
     const latest = await prRepo.findById(id);
     if (!latest) {
-      throw new HTTPException(500, {
-        message: "Failed to reload partner request",
-      });
+      return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
     }
     if (hasAnchorParticipationPolicy(latest)) {
       await scheduleWeChatReminderJobsForParticipant(latest, user.id);
@@ -124,6 +113,10 @@ export async function joinPRAsUser(
     userId: user.id,
     targetTimeWindow: refreshedRequest.time,
     excludePrId: id,
+  });
+  await assertAnchorEventParticipationFrequencyLimitAllows({
+    request: refreshedRequest,
+    userId: user.id,
   });
 
   const activeCount = await countActivePartnersForPR(id);
@@ -153,9 +146,7 @@ export async function joinPRAsUser(
     refreshedRequest.maxPartners !== null &&
     activeCount >= refreshedRequest.maxPartners
   ) {
-    throw new HTTPException(400, {
-      message: "Cannot join - partner request is full",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot join - partner request is full" });
   }
   const latestHistoricalSlot = await partnerRepo.findReleasedByPrIdAndUserId(
     id,
@@ -169,9 +160,7 @@ export async function joinPRAsUser(
         status: targetStatus,
       });
   if (!joinedSlot) {
-    throw new HTTPException(500, {
-      message: "Failed to persist join participation record",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to persist join participation record" });
   }
   const assignedPartnerId = joinedSlot.id;
 
@@ -186,7 +175,6 @@ export async function joinPRAsUser(
   const afterRecalculate = await prRepo.findById(id);
   if (
     afterRecalculate &&
-    hasAnchorParticipationPolicy(afterRecalculate) &&
     afterRecalculate.status === "FULL"
   ) {
     await expandFullPR(id);
@@ -202,9 +190,7 @@ export async function joinPRAsUser(
 
   const latest = await prRepo.findById(id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to reload partner request",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
   }
   if (hasAnchorParticipationPolicy(latest)) {
     await scheduleWeChatNewPartnerNotificationsForJoin({

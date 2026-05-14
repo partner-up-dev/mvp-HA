@@ -1,12 +1,11 @@
+import { throwHttpProblem } from "../../../lib/problem-details";
 /**
  * Use-case: Get a single Anchor Event with event-owned create assistance and
  * same-type PR browsing data.
  */
 
-import { HTTPException } from "hono/http-exception";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { PoiRepository } from "../../../repositories/PoiRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
@@ -26,10 +25,10 @@ import {
   resolveAnchorEventTimeWindowDescription,
 } from "../services/time-window-pool";
 import { resolvePublicEventLocationPool } from "../services/event-scope";
+import { findPoisByNames } from "../../poi";
 
 const eventRepo = new AnchorEventRepository();
 const partnerRepo = new PartnerRepository();
-const poiRepo = new PoiRepository();
 
 export interface EventPRSummary {
   id: number;
@@ -169,14 +168,14 @@ export async function getAnchorEventDetail(
 ): Promise<AnchorEventDetail> {
   const event = await eventRepo.findById(eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const locationPool = await resolvePublicEventLocationPool(event);
   const timeWindowDetails = listAnchorEventTimeWindowDetails(event);
   const timeWindowPool = timeWindowDetails.map((detail) => detail.timeWindow);
-  const pois = await poiRepo.findByIds(locationPool);
-  const poiByLocation = new Map(pois.map((poi) => [poi.id, poi]));
+  const pois = await findPoisByNames(locationPool);
+  const poiByLocation = new Map(pois.map((poi) => [poi.name, poi]));
 
   const browsePRs = await readVisiblePartnerRequestsByType(event.type);
   const browseTimeWindows = buildBrowseTimeWindowDetails(browsePRs, event);

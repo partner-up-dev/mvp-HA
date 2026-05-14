@@ -38,7 +38,7 @@ export function isActivatableStatus(status: string): boolean {
   return status === "READY" || status === "FULL" || status === "LOCKED_TO_START";
 }
 
-/** Statuses eligible to transition to EXPIRED. */
+/** Statuses eligible for close-time finalization. */
 export function isExpirableStatus(status: string): boolean {
   return (
     status === "OPEN" ||

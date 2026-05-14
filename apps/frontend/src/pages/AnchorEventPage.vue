@@ -74,10 +74,9 @@
     </template>
   </FooterRevealPageScaffold>
 
-  <OfficialAccountFollowNudge
-    :open="officialAccountFollowPrompt.isVisible.value"
-    @dismiss="officialAccountFollowPrompt.dismissPrompt"
-    @complete="officialAccountFollowPrompt.markPromptCompleted"
+  <BookmarkPageNudge
+    :open="bookmarkPageNudgePrompt.isVisible.value"
+    @acknowledge="bookmarkPageNudgePrompt.acknowledgePrompt"
   />
 </template>
 
@@ -89,9 +88,9 @@ import FullCommonFooter from "@/domains/landing/ui/sections/FullCommonFooter.vue
 import PageHeader from "@/shared/ui/navigation/PageHeader.vue";
 import AnchorEventCardModeSurface from "@/domains/event/ui/surfaces/AnchorEventCardModeSurface/AnchorEventCardModeSurface.vue";
 import AnchorEventListModeSurface from "@/domains/event/ui/surfaces/AnchorEventListModeSurface.vue";
-import OfficialAccountFollowNudge from "@/domains/marketing/ui/OfficialAccountFollowNudge.vue";
+import BookmarkPageNudge from "@/domains/marketing/ui/BookmarkPageNudge.vue";
 import FooterRevealPageScaffold from "@/shared/ui/layout/FooterRevealPageScaffold.vue";
-import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
+import { useBookmarkPageNudgePrompt } from "@/domains/marketing/use-cases/useBookmarkPageNudgePrompt";
 
 type EventViewMode = "LIST" | "CARD";
 
@@ -103,7 +102,7 @@ type HeaderContext = {
 const route = useRoute();
 const { t } = useI18n();
 
-const OFFICIAL_ACCOUNT_FOLLOW_PROMPT_DELAY_MS = 3000;
+const BOOKMARK_PAGE_NUDGE_DELAY_MS = 3000;
 
 const normalizeQueryViewMode = (value: string): EventViewMode | null => {
   const normalized = value.trim().toLowerCase();
@@ -144,8 +143,7 @@ const resolveInitialViewMode = (): EventViewMode =>
 const viewMode = ref<EventViewMode>("LIST");
 const headerContext = ref<HeaderContext | null>(null);
 const isCardStageActive = ref(false);
-const officialAccountFollowPrompt =
-  useOfficialAccountFollowPrompt("anchor_event");
+const bookmarkPageNudgePrompt = useBookmarkPageNudgePrompt("anchor_event");
 
 const eventId = computed(() => {
   const raw = route.params.eventId;
@@ -186,9 +184,7 @@ watch(
 );
 
 onMounted(() => {
-  officialAccountFollowPrompt.requestPromptAfterDelay(
-    OFFICIAL_ACCOUNT_FOLLOW_PROMPT_DELAY_MS,
-  );
+  bookmarkPageNudgePrompt.requestPromptAfterDelay(BOOKMARK_PAGE_NUDGE_DELAY_MS);
 });
 </script>
 

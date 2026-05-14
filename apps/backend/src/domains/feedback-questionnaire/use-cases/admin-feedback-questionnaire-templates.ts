@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type {
   FeedbackQuestionnaireDefinition,
   FeedbackQuestionnaireTemplate,
@@ -66,9 +66,7 @@ const assertKeyVersionAvailable = async (input: {
     version: input.version,
   });
   if (!existing || existing.id === input.currentTemplateId) return;
-  throw new HTTPException(409, {
-    message: "Feedback questionnaire template key/version already exists",
-  });
+  return throwHttpProblem({ status: 409, detail: "Feedback questionnaire template key/version already exists" });
 };
 
 export const listAdminFeedbackQuestionnaireTemplates = async (): Promise<
@@ -93,9 +91,7 @@ export const updateAdminFeedbackQuestionnaireTemplate = async (
 ): Promise<AdminFeedbackQuestionnaireTemplateView> => {
   const existing = await repository.findTemplateById(templateId);
   if (!existing) {
-    throw new HTTPException(404, {
-      message: "Feedback questionnaire template not found",
-    });
+    return throwHttpProblem({ status: 404, detail: "Feedback questionnaire template not found" });
   }
 
   const normalized = normalizeInput(input);
@@ -105,9 +101,7 @@ export const updateAdminFeedbackQuestionnaireTemplate = async (
   });
   const template = await repository.updateTemplate(templateId, normalized);
   if (!template) {
-    throw new HTTPException(404, {
-      message: "Feedback questionnaire template not found",
-    });
+    return throwHttpProblem({ status: 404, detail: "Feedback questionnaire template not found" });
   }
   return toView(template);
 };

@@ -10,11 +10,9 @@ import { RouterView } from "vue-router";
 import { useAuthSessionBootstrap } from "@/processes/auth/useAuthSessionBootstrap";
 import WeChatOAuthHandoffGate from "@/processes/wechat/WeChatOAuthHandoffGate.vue";
 import MatchedPRHandoffOverlay from "@/processes/route-handoff/MatchedPRHandoffOverlay.vue";
-import { useRouteWeChatAutoLogin } from "@/processes/wechat/useRouteWeChatAutoLogin";
 import { useRouteShareOrchestrator } from "@/domains/share/use-cases/useRouteShareOrchestrator";
 
 useAuthSessionBootstrap();
-useRouteWeChatAutoLogin();
 useRouteShareOrchestrator();
 </script>
 

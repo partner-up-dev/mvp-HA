@@ -1,0 +1,68 @@
+import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./apps/frontend/src", import.meta.url)),
+      "@/": fileURLToPath(new URL("./apps/frontend/src/", import.meta.url)),
+      "@partner-up-dev/backend": fileURLToPath(
+        new URL("./apps/backend/src/index.ts", import.meta.url),
+      ),
+    },
+  },
+  test: {
+    reporters: ["agent"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "backend-unit",
+          include: ["apps/backend/src/**/*.test.ts"],
+          environment: "node",
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "frontend-unit",
+          include: ["apps/frontend/src/**/*.test.ts"],
+          environment: "node",
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "backend-scenario",
+          include: ["apps/backend/tests/**/*.scenario.test.ts"],
+          environment: "node",
+          globalSetup: ["./apps/backend/tests/_infra/vitest/global-setup.ts"],
+          fileParallelism: false,
+          isolate: false,
+          maxWorkers: 1,
+          testTimeout: 60_000,
+          sequence: {
+            concurrent: false,
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "system-scenario",
+          include: ["tests/scenario/**/*.scenario.test.ts"],
+          environment: "node",
+          globalSetup: ["./tests/scenario/_infra/vitest/global-setup.ts"],
+          setupFiles: ["./tests/scenario/_infra/vitest/setup-file.ts"],
+          fileParallelism: false,
+          isolate: false,
+          maxWorkers: 1,
+          testTimeout: 60_000,
+          sequence: {
+            concurrent: false,
+          },
+        },
+      },
+    ],
+  },
+});

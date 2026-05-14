@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../../user";
 import { toPublicPR, type PublicPR } from "../services/pr-view.service";
@@ -12,7 +12,7 @@ export async function getPR(
     consistency: "strong",
   });
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const viewerUserId = viewerOpenId

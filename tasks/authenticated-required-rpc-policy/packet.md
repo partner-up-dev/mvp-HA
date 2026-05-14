@@ -25,3 +25,7 @@ Hypothesis:
 - `pnpm test:backend:unit`
 
 Frontend has no existing unit-test runner in this workspace. The RPC policy is kept in small pure functions for future unit coverage when a frontend test runner is introduced.
+
+## Known Risks
+
+- 2026-05-14: The shared frontend `AUTHENTICATED_REQUIRED` policy still starts WeChat OAuth from the RPC response layer. This is acceptable for explicit user-command mutations, but remains risky if a page-init query, prefetch, or other non-user-initiated request returns `401 + AUTHENTICATED_REQUIRED`, because it could trigger `snsapi_userinfo` without clear user intent. Follow-up should move this redirect decision to explicit command/use-case owners or otherwise gate it behind a user action.

@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PartnerId } from "../../../entities/partner";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -42,7 +42,7 @@ export async function getPRPartnerProfile(params: {
     consistency: "eventual",
   });
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const participant =
@@ -51,7 +51,7 @@ export async function getPRPartnerProfile(params: {
       partnerId,
     );
   if (!participant) {
-    throw new HTTPException(404, { message: "Partner profile not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner profile not found" });
   }
 
   const isCreator =

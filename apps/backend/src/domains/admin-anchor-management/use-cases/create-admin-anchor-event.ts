@@ -1,7 +1,10 @@
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
   AnchorEvent,
+  AnchorEventFullPrExpansionPolicy,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
@@ -16,7 +19,6 @@ import {
   normalizeMeetingPointConfig,
   normalizeMeetingPointConfigMap,
 } from "../../../entities";
-import { HTTPException } from "hono/http-exception";
 import {
   assertManualPartnerBoundsValid,
   validateAnchorParticipationPolicyOffsets,
@@ -34,16 +36,19 @@ export interface CreateAdminAnchorEventInput {
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   defaultPrNotes: string | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
   meetingPoint?: MeetingPointConfig | null;
   joinGateConfig?: PRJoinGateConfig;
+  participationFrequencyLimit?: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   locationMeetingPoints?: MeetingPointConfigMap;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   prCreationPolicy: AnchorEventPrCreationPolicy;
+  fullPrExpansionPolicy: AnchorEventFullPrExpansionPolicy;
   status: AnchorEventStatus;
 }
 
@@ -56,6 +61,7 @@ export async function createAdminAnchorEvent(
     0,
   );
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled: input.defaultConfirmationEnabled,
     confirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.defaultConfirmationEndOffsetMinutes,
@@ -64,18 +70,14 @@ export async function createAdminAnchorEvent(
 
   const existing = await anchorEventRepo.findOneByType(input.type);
   if (existing) {
-    throw new HTTPException(409, {
-      message: `Anchor event type already exists: ${input.type}`,
-    });
+    return throwHttpProblem({ status: 409, detail: `Anchor event type already exists: ${input.type}` });
   }
   if (input.feedbackQuestionnaireTemplateId !== null && input.feedbackQuestionnaireTemplateId !== undefined) {
     const template = await feedbackRepo.findTemplateById(
       input.feedbackQuestionnaireTemplateId,
     );
     if (!template) {
-      throw new HTTPException(404, {
-        message: "Feedback questionnaire template not found",
-      });
+      return throwHttpProblem({ status: 404, detail: "Feedback questionnaire template not found" });
     }
   }
 
@@ -88,6 +90,7 @@ export async function createAdminAnchorEvent(
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
     defaultPrNotes: input.defaultPrNotes,
+    defaultConfirmationEnabled: input.defaultConfirmationEnabled,
     defaultConfirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     defaultConfirmationEndOffsetMinutes:
@@ -95,6 +98,7 @@ export async function createAdminAnchorEvent(
     defaultJoinLockOffsetMinutes: input.defaultJoinLockOffsetMinutes,
     meetingPoint: normalizeMeetingPointConfig(input.meetingPoint),
     joinGateConfig: input.joinGateConfig ?? [],
+    participationFrequencyLimit: input.participationFrequencyLimit ?? null,
     feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     locationMeetingPoints: normalizeMeetingPointConfigMap(
       input.locationMeetingPoints,
@@ -102,6 +106,7 @@ export async function createAdminAnchorEvent(
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     prCreationPolicy: input.prCreationPolicy,
+    fullPrExpansionPolicy: input.fullPrExpansionPolicy,
     status: input.status,
   });
 }

@@ -263,6 +263,11 @@ export interface MessageSchema {
       support: string;
     };
   };
+  bookmarkPageNudge: {
+    title: string;
+    description: string;
+    acknowledgeAction: string;
+  };
   officialAccountFollow: {
     nudgeTitle: string;
     nudgeDescription: string;
@@ -522,6 +527,7 @@ export interface MessageSchema {
       blockedAlreadyConfirmed: string;
       blockedNotJoined: string;
       blockedStatus: string;
+      blockedParticipationFrequencyLimited: string;
       blockedCheckIn: string;
       rosterBoardTitle: string;
       rosterTitle: string;
@@ -790,6 +796,11 @@ export interface MessageSchema {
       wechatOnlyAction: string;
       unavailableAction: string;
     };
+    logout: {
+      action: string;
+      pending: string;
+      failed: string;
+    };
     credentials: {
       title: string;
       description: string;
@@ -857,6 +868,8 @@ export interface MessageSchema {
   timelinePolicyPicker: {
     title: string;
     description: string;
+    confirmationEnabled: string;
+    confirmationEnabledHint: string;
     confirmationStart: string;
     confirmationEnd: string;
     joinLock: string;
@@ -1182,6 +1195,8 @@ export interface MessageSchema {
     poiPlaceholder: string;
     newPoiLabel: string;
     newPoiPlaceholder: string;
+    fullAddressLabel: string;
+    fullAddressPlaceholder: string;
     createPoiAction: string;
     creatingPoi: string;
     galleryHint: string;
@@ -1289,9 +1304,15 @@ export interface MessageSchema {
     saveLandingConfigAction: string;
     defaultPrNotesTitle: string;
     defaultPrNotesPlaceholder: string;
+    participationFrequencyLimitTitle: string;
+    participationFrequencyLimitPlaceholder: string;
+    participationFrequencyLimitHint: string;
     prCreationPolicyTitle: string;
     prCreationPolicyAdminOnlyLabel: string;
     prCreationPolicyHint: string;
+    fullPrExpansionPolicyTitle: string;
+    fullPrExpansionPolicyEnabledLabel: string;
+    fullPrExpansionPolicyHint: string;
     preferenceTagsTitle: string;
     preferenceTagsDescription: string;
     selectEventForPreferenceTagsHint: string;

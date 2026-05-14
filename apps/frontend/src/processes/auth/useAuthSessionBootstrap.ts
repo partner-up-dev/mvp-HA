@@ -15,6 +15,27 @@ let bootstrappingPromise: Promise<void> | null = null;
 
 type AuthSessionBootstrapResult = "completed" | "deferred";
 
+const registerFreshAnonymousSession = async (
+  store: ReturnType<typeof useUserSessionStore>,
+): Promise<boolean> => {
+  const registerRes = await client.api.auth.register.anonymous.$post(
+    undefined,
+    {
+      init: {
+        credentials: "include",
+      },
+    },
+  );
+
+  if (!registerRes.ok) {
+    return false;
+  }
+
+  const payload = (await registerRes.json()) as AuthSessionPayload;
+  store.applyAuthSession(payload);
+  return true;
+};
+
 const runAuthSessionBootstrap = async (): Promise<AuthSessionBootstrapResult> => {
   if (typeof window !== "undefined") {
     const isOAuthCallback =
@@ -39,18 +60,7 @@ const runAuthSessionBootstrap = async (): Promise<AuthSessionBootstrapResult> =>
   const storedUserId = store.userId ?? getStoredUserId();
 
   if (!existingToken && !storedUserId) {
-    const registerRes = await client.api.auth.register.anonymous.$post(
-      undefined,
-      {
-        init: {
-          credentials: "include",
-        },
-      },
-    );
-    if (registerRes.ok) {
-      const payload = (await registerRes.json()) as AuthSessionPayload;
-      store.applyAuthSession(payload);
-    }
+    await registerFreshAnonymousSession(store);
   }
 
   const currentUserId = store.userId ?? storedUserId;
@@ -101,6 +111,25 @@ export const ensureAuthSessionBootstrapped = async (): Promise<void> => {
   }
 
   await bootstrappingPromise;
+};
+
+export const resetAuthSessionToFreshAnonymous = async (): Promise<void> => {
+  if (bootstrappingPromise) {
+    try {
+      await bootstrappingPromise;
+    } catch {
+      // Continue with an explicit user-initiated session reset.
+    }
+  }
+
+  const store = useUserSessionStore();
+  store.clearSession();
+  hasBootstrappedAuthSession = false;
+  const registered = await registerFreshAnonymousSession(store);
+  if (!registered) {
+    throw new Error("Failed to start anonymous session");
+  }
+  hasBootstrappedAuthSession = true;
 };
 
 export const useAuthSessionBootstrap = (): void => {

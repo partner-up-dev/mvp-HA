@@ -4,13 +4,13 @@ const normalizeGallery = (gallery: readonly string[]): string[] =>
     .filter((url) => url.length > 0);
 
 export const toPoiGalleryMap = (
-  pois: ReadonlyArray<{ id: string; gallery: readonly string[] }>,
+  pois: ReadonlyArray<{ name: string; gallery: readonly string[] }>,
 ): Map<string, string[]> => {
   const map = new Map<string, string[]>();
 
   for (const poi of pois) {
-    const poiId = poi.id.trim();
-    if (!poiId) {
+    const poiName = poi.name.trim();
+    if (!poiName) {
       continue;
     }
 
@@ -19,7 +19,7 @@ export const toPoiGalleryMap = (
       continue;
     }
 
-    map.set(poiId, gallery);
+    map.set(poiName, gallery);
   }
 
   return map;

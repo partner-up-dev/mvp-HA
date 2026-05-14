@@ -1,9 +1,9 @@
+import { throwHttpProblem } from "../../../lib/problem-details";
 /**
  * Slot management service — handles partner slot CRUD, capacity sync,
  * bounds validation, and status recalculation.
  */
 
-import { HTTPException } from "hono/http-exception";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type {
@@ -42,10 +42,7 @@ export async function syncSlotCapacity(
   if (maxPartners === null) return;
   const activeCount = await countActivePartnersForPR(prId);
   if (activeCount > maxPartners) {
-    throw new HTTPException(400, {
-      message:
-        "Invalid partner bounds - maxPartners cannot be smaller than active participants",
-    });
+    return throwHttpProblem({ status: 400, detail: "Invalid partner bounds - maxPartners cannot be smaller than active participants" });
   }
 }
 
@@ -64,7 +61,7 @@ export async function listActiveParticipantSummariesForPR(prId: PRId) {
 export async function recalculatePRStatus(prId: PRId): Promise<void> {
   const request = await prRepo.findById(prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   const activeCount = await countActivePartnersForPR(prId);

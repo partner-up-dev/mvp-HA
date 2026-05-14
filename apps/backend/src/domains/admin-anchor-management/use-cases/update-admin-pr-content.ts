@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { updatePRContent } from "../../pr";
 import { type TimeWindowEntry } from "../../../entities/anchor-event";
 import { validateAnchorParticipationPolicyOffsets } from "../../pr/services";
@@ -19,6 +19,7 @@ export interface UpdateAdminPRContentInput {
   notes: string | null;
   meetingPoint?: MeetingPointConfig | null;
   joinGateConfig?: PRJoinGateConfig;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -36,9 +37,7 @@ const assertTimeWindowValid = (timeWindow: TimeWindowEntry) => {
     Number.isNaN(endAt.getTime()) ||
     startAt.getTime() > endAt.getTime()
   ) {
-    throw new HTTPException(400, {
-      message: "PR time window is invalid",
-    });
+    return throwHttpProblem({ status: 400, detail: "PR time window is invalid" });
   }
 };
 
@@ -48,11 +47,12 @@ export async function updateAdminPRContent(
 ) {
   const existing = await prRepo.findById(prId);
   if (!existing) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   assertTimeWindowValid(input.timeWindow);
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
@@ -83,6 +83,7 @@ export async function updateAdminPRContent(
   );
 
   await prRepo.updatePartnerRules(prId, {
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,

@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../lib/problem-details";
 import type { PartnerRequestFields, PRId } from "../entities/partner-request";
 import { PartnerRequestService } from "./PartnerRequestService";
 import { ShareAIService, type PosterHtmlResponse } from "./ShareAIService";
@@ -52,9 +52,7 @@ const sanitizeGeneratedHtml = (html: string): string => {
 const assertHtmlSafe = (html: string): void => {
   const pattern = findUnsafePattern(html);
   if (pattern) {
-    throw new HTTPException(500, {
-      message: `LLM produced unsafe HTML (${pattern.source})`,
-    });
+    return throwHttpProblem({ status: 500, detail: `LLM produced unsafe HTML (${pattern.source})` });
   }
 };
 
@@ -67,9 +65,7 @@ const sanitizeAndAssertHtmlSafe = (html: string): string => {
   const sanitized = sanitizeGeneratedHtml(html);
   const secondPattern = findUnsafePattern(sanitized);
   if (secondPattern) {
-    throw new HTTPException(500, {
-      message: `LLM produced unsafe HTML (${secondPattern.source})`,
-    });
+    return throwHttpProblem({ status: 500, detail: `LLM produced unsafe HTML (${secondPattern.source})` });
   }
 
   return sanitized;
@@ -111,7 +107,7 @@ const sanitizeThumbnailResponse = (
 
 const assertNotEmptyHtml = (html: string): void => {
   if (html.trim().length === 0) {
-    throw new HTTPException(500, { message: "LLM produced empty HTML" });
+    return throwHttpProblem({ status: 500, detail: "LLM produced empty HTML" });
   }
 };
 

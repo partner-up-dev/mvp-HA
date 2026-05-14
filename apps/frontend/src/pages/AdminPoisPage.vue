@@ -54,9 +54,10 @@
         <template v-else>
           <PoiBasicSection
             v-if="activeAdminSection === 'poi-basic'"
-            v-model:new-poi-id="newPoiId"
+            v-model:new-poi-name="newPoiName"
             v-model:manual-gallery-url="manualGalleryUrl"
             v-model:is-uploading-gallery-image="isUploadingGalleryImage"
+            v-model:selected-poi-full-address="selectedPoiFullAddress"
             v-model:selected-poi-cap-text="selectedPoiCapText"
             v-model:selected-poi-meeting-point-description="selectedPoiMeetingPointDescription"
             v-model:selected-poi-meeting-point-image-url="selectedPoiMeetingPointImageUrl"
@@ -114,7 +115,7 @@ const activeAdminSection = useAdminNavigationSection("poi-basic", [
 const {
   poisQuery,
   selectedPoiIdRaw,
-  newPoiId,
+  newPoiName,
   rejectReasonDraft,
   pois,
   selectedPoiId,
@@ -122,6 +123,7 @@ const {
   manualGalleryUrl,
   isUploadingGalleryImage,
   selectedPoiGallery,
+  selectedPoiFullAddress,
   selectedPoiCapText,
   selectedPoiMeetingPointDescription,
   selectedPoiMeetingPointImageUrl,

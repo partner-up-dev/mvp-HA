@@ -1,7 +1,7 @@
+import { throwHttpProblem } from "../lib/problem-details";
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { HTTPException } from "hono/http-exception";
 import {
   authMiddleware,
   issueAnonymousAuth,
@@ -40,7 +40,7 @@ export const authRoute = app
       !hasAnyUserRole(user.role, ["service", "analytics"]) ||
       !(await verifyUserCredential(user, password))
     ) {
-      throw new HTTPException(401, { message: "Invalid admin credentials" });
+      return throwHttpProblem({ status: 401, detail: "Invalid admin credentials" });
     }
 
     const authenticated = issueAuthForUser(user);
@@ -90,9 +90,7 @@ export const authRoute = app
         candidateUser.status !== "ACTIVE" ||
         !hasUserRole(candidateUser.role, "anonymous")
       ) {
-        throw new HTTPException(401, {
-          message: "Invalid anonymous user session",
-        });
+        return throwHttpProblem({ status: 401, detail: "Invalid anonymous user session" });
       }
 
       const anonymous = issueAnonymousAuth(candidateUser.id);

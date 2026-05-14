@@ -8,6 +8,7 @@ on:
     paths:
       - "apps/frontend/**"
       - "apps/backend/src/**"
+      - "vitest.config.ts"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -37,6 +38,9 @@ jobs:
 
       - name: Lint frontend design tokens
         run: pnpm --filter @partner-up-dev/frontend lint:tokens:strict
+
+      - name: Run frontend unit tests
+        run: pnpm test:unit:frontend
 
       - name: Build frontend
         run: pnpm --filter @partner-up-dev/frontend build

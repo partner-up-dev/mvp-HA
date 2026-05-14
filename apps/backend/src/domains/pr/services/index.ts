@@ -9,6 +9,7 @@ export {
   DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
   DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   resolveAnchorParticipationPolicy,
   validateAnchorParticipationPolicyOffsets,
   isWithinConfirmationWindow,
@@ -99,3 +100,9 @@ export {
   assertUserPRCreationAllowedForAnchorEvent,
   canUserCreatePRForAnchorEvent,
 } from "../../pr-core/services/event-pr-creation-policy.service";
+export {
+  ANCHOR_EVENT_PARTICIPATION_FREQUENCY_LIMITED_CODE,
+  assertAnchorEventParticipationFrequencyLimitAllows,
+  evaluateAnchorEventParticipationFrequencyLimit,
+  type AnchorEventParticipationFrequencyLimitEvaluation,
+} from "../../pr-core/services/anchor-participation-frequency-limit.service";

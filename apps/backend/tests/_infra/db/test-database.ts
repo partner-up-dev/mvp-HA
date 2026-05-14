@@ -88,6 +88,8 @@ export function installScenarioDatabaseEnv(databaseUrl: string): string {
   process.env.DATABASE_URL = databaseUrl;
   process.env.BACKEND_SCENARIO_DISABLE_BOOTSTRAP = "true";
   process.env.BACKEND_SCENARIO_DISABLE_REQUEST_TAIL = "true";
+  process.env.BACKEND_SCENARIO_DISABLE_REQUEST_LOGGER = "true";
+  process.env.DB_MIGRATE_LOG_LEVEL = "silent";
   return databaseUrl;
 }
 

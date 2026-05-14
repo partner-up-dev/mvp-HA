@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PartnerId, PRId, UserId } from "../../../entities";
 import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -29,9 +29,7 @@ const isReleaseableStatus = (status: string): boolean =>
 const normalizeManualReason = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) {
-    throw new HTTPException(400, {
-      message: "Release reason is required",
-    });
+    return throwHttpProblem({ status: 400, detail: "Release reason is required" });
   }
   return trimmed;
 };
@@ -45,18 +43,16 @@ export async function releaseAdminPRPartner(input: {
   const reason = normalizeManualReason(input.reason);
   const record = await eventContextRepo.findRecordByPrId(input.prId);
   if (!record) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   const slot = await partnerRepo.findById(input.partnerId);
   if (!slot || slot.prId !== input.prId) {
-    throw new HTTPException(404, { message: "Partner slot not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner slot not found" });
   }
 
   if (!isReleaseableStatus(slot.status)) {
-    throw new HTTPException(400, {
-      message: "Only JOINED or CONFIRMED slots can be released manually",
-    });
+    return throwHttpProblem({ status: 400, detail: "Only JOINED or CONFIRMED slots can be released manually" });
   }
 
   const bookingContactBeforeRelease = await resolveBookingContactState({
@@ -71,9 +67,7 @@ export async function releaseAdminPRPartner(input: {
     releaseReason: reason,
   });
   if (!releasedSlot) {
-    throw new HTTPException(500, {
-      message: "Failed to release partner slot",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to release partner slot" });
   }
 
   await userReliabilityRepo.applyDelta(slot.userId, { released: 1 });

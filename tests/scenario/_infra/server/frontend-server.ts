@@ -26,6 +26,7 @@ export async function startFrontendServer(input: {
     process.chdir(frontendRoot);
     server = await createServer({
       configFile: path.join(frontendRoot, "vite.config.ts"),
+      logLevel: "error",
       root: frontendRoot,
       server: {
         host: "127.0.0.1",

@@ -6,6 +6,7 @@ import type { TimeWindow } from "./time-window.service";
 import { materializePRSupportResources } from "../../pr-booking-support";
 import { materializeFeedbackQuestionnaireInstance } from "../../feedback-questionnaire";
 import { buildMaterializedPRJoinGateConfig } from "./join-gates.service";
+import { hasAnchorParticipationPolicy } from "./anchor-participation-policy.service";
 
 const anchorEventRepo = new AnchorEventRepository();
 const eventSupportRepo = new AnchorEventSupportResourceRepository();
@@ -28,6 +29,17 @@ export async function materializeEventDefaultsForPR(input: {
       await prRepo.updateJoinGateConfig(input.prId, input.prJoinGateConfig);
     }
     return;
+  }
+
+  const currentPR = await prRepo.findById(input.prId);
+  if (currentPR && !hasAnchorParticipationPolicy(currentPR)) {
+    await prRepo.updatePartnerRules(input.prId, {
+      confirmationEnabled: event.defaultConfirmationEnabled,
+      confirmationStartOffsetMinutes:
+        event.defaultConfirmationStartOffsetMinutes,
+      confirmationEndOffsetMinutes: event.defaultConfirmationEndOffsetMinutes,
+      joinLockOffsetMinutes: event.defaultJoinLockOffsetMinutes,
+    });
   }
 
   const currentNotes = input.prNotes?.trim() ?? "";

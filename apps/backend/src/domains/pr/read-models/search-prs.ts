@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { AnchorEventId } from "../../../entities/anchor-event";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
@@ -102,16 +102,12 @@ const normalizeSearchDates = (dates: string[]): string[] =>
 const resolveAllowedSearchDateSet = (): Set<string> => {
   const todayDateKey = getProductLocalDateKey(new Date());
   if (!todayDateKey) {
-    throw new HTTPException(500, {
-      message: "Unable to resolve current product-local date",
-    });
+    return throwHttpProblem({ status: 500, detail: "Unable to resolve current product-local date" });
   }
 
   const calendarWindowStartDateKey = getWeekStartIsoDateKey(todayDateKey);
   if (!calendarWindowStartDateKey) {
-    throw new HTTPException(500, {
-      message: "Unable to resolve search calendar window start",
-    });
+    return throwHttpProblem({ status: 500, detail: "Unable to resolve search calendar window start" });
   }
 
   const allowed = new Set<string>();
@@ -150,23 +146,17 @@ export async function searchPRs(input: {
 }): Promise<PRSearchResponse> {
   const normalizedDates = normalizeSearchDates(input.dates);
   if (normalizedDates.length === 0) {
-    throw new HTTPException(400, {
-      message: "At least one valid search date is required",
-    });
+    return throwHttpProblem({ status: 400, detail: "At least one valid search date is required" });
   }
 
   const allowedDates = resolveAllowedSearchDateSet();
   if (!normalizedDates.every((date) => allowedDates.has(date))) {
-    throw new HTTPException(400, {
-      message: "Search dates must fall within the current 4-week calendar window",
-    });
+    return throwHttpProblem({ status: 400, detail: "Search dates must fall within the current 4-week calendar window" });
   }
 
   const event = await anchorEventRepo.findById(input.eventId);
   if (!event || event.status !== "ACTIVE") {
-    throw new HTTPException(404, {
-      message: "Active anchor event not found",
-    });
+    return throwHttpProblem({ status: 404, detail: "Active anchor event not found" });
   }
 
   const records = await readVisiblePartnerRequestsByType(event.type, {

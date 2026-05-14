@@ -10,9 +10,18 @@
         <label class="field field--full">
           <span class="field-label">{{ t("adminPois.newPoiLabel") }}</span>
           <input
-            v-model="newPoiId"
+            v-model="newPoiName"
             class="field-input"
             :placeholder="t('adminPois.newPoiPlaceholder')"
+          />
+        </label>
+        <label class="field field--full">
+          <span class="field-label">{{ t("adminPois.fullAddressLabel") }}</span>
+          <input
+            v-model="selectedPoiFullAddress"
+            class="field-input"
+            :disabled="selectedPoiId === null"
+            :placeholder="t('adminPois.fullAddressPlaceholder')"
           />
         </label>
       </div>
@@ -299,7 +308,7 @@ import Button from "@/shared/ui/actions/Button.vue";
 import ImageUrlInput from "@/shared/upload/ImageUrlInput.vue";
 
 defineProps<{
-  selectedPoiId: string | null;
+  selectedPoiId: number | null;
   selectedPoiGallery: string[];
   selectedPoiAvailabilityRules: EditableAvailabilityRule[];
   weekdayOptions: readonly {
@@ -317,7 +326,7 @@ const emit = defineEmits<{
   "mark-dirty": [];
 }>();
 
-const newPoiId = defineModel<string>("newPoiId", { required: true });
+const newPoiName = defineModel<string>("newPoiName", { required: true });
 const manualGalleryUrl = defineModel<string>("manualGalleryUrl", {
   required: true,
 });
@@ -325,6 +334,9 @@ const isUploadingGalleryImage = defineModel<boolean>("isUploadingGalleryImage", 
   required: true,
 });
 const selectedPoiCapText = defineModel<string>("selectedPoiCapText", {
+  required: true,
+});
+const selectedPoiFullAddress = defineModel<string>("selectedPoiFullAddress", {
   required: true,
 });
 const selectedPoiMeetingPointDescription = defineModel<string>(

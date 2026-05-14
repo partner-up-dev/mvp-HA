@@ -95,6 +95,9 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+.codex-tmp/
+.result/
+.vitest-attachments/
 nul
 apps/backend/posters/*
 apps/backend/avatars/*
@@ -102,6 +105,7 @@ apps/backend/.fc-package/
 apps/backend/.layer/
 apps/backend/dist-fc-db-migrate/
 apps/backend/fc-db-migrate/.fc-package/
+scratch
 
 # Python
 .pdm-python
@@ -111,4 +115,3 @@ __pycache__/
 # Special case
 tasks/frontend-screenshot-capture/**/*
 apps/backend/images/**/*
-scratch

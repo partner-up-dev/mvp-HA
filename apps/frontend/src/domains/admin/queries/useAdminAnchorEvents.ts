@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { InferResponseType } from "hono";
 import { computed, unref, type MaybeRef } from "vue";
-import type { PRJoinGateConfig } from "@partner-up-dev/backend";
+import type {
+  AnchorEventParticipationFrequencyLimit,
+  PRJoinGateConfig,
+} from "@partner-up-dev/backend";
 import { adminClient } from "@/lib/admin-rpc";
 import { queryKeys } from "@/shared/api/query-keys";
 
@@ -66,17 +69,20 @@ export type AdminAnchorEventInput = {
   meetingPoint?: MeetingPointInput | null;
   locationMeetingPoints?: Record<string, MeetingPointInput>;
   joinGateConfig: PRJoinGateConfig;
+  participationFrequencyLimit: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId: number | null;
   defaultPrNotes: string | null;
   timePoolConfig: AdminAnchorTimePoolConfigInput;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   prCreationPolicy: "USER_AND_ADMIN" | "ADMIN_ONLY";
+  fullPrExpansionPolicy: "ENABLED" | "DISABLED";
   status: "ACTIVE" | "PAUSED" | "ARCHIVED";
 };
 

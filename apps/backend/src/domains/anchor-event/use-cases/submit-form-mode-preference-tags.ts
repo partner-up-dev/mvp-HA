@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventPreferenceTagRepository } from "../../../repositories/AnchorEventPreferenceTagRepository";
 import type { AnchorEventId } from "../../../entities";
@@ -30,7 +30,7 @@ export async function submitAnchorEventFormModePreferenceTags(
 ): Promise<SubmitAnchorEventFormModePreferenceTagsResponse> {
   const event = await anchorEventRepo.findById(eventId);
   if (!event) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const normalizedLabels = Array.from(

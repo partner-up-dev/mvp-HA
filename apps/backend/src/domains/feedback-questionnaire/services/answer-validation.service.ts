@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type {
   FeedbackQuestionnaireAnswers,
   FeedbackQuestionnaireDefinition,
@@ -37,7 +37,7 @@ const isAnswerPresent = (
 };
 
 const fail = (message: string): never => {
-  throw new HTTPException(400, { message });
+  return throwHttpProblem({ status: 400, detail: message });
 };
 
 export const assertFeedbackAnswersMatchDefinition = (

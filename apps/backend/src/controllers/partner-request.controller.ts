@@ -1,3 +1,4 @@
+import { throwHttpProblem } from "../lib/problem-details";
 import { Hono } from "hono";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import {
@@ -31,7 +32,6 @@ import {
 } from "../domains/pr";
 import { createEventAssistedPR } from "../domains/anchor-event";
 import { updatePRBookingContactPhone } from "../domains/pr-booking-support";
-import { HTTPException } from "hono/http-exception";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 import {
   anchorUpdateContentSchema,
@@ -135,7 +135,7 @@ const updateBookingContactPhoneSchema = z.object({
 const getPROr404 = async (id: number) => {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   return request;
 };
@@ -370,9 +370,7 @@ export const partnerRequestRoute = app
       );
 
       if (creatorAuth.request.status === "DRAFT") {
-        throw new HTTPException(400, {
-          message: "Use publish endpoint to publish DRAFT partner request",
-        });
+        return throwHttpProblem({ status: 400, detail: "Use publish endpoint to publish DRAFT partner request" });
       }
 
       const result = await updatePRStatus(id, status, creatorAuth.actorUserId);
@@ -491,9 +489,7 @@ export const partnerRequestRoute = app
       const { openId } = await requireAnchorAuthenticatedIdentity(c);
       const { didAttend } = c.req.valid("json");
       if (didAttend === false) {
-        throw new HTTPException(400, {
-          message: "didAttend=false is no longer supported",
-        });
+        return throwHttpProblem({ status: 400, detail: "didAttend=false is no longer supported" });
       }
       const result = await checkIn(id, openId);
       return c.json(result);

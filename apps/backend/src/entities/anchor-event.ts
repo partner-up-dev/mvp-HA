@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   bigint,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -38,8 +39,23 @@ export const anchorEventPrCreationPolicySchema = z.enum([
 export type AnchorEventPrCreationPolicy = z.infer<
   typeof anchorEventPrCreationPolicySchema
 >;
+export const anchorEventParticipationFrequencyLimitSchema = z
+  .object({
+    intervalPrCount: z.number().int().positive(),
+  })
+  .nullable();
+export type AnchorEventParticipationFrequencyLimit = z.infer<
+  typeof anchorEventParticipationFrequencyLimitSchema
+>;
+export const anchorEventFullPrExpansionPolicySchema = z.enum([
+  "ENABLED",
+  "DISABLED",
+]);
+export type AnchorEventFullPrExpansionPolicy = z.infer<
+  typeof anchorEventFullPrExpansionPolicySchema
+>;
 
-/** A location entry: POI.id or a free-form location label. */
+/** A location entry: POI.name or a free-form location label. */
 export const locationEntrySchema = z.string().trim().min(1);
 export type LocationEntry = z.infer<typeof locationEntrySchema>;
 
@@ -352,6 +368,9 @@ export const anchorEvents = pgTable("anchor_events", {
   defaultMinPartners: integer("default_min_partners"),
   defaultMaxPartners: integer("default_max_partners"),
   defaultPrNotes: text("default_pr_notes"),
+  defaultConfirmationEnabled: boolean("default_confirmation_enabled")
+    .notNull()
+    .default(true),
   defaultConfirmationStartOffsetMinutes: integer(
     "default_confirmation_start_offset_minutes",
   ),
@@ -366,6 +385,9 @@ export const anchorEvents = pgTable("anchor_events", {
     .$type<PRJoinGateConfig>()
     .notNull()
     .default(sql`'[]'::jsonb`),
+  participationFrequencyLimit: jsonb("participation_frequency_limit")
+    .$type<AnchorEventParticipationFrequencyLimit>()
+    .default(null),
   feedbackQuestionnaireTemplateId: bigint(
     "feedback_questionnaire_template_id",
     { mode: "number" },
@@ -384,6 +406,10 @@ export const anchorEvents = pgTable("anchor_events", {
     .$type<AnchorEventPrCreationPolicy>()
     .notNull()
     .default("USER_AND_ADMIN"),
+  fullPrExpansionPolicy: text("full_pr_expansion_policy")
+    .$type<AnchorEventFullPrExpansionPolicy>()
+    .notNull()
+    .default("DISABLED"),
   status: text("status").$type<AnchorEventStatus>().notNull().default("ACTIVE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -397,12 +423,15 @@ export const insertAnchorEventSchema = createInsertSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
   joinGateConfig: prJoinGateConfigSchema.optional(),
+  participationFrequencyLimit:
+    anchorEventParticipationFrequencyLimitSchema.optional(),
   locationMeetingPoints: meetingPointConfigMapSchema.optional(),
 });
 export const selectAnchorEventSchema = createSelectSchema(anchorEvents, {
   timePoolConfig: anchorEventTimePoolConfigSchema,
   meetingPoint: meetingPointConfigSchema.nullable(),
   joinGateConfig: prJoinGateConfigSchema,
+  participationFrequencyLimit: anchorEventParticipationFrequencyLimitSchema,
   locationMeetingPoints: meetingPointConfigMapSchema,
 });
 

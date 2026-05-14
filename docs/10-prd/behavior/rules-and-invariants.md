@@ -38,20 +38,25 @@
 - In Form Mode, derived preference categories come from the substring before the first `:` in the tag label; the same derived category is mutually exclusive while uncategorized labels may coexist.
 - Form Mode may route users to submit a new POI location application. That application is POI-owned and not tied to one Anchor Event.
 - User-submitted POIs start as `PENDING`; public location reads and Form Mode location gallery resolution use only `PUBLISHED` POIs.
-- A published POI does not appear in an Anchor Event Form Mode unless that Anchor Event's location pool references the POI id.
+- A published POI does not appear in an Anchor Event Form Mode unless that Anchor Event's location pool references the POI name.
 - The Anchor Event page shows discoverable PRs under the same activity type and time-pool rules.
 - Event-page discovery reads root PR facts by activity type, resolved time window, and event-owned location rules rather than by durable PR-side event linkage.
+- Anchor Event owns whether a full PR can trigger automatic same-time-window PR expansion. The default policy is `DISABLED`; events with `ENABLED` may create a visible sibling PR after an event-context PR reaches `FULL`.
+- Anchor Event may own a participation frequency limit. When configured as `X`, a user with a current active participation in that event must wait through the next `X` complete PRs in event time-window order before joining or waitlisting another PR in the same event; the following PR is eligible. Only current `JOINED`, `CONFIRMED`, and `ATTENDED` slots count as limiting history. `PENDING`, `EXITED`, `RELEASED`, and `CANCELLED` slots do not count as limiting history.
 
 ## 3. Lifecycle And Participation Rules
 
 - The visible `PartnerRequest` status set is `DRAFT`, `OPEN`, `READY`, `FULL`, `LOCKED_TO_START`, `ACTIVE`, `CLOSED`, and `EXPIRED`.
 - `LOCKED_TO_START` means the collaboration object has entered the pre-start lock window; joining is no longer allowed, and progression toward `ACTIVE` may still continue.
 - `PartnerRequest` state is jointly shaped by partner thresholds, time windows, confirmation windows, and context-specific rules.
+- When a PR reaches its close time, it expires only when current active participants are fewer than `minPartners`.
+- When an `ACTIVE` PR reaches its close time with current active participants greater than or equal to `minPartners`, it closes automatically.
 - `PartnerRequest.minPartners` must be an integer and `>= 1`. If `maxPartners` is present, it must satisfy both `maxPartners >= 2` and `maxPartners >= minPartners`.
 - Auto-created paths must fall back to `2` when a valid `minPartners` is unavailable. Manual input paths must reject empty value, `0`, `maxPartners = 1`, and invalid bounds.
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
 - `PR` supports `join` and `exit`.
 - A `FULL` PR may accept waitlist entries while it remains before the join-lock boundary. `LOCKED_TO_START` keeps the admission surface closed.
+- Waitlist submission is subject to Anchor Event participation frequency limits when the target PR belongs to an event with that policy.
 - Waitlist entries are stored as `Partner.status = PENDING`. Cancelled waitlist entries are stored as `Partner.status = CANCELLED` and no longer hold queue position.
 - Pending users are not current active participants, cannot see PR messages, and do not count toward active capacity.
 - When an active slot is released or exited, the system promotes waitlisted users by earliest `waitlistedAt` first, subject to current eligibility checks. Promotion converts the existing pending slot into an active partner slot.
@@ -82,8 +87,8 @@
 | `FULL`            | maximum partner count reached                     | not joinable; waitlistable before join lock |
 | `LOCKED_TO_START` | pre-start lock window                             | not joinable and not waitlistable           |
 | `ACTIVE`          | in progress                                       | normally no longer accepts new joins        |
-| `CLOSED`          | explicitly concluded                              | not joinable                                |
-| `EXPIRED`         | ended because the time window elapsed             | not joinable                                |
+| `CLOSED`          | successfully concluded after active execution     | not joinable                                |
+| `EXPIRED`         | ended because the close boundary arrived before minimum viable participation was met | not joinable                                |
 
 `Partner` progression may additionally pass through confirmation-window, reminder, new-partner, and attendance follow-up loops when the corresponding modules are active.
 
@@ -113,13 +118,14 @@
 
 ## 5. Reliability Rules
 
-- Partner admission may have a confirmation window when its explicit configuration carries one. Unconfirmed slots may be released inside that window, and late joining may be blocked.
+- Partner admission may have a confirmation window when its explicit configuration carries one and confirmation is enabled. Unconfirmed slots may be released inside that window, and late joining may be blocked.
+- Confirmation can be disabled at PR level. When disabled, the PR has no confirm action, confirmation reminders, confirmation-window auto-confirm, or confirmation-deadline slot release. Join lock, check-in, booking support, and the persistent PR detail notification-subscription management path continue to use their own eligibility rules.
 - Check-in feedback is not mandatory by default; absence of check-in should remain "unknown" rather than auto-converted into "did not attend".
 - Mounted post-event feedback is optional unless the PR integration presents it for the current collaboration. Absence of a questionnaire response is tracked as missing feedback for that questionnaire instance, separate from attendance state.
 - PR messaging is a non-realtime coordination layer and must not introduce chat-room semantics such as presence, typing, or read receipts.
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
 - Successful join in a PR that supports reminder registration should immediately offer the notification-subscription modal while still leaving a durable management path on the detail page.
-- The successful-join notification-subscription modal focuses on confirmation reminders, new-partner reminders, and meeting-point reminders, with copy explaining the reason to subscribe. Confirmation reminder copy includes the confirmation deadline when that deadline is known.
+- The successful-join notification-subscription modal focuses on confirmation reminders, new-partner reminders, and meeting-point reminders, with copy explaining the reason to subscribe. Confirmation reminder copy includes the confirmation deadline when that deadline is known. PRs with confirmation disabled omit the confirmation reminder recommendation from this join-success modal.
 - Confirmation-start reminders must become claimable and deliverable at or after the configured confirmation-start instant, because the linked confirm action is backend-gated by the same window.
 - Successful waitlist entry should offer a focused `WAITLIST_PROMOTED` subscription prompt so the user can receive one notification when the pending slot becomes active.
 - Successful waitlist entry may also offer `WAITLIST_ALTERNATIVE_AVAILABLE` when the user selected cross-PR alternative reminders for that waitlist slot.
@@ -147,6 +153,7 @@
 - Participant profile pages are read-only and do not own editing behavior.
 - `/me` owns the current user's personal-center IA. Its profile surface should keep avatar, nickname, WeChat identity state or bind action, and anonymous user id continuity together.
 - When the current user has no WeChat official-account `openid`, the `/me` profile surface should offer the WeChat bind action at the identity position. When the user is bound, it should show the bound state.
+- `/me` logout clears the browser's current user session and starts a fresh anonymous UUID session for continued anonymous browsing.
 - `/me` should present PR history and POI application history as equal shortcuts under the profile surface while keeping `/pr/mine` as the dedicated PR history route.
 - The "Need Help" path must keep support, author feedback, and about-page routing distinct.
 - Event-specific beta groups are support and activity-coordination entrypoints. They may help users request new sessions, get booking/subsidy support, or coordinate activity context, and backend-owned PR messaging keeps participant visibility and participant rules authoritative.

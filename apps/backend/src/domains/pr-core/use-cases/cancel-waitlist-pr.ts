@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
 import { operationLogService } from "../../../infra/operation-log";
@@ -17,23 +17,19 @@ export async function cancelWaitlistPRByUserId(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   await refreshTemporalStatus(request);
 
   const pendingSlot = await partnerRepo.findPendingByPrIdAndUserId(id, userId);
   if (!pendingSlot) {
-    throw new HTTPException(400, {
-      message: "Cannot cancel waitlist - partner is not waitlisted",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot cancel waitlist - partner is not waitlisted" });
   }
 
   const cancelledSlot = await partnerRepo.cancelPendingSlot(pendingSlot.id);
   if (!cancelledSlot) {
-    throw new HTTPException(409, {
-      message: "Cannot cancel waitlist - slot is no longer pending",
-    });
+    return throwHttpProblem({ status: 409, detail: "Cannot cancel waitlist - slot is no longer pending" });
   }
 
   await resetPRJoinGateResolutionsForUser({
@@ -52,9 +48,7 @@ export async function cancelWaitlistPRByUserId(
 
   const latest = await prRepo.findById(id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to reload partner request",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
   }
   return toPublicPR(latest, userId);
 }

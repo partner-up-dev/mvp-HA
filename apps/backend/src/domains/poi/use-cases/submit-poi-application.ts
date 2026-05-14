@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { UserId } from "../../../entities/user";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 import { operationLogService } from "../../../infra/operation-log";
@@ -18,27 +18,27 @@ export async function submitPoiApplication(input: {
   const title = normalizePoiApplicationTitle(input.title);
   const imageUrl = normalizePoiApplicationImageUrl(input.imageUrl);
 
-  const existing = await poiRepo.findByIds([title], {
+  const existing = await poiRepo.findByNames([title], {
     includeUnpublished: true,
   });
   if (existing.length > 0) {
-    throw new HTTPException(409, { message: "POI already exists" });
+    return throwHttpProblem({ status: 409, detail: "POI already exists" });
   }
 
   const created = await poiRepo.createApplication({
-    id: title,
+    name: title,
     imageUrl,
     submittedByUserId: input.submittedByUserId,
   });
   if (!created) {
-    throw new HTTPException(409, { message: "POI already exists" });
+    return throwHttpProblem({ status: 409, detail: "POI already exists" });
   }
 
   operationLogService.log({
     actorId: input.submittedByUserId,
     action: "poi.application.submit",
     aggregateType: "poi",
-    aggregateId: created.id,
+    aggregateId: String(created.id),
     detail: {
       status: created.status,
     },

@@ -40,6 +40,7 @@ export type AnchorEventTimePolicyDraft = {
   earliestLeadMinutes: number | null;
   absoluteRulesText: string;
   recurringRulesText: string;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
@@ -47,9 +48,11 @@ export type AnchorEventTimePolicyDraft = {
 
 export type AnchorEventOtherSettingsDraft = {
   joinGateConfig: AdminAnchorEventInput["joinGateConfig"];
+  participationFrequencyLimit: AdminAnchorEventInput["participationFrequencyLimit"];
   feedbackQuestionnaireTemplateId: number | null;
   defaultPrNotes: string;
   prCreationPolicy: AdminAnchorEventInput["prCreationPolicy"];
+  fullPrExpansionPolicy: AdminAnchorEventInput["fullPrExpansionPolicy"];
 };
 
 export const normalizeLines = (value: string): string[] =>
@@ -202,12 +205,14 @@ export const toAnchorEventMutationInput = (
   meetingPoint: event.meetingPoint ?? null,
   locationMeetingPoints: event.locationMeetingPoints,
   joinGateConfig: event.joinGateConfig,
+  participationFrequencyLimit: event.participationFrequencyLimit,
   feedbackQuestionnaireTemplateId:
     event.feedbackQuestionnaireTemplateId ?? null,
   defaultPrNotes: event.defaultPrNotes ?? null,
   timePoolConfig: event.timePoolConfig,
   defaultMinPartners: event.defaultMinPartners,
   defaultMaxPartners: event.defaultMaxPartners,
+  defaultConfirmationEnabled: event.defaultConfirmationEnabled,
   defaultConfirmationStartOffsetMinutes:
     event.defaultConfirmationStartOffsetMinutes ??
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
@@ -219,6 +224,7 @@ export const toAnchorEventMutationInput = (
   coverImage: event.coverImage ?? null,
   betaGroupQrCode: event.betaGroupQrCode ?? null,
   prCreationPolicy: event.prCreationPolicy,
+  fullPrExpansionPolicy: event.fullPrExpansionPolicy,
   status: event.status as AdminAnchorEventInput["status"],
   ...patch,
 });
@@ -241,6 +247,7 @@ export const buildAnchorEventMutationInputFromEditorDraft = (
       draft.locationMeetingPoints,
     ),
     joinGateConfig: draft.joinGateConfig,
+    participationFrequencyLimit: draft.participationFrequencyLimit,
     feedbackQuestionnaireTemplateId: draft.feedbackQuestionnaireTemplateId,
     defaultPrNotes: draft.defaultPrNotes.trim() || null,
     timePoolConfig: buildAnchorEventTimePoolConfig(draft),
@@ -252,12 +259,14 @@ export const buildAnchorEventMutationInputFromEditorDraft = (
     ),
     defaultConfirmationStartOffsetMinutes:
       draft.defaultConfirmationStartOffsetMinutes,
+    defaultConfirmationEnabled: draft.defaultConfirmationEnabled,
     defaultConfirmationEndOffsetMinutes:
       draft.defaultConfirmationEndOffsetMinutes,
     defaultJoinLockOffsetMinutes: draft.defaultJoinLockOffsetMinutes,
     coverImage: draft.coverImage.trim() || null,
     betaGroupQrCode: draft.betaGroupQrCode.trim() || null,
     prCreationPolicy: draft.prCreationPolicy,
+    fullPrExpansionPolicy: draft.fullPrExpansionPolicy,
     status: draft.status,
   };
 };

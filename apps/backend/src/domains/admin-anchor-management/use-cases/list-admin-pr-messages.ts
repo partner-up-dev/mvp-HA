@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PRMessageRepository } from "../../../repositories/PRMessageRepository";
@@ -20,7 +20,7 @@ export async function listAdminPRMessages(
 ): Promise<AdminPRMessageListResponse> {
   const request = await prRepo.findById(prId);
   if (!request) {
-    throw new HTTPException(404, { message: "PR not found" });
+    return throwHttpProblem({ status: 404, detail: "PR not found" });
   }
 
   const messages = await messageRepo.listByPrId(prId);

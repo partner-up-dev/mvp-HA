@@ -28,7 +28,7 @@
 3. Revisit continuity uses the restored anonymous UUID session; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, context-specific rules, and any PR-owned join gates.
 5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the frontend injects the relevant fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or user-phone collection for booking contact.
-6. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal with confirmation reminder, new-partner reminder, and meeting-point reminder recommendations. Each recommendation explains why it is useful, and the confirmation reminder includes the confirmation deadline when known. The persistent notification-subscriptions section remains available on the detail page for later revisit.
+6. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal with confirmation reminder, new-partner reminder, and meeting-point reminder recommendations. Each recommendation explains why it is useful, and the confirmation reminder includes the confirmation deadline when known. When confirmation is disabled for that PR, the join-success recommendation omits confirmation reminder while leaving the persistent notification-subscriptions section available on the detail page for later revisit.
 7. After the join-success notification-subscription modal is completed, the same flow may recommend following the official account when the user is not backend-confirmed as a follower and the frontend cooldown is not active.
 8. If join succeeds, the user enters the downstream progression of that collaboration object.
 9. If the current PR was entered from Anchor Event context and is not the right fit, `/pr/:id` keeps a lightweight path back to browsing other active Anchor Events without hiding the current collaboration detail.
@@ -37,7 +37,7 @@
 
 1. The user browses `/events`, `/events/:eventId`, `/e/:eventId`, or enters `/events/search`; event-card order on these entry surfaces is backend-authored display policy rather than frontend-owned ranking truth.
 2. `/e/:eventId` is the ad-scan-first Anchor Event landing entry. It keeps a lighter landing role than `/events/:eventId` and may enter `FORM`, `CARD_RICH`, or `LIST` landing mode for the same event.
-3. `/events/:eventId` and `/e/:eventId` may recommend following the official account after the user has stayed for 3 seconds, gated by backend-confirmed follow state plus frontend cooldown.
+3. `/events/:eventId` and `/e/:eventId` may recommend bookmarking the web page after the user has stayed for 3 seconds, gated by a frontend 6-hour cooldown shared with the Home page bookmark recommendation.
 4. The same user should keep a stable landing mode for the same event until the operator applies a new landing revision for that event.
 5. If the landing mode cannot be resolved in time, `/e/:eventId` still enters a usable `FORM` fallback experience.
 6. In `FORM` mode, the user selects one location, one start time, and optional preferences before the system reveals candidate `PR`s. When the selected start time inherits event-authored time-window description copy from its start rule, the time control surfaces that copy under the picker.
@@ -64,7 +64,7 @@
 
 1. The user enters the location-application page from the Form Mode location control.
 2. The user submits one location name and one image.
-3. The backend creates a `PENDING` `POI`; the location name is the POI id.
+3. The backend creates a `PENDING` `POI`; the submitted location name becomes the POI name used for PR location matching.
 4. The user can revisit submitted POI applications from the submit-success page and from the `/me` personal-center shortcut.
 5. Operators review submitted POIs in the POI management surface.
 6. Publishing changes the POI status to `PUBLISHED`; rejected applications remain hidden from public location reads and may carry a rejection reason.
@@ -75,8 +75,9 @@
 1. When the user returns, the system restores existing session continuity when possible.
 2. The user can inspect and manage profile, WeChat identity, service notifications, and anonymous UUID continuity through `/me`.
 3. The `/me` personal profile card keeps identity facts together: avatar, nickname, WeChat binding state or bind action, and the anonymous user id copy affordance.
-4. The user can enter PR history and POI application history from two equal shortcuts under the personal profile card.
-5. The user can revisit created and joined PR history through `/pr/mine`.
+4. The user can log out from `/me`; the browser clears the current user session and immediately receives a fresh anonymous UUID session for continued browsing.
+5. The user can enter PR history and POI application history from two equal shortcuts under the personal profile card.
+6. The user can revisit created and joined PR history through `/pr/mine`.
 
 ## 6. Share and Distribution
 
@@ -98,7 +99,7 @@
 ## 8. Reliability Loop
 
 1. The user joins a `PR` whose `Partner` submodule carries explicit reliability-related facts such as confirmation or join-lock settings.
-2. The relevant command path enforces whether immediate confirmation is required, whether additional joining is still allowed, and whether unconfirmed slots are released.
+2. The relevant command path enforces whether confirmation is enabled, whether immediate confirmation is required, whether additional joining is still allowed, and whether unconfirmed slots are released.
 3. If the user still has relevant notification quota, the responsible modules may register reminder, new-partner, or booking-result notifications.
 4. After the event, the attendance module may collect check-in feedback and contribute to the reliability loop.
 5. When the PR has a mounted feedback questionnaire instance, the PR detail flow may ask the participant to submit that questionnaire after check-in. The feedback command stores questionnaire answers in the feedback system, while the PR flow controls when the questionnaire is presented.

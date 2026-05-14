@@ -8,6 +8,7 @@ import {
   pois,
   type Poi,
   type PoiAvailabilityRule,
+  type PoiCoordinate,
   type PoiStatus,
 } from "../entities/poi";
 import type { UserId } from "../entities/user";
@@ -19,6 +20,15 @@ const normalizeIds = (ids: string[]): string[] => {
     const normalized = id.trim();
     if (!normalized) continue;
     set.add(normalized);
+  }
+  return Array.from(set);
+};
+
+const normalizeNumericIds = (ids: number[]): number[] => {
+  const set = new Set<number>();
+  for (const id of ids) {
+    if (!Number.isInteger(id) || id <= 0) continue;
+    set.add(id);
   }
   return Array.from(set);
 };
@@ -38,16 +48,52 @@ export class PoiRepository {
     return await db.select().from(pois);
   }
 
+  async findById(
+    id: number,
+    options: { includeUnpublished?: boolean } = {},
+  ): Promise<Poi | null> {
+    const result = await this.findByIds([id], options);
+    return result[0] ?? null;
+  }
+
   async findByIds(
-    ids: string[],
+    ids: number[],
     options: { includeUnpublished?: boolean } = {},
   ): Promise<Poi[]> {
-    const normalizedIds = normalizeIds(ids);
+    const normalizedIds = normalizeNumericIds(ids);
     if (normalizedIds.length === 0) {
       return [];
     }
 
     const filters = [inArray(pois.id, normalizedIds)];
+    if (options.includeUnpublished !== true) {
+      filters.push(eq(pois.status, "PUBLISHED"));
+    }
+
+    return await db
+      .select()
+      .from(pois)
+      .where(and(...filters));
+  }
+
+  async findByName(
+    name: string,
+    options: { includeUnpublished?: boolean } = {},
+  ): Promise<Poi | null> {
+    const result = await this.findByNames([name], options);
+    return result[0] ?? null;
+  }
+
+  async findByNames(
+    names: string[],
+    options: { includeUnpublished?: boolean } = {},
+  ): Promise<Poi[]> {
+    const normalizedNames = normalizeIds(names);
+    if (normalizedNames.length === 0) {
+      return [];
+    }
+
+    const filters = [inArray(pois.name, normalizedNames)];
     if (options.includeUnpublished !== true) {
       filters.push(eq(pois.status, "PUBLISHED"));
     }
@@ -66,10 +112,14 @@ export class PoiRepository {
       .orderBy(desc(pois.createdAt), desc(pois.updatedAt));
   }
 
-  async upsertById(
-    id: string,
+  async upsertByName(
+    name: string,
     data: {
+      fullAddress?: string | null;
       gallery: string[];
+      gcj02?: PoiCoordinate | null;
+      wgs84?: PoiCoordinate | null;
+      bd09?: PoiCoordinate | null;
       status?: PoiStatus;
       perTimeWindowCap?: number | null;
       availabilityRules?: PoiAvailabilityRule[];
@@ -80,7 +130,8 @@ export class PoiRepository {
       rejectReason?: string | null;
     },
   ): Promise<Poi> {
-    const normalizedId = id.trim();
+    const normalizedName = name.trim();
+    const normalizedFullAddress = data.fullAddress?.trim() || null;
     const normalizedGallery = normalizeGallery(data.gallery);
     const normalizedPerTimeWindowCap =
       data.perTimeWindowCap === undefined ? null : data.perTimeWindowCap;
@@ -95,9 +146,13 @@ export class PoiRepository {
     const result = await db
       .insert(pois)
       .values({
-        id: normalizedId,
+        name: normalizedName,
+        fullAddress: normalizedFullAddress,
         status: data.status ?? "PUBLISHED",
         gallery: normalizedGallery,
+        gcj02: data.gcj02 ?? null,
+        wgs84: data.wgs84 ?? null,
+        bd09: data.bd09 ?? null,
         perTimeWindowCap: normalizedPerTimeWindowCap,
         availabilityRules: normalizedAvailabilityRules,
         meetingPoint: normalizedMeetingPoint,
@@ -107,9 +162,13 @@ export class PoiRepository {
         rejectReason: data.rejectReason ?? null,
       })
       .onConflictDoUpdate({
-        target: pois.id,
+        target: pois.name,
         set: {
+          fullAddress: normalizedFullAddress,
           gallery: normalizedGallery,
+          gcj02: data.gcj02 ?? null,
+          wgs84: data.wgs84 ?? null,
+          bd09: data.bd09 ?? null,
           perTimeWindowCap: normalizedPerTimeWindowCap,
           ...(data.status ? { status: data.status } : {}),
           ...(shouldReplaceAvailabilityRules
@@ -134,17 +193,113 @@ export class PoiRepository {
     return result[0];
   }
 
+  async createByName(
+    name: string,
+    data: {
+      fullAddress?: string | null;
+      gallery: string[];
+      gcj02?: PoiCoordinate | null;
+      wgs84?: PoiCoordinate | null;
+      bd09?: PoiCoordinate | null;
+      perTimeWindowCap?: number | null;
+      availabilityRules?: PoiAvailabilityRule[];
+      meetingPoint?: MeetingPointConfig | null;
+    },
+  ): Promise<Poi | null> {
+    const normalizedName = name.trim();
+    const normalizedFullAddress = data.fullAddress?.trim() || null;
+    const normalizedGallery = normalizeGallery(data.gallery);
+    const normalizedAvailabilityRules = normalizePoiAvailabilityRules(
+      data.availabilityRules ?? [],
+    );
+    const normalizedMeetingPoint = normalizeMeetingPointConfig(
+      data.meetingPoint,
+    );
+
+    const result = await db
+      .insert(pois)
+      .values({
+        name: normalizedName,
+        fullAddress: normalizedFullAddress,
+        status: "PUBLISHED",
+        gallery: normalizedGallery,
+        gcj02: data.gcj02 ?? null,
+        wgs84: data.wgs84 ?? null,
+        bd09: data.bd09 ?? null,
+        perTimeWindowCap: data.perTimeWindowCap ?? null,
+        availabilityRules: normalizedAvailabilityRules,
+        meetingPoint: normalizedMeetingPoint,
+      })
+      .onConflictDoNothing({
+        target: pois.name,
+      })
+      .returning();
+
+    return result[0] ?? null;
+  }
+
+  async updateById(
+    id: number,
+    data: {
+      name: string;
+      fullAddress?: string | null;
+      gallery: string[];
+      gcj02?: PoiCoordinate | null;
+      wgs84?: PoiCoordinate | null;
+      bd09?: PoiCoordinate | null;
+      perTimeWindowCap?: number | null;
+      availabilityRules?: PoiAvailabilityRule[];
+      meetingPoint?: MeetingPointConfig | null;
+    },
+  ): Promise<Poi | null> {
+    const normalizedName = data.name.trim();
+    const normalizedFullAddress = data.fullAddress?.trim() || null;
+    const normalizedGallery = normalizeGallery(data.gallery);
+    const normalizedPerTimeWindowCap =
+      data.perTimeWindowCap === undefined ? null : data.perTimeWindowCap;
+    const normalizedAvailabilityRules =
+      data.availabilityRules === undefined
+        ? []
+        : normalizePoiAvailabilityRules(data.availabilityRules);
+    const normalizedMeetingPoint = normalizeMeetingPointConfig(
+      data.meetingPoint,
+    );
+
+    const result = await db
+      .update(pois)
+      .set({
+        name: normalizedName,
+        fullAddress: normalizedFullAddress,
+        gallery: normalizedGallery,
+        gcj02: data.gcj02 ?? null,
+        wgs84: data.wgs84 ?? null,
+        bd09: data.bd09 ?? null,
+        perTimeWindowCap: normalizedPerTimeWindowCap,
+        availabilityRules: normalizedAvailabilityRules,
+        meetingPoint: normalizedMeetingPoint,
+        updatedAt: new Date(),
+      })
+      .where(eq(pois.id, id))
+      .returning();
+
+    return result[0] ?? null;
+  }
+
   async createApplication(data: {
-    id: string;
+    name: string;
     imageUrl: string;
     submittedByUserId: UserId;
   }): Promise<Poi | null> {
     const result = await db
       .insert(pois)
       .values({
-        id: data.id.trim(),
+        name: data.name.trim(),
+        fullAddress: null,
         status: "PENDING",
         gallery: [data.imageUrl.trim()].filter(Boolean),
+        gcj02: null,
+        wgs84: null,
+        bd09: null,
         perTimeWindowCap: null,
         availabilityRules: [],
         meetingPoint: null,
@@ -160,7 +315,7 @@ export class PoiRepository {
   }
 
   async updateReviewState(
-    id: string,
+    id: number,
     data: {
       status: Extract<PoiStatus, "PUBLISHED" | "REJECTED">;
       reviewedByUserId: UserId | null;
@@ -176,7 +331,7 @@ export class PoiRepository {
         rejectReason: data.status === "REJECTED" ? data.rejectReason ?? null : null,
         updatedAt: new Date(),
       })
-      .where(eq(pois.id, id.trim()))
+      .where(eq(pois.id, id))
       .returning();
 
     return result[0] ?? null;

@@ -6,6 +6,8 @@ import {
 } from "../../../../src/domains/pr/services";
 import type {
   AnchorEventId,
+  AnchorEventFullPrExpansionPolicy,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventPrCreationPolicy,
 } from "../../../../src/entities";
 import type { FeedbackQuestionnaireTemplateId } from "../../../../src/entities/feedback-questionnaire";
@@ -64,6 +66,8 @@ export async function givenAnchorEvent(input: {
   defaultMaxPartners?: number | null;
   defaultPrNotes?: string | null;
   prCreationPolicy?: AnchorEventPrCreationPolicy;
+  fullPrExpansionPolicy?: AnchorEventFullPrExpansionPolicy;
+  participationFrequencyLimit?: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
 }): Promise<ScenarioAnchorEvent> {
   const sequence = scenarioAnchorEventSequence++;
@@ -98,12 +102,14 @@ export async function givenAnchorEvent(input: {
     defaultJoinLockOffsetMinutes: DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
     meetingPoint: null,
     joinGateConfig: [],
+    participationFrequencyLimit: input.participationFrequencyLimit ?? null,
     feedbackQuestionnaireTemplateId:
       input.feedbackQuestionnaireTemplateId ?? null,
     locationMeetingPoints: {},
     coverImage: null,
     betaGroupQrCode: null,
     prCreationPolicy: input.prCreationPolicy ?? "USER_AND_ADMIN",
+    fullPrExpansionPolicy: input.fullPrExpansionPolicy ?? "DISABLED",
     status: "ACTIVE",
   });
 

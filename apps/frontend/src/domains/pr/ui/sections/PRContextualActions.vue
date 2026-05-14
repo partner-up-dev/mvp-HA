@@ -52,6 +52,7 @@
       :event-id="routeEventId"
       :entry-surface="joinEntrySurface"
       :confirmation-deadline-at="confirmationDeadlineAt"
+      :confirmation-reminder-supported="pr.partnerSection.confirmation.enabled"
       :viewer-is-participant="pr.partnerSection.viewer.isParticipant"
       write-join-entry-on-auth
       @joined="handleJoinFlowJoined"
@@ -746,6 +747,8 @@ function blockedReasonText(reason: BlockedReason): string {
       return t("prPage.partnerSection.blockedNotJoined");
     case "NOT_JOINABLE_STATUS":
       return t("prPage.partnerSection.blockedStatus");
+    case "PARTICIPATION_FREQUENCY_LIMITED":
+      return t("prPage.partnerSection.blockedParticipationFrequencyLimited");
     case "CHECKIN_NOT_OPEN":
       return t("prPage.partnerSection.blockedCheckIn");
     default:

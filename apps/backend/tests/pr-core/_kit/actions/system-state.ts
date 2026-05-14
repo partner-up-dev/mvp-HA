@@ -76,6 +76,23 @@ export async function configureStartedEvent(
     .where(eq(partnerRequests.id, pr.id));
 }
 
+export async function configureEndedEvent(
+  pr: ScenarioPartnerRequest,
+): Promise<void> {
+  const startAt = new Date(Date.now() - 120 * 60 * 1000);
+  const endAt = new Date(Date.now() - 60 * 60 * 1000);
+
+  await getTestDb()
+    .update(partnerRequests)
+    .set({
+      time: [startAt.toISOString(), endAt.toISOString()],
+      confirmationStartOffsetMinutes: null,
+      confirmationEndOffsetMinutes: null,
+      joinLockOffsetMinutes: null,
+    })
+    .where(eq(partnerRequests.id, pr.id));
+}
+
 export async function configureStartedEventWithFeedback(input: {
   prId: PRId;
   feedbackQuestionnaireInstanceId: FeedbackQuestionnaireInstanceId;

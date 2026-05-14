@@ -27,8 +27,9 @@ This layer exists because the product is realized by at least two meaningful uni
 1. `unit-topology.md`
 2. `system-state-and-authority.md`
 3. `cross-unit-contracts.md`
-4. `notification-contracts.md`
-5. `claim-realization-matrix.md`
+4. `test-platform.md`
+5. `notification-contracts.md`
+6. `claim-realization-matrix.md`
 
 If the change is reference-sensitive, read `docs/15-alignment/README.md` and `docs/15-alignment/ui-map.yaml` first.
 

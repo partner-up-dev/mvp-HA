@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import type {
   PRId,
@@ -37,12 +37,11 @@ export type UserUpdatePRContentFields = Omit<PartnerRequestFields, "type">;
 export const PR_TYPE_IMMUTABLE_CODE = "PR_TYPE_IMMUTABLE";
 
 const throwTypeImmutable = (): never => {
-  const error = new HTTPException(400, {
-    message: "PR type cannot be changed after creation",
+  return throwHttpProblem({
+    status: 400,
+    detail: "PR type cannot be changed after creation",
+    code: PR_TYPE_IMMUTABLE_CODE,
   });
-  (error as HTTPException & { code?: typeof PR_TYPE_IMMUTABLE_CODE }).code =
-    PR_TYPE_IMMUTABLE_CODE;
-  throw error;
 };
 
 export async function updatePRContent(
@@ -53,7 +52,7 @@ export async function updatePRContent(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
 
@@ -62,10 +61,7 @@ export async function updatePRContent(
     refreshedRequest.status !== "OPEN" &&
     refreshedRequest.status !== "DRAFT"
   ) {
-    throw new HTTPException(400, {
-      message:
-        "Cannot edit - only OPEN or DRAFT partner requests can be edited",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot edit - only OPEN or DRAFT partner requests can be edited" });
   }
 
   const minMaxChanged =
@@ -114,7 +110,7 @@ export async function updatePRContent(
 
   const updated = await prRepo.updateFields(id, fields);
   if (!updated) {
-    throw new HTTPException(500, { message: "Failed to update content" });
+    return throwHttpProblem({ status: 500, detail: "Failed to update content" });
   }
 
   if (minMaxChanged) {
@@ -132,9 +128,7 @@ export async function updatePRContent(
 
   const latest = await prRepo.findById(id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to reload partner request",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload partner request" });
   }
 
   operationLogService.log({
@@ -161,7 +155,7 @@ export async function updateUserPRContent(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
 
   return updatePRContent(

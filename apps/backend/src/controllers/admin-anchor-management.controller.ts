@@ -3,6 +3,8 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   anchorEventStatusSchema,
+  anchorEventFullPrExpansionPolicySchema,
+  anchorEventParticipationFrequencyLimitSchema,
   anchorEventPrCreationPolicySchema,
   anchorEventTimePoolConfigSchema,
   meetingPointConfigMapSchema,
@@ -88,16 +90,20 @@ const adminAnchorEventInputSchema = z.object({
   defaultMinPartners: z.number().int().nonnegative().nullable(),
   defaultMaxPartners: z.number().int().nonnegative().nullable(),
   defaultPrNotes: z.string().trim().nullable().optional(),
+  defaultConfirmationEnabled: z.boolean().optional().default(true),
   defaultConfirmationStartOffsetMinutes: z.number().int().nonnegative(),
   defaultConfirmationEndOffsetMinutes: z.number().int().nonnegative(),
   defaultJoinLockOffsetMinutes: z.number().int().nonnegative(),
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
   joinGateConfig: prJoinGateConfigSchema.optional(),
+  participationFrequencyLimit:
+    anchorEventParticipationFrequencyLimitSchema.optional(),
   feedbackQuestionnaireTemplateId: z.number().int().positive().nullable().optional(),
   locationMeetingPoints: meetingPointConfigMapSchema.optional(),
   coverImage: z.string().trim().nullable(),
   betaGroupQrCode: z.string().trim().nullable(),
   prCreationPolicy: anchorEventPrCreationPolicySchema,
+  fullPrExpansionPolicy: anchorEventFullPrExpansionPolicySchema,
   status: anchorEventStatusSchema,
 });
 
@@ -112,6 +118,7 @@ const adminCreatePRInputSchema = z.object({
   notes: z.string().trim().nullable(),
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
   joinGateConfig: prJoinGateConfigSchema.optional(),
+  confirmationEnabled: z.boolean().optional().default(true),
   confirmationStartOffsetMinutes: z.number().int().nonnegative(),
   confirmationEndOffsetMinutes: z.number().int().nonnegative(),
   joinLockOffsetMinutes: z.number().int().nonnegative(),
@@ -128,6 +135,7 @@ const adminUpdatePRContentSchema = z.object({
   notes: z.string().trim().nullable(),
   meetingPoint: meetingPointConfigSchema.nullable().optional(),
   joinGateConfig: prJoinGateConfigSchema.optional(),
+  confirmationEnabled: z.boolean().optional().default(true),
   confirmationStartOffsetMinutes: z.number().int().nonnegative(),
   confirmationEndOffsetMinutes: z.number().int().nonnegative(),
   joinLockOffsetMinutes: z.number().int().nonnegative(),

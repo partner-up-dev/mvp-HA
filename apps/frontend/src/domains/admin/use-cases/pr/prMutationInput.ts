@@ -19,6 +19,7 @@ export type AdminPRBasicDraft = {
   meetingPointDescription: string;
   meetingPointImageUrl: string;
   joinGateConfig: PRJoinGateConfig;
+  confirmationEnabled: boolean;
 };
 
 export const toIsoDateTime = (value: string): string | null => {
@@ -78,6 +79,7 @@ export const buildPRContentInput = (
       draft.meetingPointImageUrl,
     ),
     joinGateConfig: draft.joinGateConfig,
+    confirmationEnabled: draft.confirmationEnabled,
     confirmationStartOffsetMinutes: draft.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: draft.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: draft.joinLockOffsetMinutes,

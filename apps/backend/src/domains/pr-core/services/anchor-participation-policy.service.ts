@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PartnerRequest } from "../../../entities/partner-request";
 import { getTimeWindowStart } from "./time-window.service";
 
@@ -8,6 +8,7 @@ export const DEFAULT_JOIN_LOCK_OFFSET_MINUTES =
   DEFAULT_CONFIRMATION_END_OFFSET_MINUTES;
 
 export type AnchorParticipationPolicyOffsets = {
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -23,6 +24,7 @@ export function validateAnchorParticipationPolicyOffsets(
   offsets: AnchorParticipationPolicyOffsets,
 ): void {
   const {
+    confirmationEnabled,
     confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes,
     joinLockOffsetMinutes,
@@ -34,23 +36,18 @@ export function validateAnchorParticipationPolicyOffsets(
     joinLockOffsetMinutes,
   ];
   if (values.some((value) => !Number.isInteger(value) || value < 0)) {
-    throw new HTTPException(400, {
-      message: "Anchor participation policy offsets must be non-negative integers",
-    });
+    return throwHttpProblem({ status: 400, detail: "Anchor participation policy offsets must be non-negative integers" });
   }
 
-  if (confirmationStartOffsetMinutes <= confirmationEndOffsetMinutes) {
-    throw new HTTPException(400, {
-      message:
-        "Confirmation start must be earlier than confirmation end for anchor participation policy",
-    });
+  if (
+    confirmationEnabled &&
+    confirmationStartOffsetMinutes <= confirmationEndOffsetMinutes
+  ) {
+    return throwHttpProblem({ status: 400, detail: "Confirmation start must be earlier than confirmation end for anchor participation policy" });
   }
 
-  if (joinLockOffsetMinutes < confirmationEndOffsetMinutes) {
-    throw new HTTPException(400, {
-      message:
-        "Join lock must not be later than confirmation end for anchor participation policy",
-    });
+  if (confirmationEnabled && joinLockOffsetMinutes < confirmationEndOffsetMinutes) {
+    return throwHttpProblem({ status: 400, detail: "Join lock must not be later than confirmation end for anchor participation policy" });
   }
 }
 
@@ -60,9 +57,11 @@ export function resolveAnchorParticipationPolicy(
     | "confirmationStartOffsetMinutes"
     | "confirmationEndOffsetMinutes"
     | "joinLockOffsetMinutes"
+    | "confirmationEnabled"
   >,
   timeWindow: PartnerRequest["time"],
 ): ResolvedAnchorParticipationPolicy {
+  const confirmationEnabled = request.confirmationEnabled;
   const confirmationStartOffsetMinutes =
     request.confirmationStartOffsetMinutes ??
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES;
@@ -73,6 +72,7 @@ export function resolveAnchorParticipationPolicy(
     request.joinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES;
 
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled,
     confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes,
     joinLockOffsetMinutes,
@@ -88,10 +88,27 @@ export function resolveAnchorParticipationPolicy(
     confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes,
     joinLockOffsetMinutes,
-    confirmationStartAt: resolveOffsetDate(confirmationStartOffsetMinutes),
-    confirmationEndAt: resolveOffsetDate(confirmationEndOffsetMinutes),
+    confirmationEnabled,
+    confirmationStartAt: confirmationEnabled
+      ? resolveOffsetDate(confirmationStartOffsetMinutes)
+      : null,
+    confirmationEndAt: confirmationEnabled
+      ? resolveOffsetDate(confirmationEndOffsetMinutes)
+      : null,
     joinLockAt: resolveOffsetDate(joinLockOffsetMinutes),
   };
+}
+
+export function hasEnabledConfirmationPolicy(
+  request: Pick<
+    PartnerRequest,
+    | "confirmationEnabled"
+    | "confirmationStartOffsetMinutes"
+    | "confirmationEndOffsetMinutes"
+    | "joinLockOffsetMinutes"
+  >,
+): boolean {
+  return hasAnchorParticipationPolicy(request) && request.confirmationEnabled;
 }
 
 export function hasConfirmationWindowOpened(

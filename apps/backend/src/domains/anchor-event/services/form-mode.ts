@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { AnchorEvent, TimeWindowEntry } from "../../../entities";
 import {
   deriveAnchorEventPreferenceTagCategory,
@@ -29,9 +29,7 @@ const parseTimestamp = (value: string): Date | null => {
 const resolveDurationMinutes = (event: AnchorEvent): number => {
   const durationMinutes = event.timePoolConfig.durationMinutes;
   if (durationMinutes === null) {
-    throw new HTTPException(409, {
-      message: "Anchor event duration is not configured",
-    });
+    return throwHttpProblem({ status: 409, detail: "Anchor event duration is not configured" });
   }
   return durationMinutes;
 };
@@ -43,15 +41,13 @@ export const buildAnchorEventFormModeTimeWindow = (
 ): TimeWindowEntry => {
   const startAt = parseTimestamp(startAtIso);
   if (!startAt) {
-    throw new HTTPException(400, { message: "Invalid startAt" });
+    return throwHttpProblem({ status: 400, detail: "Invalid startAt" });
   }
 
   const durationMinutes = resolveDurationMinutes(event);
   const endAt = new Date(startAt.getTime() + durationMinutes * MINUTE_MS);
   if (endAt.getTime() <= now.getTime()) {
-    throw new HTTPException(400, {
-      message: "Selected start time has already passed",
-    });
+    return throwHttpProblem({ status: 400, detail: "Selected start time has already passed" });
   }
 
   const earliestLeadMinutes = event.timePoolConfig.earliestLeadMinutes;
@@ -59,9 +55,7 @@ export const buildAnchorEventFormModeTimeWindow = (
     earliestLeadMinutes !== null &&
     endAt.getTime() > now.getTime() + earliestLeadMinutes * MINUTE_MS
   ) {
-    throw new HTTPException(400, {
-      message: "Selected start time is outside the event lead-time boundary",
-    });
+    return throwHttpProblem({ status: 400, detail: "Selected start time is outside the event lead-time boundary" });
   }
 
   return [startAt.toISOString(), endAt.toISOString()];

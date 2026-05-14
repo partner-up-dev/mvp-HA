@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { initializeSlotsForPR } from "../../pr/services";
 import { type TimeWindowEntry } from "../../../entities/anchor-event";
@@ -23,6 +23,7 @@ export interface CreateAdminPRInput {
   notes: string | null;
   meetingPoint?: MeetingPointConfig | null;
   joinGateConfig?: PRJoinGateConfig;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -44,9 +45,7 @@ const assertTimeWindowValid = (timeWindow: TimeWindowEntry) => {
     Number.isNaN(endAt.getTime()) ||
     startAt.getTime() > endAt.getTime()
   ) {
-    throw new HTTPException(400, {
-      message: "PR time window is invalid",
-    });
+    return throwHttpProblem({ status: 400, detail: "PR time window is invalid" });
   }
 };
 
@@ -56,6 +55,7 @@ export async function createAdminPR(
 ): Promise<CreateAdminPROutput> {
   assertTimeWindowValid(timeWindow);
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
@@ -79,6 +79,7 @@ export async function createAdminPR(
     notes: input.notes,
     meetingPoint: input.meetingPoint ?? null,
     joinGateConfig: input.joinGateConfig ?? [],
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,

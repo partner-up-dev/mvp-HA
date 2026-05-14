@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import {
   normalizePoiApplicationTitle,
   normalizePoiRejectReason,
@@ -7,7 +7,7 @@ import {
 } from "./poi-application";
 import type { Poi } from "../../../entities/poi";
 
-test("normalizePoiApplicationTitle trims the POI id/title", () => {
+test("normalizePoiApplicationTitle trims the POI name/title", () => {
   assert.equal(normalizePoiApplicationTitle("  羽毛球馆 A  "), "羽毛球馆 A");
 });
 
@@ -21,9 +21,14 @@ test("toPoiApplicationView exposes first gallery image as application image", ()
   const createdAt = new Date("2026-05-04T12:00:00.000Z");
   const reviewedAt = new Date("2026-05-04T12:30:00.000Z");
   const view = toPoiApplicationView({
-    id: "新地点",
+    id: 101,
+    name: "新地点",
+    fullAddress: null,
     status: "REJECTED",
     gallery: ["https://example.com/poi.png"],
+    gcj02: null,
+    wgs84: null,
+    bd09: null,
     perTimeWindowCap: null,
     availabilityRules: [],
     meetingPoint: null,
@@ -36,7 +41,7 @@ test("toPoiApplicationView exposes first gallery image as application image", ()
   } satisfies Poi);
 
   assert.deepEqual(view, {
-    id: "新地点",
+    id: 101,
     title: "新地点",
     status: "REJECTED",
     gallery: ["https://example.com/poi.png"],

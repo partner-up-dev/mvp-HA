@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { UserId } from "../../../entities/user";
 import { PoiRepository } from "../../../repositories/PoiRepository";
 import { operationLogService } from "../../../infra/operation-log";
@@ -10,7 +10,7 @@ import {
 const poiRepo = new PoiRepository();
 
 export async function publishAdminPoiApplication(input: {
-  poiId: string;
+  poiId: number;
   reviewedByUserId: UserId | null;
 }) {
   const updated = await poiRepo.updateReviewState(input.poiId, {
@@ -18,14 +18,14 @@ export async function publishAdminPoiApplication(input: {
     reviewedByUserId: input.reviewedByUserId,
   });
   if (!updated) {
-    throw new HTTPException(404, { message: "POI not found" });
+    return throwHttpProblem({ status: 404, detail: "POI not found" });
   }
 
   operationLogService.log({
     actorId: input.reviewedByUserId,
     action: "poi.application.publish",
     aggregateType: "poi",
-    aggregateId: updated.id,
+    aggregateId: String(updated.id),
     detail: {
       status: updated.status,
     },
@@ -35,7 +35,7 @@ export async function publishAdminPoiApplication(input: {
 }
 
 export async function rejectAdminPoiApplication(input: {
-  poiId: string;
+  poiId: number;
   reviewedByUserId: UserId | null;
   rejectReason: string | null;
 }) {
@@ -45,14 +45,14 @@ export async function rejectAdminPoiApplication(input: {
     rejectReason: normalizePoiRejectReason(input.rejectReason),
   });
   if (!updated) {
-    throw new HTTPException(404, { message: "POI not found" });
+    return throwHttpProblem({ status: 404, detail: "POI not found" });
   }
 
   operationLogService.log({
     actorId: input.reviewedByUserId,
     action: "poi.application.reject",
     aggregateType: "poi",
-    aggregateId: updated.id,
+    aggregateId: String(updated.id),
     detail: {
       status: updated.status,
       rejectReason: updated.rejectReason,

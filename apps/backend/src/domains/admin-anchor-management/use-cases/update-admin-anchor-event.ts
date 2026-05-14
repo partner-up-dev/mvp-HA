@@ -1,9 +1,11 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { FeedbackQuestionnaireRepository } from "../../../repositories/FeedbackQuestionnaireRepository";
 import type {
   AnchorEvent,
   AnchorEventId,
+  AnchorEventFullPrExpansionPolicy,
+  AnchorEventParticipationFrequencyLimit,
   AnchorEventPrCreationPolicy,
   AnchorEventStatus,
   AnchorEventTimePoolConfig,
@@ -38,16 +40,19 @@ export interface UpdateAdminAnchorEventInput {
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   defaultPrNotes: string | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
   meetingPoint?: MeetingPointConfig | null;
   locationMeetingPoints?: MeetingPointConfigMap;
   joinGateConfig?: PRJoinGateConfig;
+  participationFrequencyLimit?: AnchorEventParticipationFrequencyLimit;
   feedbackQuestionnaireTemplateId?: FeedbackQuestionnaireTemplateId | null;
   coverImage: string | null;
   betaGroupQrCode: string | null;
   prCreationPolicy: AnchorEventPrCreationPolicy;
+  fullPrExpansionPolicy: AnchorEventFullPrExpansionPolicy;
   status: AnchorEventStatus;
 }
 
@@ -61,6 +66,7 @@ export async function updateAdminAnchorEvent(
     0,
   );
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled: input.defaultConfirmationEnabled,
     confirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.defaultConfirmationEndOffsetMinutes,
@@ -69,23 +75,19 @@ export async function updateAdminAnchorEvent(
 
   const current = await anchorEventRepo.findById(eventId);
   if (!current) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const existingByType = await anchorEventRepo.findOneByType(input.type);
   if (existingByType && existingByType.id !== eventId) {
-    throw new HTTPException(409, {
-      message: `Anchor event type already exists: ${input.type}`,
-    });
+    return throwHttpProblem({ status: 409, detail: `Anchor event type already exists: ${input.type}` });
   }
   if (input.feedbackQuestionnaireTemplateId !== null && input.feedbackQuestionnaireTemplateId !== undefined) {
     const template = await feedbackRepo.findTemplateById(
       input.feedbackQuestionnaireTemplateId,
     );
     if (!template) {
-      throw new HTTPException(404, {
-        message: "Feedback questionnaire template not found",
-      });
+      return throwHttpProblem({ status: 404, detail: "Feedback questionnaire template not found" });
     }
   }
 
@@ -107,6 +109,7 @@ export async function updateAdminAnchorEvent(
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
     defaultPrNotes: input.defaultPrNotes,
+    defaultConfirmationEnabled: input.defaultConfirmationEnabled,
     defaultConfirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     defaultConfirmationEndOffsetMinutes:
@@ -117,15 +120,17 @@ export async function updateAdminAnchorEvent(
       input.locationMeetingPoints,
     ),
     joinGateConfig: input.joinGateConfig ?? [],
+    participationFrequencyLimit: input.participationFrequencyLimit ?? null,
     feedbackQuestionnaireTemplateId: input.feedbackQuestionnaireTemplateId ?? null,
     coverImage: input.coverImage,
     betaGroupQrCode: input.betaGroupQrCode,
     prCreationPolicy: input.prCreationPolicy,
+    fullPrExpansionPolicy: input.fullPrExpansionPolicy,
     status: input.status,
   });
 
   if (!updated) {
-    throw new HTTPException(404, { message: "Anchor event not found" });
+    return throwHttpProblem({ status: 404, detail: "Anchor event not found" });
   }
 
   const latestAffectedRequests = await listRequestsAffectedByAnchorEventMeetingPoint(

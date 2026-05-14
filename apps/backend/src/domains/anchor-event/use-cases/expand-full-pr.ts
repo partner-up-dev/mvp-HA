@@ -1,14 +1,12 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { AnchorEventRepository } from "../../../repositories/AnchorEventRepository";
 import { AnchorEventPRContextRepository } from "../../../repositories/AnchorEventPRContextRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
-import { PoiRepository } from "../../../repositories/PoiRepository";
 import { initializeSlotsForPR } from "../../pr/services";
 import type { PRId } from "../../../entities/partner-request";
 import { operationLogService } from "../../../infra/operation-log";
 import { resolvePublicEventLocationPool } from "../services/event-scope";
-import { hasAnchorParticipationPolicy } from "../../pr/services";
 import {
   isActiveVisiblePRStatus,
   readVisibleAnchorEventPRContextRecordsByEventTimeWindow,
@@ -17,12 +15,13 @@ import {
 import { normalizeAutomaticPartnerBounds } from "../../pr/services";
 import { scheduleAlternativeWaitlistNotificationsForCandidate } from "../../pr-core/services/waitlist-alternative-reminder.service";
 import { materializeEventDefaultsForPR } from "../../pr/services";
+import { findPoisByNames } from "../../poi";
+import { eventOwnsTimeWindow } from "../services/time-window-pool";
 
 const prRepo = new PartnerRequestRepository();
 const anchorEventRepo = new AnchorEventRepository();
 const eventContextRepo = new AnchorEventPRContextRepository();
 const partnerRepo = new PartnerRepository();
-const poiRepo = new PoiRepository();
 
 const findNextAvailableLocation = (
   pool: string[],
@@ -46,21 +45,25 @@ const findNextAvailableLocation = (
 export async function expandFullPR(prId: PRId): Promise<void> {
   const request = await prRepo.findById(prId);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
-  if (!hasAnchorParticipationPolicy(request) || request.status !== "FULL") {
+  if (request.status !== "FULL") {
     return;
   }
 
   const fullPR = await eventContextRepo.findRecordByPrId(prId);
   if (!fullPR) {
-    throw new HTTPException(500, {
-      message: "PR event context missing",
-    });
+    return;
   }
 
   const event = await anchorEventRepo.findById(fullPR.anchor.anchorEventId);
   if (!event || event.status !== "ACTIVE") {
+    return;
+  }
+  if (!eventOwnsTimeWindow(event, fullPR.anchor.timeWindow)) {
+    return;
+  }
+  if (event.fullPrExpansionPolicy !== "ENABLED") {
     return;
   }
 
@@ -69,9 +72,9 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     fullPR.anchor.timeWindow,
   );
   const locationPool = await resolvePublicEventLocationPool(event);
-  const pois = await poiRepo.findByIds(locationPool);
+  const pois = await findPoisByNames(locationPool);
   const perTimeWindowCapByLocation = new Map(
-    pois.map((poi) => [poi.id, poi.perTimeWindowCap]),
+    pois.map((poi) => [poi.name, poi.perTimeWindowCap]),
   );
   const activeCountsByLocation = new Map<string, number>();
   for (const record of siblingPRs) {
@@ -128,6 +131,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     preferences: fullPR.root.preferences,
     notes: null,
     joinGateConfig: [],
+    confirmationEnabled: fullPR.root.confirmationEnabled,
     confirmationStartOffsetMinutes:
       fullPR.root.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: fullPR.root.confirmationEndOffsetMinutes,

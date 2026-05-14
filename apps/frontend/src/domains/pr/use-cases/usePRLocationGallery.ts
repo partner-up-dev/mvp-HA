@@ -1,5 +1,5 @@
 import { computed, type Ref } from "vue";
-import { usePoisByIds } from "@/shared/poi/queries/usePoisByIds";
+import { usePoisByNames } from "@/shared/poi/queries/usePoisByIds";
 
 export const usePRLocationGallery = (
   location: Ref<string | null | undefined>,
@@ -11,15 +11,15 @@ export const usePRLocationGallery = (
     return normalized.length > 0 ? normalized : null;
   });
 
-  const poiIdsCsv = computed(() => locationId.value);
-  const { data: poisByIdsData } = usePoisByIds(poiIdsCsv);
+  const poiNamesCsv = computed(() => locationId.value);
+  const { data: poisByNamesData } = usePoisByNames(poiNamesCsv);
 
   const locationGallery = computed(() => {
     const targetLocationId = locationId.value;
     if (!targetLocationId) return [];
 
-    const matchedPoi = (poisByIdsData.value ?? []).find(
-      (poi) => poi.id === targetLocationId,
+    const matchedPoi = (poisByNamesData.value ?? []).find(
+      (poi) => poi.name === targetLocationId,
     );
     if (!matchedPoi) return [];
 

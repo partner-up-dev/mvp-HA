@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import type { PRId } from "../../../entities/partner-request";
 import type { UserId } from "../../../entities/user";
@@ -31,7 +31,7 @@ export async function getReimbursementStatus(
     consistency: "strong",
   });
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const supportRows = await prSupportRepo.findByPrId(id);
   const supportsPostpaidSettlement = supportRows.some(
@@ -61,9 +61,7 @@ export async function getReimbursementStatus(
 
   const slot = await partnerRepo.findActiveByPrIdAndUserId(id, userId);
   if (!slot) {
-    throw new HTTPException(403, {
-      message: "Reimbursement status is only available to active participants",
-    });
+    return throwHttpProblem({ status: 403, detail: "Reimbursement status is only available to active participants" });
   }
   if (slot.status !== "ATTENDED") {
     return {

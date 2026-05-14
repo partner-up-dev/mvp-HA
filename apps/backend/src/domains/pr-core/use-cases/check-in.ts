@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import { PartnerRequestRepository } from "../../../repositories/PartnerRequestRepository";
 import { PartnerRepository } from "../../../repositories/PartnerRepository";
 import { UserReliabilityRepository } from "../../../repositories/UserReliabilityRepository";
@@ -20,32 +20,26 @@ export async function checkIn(
 ): Promise<PublicPR> {
   const request = await prRepo.findById(id);
   if (!request) {
-    throw new HTTPException(404, { message: "Partner request not found" });
+    return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
   if (!hasAnchorParticipationPolicy(refreshedRequest)) {
-    throw new HTTPException(400, {
-      message: "Check-in is not available for this partner request",
-    });
+    return throwHttpProblem({ status: 400, detail: "Check-in is not available for this partner request" });
   }
 
   if (!hasEventStarted(refreshedRequest.time)) {
-    throw new HTTPException(400, {
-      message: "Cannot check in - event has not started",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot check in - event has not started" });
   }
 
   const user = await resolveUserByOpenId(openId);
   const slot = await partnerRepo.findActiveByPrIdAndUserId(id, user.id);
   if (!slot) {
-    throw new HTTPException(400, {
-      message: "Cannot check in - partner is not joined",
-    });
+    return throwHttpProblem({ status: 400, detail: "Cannot check in - partner is not joined" });
   }
 
   const updatedSlot = await partnerRepo.reportCheckIn(slot.id);
   if (!updatedSlot) {
-    throw new HTTPException(500, { message: "Failed to submit check-in" });
+    return throwHttpProblem({ status: 500, detail: "Failed to submit check-in" });
   }
   if (slot.status !== "ATTENDED") {
     await userReliabilityRepo.applyDelta(user.id, { attended: 1 });
@@ -61,9 +55,7 @@ export async function checkIn(
 
   const latest = await prRepo.findById(id);
   if (!latest) {
-    throw new HTTPException(500, {
-      message: "Failed to refresh partner request after check-in",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to refresh partner request after check-in" });
   }
   return toPublicPR(latest, user.id);
 }

@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { User, UserId } from "../../../entities/user";
 import { UserRepository } from "../../../repositories/UserRepository";
 import { resolveUserByOpenId } from "../../user";
@@ -42,7 +42,7 @@ export async function resolveDraftCreator(
   if (input.authenticatedUserId) {
     const user = await userRepo.findById(input.authenticatedUserId);
     if (!user || user.status !== "ACTIVE") {
-      throw new HTTPException(401, { message: "Invalid authenticated user" });
+      return throwHttpProblem({ status: 401, detail: "Invalid authenticated user" });
     }
     return user;
   }
@@ -60,7 +60,7 @@ export async function resolvePublishedCreator(
   if (input.authenticatedUserId) {
     const user = await userRepo.findById(input.authenticatedUserId);
     if (!user || user.status !== "ACTIVE") {
-      throw new HTTPException(401, { message: "Invalid authenticated user" });
+      return throwHttpProblem({ status: 401, detail: "Invalid authenticated user" });
     }
 
     return {

@@ -24,6 +24,7 @@ export type AnchorEventPRContext = {
   joinLockOffsetMinutes: number;
   bookingTriggeredAt: Date | null;
   autoHideAt: Date | null;
+  confirmationEnabled: boolean;
 };
 
 export type AnchorEventPRContextRecord = {
@@ -55,6 +56,7 @@ const buildAnchorContext = (
       root.joinLockOffsetMinutes ?? DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
     bookingTriggeredAt: null,
     autoHideAt: null,
+    confirmationEnabled: root.confirmationEnabled,
   };
 };
 
@@ -220,6 +222,7 @@ export class AnchorEventPRContextRepository {
   async updateParticipationPolicy(
     prId: PRId,
     data: {
+      confirmationEnabled: boolean;
       confirmationStartOffsetMinutes: number | null;
       confirmationEndOffsetMinutes: number | null;
       joinLockOffsetMinutes: number | null;

@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PartnerRequest, PRId } from "../../../entities/partner-request";
 import { prMessageBodySchema } from "../../../entities/pr-message";
 import type { UserId } from "../../../entities/user";
@@ -40,9 +40,7 @@ export async function createPRMessage(input: {
     new Date(Date.now() - PR_MESSAGE_RATE_LIMIT_WINDOW_MS),
   );
   if (recentMessageCount >= PR_MESSAGE_RATE_LIMIT_MAX_MESSAGES) {
-    throw new HTTPException(429, {
-      message: "Too many messages sent in a short time",
-    });
+    return throwHttpProblem({ status: 429, detail: "Too many messages sent in a short time" });
   }
 
   return createPersistedPRMessage({
@@ -71,9 +69,7 @@ export async function createPersistedPRMessage(input: {
     body: input.body,
   });
   if (!createdMessage) {
-    throw new HTTPException(500, {
-      message: "Failed to create PR message",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to create PR message" });
   }
 
   const [createdMessageWithAuthor, actorInboxState] = await Promise.all([
@@ -87,9 +83,7 @@ export async function createPersistedPRMessage(input: {
       : Promise.resolve(null),
   ]);
   if (!createdMessageWithAuthor) {
-    throw new HTTPException(500, {
-      message: "Failed to reload created PR message",
-    });
+    return throwHttpProblem({ status: 500, detail: "Failed to reload created PR message" });
   }
 
   await createPRMessageUnreadWaveNotificationOpportunities({

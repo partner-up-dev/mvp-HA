@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type { PRId } from "../../../entities/partner-request";
 import type { PRMessageId } from "../../../entities/pr-message";
 import type { UserId } from "../../../entities/user";
@@ -20,9 +20,7 @@ export async function advancePRMessageReadMarker(input: {
 
   const targetMessage = await messageRepo.findByPrIdAndId(prId, lastReadMessageId);
   if (!targetMessage) {
-    throw new HTTPException(400, {
-      message: "Read marker must point to an existing message in this PR",
-    });
+    return throwHttpProblem({ status: 400, detail: "Read marker must point to an existing message in this PR" });
   }
 
   const [inboxState, latestVisibleMessageId] = await Promise.all([

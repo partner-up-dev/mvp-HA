@@ -1,4 +1,4 @@
-import { HTTPException } from "hono/http-exception";
+import { throwHttpProblem } from "../../../lib/problem-details";
 import type {
   FeedbackQuestionnaireAnswers,
   FeedbackQuestionnaireInstanceId,
@@ -16,9 +16,7 @@ export async function submitFeedbackQuestionnaire(input: {
 }) {
   const instance = await feedbackRepo.findInstanceById(input.instanceId);
   if (!instance) {
-    throw new HTTPException(404, {
-      message: "Feedback questionnaire instance not found",
-    });
+    return throwHttpProblem({ status: 404, detail: "Feedback questionnaire instance not found" });
   }
 
   assertFeedbackAnswersMatchDefinition(instance.definition, input.answers);
