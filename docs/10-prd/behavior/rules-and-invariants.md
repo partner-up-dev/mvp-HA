@@ -47,6 +47,8 @@
 - The visible `PartnerRequest` status set is `DRAFT`, `OPEN`, `READY`, `FULL`, `LOCKED_TO_START`, `ACTIVE`, `CLOSED`, and `EXPIRED`.
 - `LOCKED_TO_START` means the collaboration object has entered the pre-start lock window; joining is no longer allowed, and progression toward `ACTIVE` may still continue.
 - `PartnerRequest` state is jointly shaped by partner thresholds, time windows, confirmation windows, and context-specific rules.
+- When a PR reaches its close time, it expires only when current active participants are fewer than `minPartners`.
+- When an `ACTIVE` PR reaches its close time with current active participants greater than or equal to `minPartners`, it closes automatically.
 - `PartnerRequest.minPartners` must be an integer and `>= 1`. If `maxPartners` is present, it must satisfy both `maxPartners >= 2` and `maxPartners >= minPartners`.
 - Auto-created paths must fall back to `2` when a valid `minPartners` is unavailable. Manual input paths must reject empty value, `0`, `maxPartners = 1`, and invalid bounds.
 - If the user already joined a non-terminal PR whose time window conflicts with the target PR, the system must reject new join actions and any creation or publish action that would claim a slot.
@@ -82,8 +84,8 @@
 | `FULL`            | maximum partner count reached                     | not joinable; waitlistable before join lock |
 | `LOCKED_TO_START` | pre-start lock window                             | not joinable and not waitlistable           |
 | `ACTIVE`          | in progress                                       | normally no longer accepts new joins        |
-| `CLOSED`          | explicitly concluded                              | not joinable                                |
-| `EXPIRED`         | ended because the time window elapsed             | not joinable                                |
+| `CLOSED`          | successfully concluded after active execution     | not joinable                                |
+| `EXPIRED`         | ended because the close boundary arrived before minimum viable participation was met | not joinable                                |
 
 `Partner` progression may additionally pass through confirmation-window, reminder, new-partner, and attendance follow-up loops when the corresponding modules are active.
 

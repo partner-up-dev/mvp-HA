@@ -41,7 +41,7 @@ const userReliabilityRepo = new UserReliabilityRepository();
 
 /**
  * Refresh a PR's temporal state: release unconfirmed slots, activate if
- * within window, expire if past window-close.
+ * within window, finalize if past window-close.
  */
 export async function refreshTemporalStatus(
   request: PartnerRequest,
@@ -103,6 +103,22 @@ async function expireIfNeeded(
   const windowClose = getTimeWindowClose(request.time);
   if (!windowClose) return request;
   if (windowClose.getTime() > Date.now()) return request;
+
+  const slots = await partnerRepo.findByPrId(request.id);
+  const activeCount = slots.filter(
+    (slot) =>
+      slot.status === "JOINED" ||
+      slot.status === "CONFIRMED" ||
+      slot.status === "ATTENDED",
+  ).length;
+  const minPartners = request.minPartners ?? 1;
+
+  if (request.status === "ACTIVE" && activeCount >= minPartners) {
+    const closed = await prRepo.updateStatus(request.id, "CLOSED");
+    return closed ?? request;
+  }
+
+  if (activeCount >= minPartners) return request;
 
   const updated = await prRepo.updateStatus(request.id, "EXPIRED");
   return updated ?? request;
