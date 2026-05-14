@@ -17,12 +17,14 @@ import {
   isWeChatAbilityMockingEnabled,
   resolveWeChatAbilityMockOpenId,
 } from "../lib/wechat-ability-mocking";
+import {
+  AUTHENTICATED_REQUIRED_CODE,
+  throwAuthenticatedRequired,
+} from "../domains/pr-core/services/creator-identity.service";
 
 const oauthService = new WeChatOAuthService();
 const userRepo = new UserRepository();
-const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_OAUTH_NOT_CONFIGURED_CODE = "WECHAT_OAUTH_NOT_CONFIGURED";
-const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
 
 type CodedHttpException = HTTPException & {
   code?: string;
@@ -143,14 +145,14 @@ export const requireAuthenticatedOpenId = async (
     return throwCodedHttpException(
       401,
       "WeChat login required for partner actions",
-      WECHAT_AUTH_REQUIRED_CODE,
+      AUTHENTICATED_REQUIRED_CODE,
     );
   }
 
   return throwCodedHttpException(
     401,
     "Current account is not bound to WeChat",
-    WECHAT_BIND_REQUIRED_CODE,
+    AUTHENTICATED_REQUIRED_CODE,
   );
 };
 
@@ -193,11 +195,7 @@ export const requireAnchorAuthenticatedIdentity = async (
 ): Promise<AnchorAuthenticatedIdentity> => {
   const userId = getAuthenticatedUserId(c);
   if (!userId) {
-    return throwCodedHttpException(
-      401,
-      "WeChat login required for anchor actions",
-      WECHAT_AUTH_REQUIRED_CODE,
-    );
+    return throwAuthenticatedRequired();
   }
 
   const user = await userRepo.findById(userId);
@@ -205,7 +203,7 @@ export const requireAnchorAuthenticatedIdentity = async (
     return throwCodedHttpException(
       401,
       "Invalid authenticated WeChat user",
-      WECHAT_AUTH_REQUIRED_CODE,
+      AUTHENTICATED_REQUIRED_CODE,
     );
   }
 
@@ -213,7 +211,7 @@ export const requireAnchorAuthenticatedIdentity = async (
     return throwCodedHttpException(
       401,
       "Current account is not bound to WeChat",
-      WECHAT_BIND_REQUIRED_CODE,
+      AUTHENTICATED_REQUIRED_CODE,
     );
   }
 
@@ -225,7 +223,7 @@ export const requireAnchorAuthenticatedIdentity = async (
 
 export const getAuthenticatedUserId = (c: Context<AuthEnv>): UserId | null => {
   const auth = c.get("auth");
-  if (auth.role === "anonymous" || !auth.userId) {
+  if (!auth.roles.includes("authenticated") || !auth.userId) {
     return null;
   }
 
@@ -250,7 +248,7 @@ export const requireSessionUserId = (c: Context<AuthEnv>): UserId => {
 
 export const requireAuthenticatedUserId = (c: Context<AuthEnv>): UserId => {
   const auth = c.get("auth");
-  if (auth.role === "anonymous") {
+  if (!auth.roles.includes("authenticated")) {
     throw new HTTPException(401, { message: "Authentication required" });
   }
   return requireSessionUserId(c);

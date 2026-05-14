@@ -1,16 +1,8 @@
-import { client } from "@/lib/rpc";
+import { resolveApiUrl } from "@/shared/api/base-url";
 
 export const resolveOAuthLoginUrl = (returnTo: string): string => {
-  try {
-    return client.api.wechat.oauth.login
-      .$url({
-        query: { returnTo },
-      })
-      .toString();
-  } catch {
-    const query = new URLSearchParams({ returnTo });
-    return `/api/wechat/oauth/login?${query.toString()}`;
-  }
+  const query = new URLSearchParams({ returnTo });
+  return resolveApiUrl("/api/wechat/oauth/login", query);
 };
 
 export const redirectToWeChatOAuthLogin = (returnTo: string): void => {
@@ -23,16 +15,10 @@ export const redirectToWeChatOAuthBind = async (
 ): Promise<void> => {
   if (typeof window === "undefined") return;
 
-  const res = await client.api.wechat.oauth.bind.$get(
-    {
-      query: { returnTo },
-    },
-    {
-      init: {
-        credentials: "include",
-      },
-    },
-  );
+  const query = new URLSearchParams({ returnTo });
+  const res = await fetch(resolveApiUrl("/api/wechat/oauth/bind", query), {
+    credentials: "include",
+  });
 
   if (!res.ok) {
     // Fallback to login flow if bind endpoint is temporarily unavailable.

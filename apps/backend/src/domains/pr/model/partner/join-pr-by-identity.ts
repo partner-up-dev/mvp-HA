@@ -5,6 +5,7 @@ import { UserRepository } from "../../../../repositories/UserRepository";
 import { resolveUserByOpenId } from "../../../user";
 import { joinPRAsUser } from "../../../pr-core/use-cases/join-pr";
 import { waitlistPRAsUser } from "../../../pr-core/use-cases/waitlist-pr";
+import { throwAuthenticatedRequired } from "../../../pr-core/services/creator-identity.service";
 import type { PublicPR } from "../../read-models/public-pr-view.service";
 
 const userRepo = new UserRepository();
@@ -47,7 +48,7 @@ export const resolvePRParticipantUser = async (
   }
 
   if (!input.anonymousUserId) {
-    throw new HTTPException(401, { message: "Session required" });
+    return throwAuthenticatedRequired();
   }
 
   const anonymous = await userRepo.findById(input.anonymousUserId);

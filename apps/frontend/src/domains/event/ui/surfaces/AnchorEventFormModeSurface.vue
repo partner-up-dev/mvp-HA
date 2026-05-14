@@ -401,6 +401,7 @@ const createActionErrorMessage = computed(() => {
       return t("anchorEvent.createCard.errors.eventUnavailable");
     case "ANCHOR_EVENT_USER_PR_CREATION_DISABLED":
       return t("anchorEvent.createCard.errors.userCreationDisabled");
+    case "AUTHENTICATED_REQUIRED":
     case "WECHAT_AUTH_REQUIRED":
       return t("anchorEvent.createCard.errors.wechatAuthRequired");
     default:
@@ -1048,6 +1049,7 @@ const handleJoinCandidateSuccessClosed = async (prId: number) => {
 };
 
 const WECHAT_AUTH_BLOCKING_CODES = new Set([
+  "AUTHENTICATED_REQUIRED",
   "WECHAT_AUTH_REQUIRED",
   "WECHAT_BIND_REQUIRED",
 ]);

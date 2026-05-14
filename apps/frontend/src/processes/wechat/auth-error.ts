@@ -3,10 +3,13 @@ import {
   redirectToWeChatOAuthBind,
   redirectToWeChatOAuthLogin,
 } from "@/processes/wechat/oauth-login";
+import {
+  AUTHENTICATED_REQUIRED_CODE,
+  handleAuthenticatedRequiredResponse,
+} from "@/shared/api/auth-required-policy";
 
 const WECHAT_AUTH_REQUIRED_CODE = "WECHAT_AUTH_REQUIRED";
 const WECHAT_BIND_REQUIRED_CODE = "WECHAT_BIND_REQUIRED";
-const AUTHENTICATED_REQUIRED_CODE = "AUTHENTICATED_REQUIRED";
 
 export const isWeChatAuthRequiredError = (
   status: number,
@@ -24,6 +27,10 @@ export const handleWeChatAuthRequiredError = (
 ): boolean => {
   if (!isWeChatAuthRequiredError(status, payload)) {
     return false;
+  }
+
+  if (payload?.code === AUTHENTICATED_REQUIRED_CODE) {
+    return handleAuthenticatedRequiredResponse(status, payload, returnTo);
   }
 
   if (payload?.code === WECHAT_BIND_REQUIRED_CODE) {

@@ -7,7 +7,11 @@ export type TelemetryFailurePayload = {
   failureReason: string;
 };
 
-const AUTH_BLOCKING_CODES = new Set(["WECHAT_AUTH_REQUIRED", "WECHAT_BIND_REQUIRED"]);
+const AUTH_BLOCKING_CODES = new Set([
+  "AUTHENTICATED_REQUIRED",
+  "WECHAT_AUTH_REQUIRED",
+  "WECHAT_BIND_REQUIRED",
+]);
 
 const asApiError = (error: unknown): ApiError | null =>
   error instanceof Error ? (error as ApiError) : null;

@@ -20,7 +20,7 @@ export type CreatorIdentityResult = {
 
 export const throwAuthenticatedRequired = (): never => {
   throw new ProblemDetailsError({
-    status: 403,
+    status: 401,
     type: "https://partner-up.app/problems/auth.authenticated_required",
     code: AUTHENTICATED_REQUIRED_CODE,
     localizedText: {

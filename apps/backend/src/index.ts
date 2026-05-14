@@ -9,6 +9,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { HTTPException } from "hono/http-exception";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { ZodError } from "zod";
 import { partnerRequestRoute } from "./controllers/partner-request.controller";
 import { authRoute } from "./controllers/auth.controller";
 import { userRoute } from "./controllers/user.controller";
@@ -46,6 +48,7 @@ import {
 } from "./infra/notifications";
 import { env } from "./lib/env";
 import {
+  buildGenericProblemDetailsPayload,
   buildProblemDetailsPayload,
   ProblemDetailsError,
 } from "./lib/problem-details";
@@ -107,30 +110,60 @@ app.use("*", async (c, next) => {
 
 // Global error handler
 app.onError((err, c) => {
+  const respondProblem = (
+    payload: ReturnType<typeof buildGenericProblemDetailsPayload>,
+    status: number,
+    contentLanguage = "en-US",
+  ) =>
+    c.body(JSON.stringify(payload), status as ContentfulStatusCode, {
+      "Content-Type": "application/problem+json; charset=utf-8",
+      "Content-Language": contentLanguage,
+    });
+
   if (err instanceof ProblemDetailsError) {
     const { payload, contentLanguage } = buildProblemDetailsPayload(
       err,
       c.req.header("accept-language"),
     );
-    return c.body(JSON.stringify(payload), err.status, {
-      "Content-Type": "application/problem+json; charset=utf-8",
-      "Content-Language": contentLanguage,
-    });
+    return respondProblem(payload, err.status, contentLanguage);
   }
 
   if (err instanceof HTTPException) {
     const codedError = err as HTTPException & { code?: string };
-    const payload: { error: string; code?: string } = {
-      error: err.message,
-    };
-    if (typeof codedError.code === "string" && codedError.code.length > 0) {
-      payload.code = codedError.code;
-    }
+    const code =
+      typeof codedError.code === "string" && codedError.code.length > 0
+        ? codedError.code
+        : undefined;
+    return respondProblem(
+      buildGenericProblemDetailsPayload({
+        status: err.status,
+        detail: err.message,
+        code,
+      }),
+      err.status,
+    );
+  }
 
-    return c.json(payload, err.status);
+  if (err instanceof ZodError) {
+    return respondProblem(
+      buildGenericProblemDetailsPayload({
+        status: 422,
+        detail: err.issues.map((issue) => issue.message).join("; "),
+        code: "VALIDATION_FAILED",
+        type: "https://partner-up.app/problems/validation.failed",
+      }),
+      422,
+    );
   }
   console.error(err);
-  return c.json({ error: "Internal Server Error" }, 500);
+  return respondProblem(
+    buildGenericProblemDetailsPayload({
+      status: 500,
+      detail: "Internal Server Error",
+      type: "https://partner-up.app/problems/internal.server_error",
+    }),
+    500,
+  );
 });
 
 // Mount routes

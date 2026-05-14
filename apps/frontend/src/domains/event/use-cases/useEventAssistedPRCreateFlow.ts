@@ -25,6 +25,7 @@ type EventAssistedPRCreateInput = {
 
 const JOIN_TIME_WINDOW_CONFLICT_CODE = "JOIN_TIME_WINDOW_CONFLICT";
 const WECHAT_AUTH_BLOCKING_CODES = new Set([
+  "AUTHENTICATED_REQUIRED",
   "WECHAT_AUTH_REQUIRED",
   "WECHAT_BIND_REQUIRED",
 ]);
@@ -64,6 +65,7 @@ export const useEventAssistedPRCreateFlow = (
       switch (createAnchorError.code) {
         case JOIN_TIME_WINDOW_CONFLICT_CODE:
           return t("anchorEvent.createCard.errors.timeWindowConflict");
+        case "AUTHENTICATED_REQUIRED":
         case "WECHAT_AUTH_REQUIRED":
           return t("anchorEvent.createCard.errors.wechatAuthRequired");
         case "LOCATION_CAP_REACHED":

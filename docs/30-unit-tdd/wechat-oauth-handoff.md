@@ -24,6 +24,8 @@ It exists because the product currently uses frontend-held application access to
 - Auth bootstrap must defer while a handoff nonce is pending. It must not register or refresh an anonymous session before the handoff gate resolves.
 - Route auto-login must not redirect to WeChat while a handoff nonce is pending.
 - Route share orchestration must not build share targets or revisions from a route that still contains the handoff nonce.
+- The frontend RPC auth policy starts this OAuth login flow when an API response is `401` with problem code `AUTHENTICATED_REQUIRED`.
+- `AUTHENTICATED_REQUIRED` means the command requires the product `authenticated` role. In the current product, that role is obtained through WeChat OAuth login or anonymous-user WeChat upgrade.
 
 ## UX Semantics
 
@@ -32,6 +34,7 @@ It exists because the product currently uses frontend-held application access to
 - Slow network is a UI state, not immediate failure. After the slow threshold, show an explicit pending state while the original exchange continues.
 - A user may choose to continue as a visitor. That action cancels the local wait, removes the nonce from the URL, and lets normal auth bootstrap proceed.
 - Failed handoff should offer retry while the nonce remains present and the backend cookie may still be valid.
+- API-command initiated OAuth returns to the current browser URL. Command owners remain responsible for any domain-specific pending-action replay state they need after handoff.
 
 ## Failure Semantics
 
