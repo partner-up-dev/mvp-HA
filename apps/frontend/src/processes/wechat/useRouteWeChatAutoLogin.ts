@@ -2,8 +2,9 @@ import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
 import { isWeChatAbilityEnv } from "@/shared/wechat/ability-mocking";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+import { requestWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
 import { hasPendingWeChatOAuthHandoff } from "@/processes/wechat/oauth-handoff";
+import { ensureAuthSessionBootstrapped } from "@/processes/auth/useAuthSessionBootstrap";
 
 const AUTO_LOGIN_ATTEMPT_STORAGE_KEY =
   "partner_up_wechat_auto_login_attempted_routes";
@@ -58,6 +59,59 @@ const resolveAutoLoginRouteKey = (
   return routePath;
 };
 
+type RouteWeChatAutoLoginAttemptRuntime = {
+  resolveRouteKey: () => string | null;
+  hasPendingHandoff: () => boolean;
+  ensureAuthSessionBootstrapped: () => Promise<void>;
+  isAuthenticated: () => boolean;
+  clearRouteAttempted: (routeKey: string) => void;
+  isWeChatAbilityEnv: () => boolean;
+  hasRouteAttempted: (routeKey: string) => boolean;
+  markRouteAttempted: (routeKey: string) => void;
+  isRedirecting: () => boolean;
+  setRedirecting: (value: boolean) => void;
+  getReturnTo: () => string;
+  requestLogin: (returnTo: string) => boolean;
+};
+
+export type RouteWeChatAutoLoginAttemptResult =
+  | "skipped"
+  | "deferred"
+  | "authenticated"
+  | "already-attempted"
+  | "redirecting";
+
+export const runRouteWeChatAutoLoginAttempt = async (
+  runtime: RouteWeChatAutoLoginAttemptRuntime,
+): Promise<RouteWeChatAutoLoginAttemptResult> => {
+  if (runtime.isRedirecting()) return "redirecting";
+
+  const initialRouteKey = runtime.resolveRouteKey();
+  if (!initialRouteKey) return "skipped";
+  if (runtime.hasPendingHandoff()) return "deferred";
+
+  await runtime.ensureAuthSessionBootstrapped();
+
+  if (runtime.isRedirecting()) return "redirecting";
+  if (runtime.hasPendingHandoff()) return "deferred";
+
+  const routeKey = runtime.resolveRouteKey();
+  if (!routeKey) return "skipped";
+
+  if (runtime.isAuthenticated()) {
+    runtime.clearRouteAttempted(routeKey);
+    return "authenticated";
+  }
+
+  if (!runtime.isWeChatAbilityEnv()) return "skipped";
+  if (runtime.hasRouteAttempted(routeKey)) return "already-attempted";
+
+  runtime.markRouteAttempted(routeKey);
+  runtime.setRedirecting(true);
+  runtime.requestLogin(runtime.getReturnTo());
+  return "redirecting";
+};
+
 export const useRouteWeChatAutoLogin = () => {
   const route = useRoute();
   const userSessionStore = useUserSessionStore();
@@ -65,26 +119,27 @@ export const useRouteWeChatAutoLogin = () => {
 
   const attemptAutoLogin = () => {
     if (typeof window === "undefined") return;
-    if (redirecting.value) return;
 
-    const routeKey = resolveAutoLoginRouteKey(
-      route.path,
-      route.meta.wechatAutoLoginPolicy,
-    );
-    if (!routeKey) return;
-    if (hasPendingWeChatOAuthHandoff()) return;
-
-    if (userSessionStore.isAuthenticated) {
-      clearRouteAttempted(routeKey);
-      return;
-    }
-
-    if (!isWeChatAbilityEnv()) return;
-    if (hasRouteAttempted(routeKey)) return;
-
-    markRouteAttempted(routeKey);
-    redirecting.value = true;
-    redirectToWeChatOAuthLogin(window.location.href);
+    void runRouteWeChatAutoLoginAttempt({
+      resolveRouteKey: () =>
+        resolveAutoLoginRouteKey(
+          route.path,
+          route.meta.wechatAutoLoginPolicy,
+        ),
+      hasPendingHandoff: hasPendingWeChatOAuthHandoff,
+      ensureAuthSessionBootstrapped,
+      isAuthenticated: () => userSessionStore.isAuthenticated,
+      clearRouteAttempted,
+      isWeChatAbilityEnv,
+      hasRouteAttempted,
+      markRouteAttempted,
+      isRedirecting: () => redirecting.value,
+      setRedirecting: (value) => {
+        redirecting.value = value;
+      },
+      getReturnTo: () => window.location.href,
+      requestLogin: requestWeChatOAuthLogin,
+    });
   };
 
   watch(

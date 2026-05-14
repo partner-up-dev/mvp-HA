@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || "";
+export const API_URL = import.meta.env?.VITE_API_URL || "";
 
 export const resolveApiUrl = (path: string, query?: URLSearchParams): string => {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;

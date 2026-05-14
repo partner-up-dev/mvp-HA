@@ -23,6 +23,8 @@ It exists because the product currently uses frontend-held application access to
 - Handoff exchange is single-use from the frontend perspective: success removes the nonce from the address bar and applies the returned auth session.
 - Auth bootstrap must defer while a handoff nonce is pending. It must not register or refresh an anonymous session before the handoff gate resolves.
 - Route auto-login must not redirect to WeChat while a handoff nonce is pending.
+- Route auto-login must wait for auth bootstrap before deciding whether the current PR route needs WeChat OAuth.
+- OAuth login redirects are single-flight in the frontend runtime. Route auto-login, RPC auth-required handling, and compatibility auth-error handling share the same login redirect policy.
 - Route share orchestration must not build share targets or revisions from a route that still contains the handoff nonce.
 - The frontend RPC auth policy starts this OAuth login flow when an API response is `401` with problem code `AUTHENTICATED_REQUIRED`.
 - `AUTHENTICATED_REQUIRED` means the command requires the product `authenticated` role. In the current product, that role is obtained through WeChat OAuth login or anonymous-user WeChat upgrade.

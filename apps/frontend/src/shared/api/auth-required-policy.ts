@@ -1,9 +1,10 @@
 import type { ApiErrorPayload } from "@/shared/api/error";
-import { redirectToWeChatOAuthLogin } from "@/processes/wechat/oauth-login";
+import {
+  requestWeChatOAuthLogin,
+  resetWeChatOAuthLoginRedirectStateForTest,
+} from "@/processes/wechat/oauth-login";
 
 export const AUTHENTICATED_REQUIRED_CODE = "AUTHENTICATED_REQUIRED";
-
-let authRedirectInProgress = false;
 
 export const isAuthenticatedRequiredResponse = (
   status: number,
@@ -19,15 +20,10 @@ export const handleAuthenticatedRequiredResponse = (
   if (!isAuthenticatedRequiredResponse(status, payload)) {
     return false;
   }
-  if (authRedirectInProgress) {
-    return true;
-  }
 
-  authRedirectInProgress = true;
-  redirectToWeChatOAuthLogin(returnTo);
-  return true;
+  return requestWeChatOAuthLogin(returnTo);
 };
 
 export const resetAuthenticatedRequiredRedirectStateForTest = (): void => {
-  authRedirectInProgress = false;
+  resetWeChatOAuthLoginRedirectStateForTest();
 };

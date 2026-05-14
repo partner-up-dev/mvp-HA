@@ -1,7 +1,7 @@
 import type { ApiErrorPayload } from "@/shared/api/error";
 import {
   redirectToWeChatOAuthBind,
-  redirectToWeChatOAuthLogin,
+  requestWeChatOAuthLogin,
 } from "@/processes/wechat/oauth-login";
 import {
   AUTHENTICATED_REQUIRED_CODE,
@@ -38,6 +38,5 @@ export const handleWeChatAuthRequiredError = (
     return true;
   }
 
-  redirectToWeChatOAuthLogin(returnTo);
-  return true;
+  return requestWeChatOAuthLogin(returnTo);
 };
