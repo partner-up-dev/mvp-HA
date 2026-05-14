@@ -353,7 +353,8 @@ export function buildPRPartnerSection(params: {
   );
   const current = activeParticipants.length;
   const hasParticipationPolicy = policy !== null;
-  const confirmationEnabled =
+  const confirmationEnabled = publicPR.confirmationEnabled;
+  const confirmationPolicyEnabled =
     hasParticipationPolicy && policy.confirmationEnabled;
   const joinLocked =
     hasParticipationPolicy && policy?.joinLockAt
@@ -362,7 +363,7 @@ export function buildPRPartnerSection(params: {
   const bookingLocked = isBookingDeadlineReached(bookingDeadlineAt);
   const started = hasEventStarted(publicPR.time);
   const withinConfirmationWindow =
-    confirmationEnabled &&
+    confirmationPolicyEnabled &&
     policy?.confirmationStartAt !== null &&
     policy?.confirmationEndAt !== null &&
     Date.now() >= policy.confirmationStartAt.getTime() &&
@@ -432,7 +433,7 @@ export function buildPRPartnerSection(params: {
 
   let canConfirm = true;
   let confirmBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!confirmationEnabled) {
+  if (!confirmationPolicyEnabled) {
     canConfirm = false;
     confirmBlockedReason = "OUTSIDE_CONFIRM_WINDOW";
   } else if (!base.viewer.isParticipant) {

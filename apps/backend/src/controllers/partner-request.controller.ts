@@ -1,5 +1,5 @@
 import { throwHttpProblem } from "../lib/problem-details";
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import { authMiddleware, type AuthEnv } from "../auth/middleware";
 import {
   advancePRMessageReadMarker,
@@ -11,7 +11,6 @@ import {
   createPRFromStructured,
   createPRMessage,
   exitPRByUserId,
-  exitPR,
   getPRDetail,
   getPRBookingSupport,
   getPRPartnerProfile,
@@ -20,7 +19,6 @@ import {
   getMyJoinedPRs,
   getPRJoinGateProjection,
   joinPRByIdentity,
-  joinPR,
   listPRMessages,
   publishPR,
   resolvePRJoinGate,
@@ -35,7 +33,6 @@ import { updatePRBookingContactPhone } from "../domains/pr-booking-support";
 import { PartnerRequestRepository } from "../repositories/PartnerRequestRepository";
 import {
   anchorUpdateContentSchema,
-  buildCreatorIdentity,
   createNaturalLanguagePRSchema,
   getSessionUserId,
   issueAuthPayload,
@@ -43,11 +40,11 @@ import {
   prMessageReadMarkerSchema,
   prIdParamSchema,
   prPartnerProfileParamSchema,
+  requireAuthenticatedCreatorIdentity,
   requireAnchorAuthenticatedIdentity,
-  requireAuthenticatedOpenId,
+  requireAuthenticatedUserId,
   requireSessionUserId,
   resolveAvatarUrl,
-  tryReadAnchorAuthenticatedIdentity,
   tryReadAuthenticatedOpenId,
   partnerRequestFieldsSchema,
   updateContentSchema,
@@ -58,6 +55,17 @@ import { z } from "zod";
 
 const app = new Hono<AuthEnv>();
 const prRepo = new PartnerRequestRepository();
+const PR_MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const requireAuthenticatedPRMutation: MiddlewareHandler<AuthEnv> = async (
+  c,
+  next,
+) => {
+  if (PR_MUTATION_METHODS.has(c.req.method)) {
+    requireAuthenticatedUserId(c);
+  }
+
+  await next();
+};
 const isoDateSearchParamSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const correlationIdSchema = z.string().trim().min(1).max(128).optional();
 const eventPRSearchQuerySchema = z.object({
@@ -142,6 +150,7 @@ const getPROr404 = async (id: number) => {
 
 export const partnerRequestRoute = app
   .use("*", authMiddleware)
+  .use("*", requireAuthenticatedPRMutation)
   .get("/search", zValidator("query", eventPRSearchQuerySchema), async (c) => {
     const { eventId, date } = c.req.valid("query");
     const result = await searchPRs({
@@ -167,7 +176,7 @@ export const partnerRequestRoute = app
                 oauthOpenId: identity.openId,
               };
             })()
-          : await buildCreatorIdentity(c);
+          : await requireAuthenticatedCreatorIdentity(c);
 
       const result =
         createSource === "EVENT_ASSISTED"
@@ -185,7 +194,7 @@ export const partnerRequestRoute = app
   )
   .post("/new/nl", zValidator("json", nlWordCountCommandSchema), async (c) => {
     const { rawText, nowIso, nowWeekday } = c.req.valid("json");
-    const creatorIdentity = await buildCreatorIdentity(c);
+    const creatorIdentity = await requireAuthenticatedCreatorIdentity(c);
     const result = await createPRFromNaturalLanguage(
       rawText,
       nowIso,
@@ -198,7 +207,7 @@ export const partnerRequestRoute = app
   .post("/:id/publish", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);
-    const creatorIdentity = await buildCreatorIdentity(c);
+    const creatorIdentity = await requireAuthenticatedCreatorIdentity(c);
     const result = await publishPR(id, creatorIdentity);
     const auth = await issueAuthPayload(c, result.createdBy);
 
@@ -243,7 +252,7 @@ export const partnerRequestRoute = app
       const { id } = c.req.valid("param");
       const { body } = c.req.valid("json");
       await getPROr404(id);
-      const userId = requireSessionUserId(c);
+      const userId = requireAuthenticatedUserId(c);
       const result = await createPRMessage({
         prId: id,
         authorUserId: userId,
@@ -273,7 +282,7 @@ export const partnerRequestRoute = app
       const { id } = c.req.valid("param");
       const { lastReadMessageId } = c.req.valid("json");
       await getPROr404(id);
-      const userId = requireSessionUserId(c);
+      const userId = requireAuthenticatedUserId(c);
       const result = await advancePRMessageReadMarker({
         prId: id,
         userId,
@@ -300,7 +309,7 @@ export const partnerRequestRoute = app
       const { id } = c.req.valid("param");
       const { phone } = c.req.valid("json");
       await getPROr404(id);
-      const userId = requireSessionUserId(c);
+      const userId = requireAuthenticatedUserId(c);
       const result = await updatePRBookingContactPhone({
         prId: id,
         userId,
@@ -338,7 +347,7 @@ export const partnerRequestRoute = app
       const { id, gateKey } = c.req.valid("param");
       await getPROr404(id);
       const payload = c.req.valid("json");
-      const identity = await buildCreatorIdentity(c);
+      const identity = await requireAuthenticatedCreatorIdentity(c);
       const participant = await resolvePRParticipantUser(identity);
       const result = await resolvePRJoinGate({
         prId: id,
@@ -424,7 +433,7 @@ export const partnerRequestRoute = app
       const { id } = c.req.valid("param");
       await getPROr404(id);
       const { bookingContactPhone } = c.req.valid("json");
-      const participantIdentity = await buildCreatorIdentity(c);
+      const participantIdentity = await requireAuthenticatedCreatorIdentity(c);
       const result = await joinPRByIdentity(id, participantIdentity, {
         bookingContactPhone: bookingContactPhone ?? null,
       });
@@ -443,7 +452,7 @@ export const partnerRequestRoute = app
       const { id } = c.req.valid("param");
       await getPROr404(id);
       const payload = c.req.valid("json");
-      const participantIdentity = await buildCreatorIdentity(c);
+      const participantIdentity = await requireAuthenticatedCreatorIdentity(c);
       const result = await waitlistPRByIdentity(id, participantIdentity, {
         alternativePrReminderOptIn: payload.alternativePrReminderOptIn === true,
       });
@@ -460,7 +469,7 @@ export const partnerRequestRoute = app
     async (c) => {
       const { id } = c.req.valid("param");
       await getPROr404(id);
-      const userId = requireSessionUserId(c);
+      const userId = requireAuthenticatedUserId(c);
       const result = await cancelWaitlistPRByUserId(id, userId);
       return c.json(result);
     },
@@ -468,7 +477,7 @@ export const partnerRequestRoute = app
   .post("/:id/exit", zValidator("param", prIdParamSchema), async (c) => {
     const { id } = c.req.valid("param");
     await getPROr404(id);
-    const userId = requireSessionUserId(c);
+    const userId = requireAuthenticatedUserId(c);
     const result = await exitPRByUserId(id, userId);
     return c.json(result);
   })

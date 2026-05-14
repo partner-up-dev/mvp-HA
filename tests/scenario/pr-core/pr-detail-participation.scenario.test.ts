@@ -11,6 +11,7 @@ import {
   configureJoinGate,
   configureOpenConfirmationWindow,
   configureStartedEvent,
+  configureStartedEventWithDisabledConfirmation,
   configureStartedEventWithFeedback,
   bindScenarioWeChatOpenId,
 } from "../../../apps/backend/tests/pr-core/_kit/actions/system-state";
@@ -281,6 +282,58 @@ scenario(
     const slot = await probeLatestPartnerSlot({ pr, user: participant });
     assert.equal(slot?.status, "ATTENDED");
     assert.equal(slot?.didAttend, true);
+  },
+);
+
+scenario(
+  "pr_detail_disabled_confirmation_hides_confirm_and_allows_check_in",
+  async (ctx) => {
+    const creator = await givenUser("system-disabled-confirmation-creator");
+    const participant = await givenUser(
+      "system-disabled-confirmation-participant",
+    );
+    const pr = await givenPublishedPartnerRequest({
+      creator,
+      minPartners: 2,
+      maxPartners: null,
+      title: "System scenario disabled confirmation partner request",
+    });
+
+    await bindScenarioWeChatOpenId({
+      user: participant,
+      openId: "system-disabled-confirmation-participant-openid",
+    });
+    await joinThroughBackend({ prId: pr.id, token: participant.token });
+    await configureStartedEventWithDisabledConfirmation(pr);
+
+    ctx.record("prId", pr.id);
+    ctx.record("participantUserId", participant.user.id);
+
+    await withScenarioPage(async (page) => {
+      await installScenarioUserSession(page, participant);
+      await installDeterministicShareSidecarStubs(page);
+
+      await page.goto(`/pr/${pr.id}`);
+      await page.getByTestId("pr-detail.participant.confirm-action").waitFor({
+        state: "hidden",
+        timeout: 10_000,
+      });
+      await page.getByTestId("pr-detail.participant.check-in-action").waitFor({
+        state: "visible",
+        timeout: 10_000,
+      });
+      const checkInResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes(`/api/pr/${pr.id}/check-in`) &&
+          response.request().method() === "POST",
+      );
+      await page.getByTestId("pr-detail.participant.check-in-action").click();
+      const checkInResponse = await checkInResponsePromise;
+      assert.equal(checkInResponse.status(), 200);
+    });
+
+    const slot = await probeLatestPartnerSlot({ pr, user: participant });
+    assert.equal(slot?.status, "ATTENDED");
   },
 );
 

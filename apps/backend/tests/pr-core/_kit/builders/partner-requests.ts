@@ -9,6 +9,8 @@ import type {
   PRStatus,
 } from "../../../../src/entities/partner-request";
 import type { ScenarioUser } from "./users";
+import { PartnerRequestRepository } from "../../../../src/repositories/PartnerRequestRepository";
+import { initializeSlotsForPR } from "../../../../src/domains/pr-core/services/slot-management.service";
 
 export type ScenarioPartnerRequest = {
   id: PRId;
@@ -16,13 +18,6 @@ export type ScenarioPartnerRequest = {
 
 type CreatePRResponse = {
   id: PRId;
-  status: PRStatus;
-  canonicalPath: string;
-};
-
-type CreateDraftPRResponse = {
-  id: PRId;
-  createdBy: string | null;
   status: PRStatus;
   canonicalPath: string;
 };
@@ -41,6 +36,7 @@ const defaultTimeWindow = (): [string, string] => [
 ];
 
 let scenarioFieldsSequence = 0;
+const prRepo = new PartnerRequestRepository();
 
 export function buildScenarioFields(title: string): PartnerRequestFields {
   const sequence = scenarioFieldsSequence++;
@@ -69,19 +65,25 @@ export async function givenDraftPR(input: {
   creator: ScenarioUser;
   title: string;
 }): Promise<ScenarioPartnerRequest> {
-  const response = await requestJson("/api/pr/new/form", {
-    method: "POST",
-    token: input.creator.token,
-    body: {
-      fields: buildScenarioFields(input.title),
-      createSource: "FORM",
-    },
+  const fields = buildScenarioFields(input.title);
+  const request = await prRepo.create({
+    title: fields.title,
+    type: fields.type,
+    time: fields.time,
+    location: fields.location,
+    minPartners: fields.minPartners,
+    maxPartners: fields.maxPartners,
+    budget: fields.budget,
+    preferences: fields.preferences,
+    notes: fields.notes,
+    meetingPoint: fields.meetingPoint ?? null,
+    joinGateConfig: [],
+    status: "DRAFT",
+    createdBy: null,
   });
-  const body = await expectJsonResponse<CreateDraftPRResponse>(response, 201);
-  assert.equal(body.status, "DRAFT");
-  assert.equal(body.createdBy, null);
+  await initializeSlotsForPR(request.id, null);
 
-  return { id: body.id };
+  return { id: request.id };
 }
 
 export async function givenPublishedPartnerRequest(

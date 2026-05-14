@@ -1,6 +1,25 @@
 import { resolveApiUrl } from "@/shared/api/base-url";
+import {
+  clearWeChatOAuthLoginPending,
+  markWeChatOAuthLoginPending,
+} from "@/processes/wechat/oauth-login-pending";
 
 let oauthLoginRedirectInProgress = false;
+
+const scheduleOAuthLoginRedirect = (url: string): void => {
+  const redirect = (): void => {
+    window.location.replace(url);
+  };
+
+  if (typeof window.requestAnimationFrame === "function") {
+    window.requestAnimationFrame(() => {
+      window.setTimeout(redirect, 0);
+    });
+    return;
+  }
+
+  window.setTimeout(redirect, 0);
+};
 
 export const resolveOAuthLoginUrl = (returnTo: string): string => {
   const query = new URLSearchParams({ returnTo });
@@ -12,7 +31,8 @@ export const requestWeChatOAuthLogin = (returnTo: string): boolean => {
   if (oauthLoginRedirectInProgress) return true;
 
   oauthLoginRedirectInProgress = true;
-  window.location.replace(resolveOAuthLoginUrl(returnTo));
+  markWeChatOAuthLoginPending();
+  scheduleOAuthLoginRedirect(resolveOAuthLoginUrl(returnTo));
   return true;
 };
 
@@ -22,6 +42,7 @@ export const redirectToWeChatOAuthLogin = (returnTo: string): void => {
 
 export const resetWeChatOAuthLoginRedirectStateForTest = (): void => {
   oauthLoginRedirectInProgress = false;
+  clearWeChatOAuthLoginPending();
 };
 
 export const redirectToWeChatOAuthBind = async (

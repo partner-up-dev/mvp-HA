@@ -1,5 +1,6 @@
 import { client } from "@/lib/rpc";
 import { useUserSessionStore } from "@/shared/auth/useUserSessionStore";
+import { clearWeChatOAuthLoginPending } from "@/processes/wechat/oauth-login-pending";
 
 export const WECHAT_OAUTH_HANDOFF_QUERY_PARAM = "wechatOAuthHandoff";
 export const WECHAT_OAUTH_HANDOFF_CLEARED_EVENT =
@@ -71,5 +72,6 @@ export const consumeWeChatOAuthHandoff = async (
   const userSessionStore = useUserSessionStore();
   userSessionStore.applyAuthSession(payload.auth);
   clearWeChatOAuthHandoffFromAddressBar();
+  clearWeChatOAuthLoginPending();
   return true;
 };

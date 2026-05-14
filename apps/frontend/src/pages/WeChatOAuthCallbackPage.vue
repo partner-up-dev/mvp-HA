@@ -34,6 +34,7 @@ import {
   useUserSessionStore,
   type AuthSessionPayload,
 } from "@/shared/auth/useUserSessionStore";
+import { clearWeChatOAuthLoginPending } from "@/processes/wechat/oauth-login-pending";
 
 const { t } = useI18n();
 
@@ -75,6 +76,7 @@ type OAuthCallbackResponse =
 const handleCallback = async (): Promise<void> => {
   const { code, state } = resolveOAuthParams();
   if (!code || !state) {
+    clearWeChatOAuthLoginPending();
     status.value = "failed";
     errorMessage.value = t("wechatOAuthCallbackPage.missingParams");
     return;
@@ -96,6 +98,7 @@ const handleCallback = async (): Promise<void> => {
       const payload = (await res.json().catch(() => null)) as {
         error?: string;
       } | null;
+      clearWeChatOAuthLoginPending();
       status.value = "failed";
       errorMessage.value =
         payload?.error ?? t("wechatOAuthCallbackPage.failed");
@@ -106,15 +109,18 @@ const handleCallback = async (): Promise<void> => {
     if (payload.ok && payload.returnTo) {
       if (payload.auth) {
         userSessionStore.applyAuthSession(payload.auth);
+        clearWeChatOAuthLoginPending();
       }
       window.location.replace(payload.returnTo);
       return;
     }
 
+    clearWeChatOAuthLoginPending();
     status.value = "failed";
     errorMessage.value =
       "error" in payload ? payload.error : t("wechatOAuthCallbackPage.failed");
   } catch (error) {
+    clearWeChatOAuthLoginPending();
     status.value = "failed";
     errorMessage.value =
       error instanceof Error

@@ -28,7 +28,7 @@ async function fillStructuredPRForm(input: {
   await page.getByTestId("pr-create.form.location").fill("Scenario Court");
 }
 
-scenario("pr_create_form_saves_anonymous_draft", async (ctx) => {
+scenario("pr_create_form_requires_authentication_for_save_draft", async (ctx) => {
   await withScenarioPage(async (page) => {
     await installDeterministicShareSidecarStubs(page);
 
@@ -45,15 +45,8 @@ scenario("pr_create_form_saves_anonymous_draft", async (ctx) => {
     );
     await page.getByTestId("pr-create.save-draft").click();
     const createResponse = await createResponsePromise;
-    assert.equal(createResponse.status(), 201);
-
-    const created = (await createResponse.json()) as CreatePRResponse;
-    assert.equal(created.status, "DRAFT");
-    ctx.record("prId", created.id);
-
-    const state = await probePartnerRequestCreationState(created.id);
-    assert.equal(state.status, "DRAFT");
-    assert.equal(state.createdBy, null);
+    assert.equal(createResponse.status(), 401);
+    ctx.record("authRequiredStatus", createResponse.status());
   });
 });
 

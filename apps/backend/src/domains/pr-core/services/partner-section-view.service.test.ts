@@ -104,7 +104,7 @@ describe("buildPRPartnerSection", () => {
   it("keeps check-in available while confirmation is disabled", () => {
     const participant = buildActiveParticipant("JOINED");
     const view = buildPRPartnerSection({
-      publicPR: buildPublicPR(),
+      publicPR: buildPublicPR({ confirmationEnabled: false }),
       activeParticipants: [participant],
       rosterParticipants: [participant],
       viewerUserId,

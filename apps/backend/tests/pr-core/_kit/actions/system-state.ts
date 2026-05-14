@@ -76,6 +76,24 @@ export async function configureStartedEvent(
     .where(eq(partnerRequests.id, pr.id));
 }
 
+export async function configureStartedEventWithDisabledConfirmation(
+  pr: ScenarioPartnerRequest,
+): Promise<void> {
+  const startAt = new Date(Date.now() - 30 * 60 * 1000);
+  const endAt = new Date(Date.now() + 90 * 60 * 1000);
+
+  await getTestDb()
+    .update(partnerRequests)
+    .set({
+      time: [startAt.toISOString(), endAt.toISOString()],
+      confirmationEnabled: false,
+      confirmationStartOffsetMinutes: 120,
+      confirmationEndOffsetMinutes: 30,
+      joinLockOffsetMinutes: 30,
+    })
+    .where(eq(partnerRequests.id, pr.id));
+}
+
 export async function configureEndedEvent(
   pr: ScenarioPartnerRequest,
 ): Promise<void> {
