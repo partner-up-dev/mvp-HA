@@ -23,6 +23,7 @@ export interface CreateAdminPRInput {
   notes: string | null;
   meetingPoint?: MeetingPointConfig | null;
   joinGateConfig?: PRJoinGateConfig;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -54,6 +55,7 @@ export async function createAdminPR(
 ): Promise<CreateAdminPROutput> {
   assertTimeWindowValid(timeWindow);
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
@@ -77,6 +79,7 @@ export async function createAdminPR(
     notes: input.notes,
     meetingPoint: input.meetingPoint ?? null,
     joinGateConfig: input.joinGateConfig ?? [],
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,

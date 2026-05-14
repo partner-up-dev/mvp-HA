@@ -138,6 +138,7 @@ export class PartnerRequestRepository {
   async updatePartnerRules(
     id: PRId,
     data: {
+      confirmationEnabled: boolean;
       confirmationStartOffsetMinutes: number | null;
       confirmationEndOffsetMinutes: number | null;
       joinLockOffsetMinutes: number | null;
@@ -146,6 +147,7 @@ export class PartnerRequestRepository {
     const result = await db
       .update(partnerRequests)
       .set({
+        confirmationEnabled: data.confirmationEnabled,
         confirmationStartOffsetMinutes: data.confirmationStartOffsetMinutes,
         confirmationEndOffsetMinutes: data.confirmationEndOffsetMinutes,
         joinLockOffsetMinutes: data.joinLockOffsetMinutes,

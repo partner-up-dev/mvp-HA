@@ -75,6 +75,7 @@ export type AdminAnchorEventInput = {
   timePoolConfig: AdminAnchorTimePoolConfigInput;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;

@@ -8,6 +8,7 @@ import type { User } from "../../../entities/user";
 import { resolveUserByOpenId } from "../../user";
 import {
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   isJoinLockedByPolicy,
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,
@@ -68,6 +69,7 @@ export async function joinPRAsUser(
   }
   const refreshedRequest = await refreshTemporalStatus(request);
   const hasParticipationPolicy = hasAnchorParticipationPolicy(refreshedRequest);
+  const hasConfirmationPolicy = hasEnabledConfirmationPolicy(refreshedRequest);
 
   let targetStatus: Extract<PartnerStatus, "JOINED" | "CONFIRMED"> = "JOINED";
   const bookingContactRequired = await isBookingContactRequiredForPR(id);
@@ -81,7 +83,7 @@ export async function joinPRAsUser(
       return throwHttpProblem({ status: 400, detail: "Cannot join - event is locked after join lock" });
     }
 
-    if (isWithinConfirmationWindow(policy)) {
+    if (hasConfirmationPolicy && isWithinConfirmationWindow(policy)) {
       targetStatus = "CONFIRMED";
     }
   }

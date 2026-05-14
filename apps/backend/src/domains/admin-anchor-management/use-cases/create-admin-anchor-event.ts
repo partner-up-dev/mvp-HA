@@ -36,6 +36,7 @@ export interface CreateAdminAnchorEventInput {
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
   defaultPrNotes: string | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
@@ -60,6 +61,7 @@ export async function createAdminAnchorEvent(
     0,
   );
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled: input.defaultConfirmationEnabled,
     confirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.defaultConfirmationEndOffsetMinutes,
@@ -88,6 +90,7 @@ export async function createAdminAnchorEvent(
     defaultMinPartners: input.defaultMinPartners,
     defaultMaxPartners: input.defaultMaxPartners,
     defaultPrNotes: input.defaultPrNotes,
+    defaultConfirmationEnabled: input.defaultConfirmationEnabled,
     defaultConfirmationStartOffsetMinutes:
       input.defaultConfirmationStartOffsetMinutes,
     defaultConfirmationEndOffsetMinutes:

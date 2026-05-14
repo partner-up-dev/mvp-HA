@@ -8,6 +8,7 @@ import { userIdSchema, type User, type UserId } from "../../../entities/user";
 import { getTimeWindowStart } from "../../pr/services";
 import {
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   resolveAnchorParticipationPolicy,
 } from "../../pr/services";
 import { env } from "../../../lib/env";
@@ -139,7 +140,7 @@ const resolveReminderRemark = (
 export const resolveConfirmationReminderPolicyForRequest = async (
   request: PartnerRequest,
 ): Promise<ReturnType<typeof resolveAnchorParticipationPolicy> | null> => {
-  if (!hasAnchorParticipationPolicy(request)) {
+  if (!hasAnchorParticipationPolicy(request) || !hasEnabledConfirmationPolicy(request)) {
     return null;
   }
   return resolveAnchorParticipationPolicy(request, request.time);

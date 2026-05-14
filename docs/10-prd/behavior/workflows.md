@@ -28,7 +28,7 @@
 3. Revisit continuity uses the restored anonymous UUID session; actions that require stronger identity guarantees use authenticated session plus WeChat binding.
 4. Before join, the system checks time-window conflict, state, capacity, context-specific rules, and any PR-owned join gates.
 5. Join gates are rendered as one modal flow on the PR detail page. With no configured custom gate, the frontend injects the relevant fallback confirmation. With custom gates, each unresolved gate contributes one view such as join notice agreement or user-phone collection for booking contact.
-6. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal with confirmation reminder, new-partner reminder, and meeting-point reminder recommendations. Each recommendation explains why it is useful, and the confirmation reminder includes the confirmation deadline when known. The persistent notification-subscriptions section remains available on the detail page for later revisit.
+6. If join succeeds in a PR where reminder registration is relevant, the system immediately prompts the notification-subscription modal with confirmation reminder, new-partner reminder, and meeting-point reminder recommendations. Each recommendation explains why it is useful, and the confirmation reminder includes the confirmation deadline when known. When confirmation is disabled for that PR, the join-success recommendation omits confirmation reminder while leaving the persistent notification-subscriptions section available on the detail page for later revisit.
 7. After the join-success notification-subscription modal is completed, the same flow may recommend following the official account when the user is not backend-confirmed as a follower and the frontend cooldown is not active.
 8. If join succeeds, the user enters the downstream progression of that collaboration object.
 9. If the current PR was entered from Anchor Event context and is not the right fit, `/pr/:id` keeps a lightweight path back to browsing other active Anchor Events without hiding the current collaboration detail.
@@ -99,7 +99,7 @@
 ## 8. Reliability Loop
 
 1. The user joins a `PR` whose `Partner` submodule carries explicit reliability-related facts such as confirmation or join-lock settings.
-2. The relevant command path enforces whether immediate confirmation is required, whether additional joining is still allowed, and whether unconfirmed slots are released.
+2. The relevant command path enforces whether confirmation is enabled, whether immediate confirmation is required, whether additional joining is still allowed, and whether unconfirmed slots are released.
 3. If the user still has relevant notification quota, the responsible modules may register reminder, new-partner, or booking-result notifications.
 4. After the event, the attendance module may collect check-in feedback and contribute to the reliability loop.
 5. When the PR has a mounted feedback questionnaire instance, the PR detail flow may ask the participant to submit that questionnaire after check-in. The feedback command stores questionnaire answers in the feedback system, while the PR flow controls when the questionnaire is presented.

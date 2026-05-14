@@ -16,6 +16,7 @@ import {
 import { assertNoUserTimeWindowConflict } from "./participation-time-conflict.service";
 import {
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   isJoinLockedByPolicy,
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,
@@ -78,6 +79,9 @@ const resolvePromotionStatus = (
   request: PartnerRequest,
 ): Extract<PartnerStatus, "JOINED" | "CONFIRMED"> => {
   if (!hasAnchorParticipationPolicy(request)) {
+    return "JOINED";
+  }
+  if (!hasEnabledConfirmationPolicy(request)) {
     return "JOINED";
   }
   const policy = resolveAnchorParticipationPolicy(request, request.time);

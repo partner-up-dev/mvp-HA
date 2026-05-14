@@ -1303,6 +1303,8 @@
   "timelinePolicyPicker": {
     "title": "参与时间线",
     "description": "按活动开始时间配置确认和停止加入的节点。",
+    "confirmationEnabled": "开启确认",
+    "confirmationEnabledHint": "关闭后不显示确认动作，也不推荐或发送确认提醒。",
     "confirmationStart": "开始确认",
     "confirmationEnd": "结束确认",
     "joinLock": "停止加入",

@@ -26,6 +26,7 @@ export type AnchorEventEditorForm = {
   recurringRulesText: string;
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;

@@ -173,6 +173,7 @@ const emptyEventForm = (): EventForm => ({
   recurringRulesText: "",
   defaultMinPartners: null,
   defaultMaxPartners: null,
+  defaultConfirmationEnabled: true,
   defaultConfirmationStartOffsetMinutes:
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
   defaultConfirmationEndOffsetMinutes: DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
@@ -225,6 +226,7 @@ const toEventForm = (event: EventRecord): EventForm => ({
     .join("\n"),
   defaultMinPartners: event.defaultMinPartners,
   defaultMaxPartners: event.defaultMaxPartners,
+  defaultConfirmationEnabled: event.defaultConfirmationEnabled,
   defaultConfirmationStartOffsetMinutes:
     event.defaultConfirmationStartOffsetMinutes ??
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
@@ -333,6 +335,9 @@ const timePoolValidationMessage = computed(() => {
 });
 
 const policyValidationMessage = computed(() => {
+  if (!eventForm.value.defaultConfirmationEnabled) {
+    return null;
+  }
   if (
     eventForm.value.defaultConfirmationStartOffsetMinutes <=
     eventForm.value.defaultConfirmationEndOffsetMinutes

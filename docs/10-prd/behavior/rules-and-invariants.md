@@ -118,13 +118,14 @@
 
 ## 5. Reliability Rules
 
-- Partner admission may have a confirmation window when its explicit configuration carries one. Unconfirmed slots may be released inside that window, and late joining may be blocked.
+- Partner admission may have a confirmation window when its explicit configuration carries one and confirmation is enabled. Unconfirmed slots may be released inside that window, and late joining may be blocked.
+- Confirmation can be disabled at PR level. When disabled, the PR has no confirm action, confirmation reminders, confirmation-window auto-confirm, or confirmation-deadline slot release. Join lock, check-in, booking support, and the persistent PR detail notification-subscription management path continue to use their own eligibility rules.
 - Check-in feedback is not mandatory by default; absence of check-in should remain "unknown" rather than auto-converted into "did not attend".
 - Mounted post-event feedback is optional unless the PR integration presents it for the current collaboration. Absence of a questionnaire response is tracked as missing feedback for that questionnaire instance, separate from attendance state.
 - PR messaging is a non-realtime coordination layer and must not introduce chat-room semantics such as presence, typing, or read receipts.
 - Notification subscription is modeled by remaining send quota, not by a simple toggle.
 - Successful join in a PR that supports reminder registration should immediately offer the notification-subscription modal while still leaving a durable management path on the detail page.
-- The successful-join notification-subscription modal focuses on confirmation reminders, new-partner reminders, and meeting-point reminders, with copy explaining the reason to subscribe. Confirmation reminder copy includes the confirmation deadline when that deadline is known.
+- The successful-join notification-subscription modal focuses on confirmation reminders, new-partner reminders, and meeting-point reminders, with copy explaining the reason to subscribe. Confirmation reminder copy includes the confirmation deadline when that deadline is known. PRs with confirmation disabled omit the confirmation reminder recommendation from this join-success modal.
 - Confirmation-start reminders must become claimable and deliverable at or after the configured confirmation-start instant, because the linked confirm action is backend-gated by the same window.
 - Successful waitlist entry should offer a focused `WAITLIST_PROMOTED` subscription prompt so the user can receive one notification when the pending slot becomes active.
 - Successful waitlist entry may also offer `WAITLIST_ALTERNATIVE_AVAILABLE` when the user selected cross-PR alternative reminders for that waitlist slot.

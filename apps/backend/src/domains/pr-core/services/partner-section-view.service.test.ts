@@ -22,6 +22,7 @@ const buildPublicPR = (
     location: "Test POI",
     status: "ACTIVE",
     visibilityStatus: "VISIBLE",
+    confirmationEnabled: true,
     confirmationStartOffsetMinutes: 120,
     confirmationEndOffsetMinutes: 30,
     joinLockOffsetMinutes: 30,
@@ -51,6 +52,7 @@ const buildPublicPR = (
 };
 
 const buildPolicy = (): ResolvedAnchorParticipationPolicy => ({
+  confirmationEnabled: true,
   confirmationStartOffsetMinutes: 120,
   confirmationEndOffsetMinutes: 30,
   joinLockOffsetMinutes: 30,
@@ -96,6 +98,26 @@ describe("buildPRPartnerSection", () => {
     });
 
     assert.equal(view.viewer.slotState, "CONFIRMED");
+    assert.equal(view.viewer.canCheckIn, true);
+  });
+
+  it("keeps check-in available while confirmation is disabled", () => {
+    const participant = buildActiveParticipant("JOINED");
+    const view = buildPRPartnerSection({
+      publicPR: buildPublicPR(),
+      activeParticipants: [participant],
+      rosterParticipants: [participant],
+      viewerUserId,
+      policy: {
+        ...buildPolicy(),
+        confirmationEnabled: false,
+        confirmationStartAt: null,
+        confirmationEndAt: null,
+      },
+    });
+
+    assert.equal(view.confirmation.enabled, false);
+    assert.equal(view.viewer.canConfirm, false);
     assert.equal(view.viewer.canCheckIn, true);
   });
 });

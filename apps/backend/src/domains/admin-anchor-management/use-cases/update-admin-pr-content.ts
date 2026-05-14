@@ -19,6 +19,7 @@ export interface UpdateAdminPRContentInput {
   notes: string | null;
   meetingPoint?: MeetingPointConfig | null;
   joinGateConfig?: PRJoinGateConfig;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -51,6 +52,7 @@ export async function updateAdminPRContent(
 
   assertTimeWindowValid(input.timeWindow);
   validateAnchorParticipationPolicyOffsets({
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,
@@ -81,6 +83,7 @@ export async function updateAdminPRContent(
   );
 
   await prRepo.updatePartnerRules(prId, {
+    confirmationEnabled: input.confirmationEnabled,
     confirmationStartOffsetMinutes: input.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: input.confirmationEndOffsetMinutes,
     joinLockOffsetMinutes: input.joinLockOffsetMinutes,

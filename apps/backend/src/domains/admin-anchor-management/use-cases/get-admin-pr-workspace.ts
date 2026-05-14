@@ -41,6 +41,7 @@ export type AdminPRWorkspaceSummary = {
   joinGateConfig: PRJoinGateConfig;
   feedbackQuestionnaireInstanceId: FeedbackQuestionnaireInstanceId | null;
   partnerCount: number;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -54,6 +55,7 @@ export type AdminPRTypeOption = {
   locationOptions: string[];
   defaultMinPartners: number | null;
   defaultMaxPartners: number | null;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
@@ -97,6 +99,7 @@ const toAdminPRWorkspaceSummary = async (
   feedbackQuestionnaireInstanceId:
     root.feedbackQuestionnaireInstanceId ?? null,
   partnerCount: await countActivePartnersForPR(root.id),
+  confirmationEnabled: root.confirmationEnabled,
   confirmationStartOffsetMinutes:
     root.confirmationStartOffsetMinutes ??
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
@@ -131,6 +134,7 @@ export async function getAdminPRWorkspace(): Promise<AdminPRWorkspace> {
       locationOptions: normalizeLocationPool(event.locationPool),
       defaultMinPartners: event.defaultMinPartners ?? null,
       defaultMaxPartners: event.defaultMaxPartners ?? null,
+      defaultConfirmationEnabled: event.defaultConfirmationEnabled,
       defaultConfirmationStartOffsetMinutes:
         event.defaultConfirmationStartOffsetMinutes ??
         DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,

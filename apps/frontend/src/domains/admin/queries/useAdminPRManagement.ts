@@ -75,6 +75,7 @@ export type AdminCreatePRInput = {
     imageUrl: string | null;
   } | null;
   joinGateConfig: PRJoinGateConfig;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;
@@ -94,6 +95,7 @@ export type AdminUpdatePRContentInput = {
     imageUrl: string | null;
   } | null;
   joinGateConfig: PRJoinGateConfig;
+  confirmationEnabled: boolean;
   confirmationStartOffsetMinutes: number;
   confirmationEndOffsetMinutes: number;
   joinLockOffsetMinutes: number;

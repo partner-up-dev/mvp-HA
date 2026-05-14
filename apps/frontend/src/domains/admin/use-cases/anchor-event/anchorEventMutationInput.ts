@@ -40,6 +40,7 @@ export type AnchorEventTimePolicyDraft = {
   earliestLeadMinutes: number | null;
   absoluteRulesText: string;
   recurringRulesText: string;
+  defaultConfirmationEnabled: boolean;
   defaultConfirmationStartOffsetMinutes: number;
   defaultConfirmationEndOffsetMinutes: number;
   defaultJoinLockOffsetMinutes: number;
@@ -211,6 +212,7 @@ export const toAnchorEventMutationInput = (
   timePoolConfig: event.timePoolConfig,
   defaultMinPartners: event.defaultMinPartners,
   defaultMaxPartners: event.defaultMaxPartners,
+  defaultConfirmationEnabled: event.defaultConfirmationEnabled,
   defaultConfirmationStartOffsetMinutes:
     event.defaultConfirmationStartOffsetMinutes ??
     DEFAULT_CONFIRMATION_START_OFFSET_MINUTES,
@@ -257,6 +259,7 @@ export const buildAnchorEventMutationInputFromEditorDraft = (
     ),
     defaultConfirmationStartOffsetMinutes:
       draft.defaultConfirmationStartOffsetMinutes,
+    defaultConfirmationEnabled: draft.defaultConfirmationEnabled,
     defaultConfirmationEndOffsetMinutes:
       draft.defaultConfirmationEndOffsetMinutes,
     defaultJoinLockOffsetMinutes: draft.defaultJoinLockOffsetMinutes,

@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   bigint,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
@@ -367,6 +368,9 @@ export const anchorEvents = pgTable("anchor_events", {
   defaultMinPartners: integer("default_min_partners"),
   defaultMaxPartners: integer("default_max_partners"),
   defaultPrNotes: text("default_pr_notes"),
+  defaultConfirmationEnabled: boolean("default_confirmation_enabled")
+    .notNull()
+    .default(true),
   defaultConfirmationStartOffsetMinutes: integer(
     "default_confirmation_start_offset_minutes",
   ),

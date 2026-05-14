@@ -868,6 +868,8 @@ export interface MessageSchema {
   timelinePolicyPicker: {
     title: string;
     description: string;
+    confirmationEnabled: string;
+    confirmationEnabledHint: string;
     confirmationStart: string;
     confirmationEnd: string;
     joinLock: string;

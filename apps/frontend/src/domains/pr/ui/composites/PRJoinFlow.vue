@@ -48,7 +48,7 @@
           </div>
 
           <APRNotificationSubscriptions
-            :visible-kinds="JOIN_SUCCESS_NOTIFICATION_KINDS"
+            :visible-kinds="joinSuccessNotificationKinds"
             :description-prefixes="joinSuccessNotificationDescriptionPrefixes"
             :updating-label="t('prPage.wechatReminder.updating')"
             outline-profile="surface"
@@ -98,6 +98,7 @@ import OfficialAccountFollowPanel from "@/domains/marketing/ui/OfficialAccountFo
 import { useOfficialAccountFollowPrompt } from "@/domains/marketing/use-cases/useOfficialAccountFollowPrompt";
 import { useJoinSuccessNotificationPrompt } from "@/domains/notification/use-cases/useJoinSuccessNotificationPrompt";
 import { useJoinPR } from "@/domains/pr/queries/usePRActions";
+import { usePRDetail } from "@/domains/pr/queries/usePRDetail";
 import PRJoinGates from "@/domains/pr/ui/composites/PRJoinGates.vue";
 import PRJoinFallbackConfirmGate from "@/domains/pr/ui/gates/PRJoinFallbackConfirmGate.vue";
 import {
@@ -131,6 +132,7 @@ const props = withDefaults(
     disabled?: boolean;
     scenarioType?: string | null;
     confirmationDeadlineAt?: string | null;
+    confirmationReminderSupported?: boolean | null;
     viewerIsParticipant?: boolean | null;
     showSuccessPrompt?: boolean;
     writeJoinEntryOnAuth?: boolean;
@@ -142,6 +144,7 @@ const props = withDefaults(
     disabled: false,
     scenarioType: null,
     confirmationDeadlineAt: null,
+    confirmationReminderSupported: null,
     viewerIsParticipant: null,
     showSuccessPrompt: true,
     writeJoinEntryOnAuth: false,
@@ -180,6 +183,8 @@ const joinSuccessPromptStep = ref<JoinSuccessPromptStep>("SUBSCRIPTIONS");
 const successPromptOpenForJoin = ref(false);
 
 const joinMutation = useJoinPR();
+const prDetailId = computed(() => props.prId);
+const { data: prDetailForPrompt } = usePRDetail(prDetailId);
 const {
   isOpen: showJoinSubscriptionModal,
   open: openJoinSuccessNotificationPrompt,
@@ -189,12 +194,29 @@ const officialAccountFollowPrompt =
   useOfficialAccountFollowPrompt("pr_join_result");
 
 const confirmationDeadlineText = computed(() => {
-  const deadline = props.confirmationDeadlineAt?.trim() ?? "";
+  const deadline =
+    props.confirmationDeadlineAt?.trim() ||
+    prDetailForPrompt.value?.partnerSection.timeline?.confirmationEndAt?.trim() ||
+    "";
   if (deadline.length === 0) {
     return null;
   }
   return formatLocalDateTimeValue(deadline) ?? deadline;
 });
+const confirmationReminderSupported = computed(() => {
+  if (props.confirmationReminderSupported !== null) {
+    return props.confirmationReminderSupported;
+  }
+  return prDetailForPrompt.value?.partnerSection.confirmation.enabled ?? true;
+});
+const joinSuccessNotificationKinds = computed<readonly WeChatNotificationKind[]>(
+  () =>
+    confirmationReminderSupported.value
+      ? JOIN_SUCCESS_NOTIFICATION_KINDS
+      : JOIN_SUCCESS_NOTIFICATION_KINDS.filter(
+          (kind) => kind !== "REMINDER_CONFIRMATION",
+        ),
+);
 const joinSuccessNotificationDescriptionPrefixes = computed<
   Partial<Record<WeChatNotificationKind, string>>
 >(() => ({

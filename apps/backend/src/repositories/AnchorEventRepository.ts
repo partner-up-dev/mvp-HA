@@ -80,6 +80,7 @@ export class AnchorEventRepository {
         | "defaultMinPartners"
         | "defaultMaxPartners"
         | "defaultPrNotes"
+        | "defaultConfirmationEnabled"
         | "defaultConfirmationStartOffsetMinutes"
         | "defaultConfirmationEndOffsetMinutes"
         | "defaultJoinLockOffsetMinutes"

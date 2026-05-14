@@ -9,6 +9,7 @@ export {
   DEFAULT_CONFIRMATION_END_OFFSET_MINUTES,
   DEFAULT_JOIN_LOCK_OFFSET_MINUTES,
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   resolveAnchorParticipationPolicy,
   validateAnchorParticipationPolicyOffsets,
   isWithinConfirmationWindow,

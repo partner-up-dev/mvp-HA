@@ -14,6 +14,7 @@ import {
 } from "./services/time-window.service";
 import {
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   hasConfirmationWindowEnded,
   resolveAnchorParticipationPolicy,
 } from "./services/anchor-participation-policy.service";
@@ -202,7 +203,7 @@ async function expireIfUnderMinAfterBookingDeadline(
 async function resolveReleaseTrigger(
   request: PartnerRequest,
 ): Promise<"confirmation_end" | null> {
-  if (!hasAnchorParticipationPolicy(request)) {
+  if (!hasEnabledConfirmationPolicy(request)) {
     return null;
   }
   const policy = resolveAnchorParticipationPolicy(request, request.time);

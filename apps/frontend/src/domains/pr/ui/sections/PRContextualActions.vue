@@ -52,6 +52,7 @@
       :event-id="routeEventId"
       :entry-surface="joinEntrySurface"
       :confirmation-deadline-at="confirmationDeadlineAt"
+      :confirmation-reminder-supported="pr.partnerSection.confirmation.enabled"
       :viewer-is-participant="pr.partnerSection.viewer.isParticipant"
       write-join-entry-on-auth
       @joined="handleJoinFlowJoined"

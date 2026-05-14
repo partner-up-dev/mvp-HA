@@ -22,6 +22,7 @@ export const useUpdateAnchorEventTimePolicy = () => {
       eventId: event.id,
       input: toAnchorEventMutationInput(event, {
         timePoolConfig: buildAnchorEventTimePoolConfig(draft),
+        defaultConfirmationEnabled: draft.defaultConfirmationEnabled,
         defaultConfirmationStartOffsetMinutes:
           draft.defaultConfirmationStartOffsetMinutes,
         defaultConfirmationEndOffsetMinutes:

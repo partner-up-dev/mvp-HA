@@ -6,6 +6,7 @@ import type { PRId } from "../../../entities/partner-request";
 import { resolveUserByOpenId } from "../../user";
 import {
   hasAnchorParticipationPolicy,
+  hasEnabledConfirmationPolicy,
   isWithinConfirmationWindow,
   resolveAnchorParticipationPolicy,
 } from "../services/anchor-participation-policy.service";
@@ -24,7 +25,7 @@ export async function confirmSlot(id: PRId, openId: string): Promise<PublicPR> {
     return throwHttpProblem({ status: 404, detail: "Partner request not found" });
   }
   const refreshedRequest = await refreshTemporalStatus(request);
-  if (!hasAnchorParticipationPolicy(refreshedRequest)) {
+  if (!hasEnabledConfirmationPolicy(refreshedRequest)) {
     return throwHttpProblem({ status: 400, detail: "Slot confirmation is not available for this partner request" });
   }
   const policy = resolveAnchorParticipationPolicy(

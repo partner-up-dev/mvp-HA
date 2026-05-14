@@ -94,6 +94,9 @@ export type PartnerSectionView = {
         supported: true;
         visible: boolean;
       };
+  confirmation: {
+    enabled: boolean;
+  };
   timeline: null | {
     eventStartAt: string | null;
     confirmationStartAt: string | null;
@@ -180,7 +183,7 @@ const buildBaseSection = (
   releaseStateByPartnerId: Map<number, PartnerSectionReleaseState>,
 ): Omit<
   PartnerSectionView,
-  "reminder" | "timeline" | "bookingContact" | "fallbacks"
+  "reminder" | "confirmation" | "timeline" | "bookingContact" | "fallbacks"
 > => {
   const current = activeParticipants.length;
   const min = publicPR.minPartners;
@@ -350,6 +353,8 @@ export function buildPRPartnerSection(params: {
   );
   const current = activeParticipants.length;
   const hasParticipationPolicy = policy !== null;
+  const confirmationEnabled =
+    hasParticipationPolicy && policy.confirmationEnabled;
   const joinLocked =
     hasParticipationPolicy && policy?.joinLockAt
       ? Date.now() >= policy.joinLockAt.getTime()
@@ -357,7 +362,7 @@ export function buildPRPartnerSection(params: {
   const bookingLocked = isBookingDeadlineReached(bookingDeadlineAt);
   const started = hasEventStarted(publicPR.time);
   const withinConfirmationWindow =
-    hasParticipationPolicy &&
+    confirmationEnabled &&
     policy?.confirmationStartAt !== null &&
     policy?.confirmationEndAt !== null &&
     Date.now() >= policy.confirmationStartAt.getTime() &&
@@ -427,7 +432,7 @@ export function buildPRPartnerSection(params: {
 
   let canConfirm = true;
   let confirmBlockedReason: PartnerSectionActionBlockedReason = "NONE";
-  if (!hasParticipationPolicy) {
+  if (!confirmationEnabled) {
     canConfirm = false;
     confirmBlockedReason = "OUTSIDE_CONFIRM_WINDOW";
   } else if (!base.viewer.isParticipant) {
@@ -484,6 +489,9 @@ export function buildPRPartnerSection(params: {
           supported: false,
           visible: false,
         },
+    confirmation: {
+      enabled: confirmationEnabled,
+    },
     timeline: hasParticipationPolicy
       ? {
           eventStartAt: publicPR.time[0],

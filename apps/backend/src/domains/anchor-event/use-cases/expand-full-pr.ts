@@ -131,6 +131,7 @@ export async function expandFullPR(prId: PRId): Promise<void> {
     preferences: fullPR.root.preferences,
     notes: null,
     joinGateConfig: [],
+    confirmationEnabled: fullPR.root.confirmationEnabled,
     confirmationStartOffsetMinutes:
       fullPR.root.confirmationStartOffsetMinutes,
     confirmationEndOffsetMinutes: fullPR.root.confirmationEndOffsetMinutes,
