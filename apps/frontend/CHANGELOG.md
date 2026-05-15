@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.1](https://github.com/partner-up-dev/mvp-HA/compare/frontend-v2.0.0...frontend-v2.0.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **frontend:** generate uuid telemetry ids ([87d29c3](https://github.com/partner-up-dev/mvp-HA/commit/87d29c3051e7a1951513c1aece282af9e617e6f5))
+* **frontend:** reset me page profile on logout ([e090899](https://github.com/partner-up-dev/mvp-HA/commit/e09089980603f559ee4b8f5821c29781e8d2f289))
+
 ## [2.0.0](https://github.com/partner-up-dev/mvp-HA/compare/frontend-v1.0.0...frontend-v2.0.0) (2026-05-14)
 
 
