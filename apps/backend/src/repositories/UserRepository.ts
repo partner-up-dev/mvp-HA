@@ -126,6 +126,52 @@ export class UserRepository {
     return result[0] ?? null;
   }
 
+  async updateWeChatProfileFieldsIfMissing(input: {
+    userId: UserId;
+    nickname: string | null;
+    sex: UserSex | null;
+    avatar: string | null;
+  }) {
+    const currentUser = await this.findById(input.userId);
+    if (!currentUser) {
+      return null;
+    }
+
+    const updateValues: {
+      nickname?: string;
+      sex?: UserSex;
+      avatar?: string;
+      updatedAt: Date;
+    } = {
+      updatedAt: new Date(),
+    };
+    let hasChanges = false;
+
+    if (!currentUser.nickname && input.nickname) {
+      updateValues.nickname = input.nickname;
+      hasChanges = true;
+    }
+    if (currentUser.sex === null && input.sex !== null) {
+      updateValues.sex = input.sex;
+      hasChanges = true;
+    }
+    if (!currentUser.avatar && input.avatar) {
+      updateValues.avatar = input.avatar;
+      hasChanges = true;
+    }
+
+    if (!hasChanges) {
+      return currentUser;
+    }
+
+    const result = await db
+      .update(users)
+      .set(updateValues)
+      .where(eq(users.id, input.userId))
+      .returning();
+    return result[0] ?? null;
+  }
+
   async upgradeAnonymousUserWithWeChat(input: {
     userId: UserId;
     openId: string;

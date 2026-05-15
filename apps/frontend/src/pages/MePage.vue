@@ -30,6 +30,7 @@
             <p>{{ t("mePage.profile.description") }}</p>
           </div>
           <Button
+            v-if="userSessionStore.isAuthenticated"
             class="profile-session-action"
             appearance="pill"
             tone="danger"
@@ -308,7 +309,9 @@ const logoutPending = ref(false);
 const notificationSubscriptionsPanelError = ref<Error | null>(null);
 const wechatLoginPending = ref(false);
 
-const currentUser = computed(() => currentUserQuery.data.value ?? null);
+const currentUser = computed(() =>
+  userSessionStore.isAuthenticated ? (currentUserQuery.data.value ?? null) : null,
+);
 const canEditProfile = computed(
   () => userSessionStore.isAuthenticated && currentUser.value !== null,
 );
@@ -506,6 +509,7 @@ const handleLogout = async () => {
 
   try {
     await resetAuthSessionToFreshAnonymous();
+    queryClient.setQueryData(queryKeys.user.me(), null);
     queryClient.removeQueries({ queryKey: queryKeys.user.me() });
     nicknameDraft.value = "";
     phoneDraft.value = "";
