@@ -1,4 +1,5 @@
 import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
+import { createUuid } from "@/shared/telemetry/uuid";
 
 const ANONYMOUS_ID_STORAGE_KEY = "__partner_up_telemetry_anonymous_id__";
 const APP_JOURNEY_STORAGE_KEY = "__partner_up_telemetry_app_journey__";
@@ -59,11 +60,7 @@ export type StartUserTelemetrySegmentInput = Omit<
 };
 
 export const createTelemetryId = (): string => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return createUuid();
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {

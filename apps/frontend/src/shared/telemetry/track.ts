@@ -11,6 +11,7 @@ import {
 import { sanitizeSpmValue } from "@/shared/url/spm";
 import { sanitizeSensitiveRoutePath } from "@/shared/url/sanitizeSensitiveRoutePath";
 import { client } from "@/lib/rpc";
+import { createUuid } from "@/shared/telemetry/uuid";
 
 type TelemetryEventRecord<
   TEvent extends TelemetryEventName = TelemetryEventName,
@@ -191,10 +192,7 @@ const getCurrentReferrer = (): string | undefined => {
 };
 
 const createEventId = (): string => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return createUuid();
 };
 
 const toCanonicalEventName = (event: TelemetryEventName): string => {
