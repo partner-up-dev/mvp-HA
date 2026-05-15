@@ -35,12 +35,6 @@ import {
   type AuthSessionPayload,
 } from "@/shared/auth/useUserSessionStore";
 import { clearWeChatOAuthLoginPending } from "@/processes/wechat/oauth-login-pending";
-import {
-  clearWeChatOAuthDiagnosticFlow,
-  createWeChatOAuthDiagnosticTimer,
-  logWeChatOAuthDiagnostic,
-  toDiagnosticPath,
-} from "@/processes/wechat/oauth-diagnostics";
 
 const { t } = useI18n();
 
@@ -81,23 +75,14 @@ type OAuthCallbackResponse =
 
 const handleCallback = async (): Promise<void> => {
   const { code, state } = resolveOAuthParams();
-  logWeChatOAuthDiagnostic("callback_page.params_resolved", {
-    hasCode: Boolean(code),
-    hasState: Boolean(state),
-  });
   if (!code || !state) {
     clearWeChatOAuthLoginPending();
-    clearWeChatOAuthDiagnosticFlow({
-      reason: "callback_missing_params",
-    });
     status.value = "failed";
     errorMessage.value = t("wechatOAuthCallbackPage.missingParams");
     return;
   }
 
   try {
-    const stopCallbackTimer = createWeChatOAuthDiagnosticTimer();
-    logWeChatOAuthDiagnostic("callback_page.request.start");
     const res = await client.api.wechat.oauth.callback.$get(
       {
         query: { code, state },
@@ -108,21 +93,12 @@ const handleCallback = async (): Promise<void> => {
         },
       },
     );
-    logWeChatOAuthDiagnostic("callback_page.request.end", {
-      status: res.status,
-      ok: res.ok,
-      durationMs: stopCallbackTimer(),
-    });
 
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as {
         error?: string;
       } | null;
       clearWeChatOAuthLoginPending();
-      clearWeChatOAuthDiagnosticFlow({
-        reason: "callback_request_not_ok",
-        status: res.status,
-      });
       status.value = "failed";
       errorMessage.value =
         payload?.error ?? t("wechatOAuthCallbackPage.failed");
@@ -131,38 +107,20 @@ const handleCallback = async (): Promise<void> => {
 
     const payload = (await res.json()) as OAuthCallbackResponse;
     if (payload.ok && payload.returnTo) {
-      logWeChatOAuthDiagnostic("callback_page.payload_ok", {
-        hasAuth: Boolean(payload.auth),
-        returnToPath: toDiagnosticPath(payload.returnTo),
-      });
       if (payload.auth) {
         userSessionStore.applyAuthSession(payload.auth);
         clearWeChatOAuthLoginPending();
-        logWeChatOAuthDiagnostic("callback_page.auth_applied", {
-          role: payload.auth.role,
-          hasUserId: Boolean(payload.auth.userId),
-        });
       }
-      logWeChatOAuthDiagnostic("callback_page.redirect.execute", {
-        returnToPath: toDiagnosticPath(payload.returnTo),
-      });
       window.location.replace(payload.returnTo);
       return;
     }
 
     clearWeChatOAuthLoginPending();
-    clearWeChatOAuthDiagnosticFlow({
-      reason: "callback_payload_not_ok",
-    });
     status.value = "failed";
     errorMessage.value =
       "error" in payload ? payload.error : t("wechatOAuthCallbackPage.failed");
   } catch (error) {
     clearWeChatOAuthLoginPending();
-    clearWeChatOAuthDiagnosticFlow({
-      reason: "callback_exception",
-      errorName: error instanceof Error ? error.name : typeof error,
-    });
     status.value = "failed";
     errorMessage.value =
       error instanceof Error
@@ -172,7 +130,6 @@ const handleCallback = async (): Promise<void> => {
 };
 
 onMounted(() => {
-  logWeChatOAuthDiagnostic("callback_page.mounted");
   void handleCallback();
 });
 </script>
