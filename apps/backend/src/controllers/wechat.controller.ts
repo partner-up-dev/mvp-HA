@@ -18,7 +18,7 @@ import {
 import { WeChatJssdkService } from "../services/WeChatJssdkService";
 import {
   WeChatOAuthService,
-  type WeChatOAuthUserProfile,
+  type WeChatOAuthLoginSession,
 } from "../services/WeChatOAuthService";
 import { UserRepository } from "../repositories/UserRepository";
 import { UserNotificationOptRepository } from "../repositories/UserNotificationOptRepository";
@@ -938,6 +938,67 @@ const issueOAuthCallbackAuth = async (
   };
 };
 
+type DeferredWeChatProfileRefreshReason =
+  | "login_existing_user"
+  | "login_anonymous_upgrade"
+  | "login_authenticated_bind"
+  | "login_created_user";
+
+const hasMissingWeChatProfile = (
+  user: Pick<User, "nickname" | "sex" | "avatar">,
+): boolean => !user.nickname || user.sex === null || !user.avatar;
+
+const fetchAndApplyWeChatProfileIfMissing = async (input: {
+  userId: UserId;
+  session: WeChatOAuthLoginSession;
+  reason: DeferredWeChatProfileRefreshReason;
+}): Promise<void> => {
+  const startedAtMs = Date.now();
+  try {
+    const profile = await oauthService.fetchUserInfo(
+      input.session.oauthAccessToken,
+      input.session.openId,
+      input.session.scope,
+    );
+    const updatedUser = await userRepo.updateWeChatProfileFieldsIfMissing({
+      userId: input.userId,
+      nickname: profile.nickname,
+      sex: profile.sex,
+      avatar: profile.avatar,
+    });
+    console.log("[WeChatOAuth] profile refresh completed", {
+      reason: input.reason,
+      durationMs: Date.now() - startedAtMs,
+      updated: Boolean(updatedUser),
+    });
+  } catch (error) {
+    console.error("[WeChatOAuth] profile refresh failed", {
+      reason: input.reason,
+      durationMs: Date.now() - startedAtMs,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+const scheduleWeChatProfileRefreshIfMissing = (input: {
+  user: Pick<User, "id" | "nickname" | "sex" | "avatar">;
+  session: WeChatOAuthLoginSession | null;
+  reason: DeferredWeChatProfileRefreshReason;
+}): void => {
+  const session = input.session;
+  if (!session || !hasMissingWeChatProfile(input.user)) {
+    return;
+  }
+
+  setTimeout(() => {
+    void fetchAndApplyWeChatProfileIfMissing({
+      userId: input.user.id,
+      session,
+      reason: input.reason,
+    });
+  }, 0);
+};
+
 const resolveAuthenticatedBoundUser = async (
   c: Context,
 ): Promise<
@@ -1537,18 +1598,14 @@ export const wechatRoute = app
         }
 
         let loginOpenId: string | null = null;
-        let profile: WeChatOAuthUserProfile | null = null;
+        let loginSession: WeChatOAuthLoginSession | null = null;
 
         if (useMockOAuthFlow) {
           loginOpenId = resolveWeChatAbilityMockOpenId();
         } else {
           const session = await oauthService.exchangeCodeForSession(code);
+          loginSession = session;
           loginOpenId = session.openId;
-          profile = await oauthService.fetchUserInfo(
-            session.oauthAccessToken,
-            session.openId,
-            session.scope,
-          );
         }
 
         if (!loginOpenId) {
@@ -1557,6 +1614,11 @@ export const wechatRoute = app
 
         const existingUser = await userRepo.findByOpenId(loginOpenId);
         if (existingUser) {
+          scheduleWeChatProfileRefreshIfMissing({
+            user: existingUser,
+            session: loginSession,
+            reason: "login_existing_user",
+          });
           clearAnonymousSessionCookie(c);
           clearOAuthStateCookieByNonce(c, state);
           clearOAuthStateCookie(c);
@@ -1583,14 +1645,26 @@ export const wechatRoute = app
               const upgraded = await upgradeAnonymousUserWithWeChat({
                 userId: bindCandidateUser.id,
                 openId: loginOpenId,
-                profile: profile,
+                profile: null,
               });
               if (upgraded) {
                 boundCandidate = await resolveActiveUserById(upgraded.userId);
+                scheduleWeChatProfileRefreshIfMissing({
+                  user: boundCandidate,
+                  session: loginSession,
+                  reason: "login_anonymous_upgrade",
+                });
               }
             } else {
               await bindWeChatToCurrentUser(bindCandidateUser.id, loginOpenId);
               boundCandidate = await userRepo.findById(bindCandidateUser.id);
+              if (boundCandidate) {
+                scheduleWeChatProfileRefreshIfMissing({
+                  user: boundCandidate,
+                  session: loginSession,
+                  reason: "login_authenticated_bind",
+                });
+              }
             }
 
             if (boundCandidate && boundCandidate.status === "ACTIVE") {
@@ -1610,15 +1684,20 @@ export const wechatRoute = app
           openId: loginOpenId,
           role: ["authenticated"],
           status: "ACTIVE",
-          nickname: profile?.nickname ?? null,
-          sex: profile?.sex ?? null,
-          avatar: profile?.avatar ?? null,
+          nickname: null,
+          sex: null,
+          avatar: null,
         });
         const resolvedUser =
           createdUser ?? (await userRepo.findByOpenId(loginOpenId));
         if (!resolvedUser || resolvedUser.status !== "ACTIVE") {
           throw new Error("Failed to create user for WeChat OAuth login");
         }
+        scheduleWeChatProfileRefreshIfMissing({
+          user: resolvedUser,
+          session: loginSession,
+          reason: "login_created_user",
+        });
 
         clearAnonymousSessionCookie(c);
         clearOAuthStateCookieByNonce(c, state);
