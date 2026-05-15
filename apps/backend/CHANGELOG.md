@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.0.0](https://github.com/partner-up-dev/mvp-HA/compare/backend-v1.0.0...backend-v2.0.0) (2026-05-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **poi:** POI.id is now an integer identity; location matching uses POI.name.
+* **admin:** users.role now stores role arrays and auth tokens require roles claims.
+
+### Features
+
+* **admin:** add analytics role entry ([3c1e88a](https://github.com/partner-up-dev/mvp-HA/commit/3c1e88a7516c9f409bc9d514a482184324158e6b))
+* **backend:** add anchor event analytics funnel API ([3da5297](https://github.com/partner-up-dev/mvp-HA/commit/3da52974077b9b561775d46b322099619801d2c3))
+* **event:** add full PR expansion policy ([4a40f29](https://github.com/partner-up-dev/mvp-HA/commit/4a40f296328eea4cc7015dfa0f7472722cd4c6ab))
+* **event:** add participation frequency limit ([ca0c3e0](https://github.com/partner-up-dev/mvp-HA/commit/ca0c3e0b39d0acb842905680b6cc05da7bb88e4c))
+* **poi:** upgrade POI identity and location matching ([bb6e3cf](https://github.com/partner-up-dev/mvp-HA/commit/bb6e3cfaeba83c871f6ac263cd17f17302e92f4a))
+* **pr:** make confirmation optional ([ca4b83a](https://github.com/partner-up-dev/mvp-HA/commit/ca4b83ad522d9f0e2a43f344e8a7ef0d92fd7d98))
+* **pr:** use user phone for booking contact ([2bfedfe](https://github.com/partner-up-dev/mvp-HA/commit/2bfedfe7a646a6eda1cfb7b7f1bb9622d5483362))
+* **telemetry:** add user journey ingestion ([fc7b863](https://github.com/partner-up-dev/mvp-HA/commit/fc7b863380f7292aeb667b5fb521abe8e187cc15))
+
+
+### Bug Fixes
+
+* **auth:** unify authenticated-required handling ([a545644](https://github.com/partner-up-dev/mvp-HA/commit/a545644eccc5d755de4d1661cdc255c646d697c5))
+* db migration order ([65fa804](https://github.com/partner-up-dev/mvp-HA/commit/65fa8045c4886dfd80e5dd54a2599e7b58e07781))
+* **event:** count prior prs for frequency limit ([2b38a0b](https://github.com/partner-up-dev/mvp-HA/commit/2b38a0b050f9669d22efabbc3875c5f193b9aa41))
+* **pr:** finalize prs by close-time participation ([ac705e1](https://github.com/partner-up-dev/mvp-HA/commit/ac705e19e612b351d7c81c3422e54d60e34ab04c))
+* **pr:** hide confirm cta when confirmation is disabled ([ff43d2d](https://github.com/partner-up-dev/mvp-HA/commit/ff43d2d440e44403e7473620b6d5da1001b57117))
+* **pr:** make PR type immutable for user edits ([9579520](https://github.com/partner-up-dev/mvp-HA/commit/95795205eb25b243504a237ed864344a1d2ab975))
+* **pr:** require authenticated PR mutations ([5cc4843](https://github.com/partner-up-dev/mvp-HA/commit/5cc484385d7e06fbbdb600f16f5c485ceccf5902))
+
 ## [1.0.0](https://github.com/partner-up-dev/mvp-HA/compare/backend-v0.3.0...backend-v1.0.0) (2026-05-12)
 
 
