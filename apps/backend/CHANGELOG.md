@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/partner-up-dev/mvp-HA/compare/backend-v2.0.0...backend-v2.0.1) (2026-05-15)
+
+
+### Performance Improvements
+
+* **backend:** defer WeChat OAuth profile fetch ([74ad134](https://github.com/partner-up-dev/mvp-HA/commit/74ad1342f371c500a966c611d80520dd90cdfcd1))
+
 ## [2.0.0](https://github.com/partner-up-dev/mvp-HA/compare/backend-v1.0.0...backend-v2.0.0) (2026-05-15)
 
 
