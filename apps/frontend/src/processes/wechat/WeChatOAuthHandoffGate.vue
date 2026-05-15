@@ -43,6 +43,11 @@ import {
   WECHAT_OAUTH_HANDOFF_QUERY_PARAM,
 } from "@/processes/wechat/oauth-handoff";
 import { clearWeChatOAuthLoginPending } from "@/processes/wechat/oauth-login-pending";
+import {
+  clearWeChatOAuthDiagnosticFlow,
+  createWeChatOAuthDiagnosticTimer,
+  logWeChatOAuthDiagnostic,
+} from "@/processes/wechat/oauth-diagnostics";
 
 const HANDOFF_SLOW_THRESHOLD_MS = 8_000;
 
@@ -89,8 +94,24 @@ const isAbortError = (error: unknown): boolean =>
   error instanceof Error && error.name === "AbortError";
 
 const completeHandoff = (): void => {
+  logWeChatOAuthDiagnostic("gate.complete_handoff.start");
   ready.value = true;
-  void ensureAuthSessionBootstrapped();
+  const stopBootstrapTimer = createWeChatOAuthDiagnosticTimer();
+  void ensureAuthSessionBootstrapped()
+    .then(() => {
+      logWeChatOAuthDiagnostic("gate.complete_handoff.bootstrap_done", {
+        durationMs: stopBootstrapTimer(),
+      });
+      clearWeChatOAuthDiagnosticFlow({
+        reason: "handoff_gate_complete",
+      });
+    })
+    .catch((error: unknown) => {
+      logWeChatOAuthDiagnostic("gate.complete_handoff.bootstrap_failed", {
+        durationMs: stopBootstrapTimer(),
+        errorName: error instanceof Error ? error.name : typeof error,
+      });
+    });
 };
 
 const clearHandoffRoute = async (): Promise<void> => {
@@ -115,6 +136,10 @@ const clearHandoffRoute = async (): Promise<void> => {
 const runHandoff = async (): Promise<void> => {
   const currentAttemptId = attemptId + 1;
   attemptId = currentAttemptId;
+  logWeChatOAuthDiagnostic("gate.run.start", {
+    attemptId: currentAttemptId,
+    hasPendingHandoff: hasPendingWeChatOAuthHandoff(),
+  });
 
   if (!hasPendingWeChatOAuthHandoff()) {
     completeHandoff();
@@ -128,6 +153,10 @@ const runHandoff = async (): Promise<void> => {
   abortController = controller;
   slowTimer = setTimeout(() => {
     if (attemptId === currentAttemptId && !ready.value) {
+      logWeChatOAuthDiagnostic("gate.slow_threshold_reached", {
+        attemptId: currentAttemptId,
+        thresholdMs: HANDOFF_SLOW_THRESHOLD_MS,
+      });
       state.value = "slow";
     }
   }, HANDOFF_SLOW_THRESHOLD_MS);
@@ -142,11 +171,18 @@ const runHandoff = async (): Promise<void> => {
     abortController = null;
 
     if (consumed) {
+      logWeChatOAuthDiagnostic("gate.handoff_consumed", {
+        attemptId: currentAttemptId,
+      });
       await clearHandoffRoute();
       completeHandoff();
       return;
     }
 
+    logWeChatOAuthDiagnostic("gate.handoff_failed", {
+      attemptId: currentAttemptId,
+      reason: "not_consumed",
+    });
     clearWeChatOAuthLoginPending();
     state.value = "failed";
   } catch (error) {
@@ -156,9 +192,17 @@ const runHandoff = async (): Promise<void> => {
     abortController = null;
 
     if (isAbortError(error)) {
+      logWeChatOAuthDiagnostic("gate.handoff_aborted", {
+        attemptId: currentAttemptId,
+      });
       return;
     }
 
+    logWeChatOAuthDiagnostic("gate.handoff_failed", {
+      attemptId: currentAttemptId,
+      reason: "exception",
+      errorName: error instanceof Error ? error.name : typeof error,
+    });
     clearWeChatOAuthLoginPending();
     state.value = "failed";
   }
@@ -169,14 +213,22 @@ const retry = (): void => {
 };
 
 const continueAsGuest = async (): Promise<void> => {
+  logWeChatOAuthDiagnostic("gate.continue_as_guest");
   attemptId += 1;
   stopPendingRequest();
   clearWeChatOAuthLoginPending();
   await clearHandoffRoute();
+  clearWeChatOAuthDiagnosticFlow({
+    reason: "continue_as_guest",
+  });
   completeHandoff();
 };
 
 onMounted(() => {
+  logWeChatOAuthDiagnostic("gate.mounted", {
+    ready: ready.value,
+    hasPendingHandoff: hasPendingWeChatOAuthHandoff(),
+  });
   if (!ready.value) {
     void runHandoff();
   }
